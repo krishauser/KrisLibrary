@@ -1,0 +1,68 @@
+####  define some variables before including this file ####
+####  SRCS,LIBNAME,INCDIR,DEFINES,EXTRAOBJS	       ####
+
+CC= g++
+AR= ar
+RANLIB= ranlib
+
+ifeq ($(MAC_OS_X),1)
+ DEFINES += MAC_OS_X
+endif
+
+ifeq ($(LINUX),1)
+     DEFINES += LINUX
+endif
+
+ifeq ($(CYGWIN),1)
+     DEFINES += CYGWIN
+endif
+
+
+
+#INCDIR = .. $(GROUP_HOME)/src/Mesa-6.4.1/include $(GROUP_HOME)/src/glui-2.2
+CPPFLAGS= -O3 -g -fPIC -Wall -fpermissive $(addprefix -I, $(INCDIR)) $(addprefix -D, $(DEFINES))
+
+
+OBJDIR= objs
+DEPDIR= deps
+vpath %.d $(DEPDIR)
+vpath %.o $(OBJDIR)
+
+LIBDIROUT= lib
+
+OBJS= $(SRCS:.cpp=.o)
+DEPENDS= $(addprefix $(DEPDIR)/,$(SRCS:.cpp=.d))
+
+#################### Start the action #########################
+default: lib
+	@echo Done.
+
+.PHONY: clean deps lib
+
+deps: $(DEPENDS)
+	;
+
+clean:
+	rm -f $(DEPDIR)/*.d $(OBJDIR)/*.o $(LIBDIROUT)/*.a; 
+	rmdir $(DEPDIR) $(OBJDIR) $(LIBDIROUT)
+
+-include $(DEPENDS)
+
+$(DEPDIR)/%.d: %.cpp
+	mkdir -p $(DEPDIR);
+	$(SHELL) -ec '$(CC) -MM $(CPPFLAGS) $< | sed "s/$*.o/& $*.d/g" > $@'
+
+%.o: %.cpp
+	mkdir -p $(OBJDIR);
+	$(CC) $(CPPFLAGS) -c $*.cpp -o $(OBJDIR)/$*.o
+
+lib: $(OBJS)
+	mkdir -p $(LIBDIROUT);
+	$(AR) rcs $(LIBDIROUT)/lib$(LIBNAME).a $(addprefix $(OBJDIR)/,$(OBJS)) $(EXTRAOBJS)
+	$(RANLIB) $(LIBDIROUT)/lib$(LIBNAME).a
+
+
+
+
+
+

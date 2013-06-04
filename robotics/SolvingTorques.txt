@@ -1,0 +1,29 @@
+
+The method can be found in eq (1) in this paper http://www.cs.indiana.edu/~hauserk/papers/Hauser-2005-NonGaited.pdf.  
+
+As for a specific implementation, if you have been set up with KrisLibrary, the file is in KrisLibrary/robotics/TorqueSolver.h.
+
+Given a robot, a set of estimated contact points on given links (the ContactFormation structure found in Contact.h) and a gravity vector, the TorqueSolver class finds forces at each contact and torques at each robot joint so that equilibrium is satisfied.  To run it, you’d do something like:
+
+Robot robot;
+//this loads the robot setup from a .rob file
+robot.Load(“robot.rob”);
+Config q;
+//TODO: set up the robot’s configuration
+robot.UpdateConfig(q);
+
+ContactFormation contacts;
+//TODO: set up contacts here (note: contact positions/normals are in world space)
+
+TorqueSolver solver(robot,contacts);
+solver.SetGravity(Vector3(0,0,-9.8));
+solver.Init();
+if(solver.Solve()) {
+  cout<<”Solved torques: “<<solver.t<<endl;
+  cout<<”Solved forces: “<<solver.f<<endl;
+}
+else {
+  cout<<”Solver failed”<<endl;
+}
+
+If you also want to test the internal forces at the robot’s joints, once you solve the contact forces you can use the class in robotics/NewtonEuler.h to solve the Newton-Euler equations using the Featherstone algorithm.  If you set up the external forces/moments acting on each body, the NewtonEuler class will solve for the torques given a desired acceleration (CalcTorques) or accelerations given desired torques (CalcAccel).
