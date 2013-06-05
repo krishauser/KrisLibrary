@@ -1,7 +1,8 @@
 KrisLibrary
 ===========
 
-Basic math, geometry, and robotics, and other routines used in projects from Kris Hauser's lab.
+Basic math, geometry, and robotics, and other routines used in projects
+from Kris Hauser's lab.
 
 Authors:
 - Kris Hauser (hauserk@indiana.edu)
@@ -10,20 +11,28 @@ Authors:
 ********************************************************************
 * Building
 ********************************************************************
-Copy Makefile.config.tmpl to Makefile.config.
+Copy Makefile.config.tmpl to Makefile.config.  Pre-configured config
+files for your system may be available in Makefile.config.[system].
 
-Edit the makefile variables in Makefile.config.
-- The paths to GLUT and GLUI include files should be set to the correct
-  paths. To disable GLUT and GLUI support, set HAVE_GLUT and/or
-  HAVE_GLUI to 0
-- To enable BLAS/LAPACK interfaces, set HAVE_BLAS and HAVE_LAPACK to 1,
-  and set the appropriate Makefile.config paths.
-- To enable GLPK for solving linear programs, set HAVE_GLPK to 1, and
-  set the appropriate Makefile.config paths.
+Edit paths and optional packages in Makefile.config.
+- GLUT / GLUI: almost always needed.  Configure the GLUT and GLUI paths
+  to point to the right places on your system. To disable, set HAVE_GLUT
+  and/or HAVE_GLUI to 0. 
+- GLPK: needed for optimization and contact mechanics.  To disable, set
+  HAVE_GLPK to 0.
+- Tinyxml: needed for Xml resource loading.  To disable, set HAVE_TINYXML to 0.
+- GSL (disabled by default): needed only if you plan to use the special
+  functions in math/misc.h.
+- Assimp (disabled by default): needed only for "exotic" triangle mesh
+  loading.  To enable, set HAVE_ASSIMP to 1 and set the appropriate ASSIMP 
+  path.
+- BLAS/LAPACK (disabled by default): needed only for the experimental
+  BLAS and LAPACK interfaces through CLAPACK.  To enable, set HAVE_BLAS and
+  HAVE_LAPACK to 1, and set the appropriate CLAPACK_DIR path.
 
-1. Build all the subdirectories using 'make all'.
-2. Type 'make KrisLibrary' to build the static library. It will be
-   named libKrisLibrary.a and placed in the libs_(BUILDNAME) directory.
+Build the library using 'make'.  Documentation may also be built using
+'make docs'.
+
 
 
 ********************************************************************
@@ -46,26 +55,28 @@ Edit the makefile variables in Makefile.config.
   . splines - splines
 
 ********************************************************************
-* Known Issues
+* Known "cruft"
 ********************************************************************
 - myfile should be renamed.
-- the 2D libs in math3d should be as complete as the 3D libs
+- the 2D libs in math3d are not quite as complete as the 3D libs
 - GLdraw should be renamed.
-- GLdraw/drawextra should be renamed.
-- optimization/LOQOSolver is broken.
-- optimization/PathOptimization is broken.
-- optimization/QPInteriorPoint is broken when equality constraints are used.
 - optimization/LCP is a poor quality implementation.
-- camera/clip is named the same as math3d/clip, and is a poor
+- optimization/MinNormProblem does not have access to a good quadratic
+  programming solver.
+- camera/clip is named the same as math3d/clip, and is a less powerful
   reimplementation of math3d/Polyhedron3D.
 
 ********************************************************************
 * Contribution guidelines
 ********************************************************************
 
+We welcome fixes and contributions to KrisLibrary.  Please follow these
+guidelines when adding to the library.
+
 Classes should be named as precisely as possible to minimize confusion.
 
-Comment any confusing code.  Document using doxygen.  Write notes like "TODO" or "HACK" for partially complete code.
+Comment any confusing code.  Document using doxygen.  Write notes like "TODO"
+or "HACK" for partially complete code.
 
 Use STL whenever possible.  It keeps things standardized and fairly portable.
 

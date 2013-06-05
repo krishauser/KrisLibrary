@@ -26,6 +26,7 @@ TINYXML = $(HOME)/Code/tinyxml
 # math package
 #set the following item to zero if GSL is not present
 HAVE_GSL=0
+GSL_DIR=
 #set the following 3 items to zero if CLAPACK is not present
 HAVE_CLAPACK=0
 HAVE_LAPACK=0
@@ -88,26 +89,24 @@ ifeq ($(HAVE_GLUI),1)
 	endif
 endif
 
+
 # geometry package
-HAVE_LRS=0
-HAVE_PQP=1
-LRS = $(HOME)/lrslib-041
-#PQP = $(HOME)/Code/PQP_v1.3
 PQP = geometry/PQP
-GEOMETRY_DEFINES += HAVE_LRS=$(HAVE_LRS)
-ifeq ($(HAVE_LRS),1)
-  GEOMETRY_EXTRAOBJS += $(LRS)/objs/*.o
-endif
-GEOMETRY_DEFINES += HAVE_PQP=$(HAVE_PQP)
-ifeq ($(HAVE_PQP),1)
-  GEOMETRY_EXTRAOBJS += $(PQP)/lib/*.o
-  GEOMETRY_INCDIRS += ../$(PQP)/include
-endif
+GEOMETRY_DEFINES += HAVE_PQP=1
+GEOMETRY_EXTRAOBJS += $(PQP)/lib/*.o
+GEOMETRY_INCDIRS += ../$(PQP)/include
 
 # statistics package
 ifeq ($(HAVE_GSL),1)
   STATISTICS_INCDIR += $(GSL_DIR)
 endif
 
+
+#assimp 3D mesh loading library
+HAVE_ASSIMP=0
+ifeq ($(HAVE_ASSIMP),1)
+	ASSIMP=$(HOME)/assimp--3.0.1270-sdk
+	ASSIMPINCDIR=$(ASSIMP)/include
+endif
 
 KRISLIBRARY_EXTRAOBJS = $(GEOMETRY_EXTRAOBJS) $(OPTIMIZATION_EXTRAOBJS) $(MATH_EXTRAOBJS)

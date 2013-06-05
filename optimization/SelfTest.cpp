@@ -2,7 +2,8 @@
 #include "Minimization.h"
 #include "NewtonSolver.h"
 #include "LCP.h"
-#include "QPActiveSetSolver.h"
+#include "QuadraticProgram.h"
+//#include "QPActiveSetSolver.h"
 #include "LSQRInterface.h"
 #include <math/vectorfunction.h>
 #include <math/linalgebra.h>
@@ -211,6 +212,7 @@ namespace Optimization {
     qp.A(0,0) = 0;  qp.A(0,1) = 1; qp.p(0) = qp.q(0) = 1.5;
     */
     Assert(!qp.HasBounds());
+    /*
     QPActiveSetSolver solver(qp);
     solver.verbose = 2;
     ConvergenceResult res = solver.Solve();
@@ -272,6 +274,9 @@ namespace Optimization {
       }
       Assert(x0.isEqual(solver.x,1e-2));  //must be the same point
     }
+    */
+    FatalError("TODO: QP Solve");
+
   }
 
 struct RosenbrockFunction : public ScalarFieldFunction

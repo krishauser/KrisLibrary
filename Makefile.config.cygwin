@@ -59,9 +59,7 @@ ifeq ($(HAVE_GLPK),1)
 		OPTIMIZATION_INCDIR += $(GLPK)
 	endif
 endif
-ifeq ($(HAVE_GLPK),1)
-  OPTIMIZATION_EXTRAOBJS += optimization/$(OBJDIR)/glpk/*.o
-endif
+
 
 # GLdraw package
 HAVE_GLUT=1
@@ -86,21 +84,12 @@ ifeq ($(HAVE_GLUI),1)
 	endif
 endif
 
+
 # geometry package
-HAVE_LRS=0
-HAVE_PQP=1
-LRS = $(HOME)/lrslib-041
-#PQP = $(HOME)/Code/PQP_v1.3
 PQP = geometry/PQP
-GEOMETRY_DEFINES += HAVE_LRS=$(HAVE_LRS)
-ifeq ($(HAVE_LRS),1)
-  GEOMETRY_EXTRAOBJS += $(LRS)/objs/*.o
-endif
-GEOMETRY_DEFINES += HAVE_PQP=$(HAVE_PQP)
-ifeq ($(HAVE_PQP),1)
-  GEOMETRY_EXTRAOBJS += $(PQP)/lib/*.o
-  GEOMETRY_INCDIRS += ../$(PQP)/include
-endif
+GEOMETRY_DEFINES += HAVE_PQP=1
+GEOMETRY_EXTRAOBJS += $(PQP)/lib/*.o
+GEOMETRY_INCDIRS += ../$(PQP)/include
 
 # statistics package
 ifeq ($(HAVE_GSL),1)

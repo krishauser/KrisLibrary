@@ -1,12 +1,10 @@
 #include "TriMesh.h"
-#include "IO.h"
 #include <utils/stringutils.h>
 #include <math3d/geometry3d.h>
 #include <math3d/misc.h>
 #include <GLdraw/GL.h>
 #include <GLdraw/drawextra.h>
 #include <fstream>
-#include <sstream>
 #include <algorithm>
 #include <errors.h>
 namespace Meshing {
@@ -374,164 +372,6 @@ ostream& operator << (ostream& out,const TriMesh& tri)
   for(size_t i=0;i<tri.tris.size();i++)
     out << tri.tris[i] << endl;
   return out;
-}
-
-
-
-///Import will try to determine the file type via the file extension
-bool Import(const char* fn,TriMesh& tri)
-{
-  const char* ext=FileExtension(fn);
-  if(0==strcmp(ext,"tri")) {
-    ifstream in(fn,ios::in);
-    if(!in) return false;
-    in>>tri;
-    if(in.bad()) return false;
-    return true;
-  }
-  else if(0==strcmp(ext,"wrl")) {
-    ifstream in(fn,ios::in);
-    if(!in) return false;
-    return LoadVRML(in,tri);
-  }
-  else if(0==strcmp(ext,"off")) {
-    ifstream in(fn,ios::in);
-    if(!in) return false;
-    return LoadOFF(in,tri);
-  }
-  else {
-    fprintf(stderr,"Import(TriMesh): file extension %s not recognized\n",ext);
-    return false;
-  }
-}
-
-bool Export(const char* fn,const TriMesh& tri)
-{
-  const char* ext=FileExtension(fn);
-  if(0==strcmp(ext,"tri")) {
-    ofstream out(fn,ios::out);
-    if(!out) return false;
-    out<<tri;
-    return true;
-  }
-  else if(0==strcmp(ext,"wrl")) {
-    ofstream out(fn,ios::out);
-    if(!out) return false;
-    return SaveVRML(out,tri);
-  }
-  else if(0==strcmp(ext,"off")) {
-    ofstream out(fn,ios::out);
-    if(!out) return false;
-    return SaveOFF(out,tri);
-  }
-  else {
-    fprintf(stderr,"Export(TriMesh): file extension %s not recognized\n",ext);
-    return false;
-  }
-}
-
-///Loads from VRML file format
-bool LoadVRML(std::istream& in,TriMesh& tri)
-{
-  fprintf(stderr,"LoadVRML not implemented yet\n");
-  return false;
-}
-
-///Saves to VRML file format
-bool SaveVRML(std::ostream& out,const TriMesh& tri)
-{
-  fprintf(stderr,"SaveVRML not implemented yet\n");
-  return false;
-}
-
-///Loads from the GeomView Object File Format (OFF)
-bool LoadOFF(std::istream& in,TriMesh& tri)
-{
-  string tag;
-  in>>tag;
-  if(tag != "OFF") {
-    fprintf(stderr,"LoadOFF: not a proper OFF file\n");
-    return false;
-  }
-  int mode = 0; //0: waiting for sizes, 1: reading verts, 2: reading tris
-  int numFaces = 0;
-  int vertIndex=0,faceIndex=0;
-  string line;
-  while(in) {
-    getline(in,line);
-    if(in.bad()) return false;
-    if(line.length() == 0) continue;
-    if(line[0] == '#') continue; //comment line
-    if(mode == 0) {
-      stringstream ss(line);
-      int nv,nf,ne;
-      ss>>nv>>nf>>ne;
-      if(ss.bad()) {
-	in.setstate(ios::badbit);
-	return false;
-      }
-      tri.verts.resize(nv);
-      tri.tris.resize(0);
-      numFaces = nf;
-      mode = 1;
-    }
-    if(mode == 1) {
-      if((int)tri.verts.size() == vertIndex) mode=2;
-      else {
-	stringstream ss(line);
-	ss >> tri.verts[vertIndex];
-	if(ss.bad()) {
-	  in.setstate(ios::badbit);
-	  return false;
-	}
-	//ignore RGBA colors
-	vertIndex++;
-      }
-    }
-    if(mode == 2) {
-      if(faceIndex == numFaces) return true;
-      else {
-	stringstream ss(line);
-	int nv;
-	vector<int> face;
-	ss >> nv;
-	if(ss.bad()) {
-	  in.setstate(ios::badbit);
-	  return false;
-	}
-	for(int i=0;i<nv;i++) {
-	  int v;
-	  ss>>v;
-	  face.push_back(v);
-	}
-	if(ss.bad()) {
-	  in.setstate(ios::badbit);
-	  return false;
-	}
-	//ignore RGBA colors
-
-	//triangulate faces, assume convex
-	for(int i=1;i+1<nv;i++) {
-	  tri.tris.push_back(IntTriple(face[0],face[i],face[i+1]));
-	}
-
-	faceIndex++;
-      }
-    }
-  }
-  return false;
-}
-
-///Saves to the GeomView Object File Format (OFF)
-bool SaveOFF(std::ostream& out,const TriMesh& tri)
-{
-  out<<"OFF"<<endl;
-  out<<tri.verts.size()<<" "<<tri.tris.size()<<" 0"<<endl;
-  for(size_t i=0;i<tri.verts.size();i++) 
-    out<<tri.verts[i]<<endl;
-  for(size_t i=0;i<tri.tris.size();i++)
-    out<<"3  "<<tri.tris[i]<<endl;
-  return true;
 }
 
 } //namespace Meshing

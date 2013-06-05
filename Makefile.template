@@ -34,7 +34,7 @@ OBJS= $(SRCS:.cpp=.o)
 DEPENDS= $(addprefix $(DEPDIR)/,$(SRCS:.cpp=.d))
 
 #################### Start the action #########################
-default: lib
+default: $(OBJS)
 	@echo Done.
 
 .PHONY: clean deps lib
@@ -55,14 +55,6 @@ $(DEPDIR)/%.d: %.cpp
 %.o: %.cpp
 	mkdir -p $(OBJDIR);
 	$(CC) $(CPPFLAGS) -c $*.cpp -o $(OBJDIR)/$*.o
-
-lib: $(OBJS)
-	mkdir -p $(LIBDIROUT);
-	$(AR) rcs $(LIBDIROUT)/lib$(LIBNAME).a $(addprefix $(OBJDIR)/,$(OBJS)) $(EXTRAOBJS)
-	$(RANLIB) $(LIBDIROUT)/lib$(LIBNAME).a
-
-
-
 
 
 

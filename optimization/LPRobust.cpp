@@ -19,7 +19,7 @@ void RobustLPSolver::Clear()
 LinearProgram::Result RobustLPSolver::Solve(const LinearProgram& lp)
 {
   UpdateGLPK(lp);
-  res=SolveGLPK();
+  LinearProgram::Result res=SolveGLPK();
   return res;
 }
 
@@ -34,13 +34,12 @@ LinearProgram::Result RobustLPSolver::Solve_NewObjective(const LinearProgram& lp
 {
   if(!initialized) UpdateGLPK(lp);
   else glpk.SetObjective(lp.c,lp.minimize);
-  res=SolveGLPK();
+  LinearProgram::Result res=SolveGLPK();
   return res;
 }
 
 LinearProgram::Result RobustLPSolver::Solve_NewObjective(const LinearProgram_Sparse& lp)
 {
-  LinearProgram::Result res;
   if(!initialized) {
     glpk.Set(lp);
     initialized = true;
@@ -53,7 +52,7 @@ LinearProgram::Result RobustLPSolver::Solve_NewObjective(const LinearProgram_Spa
 void RobustLPSolver::UpdateGLPK(const LinearProgram& lp)
 {
   glpk.Set(lp);
-  initialized[SOLVE_GLPK]=true;
+  initialized=true;
 }
 
 LinearProgram::Result RobustLPSolver::SolveGLPK()

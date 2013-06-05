@@ -8,12 +8,12 @@ include Makefile.template
 MAKE = make -j 2
 SUB_LIBS = . planning optimization statistics geometry meshing spline image robotics GLdraw math math3d camera  utils
 
-default: KrisLibrary docs
+default: $(OBJS) KrisLibrary
 
 PQP:
 	cd geometry/PQP; $(MAKE)
 
-all: lib PQP
+all: $(OBJS) PQP
 	 cd utils; $(MAKE)
 	 cd math; $(MAKE)
 	 cd math3d; $(MAKE)
@@ -29,7 +29,7 @@ all: lib PQP
 	 cd spline; $(MAKE)
 
 KrisLibrary: all 
-	 $(AR) rcs $(LIBDIROUT)/libKrisLibrary.a $(addsuffix /$(OBJDIR)/*.o,$(SUB_LIBS)) $(GEOMETRY_EXTRAOBJS) $(OPTIMIZATION_EXTRAOBJS)
+	 $(AR) rcs $(LIBDIROUT)/libKrisLibrary.a $(addsuffix /$(OBJDIR)/*.o,$(SUB_LIBS)) $(KRISLIBRARY_EXTRAOBJS)
 	 $(RANLIB) $(LIBDIROUT)/libKrisLibrary.a
 
 docs:

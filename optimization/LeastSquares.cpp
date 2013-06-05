@@ -1,7 +1,5 @@
 #include "LeastSquares.h"
 #include "QuadraticProgram.h"
-#include "QPInteriorPoint.h"
-#include "QPActiveSetSolver.h"
 #include <math/MatrixEquationPrinter.h>
 #include <math/linalgebra.h>
 #include <errors.h>
@@ -28,40 +26,7 @@ bool LeastSquares::Solve(Vector& x) const
 
     qp.SetSimpleForm(Aeq,beq,Aineq,bineq);
 
-    /*
-      qp.verbose = 1;
-    if(initialPoint) {
-      if(qp.SatisfiesInequality(*initialPoint)) {
-	qp.SetInitialPoint(*initialPoint);
-      }
-      else {
-	if(verbose >= 1)
-	  cerr<<"LeastSquares:: Given initial point does not satisfy the inequalities"<<endl;
-	if(verbose >= 2) {
-	  cerr<<"Press any key to continue"<<endl;
-	  getchar();
-	}
-      }
-    }
-    
-    if(qp.Solve()) {
-      x = qp.GetOptimum();
-    }
-    */
-    QPActiveSetSolver solver(qp);
-    solver.verbose = 1;
-    ConvergenceResult res=solver.Solve();
-    if(res != ConvergenceError) {
-      x = solver.x;
-    }
-    else {
-      if(verbose >= 1)
-	cerr<<"Quadratic program unable to solve constrained least-squares problem"<<endl;
-      getchar();
-      return false;
-    }
-    //getchar();
-    return true;
+    FatalError("TODO: solve quadratic program");
   }
 
   if(Aeq.m != 0) {  //must transform the problem to an equivalent one
@@ -117,84 +82,6 @@ bool LeastSquares::Solve(Vector& x) const
       cout<<"N: "<<endl<<MatrixPrinter(N)<<endl;
     }
     if(verbose >=1) cout<<"Solving transformed problem..."<<endl;
-
-#if 0
-    //solve new least squares for y
-    if(Aineq.m != 0) {  //must transform inequality constraints, solve QP
-      //form constrained quadratic program
-      //min 0.5*x^t*A^t*A*x - x^t*A^t*b
-      QuadraticProgram qp;
-      qp.Pobj.mulTransposeA(A_new,A_new);
-      A_new.mulTranspose(b_new,qp.qobj); qp.qobj.inplaceNegative();
-      QPInteriorPoint qpi(qp);
-      qpi.verbose = verbose;
-
-      //inequality constraints Ex <= f become
-      //E*x0 + E*N*y <= f
-      //E*N*y <= f-E*x0
-      qp.Aineq.mul(Aineq,N);
-      Aineq.mul(x0,qp.bineq);
-      qp.bineq -= bineq;
-      qp.bineq.inplaceNegative();
-
-      /*
-	//do we want to scale the inequality rows?
-      Vector c;
-      for(int i=0;i<qp.Aineq.m;i++) {
-        qp.Aineq.getRowShallow(i,c);
-	Real emax = c.maxAbsElement();
-	Real norm = c.norm();
-	cout<<"Max element in ineq "<<i<<" is "<<emax<<", norm "<<norm<<endl;
-	c.inplaceMul(1.0/emax);
-	qp.bineq(i) /= emax;
-      }
-      getchar();
-      */
-
-      if(initialPoint) {
-	if(verbose >= 1) {
-	  cout<<"Transforming initial point "<<VectorPrinter(*initialPoint)<<endl;
-	}
-	Assert(SatisfiesInequalities(*initialPoint));
-	//transform initial point such that
-	//x_ip ~= x0+N*y
-	//y is initial point for new system
-
-	Vector initialPoint_new;	
-	Vector xi;
-	xi.sub(*initialPoint,x0);
-	MatrixEquation ls_ip(N,xi);
-	if(ls_ip.LeastSquares_SVD(initialPoint_new)) {
-	  if(verbose >= 1) {
-	    cout<<"New initial point "<<VectorPrinter(initialPoint_new)<<endl;
-	    //TEMP
-	    N.mul(initialPoint_new,xi); xi+=x0;
-	    cout<<"New initial point in original space "<<VectorPrinter(xi)<<endl;
-	  }
-
-	  if(qp.SatisfiesInequality(initialPoint_new)) {
-	    qp.SetInitialPoint(initialPoint_new);
-	  }
-	  else {
-	    if(verbose >= 1)
-	      cout<<"Transformed initial point does not satisfy the inequalities"<<endl;
-	  }
-	}
-	else {
-	  if(verbose >= 1)
-	    cout<<"Error solving for new initial point... must find new one"<<endl;
-	}
-      }
-
-      if(qp.Solve()) y = qp.GetOptimum();
-      else {
-	if(verbose >= 1)
-	  cout<<"Quadratic program unable to solve constrained least-squares problem"<<endl;
-	return false;
-      }
-    }
-    else
-#endif
       {
       MatrixEquation ls(A_new,b_new);
       if(!ls.LeastSquares(y)) {
@@ -231,16 +118,7 @@ bool LeastSquares::Solve(Vector& x) const
       qp.SetSimpleForm(Aeq,beq,Aineq,bineq);
       Assert(qp.IsValid());
 
-      QPActiveSetSolver qps(qp);
-      ConvergenceResult res=qps.Solve();
-      if(res != ConvergenceError) {
-	x = qps.x;
-      }
-      else {
-	if(verbose >= 1)
-	  cerr<<"Quadratic program unable to solve constrained least-squares problem"<<endl;
-	return false;
-      }
+      FatalError("TODO: solve QP");
     }
   }
   if(verbose >= 1) {

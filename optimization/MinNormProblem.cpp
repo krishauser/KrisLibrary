@@ -1,6 +1,5 @@
 #include "MinNormProblem.h"
 #include "LPRobust.h"
-#include "QPActiveSetSolver.h"
 #include "BoundedLSQRSolver.h"
 #include "LSQRInterface.h"
 #include <math/linalgebra.h>
@@ -166,6 +165,7 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
     if(HasInequalities()) {  //must use quadratic program for inequalities
       Assert(qp.Pobj.m == C.n);
       Assert(qp.A.isRef());
+      /*
       QPActiveSetSolver solver(qp);
       solver.verbose = verbose;
       ConvergenceResult res=solver.Solve();
@@ -183,6 +183,8 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
 	x = solver.x;
 	return LinearProgram::Feasible;
       }
+      */
+      FatalError("TODO: QP Solve");
     }
     else if(HasBounds()) {
       if(A.m != 0) {
