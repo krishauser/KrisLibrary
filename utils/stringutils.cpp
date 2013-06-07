@@ -463,7 +463,7 @@ std::string GetFilePath(const std::string& str)
       return "";
     }
   }
-  return str.substr(0,pos);
+  return str.substr(0,pos+1);
 }
 
 void StripExtension(std::string& str)
