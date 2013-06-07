@@ -29,6 +29,7 @@ all: $(OBJS) PQP
 	 cd spline; $(MAKE)
 
 KrisLibrary: all 
+	mkdir $(LIBDIROUT)
 	 $(AR) rcs $(LIBDIROUT)/libKrisLibrary.a $(addsuffix /$(OBJDIR)/*.o,$(SUB_LIBS)) $(KRISLIBRARY_EXTRAOBJS)
 	 $(RANLIB) $(LIBDIROUT)/libKrisLibrary.a
 
