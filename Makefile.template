@@ -43,8 +43,8 @@ deps: $(DEPENDS)
 	;
 
 clean:
-	rm -f $(DEPDIR)/*.d $(OBJDIR)/*.o $(LIBDIROUT)/*.a; 
-	rmdir $(DEPDIR) $(OBJDIR) $(LIBDIROUT)
+	rm -f $(DEPDIR)/*.d $(OBJDIR)/*.o ; 
+	rmdir $(DEPDIR) $(OBJDIR) 
 
 -include $(DEPENDS)
 

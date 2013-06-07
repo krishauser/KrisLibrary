@@ -21,12 +21,16 @@ library: $(OBJECTS)
 	cp src/Tri.h include/
 
 lib/BV.o: src/BV.cpp
+	mkdir -p lib;
 	$(CC) $(CFLAGS) -c src/BV.cpp -o lib/BV.o
 lib/PQP.o: src/PQP.cpp
+	mkdir -p lib;
 	$(CC) $(CFLAGS) -c src/PQP.cpp -o lib/PQP.o
 lib/Build.o: src/Build.cpp
+	mkdir -p lib;
 	$(CC) $(CFLAGS) -c src/Build.cpp -o lib/Build.o
 lib/TriDist.o: src/TriDist.cpp
+	mkdir -p lib;
 	$(CC) $(CFLAGS) -c src/TriDist.cpp -o lib/TriDist.o
 
 clean:

@@ -29,10 +29,25 @@ all: $(OBJS) PQP
 	 cd spline; $(MAKE)
 
 KrisLibrary: all 
-	mkdir $(LIBDIROUT)
+	mkdir -p $(LIBDIROUT)
 	 $(AR) rcs $(LIBDIROUT)/libKrisLibrary.a $(addsuffix /$(OBJDIR)/*.o,$(SUB_LIBS)) $(KRISLIBRARY_EXTRAOBJS)
 	 $(RANLIB) $(LIBDIROUT)/libKrisLibrary.a
 
 docs:
 	 doxygen doxygen.conf
 
+clean:
+	cd geometry/PQP; $(MAKE) clean
+	 cd math; $(MAKE) clean
+	 cd math3d; $(MAKE) clean
+	 cd camera; $(MAKE) clean
+	 cd GLdraw; $(MAKE) clean
+	 cd optimization; $(MAKE) clean
+	 cd geometry; $(MAKE) clean
+	 cd meshing; $(MAKE) clean
+	 cd image; $(MAKE) clean
+	 cd statistics; $(MAKE) clean
+	cd robotics; $(MAKE) clean
+	cd planning; $(MAKE) clean
+	cd spline; $(MAKE) clean
+	rm -rf $(LIBDIROUT)
