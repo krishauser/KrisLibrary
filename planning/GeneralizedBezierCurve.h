@@ -70,6 +70,10 @@ public:
   void TimeScale(Real scale);
   //gets the piecewise linear path corresponding to each segment endpoint
   void GetPiecewiseLinear(std::vector<Real>& times,std::vector<Config>& milestones) const;
+  //bisects every segment (O(n) cost)
+  void Bisect();
+  //bisects one segment at the parameter u (O(n-seg) cost)
+  void Bisect(int seg,Real u=0.5);
   bool Save(std::ostream& out) const;
   bool Load(std::istream& in);
 

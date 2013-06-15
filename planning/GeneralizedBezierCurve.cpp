@@ -282,7 +282,7 @@ void GeneralizedCubicBezierCurve::Accel(Real u,Config& ddx) const
   else {
     static bool warned = false;
     if(!warned) {
-      fprintf(stderr,"GeneralizedCubicBezierCurve: Warning, using linear acceleration evaluation\n");
+      fprintf(stderr,"GeneralizedCubicBezierCurve: Warning, using linear accel evaluation with geodesic manifold\n");
       warned=true;
     }
     Vector temp;
@@ -523,6 +523,44 @@ void GeneralizedCubicBezierSpline::GetPiecewiseLinear(vector<Real>& times,vector
     times[i+1] = times[i]+durations[i];
     milestones[i+1] = segments[i].x3; 
   }
+}
+
+void GeneralizedCubicBezierSpline::Bisect()
+{
+  Config lastpt,midpt;
+  Vector lasttangent,midtangent;
+  vector<GeneralizedCubicBezierCurve> newcurves(segments.size()*2);
+  vector<double> newdurations(segments.size()*2);
+  lastpt = segments[0].x0;
+  segments[0].Deriv(0,lasttangent);
+  lasttangent *= 0.5;
+  for(size_t i=0;i<segments.size();i++) {
+    newdurations[i*2] = newdurations[i*2+1] = durations[i];
+    segments[i].Eval(0.5,midpt);
+    segments[i].Deriv(0.5,midtangent);
+    midtangent *= 0.5;
+    newcurves[i*2].space = segments[i].space;
+    newcurves[i*2].manifold = segments[i].manifold;
+    newcurves[i*2].x0 = lastpt;
+    newcurves[i*2].x3 = midpt;
+    newcurves[i*2].SetNaturalTangents(lasttangent,midtangent);
+    lastpt = segments[i].x3;
+    segments[i].Deriv(1,lasttangent);
+    lasttangent *= 0.5;
+    newcurves[i*2+1].space = segments[i].space;
+    newcurves[i*2+1].manifold = segments[i].manifold;
+    newcurves[i*2+1].x0 = midpt;
+    newcurves[i*2+1].x3 = lastpt;
+    newcurves[i*2+1].SetNaturalTangents(midtangent,lasttangent);
+  }
+  swap(newdurations,durations);
+  swap(newcurves,segments);
+}
+
+void GeneralizedCubicBezierSpline::Bisect(int seg,Real u)
+{
+  if(u!=0.5) FatalError("TODO: bisect not at midpoint");
+  FatalError("TODO: bisect single segment");
 }
 
 bool GeneralizedCubicBezierSpline::Save(ostream& out) const
