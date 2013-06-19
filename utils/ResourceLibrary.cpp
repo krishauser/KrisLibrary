@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 #if HAVE_TINYXML
-#include <tinyxml/tinyxml.h>
+#include <tinyxml.h>
 #else
 class TiXmlElement {};
 #endif

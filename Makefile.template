@@ -18,8 +18,6 @@ ifeq ($(CYGWIN),1)
 endif
 
 
-
-#INCDIR = .. $(GROUP_HOME)/src/Mesa-6.4.1/include $(GROUP_HOME)/src/glui-2.2
 CPPFLAGS= -O3 -g -fPIC -Wall -fpermissive $(addprefix -I, $(INCDIR)) $(addprefix -D, $(DEFINES))
 
 

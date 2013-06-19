@@ -8,7 +8,7 @@ MAC_OS_X = 0
 
 #set the directory containing tinyxml 
 HAVE_TINYXML=1
-#TINYXML = $(HOME)/Code/tinyxml
+#TINYXML = ../../tinyxml
 TINYXML = /usr/include
 
 # math package
