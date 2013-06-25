@@ -3,6 +3,7 @@
 #include <GLdraw/GL.h>
 #include <GLdraw/drawextra.h>
 #include <GLdraw/drawMesh.h>
+#include <meshing/IO.h>
 #include <fstream>
 #include <algorithm>
 using namespace GLDraw;
@@ -31,7 +32,7 @@ void RobotWithGeometry::Initialize(int n)
 
 bool RobotWithGeometry::LoadGeometry(int i,const char* file)
 {
-  if(!LoadMultipleTriMeshes(file,geometry[i])) return false;
+  if(!Meshing::Import(file,geometry[i])) return false;
   return true;
 }
 
