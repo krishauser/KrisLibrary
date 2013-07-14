@@ -2,7 +2,7 @@
 #include "SBL.h"
 
 #if HAVE_TINYXML
-#include <tinyxml/tinyxml.h>
+#include <tinyxml.h>
 #endif
 
 class RoadmapPlannerInterface  : public MotionPlannerInterface
