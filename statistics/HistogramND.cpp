@@ -1,5 +1,6 @@
 #include "HistogramND.h"
 #include <errors.h>
+#include <algorithm>
 using namespace Statistics;
 using namespace std;
 
@@ -62,7 +63,7 @@ void HistogramND::Resize(const Index& _dims,const Point& min,const Point& max)
   for(size_t d=0;d<divs.size();d++) {
     divs[d].resize(_dims[d]+1);
     Real x=min[d], h=(max[d]-min[d])/_dims[d];
-    for(size_t i=0;i<=_dims[d];i++) {
+    for(int i=0;i<=_dims[d];i++) {
       divs[d][i] = x;
       x+=h;
     }

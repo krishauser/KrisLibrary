@@ -1,6 +1,7 @@
 #include "Arrangement1D.h"
 #include <errors.h>
 #include <iostream>
+#include <algorithm>
 using namespace std;
 using namespace Geometry;
 

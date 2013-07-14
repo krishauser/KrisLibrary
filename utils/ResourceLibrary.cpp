@@ -397,7 +397,7 @@ bool ResourceLibrary::LazyLoadAll(const string& dir)
       r->name = GetFileName(fn);
       StripExtension(r->name);
       Add(r);
-      return r;
+      return true;
     }
   }
   return res;

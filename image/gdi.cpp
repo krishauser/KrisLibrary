@@ -177,7 +177,11 @@ bool ExportImageGDIPlus(const char* fn, Image& img)
 	if(!ext || strlen(ext) > 4) ext="bmp";
 	if(0==strcmp(ext,"tif")) ext="tiff";
 	char typebuf[32];
+#ifndef WIN32
 	snprintf(typebuf,32,"image/%s", ext);
+#else
+	sprintf_s<32>(typebuf,"image/%s", ext);
+#endif //WIN32
 	WCHAR wtypebuf[32];
 	ToWideChar(typebuf,wtypebuf,32);
 	CLSID clsid;

@@ -13,9 +13,8 @@ namespace Math3D {
  * Most methods consider the circle as the solid disk.
  * Methods that use the circle boundary have the prefix "boundary".
  */
-class Circle2D
+struct Circle2D
 {
- public:
   Real distance(const Point2D& v) const;
   bool contains(const Point2D& v) const;
   bool contains(const Circle2D& s) const;

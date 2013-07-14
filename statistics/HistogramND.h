@@ -2,7 +2,12 @@
 #define STATISTICS_HISTOGRAMND_H
 
 #include "statistics.h"
+#ifdef _MSC_VER
+//MSVC doesn't put STL TR1 items in a tr1 folder
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif //_MSC_VER
 
 namespace Statistics {
 

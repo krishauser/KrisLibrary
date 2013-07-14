@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "MultiModalPlanner.h"
 #include <utils/IntTriple.h>
 #include <graph/Operations.h>

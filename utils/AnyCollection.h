@@ -6,7 +6,12 @@
 #include <errors.h>
 #include <vector>
 #include <map>
+#ifdef _MSC_VER
+//MSVC doesn't put TR1 files in the tr1/ folder
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif //_MSC_VER
 
 /** @brief Any primitive value (bool, char, unsigned char, int,
  * unsigned int, float, double, string) that we know how to make into a
@@ -31,13 +36,21 @@ struct AnyKeyable
 };
 
 namespace std {
+#ifndef _MSC_VER
+//MSVC doesn't put tr1 stuff in the tr1 namespace
 namespace tr1 {
+#endif //_MSC_VER
+
 template <>
 struct hash<AnyKeyable> : public unary_function<AnyKeyable,size_t>
 {
   size_t operator()(const AnyKeyable& key) const { return key.hash(); }
 };
-} //namespace tr1
+
+#ifndef _MSC_VER
+//MSVC doesn't put tr1 stuff in the tr1 namespace
+} //namespace tr1 
+#endif //_MSC_VER
 }//namespace std
 
 

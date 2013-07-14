@@ -1,4 +1,5 @@
 #include "SimpleParser.h"
+#include <string>
 #include <stdio.h>
 
 SimpleParser::SimpleParser(istream& _in)

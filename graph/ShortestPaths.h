@@ -289,7 +289,7 @@ void ShortestPathProblem<Node,Edge>::IncreaseUpdate(int u,int v,WeightFunc w,
 	SetDistance(n,d[s]+W,s);
       }
     }
-    if(!isinf(d[n])) H.push(n,-d[n]);
+    if(!IsInf(d[n])) H.push(n,-d[n]);
   }
   while(!H.empty()) {
     int n=H.top(); H.pop();

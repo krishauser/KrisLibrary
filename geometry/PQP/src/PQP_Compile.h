@@ -44,10 +44,12 @@
 // prevents compiler warnings when PQP_REAL is float
 
 #include <math.h>
+#ifndef _MSC_VER
 inline float sqrt(float x) { return (float)sqrt((double)x); }
 inline float cos(float x) { return (float)cos((double)x); }
 inline float sin(float x) { return (float)sin((double)x); }
 inline float fabs(float x) { return (float)fabs((double)x); }
+#endif //_MSC_VER
 
 //-------------------------------------------------------------------------
 //

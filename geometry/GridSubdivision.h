@@ -4,7 +4,12 @@
 #include <math/vector.h>
 #include <utils/IntTuple.h>
 #include <list>
+#ifdef _MSC_VER
+//MSVC doesn't put TR1 files in the tr1/ folder
+#include <unordered_map>
+#else
 #include <tr1/unordered_map>
+#endif //_MSC_VER
 
 namespace Geometry {
 

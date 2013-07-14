@@ -322,7 +322,7 @@ void SBLPRT::CreatePath(int i,int j,MilestonePath& path)
 
 pair<int,Node*> SBLPRT::PickConnection(int t,Node* n)
 {
-  pair<int,Node*> res(-1,NULL);
+  pair<int,Node*> res(-1,(Node*)NULL);
   if(RandBool(defaultPPickClosestTree)) res.first=PickClosestAdjacentTree(t,*n);
   else res.first=PickRandomAdjacentTree(t);
   if(res.first >= 0) {

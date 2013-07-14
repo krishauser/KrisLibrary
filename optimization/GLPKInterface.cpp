@@ -429,10 +429,12 @@ void GLPKInterface::SetRowBasic(int i)
 bool GLPKInterface::GetRowBasic(int i)
 {
   cerr<<"Warning, GLPK not defined"<<endl;
+  return false;
 }
 
 double GLPKInterface::GetRowDual(int i){
   cerr<<"Warning, GLPK not defined"<<endl;
+  return 0;
 }
 
 void GLPKInterface::SetRowNonBasic(int i,bool upper)
@@ -448,6 +450,7 @@ void GLPKInterface::SetVariableBasic(int j)
 bool GLPKInterface::GetVariableBasic(int i)
 {
   cerr<<"Warning, GLPK not defined"<<endl;
+  return false;
 }
 
 void GLPKInterface::SetVariableNonBasic(int j,bool upper)

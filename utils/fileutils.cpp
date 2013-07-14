@@ -11,6 +11,7 @@
 #include <string.h>
 #include <dirent.h>
 #endif
+#include <errors.h>
 
 namespace FileUtils {
 
@@ -134,6 +135,7 @@ bool ListDirectory(const char* path,std::vector<std::string>& files)
 {
 #if WIN32
   FatalError("TODO: ListDirectory on windows");
+  return false;
 #else
   struct dirent *de=NULL;
   DIR *d=NULL;

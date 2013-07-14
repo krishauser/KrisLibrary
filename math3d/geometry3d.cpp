@@ -6,6 +6,7 @@
 #include "basis.h"
 #include <meshing/TriMesh.h>
 #include <math/misc.h>
+#include <string>
 using namespace std;
 
 namespace Math3D {
