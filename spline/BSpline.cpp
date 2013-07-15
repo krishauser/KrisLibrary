@@ -1,6 +1,7 @@
 #include "BSpline.h"
 #include <math/fastarray.h>
 #include <errors.h>
+#include <algorithm>
 using namespace std;
 
 namespace Spline {
