@@ -1,6 +1,9 @@
 #ifndef IMAGE_GDI_H
 #define IMAGE_GDI_H
 
+#ifdef NOMINMAX
+#undef NOMINMAX
+#endif // NOMINMAX
 #include <windows.h>
 #include <GdiPlus.h>
 #include "image.h"
