@@ -1,0 +1,729 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{790AC529-49F6-4C71-B3F9-7F7406BF2A8C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>KrisLibrary</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>$(ProjectName)d</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\camera\camera.h" />
+    <ClInclude Include="..\camera\clip.h" />
+    <ClInclude Include="..\camera\frustum.h" />
+    <ClInclude Include="..\camera\transform.h" />
+    <ClInclude Include="..\camera\viewport.h" />
+    <ClInclude Include="..\errors.h" />
+    <ClInclude Include="..\geometry\Arrangement1D.h" />
+    <ClInclude Include="..\geometry\CollisionMesh.h" />
+    <ClInclude Include="..\geometry\ConvexHull2D.h" />
+    <ClInclude Include="..\geometry\DCEL.h" />
+    <ClInclude Include="..\geometry\Fitting.h" />
+    <ClInclude Include="..\geometry\Grid.h" />
+    <ClInclude Include="..\geometry\GridSubdivision.h" />
+    <ClInclude Include="..\geometry\GridTable.h" />
+    <ClInclude Include="..\geometry\KDTree.h" />
+    <ClInclude Include="..\geometry\MonotoneChain.h" />
+    <ClInclude Include="..\geometry\PenetrationDepth.h" />
+    <ClInclude Include="..\geometry\PolytopeProjection.h" />
+    <ClInclude Include="..\geometry\PQP\include\BV.h" />
+    <ClInclude Include="..\geometry\PQP\include\PQP.h" />
+    <ClInclude Include="..\geometry\PQP\include\PQP_Compile.h" />
+    <ClInclude Include="..\geometry\PQP\include\PQP_Internal.h" />
+    <ClInclude Include="..\geometry\PQP\include\Tri.h" />
+    <ClInclude Include="..\geometry\primitives.h" />
+    <ClInclude Include="..\geometry\rayprimitives.h" />
+    <ClInclude Include="..\geometry\SegmentOverlay.h" />
+    <ClInclude Include="..\geometry\UnboundedPolytope2D.h" />
+    <ClInclude Include="..\GLdraw\ColorGradient.h" />
+    <ClInclude Include="..\GLdraw\drawextra.h" />
+    <ClInclude Include="..\GLdraw\drawgeometry.h" />
+    <ClInclude Include="..\GLdraw\drawMesh.h" />
+    <ClInclude Include="..\GLdraw\GL.h" />
+    <ClInclude Include="..\GLdraw\GLColor.h" />
+    <ClInclude Include="..\GLdraw\GLError.h" />
+    <ClInclude Include="..\GLdraw\GLFog.h" />
+    <ClInclude Include="..\GLdraw\GLLight.h" />
+    <ClInclude Include="..\GLdraw\GLMaterial.h" />
+    <ClInclude Include="..\GLdraw\GLScreenshot.h" />
+    <ClInclude Include="..\GLdraw\GLScreenshotProgram.h" />
+    <ClInclude Include="..\GLdraw\GLTexture1D.h" />
+    <ClInclude Include="..\GLdraw\GLTexture2D.h" />
+    <ClInclude Include="..\GLdraw\GLTextureObject.h" />
+    <ClInclude Include="..\GLdraw\GLUINavigationProgram.h" />
+    <ClInclude Include="..\GLdraw\GLUIProgram.h" />
+    <ClInclude Include="..\GLdraw\GLUTNavigationProgram.h" />
+    <ClInclude Include="..\GLdraw\GLUTProgram.h" />
+    <ClInclude Include="..\GLdraw\GLUTString.h" />
+    <ClInclude Include="..\GLdraw\GLView.h" />
+    <ClInclude Include="..\GLdraw\TransformWidget.h" />
+    <ClInclude Include="..\GLdraw\Widget.h" />
+    <ClInclude Include="..\graph\APSP.h" />
+    <ClInclude Include="..\graph\Callback.h" />
+    <ClInclude Include="..\graph\ConnectedComponents.h" />
+    <ClInclude Include="..\graph\DirectedGraph.h" />
+    <ClInclude Include="..\graph\Edge.h" />
+    <ClInclude Include="..\graph\Graph.h" />
+    <ClInclude Include="..\graph\IO.h" />
+    <ClInclude Include="..\graph\Node.h" />
+    <ClInclude Include="..\graph\Operations.h" />
+    <ClInclude Include="..\graph\Path.h" />
+    <ClInclude Include="..\graph\ShortestPaths.h" />
+    <ClInclude Include="..\graph\Tree.h" />
+    <ClInclude Include="..\graph\UndirectedGraph.h" />
+    <ClInclude Include="..\image\formats.h" />
+    <ClInclude Include="..\image\gdi.h" />
+    <ClInclude Include="..\image\image.h" />
+    <ClInclude Include="..\image\import.h" />
+    <ClInclude Include="..\image\ppm.h" />
+    <ClInclude Include="..\image\textureops.h" />
+    <ClInclude Include="..\math3d\AABB2D.h" />
+    <ClInclude Include="..\math3d\AABB3D.h" />
+    <ClInclude Include="..\math3d\AABBTemplate.h" />
+    <ClInclude Include="..\math3d\basis.h" />
+    <ClInclude Include="..\math3d\Box2D.h" />
+    <ClInclude Include="..\math3d\Box3D.h" />
+    <ClInclude Include="..\math3d\Circle2D.h" />
+    <ClInclude Include="..\math3d\Circle3D.h" />
+    <ClInclude Include="..\math3d\clip.h" />
+    <ClInclude Include="..\math3d\Cylinder3D.h" />
+    <ClInclude Include="..\math3d\Ellipsoid3D.h" />
+    <ClInclude Include="..\math3d\geometry2d.h" />
+    <ClInclude Include="..\math3d\geometry3d.h" />
+    <ClInclude Include="..\math3d\inlinetypes.h" />
+    <ClInclude Include="..\math3d\interpolate.h" />
+    <ClInclude Include="..\math3d\Line2D.h" />
+    <ClInclude Include="..\math3d\Line3D.h" />
+    <ClInclude Include="..\math3d\LinearAlgebra.h" />
+    <ClInclude Include="..\math3d\LinearlyDependent.h" />
+    <ClInclude Include="..\math3d\LocalCoordinates2D.h" />
+    <ClInclude Include="..\math3d\LocalCoordinates3D.h" />
+    <ClInclude Include="..\math3d\matinline.h" />
+    <ClInclude Include="..\math3d\misc.h" />
+    <ClInclude Include="..\math3d\Plane2D.h" />
+    <ClInclude Include="..\math3d\Plane3D.h" />
+    <ClInclude Include="..\math3d\Point.h" />
+    <ClInclude Include="..\math3d\polar.h" />
+    <ClInclude Include="..\math3d\Polygon2D.h" />
+    <ClInclude Include="..\math3d\Polygon3D.h" />
+    <ClInclude Include="..\math3d\Polyhedron3D.h" />
+    <ClInclude Include="..\math3d\primitives.h" />
+    <ClInclude Include="..\math3d\quatinline.h" />
+    <ClInclude Include="..\math3d\random.h" />
+    <ClInclude Include="..\math3d\Ray2D.h" />
+    <ClInclude Include="..\math3d\Ray3D.h" />
+    <ClInclude Include="..\math3d\rotation.h" />
+    <ClInclude Include="..\math3d\rotationfit.h" />
+    <ClInclude Include="..\math3d\Segment2D.h" />
+    <ClInclude Include="..\math3d\Segment3D.h" />
+    <ClInclude Include="..\math3d\Sphere3D.h" />
+    <ClInclude Include="..\math3d\Triangle2D.h" />
+    <ClInclude Include="..\math3d\Triangle3D.h" />
+    <ClInclude Include="..\math3d\vecinline.h" />
+    <ClInclude Include="..\math\AABB.h" />
+    <ClInclude Include="..\math\angle.h" />
+    <ClInclude Include="..\math\AngleSet.h" />
+    <ClInclude Include="..\math\ASCIIShade.h" />
+    <ClInclude Include="..\math\backsubstitute.h" />
+    <ClInclude Include="..\math\BLASInterface.h" />
+    <ClInclude Include="..\math\BlockPrinter.h" />
+    <ClInclude Include="..\math\BlockTridiagonalMatrix.h" />
+    <ClInclude Include="..\math\BlockVector.h" />
+    <ClInclude Include="..\math\brent.h" />
+    <ClInclude Include="..\math\cast.h" />
+    <ClInclude Include="..\math\CholeskyDecomposition.h" />
+    <ClInclude Include="..\math\complex.h" />
+    <ClInclude Include="..\math\ConditionedConstraint.h" />
+    <ClInclude Include="..\math\Conditioner.h" />
+    <ClInclude Include="..\math\conjgrad.h" />
+    <ClInclude Include="..\math\DiagonalMatrix.h" />
+    <ClInclude Include="..\math\diffeq.h" />
+    <ClInclude Include="..\math\differentiation.h" />
+    <ClInclude Include="..\math\fastarray.h" />
+    <ClInclude Include="..\math\fastmath.h" />
+    <ClInclude Include="..\math\format.h" />
+    <ClInclude Include="..\math\function.h" />
+    <ClInclude Include="..\math\gaussian.h" />
+    <ClInclude Include="..\math\GramSchmidt.h" />
+    <ClInclude Include="..\math\Householder.h" />
+    <ClInclude Include="..\math\indexing.h" />
+    <ClInclude Include="..\math\InequalityConstraint.h" />
+    <ClInclude Include="..\math\infnan.h" />
+    <ClInclude Include="..\math\interpolate.h" />
+    <ClInclude Include="..\math\Interval.h" />
+    <ClInclude Include="..\math\IntervalSet.h" />
+    <ClInclude Include="..\math\LAPACKInterface.h" />
+    <ClInclude Include="..\math\LDL.h" />
+    <ClInclude Include="..\math\linalgebra.h" />
+    <ClInclude Include="..\math\LinearlyDependent.h" />
+    <ClInclude Include="..\math\LinearPath.h" />
+    <ClInclude Include="..\math\LUDecomposition.h" />
+    <ClInclude Include="..\math\math.h" />
+    <ClInclude Include="..\math\matrix.h" />
+    <ClInclude Include="..\math\MatrixEquationPrinter.h" />
+    <ClInclude Include="..\math\MatrixPrinter.h" />
+    <ClInclude Include="..\math\MatrixTemplate.h" />
+    <ClInclude Include="..\math\metric.h" />
+    <ClInclude Include="..\math\misc.h" />
+    <ClInclude Include="..\math\polynomial.h" />
+    <ClInclude Include="..\math\QRDecomposition.h" />
+    <ClInclude Include="..\math\quadrature.h" />
+    <ClInclude Include="..\math\QuasiNewton.h" />
+    <ClInclude Include="..\math\random.h" />
+    <ClInclude Include="..\math\realfunction.h" />
+    <ClInclude Include="..\math\root.h" />
+    <ClInclude Include="..\math\RowEchelon.h" />
+    <ClInclude Include="..\math\sample.h" />
+    <ClInclude Include="..\math\SelfTest.h" />
+    <ClInclude Include="..\math\sparsefunction.h" />
+    <ClInclude Include="..\math\sparsematrix.h" />
+    <ClInclude Include="..\math\SparseMatrixTemplate.h" />
+    <ClInclude Include="..\math\sparsevector.h" />
+    <ClInclude Include="..\math\SparseVectorTemplate.h" />
+    <ClInclude Include="..\math\specialfunctions.h" />
+    <ClInclude Include="..\math\stacking.h" />
+    <ClInclude Include="..\math\SVDecomposition.h" />
+    <ClInclude Include="..\math\vector.h" />
+    <ClInclude Include="..\math\vectorfunction.h" />
+    <ClInclude Include="..\math\VectorPrinter.h" />
+    <ClInclude Include="..\math\VectorTemplate.h" />
+    <ClInclude Include="..\meshing\ClosestPoint.h" />
+    <ClInclude Include="..\meshing\Expand.h" />
+    <ClInclude Include="..\meshing\Geodesic.h" />
+    <ClInclude Include="..\meshing\IntTriple.h" />
+    <ClInclude Include="..\meshing\IO.h" />
+    <ClInclude Include="..\meshing\LSConformalMapping.h" />
+    <ClInclude Include="..\meshing\MarchingCubes.h" />
+    <ClInclude Include="..\meshing\Meshing.h" />
+    <ClInclude Include="..\meshing\MeshPrimitives.h" />
+    <ClInclude Include="..\meshing\Rasterize.h" />
+    <ClInclude Include="..\meshing\TriMesh.h" />
+    <ClInclude Include="..\meshing\TriMeshAtlas.h" />
+    <ClInclude Include="..\meshing\TriMeshOperators.h" />
+    <ClInclude Include="..\meshing\TriMeshTopology.h" />
+    <ClInclude Include="..\meshing\VolumeGrid.h" />
+    <ClInclude Include="..\meshing\Voxelize.h" />
+    <ClInclude Include="..\myfile.h" />
+    <ClInclude Include="..\optimization\BoundedLSQRSolver.h" />
+    <ClInclude Include="..\optimization\GLPKInterface.h" />
+    <ClInclude Include="..\optimization\LCP.h" />
+    <ClInclude Include="..\optimization\LeastSquares.h" />
+    <ClInclude Include="..\optimization\LinearProgram.h" />
+    <ClInclude Include="..\optimization\LPOptimumFunction.h" />
+    <ClInclude Include="..\optimization\LPRobust.h" />
+    <ClInclude Include="..\optimization\LP_InteriorPoint.h" />
+    <ClInclude Include="..\optimization\lsqr.h" />
+    <ClInclude Include="..\optimization\LSQRInterface.h" />
+    <ClInclude Include="..\optimization\Minimization.h" />
+    <ClInclude Include="..\optimization\MinNormProblem.h" />
+    <ClInclude Include="..\optimization\Newton.h" />
+    <ClInclude Include="..\optimization\NewtonSolver.h" />
+    <ClInclude Include="..\optimization\NonlinearProgram.h" />
+    <ClInclude Include="..\optimization\optimization.h" />
+    <ClInclude Include="..\optimization\QuadProgPPInterface.h" />
+    <ClInclude Include="..\optimization\QuadraticProgram.h" />
+    <ClInclude Include="..\optimization\RegularizedLinearProgram.h" />
+    <ClInclude Include="..\optimization\SelfTest.h" />
+    <ClInclude Include="..\planning\AnyMotionPlanner.h" />
+    <ClInclude Include="..\planning\CSpace.h" />
+    <ClInclude Include="..\planning\CSpaceAnalysis.h" />
+    <ClInclude Include="..\planning\CSpaceHelpers.h" />
+    <ClInclude Include="..\planning\CVSpace.h" />
+    <ClInclude Include="..\planning\EdgePlanner.h" />
+    <ClInclude Include="..\planning\ExplicitCSpace.h" />
+    <ClInclude Include="..\planning\GeneralizedAStar.h" />
+    <ClInclude Include="..\planning\GeneralizedBezierCurve.h" />
+    <ClInclude Include="..\planning\GeodesicSpace.h" />
+    <ClInclude Include="..\planning\Geometric2DCSpace.h" />
+    <ClInclude Include="..\planning\Grid2DCSpace.h" />
+    <ClInclude Include="..\planning\KinodynamicCSpace.h" />
+    <ClInclude Include="..\planning\KinodynamicMotionPlanner.h" />
+    <ClInclude Include="..\planning\KinodynamicPath.h" />
+    <ClInclude Include="..\planning\MCRPlanner.h" />
+    <ClInclude Include="..\planning\MCRPlannerGoalSet.h" />
+    <ClInclude Include="..\planning\MotionPlanner.h" />
+    <ClInclude Include="..\planning\MultiModalCSpace.h" />
+    <ClInclude Include="..\planning\MultiModalPlanner.h" />
+    <ClInclude Include="..\planning\MultiRobot2DCSpace.h" />
+    <ClInclude Include="..\planning\Path.h" />
+    <ClInclude Include="..\planning\PerturbationCSpace.h" />
+    <ClInclude Include="..\planning\PRT.h" />
+    <ClInclude Include="..\planning\RigidRobot2DCSpace.h" />
+    <ClInclude Include="..\planning\SBL.h" />
+    <ClInclude Include="..\planning\SBLTree.h" />
+    <ClInclude Include="..\planning\SpaceTimeCSpace.h" />
+    <ClInclude Include="..\planning\TimeCSpace.h" />
+    <ClInclude Include="..\planning\TimedPath.h" />
+    <ClInclude Include="..\planning\TranslatingRobot2DCSpace.h" />
+    <ClInclude Include="..\planning\VisibilityGraphPlanner.h" />
+    <ClInclude Include="..\robotics\AnalyticIK.h" />
+    <ClInclude Include="..\robotics\AngleBracket.h" />
+    <ClInclude Include="..\robotics\Chain.h" />
+    <ClInclude Include="..\robotics\Contact.h" />
+    <ClInclude Include="..\robotics\DenavitHartenberg.h" />
+    <ClInclude Include="..\robotics\DynamicChain.h" />
+    <ClInclude Include="..\robotics\DynamicChain3D.h" />
+    <ClInclude Include="..\robotics\Frame.h" />
+    <ClInclude Include="..\robotics\Geometry.h" />
+    <ClInclude Include="..\robotics\IK.h" />
+    <ClInclude Include="..\robotics\IKFunctions.h" />
+    <ClInclude Include="..\robotics\Inertia.h" />
+    <ClInclude Include="..\robotics\JointStructure.h" />
+    <ClInclude Include="..\robotics\KinematicChain.h" />
+    <ClInclude Include="..\robotics\KinematicChain3D.h" />
+    <ClInclude Include="..\robotics\Kinematics.h" />
+    <ClInclude Include="..\robotics\NewtonEuler.h" />
+    <ClInclude Include="..\robotics\RigidBodyDynamics.h" />
+    <ClInclude Include="..\robotics\RLG.h" />
+    <ClInclude Include="..\robotics\RobotDynamics3D.h" />
+    <ClInclude Include="..\robotics\RobotKinematics3D.h" />
+    <ClInclude Include="..\robotics\RobotLink3D.h" />
+    <ClInclude Include="..\robotics\RobotWithGeometry.h" />
+    <ClInclude Include="..\robotics\Rotation.h" />
+    <ClInclude Include="..\robotics\SelfTest.h" />
+    <ClInclude Include="..\robotics\Simulate.h" />
+    <ClInclude Include="..\robotics\Stability.h" />
+    <ClInclude Include="..\robotics\TorqueSolver.h" />
+    <ClInclude Include="..\robotics\WorkspaceBound.h" />
+    <ClInclude Include="..\robotics\Wrench.h" />
+    <ClInclude Include="..\spline\basis.h" />
+    <ClInclude Include="..\spline\BSpline.h" />
+    <ClInclude Include="..\spline\Hermite.h" />
+    <ClInclude Include="..\spline\MonotonicSpline.h" />
+    <ClInclude Include="..\spline\path.h" />
+    <ClInclude Include="..\spline\PiecewisePolynomial.h" />
+    <ClInclude Include="..\spline\Polynomial.h" />
+    <ClInclude Include="..\spline\spline.h" />
+    <ClInclude Include="..\spline\TimeSegmentation.h" />
+    <ClInclude Include="..\statistics\BernoulliDistribution.h" />
+    <ClInclude Include="..\statistics\BetaDistribution.h" />
+    <ClInclude Include="..\statistics\CategoricalDistribution.h" />
+    <ClInclude Include="..\statistics\DataSet.h" />
+    <ClInclude Include="..\statistics\DiracDistribution.h" />
+    <ClInclude Include="..\statistics\DistributionCollector.h" />
+    <ClInclude Include="..\statistics\GaussianDistribution.h" />
+    <ClInclude Include="..\statistics\GaussianHMM.h" />
+    <ClInclude Include="..\statistics\GaussianMixtureModel.h" />
+    <ClInclude Include="..\statistics\Histogram.h" />
+    <ClInclude Include="..\statistics\Histogram2D.h" />
+    <ClInclude Include="..\statistics\Histogram3D.h" />
+    <ClInclude Include="..\statistics\HistogramND.h" />
+    <ClInclude Include="..\statistics\IntervalMap.h" />
+    <ClInclude Include="..\statistics\KMeans.h" />
+    <ClInclude Include="..\statistics\LinearModel.h" />
+    <ClInclude Include="..\statistics\LinearProcessHMM.h" />
+    <ClInclude Include="..\statistics\LogisticModel.h" />
+    <ClInclude Include="..\statistics\OLS.h" />
+    <ClInclude Include="..\statistics\OnlineMoments.h" />
+    <ClInclude Include="..\statistics\OnlineOLS.h" />
+    <ClInclude Include="..\statistics\ProbabilityDistribution.h" />
+    <ClInclude Include="..\statistics\StatDatabase.h" />
+    <ClInclude Include="..\statistics\statistics.h" />
+    <ClInclude Include="..\statistics\UniformDistribution.h" />
+    <ClInclude Include="..\statistics\WeibullDistribution.h" />
+    <ClInclude Include="..\structs\array2d.h" />
+    <ClInclude Include="..\structs\array3d.h" />
+    <ClInclude Include="..\structs\arraynd.h" />
+    <ClInclude Include="..\structs\FastFindHeap.h" />
+    <ClInclude Include="..\structs\FixedSizeHeap.h" />
+    <ClInclude Include="..\structs\Heap.h" />
+    <ClInclude Include="..\structs\IndexedPriorityQueue.h" />
+    <ClInclude Include="..\structs\myarray.h" />
+    <ClInclude Include="..\structs\myhash.h" />
+    <ClInclude Include="..\structs\mylist.h" />
+    <ClInclude Include="..\structs\myqueue.h" />
+    <ClInclude Include="..\structs\priority_queue2.h" />
+    <ClInclude Include="..\structs\RedBlack.h" />
+    <ClInclude Include="..\structs\set.h" />
+    <ClInclude Include="..\structs\SparseArray.h" />
+    <ClInclude Include="..\Timer.h" />
+    <ClInclude Include="..\utils.h" />
+    <ClInclude Include="..\utils\AnyCollection.h" />
+    <ClInclude Include="..\utils\AnyValue.h" />
+    <ClInclude Include="..\utils\ArrayMapping.h" />
+    <ClInclude Include="..\utils\arrayutils.h" />
+    <ClInclude Include="..\utils\bits.h" />
+    <ClInclude Include="..\utils\cmp_func.h" />
+    <ClInclude Include="..\utils\combination.h" />
+    <ClInclude Include="..\utils\CommandLine.h" />
+    <ClInclude Include="..\utils\ContextStack.h" />
+    <ClInclude Include="..\utils\CoverSet.h" />
+    <ClInclude Include="..\utils\DataCollector.h" />
+    <ClInclude Include="..\utils\DirtyData.h" />
+    <ClInclude Include="..\utils\EquivalenceMap.h" />
+    <ClInclude Include="..\utils\EZTrace.h" />
+    <ClInclude Include="..\utils\FastSampler.h" />
+    <ClInclude Include="..\utils\fileutils.h" />
+    <ClInclude Include="..\utils\indexing.h" />
+    <ClInclude Include="..\utils\IndexSet.h" />
+    <ClInclude Include="..\utils\IntPair.h" />
+    <ClInclude Include="..\utils\IntTriple.h" />
+    <ClInclude Include="..\utils\IntTuple.h" />
+    <ClInclude Include="..\utils\ioutils.h" />
+    <ClInclude Include="..\utils\iteratorutils.h" />
+    <ClInclude Include="..\utils\LazyLoader.h" />
+    <ClInclude Include="..\utils\ObjectPrinter.h" />
+    <ClInclude Include="..\utils\ParamList.h" />
+    <ClInclude Include="..\utils\permutation.h" />
+    <ClInclude Include="..\utils\Pointers.h" />
+    <ClInclude Include="..\utils\PrimitiveValue.h" />
+    <ClInclude Include="..\utils\ProgressPrinter.h" />
+    <ClInclude Include="..\utils\random.h" />
+    <ClInclude Include="..\utils\RangeMap.h" />
+    <ClInclude Include="..\utils\RangeMap2D.h" />
+    <ClInclude Include="..\utils\RangeSet.h" />
+    <ClInclude Include="..\utils\RangeSet2D.h" />
+    <ClInclude Include="..\utils\RefPointer.h" />
+    <ClInclude Include="..\utils\ResourceLibrary.h" />
+    <ClInclude Include="..\utils\set.h" />
+    <ClInclude Include="..\utils\shift.h" />
+    <ClInclude Include="..\utils\SignalHandler.h" />
+    <ClInclude Include="..\utils\SimpleFile.h" />
+    <ClInclude Include="..\utils\SimpleParser.h" />
+    <ClInclude Include="..\utils\SmartPointer.h" />
+    <ClInclude Include="..\utils\StatCollector.h" />
+    <ClInclude Include="..\utils\stringutils.h" />
+    <ClInclude Include="..\utils\Subset.h" />
+    <ClInclude Include="..\utils\Trace.h" />
+    <ClInclude Include="..\utils\unionfind.h" />
+    <ClInclude Include="..\utils\UniquePointer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\camera\camera.cpp" />
+    <ClCompile Include="..\camera\clip.cpp" />
+    <ClCompile Include="..\camera\frustum.cpp" />
+    <ClCompile Include="..\camera\transform.cpp" />
+    <ClCompile Include="..\camera\viewport.cpp" />
+    <ClCompile Include="..\errors.cpp" />
+    <ClCompile Include="..\geometry\Arrangement1D.cpp" />
+    <ClCompile Include="..\geometry\CollisionMesh.cpp" />
+    <ClCompile Include="..\geometry\ConvexHull2D.cpp" />
+    <ClCompile Include="..\geometry\Fitting.cpp" />
+    <ClCompile Include="..\geometry\Grid.cpp" />
+    <ClCompile Include="..\geometry\GridSubdivision.cpp" />
+    <ClCompile Include="..\geometry\KDTree.cpp" />
+    <ClCompile Include="..\geometry\MonotoneChain.cpp" />
+    <ClCompile Include="..\geometry\PenetrationDepth.cpp" />
+    <ClCompile Include="..\geometry\PolytopeProjection.cpp" />
+    <ClCompile Include="..\geometry\PQP\src\Build.cpp" />
+    <ClCompile Include="..\geometry\PQP\src\BV.cpp" />
+    <ClCompile Include="..\geometry\PQP\src\PQP.cpp" />
+    <ClCompile Include="..\geometry\PQP\src\TriDist.cpp" />
+    <ClCompile Include="..\geometry\SegmentOverlay.cpp" />
+    <ClCompile Include="..\geometry\UnboundedPolytope2D.cpp" />
+    <ClCompile Include="..\GLdraw\ColorGradient.cpp" />
+    <ClCompile Include="..\GLdraw\drawextra.cpp" />
+    <ClCompile Include="..\GLdraw\drawgeometry.cpp" />
+    <ClCompile Include="..\GLdraw\GLColor.cpp" />
+    <ClCompile Include="..\GLdraw\GLError.cpp" />
+    <ClCompile Include="..\GLdraw\GLFog.cpp" />
+    <ClCompile Include="..\GLdraw\GLLight.cpp" />
+    <ClCompile Include="..\GLdraw\GLMaterial.cpp" />
+    <ClCompile Include="..\GLdraw\GLScreenshot.cpp" />
+    <ClCompile Include="..\GLdraw\GLTexture1D.cpp" />
+    <ClCompile Include="..\GLdraw\GLTexture2D.cpp" />
+    <ClCompile Include="..\GLdraw\GLTextureObject.cpp" />
+    <ClCompile Include="..\GLdraw\GLUINavigationProgram.cpp" />
+    <ClCompile Include="..\GLdraw\GLUIProgram.cpp" />
+    <ClCompile Include="..\GLdraw\GLUTNavigationProgram.cpp" />
+    <ClCompile Include="..\GLdraw\GLUTProgram.cpp" />
+    <ClCompile Include="..\GLdraw\GLView.cpp" />
+    <ClCompile Include="..\GLdraw\TransformWidget.cpp" />
+    <ClCompile Include="..\image\bmp.cpp" />
+    <ClCompile Include="..\image\gdi.cpp" />
+    <ClCompile Include="..\image\image.cpp" />
+    <ClCompile Include="..\image\import.cpp" />
+    <ClCompile Include="..\image\ppm.cpp" />
+    <ClCompile Include="..\image\textureops.cpp" />
+    <ClCompile Include="..\image\tga.cpp" />
+    <ClCompile Include="..\math3d\AABB2D.cpp" />
+    <ClCompile Include="..\math3d\AABB3D.cpp" />
+    <ClCompile Include="..\math3d\Box3D.cpp" />
+    <ClCompile Include="..\math3d\Circle3D.cpp" />
+    <ClCompile Include="..\math3d\clip.cpp" />
+    <ClCompile Include="..\math3d\Cylinder3D.cpp" />
+    <ClCompile Include="..\math3d\geometry2d.cpp" />
+    <ClCompile Include="..\math3d\geometry3d.cpp" />
+    <ClCompile Include="..\math3d\interpolate.cpp" />
+    <ClCompile Include="..\math3d\Line2D.cpp" />
+    <ClCompile Include="..\math3d\Line3D.cpp" />
+    <ClCompile Include="..\math3d\LinearAlgebra.cpp" />
+    <ClCompile Include="..\math3d\LinearlyDependent.cpp" />
+    <ClCompile Include="..\math3d\LocalCoordinates2D.cpp" />
+    <ClCompile Include="..\math3d\LocalCoordinates3D.cpp" />
+    <ClCompile Include="..\math3d\Plane3D.cpp" />
+    <ClCompile Include="..\math3d\polar.cpp" />
+    <ClCompile Include="..\math3d\Polygon2D.cpp" />
+    <ClCompile Include="..\math3d\Polygon3D.cpp" />
+    <ClCompile Include="..\math3d\Polyhedron3D.cpp" />
+    <ClCompile Include="..\math3d\primitives.cpp" />
+    <ClCompile Include="..\math3d\quatinline.cpp" />
+    <ClCompile Include="..\math3d\random.cpp" />
+    <ClCompile Include="..\math3d\Ray3D.cpp" />
+    <ClCompile Include="..\math3d\rotation.cpp" />
+    <ClCompile Include="..\math3d\rotationfit.cpp" />
+    <ClCompile Include="..\math3d\Segment2D.cpp" />
+    <ClCompile Include="..\math3d\Segment3D.cpp" />
+    <ClCompile Include="..\math3d\Triangle2D.cpp" />
+    <ClCompile Include="..\math3d\Triangle3D.cpp" />
+    <ClCompile Include="..\math\AABB.cpp" />
+    <ClCompile Include="..\math\angle.cpp" />
+    <ClCompile Include="..\math\AngleSet.cpp" />
+    <ClCompile Include="..\math\ASCIIShade.cpp" />
+    <ClCompile Include="..\math\backsubstitute.cpp" />
+    <ClCompile Include="..\math\BLASInterface.cpp" />
+    <ClCompile Include="..\math\BlockPrinter.cpp" />
+    <ClCompile Include="..\math\BlockTridiagonalMatrix.cpp" />
+    <ClCompile Include="..\math\BlockVector.cpp" />
+    <ClCompile Include="..\math\brent.cpp" />
+    <ClCompile Include="..\math\CholeskyDecomposition.cpp" />
+    <ClCompile Include="..\math\complex.cpp" />
+    <ClCompile Include="..\math\ConditionedConstraint.cpp" />
+    <ClCompile Include="..\math\Conditioner.cpp" />
+    <ClCompile Include="..\math\DiagonalMatrix.cpp" />
+    <ClCompile Include="..\math\diffeq.cpp" />
+    <ClCompile Include="..\math\differentiation.cpp" />
+    <ClCompile Include="..\math\function.cpp" />
+    <ClCompile Include="..\math\gaussian.cpp" />
+    <ClCompile Include="..\math\GramSchmidt.cpp" />
+    <ClCompile Include="..\math\Householder.cpp" />
+    <ClCompile Include="..\math\InequalityConstraint.cpp" />
+    <ClCompile Include="..\math\infnan.cpp" />
+    <ClCompile Include="..\math\IntervalSet.cpp" />
+    <ClCompile Include="..\math\LAPACKInterface.cpp" />
+    <ClCompile Include="..\math\LDL.cpp" />
+    <ClCompile Include="..\math\linalgebra.cpp" />
+    <ClCompile Include="..\math\LinearlyDependent.cpp" />
+    <ClCompile Include="..\math\LinearPath.cpp" />
+    <ClCompile Include="..\math\LUDecomposition.cpp" />
+    <ClCompile Include="..\math\MatrixEquationPrinter.cpp" />
+    <ClCompile Include="..\math\MatrixPrinter.cpp" />
+    <ClCompile Include="..\math\MatrixTemplate.cpp" />
+    <ClCompile Include="..\math\metric.cpp" />
+    <ClCompile Include="..\math\misc.cpp" />
+    <ClCompile Include="..\math\QRDecomposition.cpp" />
+    <ClCompile Include="..\math\quadrature.cpp" />
+    <ClCompile Include="..\math\QuasiNewton.cpp" />
+    <ClCompile Include="..\math\random.cpp" />
+    <ClCompile Include="..\math\realfunction.cpp" />
+    <ClCompile Include="..\math\root.cpp" />
+    <ClCompile Include="..\math\RowEchelon.cpp" />
+    <ClCompile Include="..\math\sample.cpp" />
+    <ClCompile Include="..\math\SelfTest.cpp" />
+    <ClCompile Include="..\math\SparseMatrixTemplate.cpp" />
+    <ClCompile Include="..\math\SparseVectorTemplate.cpp" />
+    <ClCompile Include="..\math\SVDecomposition.cpp" />
+    <ClCompile Include="..\math\vectorfunction.cpp" />
+    <ClCompile Include="..\math\VectorPrinter.cpp" />
+    <ClCompile Include="..\math\VectorTemplate.cpp" />
+    <ClCompile Include="..\meshing\ClosestPoint.cpp" />
+    <ClCompile Include="..\meshing\Expand.cpp" />
+    <ClCompile Include="..\meshing\Geodesic.cpp" />
+    <ClCompile Include="..\meshing\IO.cpp" />
+    <ClCompile Include="..\meshing\LSConformalMapping.cpp" />
+    <ClCompile Include="..\meshing\MarchingCubes.cpp" />
+    <ClCompile Include="..\meshing\Meshing.cpp" />
+    <ClCompile Include="..\meshing\MeshPrimitives.cpp" />
+    <ClCompile Include="..\meshing\Rasterize.cpp" />
+    <ClCompile Include="..\meshing\TriMesh.cpp" />
+    <ClCompile Include="..\meshing\TriMeshOperators.cpp" />
+    <ClCompile Include="..\meshing\TriMeshTopology.cpp" />
+    <ClCompile Include="..\meshing\VolumeGrid.cpp" />
+    <ClCompile Include="..\meshing\Voxelize.cpp" />
+    <ClCompile Include="..\myfile.cpp" />
+    <ClCompile Include="..\optimization\BoundedLSQRSolver.cpp" />
+    <ClCompile Include="..\optimization\GLPKInterface.cpp" />
+    <ClCompile Include="..\optimization\LCP.cpp" />
+    <ClCompile Include="..\optimization\LeastSquares.cpp" />
+    <ClCompile Include="..\optimization\LinearProgram.cpp" />
+    <ClCompile Include="..\optimization\LPOptimumFunction.cpp" />
+    <ClCompile Include="..\optimization\LPRobust.cpp" />
+    <ClCompile Include="..\optimization\LP_InteriorPoint.cpp" />
+    <ClCompile Include="..\optimization\lsqr.cpp" />
+    <ClCompile Include="..\optimization\LSQRInterface.cpp" />
+    <ClCompile Include="..\optimization\Minimization.cpp" />
+    <ClCompile Include="..\optimization\MinNormProblem.cpp" />
+    <ClCompile Include="..\optimization\Newton.cpp" />
+    <ClCompile Include="..\optimization\NewtonSolver.cpp" />
+    <ClCompile Include="..\optimization\NonlinearProgram.cpp" />
+    <ClCompile Include="..\optimization\QuadProgPPInterface.cpp" />
+    <ClCompile Include="..\optimization\QuadraticProgram.cpp" />
+    <ClCompile Include="..\optimization\RegularizedLinearProgram.cpp" />
+    <ClCompile Include="..\optimization\SelfTest.cpp" />
+    <ClCompile Include="..\planning\AnyMotionPlanner.cpp" />
+    <ClCompile Include="..\planning\CSpace.cpp" />
+    <ClCompile Include="..\planning\CSpaceAnalysis.cpp" />
+    <ClCompile Include="..\planning\CVSpace.cpp" />
+    <ClCompile Include="..\planning\EdgePlanner.cpp" />
+    <ClCompile Include="..\planning\ExplicitCSpace.cpp" />
+    <ClCompile Include="..\planning\GeneralizedBezierCurve.cpp" />
+    <ClCompile Include="..\planning\Geometric2DCSpace.cpp" />
+    <ClCompile Include="..\planning\Grid2DCSpace.cpp" />
+    <ClCompile Include="..\planning\KinodynamicCSpace.cpp" />
+    <ClCompile Include="..\planning\KinodynamicMotionPlanner.cpp" />
+    <ClCompile Include="..\planning\KinodynamicPath.cpp" />
+    <ClCompile Include="..\planning\MCRPlanner.cpp" />
+    <ClCompile Include="..\planning\MCRPlannerGoalSet.cpp" />
+    <ClCompile Include="..\planning\MotionPlanner.cpp" />
+    <ClCompile Include="..\planning\MultiModalPlanner.cpp" />
+    <ClCompile Include="..\planning\MultiRobot2DCSpace.cpp" />
+    <ClCompile Include="..\planning\Path.cpp" />
+    <ClCompile Include="..\planning\PerturbationCSpace.cpp" />
+    <ClCompile Include="..\planning\RigidRobot2DCSpace.cpp" />
+    <ClCompile Include="..\planning\SBL.cpp" />
+    <ClCompile Include="..\planning\SBLTree.cpp" />
+    <ClCompile Include="..\planning\SpaceTimeCSpace.cpp" />
+    <ClCompile Include="..\planning\TimedPath.cpp" />
+    <ClCompile Include="..\planning\TranslatingRobot2DCSpace.cpp" />
+    <ClCompile Include="..\planning\VisibilityGraphPlanner.cpp" />
+    <ClCompile Include="..\robotics\AnalyticIK.cpp" />
+    <ClCompile Include="..\robotics\AngleBracket.cpp" />
+    <ClCompile Include="..\robotics\Chain.cpp" />
+    <ClCompile Include="..\robotics\Contact.cpp" />
+    <ClCompile Include="..\robotics\DenavitHartenberg.cpp" />
+    <ClCompile Include="..\robotics\DynamicChain.cpp" />
+    <ClCompile Include="..\robotics\DynamicChain3D.cpp" />
+    <ClCompile Include="..\robotics\Geometry.cpp" />
+    <ClCompile Include="..\robotics\IK.cpp" />
+    <ClCompile Include="..\robotics\IKFunctions.cpp" />
+    <ClCompile Include="..\robotics\JointStructure.cpp" />
+    <ClCompile Include="..\robotics\KinematicChain.cpp" />
+    <ClCompile Include="..\robotics\KinematicChain3D.cpp" />
+    <ClCompile Include="..\robotics\Kinematics.cpp" />
+    <ClCompile Include="..\robotics\NewtonEuler.cpp" />
+    <ClCompile Include="..\robotics\RigidBodyDynamics.cpp" />
+    <ClCompile Include="..\robotics\RLG.cpp" />
+    <ClCompile Include="..\robotics\RobotDynamics3D.cpp" />
+    <ClCompile Include="..\robotics\RobotKinematics3D.cpp" />
+    <ClCompile Include="..\robotics\RobotLink3D.cpp" />
+    <ClCompile Include="..\robotics\RobotWithGeometry.cpp" />
+    <ClCompile Include="..\robotics\Rotation.cpp" />
+    <ClCompile Include="..\robotics\SelfTest.cpp" />
+    <ClCompile Include="..\robotics\Simulate.cpp" />
+    <ClCompile Include="..\robotics\Stability.cpp" />
+    <ClCompile Include="..\robotics\TorqueSolver.cpp" />
+    <ClCompile Include="..\robotics\WorkspaceBound.cpp" />
+    <ClCompile Include="..\spline\basis.cpp" />
+    <ClCompile Include="..\spline\BSpline.cpp" />
+    <ClCompile Include="..\spline\Hermite.cpp" />
+    <ClCompile Include="..\spline\MonotonicSpline.cpp" />
+    <ClCompile Include="..\spline\path.cpp" />
+    <ClCompile Include="..\spline\PiecewisePolynomial.cpp" />
+    <ClCompile Include="..\spline\spline.cpp" />
+    <ClCompile Include="..\statistics\BetaDistribution.cpp" />
+    <ClCompile Include="..\statistics\CategoricalDistribution.cpp" />
+    <ClCompile Include="..\statistics\DataSet.cpp" />
+    <ClCompile Include="..\statistics\DistributionCollector.cpp" />
+    <ClCompile Include="..\statistics\GaussianDistribution.cpp" />
+    <ClCompile Include="..\statistics\GaussianHMM.cpp" />
+    <ClCompile Include="..\statistics\GaussianMixtureModel.cpp" />
+    <ClCompile Include="..\statistics\Histogram.cpp" />
+    <ClCompile Include="..\statistics\HistogramND.cpp" />
+    <ClCompile Include="..\statistics\KMeans.cpp" />
+    <ClCompile Include="..\statistics\LinearModel.cpp" />
+    <ClCompile Include="..\statistics\LinearProcessHMM.cpp" />
+    <ClCompile Include="..\statistics\LogisticModel.cpp" />
+    <ClCompile Include="..\statistics\OLS.cpp" />
+    <ClCompile Include="..\statistics\OnlineMoments.cpp" />
+    <ClCompile Include="..\statistics\OnlineOLS.cpp" />
+    <ClCompile Include="..\statistics\statistics.cpp" />
+    <ClCompile Include="..\statistics\UniformDistribution.cpp" />
+    <ClCompile Include="..\Timer.cpp" />
+    <ClCompile Include="..\utils\AnyCollection.cpp" />
+    <ClCompile Include="..\utils\CommandLine.cpp" />
+    <ClCompile Include="..\utils\CoverSet.cpp" />
+    <ClCompile Include="..\utils\DataCollector.cpp" />
+    <ClCompile Include="..\utils\EZTrace.cpp" />
+    <ClCompile Include="..\utils\fileutils.cpp" />
+    <ClCompile Include="..\utils\indexing.cpp" />
+    <ClCompile Include="..\utils\IndexSet.cpp" />
+    <ClCompile Include="..\utils\ioutils.cpp" />
+    <ClCompile Include="..\utils\ParamList.cpp" />
+    <ClCompile Include="..\utils\PrimitiveValue.cpp" />
+    <ClCompile Include="..\utils\ProgressPrinter.cpp" />
+    <ClCompile Include="..\utils\RangeSet.cpp" />
+    <ClCompile Include="..\utils\RangeSet2D.cpp" />
+    <ClCompile Include="..\utils\RefPointer.cpp" />
+    <ClCompile Include="..\utils\ResourceLibrary.cpp" />
+    <ClCompile Include="..\utils\set.cpp" />
+    <ClCompile Include="..\utils\SignalHandler.cpp" />
+    <ClCompile Include="..\utils\SimpleFile.cpp" />
+    <ClCompile Include="..\utils\SimpleParser.cpp" />
+    <ClCompile Include="..\utils\StatCollector.cpp" />
+    <ClCompile Include="..\utils\stringutils.cpp" />
+    <ClCompile Include="..\utils\Subset.cpp" />
+    <ClCompile Include="..\utils\Trace.cpp" />
+    <ClCompile Include="..\utils\unionfind.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
