@@ -1,0 +1,2049 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\camera">
+      <UniqueIdentifier>{96864d4a-f056-4e96-b077-88720e63bbff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\camera">
+      <UniqueIdentifier>{1f65475b-034f-495d-bd3b-14dfb2ace735}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GLdraw">
+      <UniqueIdentifier>{6220a522-6a11-4f5e-91d7-a038fb20de59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\math">
+      <UniqueIdentifier>{dfe3f000-bf81-4b00-a816-6c48ab947049}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\math">
+      <UniqueIdentifier>{128d5450-63ef-4f93-8340-7cd2d793a4ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GLdraw">
+      <UniqueIdentifier>{7628412d-d289-48c8-a0b6-ea5462434692}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\math3d">
+      <UniqueIdentifier>{f9bd6353-600f-4029-8c66-513a92672f48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\math3d">
+      <UniqueIdentifier>{f170d224-be31-411c-934f-c4f2a15966ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\geometry">
+      <UniqueIdentifier>{8078cacc-107f-41a3-8f3a-2c0e0a4ed405}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\geometry">
+      <UniqueIdentifier>{e483437f-37a0-49e7-93dc-865cccae3a3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\geometry\PQP">
+      <UniqueIdentifier>{fd460b71-9232-4bdd-8d0c-7a9c93eb99b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\geometry\PQP">
+      <UniqueIdentifier>{92179f7c-677a-4c78-a0f2-0b1aa38e6656}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\graph">
+      <UniqueIdentifier>{3952167c-f7fa-410c-a945-1e23a0866791}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\robotics">
+      <UniqueIdentifier>{6b00c6c0-4fbb-43fc-b184-06595f403678}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\robotics">
+      <UniqueIdentifier>{efcb2b33-fc4a-4d2a-acde-288deeca3ead}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\image">
+      <UniqueIdentifier>{23b08012-c1eb-4483-80c8-92dba25a3d30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\image">
+      <UniqueIdentifier>{8c54c02f-47ec-4a05-9507-14e502dea917}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\meshing">
+      <UniqueIdentifier>{0e7372e2-4785-4a21-86e0-98868dc961ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\meshing">
+      <UniqueIdentifier>{eeae853a-6743-4a3d-8b26-714b28bc0fe0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\optimization">
+      <UniqueIdentifier>{446d23e2-bb52-4426-82ca-927399f7b021}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\planning">
+      <UniqueIdentifier>{dd36041b-0a63-4772-9257-a929fb1317f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\optimization">
+      <UniqueIdentifier>{5b8c769a-5e1d-450f-bf0b-b666915cc8b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\planning">
+      <UniqueIdentifier>{398cd585-6e73-45b1-9990-5b524b0be9fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\statistics">
+      <UniqueIdentifier>{e07863b0-f66b-4835-8159-538853585aef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\structs">
+      <UniqueIdentifier>{2c8479e0-f7a5-47dd-b19b-87314e1eea9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{7f1cae6a-46af-4ed1-955d-15670c7c1f6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\structs">
+      <UniqueIdentifier>{b17f25dd-629f-4b65-ad57-f304a621a0cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{f8cd65b8-6971-4507-8415-932416403844}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\spline">
+      <UniqueIdentifier>{534aff29-da41-4ee5-8caf-a9e5b65627c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\statistics">
+      <UniqueIdentifier>{88349ed1-c933-44f2-a4fd-75acecdafc4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\spline">
+      <UniqueIdentifier>{6d5f01ea-25e0-4c90-8000-51478f242188}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\camera\camera.h">
+      <Filter>Header Files\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\camera\frustum.h">
+      <Filter>Header Files\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\camera\clip.h">
+      <Filter>Header Files\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\camera\transform.h">
+      <Filter>Header Files\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\camera\viewport.h">
+      <Filter>Header Files\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\Arrangement1D.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\CollisionMesh.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\ConvexHull2D.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\DCEL.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\Fitting.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\Grid.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\GridSubdivision.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\GridTable.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\KDTree.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\MonotoneChain.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\PenetrationDepth.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\PolytopeProjection.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\primitives.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\rayprimitives.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\SegmentOverlay.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\UnboundedPolytope2D.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\PQP\include\BV.h">
+      <Filter>Header Files\geometry\PQP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\PQP\include\PQP.h">
+      <Filter>Header Files\geometry\PQP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\PQP\include\PQP_Compile.h">
+      <Filter>Header Files\geometry\PQP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\PQP\include\PQP_Internal.h">
+      <Filter>Header Files\geometry\PQP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\PQP\include\Tri.h">
+      <Filter>Header Files\geometry\PQP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\ColorGradient.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\drawextra.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\drawgeometry.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\drawMesh.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GL.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLColor.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLError.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLFog.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLLight.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLMaterial.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLScreenshot.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLScreenshotProgram.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLTexture1D.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLTexture2D.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLTextureObject.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLUINavigationProgram.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLUIProgram.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLUTNavigationProgram.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLUTProgram.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLUTString.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLView.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\TransformWidget.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\Widget.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\AABB.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\angle.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\AngleSet.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\ASCIIShade.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\backsubstitute.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\BLASInterface.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\BlockPrinter.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\BlockTridiagonalMatrix.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\BlockVector.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\brent.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\cast.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\CholeskyDecomposition.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\complex.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\ConditionedConstraint.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\Conditioner.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\conjgrad.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\DiagonalMatrix.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\diffeq.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\differentiation.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\fastarray.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\fastmath.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\format.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\function.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\gaussian.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\GramSchmidt.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\Householder.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\indexing.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\InequalityConstraint.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\infnan.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\interpolate.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\Interval.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\IntervalSet.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\LAPACKInterface.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\LDL.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\linalgebra.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\LinearlyDependent.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\LinearPath.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\LUDecomposition.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\math.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\matrix.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\MatrixEquationPrinter.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\MatrixPrinter.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\MatrixTemplate.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\metric.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\misc.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\polynomial.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\QRDecomposition.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\quadrature.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\QuasiNewton.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\random.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\realfunction.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\root.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\RowEchelon.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\sample.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\SelfTest.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\sparsefunction.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\sparsematrix.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\SparseMatrixTemplate.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\sparsevector.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\SparseVectorTemplate.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\specialfunctions.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\stacking.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\SVDecomposition.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\vector.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\vectorfunction.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\VectorPrinter.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math\VectorTemplate.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\AABB2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\AABB3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\AABBTemplate.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\basis.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Box2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Box3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Circle2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Circle3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\clip.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Cylinder3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Ellipsoid3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\geometry2d.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\geometry3d.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\inlinetypes.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\interpolate.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Line2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Line3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\LinearAlgebra.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\LinearlyDependent.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\LocalCoordinates2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\LocalCoordinates3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\matinline.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\misc.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Plane2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Plane3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Point.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\polar.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Polygon2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Polygon3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Polyhedron3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\primitives.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\quatinline.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\random.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Ray2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Ray3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\rotation.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\rotationfit.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Segment2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Segment3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Sphere3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Triangle2D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\Triangle3D.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\math3d\vecinline.h">
+      <Filter>Header Files\math3d</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\APSP.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\Callback.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\ConnectedComponents.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\DirectedGraph.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\Edge.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\Graph.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\IO.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\Node.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\Operations.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\Path.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\ShortestPaths.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\Tree.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\graph\UndirectedGraph.h">
+      <Filter>Header Files\graph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\AnalyticIK.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\AngleBracket.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Chain.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Contact.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\DenavitHartenberg.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\DynamicChain.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\DynamicChain3D.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Frame.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Geometry.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\IK.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\IKFunctions.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Inertia.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\JointStructure.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\KinematicChain.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\KinematicChain3D.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Kinematics.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\NewtonEuler.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\RigidBodyDynamics.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\RLG.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\RobotDynamics3D.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\RobotKinematics3D.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\RobotLink3D.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\RobotWithGeometry.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\SelfTest.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Simulate.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Stability.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\TorqueSolver.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\WorkspaceBound.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Wrench.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\image\formats.h">
+      <Filter>Header Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\image\gdi.h">
+      <Filter>Header Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\image\image.h">
+      <Filter>Header Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\image\import.h">
+      <Filter>Header Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\image\ppm.h">
+      <Filter>Header Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\image\textureops.h">
+      <Filter>Header Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\ClosestPoint.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\Expand.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\Geodesic.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\IntTriple.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\IO.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\LSConformalMapping.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\MarchingCubes.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\Meshing.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\MeshPrimitives.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\Rasterize.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\TriMesh.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\TriMeshAtlas.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\TriMeshOperators.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\TriMeshTopology.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\VolumeGrid.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\Voxelize.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\AnyCollection.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\AnyValue.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\ArrayMapping.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\arrayutils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\bits.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\cmp_func.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\combination.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\CommandLine.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\ContextStack.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\CoverSet.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\DataCollector.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\DirtyData.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\EquivalenceMap.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\EZTrace.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\FastSampler.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\fileutils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\indexing.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\IndexSet.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\IntPair.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\IntTriple.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\IntTuple.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\ioutils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\iteratorutils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\LazyLoader.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\ObjectPrinter.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\ParamList.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\permutation.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\Pointers.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\PrimitiveValue.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\ProgressPrinter.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\random.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\RangeMap.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\RangeMap2D.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\RangeSet.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\RangeSet2D.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\RefPointer.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\ResourceLibrary.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\set.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\shift.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\SignalHandler.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\SimpleFile.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\SimpleParser.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\SmartPointer.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\StatCollector.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\stringutils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\Subset.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\Trace.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\unionfind.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\UniquePointer.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\basis.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\BSpline.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\Hermite.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\MonotonicSpline.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\path.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\PiecewisePolynomial.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\Polynomial.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\spline.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spline\TimeSegmentation.h">
+      <Filter>Header Files\spline</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\array2d.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\array3d.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\arraynd.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\FastFindHeap.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\FixedSizeHeap.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\Heap.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\IndexedPriorityQueue.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\myarray.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\myhash.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\mylist.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\myqueue.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\priority_queue2.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\RedBlack.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\set.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\structs\SparseArray.h">
+      <Filter>Header Files\structs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\BernoulliDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\BetaDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\CategoricalDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\DataSet.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\DiracDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\DistributionCollector.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\GaussianDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\GaussianHMM.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\GaussianMixtureModel.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\Histogram.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\Histogram2D.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\Histogram3D.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\HistogramND.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\IntervalMap.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\KMeans.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\LinearModel.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\LinearProcessHMM.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\LogisticModel.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\OLS.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\OnlineMoments.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\OnlineOLS.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\ProbabilityDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\StatDatabase.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\statistics.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\UniformDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\statistics\WeibullDistribution.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\AnyMotionPlanner.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\CSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\CSpaceAnalysis.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\CSpaceHelpers.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\CVSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\EdgePlanner.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\ExplicitCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\GeneralizedAStar.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\GeneralizedBezierCurve.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\GeodesicSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\Geometric2DCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\Grid2DCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\KinodynamicCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\KinodynamicMotionPlanner.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\KinodynamicPath.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\MCRPlanner.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\MCRPlannerGoalSet.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\MotionPlanner.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\MultiModalCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\MultiModalPlanner.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\MultiRobot2DCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\Path.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\PerturbationCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\PRT.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\RigidRobot2DCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\SBL.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\SBLTree.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\SpaceTimeCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\TimeCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\TimedPath.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\TranslatingRobot2DCSpace.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\planning\VisibilityGraphPlanner.h">
+      <Filter>Header Files\planning</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\BoundedLSQRSolver.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\GLPKInterface.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\LCP.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\LeastSquares.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\LinearProgram.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\LP_InteriorPoint.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\LPOptimumFunction.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\LPRobust.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\lsqr.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\LSQRInterface.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\Minimization.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\MinNormProblem.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\Newton.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\NewtonSolver.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\NonlinearProgram.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\optimization.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\QuadProgPPInterface.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\QuadraticProgram.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\RegularizedLinearProgram.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\optimization\SelfTest.h">
+      <Filter>Header Files\optimization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\errors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\myfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\Rotation.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\camera\camera.cpp">
+      <Filter>Source Files\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\camera\clip.cpp">
+      <Filter>Source Files\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\camera\frustum.cpp">
+      <Filter>Source Files\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\camera\transform.cpp">
+      <Filter>Source Files\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\camera\viewport.cpp">
+      <Filter>Source Files\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\PQP\src\Build.cpp">
+      <Filter>Source Files\geometry\PQP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\PQP\src\BV.cpp">
+      <Filter>Source Files\geometry\PQP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\PQP\src\PQP.cpp">
+      <Filter>Source Files\geometry\PQP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\PQP\src\TriDist.cpp">
+      <Filter>Source Files\geometry\PQP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\Arrangement1D.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\CollisionMesh.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\ConvexHull2D.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\Fitting.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\Grid.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\GridSubdivision.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\KDTree.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\MonotoneChain.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\PenetrationDepth.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\PolytopeProjection.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\SegmentOverlay.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\UnboundedPolytope2D.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\ColorGradient.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\drawextra.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\drawgeometry.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLColor.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLError.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLFog.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLLight.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLMaterial.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLScreenshot.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLTexture1D.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLTexture2D.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLTextureObject.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLUINavigationProgram.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLUIProgram.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLUTNavigationProgram.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLUTProgram.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLView.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\TransformWidget.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\AABB.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\angle.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\AngleSet.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\ASCIIShade.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\backsubstitute.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\BLASInterface.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\BlockPrinter.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\BlockTridiagonalMatrix.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\BlockVector.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\brent.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\CholeskyDecomposition.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\complex.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\ConditionedConstraint.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\Conditioner.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\DiagonalMatrix.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\diffeq.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\differentiation.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\function.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\gaussian.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\GramSchmidt.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\Householder.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\InequalityConstraint.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\infnan.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\IntervalSet.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\LAPACKInterface.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\LDL.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\linalgebra.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\LinearlyDependent.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\LinearPath.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\LUDecomposition.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\MatrixEquationPrinter.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\MatrixPrinter.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\MatrixTemplate.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\metric.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\misc.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\QRDecomposition.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\quadrature.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\QuasiNewton.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\random.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\realfunction.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\root.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\RowEchelon.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\sample.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\SelfTest.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\SparseMatrixTemplate.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\SparseVectorTemplate.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\SVDecomposition.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\vectorfunction.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\VectorPrinter.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math\VectorTemplate.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\AABB2D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\AABB3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Box3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Circle3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\clip.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Cylinder3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\geometry2d.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\geometry3d.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\interpolate.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Line2D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Line3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\LinearAlgebra.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\LinearlyDependent.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\LocalCoordinates2D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\LocalCoordinates3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Plane3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\polar.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Polygon2D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Polygon3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Polyhedron3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\primitives.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\quatinline.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\random.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Ray3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\rotation.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\rotationfit.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Segment2D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Segment3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Triangle2D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math3d\Triangle3D.cpp">
+      <Filter>Source Files\math3d</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\AnalyticIK.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\AngleBracket.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Chain.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Contact.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\DenavitHartenberg.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\DynamicChain.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\DynamicChain3D.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Geometry.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\IK.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\IKFunctions.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\JointStructure.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\KinematicChain.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\KinematicChain3D.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Kinematics.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\NewtonEuler.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\RigidBodyDynamics.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\RLG.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\RobotDynamics3D.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\RobotKinematics3D.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\RobotLink3D.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\RobotWithGeometry.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\SelfTest.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Simulate.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Stability.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\TorqueSolver.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\WorkspaceBound.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\bmp.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\gdi.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\image.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\import.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\ppm.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\textureops.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\tga.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\ClosestPoint.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\Expand.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\Geodesic.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\IO.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\LSConformalMapping.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\MarchingCubes.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\Meshing.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\MeshPrimitives.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\Rasterize.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\TriMesh.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\TriMeshOperators.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\TriMeshTopology.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\VolumeGrid.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\Voxelize.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\AnyCollection.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\CommandLine.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\CoverSet.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\DataCollector.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\EZTrace.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\fileutils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\indexing.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\IndexSet.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\ioutils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\ParamList.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\PrimitiveValue.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\ProgressPrinter.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\RangeSet.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\RangeSet2D.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\RefPointer.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\ResourceLibrary.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\set.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\SignalHandler.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\SimpleFile.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\SimpleParser.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\StatCollector.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\stringutils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\Subset.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\Trace.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\unionfind.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\BetaDistribution.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\CategoricalDistribution.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\DataSet.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\DistributionCollector.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\GaussianDistribution.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\GaussianHMM.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\GaussianMixtureModel.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\Histogram.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\HistogramND.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\KMeans.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\LinearModel.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\LinearProcessHMM.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\LogisticModel.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\OLS.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\OnlineMoments.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\OnlineOLS.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\statistics.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\UniformDistribution.cpp">
+      <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\AnyMotionPlanner.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\CSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\CSpaceAnalysis.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\CVSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\EdgePlanner.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\ExplicitCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\GeneralizedBezierCurve.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\Geometric2DCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\Grid2DCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\KinodynamicCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\KinodynamicMotionPlanner.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\KinodynamicPath.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\MCRPlanner.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\MCRPlannerGoalSet.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\MotionPlanner.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\MultiModalPlanner.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\MultiRobot2DCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\Path.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\PerturbationCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\RigidRobot2DCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\SBL.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\SBLTree.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\SpaceTimeCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\TimedPath.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\TranslatingRobot2DCSpace.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\planning\VisibilityGraphPlanner.cpp">
+      <Filter>Source Files\planning</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\BoundedLSQRSolver.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\GLPKInterface.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\LCP.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\LeastSquares.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\LinearProgram.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\LP_InteriorPoint.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\LPOptimumFunction.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\LPRobust.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\lsqr.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\LSQRInterface.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\Minimization.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\MinNormProblem.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\Newton.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\NewtonSolver.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\NonlinearProgram.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\QuadProgPPInterface.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\QuadraticProgram.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\RegularizedLinearProgram.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\optimization\SelfTest.cpp">
+      <Filter>Source Files\optimization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\errors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\myfile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Rotation.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spline\basis.cpp">
+      <Filter>Source Files\spline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spline\BSpline.cpp">
+      <Filter>Source Files\spline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spline\Hermite.cpp">
+      <Filter>Source Files\spline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spline\MonotonicSpline.cpp">
+      <Filter>Source Files\spline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spline\path.cpp">
+      <Filter>Source Files\spline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spline\PiecewisePolynomial.cpp">
+      <Filter>Source Files\spline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spline\spline.cpp">
+      <Filter>Source Files\spline</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
