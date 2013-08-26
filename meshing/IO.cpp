@@ -55,7 +55,7 @@ bool Import(const char* fn,TriMesh& tri)
   else {
 #if HAVE_ASSIMP
     if(!LoadAssimp(fn,tri)) {
-    fprintf(stderr,"Import(TriMesh): file %s could not be loaded\n",fn);
+      fprintf(stderr,"Import(TriMesh): file %s could not be loaded\n",fn);
       return false;
     }
     else {
@@ -234,6 +234,77 @@ bool LoadAssimp(const char* fn, TriMesh& mesh)
 	return true;
 }
 
+void Cast(const aiMatrix4x4& a,Matrix4& out)
+{
+  out(0,0) = a.a1;
+  out(0,1) = a.a2;
+  out(0,2) = a.a3;
+  out(0,3) = a.a4;
+  out(1,0) = a.b1;
+  out(1,1) = a.b2;
+  out(1,2) = a.b3;
+  out(1,3) = a.b4;
+  out(2,0) = a.c1;
+  out(2,1) = a.c2;
+  out(2,2) = a.c3;
+  out(2,3) = a.c4;
+  out(3,0) = a.d1;
+  out(3,1) = a.d2;
+  out(3,2) = a.d3;
+  out(3,3) = a.d4;
+}
+
+bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,const Matrix4& Tparent,vector<TriMesh>& models)
+{
+  //cout<<node->mName.C_Str()<<" transform: "<<endl;
+  Matrix4 T;
+  Cast(node->mTransformation,T);
+  //cout<<T<<endl;
+  T = Tparent * T;
+  //cout<<"final: "<<T<<endl;
+  //if(node->mNumMeshes != 0)
+  //getchar();
+
+
+  for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+    unsigned int m = node->mMeshes[i];
+    if (scene->mMeshes && scene->mMeshes[m]) {
+      if (scene->mMeshes[m]->HasFaces()) {
+	int nfaces = scene->mMeshes[m]->mNumFaces;
+	int nverts = scene->mMeshes[m]->mNumVertices;
+	models.resize(models.size()+1);
+	models.back().tris.resize(nfaces);
+	models.back().verts.resize(nverts);
+	for (int j = 0; j < nfaces; j++) {
+	  const aiFace& face = scene->mMeshes[m]->mFaces[j];
+	  Assert(face.mNumIndices == 3);
+	  models.back().tris[j].set(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
+	}
+	for (int j = 0; j < nverts; j++) {
+	  const aiVector3D& vert = scene->mMeshes[m]->mVertices[j];
+	  T.mulPoint(Vector3((double)vert.x, (double)vert.y, (double)vert.z),models.back().verts[j]);
+	}
+	if(!models.back().IsValid()) {
+	  cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
+	  cerr<<"Continuing may have unexpected results."<<endl;
+	  cerr<<"Press enter to continue."<<endl;
+	  getchar();
+	}
+	
+      } else {
+	cout << "Error processing " << fn << ", no faces!" << endl;
+	return false;
+      }
+    } else {
+      cout << "Error processing " << fn << ", no mesh!" << endl;
+      return false;
+    }
+  }
+  for(unsigned int i=0;i<node->mNumChildren;i++)
+    if(!WalkAssimpNodes(fn,scene,node->mChildren[i],T,models)) return false;
+  return true;
+}
+
 bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 {
 	Assimp::Importer importer;
@@ -244,6 +315,20 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 		cout << "AssimpImporter:"<<"Error Processing " << fn << "!" << endl;
 		return false;
 	}
+	models.resize(0);
+	Matrix4 Tident; Tident.setIdentity();
+	Matrix4 Tyz; 
+	Tyz.setZero();
+	Tyz(0,0) = 1;
+	Tyz(1,2) = -1;
+	Tyz(2,1) = 1;
+	Tyz(3,3) = 1;
+	if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tyz,models)) {
+	  //if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tident,models)) {
+	  cout << "AssimpImporter:"<<"Error Processing " << fn << "!" << endl;
+	  return false;
+	}
+	/*
 	models.resize(scene->mNumMeshes);
 	for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
 		if (scene->mMeshes && scene->mMeshes[i]) {
@@ -269,12 +354,13 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 			  }
 
 			} else {
-				cout << "Error processing " << *fn << ", no faces!" << endl;
+				cout << "Error processing " << fn << ", no faces!" << endl;
 			}
 		} else {
-			cout << "Error processing " << *fn << ", no mesh!" << endl;
+			cout << "Error processing " << fn << ", no mesh!" << endl;
 		}
 	}
+	*/
 	return true;
 }
 
