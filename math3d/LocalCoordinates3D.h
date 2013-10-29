@@ -14,6 +14,8 @@ struct LocalCoordinates3D
 {
 	void getBasis (Matrix4&) const;
 	void getBasisInv (Matrix4&) const;
+	void getTransform (RigidTransform&) const;
+	void getTransformInv (RigidTransform&) const;
 	void toLocal (const Point3D&, Point3D&) const;
 	void toLocalReorient (const Vector3&, Vector3&) const;
 	void fromLocal (const Point3D&, Point3D&) const;

@@ -54,15 +54,19 @@ struct ContactPoint2D
 
 /** @brief A robot-environment contact formation.
  * The list of contacts contacts[i] is associated with links[i]
- * (pointing from the environment into the robot).
+ * (pointing from the opposing body into the robot).
+ * Usually the opposing body is the environment, but if targets is
+ * non-empty, it gives the index of the body for which contact is made.
  */
 struct ContactFormation
 {
   //make into a single list of links and cps
   void flatten(std::vector<int>& flatLinks,std::vector<ContactPoint>& cps) const;
+  void flatten(std::vector<int>& flatLinks,std::vector<ContactPoint>& cps,std::vector<int>& flattargets) const;
 
   std::vector<int> links;
   std::vector<std::vector<ContactPoint> > contacts;
+  std::vector<int> targets;
 };
 
 /** @ingroup Robotics

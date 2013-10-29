@@ -50,11 +50,36 @@ class GeometricPrimitive3D
   AABB3D GetAABB() const;
   Box3D GetBB() const;
   RigidTransform GetFrame() const;
+  void Transform(const RigidTransform& T);
+  void Transform(const Matrix4& T);
+
+  static bool SupportsCollides(Type a,Type b);
+  bool SupportsCollides(Type b) const { return GeometricPrimitive3D::SupportsCollides(type,b); }
+  bool Collides(const Vector3& pt) const;
+  bool Collides(const Segment3D& s) const;
+  bool Collides(const Triangle3D& t) const;
+  bool Collides(const Polygon3D& p) const;
+  bool Collides(const Sphere3D& s) const;
+  bool Collides(const Ellipsoid3D& s) const;
+  bool Collides(const Cylinder3D& s) const;
+  bool Collides(const AABB3D& s) const;
+  bool Collides(const Box3D& s) const;
+  bool Collides(const GeometricPrimitive3D& g) const;
+  static bool SupportsDistance(Type a,Type b);
+  bool SupportsDistance(Type b)  { return GeometricPrimitive3D::SupportsDistance(type,b); }
   Real Distance(const Vector3& pt) const;
+  Real Distance(const Segment3D& s) const;
+  Real Distance(const Triangle3D& t) const;
+  Real Distance(const Polygon3D& p) const;
+  Real Distance(const Sphere3D& s) const;
+  Real Distance(const Ellipsoid3D& s) const;
+  Real Distance(const Cylinder3D& s) const;
+  Real Distance(const AABB3D& s) const;
+  Real Distance(const Box3D& s) const;
+  Real Distance(const GeometricPrimitive3D& g) const;
   std::vector<double> ClosestPointParameters(const Vector3& pt) const;
   Vector3 ParametersToPoint(const std::vector<double>& params) const;
   Vector3 ParametersToNormal(const std::vector<double>& params) const;
-  void Transform(const RigidTransform& T);
 
   Type type;
   AnyValue data;

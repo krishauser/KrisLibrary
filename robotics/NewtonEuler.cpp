@@ -262,6 +262,7 @@ void NewtonEulerSolver::CalcTorques(const Vector& ddq,Vector& t)
   }
 }
 
+
 void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
 {
   ddq.resize(robot.links.size());
@@ -435,6 +436,34 @@ void NewtonEulerSolver::CalcKineticEnergyMatrix(Matrix& B)
     t -= t0;
     B.copyCol(i,t);
     ddq(i) = 0;
+  }
+}
+
+void NewtonEulerSolver::MulKineticEnergyMatrix(const Vector& x,Vector& Bx)
+{
+  Assert(x.n == (int)robot.links.size());
+  Vector t0;
+  Vector ddq(robot.links.size());
+  ddq.setZero();
+  CalcTorques(ddq,t0);
+  CalcTorques(x,Bx);
+  Bx -= t0;
+}
+
+void NewtonEulerSolver::MulKineticEnergyMatrix(const Matrix& A,Matrix& BA)
+{
+  Assert(A.m == (int)robot.links.size());
+  Vector t0;
+  Vector ddq(robot.links.size());
+  ddq.setZero();
+  CalcTorques(ddq,t0);
+  BA.resize(A.m,A.n);
+  for(int i=0;i<A.n;i++) {
+    Vector Ai,BAi;
+    A.getColRef(i,Ai);
+    BA.getColRef(i,BAi);
+    CalcTorques(Ai,BAi);
+    BAi -= t0;
   }
 }
 
@@ -684,6 +713,34 @@ void NewtonEulerSolver::CalcKineticEnergyMatrixInverse(Matrix& Binv)
     ddq -= ddq0;
     Binv.copyCol(i,ddq);
     t(i) = 0;
+  }
+}
+
+void NewtonEulerSolver::MulKineticEnergyMatrixInverse(const Vector& x,Vector& Binvx)
+{
+  Assert(x.n == (int)robot.links.size());
+  Vector t(robot.links.size());
+  Vector ddq0;
+  t.setZero();
+  CalcAccel(t,ddq0);
+  CalcAccel(x,Binvx);
+  Binvx -= ddq0;
+}
+
+void NewtonEulerSolver::MulKineticEnergyMatrixInverse(const Matrix& A,Matrix& BinvA)
+{
+  Assert(A.m == (int)robot.links.size());
+  Vector t(robot.links.size());
+  Vector ddq0;
+  t.setZero();
+  CalcAccel(t,ddq0);
+  BinvA.resize(A.m,A.n);
+  for(int i=0;i<A.n;i++) {
+    Vector Ai,BAi;
+    A.getColRef(i,Ai);
+    BinvA.getColRef(i,BAi);
+    CalcAccel(Ai,BAi);
+    BAi -= ddq0;
   }
 }
 

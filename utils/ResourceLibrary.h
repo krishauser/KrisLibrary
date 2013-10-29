@@ -54,43 +54,6 @@ class ResourceBase
 
 typedef SmartPointer<ResourceBase> ResourcePtr;
 
-/** @brief A basic data type.
- *
- * Assumes the data type has std::ostream << and std::istream >> overloads.
- */
-template <class T>
-class BasicResource : public ResourceBase
-{
- public:
-  BasicResource() {}
-  BasicResource(const T& val) : data(val) {}
-  BasicResource(const T& val,const std::string& name) : ResourceBase(name),data(val) {}
-  virtual ~BasicResource() {}
-  virtual bool Load(std::istream& in) {
-    in>>data;
-    if(in.bad()) {
-      return false;
-    }
-    return true;
-  }
-  virtual bool Save(std::ostream& out) {
-    out<<data<<std::endl;
-    return true;
-  }
-  virtual bool Load(const std::string& fn) { return ResourceBase::Load(fn); }
-  virtual bool Load() { return ResourceBase::Load(); }
-  virtual bool Save(const std::string& fn) { return ResourceBase::Save(fn); }
-  virtual bool Save() { return ResourceBase::Save(); }
-  virtual const char* Type() const { return className; }
-  virtual ResourceBase* Make() { return new BasicResource<T>; }
-
-  T data;
-  static const char* className;
-};
-
-typedef BasicResource<int> IntResource;
-typedef BasicResource<double> FloatResource;
-typedef BasicResource<std::string> StringResource;
 
 /** @brief A collection of resources, which may be loaded/saved as separate
  * files in a directory or inlined into a single XML file.  Helps with
@@ -180,6 +143,97 @@ class ResourceLibrary
   Map loaders;
   Map itemsByName,itemsByType;
 };
+
+
+
+
+
+/** @brief A basic data type.
+ *
+ * Assumes the data type has std::ostream << and std::istream >> overloads.
+ */
+template <class T>
+class BasicResource : public ResourceBase
+{
+ public:
+  BasicResource() {}
+  BasicResource(const T& val) : data(val) {}
+  BasicResource(const T& val,const std::string& name) : ResourceBase(name),data(val) {}
+  virtual ~BasicResource() {}
+  virtual bool Load(std::istream& in) {
+    in>>data;
+    if(in.bad()) {
+      return false;
+    }
+    return true;
+  }
+  virtual bool Save(std::ostream& out) {
+    out<<data<<std::endl;
+    return true;
+  }
+  virtual bool Load(const std::string& fn) { return ResourceBase::Load(fn); }
+  virtual bool Load() { return ResourceBase::Load(); }
+  virtual bool Save(const std::string& fn) { return ResourceBase::Save(fn); }
+  virtual bool Save() { return ResourceBase::Save(); }
+  virtual const char* Type() const { return className; }
+  virtual ResourceBase* Make() { return new BasicResource<T>; }
+
+  T data;
+  static const char* className;
+};
+
+typedef BasicResource<int> IntResource;
+typedef BasicResource<double> FloatResource;
+typedef BasicResource<std::string> StringResource;
+
+
+/** @brief A basic array data type.
+ *
+ * Assumes the data type has std::ostream << and std::istream >> overloads.
+ */
+template <class T>
+class BasicArrayResource : public ResourceBase
+{
+ public:
+  BasicArrayResource() {}
+  BasicArrayResource(const std::vector<T>& val) : data(val) {}
+  BasicArrayResource(const std::vector<T>& val,const std::string& name) : ResourceBase(name),data(val) {}
+  virtual ~BasicArrayResource() {}
+  virtual bool Load(std::istream& in) {
+    size_t n;
+    in>>n;
+    if(in.bad()) return false;
+    data.resize(n);
+    for(size_t i=0;i<n;i++) {
+      in>>data[i];
+      if(in.bad()) return false; 
+    }
+    return true;
+  }
+  virtual bool Save(std::ostream& out) {
+    out<<data.size()<<'\t';
+    for(size_t i=0;i<data.size();i++) {
+      out<<data[i];
+      if(i+1!=data.size()) out<<" ";
+    }
+    out<<std::endl;
+    return true;
+  }
+  virtual bool Load(const std::string& fn) { return ResourceBase::Load(fn); }
+  virtual bool Load() { return ResourceBase::Load(); }
+  virtual bool Save(const std::string& fn) { return ResourceBase::Save(fn); }
+  virtual bool Save() { return ResourceBase::Save(); }
+  virtual const char* Type() const { return className; }
+  virtual ResourceBase* Make() { return new BasicArrayResource<T>; }
+
+  std::vector<T> data;
+  static const char* className;
+};
+
+typedef BasicArrayResource<int> IntArrayResource;
+typedef BasicArrayResource<double> FloatArrayResource;
+typedef BasicArrayResource<std::string> StringArrayResource;
+
 
 /** @brief A resource that contains a ResourceLibrary.  Useful for
  * hierarchical resource libraries.

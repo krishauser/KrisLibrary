@@ -46,6 +46,10 @@ class GeneralizedCubicBezierCurve
   void MidpointDeriv(Vector& v) const;
   void MidpointTimeDeriv(Real duration,Vector& v) const;
 
+  ///Generates two bezier curves that meet at the midpoint with the same
+  ///midpoint tangent (although with half the magnitude)
+  void Bisect(GeneralizedCubicBezierCurve& c1,GeneralizedCubicBezierCurve& c2) const;
+
   CSpace* space;
   GeodesicManifold* manifold;
   Config x0,x1,x2,x3;

@@ -17,6 +17,7 @@ struct Ellipsoid3D : public ScaledLocalCoordinates3D
 {
   bool contains(const Point3D& pt) const;
   bool intersects(const Line3D& l, Real* t1=NULL, Real* t2=NULL) const;
+  bool intersects(const Segment3D& s, Real* t1=NULL, Real* t2=NULL) const;
   void getAABB(AABB3D& bb) const;
 };
 

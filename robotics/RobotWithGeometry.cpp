@@ -1,9 +1,10 @@
 #include "RobotWithGeometry.h"
+#include <meshing/IO.h>
 #include <errors.h>
 #include <GLdraw/GL.h>
 #include <GLdraw/drawextra.h>
 #include <GLdraw/drawMesh.h>
-#include <meshing/IO.h>
+#include <GLdraw/GeometryAppearance.h>
 #include <fstream>
 #include <algorithm>
 using namespace GLDraw;
@@ -32,16 +33,13 @@ void RobotWithGeometry::Initialize(int n)
 
 bool RobotWithGeometry::LoadGeometry(int i,const char* file)
 {
-  if(!Meshing::Import(file,geometry[i])) return false;
+  if(!geometry[i].Load(file)) return false;
   return true;
 }
 
 bool RobotWithGeometry::SaveGeometry(int i,const char* file)
 {
-  ofstream out(file);
-  if(!out) return false;
-  out << geometry[i] << endl;
-  out.close();
+  if(!geometry[i].Save(file)) return false;
   return true;
 }
 
@@ -70,8 +68,8 @@ void RobotWithGeometry::InitSelfCollisionPair(int i,int j)
   Assert(i<j);
   Assert(!selfCollisions(i,j));
   Assert(j < (int)geometry.size());
-  if(!geometry[i].tris.empty() && !geometry[j].tris.empty()) 
-    selfCollisions(i,j) = new CollisionMeshQuery(geometry[i],geometry[j]);
+  if(!geometry[i].Empty() && !geometry[j].Empty()) 
+    selfCollisions(i,j) = new CollisionQuery(geometry[i],geometry[j]);
 }
 
 
@@ -111,26 +109,26 @@ void RobotWithGeometry::UpdateGeometry()
 
 void RobotWithGeometry::UpdateGeometry(int i)
 {
-  geometry[i].UpdateTransform(links[i].T_World);
+  geometry[i].SetTransform(links[i].T_World);
 }
 
-void RobotWithGeometry::InitMeshCollision(CollisionMesh& mesh)
+void RobotWithGeometry::InitMeshCollision(CollisionGeometry& mesh)
 {
   for(size_t i=0;i<links.size();i++) {
-    if(geometry[i].tris.empty()) continue;
+    if(geometry[i].Empty()) continue;
     if(envCollisions[i] == NULL) {
-      envCollisions[i] = new CollisionMeshQuery(geometry[i],mesh);
+      envCollisions[i] = new CollisionQuery(geometry[i],mesh);
     }
     else {
-      if(envCollisions[i]->m2 != &mesh) {
+      if(envCollisions[i]->b != &mesh) {
 	delete envCollisions[i];
-	envCollisions[i] = new CollisionMeshQuery(geometry[i],mesh);
+	envCollisions[i] = new CollisionQuery(geometry[i],mesh);
       }
     }
   }
 }
 
-bool UnderCollisionMargin(Geometry::CollisionMeshQuery* q,Real adj)
+bool UnderCollisionMargin(Geometry::AnyCollisionQuery* q,Real adj)
 {
   if(IsInf(adj) < 0) return false;
   else if(adj == 0)
@@ -146,7 +144,7 @@ bool UnderCollisionMargin(Geometry::CollisionMeshQuery* q,Real adj)
 bool RobotWithGeometry::SelfCollision(int i, int j, Real d)
 {
   if(i > j) std::swap(i,j);
-  CollisionMeshQuery* query=selfCollisions(i,j);
+  CollisionQuery* query=selfCollisions(i,j);
   if(query == NULL) return false;
   return UnderCollisionMargin(query,d);
 }
@@ -182,9 +180,9 @@ bool RobotWithGeometry::SelfCollision(Real distance)
   return false;
 }
 
-bool RobotWithGeometry::MeshCollision(CollisionMesh& mesh)
+bool RobotWithGeometry::MeshCollision(CollisionGeometry& mesh)
 {
-  if(!envCollisions[0] || envCollisions[0]->m2 != &mesh) {
+  if(!envCollisions[0] || envCollisions[0]->b != &mesh) {
     cerr<<"Warning, MeshCollision() called with a different mesh"<<endl;
     InitMeshCollision(mesh);
   }
@@ -212,7 +210,7 @@ void RobotWithGeometry::DrawGL()
 
 void RobotWithGeometry::DrawLinkGL(int i)
 {
-  DrawGLTris(geometry[i]);
+  draw(geometry[i]);
 }
 
 

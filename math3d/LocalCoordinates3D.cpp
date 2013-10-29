@@ -23,6 +23,19 @@ void LocalCoordinates3D::getBasisInv(Matrix4& basis) const
 	basis.setCol4(-v);
 }
 
+
+void LocalCoordinates3D::getTransform(RigidTransform& T) const
+{
+	T.set(xbasis,ybasis,zbasis,origin);
+}
+
+void LocalCoordinates3D::getTransformInv(RigidTransform& T) const
+{
+  getTransform(T);
+  T.inplaceInverse();
+}
+
+
 void LocalCoordinates3D::toLocalReorient(const Vector3& vin, Vector3& vout) const
 {
 	vout.x=dot(vin,xbasis);

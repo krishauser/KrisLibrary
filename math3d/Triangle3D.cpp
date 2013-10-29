@@ -270,6 +270,21 @@ bool Triangle3D::rayIntersectsBackfaceCull(const Ray3D& ray, Real *t, Real *u, R
 }
 
 
+bool Triangle3D::intersects(const Segment3D& s, Real *t, Real *u, Real *v) const
+{
+  Real ttemp,utemp,vtemp;
+  Ray3D r;
+  r.source = s.a;
+  r.direction = s.b-s.a;
+  if(!rayIntersects(r,&ttemp,&utemp,&vtemp)) return false;
+  if(ttemp > 1.0) return false;
+  if(t) *t=ttemp;
+  if(u) *u=utemp;
+  if(v) *v=vtemp;
+  return true;
+}
+
+
 //u,v are the coordinates in the triangle's frame, t is the dist
 //non-culling
 bool Triangle3D::rayIntersects(const Ray3D& ray,

@@ -8,6 +8,7 @@ namespace Math3D {
 struct Circle3D;
 struct AABB3D;
 struct Line3D;
+struct Segment3D;
 
 /** @ingroup Math3D
  * @brief A 3D cylinder.
@@ -18,6 +19,7 @@ struct Line3D;
 struct Cylinder3D
 {
   bool contains(const Point3D& pt) const;
+  Real distance(const Point3D& pt) const;
   Real closestPoint(const Point3D& pt,Point3D& closest) const;  ///< returns distance to closest
   void setTransformed(const Cylinder3D& cyl,const RigidTransform& T);
   void getBase(Circle3D& c) const;
@@ -26,6 +28,7 @@ struct Cylinder3D
 
   /// Returns the entry/exit points if they intersect
   bool intersects(const Line3D& line,Real* tmin=NULL,Real* tmax=NULL) const;
+  bool intersects(const Segment3D& seg,Real* tmin=NULL,Real* tmax=NULL) const;
 
   Point3D center;
   Vector3 axis;

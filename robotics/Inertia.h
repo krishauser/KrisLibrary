@@ -2,6 +2,10 @@
 #define ROBOTICS_INERTIA_H
 
 #include <math3d/primitives.h>
+#include <math3d/geometry3d.h>
+
+using namespace Math;
+using namespace Math3D;
 
 //computes the inertia matrix I about the point refPt for a rigid body with com at com,
 //with mass mass, and inertia matrix Icom (about the center of mass).
@@ -69,5 +73,8 @@ inline void CapsuleInertiaMatrix(Real r,Real h,Real m,Matrix3& I)
   I(0,0) = I(1,1) = M1*(0.25*Sqr(r) + Sqr(h)/12.0) + M2*(0.4*Sqr(r) + 0.375*r*h + 0.25*Sqr(h));
   I(2,2) = (M1*0.5 + M2*0.4)*Sqr(r);
 }
+
+Vector3 CenterOfMass(const GeometricPrimitive3D& geom);
+Matrix3 InertiaMatrix(const GeometricPrimitive3D& geom,Real mass);
 
 #endif

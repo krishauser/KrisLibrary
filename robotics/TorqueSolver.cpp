@@ -208,9 +208,13 @@ void TorqueSolver::FillProblem()
     for(size_t j=0;j<h.size();j++,m+=3) {
       //Matrix J; J.setRefTranspose(Jt);
       //robot.GetPositionJacobian(localPos,h.link,J);
-      int k=contacts.links[i];
+      int k = contacts.links[i];
+      int t = (contacts.targets.empty() ?  -1 : contacts.targets[i]);
       Assert(k >= 0 && k < robot.links.size());
-      const Vector3& p = h[j].x;
+      Vector3 p = h[j].x;
+      //if it's a self-contact transform to world
+      if(t >= 0)
+	p = robot.links[t].T_World*p;
       Vector3 v;
       while(k!=-1) {
 	robot.links[k].GetPositionJacobian(robot.q[k],p,v);
@@ -229,6 +233,27 @@ void TorqueSolver::FillProblem()
 	  problem.A(n,m+2)=v.z;
 	}
 	k=robot.parents[k];
+      }
+      if(t >= 0) {
+	k = t;
+	while(k!=-1) {
+	  robot.links[k].GetPositionJacobian(robot.q[k],p,v);
+	  int n=dofMap[k];
+	  if(robot.torqueMax(k) > 0) { //fill out active objective
+	    Assert(n >= 0 && n < problem.C.m);
+	    problem.C(n,m) -= v.x;
+	    problem.C(n,m+1) -= v.y;
+	    problem.C(n,m+2) -= v.z;
+	  }
+	  else {
+	    Assert(n >= 0 && n < problem.A.m);
+	    //fill out passive constraint
+	    problem.A(n,m)-=v.x;
+	    problem.A(n,m+1)-=v.y;
+	    problem.A(n,m+2)-=v.z;
+	  }
+	  k=robot.parents[k];
+	}
       }
     }
   }

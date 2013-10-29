@@ -777,6 +777,7 @@ bool Ellipse2D::intersects(const Line2D& l, Real* t1, Real* t2) const
 
 
 GeometricPrimitive2D::GeometricPrimitive2D()
+  :type(Empty)
 {}
 
 GeometricPrimitive2D::GeometricPrimitive2D(const GeometricPrimitive2D& rhs)
@@ -862,6 +863,11 @@ void GeometricPrimitive2D::Set(const Triangle2D& triangle)
   data = triangle;
 }
 
+bool GeometricPrimitive2D::SupportsCollides(Type a,Type b)
+{
+  return true;
+}
+
 bool GeometricPrimitive2D::Collides(const GeometricPrimitive2D& geom) const
 {
   switch(type) {
@@ -908,7 +914,7 @@ bool GeometricPrimitive2D::Collides(const Segment2D& seg) const
   case Point:
     return seg.distance(*AnyCast<Vector2>(&data)) == 0;
   case Segment:
-    return AnyCast<Segment2D>(&data)->intersects(seg) == 0;
+    return AnyCast<Segment2D>(&data)->intersects(seg);
   case Circle:
     return AnyCast<Circle2D>(&data)->intersects(seg);
   case AABB:
@@ -981,6 +987,17 @@ bool GeometricPrimitive2D::Collides(const Triangle2D& triangle) const
   }
 }
 
+bool GeometricPrimitive2D::SupportsDistance(Type a,Type b)
+{
+  if((a==AABB||a==Box||a==Triangle) && (b==Segment || b==AABB || b==Box || b==Triangle))
+    return false;
+
+  if(a==Segment && (b==AABB || b==Box || b==Triangle))
+    return false;
+  
+  return true;
+}
+
 Real GeometricPrimitive2D::Distance(const GeometricPrimitive2D& geom) const
 {
   switch(type) {
@@ -997,7 +1014,7 @@ Real GeometricPrimitive2D::Distance(const GeometricPrimitive2D& geom) const
   case Triangle:
     return geom.Distance(*AnyCast<Triangle2D>(&data));
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1017,7 +1034,7 @@ Real GeometricPrimitive2D::Distance(const Vector2& x) const
   case Triangle:
     return AnyCast<Triangle2D>(&data)->closestPoint(x).distance(x);
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1033,8 +1050,11 @@ Real GeometricPrimitive2D::Distance(const Segment2D& s) const
   case Point:
     return s.distance(*AnyCast<Vector2>(&data));
   case Segment:
-    if(AnyCast<Segment2D>(&data)->intersects(s)) return 0.0;
-    return Min(AnyCast<Segment2D>(&data)->distance(s.a),AnyCast<Segment2D>(&data)->distance(s.b));
+    {
+      const Segment2D* seg=AnyCast<Segment2D>(&data);
+      if(seg->intersects(s)) return 0.0;
+      return Min(Min(seg->distance(s.a),seg->distance(s.b)),Min(s.distance(seg->a),s.distance(seg->b)));
+    }
   case Circle:
     return Max(0.0,s.distance(AnyCast<Circle2D>(&data)->center)-AnyCast<Circle2D>(&data)->radius);
   case AABB:
@@ -1047,7 +1067,7 @@ Real GeometricPrimitive2D::Distance(const Segment2D& s) const
     FatalError("Triangle-Segment distance not implemented");
     return Inf;
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1071,7 +1091,7 @@ Real GeometricPrimitive2D::Distance(const AABB2D& b) const
     FatalError("Triangle-AABB distance not implemented");
     return Inf;
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1095,7 +1115,7 @@ Real GeometricPrimitive2D::Distance(const Box2D& b) const
     FatalError("Triangle-Box distance not implemented");
     return Inf;
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1119,7 +1139,7 @@ Real GeometricPrimitive2D::Distance(const Triangle2D& t) const
     FatalError("Triangle-Triangle distance not implemented");
     return Inf;
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1218,31 +1238,31 @@ void GeometricPrimitive2D::ToPolygon(vector<Vector2> & poly,int divs) const
   }
 }
 
-void GeometricPrimitive2D::ToBound(AABB2D& bb) const
+AABB2D GeometricPrimitive2D::GetAABB() const
 {
+  AABB2D bb;
   switch(type) {
   case Point:
     bb.bmin = bb.bmin = *AnyCast<Vector2>(&data);
-    return;
+    break;
   case Segment:
     AnyCast<Segment2D>(&data)->getAABB(bb);
-    return;
+    break;
   case Circle:
     AnyCast<Circle2D>(&data)->getAABB(bb);
-    return;
+    break;
   case AABB:
-    bb=*AnyCast<AABB2D>(&data);
-    return;
+    return *AnyCast<AABB2D>(&data);
   case Box:
     AnyCast<Box2D>(&data)->getAABB(bb);
-    return;
+    break;
   case Triangle:
     AnyCast<Triangle2D>(&data)->getAABB(bb);
-    return;
+    break;
   default:
-    bb = AABB2D();
-    return;
+    break;
   }
+  return bb;
 }
 
 

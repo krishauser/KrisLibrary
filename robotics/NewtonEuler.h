@@ -38,6 +38,10 @@ struct NewtonEulerSolver
   void CalcResidualAccel(Vector& ddq0);
 
   //helpers (also assume current state of robot has been updated)
+  void MulKineticEnergyMatrix(const Vector& x,Vector& Bx);
+  void MulKineticEnergyMatrix(const Matrix& A,Matrix& BA);
+  void MulKineticEnergyMatrixInverse(const Vector& x,Vector& Binvx);
+  void MulKineticEnergyMatrixInverse(const Matrix& A,Matrix& BinvA);
   void CalcVelocities();
   void CalcLinkAccel(const Vector& ddq);
   void SelfTest();

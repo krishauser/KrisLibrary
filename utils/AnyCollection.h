@@ -15,7 +15,7 @@
 
 /** @brief Any primitive value (bool, char, unsigned char, int,
  * unsigned int, float, double, string) that we know how to make into a
- * hashable object
+ * hashable object.
  */
 struct AnyKeyable
 {
@@ -58,6 +58,22 @@ struct hash<AnyKeyable> : public unary_function<AnyKeyable,size_t>
 /** @brief A flexible hierarchical collection of AnyValues, which can
  * be easily initialized to contain primitive values, arrays, or maps.
  * Arrays and maps can be nested as well.
+ * 
+ * AnyCollection c;
+ * c["firstName"] = "John";  //automatically sets c to a map
+ * c["lastName"] = "Smith";
+ * c["age"] = 25;
+ * c["phoneNumbers"][0] = "123-4567";  //automatically sets c["phoneNumbers"] to an array
+ * c["phoneNumbers"][1] = "890-1234";
+ * Assert(int(c["age"]) == 25);
+ * Assert(string(c["age"]) == "25");
+ *
+ * An AnyCollection v representing a primitive value can be cast to a given
+ * type T using T(v). This will be cast appropriately to the type of value.
+ * Or, if value is of type T, v.as(T) will perform error checking and return
+ * false if v is not of the right type.
+ *
+ * AnyCollections are written to / read from JSON format.
  */
 class AnyCollection
 {
@@ -84,11 +100,14 @@ class AnyCollection
   //coerce cast to plain data type
   template<class T>
   operator T() const;
+  //coerce cast to plain data type
+  template<class T>
+  bool as(T& value) const;
   //coerce cast a flat array type to a vector
   template<class T>
-  void asvector(std::vector<T>& values) const;
+  bool asvector(std::vector<T>& values) const;
   //retrieve elements of a flat array type
-  void asvector(std::vector<AnyValue>& values) const;
+  bool asvector(std::vector<AnyValue>& values) const;
   //test equality with value
   template <class T>
   bool operator == (const T& value) const;
@@ -212,16 +231,25 @@ AnyCollection::AnyCollection(const std::tr1::unordered_map<T,T2>& map)
 template<class T>
 AnyCollection::operator T() const
 {
-  if(type == Value) {
-    T result;
-    bool res=CoerceCast<T>(&value,result);
-    if(!res)
+  T res;
+  if(!as(res)) {
+    if(type == Value)
       FatalError("AnyCollection: coercion from %s to %s failed\n",value.type().name(),typeid(T).name());
-    return result;
+    else
+      FatalError("AnyCollection: coersion to %s failed, not of value type\n",typeid(T).name());
+  }
+  return res;
+}
+
+template<class T>
+bool AnyCollection::as(T& result) const
+{
+  if(type == Value) {
+    bool res=CoerceCast<T>(value,result);
+    return res;
   }
   else {
-    FatalError("AnyCollection: not of basic value type\n");
-    return T();
+    return false;
   }
 }
 
@@ -233,16 +261,19 @@ bool AnyCollection::operator == (const T& v) const
 }
 
 template<class T>
-void AnyCollection::asvector(std::vector<T>& values) const
+bool AnyCollection::asvector(std::vector<T>& values) const
 {
   std::vector<AnyValue> anyvalues;
-  asvector(anyvalues);
-  values.resize(anyvalues);
+  if(!asvector(anyvalues)) return false;
+  values.resize(anyvalues.size());
   for(size_t i=0;i<values.size();i++) {
-    bool res = CoerceCast<T>(&anyvalues[i],values[i]);
-    if(!res)
-      FatalError("AnyCollection: coercion from %s to %s failed\n",anyvalues[i].type().name(),typeid(T).name());  
+    bool res = CoerceCast<T>(anyvalues[i],values[i]);
+    if(!res) {
+      printf("Coerce cast %s to %s failed for element %d\n",anyvalues[i].type().name(),typeid(T).name(),i);
+      return false;
+    }
   }
+  return true;
 }
 
 

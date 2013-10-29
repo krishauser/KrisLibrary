@@ -6,10 +6,11 @@ using namespace Math3D;
 
 namespace GLDraw {
 
-#if 0
   void draw(const GeometricPrimitive2D& geom)
   {
     switch(geom.type) {
+    case GeometricPrimitive3D::Empty:
+      break;
     case GeometricPrimitive2D::Point:
       {
 	glBegin(GL_POINTS);
@@ -71,6 +72,8 @@ namespace GLDraw {
   void draw(const GeometricPrimitive3D& geom)
   {
     switch(geom.type) {
+    case GeometricPrimitive3D::Empty:
+      break;
     case GeometricPrimitive3D::Point:
       {
 	glBegin(GL_POINTS);
@@ -162,29 +165,6 @@ namespace GLDraw {
       return;
     }
   }
-#else
-
-  void draw(const GeometricPrimitive2D& geom)
-  {
-    printf("cast %s:\n",geom.data.type().name());    
-    printf("%s:\n",typeid(Vector2).name());
-    printf("Not done yet, weird linker error\n");
-  }
-  void draw(const GeometricPrimitive3D& geom)
-  {
-    //AnyValue blah = 4;
-    //printf("%d:\n",*AnyCast<int>(&blah));
-    printf("geomtype \"%s\":\n",geom.TypeName());    
-    printf("geom \"%s\":\n",geom.data.type().name());    
-    printf("void \"%s\":\n",typeid(void).name());    
-    printf("cylinder %s:\n",typeid(Cylinder3D).name());
-    printf("eq? %d:\n",(&typeid(Cylinder3D) == &geom.data.type() ? 1: 0));
-    //printf("%s %s\n",(&geom.data)->type().name(),
-    //const Cylinder3D* s=AnyCast<Cylinder3D>(&geom.data);
-    //printf("AnyCast %s:\n",typeid(*s).name());
-    printf("Not done yet, weird linker error\n");
-  }
-#endif
 
   void draw(const ConvexPolygon2D& geom)
   {

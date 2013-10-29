@@ -80,8 +80,12 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
 
 void WriteValue(const AnyValue& value,std::ostream& out)
 {
-  if(value.type() == typeid(bool))
-    out<<*AnyCast<bool>(&value);
+  if(value.type() == typeid(bool)) {
+    if(*AnyCast<bool>(&value)==true)
+      out<<"true";
+    else
+      out<<"false";
+  }
   else if(value.type() == typeid(char))
     out<<*AnyCast<char>(&value);
   else if(value.type() == typeid(unsigned char))
@@ -108,7 +112,7 @@ bool BasicNumericalCoerceCast(const AnyValue& value,T& result)
   else if(value.type() == typeid(int)) result=T(*AnyCast<int>(&value));
   else if(value.type() == typeid(unsigned int)) result=T(*AnyCast<unsigned int>(&value));
   else if(value.type() == typeid(float)) result=T(*AnyCast<float>(&value));
-  else if(value.type() == typeid(double)) result=T(*AnyCast<double>(&value) != 0);
+  else if(value.type() == typeid(double)) result=T(*AnyCast<double>(&value));
   else {
     return false;
   }
@@ -232,14 +236,14 @@ AnyCollection::operator AnyValue& ()
   return value;
 }
 
-template<>
-void AnyCollection::asvector(std::vector<AnyValue>& values) const
+bool AnyCollection::asvector(std::vector<AnyValue>& values) const
 {
-  if(type != Array) FatalError("Not of array data type");
-  if(depth() != 1) FatalError("Not of depth 1");
+  if(type != Array) return false;
+  if(depth() != 1) return false;
   values.resize(array.size());
   for(size_t i=0;i<array.size();i++)
-    values[i] = *array[i];
+    values[i] = (const AnyValue&)(*array[i]);
+  return true;
 }
 
 void AnyCollection::resize(size_t n)
@@ -875,7 +879,6 @@ bool AnyCollection::read(std::istream& in)
     type = Value;
     return ReadValue(value,in,",]}");
   }
-  FatalError("Reading not done yet\n");
   return false;
 }
 
@@ -898,10 +901,14 @@ void AnyCollection::write(std::ostream& out) const
     out<<"{";
     for(MapType::const_iterator i=map.begin();i!=map.end();i++) {
       if(i!=map.begin()) out<<", ";
+      //comment this out for one line, keep it for pretty printing
+      out<<std::endl<<"  ";
       WriteValue(i->first.value,out);
       out<<":";
       i->second->write(out);
     }
+    //comment this out for one line, keep it for pretty printing
+    out<<std::endl;
     out<<"}";
   }
 }

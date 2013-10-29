@@ -46,6 +46,7 @@ struct Triangle3D
   
   bool rayIntersects(const Ray3D& ray, Real *t, Real *u, Real *v) const;
   bool rayIntersectsBackfaceCull(const Ray3D& ray, Real *t, Real *u, Real *v) const;
+  bool intersects(const Segment3D& s, Real *t=NULL, Real *u=NULL, Real *v=NULL) const;
   bool intersects(const Plane3D&) const;
   bool intersects(const Plane3D&, Segment3D& S) const;
   bool intersects(const Triangle3D&) const;

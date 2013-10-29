@@ -19,7 +19,7 @@ namespace Math3D {
 class GeometricPrimitive2D
 {
  public:
-  enum Type { Point, Segment, AABB, Triangle, Circle, Box };
+  enum Type { Empty, Point, Segment, AABB, Triangle, Circle, Box };
 
   GeometricPrimitive2D();
   GeometricPrimitive2D(const GeometricPrimitive2D& rhs);
@@ -30,12 +30,21 @@ class GeometricPrimitive2D
   GeometricPrimitive2D(const Circle2D& circle);
   GeometricPrimitive2D(const Triangle2D& triangle);
   static const char* TypeName(Type type);
+  const char* TypeName() const { return GeometricPrimitive2D::TypeName(type); }
   void Set(const Vector2& point);
   void Set(const Segment2D& segment);
   void Set(const AABB2D& aabb);
   void Set(const Box2D& box);
   void Set(const Circle2D& circle);
   void Set(const Triangle2D& triangle);
+  AABB2D GetAABB() const;
+  Box2D GetBB() const;
+  RigidTransform GetFrame() const;
+  void Transform(const RigidTransform2D& T);
+  void ToPolygon(std::vector<Vector2>& outline,int divs=32) const;
+
+  static bool SupportsCollides(Type a,Type b);
+  bool SupportsCollides(Type b) const { return GeometricPrimitive2D::SupportsCollides(type,b); }
   bool Collides(const GeometricPrimitive2D& geom) const;
   bool Collides(const Vector2& point) const;
   bool Collides(const Segment2D& segment) const;
@@ -43,6 +52,8 @@ class GeometricPrimitive2D
   bool Collides(const Box2D& box) const;
   bool Collides(const Circle2D& circle) const;
   bool Collides(const Triangle2D& triangle) const;
+  static bool SupportsDistance(Type a,Type b);
+  bool SupportsDistance(Type b)  { return GeometricPrimitive2D::SupportsDistance(type,b); }
   Real Distance(const GeometricPrimitive2D& geom) const;
   Real Distance(const Vector2& x) const;
   Real Distance(const Segment2D& segment) const;
@@ -50,9 +61,6 @@ class GeometricPrimitive2D
   Real Distance(const Box2D& box) const;
   Real Distance(const Circle2D& circle) const;
   Real Distance(const Triangle2D& triangle) const;
-  void Transform(const RigidTransform2D& T);
-  void ToPolygon(std::vector<Vector2>& outline,int divs=32) const;
-  void ToBound(AABB2D& bb) const;
 
   Type type;
   AnyValue data;

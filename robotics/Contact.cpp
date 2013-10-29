@@ -95,6 +95,27 @@ void ContactFormation::flatten(std::vector<int>& flatlinks,std::vector<ContactPo
   }
 }
 
+void ContactFormation::flatten(std::vector<int>& flatlinks,std::vector<ContactPoint>& cps,std::vector<int>& flattargets) const
+{
+  cps.resize(0);
+  size_t ncp = 0;
+  for(size_t i=0;i<contacts.size();i++)
+    ncp += contacts[i].size();
+  flatlinks.resize(ncp);
+  flattargets.resize(ncp);
+  cps.resize(ncp);
+  size_t k=0;
+  for(size_t i=0;i<contacts.size();i++) {
+    fill(flatlinks.begin()+k,flatlinks.begin()+k+contacts[i].size(),links[i]);
+    int target = (targets.empty() ? -1 : targets[i]);
+    fill(flattargets.begin()+k,flattargets.begin()+k+contacts[i].size(),target);
+    copy(contacts[i].begin(),contacts[i].end(),cps.begin()+k);
+    k += contacts[i].size();
+  }
+}
+
+
+
 void FrictionConePolygon::set(int k,const Vector3& n,Real kFriction)
 {
   Assert(k >= 3);

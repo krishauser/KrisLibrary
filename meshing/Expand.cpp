@@ -1,4 +1,6 @@
 #include "Expand.h"
+#include <math3d/geometry3d.h>
+#include "MeshPrimitives.h"
 #include <utils/arrayutils.h>
 #include <errors.h>
 
@@ -67,7 +69,7 @@ void Expand(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& m)
   }
   Assert(divs <= 1);
   vector<TriMeshEdge> edges;
-  vector<IntTriple> edgeIndices(in.tris.size());
+  vector<IntTriple> edgeIndices(in.tris.size(),IntTriple(-1,-1,-1));
   GetPairedEdges(in,edges);
   for(size_t i=0;i<edges.size();i++) {
     edgeIndices[edges[i].t1][edges[i].e1] = i;
@@ -88,7 +90,7 @@ void Expand(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& m)
     for(size_t j=0;j<in.incidentTris[i].size();j++) 
       n+=in.TriangleNormal(in.incidentTris[i][j]);
     n.inplaceNormalize();
-    vertpts[i] = in.verts[i] + n * distance;
+    vertpts[i] = in.verts[i] + n *distance;
   }
   if(divs >= 1) {
     for(size_t i=0;i<edges.size();i++) {
@@ -98,6 +100,7 @@ void Expand(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& m)
       edgepts[i*2+1] = in.verts[edges[i].v2] + n * distance;
     }
   }
+  //vertex order: triangle points, vertex points, edge points
   m.verts = tripts;
   ArrayUtils::concat(m.verts,vertpts);
   ArrayUtils::concat(m.verts,edgepts);
@@ -107,8 +110,8 @@ void Expand(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& m)
   for(size_t i=0;i<in.tris.size();i++) 
     m.tris.push_back(IntTriple(i*3,i*3+1,i*3+2));
   //vertex faces
-  int k1=(int)tripts.size();
-  int k2=(int)tripts.size()+(int)vertpts.size();
+  int k1=(int)tripts.size();  //k1 is the start index of the vertex points
+  int k2=(int)tripts.size()+(int)vertpts.size();  //k2 is the start index of the edge points
   for(size_t i=0;i<in.verts.size();i++) {
     if(divs==1) {
       for(size_t j=0;j<in.incidentTris[i].size();j++) {
@@ -116,11 +119,15 @@ void Expand(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& m)
 	int vi=in.tris[t].getIndex(i);
 	Assert(vi >= 0);
 	int e1,e2;
-	edgeIndices[in.incidentTris[i][j]].getCompliment(vi,e1,e2);
-	int flip1 = (edges[e1].v1 == (int)i? 0 : 1);
-	int flip2 = (edges[e2].v1 == (int)i? 0 : 1);
-	m.tris.push_back(IntTriple(k1+i,t*3+vi,k2+e1*2+flip1));
-	m.tris.push_back(IntTriple(k1+i,k2+e2*2+flip2,t*3+vi));
+	edgeIndices[t].getCompliment(vi,e1,e2);
+	if(e1 >= 0) {
+	  int flip1 = (edges[e1].v1 == (int)i? 0 : 1);
+	  m.tris.push_back(IntTriple(k1+i,t*3+vi,k2+e1*2+flip1));
+	}
+	if(e2 >= 0) {
+	  int flip2 = (edges[e2].v1 == (int)i? 0 : 1);
+	  m.tris.push_back(IntTriple(k1+i,k2+e2*2+flip2,t*3+vi));
+	}
       }
     }
     else {
@@ -168,5 +175,208 @@ void Expand(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& m)
     }
   }
 }
+
+void Expand2Sided(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& m)
+{
+  vector<TriMesh> expandedTris;
+  expandedTris.reserve(in.tris.size());
+  for(size_t i=0;i<in.tris.size();i++) {
+    Vector3 n=in.TriangleNormal(i);
+    Vector3 e1=in.verts[in.tris[i].b]-in.verts[in.tris[i].a];
+    Vector3 e2=in.verts[in.tris[i].c]-in.verts[in.tris[i].b];
+    Vector3 e3=in.verts[in.tris[i].a]-in.verts[in.tris[i].c];
+    e1.inplaceNormalize();
+    e2.inplaceNormalize();
+    e3.inplaceNormalize();
+    TriMesh tris;
+    Triangle3D t;
+    in.GetTriangle(i,t);
+    tris.verts.resize(6);
+    tris.verts[0] = t.a-n*distance;
+    tris.verts[1] = t.b-n*distance;
+    tris.verts[2] = t.c-n*distance;
+    tris.verts[3] = t.a+n*distance;
+    tris.verts[4] = t.b+n*distance;
+    tris.verts[5] = t.c+n*distance;
+    tris.tris.resize(2);
+    tris.tris[0].set(0,2,1);
+    tris.tris[1].set(3,4,5);
+
+    //cylinders
+    Vector3 d1,d2,d3;
+    d1.setCross(e1,n);
+    d2.setCross(e2,n);
+    d3.setCross(e3,n);
+    vector<vector<Vector3> > rows(divs);
+    vector<vector<int> > rowsindices(divs);
+    for(int k=0;k<divs;k++) {
+      Real theta = Pi*Real(k+1)/Real(divs+1)-Pi*0.5;
+      Real x=Cos(theta)*distance;
+      Real y=Sin(theta)*distance;
+      //edge a->b
+      rows[k].push_back(t.a+d1*x+n*y);
+      rowsindices[k].push_back(0);
+      rows[k].push_back(t.b+d1*x+n*y);
+      rowsindices[k].push_back(1);
+      //transition from a->b to b->c
+      Vector3 d12 = d1+d2; d12.inplaceNormalize();
+      rows[k].push_back(t.b+d12*x+n*y);
+      rowsindices[k].push_back(1);
+      //edge b->a
+      rows[k].push_back(t.b+d2*x+n*y);
+      rowsindices[k].push_back(1);
+      rows[k].push_back(t.c+d2*x+n*y);
+      rowsindices[k].push_back(2);
+      //transition from b->c to c->a 
+      Vector3 d23 = d2+d3; d23.inplaceNormalize();
+      rows[k].push_back(t.c+d23*x+n*y);
+      rowsindices[k].push_back(2);
+      //edge c->a
+      rows[k].push_back(t.c+d3*x+n*y);
+      rowsindices[k].push_back(2);
+      rows[k].push_back(t.a+d3*x+n*y);
+      rowsindices[k].push_back(0);
+      //transition from c->a to a->b
+      Vector3 d31 = d3+d1; d31.inplaceNormalize();
+      rows[k].push_back(t.a+d31*x+n*y);
+      rowsindices[k].push_back(0);
+      Assert(rows.size()==rowsindices.size());
+
+      /*
+      //edge a->b
+      tris.verts.push_back(t.a+d1*x+n*y);
+      tris.verts.push_back(t.b+d1*x+n*y);
+      int vn=(int)tris.verts.size();
+      int vlast = vn-6;
+      if(k==0) { //bottom row
+	tris.tris.push_back(IntTriple(0,1,vn-1));
+	tris.tris.push_back(IntTriple(0,vn-1,vn-2));
+      }
+      else {
+	tris.tris.push_back(IntTriple(vlast-2,vlast-1,vn-1));
+	tris.tris.push_back(IntTriple(vlast-2,vn-1,vn-2));
+      }
+      if(k+1==divs) { //top row
+	tris.tris.push_back(IntTriple(vn-2,vn-1,4));
+	tris.tris.push_back(IntTriple(vn-2,4,3));
+      }
+
+      //edge b->c
+      tris.verts.push_back(t.b+d2*x+n*y);
+      tris.verts.push_back(t.c+d2*x+n*y);
+      vn=(int)tris.verts.size();
+      int vlast = vn-6;
+      if(k==0) { //bottom row
+	tris.tris.push_back(IntTriple(1,2,vn-1));
+	tris.tris.push_back(IntTriple(1,vn-1,vn-2));
+      }
+      else {
+	tris.tris.push_back(IntTriple(vlast-2,vn-1-6,vn-1));
+	tris.tris.push_back(IntTriple(vlast-2,vn-1,vn-2));
+      }
+      if(k+1==divs) { //top row
+	tris.tris.push_back(IntTriple(vn-2,vn-1,5));
+	tris.tris.push_back(IntTriple(vn-2,5,4));
+      }
+
+      //edge c->a
+      tris.verts.push_back(t.c+d3*x+n*y);
+      tris.verts.push_back(t.a+d3*x+n*y);
+      vn=(int)tris.verts.size();
+      int vlast = vn-6;
+      if(k==0) { //bottom row
+	tris.tris.push_back(IntTriple(2,0,vn-1));
+	tris.tris.push_back(IntTriple(2,vn-1,vn-2));
+      }
+      else {
+	tris.tris.push_back(IntTriple(vlast-2,vlast-1,vn-1));
+	tris.tris.push_back(IntTriple(vlast-2,vn-1,vn-2));
+      }
+      if(k+1==divs) { //top row
+	tris.tris.push_back(IntTriple(vn-2,vn-1,3));
+	tris.tris.push_back(IntTriple(vn-2,3,5));
+      }
+
+      //temp: flat corners
+      if(k==0) {
+	//bottom row
+	tris.tris.push_back(IntTriple(0,vn-6,vn-1));
+	tris.tris.push_back(IntTriple(1,vn-4,vn-5));
+	tris.tris.push_back(IntTriple(2,vn-2,vn-3));
+      }
+      else {
+	tris.tris.push_back(IntTriple(vn-6-1,vn-6-6,vn-1));
+	tris.tris.push_back(IntTriple(vn-1,vn-6-6,vn-6));
+	tris.tris.push_back(IntTriple(vn-6-5,vn-6-4,vn-5));
+	tris.tris.push_back(IntTriple(vn-5,vn-6-4,vn-4));
+	tris.tris.push_back(IntTriple(vn-6-3,vn-6-2,vn-3));
+	tris.tris.push_back(IntTriple(vn-3,vn-6-2,vn-2));
+      }
+      if(k+1 == divs) { //top row
+	tris.tris.push_back(IntTriple(vn-1,vn-6,3));
+	tris.tris.push_back(IntTriple(vn-5,vn-4,4));
+	tris.tris.push_back(IntTriple(vn-3,vn-2,5));
+      }
+      */
+    }
+    //stitch together rows with triangles
+    vector<size_t> rowstart(rows.size());
+    for(size_t i=0;i<rows.size();i++) {
+      rowstart[i] = tris.verts.size();
+      tris.verts.insert(tris.verts.end(),rows[i].begin(),rows[i].end());
+    }
+    //bottom row
+    for(size_t j=0;j<rows[0].size();j++) {
+      size_t v = rowstart[0]+j;
+      size_t vnext = rowstart[0]+(j+1)%rows[0].size();
+      int vbottom = rowsindices[0][j];
+      int vbottomnext = rowsindices[0][(j+1)%rows[0].size()];
+      if(vbottom == vbottomnext) //single triangle
+	tris.tris.push_back(IntTriple(vbottom,vnext,v));
+      else {
+	tris.tris.push_back(IntTriple(vbottom,vbottomnext,vnext));
+	tris.tris.push_back(IntTriple(vbottom,vnext,v));
+      }
+    }
+    for(size_t i=0;i+1<rows.size();i++) {
+      for(size_t j=0;j<rows[i].size();j++) {
+	size_t v = rowstart[i]+j;
+	size_t vnext = rowstart[i]+(j+1)%rows[i].size();
+	size_t vup = rowstart[i+1]+j;
+	size_t vupnext = rowstart[i+1]+(j+1)%rows[i+1].size();
+	tris.tris.push_back(IntTriple(v,vnext,vupnext));
+	tris.tris.push_back(IntTriple(v,vupnext,vup));
+      }
+    }
+    //upper row
+    for(size_t j=0;j<rows.back().size();j++) {
+      size_t v = rowstart.back()+j;
+      size_t vnext = rowstart.back()+(j+1)%rows.back().size();
+      int vup = rowsindices.back()[j]+3;
+      int vupnext = rowsindices.back()[(j+1)%rows.back().size()]+3;
+      if(vup == vupnext) { //single triangle
+	tris.tris.push_back(IntTriple(vup,v,vnext));
+      }
+      else {
+	tris.tris.push_back(IntTriple(v,vnext,vupnext));
+	tris.tris.push_back(IntTriple(v,vupnext,vup));
+      }
+    }
+
+    //spheres
+    Real theta1 = Acos(d1.dot(d2));
+    Real theta2 = Acos(d2.dot(d3));
+    Real theta3 = Acos(d3.dot(d1));
+    int slices1 = (int)Floor(theta1/Pi*divs);
+    int slices2 = (int)Floor(theta2/Pi*divs);
+    int slices3 = (int)Floor(theta3/Pi*divs);
+
+    //TODO: round corners
+
+    expandedTris.push_back(tris);
+  }
+  m.Merge(expandedTris);
+}
+
 
 } //namespace Meshing

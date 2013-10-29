@@ -41,7 +41,7 @@ bool SimpleParser::ReadLine(string& str)
       else if(c == '\n') { } //skip
       else str += c;
     }
-    else if(c == '\n' || IsComment(c)) {
+    else if(c == '\n') {
       return true;
     }
     else str += c;
@@ -87,7 +87,17 @@ bool SimpleParser::Read()
 	  return false;
 	}
 	str.erase();
-	if(IsSpace(c)) mode=0;
+	if(c == '\n') {
+	  Result res=InputEndLine();
+	  if(res==Stop) return true;
+	  else if(res == Error) {
+	    cerr<<"Error on endline at line "<<lineno<<endl;
+	    return false;
+	  }
+	  lineno++;
+	  mode=0;
+	}
+	else if(IsSpace(c)) mode=0;
 	else if(IsComment(c)) mode=1;
 	else if(IsPunct(c)) { str+=c; mode=3;	}
 	else {

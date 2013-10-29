@@ -434,6 +434,66 @@ void GeneralizedCubicBezierCurve::MidpointDeriv(Vector& v) const
   }
 }
 
+void GeneralizedCubicBezierCurve::Bisect(GeneralizedCubicBezierCurve& c1,GeneralizedCubicBezierCurve& c2) const
+{
+  c1.space = c2.space = space;
+  c1.manifold = c2.manifold = manifold;
+  //endpoints
+  c1.x0 = x0;
+  c2.x3 = x3;
+  //midpoints
+  Midpoint(c1.x3);
+  c2.x0 = c1.x3;
+
+  //lead in / lead out
+  if(manifold) {
+    space->Interpolate(x0,x1,0.5,c1.x1);
+    space->Interpolate(x2,x3,0.5,c2.x2);
+  }
+  else {
+    c1.x1 = 0.5*(x0+x1);
+    c2.x2 = 0.5*(x3+x2);
+  }
+
+  //midpoint derivative
+  Vector vmid;
+  MidpointDeriv(vmid);
+  const static double sixth = 1.0/6.0;
+  if(manifold) {
+    manifold->Integrate(c1.x3,vmid*(-sixth),c1.x2);  
+    manifold->Integrate(c1.x3,vmid*sixth,c2.x1); 
+  }
+  else {
+    c1.x2 = c1.x3 - sixth*vmid;
+    c2.x1 = c1.x3 + sixth*vmid;
+  }
+  /*
+  Vector test,temp;
+  Deriv(0,temp);
+  c1.Deriv(0,test);
+  Assert(temp.isEqual(test*2.0,Epsilon));
+  Deriv(1,temp);
+  c2.Deriv(1,test);
+  Assert(temp.isEqual(test*2.0,Epsilon));
+  Deriv(0.5,temp);
+  c1.Deriv(1,test);
+  Assert(temp.isEqual(test*2.0,Epsilon));
+  c2.Deriv(0,test);
+  Assert(temp.isEqual(test*2.0,Epsilon));
+  Accel(0,temp);
+  c1.Accel(0,test);
+  Assert(temp.isEqual(test*4.0,Epsilon));
+  Accel(1,temp);
+  c2.Accel(1,test);
+  Assert(temp.isEqual(test*4.0,Epsilon));
+  Accel(0.5,temp);
+  c1.Accel(1,test);
+  Assert(temp.isEqual(test*4.0,Epsilon));
+  c2.Accel(0,test);
+  Assert(temp.isEqual(test*4.0,Epsilon));
+  */
+}
+
 
 Real GeneralizedCubicBezierSpline::TotalTime() const
 {
@@ -498,7 +558,10 @@ int GeneralizedCubicBezierSpline::Deriv(Real u,Vector& dx) const
   Real param;
   int seg = ParamToSegment(u,&param);
   segments[seg].Deriv(param,dx);
-  dx /= durations[seg];
+  if(durations.empty())
+    dx *= segments.size();
+  else
+    dx /= durations[seg];
   return seg;
 }
 
@@ -507,7 +570,10 @@ int GeneralizedCubicBezierSpline::Accel(Real u,Vector& ddx) const
   Real param;
   int seg = ParamToSegment(u,&param);
   segments[seg].Accel(param,ddx);
-  ddx /= Sqr(durations[seg]);
+  if(durations.empty())
+    ddx *= Sqr((Real)segments.size());
+  else
+    ddx /= Sqr(durations[seg]);
   return seg;
 }
 
@@ -532,10 +598,10 @@ void GeneralizedCubicBezierSpline::Bisect()
   vector<GeneralizedCubicBezierCurve> newcurves(segments.size()*2);
   vector<double> newdurations(segments.size()*2);
   lastpt = segments[0].x0;
-  segments[0].Deriv(0,lasttangent);
-  lasttangent *= 0.5;
   for(size_t i=0;i<segments.size();i++) {
-    newdurations[i*2] = newdurations[i*2+1] = durations[i];
+    newdurations[i*2] = newdurations[i*2+1] = durations[i]*0.5;
+    segments[i].Deriv(0,lasttangent);
+    lasttangent *= 0.5;
     segments[i].Eval(0.5,midpt);
     segments[i].Deriv(0.5,midtangent);
     midtangent *= 0.5;

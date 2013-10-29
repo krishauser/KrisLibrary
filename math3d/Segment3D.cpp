@@ -37,6 +37,13 @@ void Segment3D::getAABB(AABB3D& bb) const
   bb.expand(b);
 }
 
+Real Segment3D::distance(const Point3D& in) const
+{
+  Point3D temp;
+  closestPoint(in,temp);
+  return in.distance(temp);
+}
+
 Real Segment3D::closestPointParameter(const Point3D& in) const
 {
 	Vector3 dir=b-a;
@@ -46,6 +53,17 @@ Real Segment3D::closestPointParameter(const Point3D& in) const
 	if(numer <= Zero) return Zero;
 	if(numer >= denom) return One;
 	return numer/denom;
+}
+
+
+Real Segment3D::distance(const Segment3D& s) const
+{
+  Real t,u;
+  closestPoint(s,t,u);
+  Vector3 p1,p2;
+  eval(t,p1);
+  s.eval(u,p2);
+  return p1.distance(p2);
 }
 
 Real Segment3D::closestPoint(const Point3D& in,Point3D& out) const

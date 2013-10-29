@@ -16,6 +16,12 @@ bool Cylinder3D::contains(const Point3D& pt) const
   return true;
 }
 
+Real Cylinder3D::distance(const Point3D& pt) const
+{
+  Point3D closest;
+  return closestPoint(pt,closest);
+}
+
 Real Cylinder3D::closestPoint(const Point3D& pt,Point3D& closest) const
 {
   Real h = dot(pt-center,axis);
@@ -77,6 +83,22 @@ void Cylinder3D::getAABB(AABB3D& aabb) const
   else aabb.bmin.y -= axis.y*height;
   if(axis.z > 0) aabb.bmax.z += axis.z*height;
   else aabb.bmin.z -= axis.z*height;
+}
+
+bool Cylinder3D::intersects(const Segment3D& s,Real* tmin,Real* tmax) const
+{
+  Line3D l;
+  l.source = s.a;
+  l.direction = s.b-s.a;
+  Real u,v;
+  if(!intersects(l,&u,&v)) return false;
+  if(v < 0.0) return false;
+  if(u > 1.0) return false;
+  u = Max(u,0.0);
+  v = Min(v,1.0);
+  if(tmin) *tmin = u;
+  if(tmax) *tmax = v;
+  return true;
 }
 
 bool Cylinder3D::intersects(const Line3D& line,Real* tmin,Real* tmax) const

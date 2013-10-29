@@ -104,7 +104,7 @@ Real VolumeGrid::TrilinearInterpolate(const Vector3& pt) const
   Real ri = Floor(u);
   Real rj = Floor(v);
   Real rk = Floor(w);
-  
+ 
   //set u,v,w to their fractional component
   u = u - ri;
   v = v - rj;

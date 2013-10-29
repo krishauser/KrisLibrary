@@ -2,9 +2,9 @@
 #define GL_DRAWGEOMETRY_H
 
 
-#include "GL.h"
 #include <math3d/geometry2d.h>
 #include <math3d/geometry3d.h>
+#include "GL.h"
 
 namespace GLDraw {
 

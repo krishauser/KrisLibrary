@@ -3,7 +3,7 @@
 
 #include <robotics/RobotDynamics3D.h>
 #include <structs/array2d.h>
-#include <geometry/CollisionMesh.h>
+#include <geometry/AnyGeometry.h>
 
 /** @ingroup Robot
  * @brief The base class for a robot definition. 
@@ -18,9 +18,9 @@
 class RobotWithGeometry : public RobotDynamics3D
 {
 public:
-  typedef Geometry::CollisionMesh CollisionMesh;
-  typedef Geometry::CollisionMeshQuery CollisionMeshQuery;
-
+  typedef Geometry::AnyCollisionGeometry3D CollisionGeometry;
+  typedef Geometry::AnyCollisionQuery CollisionQuery;
+  
   RobotWithGeometry();
   virtual ~RobotWithGeometry();
 
@@ -40,7 +40,7 @@ public:
   virtual void UpdateGeometry();
   virtual void UpdateGeometry(int i);
   /// Call this before querying environment collisions 
-  virtual void InitMeshCollision(CollisionMesh& mesh);
+  virtual void InitMeshCollision(CollisionGeometry& mesh);
 
   virtual bool SelfCollision(Real distance=0);
   /// Query collision between specified bodies
@@ -50,16 +50,16 @@ public:
   /// Query collision between bodies i,j
   virtual bool SelfCollision(int i, int j, Real distance=0); 
 
-  virtual bool MeshCollision(CollisionMesh& mesh);
+  virtual bool MeshCollision(CollisionGeometry& mesh);
   virtual bool MeshCollision(int i,Real distance=0);
 
   virtual void DrawGL();
   virtual void DrawLinkGL(int i);
 
-  std::vector<CollisionMesh> geometry;
+  std::vector<CollisionGeometry> geometry;
   ///matrix(i,j) of collisions between bodies, i < j (upper triangular)
-  Array2D<CollisionMeshQuery*> selfCollisions;
-  std::vector<CollisionMeshQuery*> envCollisions;
+  Array2D<CollisionQuery*> selfCollisions;
+  std::vector<CollisionQuery*> envCollisions;
 };
 
 #endif

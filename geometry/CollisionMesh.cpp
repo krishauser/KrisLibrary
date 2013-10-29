@@ -366,13 +366,13 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
   }
 }
 
-Real CollisionMeshQuery::Distance_Cached()
+Real CollisionMeshQuery::Distance_Cached() const
 {
   return pqpResults->distance.Distance();
 }
 
 
-Real CollisionMeshQuery::PenetrationDepth_Cached()
+Real CollisionMeshQuery::PenetrationDepth_Cached() const
 {
   if(penetration1->maxDepth <= 0 && penetration2->maxDepth <= 0) {
     cout<<"PenetrationDepth_Cached(): Error, the two objects have no interior vertices!"<<endl;
@@ -412,7 +412,7 @@ bool CollisionMeshQuery::WithinDistanceAll(Real tol)
   return pqpResults->tolerance.CloserThanTolerance();
 }
 
-void CollisionMeshQuery::ClosestPoints(Vector3& p1,Vector3& p2)
+void CollisionMeshQuery::ClosestPoints(Vector3& p1,Vector3& p2) const
 {
   const PQP_REAL* P1 = pqpResults->distance.P1();
   const PQP_REAL* P2 = pqpResults->distance.P2();
@@ -421,7 +421,13 @@ void CollisionMeshQuery::ClosestPoints(Vector3& p1,Vector3& p2)
   //these are in local coords
 }
 
-void CollisionMeshQuery::TolerancePoints(Vector3& p1,Vector3& p2)
+void CollisionMeshQuery::ClosestPair(int& t1,int& t2) const
+{
+  t1 = pqpResults->distance.tid1;
+  t2 = pqpResults->distance.tid2;
+}
+
+void CollisionMeshQuery::TolerancePoints(Vector3& p1,Vector3& p2) const
 {
   const PQP_REAL* P1 = pqpResults->tolerance.P1();
   const PQP_REAL* P2 = pqpResults->tolerance.P2();
@@ -430,8 +436,15 @@ void CollisionMeshQuery::TolerancePoints(Vector3& p1,Vector3& p2)
 }
 
 
+void CollisionMeshQuery::TolerancePair(int& t1,int& t2) const
+{
+  t1 = pqpResults->tolerance.tid1;
+  t2 = pqpResults->tolerance.tid2;
+}
+
+
 //d1 is the direction that m2 can move to get out of m1
-void CollisionMeshQuery::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1)
+void CollisionMeshQuery::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) const
 {
   const RigidTransform& f1=m1->currentTransform;
   const RigidTransform& f2=m2->currentTransform;
@@ -612,7 +625,7 @@ void CollisionMeshQueryEnhanced::TolerancePoints(vector<Vector3>& p1,vector<Vect
   }
 }
 
-Real CollisionMeshQueryEnhanced::PenetrationDepth_Cached()
+Real CollisionMeshQueryEnhanced::PenetrationDepth_Cached() const
 {
   //TODO: what about when only the margins overlap?
   if(margin1 + margin2 > 0 ) {
@@ -625,7 +638,7 @@ Real CollisionMeshQueryEnhanced::PenetrationDepth_Cached()
 }
 
 
-void CollisionMeshQueryEnhanced::ClosestPoints(Vector3& p1,Vector3& p2)
+void CollisionMeshQueryEnhanced::ClosestPoints(Vector3& p1,Vector3& p2) const
 { 
   CollisionMeshQuery::ClosestPoints(p1,p2);
   if(margin1 + margin2 > 0) {
@@ -642,7 +655,8 @@ void CollisionMeshQueryEnhanced::ClosestPoints(Vector3& p1,Vector3& p2)
   }
 }
 
-void CollisionMeshQueryEnhanced::TolerancePoints(Vector3& p1,Vector3& p2)
+
+void CollisionMeshQueryEnhanced::TolerancePoints(Vector3& p1,Vector3& p2) const
 {
   CollisionMeshQuery::TolerancePoints(p1,p2);
   if(margin1 + margin2 > 0) {
@@ -661,7 +675,7 @@ void CollisionMeshQueryEnhanced::TolerancePoints(Vector3& p1,Vector3& p2)
 
 
 //d1 is the direction that m2 can move to get out of m1
-void CollisionMeshQueryEnhanced::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1)
+void CollisionMeshQueryEnhanced::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) const
 {
   if(margin1+margin2 == 0)
     CollisionMeshQuery::PenetrationPoints(p1,p2,d1);
@@ -966,7 +980,8 @@ inline bool Collide(const Triangle3D& tri,const BV& b,Vector3& pt)
 
 
 
-//returns the index of a triangle colliding with g
+//returns the index of a triangle colliding with g.  g is given
+//in the local frame of the models.  pt is a colliding point. 
 template <class Geom>
 int CollideRecurse(const Geom& g,const PQP_Model& m,int b,Vector3& pt)
 {
@@ -994,9 +1009,10 @@ int CollideRecurse(const Geom& g,const PQP_Model& m,int b,Vector3& pt)
   return -1;
 }
 
-
+//computes the indices of all triangles colliding with g.  g is given in the
+//local frame of the model.
 template <class Geom>
-void CollideAllRecurse(const Geom& g,const PQP_Model& m,int b,vector<int>& tris)
+void CollideAllRecurse(const Geom& g,const PQP_Model& m,int b,vector<int>& tris,size_t max)
 {
   Geom gloc;
   ToLocal(m.b[b],g,gloc);
@@ -1008,14 +1024,15 @@ void CollideAllRecurse(const Geom& g,const PQP_Model& m,int b,vector<int>& tris)
       Copy(m.tris[t].p2,tri.b);
       Copy(m.tris[t].p3,tri.c);
       Vector3 pt;
-      if(Collide(tri,g,pt))
+      if(Collide(tri,g,pt)) 
 	tris.push_back(m.tris[t].id);
     }
     else {
       int c1=m.b[b].first_child;
       int c2=c1+1;
-      CollideAllRecurse(g,m,c1,tris);
-      CollideAllRecurse(g,m,c2,tris);
+      CollideAllRecurse(g,m,c1,tris,max);
+      if(tris.size()==max) return;
+      CollideAllRecurse(g,m,c2,tris,max);
     }
   }
 }
@@ -1213,9 +1230,10 @@ struct ClosestPointCallback
 
 int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp)
 {
-  //TODO: take into account current transform of the mesh?
+  Vector3 plocal;
+  mesh.currentTransform.mulInverse(p,plocal);
   ClosestPointCallback cb;
-  cb.Execute(*mesh.pqpModel,p);
+  cb.Execute(*mesh.pqpModel,plocal);
   cp = cb.cp;
 
   /*
@@ -1235,13 +1253,19 @@ int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp)
 
 int Collide(const CollisionMesh& m,const Segment3D& s,Vector3& pt)
 {
-  return CollideRecurse(s,*m.pqpModel,0,pt);
+  Segment3D slocal;
+  m.currentTransform.mulInverse(s.a,slocal.a);
+  m.currentTransform.mulInverse(s.b,slocal.b);
+  return CollideRecurse(slocal,*m.pqpModel,0,pt);
 }
 
 bool Collide(const CollisionMesh& m,const Sphere3D& s)
 {
+  Sphere3D slocal;
+  m.currentTransform.mulInverse(s.center,slocal.center);
+  slocal.radius = s.radius;
   Vector3 pt;
-  return CollideRecurse(s,*m.pqpModel,0,pt)>=0;
+  return CollideRecurse(slocal,*m.pqpModel,0,pt)>=0;
 }
 
 
@@ -1258,9 +1282,13 @@ bool Collide(const CollisionMesh& m,const AABB3D& bb)
 
 bool Collide(const CollisionMesh& m,const Box3D& b)
 {
+  RigidTransform Tinv;
+  Tinv.setInverse(m.currentTransform);
+  Box3D blocal;
+  blocal.setTransformed(b,Tinv);
   Vector3 pt;
   BV bv;
-  BoxToBV(b,bv);
+  BoxToBV(blocal,bv);
   return CollideRecurse(bv,*m.pqpModel,0,pt)>=0;
 }
 
@@ -1293,6 +1321,38 @@ bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g)
   }
 }
 
+bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
+{
+  switch(a.type) {
+  case GeometricPrimitive3D::Point:
+    {
+      Sphere3D s;
+      s.center = *AnyCast<Vector3>(&a.data);
+      s.radius = d;
+      return Collide(c,s);
+    }
+  case GeometricPrimitive3D::Segment:
+  case GeometricPrimitive3D::Triangle:
+  case GeometricPrimitive3D::AABB:
+  case GeometricPrimitive3D::Box:
+    {
+      if(d != 0) {
+	FatalError("Not yet able to within-distance test of %s with a CollisionMesh\n",a.TypeName());
+      }
+      return Collide(c,a);
+    }
+  case GeometricPrimitive3D::Sphere:
+    {
+      Sphere3D s = *AnyCast<Sphere3D>(&a.data);
+      s.radius += d;
+      return Collide(c,s);
+    }
+  default:
+    FatalError("Not yet able to collide a primitive of type %s with a CollisionMesh\n",a.TypeName());
+    return false;
+  }
+}
+
 bool Collide(const CollisionMesh& m1,const CollisionMesh& m2)
 {
 
@@ -1313,19 +1373,25 @@ bool Collide(const CollisionMesh& m1,const CollisionMesh& m2)
 
 
 
-void CollideAll(const CollisionMesh& m,const Sphere3D& s,vector<int>& tris)
+void CollideAll(const CollisionMesh& m,const Sphere3D& s,vector<int>& tris,int max)
 {
+  Sphere3D slocal;
+  m.currentTransform.mulInverse(s.center,slocal.center);
+  slocal.radius = s.radius;
   tris.resize(0);
-  CollideAllRecurse(s,*m.pqpModel,0,tris);
+  CollideAllRecurse(slocal,*m.pqpModel,0,tris,max);
 }
 
-void CollideAll(const CollisionMesh& m,const Segment3D& s,vector<int>& tris)
+void CollideAll(const CollisionMesh& m,const Segment3D& s,vector<int>& tris,int max)
 {
+  Segment3D slocal;
+  m.currentTransform.mulInverse(s.a,slocal.a);
+  m.currentTransform.mulInverse(s.b,slocal.b);
   tris.resize(0);
-  CollideAllRecurse(s,*m.pqpModel,0,tris);
+  CollideAllRecurse(s,*m.pqpModel,0,tris,max);
 }
 
-void CollideAll(const CollisionMesh& m,const AABB3D& bb,vector<int>& tris)
+void CollideAll(const CollisionMesh& m,const AABB3D& bb,vector<int>& tris,int max)
 {
   Box3D box;
   box.xbasis.set(1,0,0);
@@ -1333,19 +1399,22 @@ void CollideAll(const CollisionMesh& m,const AABB3D& bb,vector<int>& tris)
   box.zbasis.set(0,0,1);
   box.origin = bb.bmin;
   box.dims = bb.bmax-bb.bmin;
-  CollideAll(m,box,tris);
+  CollideAll(m,box,tris,max);
 }
 
-void CollideAll(const CollisionMesh& m,const Box3D& bb,vector<int>& tris)
+void CollideAll(const CollisionMesh& m,const Box3D& bb,vector<int>& tris,int max)
 {
-  //TODO: take into account current transform of the mesh?  
+  RigidTransform Tinv;
+  Tinv.setInverse(m.currentTransform);
+  Box3D blocal;
+  blocal.setTransformed(bb,Tinv);
   BV bv;
-  BoxToBV(bb,bv);
+  BoxToBV(blocal,bv);
   tris.resize(0);
-  CollideAllRecurse(bv,*m.pqpModel,0,tris);
+  CollideAllRecurse(bv,*m.pqpModel,0,tris,max);
 }
 
-void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector<int>& tris)
+void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector<int>& tris,int max)
 {
   switch(g.type) { 
   case GeometricPrimitive3D::Point:
@@ -1353,23 +1422,23 @@ void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector
       Sphere3D s;
       s.center = *AnyCast<Vector3>(&g.data);
       s.radius = 0;
-      CollideAll(m,s,tris);
+      CollideAll(m,s,tris,max);
     }
     break;
   case GeometricPrimitive3D::Segment:
-    CollideAll(m,*AnyCast<Segment3D>(&g.data),tris);
+    CollideAll(m,*AnyCast<Segment3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::Triangle:
-    CollideAll(m,*AnyCast<Triangle3D>(&g.data),tris);
+    CollideAll(m,*AnyCast<Triangle3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::AABB:
-    CollideAll(m,*AnyCast<AABB3D>(&g.data),tris);
+    CollideAll(m,*AnyCast<AABB3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::Box:
-    CollideAll(m,*AnyCast<Box3D>(&g.data),tris);
+    CollideAll(m,*AnyCast<Box3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::Sphere:
-    CollideAll(m,*AnyCast<Sphere3D>(&g.data),tris);
+    CollideAll(m,*AnyCast<Sphere3D>(&g.data),tris,max);
     break;
   default:
     fprintf(stderr,"CollideAll: Collider for type %s not known\n",g.TypeName());
@@ -1387,12 +1456,62 @@ bool WithinDistance(const CollisionMesh& m,const Vector3& p,Real d)
 
 ///Finds the triangles within distance d to p on m using the PQP
 ///bounding heirarchy
-void NearbyTriangles(const CollisionMesh& m,const Vector3& p,Real d,vector<int>& tris)
+void NearbyTriangles(const CollisionMesh& m,const Vector3& p,Real d,vector<int>& tris,int max)
 {
   Sphere3D s;
   s.center=p;
   s.radius=d;
-  CollideAll(m,s,tris);
+  CollideAll(m,s,tris,max);
+}
+
+void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d,vector<int>& tris,int max)
+{
+  switch(g.type) { 
+  case GeometricPrimitive3D::Point:
+    {
+      Sphere3D s;
+      s.center = *AnyCast<Vector3>(&g.data);
+      s.radius = d;
+      CollideAll(m,s,tris,max);
+    }
+    break;
+  case GeometricPrimitive3D::Segment:
+  case GeometricPrimitive3D::Triangle:
+  case GeometricPrimitive3D::AABB:
+  case GeometricPrimitive3D::Box:
+    if(d != 0) {
+      FatalError("Not yet able to within-distance test of %s with a CollisionMesh\n",g.TypeName());
+    }
+    CollideAll(m,g,tris,max);
+    break;
+  case GeometricPrimitive3D::Sphere:
+    {
+      Sphere3D s;
+      s.center = AnyCast<Sphere3D>(&g.data)->center;
+      s.radius = AnyCast<Sphere3D>(&g.data)->radius+d;
+      return CollideAll(m,s,tris,max);
+    }
+    break;
+  default:
+    fprintf(stderr,"NearbyTriangles: Collider for type %s not known\n",g.TypeName());
+  }
+}
+
+void NearbyTriangles(const CollisionMesh& m1,const CollisionMesh& m2,Real d,vector<int>& tris1,vector<int>& tris2,int max)
+{
+  CollisionMeshQuery q(m1,m2);
+  if(max==1) {
+    bool res = q.WithinDistance(d);
+    if(res) {
+      tris1.resize(1);
+      tris2.resize(1);
+      q.TolerancePair(tris1[0],tris2[0]);
+    }
+  }
+  else {
+    q.WithinDistanceAll(d);
+    q.TolerancePairs(tris1,tris2);
+  }
 }
 
 

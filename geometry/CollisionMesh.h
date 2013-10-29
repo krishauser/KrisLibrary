@@ -3,6 +3,7 @@
 
 #include <meshing/TriMeshTopology.h>
 #include <math3d/geometry3d.h>
+#include <limits.h>
 
 class PQP_Model;
 class PQP_Results;
@@ -66,12 +67,14 @@ class CollisionMeshQuery
   bool WithinDistanceAll(Real tol);
   Real PenetrationDepth(); //note: calls CollideAll(), returns -0 if seperated
 
-  Real Distance_Cached();
-  Real PenetrationDepth_Cached();
-  void ClosestPoints(Vector3& p1,Vector3& p2);
-  void TolerancePoints(Vector3& p1,Vector3& p2);
+  Real Distance_Cached() const;
+  Real PenetrationDepth_Cached() const;
+  void ClosestPoints(Vector3& p1,Vector3& p2) const;
+  void ClosestPair(int& t1,int& t2) const;
+  void TolerancePoints(Vector3& p1,Vector3& p2) const;
+  void TolerancePair(int& t1,int& t2) const;
   //d1 is the direction that m1 can move to get out of m2 (in world coords)
-  void PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1);
+  void PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) const;
   //extracting the pairs of interacting features
   void CollisionPairs(std::vector<int>& t1,std::vector<int>& t2) const;
   void TolerancePairs(std::vector<int>& t1,std::vector<int>& t2) const;
@@ -106,11 +109,12 @@ class CollisionMeshQueryEnhanced : public CollisionMeshQuery
   bool WithinDistanceAll(Real tol);
   Real PenetrationDepth(); //note: calls CollideAll(), returns -0 if seperated
 
-  Real PenetrationDepth_Cached();
-  void ClosestPoints(Vector3& p1,Vector3& p2);
-  void TolerancePoints(Vector3& p1,Vector3& p2);
+  Real Distance_Cached() const;
+  Real PenetrationDepth_Cached() const;
+  void ClosestPoints(Vector3& p1,Vector3& p2) const;
+  void TolerancePoints(Vector3& p1,Vector3& p2) const;
   //d1 is the direction that m1 can move to get out of m2 (in world coords)
-  void PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1);
+  void PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) const;
   //extracting the pairs of interacting features
   void CollisionPairs(std::vector<int>& t1,std::vector<int>& t2) const;
   void TolerancePairs(std::vector<int>& t1,std::vector<int>& t2) const;
@@ -145,26 +149,28 @@ int RayCast(const CollisionMesh& m,const Ray3D& r,Vector3& pt);
 int RayCastLocal(const CollisionMesh& m,const Ray3D& r,Vector3& pt);
 
 /// Computes a list of triangles that overlap the geometry
-void CollideAll(const CollisionMesh& m,const Sphere3D& s,std::vector<int>& tris);
-void CollideAll(const CollisionMesh& m,const Segment3D& s,std::vector<int>& tris);
-void CollideAll(const CollisionMesh& m,const AABB3D& bb,std::vector<int>& tris);
-void CollideAll(const CollisionMesh& m,const Box3D& b,std::vector<int>& tris);
-void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector<int>& tris);
+void CollideAll(const CollisionMesh& m,const Sphere3D& s,std::vector<int>& tris,int max=INT_MAX);
+void CollideAll(const CollisionMesh& m,const Segment3D& s,std::vector<int>& tris,int max=INT_MAX);
+void CollideAll(const CollisionMesh& m,const AABB3D& bb,std::vector<int>& tris,int max=INT_MAX);
+void CollideAll(const CollisionMesh& m,const Box3D& b,std::vector<int>& tris,int max=INT_MAX);
+void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector<int>& tris,int max=INT_MAX);
 
 
 
 ///Returns true if m is within distance d of the geometry
 bool WithinDistance(const CollisionMesh& m,const Vector3& p,Real d);
+bool WithinDistance(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d);
 bool WithinDistance(const CollisionMesh& m1,const CollisionMesh& m2,Real d);
 
 /// Computes the triangles in m within distance d to p on m 
-void NearbyTriangles(const CollisionMesh& m,const Vector3& p,Real d,std::vector<int>& tris);
-
+void NearbyTriangles(const CollisionMesh& m,const Vector3& p,Real d,std::vector<int>& tris,int max=INT_MAX);
+void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d,std::vector<int>& tris,int max=INT_MAX);
+void NearbyTriangles(const CollisionMesh& m1,const CollisionMesh& m2,Real d,std::vector<int>& tris1,std::vector<int>& tris2,int max=INT_MAX);
 
 /// Convenience function to check distance between two meshes
 Real Distance(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,Real relErr);
 
-///Finds the closest point pt to p on m and returns the triangle index 
+///Finds the closest point pt to p on m and returns the triangle index. cp is given in the mesh's local frame
 int ClosestPoint(const CollisionMesh& m,const Vector3& p,Vector3& cp);
 
 
