@@ -304,6 +304,7 @@ const char* GeometricPrimitive3D::TypeName(Type type)
 }
 
 GeometricPrimitive3D::GeometricPrimitive3D()
+  :type(Empty)
 {}
 
 GeometricPrimitive3D::GeometricPrimitive3D(const GeometricPrimitive3D& prim)
