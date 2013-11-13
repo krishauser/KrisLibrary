@@ -5,9 +5,17 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -20,12 +28,27 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -33,14 +56,40 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>$(ProjectName)d</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>$(ProjectName)d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>$(ProjectName)_x64</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -72,6 +121,24 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
   </ItemGroup>
@@ -82,8 +149,10 @@
     <ClInclude Include="..\camera\transform.h" />
     <ClInclude Include="..\camera\viewport.h" />
     <ClInclude Include="..\errors.h" />
+    <ClInclude Include="..\geometry\AnyGeometry.h" />
     <ClInclude Include="..\geometry\Arrangement1D.h" />
     <ClInclude Include="..\geometry\CollisionMesh.h" />
+    <ClInclude Include="..\geometry\CollisionPointCloud.h" />
     <ClInclude Include="..\geometry\ConvexHull2D.h" />
     <ClInclude Include="..\geometry\DCEL.h" />
     <ClInclude Include="..\geometry\Fitting.h" />
@@ -107,8 +176,10 @@
     <ClInclude Include="..\GLdraw\drawextra.h" />
     <ClInclude Include="..\GLdraw\drawgeometry.h" />
     <ClInclude Include="..\GLdraw\drawMesh.h" />
+    <ClInclude Include="..\GLdraw\GeometryAppearance.h" />
     <ClInclude Include="..\GLdraw\GL.h" />
     <ClInclude Include="..\GLdraw\GLColor.h" />
+    <ClInclude Include="..\GLdraw\GLDisplayList.h" />
     <ClInclude Include="..\GLdraw\GLError.h" />
     <ClInclude Include="..\GLdraw\GLFog.h" />
     <ClInclude Include="..\GLdraw\GLLight.h" />
@@ -264,6 +335,7 @@
     <ClInclude Include="..\meshing\MarchingCubes.h" />
     <ClInclude Include="..\meshing\Meshing.h" />
     <ClInclude Include="..\meshing\MeshPrimitives.h" />
+    <ClInclude Include="..\meshing\PointCloud.h" />
     <ClInclude Include="..\meshing\Rasterize.h" />
     <ClInclude Include="..\meshing\TriMesh.h" />
     <ClInclude Include="..\meshing\TriMeshAtlas.h" />
@@ -327,6 +399,7 @@
     <ClInclude Include="..\robotics\AnalyticIK.h" />
     <ClInclude Include="..\robotics\AngleBracket.h" />
     <ClInclude Include="..\robotics\Chain.h" />
+    <ClInclude Include="..\robotics\ConstrainedDynamics.h" />
     <ClInclude Include="..\robotics\Contact.h" />
     <ClInclude Include="..\robotics\DenavitHartenberg.h" />
     <ClInclude Include="..\robotics\DynamicChain.h" />
@@ -436,6 +509,7 @@
     <ClInclude Include="..\utils\Pointers.h" />
     <ClInclude Include="..\utils\PrimitiveValue.h" />
     <ClInclude Include="..\utils\ProgressPrinter.h" />
+    <ClInclude Include="..\utils\PropertyMap.h" />
     <ClInclude Include="..\utils\random.h" />
     <ClInclude Include="..\utils\RangeMap.h" />
     <ClInclude Include="..\utils\RangeMap2D.h" />
@@ -463,8 +537,10 @@
     <ClCompile Include="..\camera\transform.cpp" />
     <ClCompile Include="..\camera\viewport.cpp" />
     <ClCompile Include="..\errors.cpp" />
+    <ClCompile Include="..\geometry\AnyGeometry.cpp" />
     <ClCompile Include="..\geometry\Arrangement1D.cpp" />
     <ClCompile Include="..\geometry\CollisionMesh.cpp" />
+    <ClCompile Include="..\geometry\CollisionPointCloud.cpp" />
     <ClCompile Include="..\geometry\ConvexHull2D.cpp" />
     <ClCompile Include="..\geometry\Fitting.cpp" />
     <ClCompile Include="..\geometry\Grid.cpp" />
@@ -482,7 +558,9 @@
     <ClCompile Include="..\GLdraw\ColorGradient.cpp" />
     <ClCompile Include="..\GLdraw\drawextra.cpp" />
     <ClCompile Include="..\GLdraw\drawgeometry.cpp" />
+    <ClCompile Include="..\GLdraw\GeometryAppearance.cpp" />
     <ClCompile Include="..\GLdraw\GLColor.cpp" />
+    <ClCompile Include="..\GLdraw\GLDisplayList.cpp" />
     <ClCompile Include="..\GLdraw\GLError.cpp" />
     <ClCompile Include="..\GLdraw\GLFog.cpp" />
     <ClCompile Include="..\GLdraw\GLLight.cpp" />
@@ -592,6 +670,7 @@
     <ClCompile Include="..\meshing\MarchingCubes.cpp" />
     <ClCompile Include="..\meshing\Meshing.cpp" />
     <ClCompile Include="..\meshing\MeshPrimitives.cpp" />
+    <ClCompile Include="..\meshing\PointCloud.cpp" />
     <ClCompile Include="..\meshing\Rasterize.cpp" />
     <ClCompile Include="..\meshing\TriMesh.cpp" />
     <ClCompile Include="..\meshing\TriMeshOperators.cpp" />
@@ -647,6 +726,7 @@
     <ClCompile Include="..\robotics\AnalyticIK.cpp" />
     <ClCompile Include="..\robotics\AngleBracket.cpp" />
     <ClCompile Include="..\robotics\Chain.cpp" />
+    <ClCompile Include="..\robotics\ConstrainedDynamics.cpp" />
     <ClCompile Include="..\robotics\Contact.cpp" />
     <ClCompile Include="..\robotics\DenavitHartenberg.cpp" />
     <ClCompile Include="..\robotics\DynamicChain.cpp" />
@@ -654,6 +734,7 @@
     <ClCompile Include="..\robotics\Geometry.cpp" />
     <ClCompile Include="..\robotics\IK.cpp" />
     <ClCompile Include="..\robotics\IKFunctions.cpp" />
+    <ClCompile Include="..\robotics\Inertia.cpp" />
     <ClCompile Include="..\robotics\JointStructure.cpp" />
     <ClCompile Include="..\robotics\KinematicChain.cpp" />
     <ClCompile Include="..\robotics\KinematicChain3D.cpp" />
@@ -709,6 +790,7 @@
     <ClCompile Include="..\utils\ParamList.cpp" />
     <ClCompile Include="..\utils\PrimitiveValue.cpp" />
     <ClCompile Include="..\utils\ProgressPrinter.cpp" />
+    <ClCompile Include="..\utils\PropertyMap.cpp" />
     <ClCompile Include="..\utils\RangeSet.cpp" />
     <ClCompile Include="..\utils\RangeSet2D.cpp" />
     <ClCompile Include="..\utils\RefPointer.cpp" />

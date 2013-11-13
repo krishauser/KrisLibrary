@@ -1248,6 +1248,27 @@
     <ClInclude Include="..\robotics\Rotation.h">
       <Filter>Header Files\robotics</Filter>
     </ClInclude>
+    <ClInclude Include="..\geometry\AnyGeometry.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\geometry\CollisionPointCloud.h">
+      <Filter>Header Files\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GeometryAppearance.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLdraw\GLDisplayList.h">
+      <Filter>Header Files\GLdraw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\meshing\PointCloud.h">
+      <Filter>Header Files\meshing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils\PropertyMap.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\robotics\ConstrainedDynamics.h">
+      <Filter>Header Files\robotics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\camera\camera.cpp">
@@ -2044,6 +2065,30 @@
     </ClCompile>
     <ClCompile Include="..\spline\spline.cpp">
       <Filter>Source Files\spline</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\CollisionPointCloud.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\geometry\AnyGeometry.cpp">
+      <Filter>Source Files\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GeometryAppearance.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLdraw\GLDisplayList.cpp">
+      <Filter>Source Files\GLdraw</Filter>
+    </ClCompile>
+    <ClCompile Include="..\meshing\PointCloud.cpp">
+      <Filter>Source Files\meshing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\PropertyMap.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\ConstrainedDynamics.cpp">
+      <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\robotics\Inertia.cpp">
+      <Filter>Source Files\robotics</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
