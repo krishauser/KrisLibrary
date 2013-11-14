@@ -445,6 +445,7 @@
     <ClInclude Include="..\statistics\GaussianDistribution.h" />
     <ClInclude Include="..\statistics\GaussianHMM.h" />
     <ClInclude Include="..\statistics\GaussianMixtureModel.h" />
+    <ClInclude Include="..\statistics\HierarchicalClustering.h" />
     <ClInclude Include="..\statistics\Histogram.h" />
     <ClInclude Include="..\statistics\Histogram2D.h" />
     <ClInclude Include="..\statistics\Histogram3D.h" />
@@ -766,6 +767,7 @@
     <ClCompile Include="..\statistics\GaussianDistribution.cpp" />
     <ClCompile Include="..\statistics\GaussianHMM.cpp" />
     <ClCompile Include="..\statistics\GaussianMixtureModel.cpp" />
+    <ClCompile Include="..\statistics\HierarchicalClustering.cpp" />
     <ClCompile Include="..\statistics\Histogram.cpp" />
     <ClCompile Include="..\statistics\HistogramND.cpp" />
     <ClCompile Include="..\statistics\KMeans.cpp" />

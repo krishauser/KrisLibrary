@@ -1269,6 +1269,9 @@
     <ClInclude Include="..\robotics\ConstrainedDynamics.h">
       <Filter>Header Files\robotics</Filter>
     </ClInclude>
+    <ClInclude Include="..\statistics\HierarchicalClustering.h">
+      <Filter>Header Files\statistics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\camera\camera.cpp">
@@ -2089,6 +2092,9 @@
     </ClCompile>
     <ClCompile Include="..\robotics\Inertia.cpp">
       <Filter>Source Files\robotics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\statistics\HierarchicalClustering.cpp">
+      <Filter>Source Files\statistics</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
