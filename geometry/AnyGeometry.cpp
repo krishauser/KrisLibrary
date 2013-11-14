@@ -68,9 +68,11 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D>& geoms)
   }
   else {
     type = geoms[nonempty[0]].type;
-    for(size_t i=0;i<nonempty.size();i++)
-      if(geoms[nonempty[i]].type != type) 
+    for(size_t i=1;i<nonempty.size();i++)
+      if(geoms[nonempty[i]].type != type) {
+	printf("Type %s vs %s\n",AnyGeometry3D::TypeName(type),geoms[nonempty[i]].TypeName());
 	FatalError("Can't mix multiple geometry types together yet\n");
+      }
     switch(type) {
     case Primitive:
       FatalError("Can't mix multiple primitive geometries together yet\n");

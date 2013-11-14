@@ -497,13 +497,23 @@ SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
 AnyCollection& AnyCollection::operator[](int i)
 {
   if(type == None) {
-    type = Map;
-    map.clear();
-    AnyKeyable key(i);
-    return operator[](key);
+    if(i==0) { // first array reference
+      type = Array;
+      array.resize(0);
+    }
+    else {  // first map reference
+      type = Map;
+      map.clear();
+    }
   }
-  else if(type == Array)
+
+  if(type == Array) {
+    if(i == (int)array.size()) { //resize by 1
+      array.resize(i+1);
+      array[i] = new AnyCollection();
+    }
     return *array[i];
+  }
   else if(type == Map) {
     AnyKeyable key(i);
     return operator[](key);
@@ -541,18 +551,33 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
     //coerce to a map type
     type = Map;
     map.clear();
-    map[key] = new AnyCollection;
-    return *map[key];
   }
-  else if(type == Array) {
+  if(type == Array) {
+    if(key.value.type() != typeid(int) && key.value.type() != typeid(unsigned int)) {
+      //cast array to a map
+      type = Map;
+      map.clear();
+      for(size_t i=0;i<array.size();i++)
+	map[(int)i] = array[i];
+      array.clear();
+    }
+  }
+
+  if(type == Array) {
+    int index;
     if(key.value.type() == typeid(int))
-      return *array[*AnyCast<int>(&key.value)];
+      index = *AnyCast<int>(&key.value);
     else if(key.value.type() == typeid(unsigned int))
-      return *array[*AnyCast<unsigned int>(&key.value)];
+      index = (int)(*AnyCast<unsigned int>(&key.value));
     else {
       FatalError("AnyCollection: can't lookup arrays with non-integer types");
       return *this;
     }
+    if(index == (int)array.size()) {
+      array.resize(index+1);
+      array[index] = new AnyCollection();
+    }
+    return *array[index];
   }
   else if(type == Map) {
     MapType::iterator i=map.find(key);
@@ -882,9 +907,9 @@ bool AnyCollection::read(std::istream& in)
   return false;
 }
 
-void AnyCollection::write(std::ostream& out) const
+void AnyCollection::write_inline(std::ostream& out) const
 {
-  if(type == None) out<<"None";
+  if(type == None) out<<"null";
   else if(type == Value) {
     WriteValue(value,out);
   }
@@ -892,7 +917,7 @@ void AnyCollection::write(std::ostream& out) const
     out<<"[";
     for(size_t i=0;i<array.size();i++) {
       if(i!=0) out<<", ";
-      array[i]->write(out);
+      array[i]->write_inline(out);
     }
     out<<"]";
   }
@@ -901,14 +926,43 @@ void AnyCollection::write(std::ostream& out) const
     out<<"{";
     for(MapType::const_iterator i=map.begin();i!=map.end();i++) {
       if(i!=map.begin()) out<<", ";
-      //comment this out for one line, keep it for pretty printing
-      out<<std::endl<<"  ";
       WriteValue(i->first.value,out);
       out<<":";
-      i->second->write(out);
+      i->second->write_inline(out);
     }
-    //comment this out for one line, keep it for pretty printing
-    out<<std::endl;
+    out<<"}";
+  }
+}
+
+void AnyCollection::write(std::ostream& out,int indent) const
+{
+  if(type == None) out<<"null";
+  else if(type == Value) {
+    WriteValue(value,out);
+  }
+  else if(type == Array) {
+    bool write_inline = (depth() == 1); //raw array, write as inline
+    out<<"[";
+    for(size_t i=0;i<array.size();i++) {
+      if(i!=0) out<<", ";
+      if(!write_inline)	out<<std::endl<<std::string(indent+2,' ');
+      array[i]->write(out,indent+2);
+    }
+    if(!write_inline)	out<<std::endl<<std::string(indent,' ');
+    out<<"]";
+  }
+  else {
+    bool write_inline = (depth() == 1); //raw map, write as inline
+    //map
+    out<<"{";
+    for(MapType::const_iterator i=map.begin();i!=map.end();i++) {
+      if(i!=map.begin()) out<<", ";
+      if(!write_inline) out<<std::endl<<std::string(indent+2,' ');
+      WriteValue(i->first.value,out);
+      out<<": ";
+      i->second->write(out,indent+2);
+    }
+    if(!write_inline) out<<std::endl<<std::string(indent,' ');
     out<<"}";
   }
 }

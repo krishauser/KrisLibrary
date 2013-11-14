@@ -177,8 +177,12 @@ class AnyCollection
   ///are also merged
   void deepmerge(const AnyCollection& other);
 
+  ///Reads in JSON format
   bool read(std::istream& in);
-  void write(std::ostream& out) const;
+  ///Writes in JSON format
+  void write(std::ostream& out,int indent=0) const;
+  ///Same as write, but puts everything onto one line
+  void write_inline(std::ostream& out) const;
 
  private:
   enum Type { None, Value, Array, Map };
