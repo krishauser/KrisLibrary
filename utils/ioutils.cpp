@@ -195,7 +195,7 @@ bool SafeInputString(std::istream& in, std::string& str)
   else { //read until new whitespace
     while(in) {
       char c = in.get();
-      if(isspace(c)) 
+      if(isspace(c) || c==EOF) 
 	return true;
       str += c;
     }
