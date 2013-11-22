@@ -1251,8 +1251,8 @@ ToleranceRecurse2(PQP_ToleranceResult *res,
   PQP_REAL lim1=res->tolerance,lim2=res->tolerance;
   if(l2) {  //clip points of interest by existing per-triangle tolerance
     int ti2=-o2->child(b2)->first_child - 1;
-    if(allRes.triDist2.count(o1->tris[ti2].id)!=0)
-      lim1=allRes.triDist2[o1->tris[ti2].id];
+    if(allRes.triDist2.count(o2->tris[ti2].id)!=0)
+      lim1=allRes.triDist2[o2->tris[ti2].id];
   }
   if(l1) {  //clip points of interest by existing per-triangle tolerance
     int ti1=-o1->child(b1)->first_child - 1;
