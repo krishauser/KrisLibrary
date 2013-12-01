@@ -44,3 +44,10 @@ deps
 objs
 lib
 *.a
+
+#Windows files
+Debug
+Debug-Assimp
+Release
+Release-Assimp
+x64
