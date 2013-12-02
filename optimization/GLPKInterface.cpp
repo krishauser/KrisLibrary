@@ -12,24 +12,9 @@ extern "C"
 using namespace Optimization;
 using namespace std;
 
-#define GLPK_FAULT_STYLE_4_15 0
-#define GLPK_FAULT_STYLE_4_39 1
-
-//workaround for GLPK 4.15
-#if GLPK_FAULT_STYLE_4_15
-extern "C" {
-void _glp_lib_print_hook(int (*func)(void *info, const char *buf), void *info);
-void _glp_lib_fault_hook(int (*func)(void *info, const char *buf), void *info);
-}
-#elif GLPK_FAULT_STYLE_4_39
-//workaround for GLPK 4.39
-extern "C" {
-void glp_term_hook(int (*func)(void *info, const char *buf), void *info);
-//void glp_fault_hook(int (*func)(void *info, const char *buf), void *info);
-#define glp_fault_hook glp_term_hook
-}
+#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 48
+#error "Require GLPK 4.48 or above"
 #endif
-
 
 const static Real kZeroTol = 1e-6;
 
@@ -39,53 +24,53 @@ GLPKInterface::GLPKInterface()
 
 GLPKInterface::~GLPKInterface()
 {
-  SafeDeleteProc(lp,lpx_delete_prob);
+  SafeDeleteProc(lp,glp_delete_prob);
 }
 
 inline int BoundType(Real low,Real high)
 {
   if(IsInf(low)==-1) {
-    if(IsInf(high) == 1) return LPX_FR;
-    return LPX_UP;
+    if(IsInf(high) == 1) return GLP_FR;
+    return GLP_UP;
   }
   else if(IsInf(high) == 1) {
-    return LPX_LO;
+    return GLP_LO;
   }
   else {
-    if(low==high) return LPX_FX;
-    else return LPX_DB;
+    if(low==high) return GLP_FX;
+    else return GLP_DB;
   }
 }
 
-int BoundTypeToLPX(LinearProgram::BoundType b)
+int BoundTypeToGLP(LinearProgram::BoundType b)
 {
   switch(b) {
-  case LinearProgram::Free:       return LPX_FR;
-  case LinearProgram::LowerBound: return LPX_LO;
-  case LinearProgram::UpperBound: return LPX_UP;
-  case LinearProgram::Bounded:    return LPX_DB;
-  case LinearProgram::Fixed:      return LPX_FX;
-  default: abort(); return LPX_FR;
+  case LinearProgram::Free:       return GLP_FR;
+  case LinearProgram::LowerBound: return GLP_LO;
+  case LinearProgram::UpperBound: return GLP_UP;
+  case LinearProgram::Bounded:    return GLP_DB;
+  case LinearProgram::Fixed:      return GLP_FX;
+  default: abort(); return GLP_FR;
   }
 }
 
 void GLPKInterface::Set(const LinearProgram& LP)
 {
-  SafeDeleteProc(lp,lpx_delete_prob);
-  lp = lpx_create_prob();
-  if(LP.minimize) lpx_set_obj_dir(lp,LPX_MIN);
-  else lpx_set_obj_dir(lp,LPX_MAX);
+  SafeDeleteProc(lp,glp_delete_prob);
+  lp = glp_create_prob();
+  if(LP.minimize) glp_set_obj_dir(lp,GLP_MIN);
+  else glp_set_obj_dir(lp,GLP_MAX);
 
-  lpx_add_rows(lp,LP.A.m);
+  glp_add_rows(lp,LP.A.m);
   for(int i=0;i<LP.A.m;i++) {
-    lpx_set_row_bnds(lp,i+1,BoundTypeToLPX(LP.ConstraintType(i)),LP.q(i),LP.p(i)); 
+    glp_set_row_bnds(lp,i+1,BoundTypeToGLP(LP.ConstraintType(i)),LP.q(i),LP.p(i)); 
   }
-  lpx_add_cols(lp,LP.A.n);
+  glp_add_cols(lp,LP.A.n);
   for(int i=0;i<LP.A.n;i++) {
-    lpx_set_col_bnds(lp,i+1,BoundTypeToLPX(LP.VariableType(i)),LP.l(i),LP.u(i)); 
+    glp_set_col_bnds(lp,i+1,BoundTypeToGLP(LP.VariableType(i)),LP.l(i),LP.u(i)); 
   }
   for(int i=0;i<LP.A.n;i++)
-    lpx_set_obj_coef(lp,i+1,LP.c(i));
+    glp_set_obj_coef(lp,i+1,LP.c(i));
 
   vector<int> itemp(LP.A.n+1);
   dVector temp(LP.A.n+1);
@@ -99,34 +84,27 @@ void GLPKInterface::Set(const LinearProgram& LP)
         nnz++;
       }
     }
-    lpx_set_mat_row(lp,i+1,nnz,&itemp[0],temp);
+    glp_set_mat_row(lp,i+1,nnz,&itemp[0],temp);
   }
-  //set to only report errors
-  lpx_set_int_parm(lp,LPX_K_MSGLEV,1);
-
-  //lpx_scale_prob(lp);
-  //lpx_adv_basis(lp);
-  //lpx_set_int_parm(lp,LPX_K_PRESOL,1);
-  lpx_set_int_parm(lp,LPX_K_PRESOL,0);
 }
 
 void GLPKInterface::Set(const LinearProgram_Sparse& LP)
 {
-  SafeDeleteProc(lp,lpx_delete_prob);
-  lp = lpx_create_prob();
-  if(LP.minimize) lpx_set_obj_dir(lp,LPX_MIN);
-  else lpx_set_obj_dir(lp,LPX_MAX);
+  SafeDeleteProc(lp,glp_delete_prob);
+  lp = glp_create_prob();
+  if(LP.minimize) glp_set_obj_dir(lp,GLP_MIN);
+  else glp_set_obj_dir(lp,GLP_MAX);
 
-  lpx_add_rows(lp,LP.A.m);
+  glp_add_rows(lp,LP.A.m);
   for(int i=0;i<LP.A.m;i++) {
-    lpx_set_row_bnds(lp,i+1,BoundTypeToLPX(LP.ConstraintType(i)),LP.q(i),LP.p(i)); 
+    glp_set_row_bnds(lp,i+1,BoundTypeToGLP(LP.ConstraintType(i)),LP.q(i),LP.p(i)); 
   }
-  lpx_add_cols(lp,LP.A.n);
+  glp_add_cols(lp,LP.A.n);
   for(int i=0;i<LP.A.n;i++) {
-    lpx_set_col_bnds(lp,i+1,BoundTypeToLPX(LP.VariableType(i)),LP.l(i),LP.u(i)); 
+    glp_set_col_bnds(lp,i+1,BoundTypeToGLP(LP.VariableType(i)),LP.l(i),LP.u(i)); 
   }
   for(int i=0;i<LP.A.n;i++)
-    lpx_set_obj_coef(lp,i+1,LP.c(i));
+    glp_set_obj_coef(lp,i+1,LP.c(i));
 
   vector<int> itemp(LP.A.n+1);
   dVector temp(LP.A.n+1);
@@ -140,45 +118,29 @@ void GLPKInterface::Set(const LinearProgram_Sparse& LP)
         nnz++;
       }
     }
-    lpx_set_mat_row(lp,i+1,nnz,&itemp[0],temp);
+    glp_set_mat_row(lp,i+1,nnz,&itemp[0],temp);
   }
-  //set to only report errors
-  lpx_set_int_parm(lp,LPX_K_MSGLEV,1);
-
-  //lpx_scale_prob(lp);
-  //lpx_adv_basis(lp);
-  //lpx_set_int_parm(lp,LPX_K_PRESOL,1);
-  lpx_set_int_parm(lp,LPX_K_PRESOL,0);
 }
 
 void GLPKInterface::Clear()
 {
-  SafeDeleteProc(lp,lpx_delete_prob);
+  SafeDeleteProc(lp,glp_delete_prob);
 }
 
 void GLPKInterface::Create(int m,int n)
 {
-  SafeDeleteProc(lp,lpx_delete_prob);
-  lp = lpx_create_prob();
-  lpx_add_rows(lp,m);
-  lpx_add_cols(lp,n);
-
-  //set to only report errors
-  lpx_set_int_parm(lp,LPX_K_MSGLEV,1);
-
-  //lpx_scale_prob(lp);
-  //lpx_adv_basis(lp);
-  //lpx_set_int_parm(lp,LPX_K_PRESOL,1);
-  lpx_set_int_parm(lp,LPX_K_PRESOL,0);
-
+  SafeDeleteProc(lp,glp_delete_prob);
+  lp = glp_create_prob();
+  glp_add_rows(lp,m);
+  glp_add_cols(lp,n);
 }
 
 void GLPKInterface::SetObjective(const Vector& obj,bool minimize)
 {
   for(int i=0;i<obj.n;i++)
-    lpx_set_obj_coef(lp,i+1,obj(i));
-  if(minimize) lpx_set_obj_dir(lp,LPX_MIN);
-  else lpx_set_obj_dir(lp,LPX_MAX);
+    glp_set_obj_coef(lp,i+1,obj(i));
+  if(minimize) glp_set_obj_dir(lp,GLP_MIN);
+  else glp_set_obj_dir(lp,GLP_MAX);
 }
 
 void GLPKInterface::SetRow(int i,const Vector& Ai)
@@ -194,62 +156,62 @@ void GLPKInterface::SetRow(int i,const Vector& Ai)
       nnz++;
     }
   }
-  lpx_set_mat_row(lp,i+1,nnz,&itemp[0],temp);
+  glp_set_mat_row(lp,i+1,nnz,&itemp[0],temp);
 }
 
 void GLPKInterface::SetRowBounds(int i,Real low,Real high)
 {
-  lpx_set_row_bnds(lp,i+1,BoundType(low,high),low,high); 
+  glp_set_row_bnds(lp,i+1,BoundType(low,high),low,high); 
 }
 
 void GLPKInterface::SetVariableBounds(int j,Real low,Real high)
 {
-  lpx_set_col_bnds(lp,j+1,BoundType(low,high),low,high); 
+  glp_set_col_bnds(lp,j+1,BoundType(low,high),low,high); 
 }
 
 
 void GLPKInterface::SetRowBasic(int i)
 {
-  lpx_set_row_stat(lp,i+1,LPX_BS);
+  glp_set_row_stat(lp,i+1,GLP_BS);
 }
 
 bool GLPKInterface::GetRowBasic(int i)
 {
-  return lpx_get_row_stat(lp,i+1)==LPX_BS;
+  return glp_get_row_stat(lp,i+1)==GLP_BS;
 }
 
 double GLPKInterface::GetRowDual(int i){
-	return lpx_get_row_dual(lp, i+1);
+	return glp_get_row_dual(lp, i+1);
 }
 
 double GLPKInterface::GetVariableDual(int j){
-	return lpx_get_col_dual(lp, j+1);
+	return glp_get_col_dual(lp, j+1);
 }
 
 void GLPKInterface::SetRowNonBasic(int i,bool upper)
 {
-  if(upper) lpx_set_row_stat(lp,i+1,LPX_NU);
-  else lpx_set_row_stat(lp,i+1,LPX_NL);
+  if(upper) glp_set_row_stat(lp,i+1,GLP_NU);
+  else glp_set_row_stat(lp,i+1,GLP_NL);
 }
 
 void GLPKInterface::SetVariableBasic(int j)
 {
-  lpx_set_col_stat(lp,j+1,LPX_BS);
+  glp_set_col_stat(lp,j+1,GLP_BS);
 }
 
 bool GLPKInterface::GetVariableBasic(int j)
 {
-  return lpx_get_col_stat(lp,j+1)==LPX_BS;
+  return glp_get_col_stat(lp,j+1)==GLP_BS;
 }
 
 void GLPKInterface::SetVariableNonBasic(int j,bool upper)
 {
-  if(upper) lpx_set_col_stat(lp,j+1,LPX_NU);
-  else lpx_set_col_stat(lp,j+1,LPX_NL);
+  if(upper) glp_set_col_stat(lp,j+1,GLP_NU);
+  else glp_set_col_stat(lp,j+1,GLP_NL);
 }
 
 
-int my_glpx_fault_handler(void* info,const char* msg)
+int my_gglp_fault_handler(void* info,const char* msg)
 {
   printf("GLPK error message %s\n",msg);
   //printf("GLPK fatal error %s\n",msg);
@@ -257,11 +219,17 @@ int my_glpx_fault_handler(void* info,const char* msg)
   //throw(std::runtime_error(msg));
   /*
   printf("GLPK fatal error, dumping!\n");
-  LPX* lp=(LPX*)info;
-  lpx_write_cpxlp(lp,"temp_lp.txt");
+  GLP* lp=(GLP*)info;
+  glp_write_cpxlp(lp,"temp_lp.txt");
   */
   return 0;
 }
+
+void my_gglp_fault_handler2(void* info)
+{
+  printf("GLPK error, quitting\n");
+}
+
 
 struct GLPKInterruptHandler : public SignalHandler
 {
@@ -273,8 +241,8 @@ public:
   virtual void OnRaise(int signum) 
   {
     printf("Interrupt called during GLPK solve... possible infinite loop\n");
-    LPX* lp=glpk->lp;;
-    lpx_write_cpxlp(lp,"temp_lp.txt");
+    glp_prob* lp=glpk->lp;
+    glp_write_lp(lp,NULL,"temp_lp.txt");
     throw(std::runtime_error("Interrupt called during GLPK solve"));
     //exit(-1);
   }
@@ -285,22 +253,21 @@ public:
 LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
 {
   assert(lp != NULL);
-  //lpx_write_cpxlp(lp,"temp_lp.txt");
-  //lpx_print_prob(lp,"temp_lp.txt");
-#if GLPK_FAULT_STYLE_4_15
-  _glp_lib_fault_hook(my_glpx_fault_handler,0);
-#elif GLPK_FAULT_STYLE_4_39
-  glp_fault_hook(my_glpx_fault_handler,0);
-#else  //older versions of GLPK
-  lib_set_fault_hook(lp,my_glpx_fault_handler);
-#endif // GLPK_FAULT_STYLE
+  //glp_write_cpxlp(lp,"temp_lp.txt");
+  //glp_print_prob(lp,"temp_lp.txt");
+  glp_error_hook(my_gglp_fault_handler2,0);
+
+  glp_smcp params;
+  glp_init_smcp(&params);
+  params.msg_lev = GLP_MSG_ERR;
+  params.presolve = GLP_OFF;
 
   GLPKInterruptHandler handler(this);
   handler.SetCurrent(SIGINT);
   //handler.SetCurrent(SIGABRT);
   int res;
   try {
-    res=lpx_simplex(lp);
+    res=glp_simplex(lp,&params);
   }
   catch(const std::exception& e) {
     printf("GLPK internal error: ");
@@ -311,59 +278,56 @@ LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
     printf("Unknown error occurred\n");
     return LinearProgram::Error;
   }
-#if GLPK_FAULT_STYLE_4_15
-  _glp_lib_fault_hook(0,0);
-#elif GLPK_FAULT_STYLE_4_39
-  glp_fault_hook(0,0);
-#else
-  lib_set_fault_hook(NULL,NULL);
-#endif //GLP_FAULT_STYLE
+  glp_error_hook(0,0);
   handler.UnsetCurrent(SIGINT);
   switch(res) {
-  case LPX_E_OK:
+  case 0:
     break;
-  case LPX_E_FAULT:
+  case GLP_EFAIL:
     cout<<"Error in matrix construction!"<<endl;
     return LinearProgram::Error;
-  case LPX_E_OBJLL:
+  case GLP_EOBJLL:
     cout<<"Objective reached lower limit!"<<endl;
     return LinearProgram::Error;
-  case LPX_E_OBJUL:
+  case GLP_EOBJUL:
     cout<<"Objective reached upper limit!"<<endl;
     return LinearProgram::Error;
-  case LPX_E_NOPFS:
+  case GLP_ENOPFS:
     cout<<"Linear program has no primary feasible solution!"<<endl;
     return LinearProgram::Infeasible;
-  case LPX_E_NODFS:
+  case GLP_ENODFS:
     cout<<"Linear program has no dual feasible solution!"<<endl;
     return LinearProgram::Infeasible;
-  case LPX_E_ITLIM:
+  case GLP_EITLIM:
     cout<<"Max iterations reached!"<<endl;
     return LinearProgram::Error;
-  case LPX_E_TMLIM:
+  case GLP_ETMLIM:
     cout<<"Time limit reached!"<<endl;
     return LinearProgram::Error;
-  case LPX_E_SING:
+  case GLP_ESING:
     cout<<"Singularity reached!"<<endl;
     return LinearProgram::Error;
+  default:
+	  cout<<"Unknown error"<<endl;
+	  return LinearProgram::Error;
   }
 
-  int stat=lpx_get_status(lp);
-  int n=lpx_get_num_cols(lp);
+  int stat=glp_get_status(lp);
+  int n=glp_get_num_cols(lp);
   xopt.resize(n);
   for(int i=0;i<n;i++)
-    xopt(i) = (Real)lpx_get_col_prim(lp,i+1);
+    xopt(i) = (Real)glp_get_col_prim(lp,i+1);
 
   switch(stat) {
-  case LPX_OPT:
-  case LPX_FEAS:
+  case GLP_OPT:
+  case GLP_FEAS:
     return LinearProgram::Feasible;
-  case LPX_INFEAS:
-  case LPX_NOFEAS:
+  case GLP_INFEAS:
+  case GLP_NOFEAS:
     return LinearProgram::Infeasible;
-  case LPX_UNBND:
+  case GLP_UNBND:
     return LinearProgram::Unbounded;
-  case LPX_UNDEF:
+  case GLP_UNDEF:
     cout<<"Solution is undefined!"<<endl;
     return LinearProgram::Error;
   default:
