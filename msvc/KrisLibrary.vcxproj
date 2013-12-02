@@ -143,7 +143,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WIN32;_DEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
     </ClCompile>
