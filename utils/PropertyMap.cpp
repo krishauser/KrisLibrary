@@ -144,7 +144,7 @@ bool PropertyMap::Load(TiXmlElement* node)
   }
   return true;
 #else 
-  fprintf(stderr,"PropertyMap: Didn't compile KrisLibrary with TinyXml");
+  fprintf(stderr,"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
   return false;
 #endif //HAVE_TINYXML
 }
@@ -156,7 +156,7 @@ bool PropertyMap::Save(TiXmlElement* node) const
     node->SetAttribute(i->first.c_str(),i->second.c_str());
   return true;
 #else 
-  fprintf(stderr,"PropertyMap: Didn't compile KrisLibrary with TinyXml");
+  fprintf(stderr,"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
   return false;
 #endif //HAVE_TINYXML
 }
