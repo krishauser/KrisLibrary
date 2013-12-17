@@ -353,6 +353,9 @@ AABB3D GeometricPrimitive3D::GetAABB() const
 {
   AABB3D bb;
   switch(type) {
+  case Empty:
+    bb.minimize();
+    return bb;
   case Point:
     {
       const Vector3* p = AnyCast<Vector3>(&data);
