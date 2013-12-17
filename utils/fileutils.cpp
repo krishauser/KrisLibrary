@@ -2,6 +2,7 @@
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <strsafe.h>
 #else
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -134,8 +135,54 @@ bool CreateDirectory(const char* path)
 bool ListDirectory(const char* path,std::vector<std::string>& files)
 {
 #if WIN32
-  FatalError("TODO: ListDirectory on windows");
-  return false;
+  files.resize(0);
+  WIN32_FIND_DATA ffd;
+  TCHAR szDir[MAX_PATH];
+  size_t length_of_arg;
+  HANDLE hFind = INVALID_HANDLE_VALUE;
+  DWORD dwError=0;
+
+  StringCchLength(path, MAX_PATH, &length_of_arg);
+
+  if (length_of_arg > (MAX_PATH - 3)) {
+    fprintf(stderr,"Directory path %s is too long.\n",path);
+    return false;
+  }
+
+   // Prepare string for use with FindFile functions.  First, copy the
+   // string to a buffer, then append '\*' to the directory name.
+
+   StringCchCopy(szDir, MAX_PATH, path);
+   StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+   // Find the first file in the directory.
+
+   hFind = FindFirstFile(szDir, &ffd);
+
+   if (INVALID_HANDLE_VALUE == hFind) 
+   {
+     //either no items or not a directory -- should we return true if it's
+     //an empty directory?
+     return false;
+   } 
+   
+   // List all the files in the directory with some info about them.
+
+   do
+   {
+     files.push_back(ffd.cFileName);
+   }
+   while (FindNextFile(hFind, &ffd) != 0);
+ 
+   dwError = GetLastError();
+   if (dwError != ERROR_NO_MORE_FILES) 
+   {
+     fprintf(stderr,"Error while reading files from %s\n",path);
+     return false;
+   }
+
+   FindClose(hFind);
+   return true;
 #else
   struct dirent *de=NULL;
   DIR *d=NULL;
