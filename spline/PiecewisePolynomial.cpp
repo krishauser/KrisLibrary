@@ -87,7 +87,11 @@ double PiecewisePolynomial::Derivative(double t) const
   assert(!segments.empty());
   int i = FindSegment(t);
   if(i < 0) return 0;
-  else if (i >= (int)segments.size()) return 0;
+  else if (i >= (int)segments.size()) {
+	if(t == times.back())
+		return segments.back().Derivative(times.back()-timeShift.back());
+	return 0;
+  }
   else return segments[i].Derivative(t-timeShift[i]);
 }
 

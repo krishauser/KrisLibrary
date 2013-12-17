@@ -386,33 +386,38 @@ void ChangeFileExtension (char* str, const char* ext)
 
 const char* GetFileName(const char* str)
 {
-	const char* fp = strrchr(str,'\\');
-	if(fp == NULL)
-	{
-		fp = strrchr(str,'/');
-		if(fp == NULL)
+	const char* fpb = strrchr(str,'\\');
+	const char* fpf = strrchr(str,'/');
+	if(fpb == NULL && fpf == NULL) 
 			return str;
+	if(fpb == NULL || fpf > fpb) {
+		fpf++;
+		return fpf;
 	}
-	fp++;
-
-	return fp;
+	else {
+		fpb++;
+		return fpb;
+	}
 }
 
 
 void GetFilePath(const char* str, char* buf)
 {
 	strcpy(buf, str);
-	char* fp = strrchr(buf,'\\');
-	if(fp == NULL)
-	{
-		fp = strrchr(buf,'/');
-		if(fp == NULL) {
-		  buf[0] = 0;
-		  return;
-		}
+	char* fpb = strrchr(buf,'\\');
+	char* fpf = strrchr(buf,'/');
+	if(fpb == NULL && fpf == NULL) { 
+			buf[0] = 0;
+			return;
 	}
-	fp++;
-	*fp = '\0';
+	if(fpb == NULL || fpf > fpb) {
+		fpf++;
+		*fpf = 0;
+	}
+	else {
+		fpb++;
+		*fpb = 0;
+	}
 }
 
 void StripExtension(char* str)
@@ -444,26 +449,32 @@ void ChangeFileExtension (std::string& str, const std::string& ext)
 
 std::string GetFileName(const std::string& str)
 {
-  size_t pos = str.rfind('\\');
-  if(pos == std::string::npos){
-    pos = str.rfind('/');
-    if(pos == std::string::npos){
-      return str;
-    }
+  size_t posb = str.rfind('\\');
+  size_t posf = str.rfind('/');
+  if(posb == std::string::npos && posf == std::string::npos){
+	  return str;
   }
-  return str.substr(pos+1,str.length()-pos-1);
+  if(posb == std::string::npos || (posf != std::string::npos && posf > posb)) {
+	  return str.substr(posf+1,str.length()-posf-1);
+  }
+  else {
+	  return str.substr(posb+1,str.length()-posb-1);
+  }
 }
 
 std::string GetFilePath(const std::string& str)
 {
-  size_t pos = str.rfind('\\');
-  if(pos == std::string::npos){
-    pos = str.rfind('/');
-    if(pos == std::string::npos){
-      return "";
-    }
+  size_t posb = str.rfind('\\');
+  size_t posf = str.rfind('/');
+  if(posb == std::string::npos && posf == std::string::npos){
+	  return "";
   }
-  return str.substr(0,pos+1);
+  if(posb == std::string::npos || (posf != std::string::npos && posf > posb)) {
+	return str.substr(0,posf+1);
+  }
+  else {
+	  return str.substr(0,posb+1);
+  }
 }
 
 void StripExtension(std::string& str)
