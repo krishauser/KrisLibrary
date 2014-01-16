@@ -12,8 +12,8 @@ extern "C"
 using namespace Optimization;
 using namespace std;
 
-#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 48
-#error "Require GLPK 4.48 or above"
+#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 45
+#error "Require GLPK 4.45 or above"
 #endif
 
 const static Real kZeroTol = 1e-6;
