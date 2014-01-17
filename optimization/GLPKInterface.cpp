@@ -12,8 +12,8 @@ extern "C"
 using namespace Optimization;
 using namespace std;
 
-#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 45
-#error "Require GLPK 4.45 or above"
+#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 40
+#error "Require GLPK 4.40 or above"
 #endif
 
 const static Real kZeroTol = 1e-6;
@@ -255,7 +255,9 @@ LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
   assert(lp != NULL);
   //glp_write_cpxlp(lp,"temp_lp.txt");
   //glp_print_prob(lp,"temp_lp.txt");
+#if GLP_MINOR_VERSION >= 43
   glp_error_hook(my_gglp_fault_handler2,0);
+#endif
 
   glp_smcp params;
   glp_init_smcp(&params);
@@ -278,7 +280,9 @@ LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
     printf("Unknown error occurred\n");
     return LinearProgram::Error;
   }
+#if GLP_MINOR_VERSION >= 43
   glp_error_hook(0,0);
+#endif
   handler.UnsetCurrent(SIGINT);
   switch(res) {
   case 0:
