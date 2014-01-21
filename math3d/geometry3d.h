@@ -66,7 +66,7 @@ class GeometricPrimitive3D
   bool Collides(const Box3D& s) const;
   bool Collides(const GeometricPrimitive3D& g) const;
   static bool SupportsDistance(Type a,Type b);
-  bool SupportsDistance(Type b)  { return GeometricPrimitive3D::SupportsDistance(type,b); }
+  bool SupportsDistance(Type b) const { return GeometricPrimitive3D::SupportsDistance(type,b); }
   Real Distance(const Vector3& pt) const;
   Real Distance(const Segment3D& s) const;
   Real Distance(const Triangle3D& t) const;
@@ -80,6 +80,7 @@ class GeometricPrimitive3D
   std::vector<double> ClosestPointParameters(const Vector3& pt) const;
   Vector3 ParametersToPoint(const std::vector<double>& params) const;
   Vector3 ParametersToNormal(const std::vector<double>& params) const;
+  bool RayCast(const Ray3D& ray,Vector3& pt) const;
 
   Type type;
   AnyValue data;
