@@ -199,7 +199,17 @@ bool AnyGeometry3D::Load(istream& in)
   string typestr;
   in>>typestr;
   if(typestr == "Primitive") {
-    FatalError("Can't load geometric primitives yet");
+    GeometricPrimitive3D geom;
+    in>>geom;
+    if(in) {
+      type = Primitive;
+      data = geom;
+      return true;
+    }
+    else {
+      fprintf(stderr,"Failed to load Primitive type\n");
+      return false;
+    }
   }
   else if(typestr == "TriangleMesh") {
     type = TriangleMesh;
@@ -793,7 +803,22 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D& r,Real* distance,int* element)
 {
   switch(type) {
   case Primitive:
-    FatalError("Can't ray-cast primitives yet\n");
+    {
+      RigidTransform T=PrimitiveCollisionData(),Tinv;
+      Tinv.setInverse(T);
+      Ray3D rlocal; rlocal.setTransformed(r,Tinv);
+      Vector3 localpt;
+      if(AsPrimitive().RayCast(rlocal,localpt)) {
+	if(distance) {
+	  *distance = localpt.distance(rlocal.source);
+	  //TODO: this isn't perfect if the margin is > 0 -- will miss silouettes
+	  *distance -= margin;
+	}
+	if(element) *element = 0;
+	return true;
+      }
+      return false;
+    }
     break;
   case ImplicitSurface:
     FatalError("Can't ray-cast implicit surfaces yet\n");

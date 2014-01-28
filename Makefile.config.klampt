@@ -7,7 +7,7 @@
 #set the following item to 0 if tinyxml is not present
 HAVE_TINYXML=1
 #set the tinyxml directory
-TINYXML = $(HOME)/tinyxml
+TINYXML = ../../tinyxml
 
 # math package
 #set the following item to zero if GSL is not present
@@ -39,11 +39,11 @@ HAVE_GLUI=1
 # indicate directory of GLUT header files (may be empty for /usr/include)
 GLUT=
 # indicate directory for GLUI header files (may be empty for /usr/include)
-GLUI= $(HOME)/glui-2.36/src
+GLUI= ../../glui-2.36/src
 
 # Assimp 3D mesh loading library
 HAVE_ASSIMP=1
-ASSIMP=$(HOME)/assimp--3.0.1270-sdk
+ASSIMP=../../assimp--3.0.1270-sdk
 
 ############## End paths to edit ################
 

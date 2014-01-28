@@ -756,13 +756,102 @@ Vector3 GeometricPrimitive3D::ParametersToPoint(const vector<double>& params) co
     FatalError("Invalid primitive type");
     return Vector3(0.0);
   }
-
 }
 
 Vector3 GeometricPrimitive3D::ParametersToNormal(const vector<double>& params) const
 {
   FatalError("Not done yet");
   return Vector3(0.0);
+}
+
+bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
+{
+  switch(type) {
+  case Point:
+    if(ray.distance(*AnyCast<Vector3>(&data)) < Epsilon) {
+      pt = *AnyCast<Vector3>(&data);
+      return true;
+    }
+    return false;
+  case Segment:
+    fprintf(stderr,"Segment ray cast not done yet\n");
+    return false;
+  case Sphere:
+    {
+      const Sphere3D* s=AnyCast<Sphere3D>(&data);
+      Real t,u;
+      if(s->intersects(ray,&t,&u)) {
+	if(u >= 0) {
+	  if(t < 0) t = 0;
+	  ray.eval(t,pt);
+	  return true;
+	}
+      }
+      return false;
+    }
+  case Ellipsoid:
+    {
+      const Ellipsoid3D* s=AnyCast<Ellipsoid3D>(&data);
+      Real t,u;
+      if(s->intersects(ray,&t,&u)) {
+	if(u >= 0) {
+	  if(t < 0) t = 0;
+	  ray.eval(t,pt);
+	  return true;
+	}
+      }
+      return false;
+    }
+  case Cylinder:
+    {
+      const Cylinder3D* s=AnyCast<Cylinder3D>(&data);
+      Real t,u;
+      if(s->intersects(ray,&t,&u)) {
+	if(u >= 0) {
+	  if(t < 0) t = 0;
+	  ray.eval(t,pt);
+	  return true;
+	}
+      }
+      return false;
+    }
+  case AABB:
+    {
+      Real tmin=0,tmax=Inf;
+      Line3D l=ray;
+      if(l.intersects(*AnyCast<AABB3D>(&data),tmin,tmax)) {
+	ray.eval(tmin,pt);
+	return true;
+      }
+      return false;
+    }
+  case Box:
+    {
+      const Box3D* b=AnyCast<Box3D>(&data);
+      RigidTransform T_world_box;
+      b->getTransformInv(T_world_box);
+      Ray3D rlocal; rlocal.setTransformed(ray,T_world_box);
+      AABB3D localbox; localbox.bmin.setZero(); localbox.bmax = b->dims;
+      Real tmin=0,tmax=Inf;
+      Line3D l=rlocal;
+      if(l.intersects(localbox,tmin,tmax)) {
+	ray.eval(tmin,pt);
+	return true;
+      }
+      return false;
+    }
+  case Triangle:
+    {
+      Real t,u,v;
+      if(AnyCast<Triangle3D>(&data)->rayIntersects(ray,&t,&u,&v)) {
+	ray.eval(t,pt);
+	return true;
+      }
+      return false;
+    }
+  default:
+    return false;
+  }
 }
 
 
