@@ -239,6 +239,8 @@ AnyCollection::operator T() const
   if(!as(res)) {
     if(type == Value)
       FatalError("AnyCollection: coercion from %s to %s failed\n",value.type().name(),typeid(T).name());
+    else if(type == None)
+      FatalError("AnyCollection: coersion to %s failed, item does not exist\n",typeid(T).name());
     else
       FatalError("AnyCollection: coersion to %s failed, not of value type\n",typeid(T).name());
   }
