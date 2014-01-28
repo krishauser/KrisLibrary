@@ -902,7 +902,11 @@ bool AnyCollection::read(std::istream& in)
   else {
     //could be part of a list or map
     type = Value;
-    return ReadValue(value,in,",]}");
+    if(!ReadValue(value,in,",]}")) {
+      std::cerr<<"AnyCollection: Unable to read primitive value"<<std::endl;
+      return false;
+    }
+    return true;
   }
   return false;
 }

@@ -5,7 +5,7 @@
 #include "GL.h"
 #include "GLError.h"
 
-#include <glui.h>
+#include <GL/glui.h>
 
 #include <assert.h>
 #include <stdio.h>

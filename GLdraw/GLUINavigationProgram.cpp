@@ -6,7 +6,7 @@
 #include "GLError.h"
 #include "GLView.h"
 
-#include <glui.h>
+#include <GL/glui.h>
 
 using namespace std;
 using namespace GLDraw;
