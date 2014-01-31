@@ -322,6 +322,7 @@ void TransformWidget::Drag(int dx,int dy,Camera::Viewport& viewport)
     qRes.mul(qR,qT);
     qRes.getMatrix(T.R);
   }
+  Refresh();
 }
 
 
