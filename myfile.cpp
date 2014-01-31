@@ -6,6 +6,16 @@
 #include <string.h>
 #include <assert.h>
 
+//BSD socket stuff
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h> 
+#include <fcntl.h>
+#ifndef WIN32
+#include <unistd.h>
+#endif
+
 //platform-specific defines
 
 #ifdef WIN32
@@ -115,10 +125,12 @@ inline bool FileWrite(FILE_POINTER x, const void* d, int size)
 
 
 enum { MODE_NONE,
-	MODE_MYFILE, //internally managed file
-	MODE_EXTFILE, //external file reference
-	MODE_MYDATA, //internally managed data
-	MODE_EXTDATA //external data reference
+       MODE_MYFILE, //internally managed file
+       MODE_EXTFILE, //external file reference
+       MODE_MYDATA, //internally managed data
+       MODE_EXTDATA, //external data reference
+       MODE_TCPSOCKET, //TCP socket
+       MODE_UDPSOCKET //UDP socket
 };
 
 File::File()
@@ -137,6 +149,7 @@ void File::Close()
 {
         if(srctype == MODE_MYFILE && file != INVALID_FILE_POINTER) FileClose(file);
 	if(srctype == MODE_MYDATA && datafile != NULL) free(datafile);
+	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) close((int)file);
 
 	srctype = MODE_NONE;
 	mode = 0;
@@ -194,12 +207,131 @@ void File::ResizeDataBuffer(int size)
 	datasize = size;
 }
 
+///Caller must ensure that protocol and host are large enough to handle the 
+///items.  Simple way of doing this is to allocate to size strlen(addr)
+bool ParseAddr(const char* addr,char* protocol,char* host,int& port)
+{
+  const char* pos=strstr(addr,"://");
+  if(pos == NULL) return false;
+  //parse protocol
+  int spos = pos-addr;
+  strncpy(protocol,addr,spos);
+  protocol[spos] = 0;
+  //parse address and port
+  pos += 3;
+  spos += 3;
+  const char* colonpos = strstr(pos,":");
+  if(colonpos==NULL) {
+    strcpy(host,pos);
+  }
+  else {
+    strncpy(host,pos,colonpos-pos);
+    host[colonpos-pos]=0;
+  }
+  port = -1;
+  //default http port
+  if(strcmp(protocol,"http")==0)
+    port = 80;
+  //default ftp port
+  if(strcmp(protocol,"ftp")==0)
+    port = 21;
+
+  if(colonpos != NULL) {
+    //parse port
+    colonpos ++;
+    char* endptr;
+    long int res = strtol(colonpos,&endptr,0);
+    if(res==0 && endptr==colonpos) {
+      fprintf(stderr,"ParseAddr: address did not contain valid port\n");
+      return false;
+    }
+    if(res < 0 || res > 0xffff) {
+      fprintf(stderr,"ParseAddr: address did not contain valid port\n");
+      return false;
+    }
+    port = (int)res;
+  }
+
+  if(port < 0) {
+    fprintf(stderr,"ParseAddr: address did not contain valid port\n");
+    return false;
+  }
+  return true;
+}
+
+
 bool File::Open(const char* fn, int openmode)
 {
 	Close();
 
 	if(openmode == 0)
 		return false;
+
+	const char* addrpos=strstr(fn,"://");
+	if(addrpos != NULL) {
+	  //open TCP or UDP socket
+	  //parse fn into host and port
+	  char* protocol = new char[strlen(fn)];
+	  char* host = new char[strlen(fn)];
+	  int port;
+	  if(!ParseAddr(fn,protocol,host,port)) {
+	    fprintf(stderr,"Error parsing address %s\n",fn);
+	    delete [] protocol;
+	    delete [] host;
+	    return false;
+	  }
+
+	  struct sockaddr_in serv_addr;
+	  struct hostent *server;
+
+	  int sockettype = SOCK_STREAM;
+	  int socketsrctype = MODE_TCPSOCKET;
+	  if(0==strcmp(protocol,"udp")) {
+	    sockettype = SOCK_DGRAM;
+	    socketsrctype = MODE_UDPSOCKET;
+	  }
+	  delete [] protocol;
+	  
+	  int sockfd = socket(AF_INET, sockettype, 0);
+	  if (sockfd < 0) {
+	    fprintf(stderr,"File::Open: Error creating socket\n");
+	    delete [] host;
+	    return false;
+	  }
+	  server = gethostbyname(host);
+	  delete [] host;
+	  if (server == NULL) {
+	    fprintf(stderr,"File::Open: Error, no such host %s:%d\n",host,port);
+	    close(sockfd);
+	    sockfd = -1;
+	    return false;
+	  }
+	  memset(&serv_addr, 0, sizeof(serv_addr));
+	  serv_addr.sin_family = AF_INET;
+	  memcpy(&serv_addr.sin_addr.s_addr,
+		 server->h_addr,
+		 server->h_length);
+	  serv_addr.sin_port = htons(port);
+	  if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
+	    fprintf(stderr,"File::Open: Connect to %s:%d failed\n",host,port);
+	    perror("");
+	    close(sockfd);
+	    return false;
+	  }
+
+
+	  if(sockfd == 0) {
+	    fprintf(stderr,"File::Open: socket open returned a 0 file descriptor, this is incompatible\n");
+	    close(sockfd);
+	    return false;
+	  }
+
+	  file = (FILE_POINTER)sockfd;
+	  srctype = socketsrctype;
+	  mode = openmode;
+	  printf("File::Open %s succeeded\n",fn);
+	  return true;
+	}
 
 	file=FileOpen(fn,openmode);
 
@@ -289,6 +421,8 @@ int File::Length()
 
 bool File::ReadData(void* d, int size)
 {
+  if(size < 0)
+    fprintf(stderr,"File::ReadData: invalid size %d\n",size);
 	if(mode & FILEREAD)
 	{
 		switch(srctype)
@@ -303,6 +437,20 @@ bool File::ReadData(void* d, int size)
 			memcpy(d, datafile+datapos, size);
 			datapos += size;
 			return true;
+		case MODE_TCPSOCKET:
+		case MODE_UDPSOCKET:
+		  {
+		    char* buffer = (char*)d;
+		    int totalread = 0;
+		    while(totalread < size) {
+		      int n=read((int)file,buffer+totalread,size-totalread);
+		      if(n < 0) 
+			return false;
+		      totalread += n;
+		    }
+		    assert(totalread == size);
+		    return true;
+		  }
 		}
 	}
 	return false;
@@ -331,6 +479,21 @@ bool File::WriteData(const void* d, int size)
 			memcpy(datafile+datapos, d, size);
 			datapos += size;
 			return true;
+		case MODE_TCPSOCKET:
+		case MODE_UDPSOCKET:
+		  {
+		    const char* msg = (const char*)d;
+		    int totalsent = 0;
+		    while(totalsent < size) {
+		      int n = write((int)file,msg+totalsent,size-totalsent);
+		      if(n <= 0) {
+			return false;
+		      }
+		      totalsent += n;
+		    }
+		    assert(totalsent == size);
+		    return true;
+		  }
 		}
 	}
 	return false;
@@ -376,14 +539,60 @@ bool File::ReadString(char* str, int bufsize)
 					return true;
 			}
 			break;
+		case MODE_TCPSOCKET:
+		case MODE_UDPSOCKET:
+		  {
+		    int slen;
+		    if(!ReadData(&slen,4)) {
+		      fprintf(stderr,"File::ReadString read length failed\n");
+		      return false;
+		    }
+		    if(slen < 0) {
+		      fprintf(stderr,"File::ReadString read length %d is negative\n",slen);
+		      return false;
+		    }
+		    if(slen+1 > bufsize) {
+		      fprintf(stderr,"File::ReadString read length %d is greater than buffer size %d\n",slen,bufsize);
+		      return false;
+		    }
+		    if(!ReadData(str,slen)) {
+		      fprintf(stderr,"File::ReadString read string failed\n");
+		      return false;
+		    }
+		    str[slen] = 0;
+		    return true;
+		  }
+		default:
+		  fprintf(stderr,"File::ReadString: unknown file type %d\n",srctype);
+		  break;
 		}
 	}
+	else
+	  fprintf(stderr,"File::ReadString: file not in FILEREAD mode\n");
 	return false;
 }
 
 bool File::WriteString(const char* str)
 {
-	return WriteData(str, (int)(strlen(str)+1));
+  switch(srctype) {
+  case MODE_TCPSOCKET:
+  case MODE_UDPSOCKET:
+    if(strlen(str) > 0xffffffff) {
+      fprintf(stderr,"File::WriteString: string must be no longer than 65536\n");
+      return false;
+    }
+    else {
+      assert(sizeof(int)==4);
+      int slen = (int)strlen(str);
+      if(!WriteData(&slen,4)) {
+	return false;
+      }
+      return WriteData(&slen,(int)strlen(str));
+    }
+    break;
+  default:
+    return WriteData(str, (int)(strlen(str)+1));
+  }
 }
 
 
