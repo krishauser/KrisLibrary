@@ -13,7 +13,7 @@ TINYXML = /usr/include
 
 # math package
 #set the following item to zero if GSL is not present
-HAVE_GSL=1
+HAVE_GSL=0
 GSL_DIR=/usr/include
 
 #set the following 3 items to zero if CLAPACK is not present
@@ -28,6 +28,21 @@ endif
 ifeq ($(HAVE_GSL),1)
   MATH_INCDIR += $(GSL_DIR)
 endif
+
+
+# Assimp 3D mesh loading library
+HAVE_ASSIMP=0
+ASSIMP=../../assimp--3.0.1270-sdk
+ASSIMPINCDIR=$(ASSIMP)/include
+ifneq ($(wildcard $(ASSIMP)),)
+	HAVE_ASSIMP=1
+endif
+
+ifneq ($(wildcard /usr/lib/libassimp.so), )
+	HAVE_ASSIMP=1
+	ASSIMPINCDIR=/usr/include
+endif
+
 
 ## For Mac, use HAVE_IEEE_COMPARISONS
 # comment out the following line if isinf,isnan,finite are not defined
@@ -64,14 +79,10 @@ endif
 GLDRAW_DEFINES += HAVE_GLUT=$(HAVE_GLUT) HAVE_GLUI=$(HAVE_GLUI)
 GLDRAW_INCDIR=
 ifeq ($(HAVE_GLUT),1)
-  GLDRAW_INCDIR += $(GLUT)/include
+	GLDRAW_INCDIR += $(GLUT)/include
 endif
 ifeq ($(HAVE_GLUI),1)
-	ifeq ($(MAC_OS_X),1)
-		GLDRAW_INCDIR += $(GLUI)/include
-	else
-		GLDRAW_INCDIR += $(GLUI)/include/GL
-	endif
+	GLDRAW_INCDIR += $(GLUI)/include
 endif
 
 # geometry package
@@ -84,14 +95,6 @@ GEOMETRY_INCDIRS += ../$(PQP)/include
 # statistics package
 ifeq ($(HAVE_GSL),1)
   STATISTICS_INCDIR += $(GSL_DIR)
-endif
-
-
-#assimp 3D mesh loading library
-HAVE_ASSIMP=0
-ifeq ($(HAVE_ASSIMP),1)
-	ASSIMP=$(HOME)/assimp--3.0.1270-sdk
-	ASSIMPINCDIR=$(ASSIMP)/include
 endif
 
 KRISLIBRARY_EXTRAOBJS = $(GEOMETRY_EXTRAOBJS) $(OPTIMIZATION_EXTRAOBJS) $(MATH_EXTRAOBJS)
