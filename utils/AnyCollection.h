@@ -179,6 +179,7 @@ class AnyCollection
 
   ///Reads in JSON format
   bool read(std::istream& in);
+  bool read(const char* data);
   ///Writes in JSON format
   void write(std::ostream& out,int indent=0) const;
   ///Same as write, but puts everything onto one line

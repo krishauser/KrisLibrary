@@ -62,18 +62,27 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       value = val;
       return true;
     }
-    Lowercase(str);
-    if(str=="true") {
+    std::string lstr=str;
+    Lowercase(lstr);
+    if(lstr=="true") {
       value = true;
       return true;
     }
-    else if(str=="false") {
+    else if(lstr=="false") {
       value = false;
       return true;
     }
     else {
-      std::cerr<<"Invalid basic data type \""<<str<<"\""<<std::endl;
-      return false;
+      //check for invalid values
+      for(size_t i=0;i<str.length();i++) {
+	if(!(isalnum(str[i])||str[i]=='_')) {
+	  std::cerr<<"Invalid basic data type \""<<str<<"\""<<std::endl;
+	  return false;
+	}
+      }
+      //identifier
+      value = str;
+      return true;
     }
   }
 }
@@ -99,7 +108,7 @@ void WriteValue(const AnyValue& value,std::ostream& out)
   else if(value.type() == typeid(double))
     out<<*AnyCast<double>(&value);
   else if(value.type() == typeid(std::string))
-    out<<'\"'<<*AnyCast<std::string>(&value)<<'\"';
+    OutputQuotedString(out,*AnyCast<std::string>(&value));
   else out<<"UNKNOWN_TYPE("<<value.type().name()<<")";
 }
 
@@ -126,6 +135,27 @@ template <> bool CoerceCast<int>(const AnyValue& value,int& result) { return Bas
 template <> bool CoerceCast<unsigned int>(const AnyValue& value,unsigned int& result) { return BasicNumericalCoerceCast<unsigned int>(value,result); }
 template <> bool CoerceCast<float>(const AnyValue& value,float& result) { return BasicNumericalCoerceCast<float>(value,result); }
 template <> bool CoerceCast<double>(const AnyValue& value,double& result) { return BasicNumericalCoerceCast<double>(value,result); }
+
+template <> bool LexicalCast(const AnyValue& value,std::string& result)
+{
+  if(value.type() == typeid(bool)) return LexicalCast(*AnyCast<bool>(&value),result); 
+  else if(value.type() == typeid(char)) return LexicalCast(*AnyCast<char>(&value),result);
+  else if(value.type() == typeid(unsigned char)) return LexicalCast(*AnyCast<unsigned char>(&value),result);
+  else if(value.type() == typeid(int)) return LexicalCast(*AnyCast<int>(&value),result);
+  else if(value.type() == typeid(unsigned int)) return LexicalCast(*AnyCast<unsigned int>(&value),result);
+  else if(value.type() == typeid(float)) return LexicalCast(*AnyCast<float>(&value),result);
+  else if(value.type() == typeid(double)) return LexicalCast(*AnyCast<double>(&value),result);
+  else if(value.type() == typeid(std::string)) { result=*AnyCast<std::string>(&value); return true; }
+  else {
+    return false;
+  }
+  return true;
+}
+template <> bool LexicalCast(const std::string& value,AnyValue& result)
+{
+  std::stringstream ss(value);
+  return ReadValue(result,ss,"");
+}
 
 
 AnyKeyable::AnyKeyable()
@@ -825,6 +855,12 @@ void AnyCollection::deepmerge(const AnyCollection& other)
       }
     }
   }
+}
+
+bool AnyCollection::read(const char* data)
+{
+  std::stringstream ss(data);
+  return read(ss);
 }
 
 bool AnyCollection::read(std::istream& in)
