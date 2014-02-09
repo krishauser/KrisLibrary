@@ -6,6 +6,8 @@
 
 #include <typeinfo>
 #include <algorithm>
+#include <string>
+#include <sstream>
 #include <errors.h>
 
 /**@brief A polymorphic container class that can contain data of any type.
@@ -120,5 +122,38 @@ template <> bool CoerceCast<int>(const AnyValue& value,int& result);
 template <> bool CoerceCast<unsigned int>(const AnyValue& value,unsigned int& result);
 template <> bool CoerceCast<float>(const AnyValue& value,float& result);
 template <> bool CoerceCast<double>(const AnyValue& value,double& result);
+template <class T> bool LexicalCast(const T& value,std::string& result);
+template <> bool LexicalCast(const AnyValue& value,std::string& result);
+template <class T> std::string LexicalCast(const T& value);
+template <class T> bool LexicalCast(const std::string& value,T& result);
+template <> bool LexicalCast(const std::string& value,AnyValue& result);
+
+
+template <class T> bool LexicalCast(const T& value,std::string& result)
+{
+  std::stringstream ss;
+  ss<<value;
+  if(ss) {
+    result = ss.str();
+    return true;
+  }
+  return false;
+}
+
+template <class T> std::string LexicalCast(const T& value)
+{
+  std::string result;
+  if(!LexicalCast(value,result)) { return ""; }
+  return result;
+}
+
+template <class T> bool LexicalCast(const std::string& value,T& result)
+{
+  std::stringstream ss(value);
+  ss>>result;
+  if(ss) return true;
+  return false;
+}
+
 
 #endif
