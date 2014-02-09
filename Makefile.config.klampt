@@ -41,7 +41,7 @@ HAVE_GLUI=1
 # indicate directory of GLUT header files (may be empty for /usr/include)
 GLUT=
 # indicate directory for GLUI header files (may be empty for /usr/include)
-GLUI = $(DEFAULTDEPDIR)/glui-2.36
+GLUI = $(DEFAULTDEPDIR)/glui-2.36/src
 
 # Assimp 3D mesh loading library
 HAVE_ASSIMP=0
