@@ -317,50 +317,19 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 	}
 	models.resize(0);
 	Matrix4 Tident; Tident.setIdentity();
+	/*
 	Matrix4 Tyz; 
 	Tyz.setZero();
 	Tyz(0,0) = 1;
 	Tyz(1,2) = -1;
 	Tyz(2,1) = 1;
 	Tyz(3,3) = 1;
-	if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tyz,models)) {
-	  //if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tident,models)) {
+	*/
+	//if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tyz,models)) {
+	if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tident,models)) {
 	  cout << "AssimpImporter:"<<"Error Processing " << fn << "!" << endl;
 	  return false;
 	}
-	/*
-	models.resize(scene->mNumMeshes);
-	for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-		if (scene->mMeshes && scene->mMeshes[i]) {
-			if (scene->mMeshes[i]->HasFaces()) {
-				int nfaces = scene->mMeshes[i]->mNumFaces;
-				int nverts = scene->mMeshes[i]->mNumVertices;
-				models[i].tris.resize(nfaces);
-				models[i].verts.resize(nverts);
-				for (int j = 0; j < nfaces; j++) {
-					const aiFace& face = scene->mMeshes[i]->mFaces[j];
-					Assert(face.mNumIndices == 3);
-					models[i].tris[j].set(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
-				}
-				for (int j = 0; j < nverts; j++) {
-					const aiVector3D& vert = scene->mMeshes[i]->mVertices[j];
-					models[i].verts[j].set((double)vert.x, (double)vert.y, (double)vert.z);
-				}
-			  if(!models[i].IsValid()) {
-				cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
-				cerr<<"Continuing may have unexpected results."<<endl;
-				cerr<<"Press enter to continue."<<endl;
-				getchar();
-			  }
-
-			} else {
-				cout << "Error processing " << fn << ", no faces!" << endl;
-			}
-		} else {
-			cout << "Error processing " << fn << ", no mesh!" << endl;
-		}
-	}
-	*/
 	return true;
 }
 
