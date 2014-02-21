@@ -116,6 +116,9 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   Real margin;
 };
 
+/** @brief A class that stores information regarding a collision query.
+ * May be slightly faster than running individual queries.
+ */
 class AnyCollisionQuery
 {
  public:
