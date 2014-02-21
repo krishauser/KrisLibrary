@@ -15,14 +15,38 @@ typedef FILE *FILE_POINTER;
 #define INVALID_FILE_POINTER NULL
 #endif // WIN32
 
+///Flags sent to Open: read or write mode (may be bitwise or-ed together)
 #define FILEREAD 0x1
 #define FILEWRITE 0x2
+///Flags sent to Open for socket connections: client mode or server mode.
+#define FILECLIENT 0x1
+#define FILESERVER 0x2
+///Flags sent to Seek
 #define FILESEEKSTART 0
 #define FILESEEKCURRENT 1
 #define FILESEEKEND 2
 
-/** \ingroup Standard
- * \brief A cross-platform class for reading/writing binary data.
+/** @ingroup Standard
+ * @brief A cross-platform class for reading/writing binary data.
+ *
+ * Can be configured to read from files on disk, memory buffers, or sockets.
+ *
+ * To read/write to memory buffers, you may either provide a fixed-size buffer
+ * to OpenData(buf,size,mode) or just call OpenData(mode), which allocates
+ * a buffer for writing to.  GetDataBuffer can then be used to retrieve the
+ * buffer.
+ *
+ * To open a socket, provide an address in the form http://servername,
+ * ftp://servername, tcp://servername:port or udp://servername:port to Open. 
+ * If opened in FILESERVER mode, the Open call will block until a single
+ * connection is accepted. 
+ * 
+ * Seek and Length do not work in sockets.  Position returns 0 if the socket
+ * is open and -1 otherwise.
+ *
+ * Read/WriteString operate differently in sockets.  Rather than providing a 
+ * null-terminated string, the message's first 4 bytes are the length of the
+ * string (interpreted as an integer) and the remaining bytes are the string.
  */
 class File
 {
@@ -33,6 +57,8 @@ public:
 	bool Open(FILE_POINTER, int openmode = FILEREAD | FILEWRITE);
 	bool OpenData(void* buf, int size, int openmode = FILEREAD | FILEWRITE);
 	bool OpenData(int openmode = FILEREAD | FILEWRITE);
+	bool OpenTCPSocket(int sockfd);
+	bool OpenUDPSocket(int sockfd);
 	void Close();
 
 	bool Seek(int, int from = FILESEEKCURRENT);

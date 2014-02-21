@@ -6,12 +6,7 @@
 #include <string.h>
 #include <assert.h>
 
-//BSD socket stuff
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h> 
-#include <fcntl.h>
+#include <utils/socketutils.h>
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -207,58 +202,36 @@ void File::ResizeDataBuffer(int size)
 	datasize = size;
 }
 
-///Caller must ensure that protocol and host are large enough to handle the 
-///items.  Simple way of doing this is to allocate to size strlen(addr)
-bool ParseAddr(const char* addr,char* protocol,char* host,int& port)
+
+bool File::OpenTCPSocket(int sockfd)
 {
-  const char* pos=strstr(addr,"://");
-  if(pos == NULL) return false;
-  //parse protocol
-  int spos = pos-addr;
-  strncpy(protocol,addr,spos);
-  protocol[spos] = 0;
-  //parse address and port
-  pos += 3;
-  spos += 3;
-  const char* colonpos = strstr(pos,":");
-  if(colonpos==NULL) {
-    strcpy(host,pos);
-  }
-  else {
-    strncpy(host,pos,colonpos-pos);
-    host[colonpos-pos]=0;
-  }
-  port = -1;
-  //default http port
-  if(strcmp(protocol,"http")==0)
-    port = 80;
-  //default ftp port
-  if(strcmp(protocol,"ftp")==0)
-    port = 21;
-
-  if(colonpos != NULL) {
-    //parse port
-    colonpos ++;
-    char* endptr;
-    long int res = strtol(colonpos,&endptr,0);
-    if(res==0 && endptr==colonpos) {
-      fprintf(stderr,"ParseAddr: address did not contain valid port\n");
-      return false;
-    }
-    if(res < 0 || res > 0xffff) {
-      fprintf(stderr,"ParseAddr: address did not contain valid port\n");
-      return false;
-    }
-    port = (int)res;
-  }
-
-  if(port < 0) {
-    fprintf(stderr,"ParseAddr: address did not contain valid port\n");
+  Close();
+  if(sockfd == 0) {
+    fprintf(stderr,"File::Open: socket file descriptor 0  is incompatible\n");
     return false;
   }
+
+  file = (FILE_POINTER)sockfd;
+  srctype = MODE_TCPSOCKET;
+  //can read and write to sockets
+  mode = FILEREAD | FILEWRITE;
   return true;
 }
 
+bool File::OpenUDPSocket(int sockfd)
+{
+  Close();
+  if(sockfd == 0) {
+    fprintf(stderr,"File::Open: socket file descriptor 0  is incompatible\n");
+    return false;
+  }
+
+  file = (FILE_POINTER)sockfd;
+  srctype = MODE_UDPSOCKET;
+  //can read and write to sockets
+  mode = FILEREAD | FILEWRITE;
+  return true;
+}
 
 bool File::Open(const char* fn, int openmode)
 {
@@ -269,68 +242,52 @@ bool File::Open(const char* fn, int openmode)
 
 	const char* addrpos=strstr(fn,"://");
 	if(addrpos != NULL) {
-	  //open TCP or UDP socket
-	  //parse fn into host and port
-	  char* protocol = new char[strlen(fn)];
-	  char* host = new char[strlen(fn)];
-	  int port;
-	  if(!ParseAddr(fn,protocol,host,port)) {
-	    fprintf(stderr,"Error parsing address %s\n",fn);
-	    delete [] protocol;
-	    delete [] host;
-	    return false;
-	  }
-
-	  struct sockaddr_in serv_addr;
-	  struct hostent *server;
-
-	  int sockettype = SOCK_STREAM;
 	  int socketsrctype = MODE_TCPSOCKET;
-	  if(0==strcmp(protocol,"udp")) {
-	    sockettype = SOCK_DGRAM;
+	  if(strstr(fn,"udp://") != NULL)
 	    socketsrctype = MODE_UDPSOCKET;
-	  }
-	  delete [] protocol;
-	  
-	  int sockfd = socket(AF_INET, sockettype, 0);
-	  if (sockfd < 0) {
-	    fprintf(stderr,"File::Open: Error creating socket\n");
-	    delete [] host;
-	    return false;
-	  }
-	  server = gethostbyname(host);
-	  delete [] host;
-	  if (server == NULL) {
-	    fprintf(stderr,"File::Open: Error, no such host %s:%d\n",host,port);
+	  if(openmode == FILESERVER) {
+	    int sockfd = Bind(fn);
+	    listen(sockfd,1);
+	    int clientsocket = Accept(sockfd);
+	    if(clientsocket < 0) {
+	      fprintf(stderr,"File::Open: Accept connection to client on %s failed\n",fn);
+	      perror("");
+	      close(sockfd);
+	      return false;
+	    }
+	    if(clientsocket == 0) {
+	      fprintf(stderr,"File::Open: Accept connection returned a 0 file descriptor, this is incompatible\n");
+	      close(clientsocket);
+	      close(sockfd);
+	      return false;
+	    }
+	    file = (FILE_POINTER)clientsocket;
+	    srctype = socketsrctype;
+	    //can read and write to sockets
+	    mode = FILEREAD | FILEWRITE;
 	    close(sockfd);
-	    sockfd = -1;
-	    return false;
+	    printf("File::Open server socket %s succeeded\n",fn);
+	    return true;
 	  }
-	  memset(&serv_addr, 0, sizeof(serv_addr));
-	  serv_addr.sin_family = AF_INET;
-	  memcpy(&serv_addr.sin_addr.s_addr,
-		 server->h_addr,
-		 server->h_length);
-	  serv_addr.sin_port = htons(port);
-	  if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-	    fprintf(stderr,"File::Open: Connect to %s:%d failed\n",host,port);
-	    perror("");
-	    close(sockfd);
-	    return false;
+	  else {
+	    int sockfd = Connect(fn);
+	    if (sockfd < 0) {
+	      fprintf(stderr,"File::Open: Connect client to %s failed\n",fn);
+	      perror("");
+	      return false;
+	    }	    
+	    if(sockfd == 0) {
+	      fprintf(stderr,"File::Open: socket connect returned a 0 file descriptor, this is incompatible\n");
+	      close(sockfd);
+	      return false;
+	    }
+	    file = (FILE_POINTER)sockfd;
+	    srctype = socketsrctype;
+	    //can read and write to sockets
+	    mode = FILEREAD | FILEWRITE;
+	    printf("File::Open client socket %s succeeded\n",fn);
+	    return true;
 	  }
-
-
-	  if(sockfd == 0) {
-	    fprintf(stderr,"File::Open: socket open returned a 0 file descriptor, this is incompatible\n");
-	    close(sockfd);
-	    return false;
-	  }
-
-	  file = (FILE_POINTER)sockfd;
-	  srctype = socketsrctype;
-	  mode = openmode;
-	  printf("File::Open %s succeeded\n",fn);
-	  return true;
 	}
 
 	file=FileOpen(fn,openmode);
@@ -366,6 +323,10 @@ int File::Position() const
 	case MODE_MYDATA:
 	case MODE_EXTDATA:
 		return datapos;
+	case MODE_TCPSOCKET:
+	case MODE_UDPSOCKET:
+	  if(file == INVALID_FILE_POINTER) return -1;
+	  return 0;
 	}
 	return -1;
 }
@@ -587,7 +548,7 @@ bool File::WriteString(const char* str)
       if(!WriteData(&slen,4)) {
 	return false;
       }
-      return WriteData(&slen,(int)strlen(str));
+      return WriteData(str,(int)strlen(str));
     }
     break;
   default:
