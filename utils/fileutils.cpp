@@ -109,7 +109,7 @@ bool TempName(char* out,const char* directory,const char* prefix)
 
 bool IsDirectory(const char* path)
 {
-#if WIN32
+#ifdef WIN32
 	bool res = ((GetFileAttributes(path) & FILE_ATTRIBUTE_DIRECTORY) != 0);
 	return res;
 #else
@@ -122,7 +122,7 @@ bool IsDirectory(const char* path)
 
 bool CreateDirectory(const char* path)
 {
-#if WIN32
+#ifdef WIN32
 	HANDLE f = CreateFile(path,FILE_LIST_DIRECTORY,FILE_SHARE_READ,NULL,CREATE_NEW,FILE_ATTRIBUTE_DIRECTORY,NULL);
 	if(f == INVALID_HANDLE_VALUE) return false;
 	CloseHandle(f);
@@ -134,7 +134,7 @@ bool CreateDirectory(const char* path)
 
 bool ListDirectory(const char* path,std::vector<std::string>& files)
 {
-#if WIN32
+#ifdef WIN32
   files.resize(0);
   WIN32_FIND_DATA ffd;
   TCHAR szDir[MAX_PATH];

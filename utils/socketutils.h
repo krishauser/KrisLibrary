@@ -1,8 +1,17 @@
 #ifndef UTILS_SOCKET_UTILS_H
 #define UTILS_SOCKET_UTILS_H
 
+#ifndef WIN32
 #include <sys/socket.h>
+#else
+#include <WinSock2.h>
+#endif
 
+///Starts up the network library, if needed.  Necessary for Windows.
+bool SocketStart();
+
+///Closes the network library, if needed.  Necessary for Windows.
+bool SocketStop();
 
 ///Parses an address of the form http://servername, ftp://servername,
 ///tcp://servername:port, or udp://servername:port into the protocol,

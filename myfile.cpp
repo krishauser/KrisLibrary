@@ -66,6 +66,12 @@ inline bool FileWrite(FILE_POINTER x, const void* d, int size)
   return (size == s);
 }
 
+inline int SocketClose(int fd) { return closesocket(fd); }
+
+inline int SocketRead(int fd,char* data,int size) { return recv(fd,data,size,0); }
+
+inline int SocketWrite(int fd,const char* data,int size) { return send(fd,data,size,0); }
+
 #else
 
 inline FILE_POINTER FileOpen(const char* fn, int openmode) {
@@ -114,6 +120,12 @@ inline bool FileWrite(FILE_POINTER x, const void* d, int size)
   return (int)fwrite(d,1,size,x)==size;
 }
 
+inline int SocketClose(int fd) { return close(fd); }
+
+inline int SocketRead(int fd,char* data,int size) { return read(fd,data,size); }
+
+inline int SocketWrite(int fd,const char* data,int size) { return write(fd,data,size); }
+
 #endif
 
 
@@ -144,7 +156,7 @@ void File::Close()
 {
         if(srctype == MODE_MYFILE && file != INVALID_FILE_POINTER) FileClose(file);
 	if(srctype == MODE_MYDATA && datafile != NULL) free(datafile);
-	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) close((int)file);
+	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) SocketClose((int)file);
 
 	srctype = MODE_NONE;
 	mode = 0;
@@ -252,20 +264,20 @@ bool File::Open(const char* fn, int openmode)
 	    if(clientsocket < 0) {
 	      fprintf(stderr,"File::Open: Accept connection to client on %s failed\n",fn);
 	      perror("");
-	      close(sockfd);
+	      SocketClose(sockfd);
 	      return false;
 	    }
 	    if(clientsocket == 0) {
 	      fprintf(stderr,"File::Open: Accept connection returned a 0 file descriptor, this is incompatible\n");
-	      close(clientsocket);
-	      close(sockfd);
+	      SocketClose(clientsocket);
+	      SocketClose(sockfd);
 	      return false;
 	    }
 	    file = (FILE_POINTER)clientsocket;
 	    srctype = socketsrctype;
 	    //can read and write to sockets
 	    mode = FILEREAD | FILEWRITE;
-	    close(sockfd);
+	    SocketClose(sockfd);
 	    printf("File::Open server socket %s succeeded\n",fn);
 	    return true;
 	  }
@@ -278,7 +290,7 @@ bool File::Open(const char* fn, int openmode)
 	    }	    
 	    if(sockfd == 0) {
 	      fprintf(stderr,"File::Open: socket connect returned a 0 file descriptor, this is incompatible\n");
-	      close(sockfd);
+	      SocketClose(sockfd);
 	      return false;
 	    }
 	    file = (FILE_POINTER)sockfd;
@@ -404,7 +416,7 @@ bool File::ReadData(void* d, int size)
 		    char* buffer = (char*)d;
 		    int totalread = 0;
 		    while(totalread < size) {
-		      int n=read((int)file,buffer+totalread,size-totalread);
+		      int n=SocketRead((int)file,buffer+totalread,size-totalread);
 		      if(n < 0) 
 			return false;
 		      totalread += n;
@@ -446,7 +458,7 @@ bool File::WriteData(const void* d, int size)
 		    const char* msg = (const char*)d;
 		    int totalsent = 0;
 		    while(totalsent < size) {
-		      int n = write((int)file,msg+totalsent,size-totalsent);
+		      int n = SocketWrite((int)file,msg+totalsent,size-totalsent);
 		      if(n <= 0) {
 			return false;
 		      }
