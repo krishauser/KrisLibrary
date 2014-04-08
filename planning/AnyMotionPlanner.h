@@ -58,10 +58,15 @@ class MotionPlannerInterface
   virtual void GetRoadmap(RoadmapPlanner& roadmap) {}
 };
 
+/** @brief A motion planner creator.
+ * 
+ * The planner type can be left as Any, in which a default planner will be
+ * used. Otherwise, a given planner type can be designated.
+ */
 class MotionPlannerFactory
 {
  public:
-  enum Type { PRM,LazyPRM,PerturbationTree,EST,RRT,SBL,SBLPRT, PRMStar,LazyPRMStar,RRTStar };
+  enum Type { Any,PRM,LazyPRM,PerturbationTree,EST,RRT,SBL,SBLPRT, PRMStar,LazyPRMStar,RRTStar };
 
   MotionPlannerFactory();
   virtual ~MotionPlannerFactory() {}

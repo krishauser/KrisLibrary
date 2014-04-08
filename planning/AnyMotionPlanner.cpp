@@ -296,7 +296,7 @@ class PRMStarInterface  : public MotionPlannerInterface
 
 
 MotionPlannerFactory::MotionPlannerFactory()
-  :type(PRM),
+  :type(Any),
    knn(10),
    connectionThreshold(Inf),
    ignoreConnectedComponents(false),
@@ -318,6 +318,7 @@ MotionPlannerInterface* MotionPlannerFactory::Create(CSpace* space)
     prm->storeEdges=storeEdges;
     return prm;
     }
+  case Any:
   case SBL:
     {
     SBLInterface* sbl = new SBLInterface(space,useGrid,gridResolution,randomizeFrequency);
@@ -376,10 +377,11 @@ bool MotionPlannerFactory::Load(TiXmlElement* e)
 #if HAVE_TINYXML
   string stype;
   if(e->QueryStringAttribute("type",&stype)!=TIXML_SUCCESS) {
-    printf("Could not read motion planner factory attribute type\n");
-    return false;
+    type = MotionPlannerFactory::Any;
   }
-  if(stype == "prm")
+  else if(stype == "any")
+    type = MotionPlannerFactory::Any;
+  else if(stype == "prm")
     type = MotionPlannerFactory::PRM;
   else if(stype == "sbl")
     type = MotionPlannerFactory::SBL;
