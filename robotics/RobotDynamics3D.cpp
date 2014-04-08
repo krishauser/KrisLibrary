@@ -136,8 +136,8 @@ void RobotDynamics3D::GetWorldAcceleration(const Vector3& pi, int i, const Vecto
   Vector3 dw_residual,dv_residual;  //residual
   GetResidualAcceleration(pi,i,dw_residual,dv_residual);
   //this is a hack to get J*ddq
-  GetWorldVelocity(pi,i,ddq,dw);
-  GetWorldAngularVelocity(i,ddq,dv);
+  GetWorldVelocity(pi,i,ddq,dv);
+  GetWorldAngularVelocity(i,ddq,dw);
   dw += dw_residual;
   dv += dv_residual;
 }
