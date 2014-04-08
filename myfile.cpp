@@ -5,6 +5,7 @@
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #include <utils/socketutils.h>
 #ifndef WIN32
@@ -405,8 +406,15 @@ bool File::ReadData(void* d, int size)
 		    int totalread = 0;
 		    while(totalread < size) {
 		      int n=read((int)file,buffer+totalread,size-totalread);
-		      if(n < 0) 
+		      if(n == 0) 
 			return false;
+		      if(n < 0) {
+			if(errno==EWOULDBLOCK)
+			  //just spin?
+			  continue;
+			perror("Unhandled error in socket read");
+			return false;
+		      }
 		      totalread += n;
 		    }
 		    assert(totalread == size);
