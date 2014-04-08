@@ -1,4 +1,5 @@
 #include "AnyMotionPlanner.h"
+#include "OptimalMotionPlanner.h"
 #include "SBL.h"
 
 #if HAVE_TINYXML
@@ -249,6 +250,51 @@ class SBLPRTInterface  : public MotionPlannerInterface
 };
 
 
+class PRMStarInterface  : public MotionPlannerInterface
+{
+ public:
+  PRMStarInterface(CSpace* space)
+    : planner(space)
+    {}
+  virtual ~PRMStarInterface() {}
+  virtual bool CanAddMilestone() const { if(qStart.n != 0 && qGoal.n != 0) return false; return true; }
+  virtual int AddMilestone(const Config& q) {
+    if(qStart.n == 0) {
+      qStart = q;
+      return 0;
+    }
+    else if(qGoal.n == 0) {
+      qGoal = q;
+      planner.Init(qStart,qGoal);
+      return 1;
+    }
+    AssertNotReached();
+    return -1;
+  }
+  virtual void GetMilestone(int i,Config& q) { q=planner.roadmap.nodes[i]; }
+  virtual int PlanMore() { 
+    planner.PlanMore();
+    return -1;
+  }
+  virtual int NumIterations() const { return planner.numPlanSteps; }
+  virtual int NumMilestones() const { return planner.roadmap.nodes.size(); }
+  virtual int NumComponents() const { return 1; }
+  virtual bool IsConnected(int ma,int mb) const { 
+    Assert(ma==0 && mb==1);
+    if(IsInf(planner.spp.d[mb])) return false;
+    return true;
+  }
+  virtual void GetPath(int ma,int mb,MilestonePath& path) {
+    Assert(ma==0 && mb==1);
+    planner.GetPath(path);
+  }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) { roadmap.roadmap = planner.roadmap; }
+
+  PRMStarPlanner planner;
+  Config qStart,qGoal;
+};
+
+
 MotionPlannerFactory::MotionPlannerFactory()
   :type(PRM),
    knn(10),
@@ -303,6 +349,20 @@ MotionPlannerInterface* MotionPlannerFactory::Create(CSpace* space)
 	return rrt;
       }
     }
+  case PRMStar:
+    {
+      PRMStarInterface* prm = new PRMStarInterface(space);
+      prm->planner.lazy = false;
+      prm->planner.connectionThreshold = connectionThreshold;
+      return prm;
+    }
+  case LazyPRMStar:
+    {
+      PRMStarInterface* prm = new PRMStarInterface(space);
+      prm->planner.lazy = true;
+      prm->planner.connectionThreshold = connectionThreshold;
+      return prm;
+    }
   default:
     FatalError("MotionPlannerFactory: That interface is not done");
     return NULL;
@@ -333,6 +393,12 @@ bool MotionPlannerFactory::Load(TiXmlElement* e)
     type = MotionPlannerFactory::PerturbationTree;
   else if(stype == "lazyprm")
     type = MotionPlannerFactory::LazyPRM;
+  else if(stype == "prm*")
+    type = MotionPlannerFactory::PRMStar;
+  else if(stype == "rrt*")
+    type = MotionPlannerFactory::RRTStar;
+  else if(stype == "lazyprm*")
+    type = MotionPlannerFactory::LazyPRMStar;
   else {
     fprintf(stderr,"MotionPlannerFactory::Load: Unsupported motion planner type %s\n",stype.c_str());
     return false;

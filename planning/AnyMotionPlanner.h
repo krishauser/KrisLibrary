@@ -7,11 +7,15 @@ class TiXmlElement;
 
 /** @brief An abstract class for a sample-based motion planner. 
  *
- * Standard single-query usage is to create a MotionPlannerInterface using
+ * Standard single-query, feasible motion planning usage is to create
+ * a MotionPlannerInterface using
  * a MotionPlannerFactory, then add the start and goal milestones
  * (which have id's 0 and 1, respectively).  Then PlanMore() is called
  * until IsConnected(0,1) returns true, at which point the path is
  * retrieved using GetPath(0,1,p).
+ *
+ * Standard single-query, optimal motion planning usage is the same, except
+ * PlanMore() is called for a desired time limit.
  */
 class MotionPlannerInterface
 {
@@ -57,7 +61,7 @@ class MotionPlannerInterface
 class MotionPlannerFactory
 {
  public:
-  enum Type { PRM,LazyPRM,PerturbationTree,EST,RRT,SBL,SBLPRT};
+  enum Type { PRM,LazyPRM,PerturbationTree,EST,RRT,SBL,SBLPRT, PRMStar,LazyPRMStar,RRTStar };
 
   MotionPlannerFactory();
   virtual ~MotionPlannerFactory() {}
