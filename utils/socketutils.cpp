@@ -71,7 +71,7 @@ int Connect(const char* addr)
   char* host = new char[strlen(addr)];
   int port;
   if(!ParseAddr(addr,protocol,host,port)) {
-    fprintf(stderr,"Error parsing address %s\n",addr);
+    fprintf(stderr,"Connect: Error parsing address %s\n",addr);
     delete [] protocol;
     delete [] host;
     return -1;
@@ -88,15 +88,14 @@ int Connect(const char* addr)
 	  
   int sockfd = socket(AF_INET, sockettype, 0);
   if (sockfd < 0) {
-    fprintf(stderr,"File::Open: Error creating socket\n");
+    fprintf(stderr,"Connect: Error creating socket\n");
     delete [] host;
     return -1;
   }
   server = gethostbyname(host);
   if (server == NULL) {
-    fprintf(stderr,"File::Open: Error, no such host %s:%d\n",host,port);
+    fprintf(stderr,"Connect: Error, no such host %s:%d\n",host,port);
     close(sockfd);
-    sockfd = -1;
     delete [] host;
     return -1;
   }
@@ -108,8 +107,8 @@ int Connect(const char* addr)
   serv_addr.sin_port = htons(port);
 
   if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-    fprintf(stderr,"File::Open: Connect client to %s:%d failed\n",host,port);
-    perror("");
+    fprintf(stderr,"Connect: Connect to %s:%d failed\n",host,port);
+    perror("Connect error:");
     close(sockfd);
     delete [] host;
     return -1;
