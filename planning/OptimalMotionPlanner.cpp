@@ -1,6 +1,6 @@
 #include "OptimalMotionPlanner.h"
 #include <math/random.h>
-#include <Graph/Path.h>
+#include <graph/Path.h>
 #include <Timer.h>
 
 class EdgeDistance
