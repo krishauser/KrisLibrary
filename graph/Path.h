@@ -38,7 +38,16 @@ inline bool GetAncestorPath(const std::vector<int>& p,
       for(std::list<int>::iterator it=path.begin();it!=path.end()&&i<20;it++,i++) 
 	printf("%d ",*it);
       printf("\n");
-      abort();
+      printf("...\n");
+      std::list<int>::iterator it = path.end();
+      for(int i=0;i<20;i++) it--;
+      while(it != path.end()) {
+	printf("%d ",*it);
+	it++;
+      }
+      printf("\n");
+      //abort();
+      return false;
     }
   }
   return (lastAncestor == -1);
