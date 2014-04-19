@@ -357,6 +357,8 @@ void ShortestPathProblem<Node,Edge>::DeleteUpdate(int u,int v,WeightFunc w,
     if(p[v] != -1) {
       d[v] = inf;
       DecreaseUpdate(p[v],v,w,in,out);
+      d[v] = 0;
+      IncreaseUpdate(p[v],v,w,in,out);
     }
     else {
       for(g.Begin(v,out);!out.end();++out) {
@@ -386,7 +388,7 @@ bool ShortestPathProblem<Node,Edge>::HasShortestPaths(int s,WeightFunc w,Iterato
       double W=w(*it,it.source(),it.target());
       if(p[n] == t) {
 	if(fabs(d[n]-d[t]-W) > 1e-10) {
-	  printf("Inconsistency in node's weight through parent, %f vs %f\n", d[n],d[t]+W);
+	  printf("Inconsistency in node %d's weight through parent %d, %f vs %f=%f+%f\n", n, t, d[n],d[t]+W,d[t],W);
 	  return false;
 	}
       }
