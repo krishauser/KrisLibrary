@@ -49,7 +49,7 @@ bool ConstrainedCalcAccel(RobotDynamics3D& robot,const vector<int>& fixedLinks,c
   return ConstrainedCalcAccel(robot,ddx,J,t,ddq,f);
 }
 
-bool ConstrainedCalcTorque(RobotDynamics3D& robot,const vector<int>& fixedLinks,std::vector<int>& fixedDofs,const Vector& ddq,Vector& t,Vector* f)
+bool ConstrainedCalcTorque(RobotDynamics3D& robot,const vector<int>& fixedLinks,const std::vector<int>& fixedDofs,const Vector& ddq,Vector& t,Vector* f)
 {
   Matrix J;
   Vector ddx;
@@ -263,8 +263,22 @@ bool ConstrainedForwardDynamics(RobotDynamics3D& robot,const Vector& ddx,const M
 }
 
 
-bool ConstrainedCalcTorque(RobotDynamics3D& robot,const Vector& dx,const Matrix& dC_dq,const Vector& ddq,Vector& t,Vector* f)
+bool ConstrainedCalcTorque(RobotDynamics3D& robot,const Vector& ddx,const Matrix& dC_dq,const Vector& ddq,Vector& t,Vector* f)
 {
+  Matrix A;
+  Vector b;
+  ConstrainedForwardDynamics(robot,ddx,dC_dq,A,b);
+  //ddq = A*t + b
+  Vector temp;
+  temp.sub(ddq,b);
+  LDLDecomposition<Real> ldl;
+  ldl.set(A);
+  ldl.zeroTolerance = 1e-6;
+  if(!ldl.backSub(temp,t)) {
+    fprintf(stderr,"ConstrainedCalcTorque could not invert dynamics matrix\n");
+    return false;
+  }
+  return true;
   /*
     From above:
     f = (Jc*B^-1*Jc)^-1*(ddx-ddx0)
@@ -276,6 +290,6 @@ bool ConstrainedCalcTorque(RobotDynamics3D& robot,const Vector& dx,const Matrix&
     Let B*ddq + C + D = t0
     (I - Jc^T*(Jc*B^-1*Jc)^-1 Jc B^-1)t = t0 - Jc^T*(Jc*B^-1*Jc)^-1*(accel at constraints w zero torque)
    */
-  FatalError("Not done yet");
+  FatalError("Fast version not done yet");
   return false;
 }
