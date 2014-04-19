@@ -53,6 +53,9 @@ int TranslateEscape(int c);
 //translates escape sequences (e.g. \n, \t, etc) over str
 std::string TranslateEscapes(const std::string& str);
 
+///Returns the entire contents of a file as a string
+bool GetFileContents(const char *filename,std::string& contents);
+
 ///ReadFile() for STL vectors.  See myfile.h
 template <class type>
 bool ReadFile(File& f, std::vector<type>& v)
