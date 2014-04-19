@@ -42,7 +42,7 @@ public:
   /// Initializer: rigid object
   void InitializeRigidObject();
   /// Initializer: merge some robots into one big robot
-  void Merge(const std::vector<RobotKinematics3D>& robots);
+  void Merge(const std::vector<RobotKinematics3D*>& robots);
   /// Initializer: select a subset of the robot links as DOFs
   void Subset(const RobotKinematics3D& robot,const std::vector<int>& subset);
 

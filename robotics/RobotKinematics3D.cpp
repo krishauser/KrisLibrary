@@ -37,25 +37,25 @@ void RobotKinematics3D::InitializeRigidObject()
   }
 }
 
-void RobotKinematics3D::Merge(const vector<RobotKinematics3D>& robots)
+void RobotKinematics3D::Merge(const vector<RobotKinematics3D*>& robots)
 {
   size_t nl = 0;
   vector<size_t> offset(robots.size());
   for(size_t i=0;i<robots.size();i++) {
     offset[i] = nl;
-    nl += robots[i].links.size();
+    nl += robots[i]->links.size();
   }
   Initialize(nl);
   for(size_t i=0;i<robots.size();i++) {
-    for(size_t j=0;j<robots[i].links.size();j++) {
-      links[offset[i]+j] = robots[i].links[j];
-      if(robots[i].parents[j] >= 0)
-	parents[offset[i]+j] = robots[i].parents[j]+offset[i];
+    for(size_t j=0;j<robots[i]->links.size();j++) {
+      links[offset[i]+j] = robots[i]->links[j];
+      if(robots[i]->parents[j] >= 0)
+	parents[offset[i]+j] = robots[i]->parents[j]+offset[i];
       else
 	parents[offset[i]+j]=-1;
-      q(offset[i]+j) = robots[i].q(j);
-      qMin(offset[i]+j) = robots[i].qMin(j);
-      qMax(offset[i]+j) = robots[i].qMax(j);
+      q(offset[i]+j) = robots[i]->q(j);
+      qMin(offset[i]+j) = robots[i]->qMin(j);
+      qMax(offset[i]+j) = robots[i]->qMax(j);
     }
   }
 }

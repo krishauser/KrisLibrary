@@ -23,37 +23,37 @@ void RobotDynamics3D::InitializeRigidObject()
   powerMax.resize(6,Inf);
 }
 
-void RobotDynamics3D::Merge(const std::vector<RobotDynamics3D>& robots)
+void RobotDynamics3D::Merge(const std::vector<RobotDynamics3D*>& robots)
 {
   size_t nl = 0;
   vector<size_t> offset(robots.size());
   for(size_t i=0;i<robots.size();i++) {
     offset[i] = nl;
-    nl += robots[i].links.size();
+    nl += robots[i]->links.size();
   }
   Initialize(nl);
   for(size_t i=0;i<robots.size();i++) {
-    for(size_t j=0;j<robots[i].links.size();j++) {
-      links[offset[i]+j] = robots[i].links[j];
-      if(robots[i].parents[j] >= 0)
-	parents[offset[i]+j] = robots[i].parents[j]+offset[i];
+    for(size_t j=0;j<robots[i]->links.size();j++) {
+      links[offset[i]+j] = robots[i]->links[j];
+      if(robots[i]->parents[j] >= 0)
+	parents[offset[i]+j] = robots[i]->parents[j]+offset[i];
       else
 	parents[offset[i]+j]=-1;
-      q(offset[i]+j) = robots[i].q(j);
-      qMin(offset[i]+j) = robots[i].qMin(j);
-      qMax(offset[i]+j) = robots[i].qMax(j);
-      dq(offset[i]+j) = robots[i].dq(j);
-      torqueMax(offset[i]+j) = robots[i].torqueMax(j);
-      velMin(offset[i]+j) = robots[i].velMin(j);
-      velMax(offset[i]+j) = robots[i].velMax(j);
-      powerMax(offset[i]+j) = robots[i].powerMax(j);
+      q(offset[i]+j) = robots[i]->q(j);
+      qMin(offset[i]+j) = robots[i]->qMin(j);
+      qMax(offset[i]+j) = robots[i]->qMax(j);
+      dq(offset[i]+j) = robots[i]->dq(j);
+      torqueMax(offset[i]+j) = robots[i]->torqueMax(j);
+      velMin(offset[i]+j) = robots[i]->velMin(j);
+      velMax(offset[i]+j) = robots[i]->velMax(j);
+      powerMax(offset[i]+j) = robots[i]->powerMax(j);
     }
   }
 }
 
 void RobotDynamics3D::Subset(const RobotDynamics3D& robot,const std::vector<int>& subset)
 {
-  RobotDynamics3D::Subset(robot,subset);
+  RobotKinematics3D::Subset(robot,subset);
   for(size_t i=0;i<subset.size();i++) {
     dq(i) = robot.dq(subset[i]);
     torqueMax(i) = robot.torqueMax(subset[i]);

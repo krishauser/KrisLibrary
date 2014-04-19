@@ -34,7 +34,7 @@ class RobotDynamics3D : public RobotKinematics3D
 public:
   void Initialize(int numBodies);
   void InitializeRigidObject();
-  void Merge(const std::vector<RobotDynamics3D>& robots);
+  void Merge(const std::vector<RobotDynamics3D*>& robots);
   void Subset(const RobotDynamics3D& robot,const std::vector<int>& subset);
   void UpdateDynamics();   ///< This calls UpdateFrames() and Update_J()
   void Update_J();         ///< Updates JO and JP.
