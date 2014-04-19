@@ -109,7 +109,7 @@ int MilestonePath::Reduce(int numIters)
       EdgePlanner* e_x2b=space->LocalPlanner(x2,b);
       if(e_ax1->IsVisible() && e_x2b->IsVisible()) {
 	numsplices++;
-	cout<<"Visible subsegment "<<i1<<"->"<<i2<<endl;
+	//cout<<"Visible subsegment "<<i1<<"->"<<i2<<endl;
 	//replace edges a->a',...,b'->b with a->x1,x1->x2,x2->b
 	edges.erase(edges.begin()+i1,edges.begin()+i2+1);
 
