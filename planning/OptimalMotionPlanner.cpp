@@ -9,13 +9,18 @@ class EdgeDistance
   Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
   {
     assert(e->Space() != NULL);
-    return e->Space()->Distance(e->Start(),e->Goal());
+    Real res = e->Space()->Distance(e->Start(),e->Goal());
+    if(res <= 0) {
+      printf("PRMStarPlanner: Warning, edge has nonpositive length %g\n",res);
+      return Epsilon;
+    }
+    return res;
   }
 };
 
 
 PRMStarPlanner::PRMStarPlanner(CSpace* space)
-  :RoadmapPlanner(space),spp(roadmap),lazy(false),randomNeighbors(false),connectByRadius(false),connectRadiusConstant(1),connectionThreshold(Inf)
+  :RoadmapPlanner(space),lazy(false),randomNeighbors(false),connectByRadius(false),connectRadiusConstant(1),connectionThreshold(Inf),spp(roadmap)
 {}
 
 void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
@@ -23,6 +28,7 @@ void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
   Cleanup();
   start = AddMilestone(qstart);
   goal = AddMilestone(qgoal);
+  Assert(start == 0 && goal == 1);
   spp.InitializeSource(start);  
 
   numPlanSteps = 0;
@@ -72,7 +78,7 @@ void PRMStarPlanner::PlanMore()
     if(lazy && (n!=goal && IsInf(spp.d[n])))
       continue;
     //check for shorter connections into m and neighbors[i]
-    Assert(n >= 0 && n < roadmap.nodes.size() && n != m);
+    Assert(n >= 0 && n < (int)roadmap.nodes.size() && n != m);
     Real d = space->Distance(x,roadmap.nodes[n]);
     if(d > connectionThreshold) continue;
 
@@ -100,11 +106,14 @@ void PRMStarPlanner::PlanMore()
     }
   }
   tConnect += timer.ElapsedTime();
-  if(lazy) {
+  if(lazy) {    
     if(spp.d[goal] < goalDist) {
       //found an improved path to the goal! do checking
       timer.Reset();
-      CheckPath(start,goal);
+      //printf("Candidate improvement to cost %g\n",spp.d[goal]);
+      if(CheckPath(start,goal)) {
+	//printf("Found an improved path to goal with cost %g (before it was %g)\n",spp.d[goal],goalDist);
+      }
       tLazy += timer.ElapsedTime();
     }
   }
@@ -188,10 +197,32 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
     spp.InitializeSource(a);
     spp.FindPath_Undirected(b,distanceWeightFunc);
   }
-  else
+  else {
     Assert(a==start);
+    EdgeDistance distanceWeightFunc;
+    Assert(spp.HasShortestPaths_Undirected(a,distanceWeightFunc));
+  }
   if(IsInf(spp.d[b])) return false;
-  if(!Graph::GetAncestorPath(spp.p,b,a,nodes)) return false;
+  if(!Graph::GetAncestorPath(spp.p,b,a,nodes)) {
+    printf("PRMStarPlanner: Unable to find path from %d to %d\n",a,b);
+    printf("node,distance,parent,edge weight,edge feasible\n");
+    for(int i=0;i<20;i++) {
+      Real w = 0;
+      int feas = 0;
+      if(spp.p[b] >= 0) {
+	SmartPointer<EdgePlanner>* e=roadmap.FindEdge(b,spp.p[b]);
+	Assert(e != NULL);
+	w=(*e)->Space()->Distance((*e)->Start(),(*e)->Goal());
+	feas = (*e)->IsVisible();
+      }
+      printf("%d,%g,%d,%g,%d\n",b,spp.d[b],spp.p[b],w,feas);
+      b = spp.p[b];
+      if(b < 0) break;
+    }
+    return false;
+  }
+  for(size_t i=0;i+1<nodes.size();i++) 
+    Assert(spp.d[nodes[i+1]] > spp.d[nodes[i]]);
   path.edges.resize(0);
   for(size_t i=0;i+1<nodes.size();i++) {
     SmartPointer<EdgePlanner>* e=roadmap.FindEdge(nodes[i],nodes[i+1]);
@@ -228,6 +259,7 @@ bool PRMStarPlanner::CheckPath(int a,int b)
 	i=(int)k/2;
       else
 	i=(int)path.edges.size()-1-(int)k/2;
+      Assert(i >= 0 && i+1 < (int)npath.size());
       SmartPointer<EdgePlanner>* e = roadmap.FindEdge(npath[i],npath[i+1]);
       numEdgeChecks++;
       if(!(*e)->IsVisible()) {
