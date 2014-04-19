@@ -31,6 +31,39 @@ void RobotWithGeometry::Initialize(int n)
   envCollisions.resize(n,NULL);
 }
 
+void RobotWithGeometry::Merge(const std::vector<RobotWithGeometry*>& robots)
+{
+  vector<RobotDynamics3D*> drobots(robots.size());
+  copy(robots.begin(),robots.end(),drobots.begin());
+  RobotDynamics3D::Merge(drobots);
+
+  CleanupCollisions();
+  CleanupSelfCollisions();
+  int n = (int)links.size();
+  geometry.resize(n);
+  selfCollisions.resize(n,n,NULL);
+  envCollisions.resize(n,NULL);
+  
+  size_t nl = 0;
+  vector<size_t> offset(robots.size());
+  for(size_t i=0;i<robots.size();i++) {
+    offset[i] = nl;
+    nl += robots[i]->links.size();
+  }
+  InitAllSelfCollisions();
+  for(size_t i=0;i<robots.size();i++) {
+    for(size_t j=0;j<robots[i]->geometry.size();j++)
+      geometry[j+offset[i]] = robots[i]->geometry[j];
+    for(size_t j=0;j<robots[i]->envCollisions.size();j++)
+      envCollisions[j+offset[i]] = robots[i]->envCollisions[j];
+    //delete self collisions that are not allowed
+    for(int j=0;j<robots[i]->selfCollisions.m;j++)
+      for(int k=0;k<robots[i]->selfCollisions.n;k++)
+	if(!robots[i]->selfCollisions(j,k))
+	  selfCollisions(j+offset[i],k+offset[i]) = NULL;
+  }
+}
+
 bool RobotWithGeometry::LoadGeometry(int i,const char* file)
 {
   if(!geometry[i].Load(file)) return false;
