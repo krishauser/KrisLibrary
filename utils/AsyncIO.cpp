@@ -1,6 +1,9 @@
 #include "AsyncIO.h"
 #include "socketutils.h"
 #include <iostream>
+#ifndef WIN32
+#include <unistd.h>
+#endif
 
 AsyncReaderQueue::AsyncReaderQueue(size_t _queueMax)
   :queueMax(_queueMax),msgCount(0)
