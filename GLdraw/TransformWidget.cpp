@@ -17,11 +17,27 @@ WidgetSet::WidgetSet()
   :activeWidget(NULL),closestWidget(NULL)
 {}
 
+void WidgetSet::Enable(int index,bool enabled)
+{
+  Assert(index >= 0 && index < (int)widgets.size());
+  widgetEnabled.resize(widgets.size(),true);
+  widgetEnabled[index] = enabled;
+}
+
+void WidgetSet::Enable(Widget* widget,bool enabled)
+{
+  widgetEnabled.resize(widgets.size(),true);
+  for(size_t i=0;i<widgets.size();i++)
+    if(widgets[i] == widget) widgetEnabled[i] = enabled;
+}
+
 bool WidgetSet::Hover(int x,int y,Camera::Viewport& viewport,double& closestDistance)
 {
+  widgetEnabled.resize(widgets.size(),true);
   closestDistance = Inf;
   closestWidget = NULL;
   for(size_t i=0;i<widgets.size();i++) {
+    if(!widgetEnabled[i]) continue;
     Real d;
     if(widgets[i]->Hover(x,y,viewport,d)) {
       if(d < closestDistance) {
@@ -71,9 +87,11 @@ void WidgetSet::SetHighlight(bool value)
 
 bool WidgetSet::BeginDrag(int x,int y,Camera::Viewport& viewport,double& closestDistance) 
 {
+  widgetEnabled.resize(widgets.size(),true);
   closestDistance = Inf;
   closestWidget = NULL;
   for(size_t i=0;i<widgets.size();i++) {
+    if(!widgetEnabled[i]) continue;
     Real d;
     if(widgets[i]->BeginDrag(x,y,viewport,d)) {
       if(d < closestDistance) {
@@ -141,12 +159,20 @@ void WidgetSet::Keypress(char c)
 }
 void WidgetSet::DrawGL(Camera::Viewport& viewport)
 {
-  for(size_t i=0;i<widgets.size();i++) widgets[i]->DrawGL(viewport);
+  widgetEnabled.resize(widgets.size(),true);
+  for(size_t i=0;i<widgets.size();i++) {
+    if(widgetEnabled[i])
+      widgets[i]->DrawGL(viewport);
+  }
 }
 
 void WidgetSet::Idle()
 {
-  for(size_t i=0;i<widgets.size();i++) widgets[i]->Idle();
+  widgetEnabled.resize(widgets.size(),true);
+  for(size_t i=0;i<widgets.size();i++) {
+    if(widgetEnabled[i])
+      widgets[i]->Idle();
+  }
 }
 
 TransformWidget::TransformWidget()

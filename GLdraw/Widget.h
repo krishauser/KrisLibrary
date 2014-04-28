@@ -58,8 +58,11 @@ class WidgetSet : public Widget
   virtual void Keypress(char c);
   virtual void DrawGL(Camera::Viewport& viewport);
   virtual void Idle();
+  virtual void Enable(int index,bool enabled);
+  virtual void Enable(Widget* widget,bool enabled);
 
   std::vector<Widget*> widgets;
+  std::vector<bool> widgetEnabled;
   Widget* activeWidget;
   Widget* closestWidget;
 };
