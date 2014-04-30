@@ -6,7 +6,7 @@
 #else
 #include <sys/socket.h>
 typedef int SOCKET;
-const static int INVALID_SOCKET -1
+const static int INVALID_SOCKET = -1;
 #endif
 
 ///Parses an address of the form http://servername, ftp://servername,
