@@ -241,7 +241,6 @@ const char* SocketClientTransport::DoRead()
     cout<<"SocketReadWorker: Error reading string..."<<endl;
     return NULL;
   }
-  cout<<"SocketClientTransport: got message "<<buf<<endl;
   return buf;
 }
 
