@@ -87,7 +87,7 @@ void* read_worker_thread_func(void * ptr)
   while(data->timer.ElapsedTime() < data->lastReadTime + data->timeout) {
     const char* res = data->transport->DoRead();
     if(!res) {
-      fprintf(stderr,"AsyncReaderThread: abnormal termination\n");
+      fprintf(stderr,"AsyncReaderThread: abnormal termination, read failed\n");
       return NULL;
     }
     
@@ -97,6 +97,8 @@ void* read_worker_thread_func(void * ptr)
 		data->lastReadTime = data->timer.ElapsedTime();
 	} //mutex unlocked
   }
+  if(data->timeout != 0)
+    fprintf(stderr,"AsyncReaderThread: quitting due to timeout\n");
   return NULL;
 }
 
@@ -107,7 +109,7 @@ bool AsyncReaderThread::Start()
     if(!transport) return false;
     if(!transport->Start()) return false;
     lastReadTime = 0;
-	thread = ThreadStart(read_worker_thread_func,this);
+    thread = ThreadStart(read_worker_thread_func,this);
     initialized = true;
   }
   return true;
@@ -116,10 +118,15 @@ bool AsyncReaderThread::Start()
 void AsyncReaderThread::Stop()
 {
   if(initialized) {
+    double oldtimeout = timeout;
+    //signal that the thread should stop
     timeout = 0;
+    //wait for the thread to stop
     ThreadJoin(thread);
     transport->Stop();
     initialized = false;
+    //restore the old timeout
+    timeout = oldtimeout;
   }
 }
 
@@ -234,6 +241,7 @@ const char* SocketClientTransport::DoRead()
     cout<<"SocketReadWorker: Error reading string..."<<endl;
     return NULL;
   }
+  cout<<"SocketClientTransport: got message "<<buf<<endl;
   return buf;
 }
 
@@ -249,7 +257,7 @@ bool SocketClientTransport::Start()
     else
       opened=true;
   }
-  ThreadSleep(1);
+  //ThreadSleep(1);
   return true;
 }
 
@@ -257,7 +265,7 @@ bool SocketClientTransport::Stop()
 {
   cout<<"SocketTransport: Destroying socket:"<<endl;
   socket.Close();
-  cout<<"SocketTransport: Done destroying socket:"<<endl;
+  cout<<"SocketTransport: Done destroying socket."<<endl;
   return true;
 }
 
