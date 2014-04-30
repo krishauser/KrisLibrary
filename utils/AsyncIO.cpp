@@ -64,11 +64,9 @@ AsyncPipeQueue::AsyncPipeQueue(size_t _recvQueueMax,size_t _sendQueueMax)
   :reader(_recvQueueMax),writer(_sendQueueMax)
 {}
 
-
 AsyncReaderThread::AsyncReaderThread(double _timeout)
   :AsyncReaderQueue(1),initialized(false),timeout(_timeout),lastReadTime(-1)
 {
-  mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 AsyncReaderThread::~AsyncReaderThread()
@@ -93,10 +91,11 @@ void* read_worker_thread_func(void * ptr)
       return NULL;
     }
     
-    pthread_mutex_lock(&data->mutex);
-    data->OnRead(res);
-    data->lastReadTime = data->timer.ElapsedTime();
-    pthread_mutex_unlock(&data->mutex);
+	{
+		ScopedLock lock(data->mutex);
+		data->OnRead(res);
+		data->lastReadTime = data->timer.ElapsedTime();
+	} //mutex unlocked
   }
   return NULL;
 }
@@ -108,7 +107,7 @@ bool AsyncReaderThread::Start()
     if(!transport) return false;
     if(!transport->Start()) return false;
     lastReadTime = 0;
-    pthread_create(&thread,NULL,read_worker_thread_func,this);
+	thread = ThreadStart(read_worker_thread_func,this);
     initialized = true;
   }
   return true;
@@ -118,7 +117,7 @@ void AsyncReaderThread::Stop()
 {
   if(initialized) {
     timeout = 0;
-    pthread_join(thread,NULL);
+    ThreadJoin(thread);
     transport->Stop();
     initialized = false;
   }
@@ -130,7 +129,6 @@ void AsyncReaderThread::Stop()
 AsyncPipeThread::AsyncPipeThread(double _timeout)
   :AsyncPipeQueue(1),initialized(false),timeout(_timeout),lastReadTime(-1)
 {
-  mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 AsyncPipeThread::~AsyncPipeThread()
@@ -150,18 +148,19 @@ void* pipe_read_worker_thread_func(void * ptr)
   AsyncPipeThread* data = reinterpret_cast<AsyncPipeThread*>(ptr);
   while(data->timer.ElapsedTime() < data->lastReadTime + data->timeout) {
     if(!data->transport->ReadReady()) {
-      pthread_yield();
+      ThreadYield();
     }
     else {
       const char* res = data->transport->DoRead();
       if(!res) {
 	fprintf(stderr,"AsyncReaderThread: abnormal termination\n");
 	return NULL;
-      }    
-      pthread_mutex_lock(&data->mutex);
-      data->OnRead(res);
-      data->lastReadTime = data->timer.ElapsedTime();
-      pthread_mutex_unlock(&data->mutex);
+      } 
+	  {
+		ScopedLock lock(data->mutex);
+		data->OnRead(res);
+		data->lastReadTime = data->timer.ElapsedTime();
+	  } //mutex unlocked
     }
   }
   return NULL;
@@ -173,16 +172,18 @@ void* pipe_write_worker_thread_func(void * ptr)
   while(data->timer.ElapsedTime() < data->lastWriteTime + data->timeout) {
     //do the writing
     if(!data->transport->WriteReady()) {
-      pthread_yield();
+      ThreadYield();
     }
     else {
       string send;
-      pthread_mutex_lock(&data->mutex);
-      if(data->WriteAvailable()) {
-	 send = data->OnWrite();
-	 data->lastWriteTime = data->timer.ElapsedTime();
-      }
-      pthread_mutex_unlock(&data->mutex);
+	  {
+		ScopedLock(data->mutex);
+		if(data->WriteAvailable()) {
+		send = data->OnWrite();
+		data->lastWriteTime = data->timer.ElapsedTime();
+		}
+		//mutex unlocked
+	  }
       if(!send.empty()) {
 	if(!data->transport->DoWrite(send.c_str())) {
 	  fprintf(stderr,"AsyncPipeThread: abnormal termination\n");
@@ -190,7 +191,7 @@ void* pipe_write_worker_thread_func(void * ptr)
 	}
       }
       else
-	pthread_yield();
+	ThreadYield();
     }    
   }
   return NULL;
@@ -203,8 +204,8 @@ bool AsyncPipeThread::Start()
   if(!initialized) {
     if(!transport->Start()) return false;
     lastReadTime = lastWriteTime = 0;
-    pthread_create(&readThread,NULL,pipe_read_worker_thread_func,this);
-    pthread_create(&readThread,NULL,pipe_write_worker_thread_func,this);
+	readThread = ThreadStart(pipe_read_worker_thread_func,this);
+    writeThread = ThreadStart(pipe_write_worker_thread_func,this);
     initialized = true;
   }
   return true;
@@ -214,8 +215,8 @@ void AsyncPipeThread::Stop()
 {
   if(initialized) {
     timeout = 0;
-    pthread_join(readThread,NULL);
-    pthread_join(writeThread,NULL);
+	ThreadJoin(readThread);
+    ThreadJoin(writeThread);
     transport->Stop();
     initialized = false;
   }
@@ -243,12 +244,12 @@ bool SocketClientTransport::Start()
   while(!opened) {
     if(!socket.Open(addr.c_str(),FILECLIENT)) {
       fprintf(stderr,"SocketTransport: Unable to open address... waiting\n");
-      sleep(1);
+      ThreadSleep(1);
     }
     else
       opened=true;
   }
-  sleep(1);
+  ThreadSleep(1);
   return true;
 }
 
@@ -287,7 +288,7 @@ bool SocketServerTransport::Stop()
   for(size_t i=0;i<clientsockets.size();i++)
     clientsockets[i] = NULL;
   clientsockets.resize(0);
-  close(serversocket);
+  CloseSocket(serversocket);
   return true;
 }
 

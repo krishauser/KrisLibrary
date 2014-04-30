@@ -9,9 +9,7 @@
 #include <errors.h>
 #include <math/math.h>
 #include "SmartPointer.h"
-#ifndef WIN32
-#include <pthread.h>
-#endif //WIN32
+#include "threadutils.h"
 using namespace std;
 
 /** @brief Asynchronous reader base class.
@@ -112,7 +110,7 @@ class AsyncWriterQueue : public AsyncWriter
   virtual void Reset();
   virtual void SendMessage(const string& msg);
   virtual int SentMessageCount() { return msgCount+msgQueue.size(); }
-  virtual int DeliveredMessageCount() { return msgCount; }
+  virtual int DeliveredMessageCount() { return (int)msgCount; }
 
   size_t queueMax;
   size_t msgCount;
@@ -214,8 +212,6 @@ class SocketServerTransport : public AsyncTransport
 };
 
 
-#ifndef WIN32
-
 ///An asynchronous reader that uses multithreading.
 ///Subclass will define what that particular process is (usually blocking I/O)
 ///by overloading the Callback() function.
@@ -234,11 +230,11 @@ class AsyncReaderThread : public AsyncReaderQueue
   SmartPointer<AsyncTransport> transport;
 
   bool initialized;
-  pthread_t thread;
+  Thread thread;
   double timeout;
 
   Timer timer;
-  pthread_mutex_t mutex;
+  Mutex mutex;
   double lastReadTime;
 };
 
@@ -259,11 +255,11 @@ class AsyncPipeThread : public AsyncPipeQueue
   SmartPointer<AsyncTransport> transport;
 
   bool initialized;
-  pthread_t readThread,writeThread;
+  Thread readThread,writeThread;
   double timeout;
 
   Timer timer;
-  pthread_mutex_t mutex;
+  Mutex mutex;
   double lastReadTime;
   double lastWriteTime;
 };
@@ -294,7 +290,5 @@ class SocketPipeWorker : public AsyncPipeThread
       transport = new SocketClientTransport(addr);
   }
 };
-
-#endif //WIN32
 
 #endif
