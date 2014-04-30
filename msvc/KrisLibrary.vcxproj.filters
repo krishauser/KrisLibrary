@@ -1272,6 +1272,9 @@
     <ClInclude Include="..\statistics\HierarchicalClustering.h">
       <Filter>Header Files\statistics</Filter>
     </ClInclude>
+    <ClInclude Include="..\utils\AsyncIO.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\camera\camera.cpp">
@@ -2095,6 +2098,12 @@
     </ClCompile>
     <ClCompile Include="..\statistics\HierarchicalClustering.cpp">
       <Filter>Source Files\statistics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\AsyncIO.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utils\socketutils.cpp">
+      <Filter>Source Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
