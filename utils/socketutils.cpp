@@ -184,7 +184,7 @@ SOCKET Accept(SOCKET sockfd)
   return clientsocket;
 }
 
-void SetNonblock(int sockfd)
+void SetNonblock(SOCKET sockfd)
 {
 #ifdef WIN32
 	u_long val;
@@ -195,7 +195,7 @@ void SetNonblock(int sockfd)
 }
 
 
-void CloseSocket(int sockfd)
+void CloseSocket(SOCKET sockfd)
 {
 #ifdef WIN32
 	closesocket(sockfd);
