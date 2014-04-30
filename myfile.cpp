@@ -145,7 +145,7 @@ void File::Close()
 {
         if(srctype == MODE_MYFILE && file != INVALID_FILE_POINTER) FileClose(file);
 	if(srctype == MODE_MYDATA && datafile != NULL) free(datafile);
-	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) CloseSocket((int)file);
+	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) CloseSocket((SOCKET)file);
 
 	srctype = MODE_NONE;
 	mode = 0;
@@ -326,7 +326,7 @@ int File::Position() const
 		return datapos;
 	case MODE_TCPSOCKET:
 	case MODE_UDPSOCKET:
-	  if(file == INVALID_FILE_POINTER) return -1;
+	  if((SOCKET)file == INVALID_SOCKET) return -1;
 	  return 0;
 	}
 	return -1;
@@ -363,6 +363,9 @@ bool File::Seek(int p, int from)
 			datapos = datasize + p;
 			break;
 		}
+	case MODE_TCPSOCKET:
+	case MODE_UDPSOCKET:
+	  return false;
 	}
 	return true;
 }
@@ -405,7 +408,7 @@ bool File::ReadData(void* d, int size)
 		    char* buffer = (char*)d;
 		    int totalread = 0;
 		    while(totalread < size) {
-		      int n=recv((int)file,buffer+totalread,size-totalread,0);
+		      int n=recv((SOCKET)file,buffer+totalread,size-totalread,0);
 		      if(n == 0) 
 			return false;
 		      if(n < 0) {
@@ -454,7 +457,7 @@ bool File::WriteData(const void* d, int size)
 		    const char* msg = (const char*)d;
 		    int totalsent = 0;
 		    while(totalsent < size) {
-		      int n = send((int)file,msg+totalsent,size-totalsent,0);
+		      int n = send((SOCKET)file,msg+totalsent,size-totalsent,0);
 		      if(n <= 0) {
 			return false;
 		      }
@@ -489,24 +492,30 @@ bool File::ReadString(char* str, int bufsize)
 			for(i=0; i<bufsize; i++)
 			{
 				c = ReadChar(file);
-				if(c==EOF)
-					return false;
+				if(c==EOF) {
+				  fprintf(stderr,"File::ReadString hit end of file without finding null character\n");
+				  return false;
+				}
 				str[i]=c;
 				if(c==0)
 					return true;
 			}
+			fprintf(stderr,"File::ReadString string length is greater than buffer size %d\n",bufsize);
 			break;
 		case MODE_MYDATA:
 		case MODE_EXTDATA:
 			for(i=0; i<bufsize; i++)
 			{
-				if(datapos >= datasize)
-					return false;
-				str[i]=datafile[datapos];
-				datapos++;
-				if(str[i]==0)
-					return true;
+			  if(datapos >= datasize) {
+			    fprintf(stderr,"File::ReadString ran past end of internal buffer without finding null character\n");
+			    return false;
+			  }
+			  str[i]=datafile[datapos];
+			  datapos++;
+			  if(str[i]==0)
+			    return true;
 			}
+			fprintf(stderr,"File::ReadString string length is greater than buffer size %d\n",bufsize);
 			break;
 		case MODE_TCPSOCKET:
 		case MODE_UDPSOCKET:
