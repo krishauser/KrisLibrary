@@ -253,7 +253,7 @@ void SplineBase<Key,Point>::operator = (const SplineBase<Key,Point>& rhs)
 {
 	if(&rhs == this) return;
 	resize(rhs.getNumKeys());
-	copyTimeBase(rhs);
+	SplineTimeBase::copyTimeBase(rhs);
 	for(size_t i=0; i<keys.size(); i++)
 		keys[i] = rhs.keys[i];
 }
@@ -322,7 +322,7 @@ template <class Point>
 void SplineBezierCubic<Point>::fromHermite(const SplineHermite<Point>& s)
 {
 	//copy times
-	copyTimeBase(s);
+	SplineTimeBase::copyTimeBase(s);
 	for(size_t i=0;i<ParentT::keys.size();i++)
 	{
 		getPoint(i) = s.getPoint(i);
