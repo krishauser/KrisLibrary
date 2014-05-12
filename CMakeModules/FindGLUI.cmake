@@ -37,15 +37,15 @@ if(OPENGL_FOUND AND GLUT_FOUND)
 			NAMES 
 			GL/glui.h
 			PATHS
-			${GLUI_ROOT_PATH}/include
+			${GLUI_ROOT_DIR}/include
 			DOC
 			"GLUI include directory")
 		find_library(GLUI_LIBRARY
 			NAMES
 			glui32
-			${GLUI_ROOT_DIR}/lib
-			${GLUI_ROOT_DIR}/Release
 			HINTS
+			${GLUI_ROOT_DIR}/msvc/lib
+			${GLUI_ROOT_DIR}/Release
 			${OPENGL_LIBRARY_DIR}
 			${OPENGL_INCLUDE_DIR}/../lib
 			DOC
@@ -53,9 +53,9 @@ if(OPENGL_FOUND AND GLUT_FOUND)
 		find_library(GLUI_DEBUG_LIBRARY
 			NAMES
 			glui32d
-			${GLUI_ROOT_DIR}/lib
-			${GLUI_ROOT_DIR}/Debug
 			HINTS
+			${GLUI_ROOT_DIR}/msvc/lib
+			${GLUI_ROOT_DIR}/Debug
 			${OPENGL_LIBRARY_DIR}
 			${OPENGL_INCLUDE_DIR}/../lib
 			DOC
