@@ -1,4 +1,5 @@
 #include "ResourceLibrary.h"
+#include "AnyCollection.h"
 #include "stringutils.h"
 #include "fileutils.h"
 #include "ioutils.h"
@@ -36,23 +37,30 @@ ResourceBase::ResourceBase(const string& _name,const string& fn)
   :name(_name),fileName(fn)
 {}
 
+bool ResourceBase::Load(AnyCollection& c)
+{
+  string data;
+  if(c["data"].as<string>(data)) {
+    stringstream ss(data);
+    return Load(ss);
+  }
+  return false;
+}
+
+bool ResourceBase::Save(AnyCollection& c)
+{
+  stringstream ss;
+  if(!Save(ss)) return false;
+  c["data"] = ss.str();
+  return true;
+}
+
 bool ResourceBase::Load(TiXmlElement* in)
 {
 #if HAVE_TINYXML
-  if(0 != strcmp(in->Value(),Type())) {
-    printf("ResourceBase::Load: Element %s doesn't have type %s\n",in->Value(),Type());
-    return false;
-  }
-  if(in->Attribute("name")!=NULL)
-    name = in->Attribute("name");
-  if(in->Attribute("file")!=NULL)
-    fileName = in->Attribute("file");
   if(in->GetText()) {
     stringstream ss(in->GetText());
     return Load(ss);
-  }
-  else if(!fileName.empty()) {
-    return Load(fileName);
   }
 #endif
   return false;
@@ -61,11 +69,6 @@ bool ResourceBase::Load(TiXmlElement* in)
 bool ResourceBase::Save(TiXmlElement* out)
 {
 #if HAVE_TINYXML
-  out->SetValue(Type());
-  if(!name.empty())
-    out->SetAttribute("name",name);
-  if(!fileName.empty())
-    out->SetAttribute("file",fileName);
   stringstream ss;
   if(!Save(ss)) return false;
   TiXmlText text(ss.str().c_str());
@@ -167,7 +170,7 @@ bool ResourceLibrary::Save(TiXmlElement* root)
       if(!i->second[j]->fileName.empty())
 	c->SetAttribute("file",i->second[j]->fileName.c_str());
       if(i->second[j]->Save(c)) {
-	//ok
+	//ok, saved directly to TiXmlElement
 	root->LinkEndChild(c);
       }
       else {
@@ -187,7 +190,44 @@ bool ResourceLibrary::Save(TiXmlElement* root)
   fprintf(stderr,"ResourceLibrary::Save(): tinyxml not defined\n");
   return false;
 #endif
+}
 
+bool ResourceLibrary::SaveJSON(std::ostream& s)
+{
+  AnyCollection c;
+  if(!Save(c)) return false;
+  c.write(s);
+  return true;
+}
+
+bool ResourceLibrary::Save(AnyCollection& c)
+{
+  c.clear();
+  c.resize(itemsByType.size());
+  int k=0;
+  for(Map::iterator i=itemsByType.begin();i!=itemsByType.end();i++,k++) {
+    for(size_t j=0;j<i->second.size();j++) {
+      if(i->second[j]->Save(c[k])) {
+	//ok, saved directly to AnyCollection
+	c[k]["type"] = string(i->second[j]->Type());
+	c[k]["name"] = i->second[j]->name;
+      }
+      else if(!i->second[j]->fileName.empty()) {
+	c[k]["type"] = string(i->second[j]->Type());
+	c[k]["name"] = i->second[j]->name;
+	c[k]["file"] = i->second[j]->fileName;
+	if(!i->second[j]->Save()) {
+	  cerr<<"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName<<endl;
+	  return false;
+	}
+      }
+      else {
+	cerr<<"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to AnyCollection or file"<<endl;
+	return false;
+      }
+    }
+  }
+  return true;
 }
 
 bool ResourceLibrary::LoadXml(const std::string& fn)
@@ -218,22 +258,24 @@ bool ResourceLibrary::Load(TiXmlElement* root)
       res = false;
     }
     else {
-      ResourceBase* resource=knownTypes[element->Value()][0]->Make();
-      if(!resource->Load(element)) {
+      SmartPointer<ResourceBase> resource=knownTypes[element->Value()][0]->Make();
+      if(element->Attribute("name")!=NULL)
+	resource->name = element->Attribute("name");
+      if(element->Attribute("file")!=NULL) {
+	resource->fileName = element->Attribute("file");
+	if(!resource->Load()) {
+	  fprintf(stderr,"ResourceLibrary::LoadXml(): error loading element of type %s\n",element->Value());
+	  res = false;
+	}
+	else {
+	  Add(resource);
+	}
+      }
+      else if(!resource->Load(element)) {
 	fprintf(stderr,"ResourceLibrary::LoadXml(): error loading element of type %s\n",element->Value());
-	delete resource;
 	res = false;
       }
       else {
-	//handle loading of name and filename if the resource doesnt do it already
-	if(resource->name.empty()) {
-	  if(element->Attribute("name") != NULL)
-	    resource->name = element->Attribute("name");
-	}
-	if(resource->fileName.empty()) {
-	  if(element->Attribute("file") != NULL)
-	    resource->fileName = element->Attribute("file");
-	}
 	Add(resource);
       }
     }
@@ -244,6 +286,46 @@ bool ResourceLibrary::Load(TiXmlElement* root)
   fprintf(stderr,"ResourceLibrary::Load(): tinyxml not defined\n");
   return false;
 #endif
+}
+
+
+bool ResourceLibrary::LoadJSON(istream& s)
+{
+  AnyCollection c;
+  if(!c.read(s)) return false;
+  return Load(c);
+}
+
+bool ResourceLibrary::Load(AnyCollection& c)
+{
+  vector<SmartPointer<AnyCollection> > subitems;
+  c.enumerate(subitems);
+  for(size_t i=0;i<subitems.size();i++) {
+    AnyCollection& c=(*subitems[i]);
+    string type;
+    if(!c["type"].as<string>(type)) {
+      printf("ResourceLibrary::Load: Item %d does not have \"type\" element\n",i);
+      return false;
+    }
+    if(knownTypes.count(type) == 0) {    
+      printf("ResourceLibrary::Load: Item %d type %s unknown\n",i,type.c_str());
+      return false;
+    }
+    SmartPointer<ResourceBase> res = knownTypes[type][0]->Make();
+    c["name"].as<string>(res->name);
+    if(c["file"].as<string>(res->fileName)) {
+      if(!res->Load()) {
+	printf("ResourceLibrary::Load: Error reading item %d\n",i);
+	return false;
+      }
+    }
+    else if(!res->Load(c)) {
+      printf("ResourceLibrary::Load: Error reading item %d\n",i);
+      return false; 
+    }
+    Add(res);
+  }
+  return true;
 }
 
 bool ResourceLibrary::LazyLoadXml(const std::string& fn)
@@ -286,6 +368,42 @@ bool ResourceLibrary::LazyLoadXml(const std::string& fn)
 #endif
 }
 
+
+bool ResourceLibrary::LazyLoadJSON(std::istream& s)
+{
+  AnyCollection c;
+  if(!c.read(s)) return false;
+  return LazyLoad(c);
+}
+
+bool ResourceLibrary::LazyLoad(AnyCollection& c)
+{
+  vector<SmartPointer<AnyCollection> > subitems;
+  c.enumerate(subitems);
+  for(size_t i=0;i<subitems.size();i++) {
+    AnyCollection& c=*subitems[i];
+    string type;
+    if(!c["type"].as<string>(type)) {
+      printf("ResourceLibrary::LazyLoad: Item %d does not have \"type\" element\n",i);
+      return false;
+    }
+    if(knownTypes.count(type) == 0) {    
+      printf("ResourceLibrary::LazyLoad: Item %d type %s unknown\n",i,type.c_str());
+      return false;
+    }
+    SmartPointer<ResourceBase> res = knownTypes[type][0]->Make();
+    c["name"].as<string>(res->name);
+    if(c["file"].as<string>(res->fileName)) {
+      //lazy load
+    }
+    else if(!res->Load(c)) {
+      printf("ResourceLibrary::LazyLoad: Error reading item %d\n",i);
+      return false;
+    }
+    Add(res);
+  }
+  return true;
+}
 
 ResourcePtr ResourceLibrary::LoadItem(const string& fn)
 {

@@ -2,6 +2,7 @@
 #define RESOURCE_LIBRARY_H
 
 #include "SmartPointer.h"
+#include "AnyCollection.h"
 #include <string>
 #include <iostream>
 #include <typeinfo>
@@ -14,9 +15,13 @@ class TiXmlElement;
  *
  * The subclass must support saving through one or more of the
  * following methods
- * - to a file on disk: Load/Save(string)
+ * - to a file on disk: Load/Save(string filename)
  * - to iostreams: Load(istream)/Save(ostream)
  * - to xml nodes: Load/Save(TiXmlElement*)
+ * - to AnyCollections: Load/Save(AnyCollection&)
+ *   (these are used by ResourceLibrary's to save to JSON)
+ * Note: subclass should not save the "name" or "fileName" members, nor
+ * parse the "name" or "file" attributes of xml elements or collections.
  *
  * If the resource library is saved to a directory, then each entry
  * is stored to a separate file.  
@@ -43,6 +48,8 @@ class ResourceBase
   virtual bool Save(std::ostream& out) { return false; }
   virtual bool Load(TiXmlElement* in);
   virtual bool Save(TiXmlElement* out);
+  virtual bool Load(AnyCollection& c);
+  virtual bool Save(AnyCollection& c);
   //A unique type string used for type indexing and xml output, only 
   //alphanumeric characters allowed.
   virtual const char* Type() const { return typeid(*this).name(); }
@@ -69,6 +76,15 @@ typedef SmartPointer<ResourceBase> ResourcePtr;
  * and otherwise it is omitted.  In the latter case, the resource
  * is saved to its fileName.
  *
+ * Inlined JSON files are structured
+ * [
+ *    {type:resource.Type(),
+ *     name:resource.name,
+ *     file:resource.fileName,
+ *     data:resource.data
+ *    }
+ * ]
+ *
  * Resources are accessed either by name (Get()) or type (GetByType()).
  */
 class ResourceLibrary
@@ -93,6 +109,18 @@ class ResourceLibrary
   bool Load(TiXmlElement* e);
   ///Loads from an XML file without loading external files
   bool LazyLoadXml(const std::string& fn);
+  ///Saves to a JSON stream
+  bool SaveJSON(std::ostream& s);
+  ///Loads from a JSON stream
+  bool LoadJSON(std::istream& s);
+  ///Loads from a JSON stream without loading external files
+  bool LazyLoadJSON(std::istream& s);
+  ///Saves to an AnyCollection
+  bool Save(AnyCollection& c);
+  ///Loads from an AnyCollection
+  bool Load(AnyCollection& c);
+  ///Loads from an AnyCollection without loading external files
+  bool LazyLoad(AnyCollection& c);
   ///Prepends the given directory onto each resource's filename
   void AddBaseDirectory(const std::string& dir);
   ///Changes the first directory in each resource's filename to dir.
@@ -223,6 +251,8 @@ class BasicArrayResource : public ResourceBase
   virtual bool Load() { return ResourceBase::Load(); }
   virtual bool Save(const std::string& fn) { return ResourceBase::Save(fn); }
   virtual bool Save() { return ResourceBase::Save(); }
+  virtual bool Load(AnyCollection& c) { return c["data"].asvector(data); }
+  virtual bool Save(AnyCollection& c) { c["data"] = data; return true;}
   virtual const char* Type() const { return className; }
   virtual ResourceBase* Make() { return new BasicArrayResource<T>; }
 
@@ -243,6 +273,8 @@ class ResourceLibraryResource : public ResourceBase
  public:
   virtual bool Load(const std::string& fn);
   virtual bool Save(const std::string& fn);
+  virtual bool Load(AnyCollection& c) { return library.Load(c["data"]); }
+  virtual bool Save(AnyCollection& c) { return library.Save(c["data"]); }
   virtual const char* Type() const { return "ResourceLibrary"; }
   virtual ResourceBase* Make() { return new ResourceLibraryResource; }
 
