@@ -11,7 +11,7 @@
  */
 
 namespace Math {
-  struct ScalarFieldFunction;
+  class ScalarFieldFunction;
 } //namespace Math
 
 namespace Meshing {
