@@ -1,13 +1,17 @@
 #ifndef THREAD_UTILS_H
 #define THREAD_UTILS_H
 
+#ifndef USE_BOOST_THREADS
+#ifndef USE_PTHREADS
 #ifdef WIN32
 #define USE_BOOST_THREADS 1
 #define USE_PTHREADS 0
 #else
-#define USE_BOOST_THREADS 1
-#define USE_PTHREADS 0
+#define USE_BOOST_THREADS 0
+#define USE_PTHREADS 1
 #endif
+#endif //USE_PTHREADS
+#endif //USE_BOOST_THREADS
 
 #if USE_BOOST_THREADS
 #include <boost/thread.hpp>
