@@ -3,10 +3,10 @@
 
 #ifndef WIN32
 #include <sys/socket.h>
-#else
-#include <WinSock2.h>
 typedef int SOCKET;
 const static int INVALID_SOCKET = -1;
+#else
+#include <WinSock2.h>
 #endif
 
 ///Parses an address of the form http://servername, ftp://servername,
