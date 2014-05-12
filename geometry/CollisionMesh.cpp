@@ -8,11 +8,10 @@ using namespace std;
 
 const static Real third = 1.0/3.0;
 
-#if HAVE_PQP
-#include <PQP.h>
-#include <../src/MatVec.h>
-#include <../src/OBB_Disjoint.h>
-#include <../src/TriDist.h>
+#include "PQP/include/PQP.h"
+#include "PQP/src/MatVec.h"
+#include "PQP/src/OBB_Disjoint.h"
+#include "PQP/src/TriDist.h"
 
 
 class PQP_Results
@@ -24,14 +23,11 @@ public:
   PQP_ToleranceAllResult toleranceAll;
 };
 
-#endif
 
 
 
 namespace Geometry {
 
-
-#if HAVE_PQP
 
 void RigidTransformToPQP(const RigidTransform& f,PQP_REAL R[3][3],PQP_REAL T[3])
 {
@@ -1712,9 +1708,6 @@ TriDistance(PQP_REAL R[3][3], PQP_REAL T[3], Tri *t1, Tri *t2,
 
 
 
-#else // HAVE_PQP
-
-#endif // HAVE_PQP
 
 
 } //namespace Geometry
