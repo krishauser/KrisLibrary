@@ -26,6 +26,7 @@
  * Plan performs one step of the planning process, returns true
  *   to continue, false on failure
  * Done returns true if the planning's done
+ * Failed returns true if an infeasible configuration has been found
  */
 class EdgePlanner
 {
@@ -60,6 +61,11 @@ public:
   virtual EdgePlanner* Copy() const { return new TrueEdgePlanner(space,a,b); }
   virtual EdgePlanner* ReverseCopy() const { return new TrueEdgePlanner(space,b,a); }
 
+  virtual Real Priority() const { return 0; }
+  virtual bool Plan() { return false; }
+  virtual bool Done() const { return true; }
+  virtual bool Failed() const {  return false; }
+
   Config a,b;
   CSpace* space;
 };
@@ -76,6 +82,11 @@ public:
   virtual CSpace* Space() const { return space; }
   virtual EdgePlanner* Copy() const { return new FalseEdgePlanner(space,a,b); }
   virtual EdgePlanner* ReverseCopy() const { return new FalseEdgePlanner(space,b,a); }
+
+  virtual Real Priority() const { return 0; }
+  virtual bool Plan() { return false; }
+  virtual bool Done() const { return true; }
+  virtual bool Failed() const {  return true; }
 
   Config a,b;
   CSpace* space;

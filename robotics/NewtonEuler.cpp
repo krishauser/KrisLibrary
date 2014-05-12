@@ -330,12 +330,26 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
 	A.set(axis_w,Vector3(Zero));
       inertiaMatrices[c].mul(A,Ia);
       Real aIa = Ia.dot(A);
-      Assert(aIa > Zero);
       //IaaI.setOuterProduct(Ia);
       for(int i=0;i<6;i++)
 	for(int j=0;j<6;j++)
 	  IaaI(i,j) = Ia(i)*Ia(j);
 
+      if(!(aIa > 0.0)) {
+	//check if the child is a frozen link.  If so, add the inertias directly
+	if(robot.qMin[c] == robot.qMax[c]) {
+	  temp2.mul(cToP,temp);
+	  temp.mul(temp2,pToC);
+	  inertiaMatrices[n] += temp;
+
+	  bf_Ivda = biasingForces[c];
+	  inertiaMatrices[c].madd(velDepAccels[c],bf_Ivda);
+	  cToP.madd(bf_Ivda,biasingForces[n]);
+	  continue;
+	}
+	fprintf(stderr,"NewtonEulerSolver: Warning, axis-wise inertia on link %d is invalid; %g\n",n,aIa);
+	aIa = Epsilon;
+      }
       //add this child's contribution to the revised inertia matrix
       //I[n] += cToP*(I-Ia*Iat/aIa)*pToC
       temp = inertiaMatrices[c];
@@ -343,7 +357,7 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
       temp2.mul(cToP,temp);
       temp.mul(temp2,pToC);
       inertiaMatrices[n] += temp;
-
+      
       //add this child's contribution to the revised biasing force
       //bf[n] += cToP*(bf+I*vda + I*A*(t[c]-At*(bf+I*vda))/aIa)
       bf_Ivda = biasingForces[c];
@@ -370,8 +384,6 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
     else
       A.set(axis_w,Vector3(Zero));
     inertiaMatrices[n].mul(A,Ia);
-    Real aIa = Ia.dot(A);
-    Assert(aIa > Zero);
 
     int p=robot.parents[n];
     if(p>=0) {
@@ -384,6 +396,19 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
     }
     else 
       pAccel.setZero();
+
+    Real aIa = Ia.dot(A);
+    if(!(aIa > 0.0)) {
+      if(robot.qMin[n] == robot.qMax[n]) {
+	ddq(n) = 0;
+	accelerations[n].v.setZero();
+	accelerations[n].w.setZero();
+	continue;
+      }
+      fprintf(stderr,"NewtonEulerSolver: Warning, axis-wise inertia on link %d is invalid; %g\n",n,aIa);
+      aIa = Epsilon;
+    }
+    Assert(aIa > 0.0);
 
     //ddq = (t-A^t*I*X[p->n]*a[p] - A^t(bf+I*vda))/(A^tIA)
     bf_Ivda = biasingForces[n];

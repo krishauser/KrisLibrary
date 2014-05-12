@@ -29,8 +29,18 @@ void GLUIProgramBase::DisplayFunc() {
   CheckGLErrors("DisplayFunc",false);
 }
 void GLUIProgramBase::ReshapeFunc(int w,int h) { DEBUG(current_program->Handle_Reshape(w,h)); }
-void GLUIProgramBase::KeyboardFunc(unsigned char c,int x,int h) { DEBUG(current_program->Handle_Keypress(c,x,h)); }
-void GLUIProgramBase::SpecialFunc(int key,int x,int h) { DEBUG(current_program->Handle_Special(key,x,h)); }
+void GLUIProgramBase::KeyboardFunc(unsigned char c,int x,int y) {
+  DEBUG(current_program->Handle_Keypress(c,x,y));
+  if(GLUT_API_VERSION < 4)
+    DEBUG(current_program->Handle_KeypressUp(c,x,y));
+}
+void GLUIProgramBase::KeyboardUpFunc(unsigned char c,int x,int y) { DEBUG(current_program->Handle_KeypressUp(c,x,y)); }
+void GLUIProgramBase::SpecialFunc(int key,int x,int y) {
+  DEBUG(current_program->Handle_Special(key,x,y));
+  if(GLUT_API_VERSION < 4)
+    DEBUG(current_program->Handle_SpecialUp(key,x,y));
+}
+void GLUIProgramBase::SpecialUpFunc(int key,int x,int y) { DEBUG(current_program->Handle_SpecialUp(key,x,y)); }
 void GLUIProgramBase::MouseFunc(int button,int state,int x,int y) { DEBUG(current_program->Handle_Click(button,state,x,y)); }
 void GLUIProgramBase::MotionFunc(int x,int y) { DEBUG(current_program->Handle_Drag(x,y)); }
 void GLUIProgramBase::PassiveMotionFunc(int x,int y) { DEBUG(current_program->Handle_Motion(x,y)); }
@@ -55,9 +65,14 @@ int GLUIProgramBase::Run(const char *window_title,unsigned int mode)
 	GLUI_Master.set_glutKeyboardFunc(KeyboardFunc);
 	GLUI_Master.set_glutSpecialFunc(SpecialFunc);
 	GLUI_Master.set_glutMouseFunc(MouseFunc);
+	GLUI_Master.set_glutIdleFunc(IdleFunc);
+
 	glutMotionFunc(MotionFunc);
 	glutPassiveMotionFunc(PassiveMotionFunc);
-	GLUI_Master.set_glutIdleFunc(IdleFunc);
+#if GLUT_API_VERSION >= 4
+	glutKeyboardUpFunc(KeyboardUpFunc);
+	glutSpecialUpFunc(SpecialUpFunc);
+#endif //GLUT_API_VERSION
 
 	if(!Initialize()) return -1;
 

@@ -116,6 +116,7 @@ void APSP<Node,Edge>::SolveFloydWarshall_Directed(WeightFunc w)
 	  d[i][j] = d[i][k]+d[k][j];
 	  next[i][j] = k;
 	}
+	  }
 }
 
 

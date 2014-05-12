@@ -1,6 +1,7 @@
 #include "ioutils.h"
 #include "stringutils.h"
 #include <math/infnan.h>
+#include <fstream>
 #include <limits>
 #include <string.h>
 #include <ctype.h>
@@ -283,4 +284,20 @@ bool SafeOutputFloat(std::ostream& out, double f)
 {
   out<<f;
   return true;
+}
+
+
+bool GetFileContents(const char *filename,std::string& contents)
+{
+  std::ifstream in(filename, std::ios::in | std::ios::binary);
+  if (in)
+  {
+    in.seekg(0, std::ios::end);
+    contents.resize(in.tellg());
+    in.seekg(0, std::ios::beg);
+    in.read(&contents[0], contents.size());
+    in.close();
+    return true;
+  }
+  return false;
 }

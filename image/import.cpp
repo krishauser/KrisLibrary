@@ -1,4 +1,5 @@
 #include "import.h"
+#include <string.h>
 #include <errors.h>
 #include <utils/stringutils.h>
 

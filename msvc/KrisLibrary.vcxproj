@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -28,6 +28,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -40,6 +41,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -56,6 +58,7 @@
     <Import Project="glpk.props" />
     <Import Project="assimp_debug.props" />
     <Import Project="tinyxml.props" />
+    <Import Project="boost.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -66,6 +69,7 @@
     <Import Project="glpk.props" />
     <Import Project="assimp_release.props" />
     <Import Project="tinyxml.props" />
+    <Import Project="boost.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -87,7 +91,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WIN32;_DEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
     </ClCompile>
     <Link>
@@ -101,7 +105,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include;C:\boost_1_54_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
     </ClCompile>
     <Link>
@@ -117,7 +121,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include;C:\boost_1_54_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
     </ClCompile>
     <Link>
@@ -135,7 +139,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;NOMINMAX;HAVE_PQP=1;HAVE_GLPK=0;HAVE_GLUT=1;HAVE_GLUI=1;HAVE_GSL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include/GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;../geometry/PQP/include;../../glui-2.36/src/include;C:\boost_1_54_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ObjectFileName>%(RelativeDir)/$(IntDir)</ObjectFileName>
     </ClCompile>
     <Link>
@@ -490,6 +494,7 @@
     <ClInclude Include="..\utils\AnyValue.h" />
     <ClInclude Include="..\utils\ArrayMapping.h" />
     <ClInclude Include="..\utils\arrayutils.h" />
+    <ClInclude Include="..\utils\AsyncIO.h" />
     <ClInclude Include="..\utils\bits.h" />
     <ClInclude Include="..\utils\cmp_func.h" />
     <ClInclude Include="..\utils\combination.h" />
@@ -787,6 +792,7 @@
     <ClCompile Include="..\statistics\UniformDistribution.cpp" />
     <ClCompile Include="..\Timer.cpp" />
     <ClCompile Include="..\utils\AnyCollection.cpp" />
+    <ClCompile Include="..\utils\AsyncIO.cpp" />
     <ClCompile Include="..\utils\CommandLine.cpp" />
     <ClCompile Include="..\utils\CoverSet.cpp" />
     <ClCompile Include="..\utils\DataCollector.cpp" />
@@ -807,6 +813,7 @@
     <ClCompile Include="..\utils\SignalHandler.cpp" />
     <ClCompile Include="..\utils\SimpleFile.cpp" />
     <ClCompile Include="..\utils\SimpleParser.cpp" />
+    <ClCompile Include="..\utils\socketutils.cpp" />
     <ClCompile Include="..\utils\StatCollector.cpp" />
     <ClCompile Include="..\utils\stringutils.cpp" />
     <ClCompile Include="..\utils\Subset.cpp" />

@@ -44,7 +44,7 @@ void DiagonalMatrixTemplate<T>::copyDiagonal(const MatrixT& m)
 	}
 	if(BaseT::n == 0)
 	{
-		resize(m.m);
+	  BaseT::resize(m.m);
 	}
 	else if(BaseT::n != m.m)
 	{

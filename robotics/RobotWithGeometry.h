@@ -36,6 +36,9 @@ public:
   void GetSelfCollisionPairs(Array2D<bool>& collision) const;
   void CleanupSelfCollisions();
 
+  ///Creates this into a mega-robot from several other robots
+  void Merge(const std::vector<RobotWithGeometry*>& robots);
+
   /// Call this before querying self collisions
   virtual void UpdateGeometry();
   virtual void UpdateGeometry(int i);

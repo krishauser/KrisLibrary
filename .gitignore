@@ -51,3 +51,11 @@ Debug-Assimp
 Release
 Release-Assimp
 x64
+
+#CMake temporary files
+CMakeFiles
+CMakeCache.txt
+CPack*
+CTest*
+cmake*.cmake
+_CPack*

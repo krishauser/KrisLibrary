@@ -6,16 +6,25 @@
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <netdb.h> 
-#include <fcntl.h>
-#else
-#endif //WIN32
+#endif
+
 
 #ifdef WIN32
-bool SocketStart()
+struct WSASocketGlobal
 {
+public:
+  bool started;
+  WSASocketGlobal() : started(false)
+  ~WSASocketGlobal() {
+    if(started) {
+      printf("Shutting down the Winsock 2.2 dll\n");
+      WSACleanup();
+    }
+  }
+  bool Init() {
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
@@ -28,7 +37,7 @@ bool SocketStart()
         /* Tell the user that we could not find a usable */
         /* Winsock DLL.                                  */
         printf("WSAStartup failed with error: %d\n", err);
-        return 1;
+        return false;
     }
 
 /* Confirm that the WinSock DLL supports 2.2.*/
@@ -44,20 +53,27 @@ bool SocketStart()
         WSACleanup();
         return false;
     }
-    else
+    else {
         printf("The Winsock 2.2 dll was found okay\n");
+	started = true;
 	return true;
-}
+    }
+  }
+};
 
-int close(int fd)
+SmartPointer<WSASocketGlobal> gWSASocketObject;
+
+bool EnsureSocketStarted() 
 {
-	return closesocket(fd);
+  if(gWSASocketObject)
+    return gWSASocketObject->started;
+  gWSASocketObject = new WSASocketGlobal;
+  return gWSASocketObject->Init();
 }
 
 #else
 
-bool SocketStart() { return true; }
-bool SocketStop() { return true; }
+bool EnsureSocketStarted() { }
 
 #endif //WIN32
 
@@ -114,16 +130,18 @@ bool ParseAddr(const char* addr,char* protocol,char* host,int& port)
 }
 
 
-int Connect(const char* addr)
+SOCKET Connect(const char* addr)
 {
+  if(!EnsureSocketStarted()) return INVALID_SOCKET;
+
   char* protocol = new char[strlen(addr)];
   char* host = new char[strlen(addr)];
   int port;
   if(!ParseAddr(addr,protocol,host,port)) {
-    fprintf(stderr,"Error parsing address %s\n",addr);
+    fprintf(stderr,"Connect: Error parsing address %s\n",addr);
     delete [] protocol;
     delete [] host;
-    return -1;
+    return INVALID_SOCKET;
   }
 
   struct sockaddr_in serv_addr;
@@ -135,19 +153,18 @@ int Connect(const char* addr)
   }
   delete [] protocol;
 	  
-  int sockfd = socket(AF_INET, sockettype, 0);
-  if (sockfd < 0) {
-    fprintf(stderr,"File::Open: Error creating socket\n");
+  SOCKET sockfd = socket(AF_INET, sockettype, 0);
+  if (sockfd == INVALID_SOCKET) {
+    fprintf(stderr,"Connect: Error creating socket\n");
     delete [] host;
-    return -1;
+    return INVALID_SOCKET;
   }
   server = gethostbyname(host);
   if (server == NULL) {
-    fprintf(stderr,"File::Open: Error, no such host %s:%d\n",host,port);
-    close(sockfd);
-    sockfd = -1;
+    fprintf(stderr,"Connect: Error, no such host %s:%d\n",host,port);
+    CloseSocket(sockfd);
     delete [] host;
-    return -1;
+    return INVALID_SOCKET;
   }
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
@@ -157,19 +174,21 @@ int Connect(const char* addr)
   serv_addr.sin_port = htons(port);
 
   if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-    fprintf(stderr,"File::Open: Connect client to %s:%d failed\n",host,port);
-    perror("");
-    close(sockfd);
+    fprintf(stderr,"Connect: Connect to %s:%d failed\n",host,port);
+    perror("Connect error:");
+    CloseSocket(sockfd);
     delete [] host;
-    return -1;
+    return INVALID_SOCKET;
   }
 
   return sockfd;
 }
 
 
-int Bind(const char* addr,bool block)
+SOCKET Bind(const char* addr,bool block)
 {
+  if(!EnsureSocketStarted()) return INVALID_SOCKET;
+
   char* protocol = new char[strlen(addr)];
   char* host = new char[strlen(addr)];
   int port;
@@ -177,7 +196,7 @@ int Bind(const char* addr,bool block)
     fprintf(stderr,"Error parsing address %s\n",addr);
     delete [] protocol;
     delete [] host;
-    return -1;
+    return INVALID_SOCKET;
   }
 
   struct sockaddr_in serv_addr;
@@ -189,11 +208,11 @@ int Bind(const char* addr,bool block)
   }
   delete [] protocol;
 	  
-  int sockfd = socket(AF_INET, sockettype, 0);
-  if (sockfd < 0) {
+  SOCKET sockfd = socket(AF_INET, sockettype, 0);
+  if (sockfd == INVALID_SOCKET) {
     fprintf(stderr,"File::Open: Error creating socket\n");
     delete [] host;
-    return -1;
+    return INVALID_SOCKET;
   }
   if(!block)  {
 	  SetNonblock(sockfd);
@@ -202,9 +221,9 @@ int Bind(const char* addr,bool block)
   server = gethostbyname(host);
   if (server == NULL) {
     fprintf(stderr,"File::Open: Error, no such host %s:%d\n",host,port);
-    close(sockfd);
+    CloseSocket(sockfd);
     delete [] host;
-    return -1;
+    return INVALID_SOCKET;
   }
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
@@ -216,24 +235,26 @@ int Bind(const char* addr,bool block)
   if (bind(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
     fprintf(stderr,"File::Open: Bind server to %s:%d failed\n",host,port);
     perror("");
-    close(sockfd);
+    CloseSocket(sockfd);
     delete [] host;
-    return -1 ;
+    return INVALID_SOCKET ;
   }
   delete [] host;
   return sockfd;
 }
 
-int Accept(int sockfd)
+SOCKET Accept(SOCKET sockfd)
 {
+  if(!EnsureSocketStarted()) return INVALID_SOCKET;
+
   struct sockaddr_in cli_addr;
   int clilen = sizeof(cli_addr);
-  int clientsocket = accept(sockfd, (struct sockaddr *)&cli_addr, 
+  SOCKET clientsocket = accept(sockfd, (struct sockaddr *)&cli_addr, 
 			    &clilen);
   return clientsocket;
 }
 
-void SetNonblock(int sockfd)
+void SetNonblock(SOCKET sockfd)
 {
 #ifdef WIN32
 	u_long iMode=1;
@@ -241,4 +262,14 @@ void SetNonblock(int sockfd)
 #else
     fcntl(sockfd,F_SETFL,FNDELAY);
 #endif //WIN32
+}
+
+
+void CloseSocket(SOCKET sockfd)
+{
+#ifdef WIN32
+	closesocket(sockfd);
+#else
+	close(sockfd);
+#endif
 }

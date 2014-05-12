@@ -15,8 +15,11 @@
  * @ingroup Math
  * @brief Cross-platform infinity and not-a-number routines.
  *
- * Not necessarily throroughly tested.  Developed partially
- * because cygwin's isnan's go into infinite loops.
+ * Warning: if INFINITY is not defined as a constant, this uses
+ * the STL numeric_limits<T>::infinity() call.  Global static members
+ * set to Inf will NOT necessarily be initialized properly on certain
+ * platforms, e.g., Windows.  The solution is to avoid declaring static
+ * variables equal to infinity.
  */
 
 namespace Math { 

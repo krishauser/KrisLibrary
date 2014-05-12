@@ -9,9 +9,7 @@
 #include <errors.h>
 #include <math/math.h>
 #include "SmartPointer.h"
-#ifndef WIN32
-#include <pthread.h>
-#endif //WIN32
+#include "threadutils.h"
 using namespace std;
 
 /** @brief Asynchronous reader base class.
@@ -74,6 +72,7 @@ class AsyncReaderQueue : public AsyncReader
  public:
   ///This will keep only the newest queueMax messages
   AsyncReaderQueue(size_t queueMax=1000);
+  virtual ~AsyncReaderQueue() {}
   ///Called by subclass to add a message onto the queue
   void OnRead(const string& msg);
 
@@ -101,6 +100,7 @@ class AsyncWriterQueue : public AsyncWriter
   ///allow an overflow of sendQueueMax messages.  Typical usage may be 1 and 1
   ///(only keep and send newest messages).
   AsyncWriterQueue(size_t queueMax=1000);
+  virtual ~AsyncWriterQueue() {}
 
   ///Called by subclass to see whether there's a message to send
   bool WriteAvailable() const { return !msgQueue.empty(); }
@@ -110,7 +110,7 @@ class AsyncWriterQueue : public AsyncWriter
   virtual void Reset();
   virtual void SendMessage(const string& msg);
   virtual int SentMessageCount() { return msgCount+msgQueue.size(); }
-  virtual int DeliveredMessageCount() { return msgCount; }
+  virtual int DeliveredMessageCount() { return (int)msgCount; }
 
   size_t queueMax;
   size_t msgCount;
@@ -212,8 +212,6 @@ class SocketServerTransport : public AsyncTransport
 };
 
 
-#ifndef WIN32
-
 ///An asynchronous reader that uses multithreading.
 ///Subclass will define what that particular process is (usually blocking I/O)
 ///by overloading the Callback() function.
@@ -222,7 +220,7 @@ class AsyncReaderThread : public AsyncReaderQueue
 {
  public:
   AsyncReaderThread(double timeout=Math::Inf);
-  ~AsyncReaderThread();
+  virtual ~AsyncReaderThread();
   virtual void Reset();
   virtual void Work() { AssertNotReached(); }
   ///Subclasses: override these to implement custom starting and stopping routines
@@ -232,11 +230,11 @@ class AsyncReaderThread : public AsyncReaderQueue
   SmartPointer<AsyncTransport> transport;
 
   bool initialized;
-  pthread_t thread;
+  Thread thread;
   double timeout;
 
   Timer timer;
-  pthread_mutex_t mutex;
+  Mutex mutex;
   double lastReadTime;
 };
 
@@ -248,7 +246,7 @@ class AsyncPipeThread : public AsyncPipeQueue
 {
  public:
   AsyncPipeThread(double timeout=Math::Inf);
-  ~AsyncPipeThread();
+  virtual ~AsyncPipeThread();
   virtual void Reset();
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
@@ -257,11 +255,11 @@ class AsyncPipeThread : public AsyncPipeQueue
   SmartPointer<AsyncTransport> transport;
 
   bool initialized;
-  pthread_t readThread,writeThread;
+  Thread readThread,writeThread;
   double timeout;
 
   Timer timer;
-  pthread_mutex_t mutex;
+  Mutex mutex;
   double lastReadTime;
   double lastWriteTime;
 };
@@ -292,7 +290,5 @@ class SocketPipeWorker : public AsyncPipeThread
       transport = new SocketClientTransport(addr);
   }
 };
-
-#endif //WIN32
 
 #endif

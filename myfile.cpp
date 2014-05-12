@@ -5,6 +5,7 @@
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 
 #include <utils/socketutils.h>
 #ifndef WIN32
@@ -156,7 +157,11 @@ void File::Close()
 {
         if(srctype == MODE_MYFILE && file != INVALID_FILE_POINTER) FileClose(file);
 	if(srctype == MODE_MYDATA && datafile != NULL) free(datafile);
+<<<<<<< HEAD
 	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) SocketClose((int)file);
+=======
+	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) CloseSocket((SOCKET)file);
+>>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
 
 	srctype = MODE_NONE;
 	mode = 0;
@@ -258,39 +263,56 @@ bool File::Open(const char* fn, int openmode)
 	  if(strstr(fn,"udp://") != NULL)
 	    socketsrctype = MODE_UDPSOCKET;
 	  if(openmode == FILESERVER) {
-	    int sockfd = Bind(fn);
+	    SOCKET sockfd = Bind(fn);
 	    listen(sockfd,1);
-	    int clientsocket = Accept(sockfd);
-	    if(clientsocket < 0) {
+	    SOCKET clientsocket = Accept(sockfd);
+	    if(clientsocket == INVALID_SOCKET) {
 	      fprintf(stderr,"File::Open: Accept connection to client on %s failed\n",fn);
 	      perror("");
+<<<<<<< HEAD
 	      SocketClose(sockfd);
+=======
+	      CloseSocket(sockfd);
+>>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
 	      return false;
 	    }
 	    if(clientsocket == 0) {
 	      fprintf(stderr,"File::Open: Accept connection returned a 0 file descriptor, this is incompatible\n");
+<<<<<<< HEAD
 	      SocketClose(clientsocket);
 	      SocketClose(sockfd);
+=======
+	      CloseSocket(clientsocket);
+	      CloseSocket(sockfd);
+>>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
 	      return false;
 	    }
 	    file = (FILE_POINTER)clientsocket;
 	    srctype = socketsrctype;
 	    //can read and write to sockets
 	    mode = FILEREAD | FILEWRITE;
+<<<<<<< HEAD
 	    SocketClose(sockfd);
+=======
+	    CloseSocket(sockfd);
+>>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
 	    printf("File::Open server socket %s succeeded\n",fn);
 	    return true;
 	  }
 	  else {
-	    int sockfd = Connect(fn);
-	    if (sockfd < 0) {
+	    SOCKET sockfd = Connect(fn);
+	    if (sockfd == INVALID_SOCKET) {
 	      fprintf(stderr,"File::Open: Connect client to %s failed\n",fn);
 	      perror("");
 	      return false;
 	    }	    
 	    if(sockfd == 0) {
 	      fprintf(stderr,"File::Open: socket connect returned a 0 file descriptor, this is incompatible\n");
+<<<<<<< HEAD
 	      SocketClose(sockfd);
+=======
+	      CloseSocket(sockfd);
+>>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
 	      return false;
 	    }
 	    file = (FILE_POINTER)sockfd;
@@ -337,7 +359,7 @@ int File::Position() const
 		return datapos;
 	case MODE_TCPSOCKET:
 	case MODE_UDPSOCKET:
-	  if(file == INVALID_FILE_POINTER) return -1;
+	  if((SOCKET)file == INVALID_SOCKET) return -1;
 	  return 0;
 	}
 	return -1;
@@ -374,6 +396,9 @@ bool File::Seek(int p, int from)
 			datapos = datasize + p;
 			break;
 		}
+	case MODE_TCPSOCKET:
+	case MODE_UDPSOCKET:
+	  return false;
 	}
 	return true;
 }
@@ -416,9 +441,21 @@ bool File::ReadData(void* d, int size)
 		    char* buffer = (char*)d;
 		    int totalread = 0;
 		    while(totalread < size) {
+<<<<<<< HEAD
 		      int n=SocketRead((int)file,buffer+totalread,size-totalread);
 		      if(n < 0) 
+=======
+		      int n=recv((SOCKET)file,buffer+totalread,size-totalread,0);
+		      if(n == 0) 
 			return false;
+		      if(n < 0) {
+			if(errno==EWOULDBLOCK)
+			  //just spin?
+			  continue;
+			perror("Unhandled error in socket read");
+>>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
+			return false;
+		      }
 		      totalread += n;
 		    }
 		    assert(totalread == size);
@@ -458,7 +495,11 @@ bool File::WriteData(const void* d, int size)
 		    const char* msg = (const char*)d;
 		    int totalsent = 0;
 		    while(totalsent < size) {
+<<<<<<< HEAD
 		      int n = SocketWrite((int)file,msg+totalsent,size-totalsent);
+=======
+		      int n = send((SOCKET)file,msg+totalsent,size-totalsent,0);
+>>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
 		      if(n <= 0) {
 			return false;
 		      }
@@ -493,24 +534,30 @@ bool File::ReadString(char* str, int bufsize)
 			for(i=0; i<bufsize; i++)
 			{
 				c = ReadChar(file);
-				if(c==EOF)
-					return false;
+				if(c==EOF) {
+				  fprintf(stderr,"File::ReadString hit end of file without finding null character\n");
+				  return false;
+				}
 				str[i]=c;
 				if(c==0)
 					return true;
 			}
+			fprintf(stderr,"File::ReadString string length is greater than buffer size %d\n",bufsize);
 			break;
 		case MODE_MYDATA:
 		case MODE_EXTDATA:
 			for(i=0; i<bufsize; i++)
 			{
-				if(datapos >= datasize)
-					return false;
-				str[i]=datafile[datapos];
-				datapos++;
-				if(str[i]==0)
-					return true;
+			  if(datapos >= datasize) {
+			    fprintf(stderr,"File::ReadString ran past end of internal buffer without finding null character\n");
+			    return false;
+			  }
+			  str[i]=datafile[datapos];
+			  datapos++;
+			  if(str[i]==0)
+			    return true;
 			}
+			fprintf(stderr,"File::ReadString string length is greater than buffer size %d\n",bufsize);
 			break;
 		case MODE_TCPSOCKET:
 		case MODE_UDPSOCKET:

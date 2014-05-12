@@ -19,8 +19,18 @@ GLUTProgramBase::GLUTProgramBase(int w,int h)
 GLUTProgramBase* GLUTProgramBase::current_program=NULL;
 void GLUTProgramBase::DisplayFunc() { current_program->Handle_Display(); }
 void GLUTProgramBase::ReshapeFunc(int w,int h) { current_program->Handle_Reshape(w,h); }
-void GLUTProgramBase::KeyboardFunc(unsigned char c,int x,int h) { current_program->Handle_Keypress(c,x,h); }
-void GLUTProgramBase::SpecialFunc(int key,int x,int h) { current_program->Handle_Special(key,x,h); }
+void GLUTProgramBase::KeyboardFunc(unsigned char c,int x,int y) {
+  current_program->Handle_Keypress(c,x,y);
+  if(GLUT_API_VERSION < 4)
+    current_program->Handle_KeypressUp(c,x,y);
+}
+void GLUTProgramBase::KeyboardUpFunc(unsigned char c,int x,int y) { current_program->Handle_KeypressUp(c,x,y); }
+void GLUTProgramBase::SpecialFunc(int key,int x,int y) {
+  current_program->Handle_Special(key,x,y);
+  if(GLUT_API_VERSION < 4)
+    current_program->Handle_SpecialUp(key,x,y);
+}
+void GLUTProgramBase::SpecialUpFunc(int key,int x,int y) { current_program->Handle_SpecialUp(key,x,y); }
 void GLUTProgramBase::MouseFunc(int button,int state,int x,int y) { current_program->Handle_Click(button,state,x,y); }
 void GLUTProgramBase::MotionFunc(int x,int y) { current_program->Handle_Drag(x,y); }
 void GLUTProgramBase::PassiveMotionFunc(int x,int y) { current_program->Handle_Motion(x,y); }
@@ -43,6 +53,10 @@ int GLUTProgramBase::Run(const char *window_title,unsigned int mode)
 	glutMotionFunc(MotionFunc);
 	glutPassiveMotionFunc(PassiveMotionFunc);
 	glutIdleFunc(IdleFunc);
+#if GLUT_API_VERSION >= 4
+	glutKeyboardUpFunc(KeyboardUpFunc);
+	glutSpecialUpFunc(SpecialUpFunc);
+#endif //GLUT_API_VERSION
 
 	if(!Initialize()) return -1;
 
