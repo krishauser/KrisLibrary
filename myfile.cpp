@@ -143,8 +143,9 @@ enum { MODE_NONE,
 
 File::File()
 :mode(0),srctype(MODE_NONE),
-file(INVALID_FILE_POINTER),
-datafile(NULL),datapos(0),datasize(0)
+ file(INVALID_FILE_POINTER),
+ datafile(NULL),datapos(0),datasize(0),
+ socket(0)
 {
 }
 
@@ -157,7 +158,7 @@ void File::Close()
 {
         if(srctype == MODE_MYFILE && file != INVALID_FILE_POINTER) FileClose(file);
 	if(srctype == MODE_MYDATA && datafile != NULL) free(datafile);
-	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) SocketClose((int)file);
+	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) SocketClose(socket);
 
 	srctype = MODE_NONE;
 	mode = 0;
@@ -165,6 +166,7 @@ void File::Close()
 	datafile = NULL;
 	datapos = 0;
 	datasize = 0;
+	socket = 0;
 }
 
 bool File::OpenData(void* data, int size, int openmode)
@@ -216,7 +218,7 @@ void File::ResizeDataBuffer(int size)
 }
 
 
-bool File::OpenTCPSocket(int sockfd)
+bool File::OpenTCPSocket(SOCKET sockfd)
 {
   Close();
   if(sockfd == 0) {
@@ -224,14 +226,14 @@ bool File::OpenTCPSocket(int sockfd)
     return false;
   }
 
-  file = (FILE_POINTER)sockfd;
+  socket = sockfd;
   srctype = MODE_TCPSOCKET;
   //can read and write to sockets
   mode = FILEREAD | FILEWRITE;
   return true;
 }
 
-bool File::OpenUDPSocket(int sockfd)
+bool File::OpenUDPSocket(SOCKET sockfd)
 {
   Close();
   if(sockfd == 0) {
@@ -239,7 +241,7 @@ bool File::OpenUDPSocket(int sockfd)
     return false;
   }
 
-  file = (FILE_POINTER)sockfd;
+  socket = sockfd;
   srctype = MODE_UDPSOCKET;
   //can read and write to sockets
   mode = FILEREAD | FILEWRITE;
@@ -274,7 +276,7 @@ bool File::Open(const char* fn, int openmode)
 	      SocketClose(sockfd);
 	      return false;
 	    }
-	    file = (FILE_POINTER)clientsocket;
+	    socket = clientsocket;
 	    srctype = socketsrctype;
 	    //can read and write to sockets
 	    mode = FILEREAD | FILEWRITE;
@@ -294,7 +296,7 @@ bool File::Open(const char* fn, int openmode)
 	      SocketClose(sockfd);
 	      return false;
 	    }
-	    file = (FILE_POINTER)sockfd;
+	    socket = sockfd;
 	    srctype = socketsrctype;
 	    //can read and write to sockets
 	    mode = FILEREAD | FILEWRITE;
@@ -338,7 +340,7 @@ int File::Position() const
 		return datapos;
 	case MODE_TCPSOCKET:
 	case MODE_UDPSOCKET:
-	  if((SOCKET)file == INVALID_SOCKET) return -1;
+	  if(socket == INVALID_SOCKET) return -1;
 	  return 0;
 	}
 	return -1;
@@ -420,7 +422,7 @@ bool File::ReadData(void* d, int size)
 		    char* buffer = (char*)d;
 		    int totalread = 0;
 		    while(totalread < size) {
-		      int n=SocketRead((int)file,buffer+totalread,size-totalread);
+		      int n=SocketRead(socket,buffer+totalread,size-totalread);
 		      if(n == 0) 
 			return false;
 		      if(n < 0) {
@@ -469,7 +471,7 @@ bool File::WriteData(const void* d, int size)
 		    const char* msg = (const char*)d;
 		    int totalsent = 0;
 		    while(totalsent < size) {
-		      int n = SocketWrite((int)file,msg+totalsent,size-totalsent);
+		      int n = SocketWrite(socket,msg+totalsent,size-totalsent);
 		      if(n <= 0) {
 			return false;
 		      }

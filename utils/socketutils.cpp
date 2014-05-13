@@ -75,7 +75,7 @@ bool EnsureSocketStarted()
 
 #else
 
-bool EnsureSocketStarted() { }
+bool EnsureSocketStarted() { return true; }
 
 #endif //WIN32
 
@@ -250,7 +250,7 @@ SOCKET Accept(SOCKET sockfd)
   if(!EnsureSocketStarted()) return INVALID_SOCKET;
 
   struct sockaddr_in cli_addr;
-  int clilen = sizeof(cli_addr);
+  socklen_t clilen = sizeof(cli_addr);
   SOCKET clientsocket = accept(sockfd, (struct sockaddr *)&cli_addr, 
 			    &clilen);
   return clientsocket;

@@ -1,6 +1,7 @@
 #include "textureops.h"
 #include <errors.h>
 
+#ifdef WIN32
 
 bool LoadImageFromBitmap(HDC hdc, HBITMAP hbit, Image& img)
 {
@@ -51,7 +52,7 @@ bool LoadImageFromBitmap(HDC hdc, HBITMAP hbit, Image& img)
 	return true;
 }
 
-
+#endif //WIN32
 
 
 int sumbits(unsigned int word)
@@ -124,3 +125,5 @@ void StretchSquare(Image& tex)
 
 	newtex.output(tex, tex.format);
 }
+
+

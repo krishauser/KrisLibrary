@@ -1,3 +1,4 @@
+#ifdef WIN32
 #include "image.h"
 #include <windows.h>
 #include "../errors.h"
@@ -137,3 +138,4 @@ bool ImportImageBMP(const char* fn, Image& image)
 	fclose(f);
 	return true;
 }
+#endif //WIN32

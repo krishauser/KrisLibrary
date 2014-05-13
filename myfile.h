@@ -6,6 +6,7 @@
 #include <windows.h>
 typedef HANDLE FILE_POINTER;
 #define INVALID_FILE_POINTER INVALID_HANDLE_VALUE
+typedef HANDLE SOCKET;
 
 #else
 
@@ -13,6 +14,7 @@ typedef HANDLE FILE_POINTER;
 #include <stdio.h>
 typedef FILE *FILE_POINTER;
 #define INVALID_FILE_POINTER NULL
+typedef int SOCKET;
 #endif // WIN32
 
 ///Flags sent to Open: read or write mode (may be bitwise or-ed together)
@@ -57,8 +59,8 @@ public:
 	bool Open(FILE_POINTER, int openmode = FILEREAD | FILEWRITE);
 	bool OpenData(void* buf, int size, int openmode = FILEREAD | FILEWRITE);
 	bool OpenData(int openmode = FILEREAD | FILEWRITE);
-	bool OpenTCPSocket(int sockfd);
-	bool OpenUDPSocket(int sockfd);
+	bool OpenTCPSocket(SOCKET sockfd);
+	bool OpenUDPSocket(SOCKET sockfd);
 	void Close();
 
 	bool Seek(int, int from = FILESEEKCURRENT);
@@ -77,11 +79,12 @@ public:
 private:
 	int mode;		//file read/write mode
 	int srctype;	//data source mode (file,data,etc)
-
+	
 	FILE_POINTER file;
 	unsigned char* datafile;
 	int datapos;
 	int datasize;
+	SOCKET socket; 
 };
 
 /** \file myfile.h
