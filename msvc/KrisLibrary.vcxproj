@@ -84,11 +84,11 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -113,11 +113,11 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat></DebugInformationFormat>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -142,11 +142,11 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat></DebugInformationFormat>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -171,11 +171,11 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TIXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;USE_BOOST_THREADS=1;HAVE_GLUI=1;NOMINMAX;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
