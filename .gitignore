@@ -54,6 +54,7 @@ Release-Assimp
 x64
 
 #CMake temporary files
+Makefile
 CMakeFiles
 CMakeCache.txt
 CPack*
