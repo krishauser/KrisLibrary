@@ -13,11 +13,12 @@
 
 
 #ifdef WIN32
+
 struct WSASocketGlobal
 {
 public:
-  bool started;
-  WSASocketGlobal() : started(false)
+  bool started,failed;
+  WSASocketGlobal() : started(false),failed(false) {}
   ~WSASocketGlobal() {
     if(started) {
       printf("Shutting down the Winsock 2.2 dll\n");
@@ -37,6 +38,7 @@ public:
         /* Tell the user that we could not find a usable */
         /* Winsock DLL.                                  */
         printf("WSAStartup failed with error: %d\n", err);
+		failed = true;
         return false;
     }
 
@@ -51,6 +53,7 @@ public:
         /* WinSock DLL.                                  */
         printf("Could not find a usable version of Winsock.dll\n");
         WSACleanup();
+		failed = true;
         return false;
     }
     else {
@@ -61,14 +64,13 @@ public:
   }
 };
 
-SmartPointer<WSASocketGlobal> gWSASocketObject;
+static WSASocketGlobal gWSASocketObject;
 
 bool EnsureSocketStarted() 
 {
-  if(gWSASocketObject)
-    return gWSASocketObject->started;
-  gWSASocketObject = new WSASocketGlobal;
-  return gWSASocketObject->Init();
+  if(gWSASocketObject.failed) return false;
+  if(gWSASocketObject.started) return false;  
+  return gWSASocketObject.Init();
 }
 
 #else

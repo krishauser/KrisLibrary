@@ -64,12 +64,6 @@ AsyncPipeQueue::AsyncPipeQueue(size_t _recvQueueMax,size_t _sendQueueMax)
   :reader(_recvQueueMax),writer(_sendQueueMax)
 {}
 
-<<<<<<< HEAD
-
-#ifndef WIN32
-
-=======
->>>>>>> a0ebbf7998d4743aaaae2377355d104b282d836e
 AsyncReaderThread::AsyncReaderThread(double _timeout)
   :AsyncReaderQueue(1),initialized(false),timeout(_timeout),lastReadTime(-1)
 {
@@ -362,5 +356,3 @@ bool SocketServerTransport::DoWrite(const char* str)
   if(clientsockets.empty()) return false;
   return true;
 }
-
-#endif // WIN32
