@@ -46,6 +46,7 @@ lib
 *.a
 
 #Windows files
+msvc
 Debug
 Debug-Assimp
 Release
