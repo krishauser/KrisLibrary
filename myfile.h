@@ -6,7 +6,7 @@
 #include <windows.h>
 typedef HANDLE FILE_POINTER;
 #define INVALID_FILE_POINTER INVALID_HANDLE_VALUE
-typedef HANDLE SOCKET;
+typedef UINT_PTR SOCKET;
 
 #else
 
