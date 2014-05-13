@@ -13,6 +13,7 @@
 
 
 #ifdef WIN32
+typedef int socklen_t;
 
 struct WSASocketGlobal
 {
