@@ -3,8 +3,10 @@
 
 #include "SmartPointer.h"
 #include "AnyCollection.h"
+#include <string.h>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <typeinfo>
 #include <map>
 #include <vector>
@@ -50,11 +52,15 @@ class ResourceBase
   virtual bool Save(TiXmlElement* out);
   virtual bool Load(AnyCollection& c);
   virtual bool Save(AnyCollection& c);
-  //A unique type string used for type indexing and xml output, only 
-  //alphanumeric characters allowed.
+  ///A unique type string used for type indexing and xml output, only 
+  ///alphanumeric characters allowed.
   virtual const char* Type() const { return typeid(*this).name(); }
-  //ResourceBase's are their own factories
+  ///Make a ResourceBase of the same dynamic type as this.
+  ///ResourceBase instances are their own factories.
   virtual ResourceBase* Make() { return new ResourceBase; }
+  ///Make a ResourceBase that copies all the contents of this.
+  ///(Copying the name and fileName are optional)
+  virtual ResourceBase* Copy() { return new ResourceBase(name,fileName); }
 
   std::string name,fileName;
 };
@@ -157,6 +163,8 @@ class ResourceLibrary
   size_t CountByType(const std::string& type) const;
   template <class T>
   size_t CountByType() const;
+  ///Return all
+  std::vector<ResourcePtr> Enumerate() const;
 
   //modifiers
   void Add(const ResourcePtr& resource);
@@ -173,6 +181,24 @@ class ResourceLibrary
 };
 
 
+///Extracts only the resources of type T
+template <class T>
+std::vector<T*> ResourcesByType(std::vector<ResourcePtr>& resources)
+{
+  std::vector<T*> rtype;
+  for(size_t i=0;i<resources.size();i++) {
+    T* ptr = dynamic_cast<T*>((ResourceBase*)resources[i]);
+    if(ptr) rtype.push_back(ptr);
+  }
+  return rtype;
+}
+
+///Extracts only the resources whose type string matches type
+std::vector<ResourcePtr> ResourcesByType(std::vector<ResourcePtr>& resources,const std::string& type);
+
+///Returns the set of type strings covered by the given resources
+std::vector<std::string> ResourceTypes(const std::vector<ResourcePtr>& resources);
+
 
 
 
@@ -187,6 +213,7 @@ class BasicResource : public ResourceBase
   BasicResource() {}
   BasicResource(const T& val) : data(val) {}
   BasicResource(const T& val,const std::string& name) : ResourceBase(name),data(val) {}
+  BasicResource(const T& val,const std::string& name,const std::string& fileName) : ResourceBase(name,fileName),data(val) {}
   virtual ~BasicResource() {}
   virtual bool Load(std::istream& in) {
     in>>data;
@@ -205,6 +232,7 @@ class BasicResource : public ResourceBase
   virtual bool Save() { return ResourceBase::Save(); }
   virtual const char* Type() const { return className; }
   virtual ResourceBase* Make() { return new BasicResource<T>; }
+  virtual ResourceBase* Copy() { return new BasicResource<T>(data,name,fileName); }
 
   T data;
   static const char* className;
@@ -214,18 +242,62 @@ typedef BasicResource<int> IntResource;
 typedef BasicResource<double> FloatResource;
 typedef BasicResource<std::string> StringResource;
 
+/** @brief A resource that is composed of multiple sub-objects, which can
+ * themselves be considered resources.
+ *
+ * Subclasses should overload casting, extracting, packing, and unpacking
+ * methods to implement compound functionality.
+ */
+class CompoundResourceBase : public ResourceBase
+{
+ public:
+  CompoundResourceBase() {}
+  CompoundResourceBase(const std::string& name) : ResourceBase(name) {}
+  CompoundResourceBase(const std::string& name,const std::string& fileName) : ResourceBase(name,fileName) {}
+  virtual ~CompoundResourceBase() {}
+
+  ///Returns a list of subtypes that can be used in Cast
+  virtual std::vector<std::string> CastTypes() const { return std::vector<std::string>(); }
+  ///Returns a list of subtypes that can be used in Extract
+  virtual std::vector<std::string> ExtractTypes() const { return SubTypes(); }
+  ///Returns a list of subtypes that will be produced in Unpack
+  virtual std::vector<std::string> SubTypes() const { return std::vector<std::string>(); }
+
+  /** Returns a copy of the resource cast to a resource of another type */
+  virtual ResourcePtr Cast(const char* type) { return NULL; }
+
+  /** Extracts all items of the given subtype.  Default uses Unpack to 
+   find objects of the right type. */
+  virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects);
+
+  /** Creates the object of out of the given resources, returning true if
+   * successful.  If unsuccessful, the error message may be set to an
+   * informative description of the error.
+   */
+  virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL) { if(errorMessage) *errorMessage = std::string(Type())+"::Pack not implemented"; return false; }
+
+  /** Creates a list of sub-objects that describe the given resource.
+   * If the decomposition succeeded, returns true
+   * If the decomposition succeeded but is incomplete, the flag
+   * incomplete is set to true (if non-null).
+   * Here "incomplete" means that calling Pack on the return array may
+   * NOT produce an exact copy of r.
+   */
+  virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL) { return false; }
+};
 
 /** @brief A basic array data type.
  *
  * Assumes the data type has std::ostream << and std::istream >> overloads.
  */
 template <class T>
-class BasicArrayResource : public ResourceBase
+class BasicArrayResource : public CompoundResourceBase
 {
  public:
   BasicArrayResource() {}
   BasicArrayResource(const std::vector<T>& val) : data(val) {}
-  BasicArrayResource(const std::vector<T>& val,const std::string& name) : ResourceBase(name),data(val) {}
+  BasicArrayResource(const std::vector<T>& val,const std::string& name) : CompoundResourceBase(name),data(val) {}
+  BasicArrayResource(const std::vector<T>& val,const std::string& name,const std::string& fileName) : CompoundResourceBase(name,fileName),data(val) {}
   virtual ~BasicArrayResource() {}
   virtual bool Load(std::istream& in) {
     size_t n;
@@ -255,6 +327,36 @@ class BasicArrayResource : public ResourceBase
   virtual bool Save(AnyCollection& c) { c["data"] = data; return true;}
   virtual const char* Type() const { return className; }
   virtual ResourceBase* Make() { return new BasicArrayResource<T>; }
+  virtual ResourceBase* Copy() { return new BasicArrayResource<T>(data,name,fileName); }
+
+  //CompoundResourceBase methods
+  virtual std::vector<std::string> SubTypes() const { return std::vector<std::string>(1,BasicResource<T>::className); }
+  virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects) {
+    if(0==strcmp(subtype,BasicResource<T>::className))
+      return Unpack(subobjects);
+    return false;
+  }
+  virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL) {
+    for(size_t i=0;i<subobjects.size();i++)
+      if(typeid(*subobjects[i]) != typeid(BasicResource<T>)) {
+	if(errorMessage) *errorMessage = std::string("Subobject does not have type ")+std::string(BasicResource<T>::className);
+	return false;
+      }
+    data.resize(subobjects.size());
+    for(size_t i=0;i<subobjects.size();i++)    
+      data[i] = dynamic_cast<BasicResource<T>*>(&*subobjects[i])->data;
+    return true;
+  }
+  virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL) {
+    subobjects.resize(data.size());
+    for(size_t i=0;i<data.size();i++) {
+      subobjects[i] = new BasicResource<T>(data[i]);
+      std::stringstream ss;
+      ss<<"data["<<i<<"]";
+      subobjects[i]->name = ss.str();
+    }
+    return true;
+  }
 
   std::vector<T> data;
   static const char* className;
@@ -268,15 +370,20 @@ typedef BasicArrayResource<std::string> StringArrayResource;
 /** @brief A resource that contains a ResourceLibrary.  Useful for
  * hierarchical resource libraries.
  */
-class ResourceLibraryResource : public ResourceBase
+class ResourceLibraryResource : public CompoundResourceBase
 {
  public:
   virtual bool Load(const std::string& fn);
   virtual bool Save(const std::string& fn);
-  virtual bool Load(AnyCollection& c) { return library.Load(c["data"]); }
-  virtual bool Save(AnyCollection& c) { return library.Save(c["data"]); }
+  virtual bool Load(AnyCollection& c);
+  virtual bool Save(AnyCollection& c);
   virtual const char* Type() const { return "ResourceLibrary"; }
   virtual ResourceBase* Make() { return new ResourceLibraryResource; }
+  virtual ResourceBase* Copy();
+  virtual std::vector<std::string> SubTypes() const;
+  virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects);
+  virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL);
+  virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL);
 
   ResourceLibrary library;
 };
