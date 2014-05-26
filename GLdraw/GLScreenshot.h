@@ -7,7 +7,7 @@
  * If GDI is available (windows) saves to whatever file type is 
  * given by filename.  Otherwise this saves in PPM format.
  */
-void GLSaveScreenshot(const char *filename);
-void GLSaveScreenshotPPM(const char *filename);
+bool GLSaveScreenshot(const char *filename);
+bool GLSaveScreenshotPPM(const char *filename);
 
 #endif
