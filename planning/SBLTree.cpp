@@ -575,7 +575,7 @@ void SBLTreeWithGrid::InitDefaultGrid(int numDims,Real h)
 
 void SBLTreeWithGrid::RandomizeSubset()
 {
-  cout<<"SBLTreeWithGrid: Randomizing subset"<<endl;
+  //cout<<"SBLTreeWithGrid: Randomizing subset"<<endl;
   A.Clear();
   A.RandomizeSubset();
 
