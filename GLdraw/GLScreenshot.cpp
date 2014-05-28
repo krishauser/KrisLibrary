@@ -24,7 +24,7 @@ void flipRGBImage(unsigned char* image,int width,int height)
   delete [] row;
 }
 
-void GLSaveScreenshot(const char* filename)
+bool GLSaveScreenshot(const char* filename)
 {
 #if (defined WIN32 && defined GDI_AVAILABLE)
   // These are important to get screen captures to work correctly
@@ -45,11 +45,11 @@ void GLSaveScreenshot(const char* filename)
   glReadBuffer(GL_BACK);
   glReadPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE,image.data);
   bool errors = CheckGLErrors("SaveScreenshot",false);
-  if(errors) return;
+  if(errors) return false;
   //printf("Flipping RGB image...\n");
   flipRGBImage(image.data,width,height);
   //printf("Done, now exporting...\n");
-  ExportImageGDIPlus(filename,image);
+  return ExportImageGDIPlus(filename,image);
   //printf("Done, saving screenshot.\n");
   /*
   ImageOperator op(image);
@@ -62,11 +62,11 @@ void GLSaveScreenshot(const char* filename)
   */
 #else
   fprintf(stderr,"Warning, saving screenshot in PPM format...\n");
-  GLSaveScreenshotPPM(filename);
+  return GLSaveScreenshotPPM(filename);
 #endif
 }
 
-void GLSaveScreenshotPPM(const char* filename)
+bool GLSaveScreenshotPPM(const char* filename)
 {
   // These are important to get screen captures to work correctly
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -82,8 +82,14 @@ void GLSaveScreenshotPPM(const char* filename)
   unsigned char* data = new unsigned char[width*height*3];
   glReadBuffer(GL_BACK);
   glReadPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE,data);
+  bool errors = CheckGLErrors("SaveScreenshot",false);
+  if(errors) {
+    delete [] data;
+    return false;
+  }
   flipRGBImage(data,width,height);
-  WritePPM_RGB_Binary(data,width,height,filename);
+  bool res = WritePPM_RGB_Binary(data,width,height,filename);
   delete [] data;
+  return res;
 }
 

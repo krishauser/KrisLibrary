@@ -3,6 +3,7 @@
 #include "stringutils.h"
 #include "fileutils.h"
 #include "ioutils.h"
+#include <set>
 #include <fstream>
 #include <sstream>
 #if HAVE_TINYXML
@@ -25,6 +26,22 @@ template <> const char* BasicArrayResource<int>::className = "vector<int>";
 template <> const char* BasicArrayResource<double>::className = "vector<double>";
 template <> const char* BasicArrayResource<std::string>::className = "vector<string>";
 
+vector<ResourcePtr> ResourcesByType(std::vector<ResourcePtr>& resources,const std::string& type)
+{
+  vector<ResourcePtr> res;
+  for(size_t i=0;i<resources.size();i++)
+    if(type == resources[i]->Type())
+      res.push_back(resources[i]);
+  return res;
+}
+
+vector<string> ResourceTypes(const vector<ResourcePtr>& resources)
+{
+  set<string> types;
+  for(size_t i=0;i<resources.size();i++)
+    types.insert(resources[i]->Type());
+  return vector<string>(types.begin(),types.end());
+}
 
 ResourceBase::ResourceBase()
 {}
@@ -136,6 +153,25 @@ bool ResourceBase::Save()
 {
   return Save(fileName); 
 }
+
+bool CompoundResourceBase::Extract(const char* subtype,std::vector<ResourcePtr>& subobjects)
+{
+  std::vector<ResourcePtr> all;
+  if(Unpack(all)) {
+    subobjects = ResourcesByType(all,subtype);
+    if(subobjects.empty()) {
+      //no objects -- do we extract of this given type?
+      vector<string> extractTypes = ExtractTypes();
+      for(size_t i=0;i<extractTypes.size();i++)
+	if(subtype == extractTypes[i]) return true;
+      return false;
+    }
+    else
+      return true;
+  }
+  return false;
+}
+
 
 void ResourceLibrary::Clear()
 {
@@ -586,6 +622,14 @@ size_t ResourceLibrary::CountByType(const std::string& name) const
   return i->second.size();
 }
 
+std::vector<ResourcePtr> ResourceLibrary::Enumerate() const
+{
+  std::vector<ResourcePtr> res;
+  for(Map::const_iterator i=itemsByName.begin();i!=itemsByName.end();i++) 
+    res.insert(res.end(),i->second.begin(),i->second.end());
+  return res;
+}
+
 void ResourceLibrary::Add(const ResourcePtr& r)
 {
   itemsByName[r->name].push_back(r);
@@ -628,6 +672,51 @@ bool ResourceLibrary::Erase(const std::string& name,int index)
     }
   }  
   i->second.erase(i->second.begin()+index);
+  return true;
+}
+
+bool ResourceLibraryResource::Load(AnyCollection& c)
+{
+  return library.Load(c["data"]);
+}
+bool ResourceLibraryResource::Save(AnyCollection& c)
+{
+  return library.Save(c["data"]);
+}
+
+ResourceBase* ResourceLibraryResource::Copy()
+{
+  ResourceLibraryResource* res = new ResourceLibraryResource;
+  res->library = library;
+  return res;
+}
+
+std::vector<std::string> ResourceLibraryResource::SubTypes() const
+{ 
+  std::vector<std::string> res;
+  for(ResourceLibrary::Map::const_iterator i=library.itemsByType.begin();i!=library.itemsByName.end();i++)
+    res.push_back(i->first);
+  return res;
+}
+
+bool ResourceLibraryResource::Extract(const char* subtype,std::vector<ResourcePtr>& res)
+{
+  if(library.itemsByType.count(subtype)==0) return false;
+  res = library.itemsByType.find(subtype)->second;
+  return true;
+}
+
+bool ResourceLibraryResource::Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage)
+{
+  library.Clear();
+  for(size_t i=0;i<subobjects.size();i++)
+    library.Add(subobjects[i]);
+  return true;
+}
+
+bool ResourceLibraryResource::Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete)
+{
+  subobjects = library.Enumerate();
   return true;
 }
 
