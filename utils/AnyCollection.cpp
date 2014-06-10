@@ -870,6 +870,12 @@ bool AnyCollection::read(std::istream& in)
   if(in.peek()=='[') {
     in.get();
     type = Array;
+    EatWhitespace(in);
+    if(in.peek()==']') {
+      //empty array
+      in.get();
+      return true;
+    }
     //read list
     SmartPointer<AnyCollection> value;
     value = new AnyCollection();
@@ -902,6 +908,12 @@ bool AnyCollection::read(std::istream& in)
   else if(in.peek()=='{') {
     in.get();
     type = Map;
+    EatWhitespace(in);
+    if(in.peek() == '}') {
+      //empty map
+      in.get();
+      return true;
+    }
     //read list
     AnyKeyable key;
     SmartPointer<AnyCollection> value;
