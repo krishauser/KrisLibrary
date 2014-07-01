@@ -104,6 +104,7 @@ bool ConstrainedCalcAccel(RobotDynamics3D& robot,const Vector& ddx,const Matrix&
   ne.MulKineticEnergyMatrixInverse(Jt,BinvJt);
   JBinvJt.mul(Jc,BinvJt);
   LDLDecomposition<Real> ldl;
+  ldl.verbose = 0;
   ldl.set(JBinvJt);
   Vector f,Jcf,BinvJCf;
   if(!ldl.backSub(ddx-ddx0,f)) {
@@ -136,6 +137,7 @@ bool ConstrainedProjector(RobotDynamics3D& robot,const Vector& ddx,const Matrix&
   ne.MulKineticEnergyMatrixInverse(Jt,BinvJt);
   JBinvJt.mul(Jc,BinvJt);
   LDLDecomposition<Real> ldl;
+  ldl.verbose = 0;
   ldl.set(JBinvJt);
   if(!ldl.getInverse(JBinvJT_Inv)) {
     return false;
@@ -188,10 +190,14 @@ bool ConstrainedForwardDynamics(RobotDynamics3D& robot,const Vector& ddx,const M
   BinvJt.mulTransposeB(Binv,Jc);
   JBinvJt.mul(Jc,BinvJt);
   LDLDecomposition<Real> ldl;
+  ldl.verbose = 0;
   ldl.set(JBinvJt);
+  /*
   if(!ldl.getInverse(JBinvJT_Inv)) {
     return false;
   }
+  */
+  ldl.getPseudoInverse(JBinvJT_Inv);
 
   Matrix mtemp,mtemp2;
   mtemp.mul(BinvJt,JBinvJT_Inv);
@@ -222,8 +228,8 @@ bool ConstrainedForwardDynamics(RobotDynamics3D& robot,const Vector& ddx,const M
   cout<<"B: "<<endl<<B<<endl;
   LDLDecomposition<Real> ldlB;
   ldlB.set(B);
-  ldlB.getInverse(Binv);
-  cout<<"Binv2: "<<Binv<<endl;
+  ldlB.getPseudoInverse(Binv);
+  cout<<"Binv (pseudoinverted): "<<Binv<<endl;
 
   cout<<"J*B^-1*Jt:"<<endl<<JBinvJt<<endl;
   cout<<"(J*B^-1*Jt)^-1:"<<endl<<JBinvJT_Inv<<endl;
@@ -272,6 +278,7 @@ bool ConstrainedCalcTorque(RobotDynamics3D& robot,const Vector& ddx,const Matrix
   Vector temp;
   temp.sub(ddq,b);
   LDLDecomposition<Real> ldl;
+  ldl.verbose = 0;
   ldl.set(A);
   ldl.zeroTolerance = 1e-6;
   if(!ldl.backSub(temp,t)) {
