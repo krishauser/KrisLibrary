@@ -871,8 +871,8 @@ bool AnyCollection::read(std::istream& in)
     in.get();
     type = Array;
     EatWhitespace(in);
-    if (in.peek() == ']') {
-      //empty list
+    if(in.peek()==']') {
+      //empty array
       in.get();
       return true;
     }
@@ -909,7 +909,7 @@ bool AnyCollection::read(std::istream& in)
     in.get();
     type = Map;
     EatWhitespace(in);
-    if (in.peek() == '}') {
+    if(in.peek() == '}') {
       //empty map
       in.get();
       return true;
