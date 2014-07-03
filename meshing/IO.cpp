@@ -292,12 +292,10 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
 	}
 	
       } else {
-	cout << "Error processing " << fn << ", no faces!" << endl;
-	return false;
+	cout << "AssimpImporter: Warning, " << fn << ", mesh "<<m<<" has no faces" << endl;
       }
     } else {
-      cout << "Error processing " << fn << ", no mesh!" << endl;
-      return false;
+      cout << "AssimpImporter: Warning, " << fn << " has no mesh" << endl;
     }
   }
   for(unsigned int i=0;i<node->mNumChildren;i++)
