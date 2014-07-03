@@ -199,9 +199,20 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
   Real stpmax= stepMax*Max(x.norm(),(Real)x.n);
   int maxIters = iters;
   for (iters=0;iters<maxIters;iters++) { 
+    if(verbose >= 2) cout<<"Iteration "<<iters<<", x = "<<x<<endl;
     func->Jacobian(x,fJx);
     fJx.mulTranspose(fx,g);
     xold.copy(x);
+    //if x at the bounds, examine descent direction, set those directions
+    //to be constrained
+    if(bmin.n != 0) {
+      for(int i=0;i<x.n;i++) {
+	if(x(i) == bmin(i) && g(i) > 0) fJx.setCol(i,0.0);
+	if(x(i) == bmax(i) && g(i) < 0) fJx.setCol(i,0.0);
+      }
+    }
+
+    //solve newton step
     if(!SolveUnderconstrainedLS(fJx,fx,p)) {
       //least squares
       MatrixEquation eq(fJx,fx);
@@ -211,6 +222,7 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       }
     }
     p.inplaceNegative();
+    if(verbose >= 2) cout<<"  Descent direction "<<p<<endl;
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
     check = LineMinimization(g,p,&f); //lnsrch returns new x and f. It also calculates fx at the new x when it calls Merit()
@@ -283,8 +295,24 @@ ConvergenceResult NewtonRoot::Solve_Sparse(int& iters)
     sf->Jacobian_Sparse(x,A);
     A.mulTranspose(fx,g);
     xold.copy(x);
+
+    //if x at the bounds, examine descent direction, set those directions
+    //to be constrained
+    if(bmin.n != 0) {
+      for(int i=0;i<x.n;i++) {
+	if(x(i) == bmin(i) && g(i) > 0) {
+	  for(int j=0;j<A.m;j++)
+	    A.rows[j].erase(i);
+	}
+	if(x(i) == bmax(i) && g(i) < 0) {
+	  for(int j=0;j<A.m;j++)
+	    A.rows[j].erase(i);
+	}
+      }
+    }
+
     if(!SolveUnderconstrainedLS(A,fx,p)) {
-      printf("NewtonRoot::Solve: Unable to compute either pseudoinverse of sparse matrix\n");
+      printf("NewtonRoot::Solve: Unable to compute pseudoinverse of sparse matrix\n");
       return ConvergenceError;
     }
     p.inplaceNegative();
@@ -515,7 +543,6 @@ bool ConstrainedNewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
       if(verbose) cout<<"stuck at distance "<<endDist<<"."<<endl;
       return false;
     }
-
   case ConvergenceF:
     if(endMargin < tolc) {
       if(verbose) cout<<"Reached convergence on f, but not margin "<<endMargin<<endl;
@@ -540,6 +567,7 @@ bool ConstrainedNewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
     if(verbose) cout<<"Error"<<endl;
     return false;
   }
+  return false;
 }
 
 //this one steps across the constraint manifold first, then solves
