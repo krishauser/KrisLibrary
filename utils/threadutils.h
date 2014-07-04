@@ -42,10 +42,10 @@ struct Mutex
 
 struct ScopedLock
 {
-	ScopedLock(Mutex& _mutex) { mutex=&_mutex; pthread_mutex_lock(mutex.mutex);  }
-	~ScopedLock() { pthread_mutex_unlock(&mutex.mutex); }
-	Mutex& mutex;
-}
+  ScopedLock(Mutex& _mutex) :mutex(_mutex) { pthread_mutex_lock(&mutex.mutex);  }
+  ~ScopedLock() { pthread_mutex_unlock(&mutex.mutex); }
+  Mutex& mutex;
+};
 
 #endif //USE_PTHREADS
 
