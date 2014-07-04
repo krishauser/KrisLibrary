@@ -522,9 +522,7 @@ CollideRecurse(PQP_CollideResult *res,
 
   PQP_REAL sz1 = o1->child(b1)->GetSize();
   PQP_REAL sz2 = o2->child(b2)->GetSize();
-
-  PQP_REAL Rc[3][3],Tc[3],Ttemp[3];
-    
+   
   if (l2 || (!l1 && (sz1 > sz2)))
   {
     int c1 = o1->child(b1)->first_child;
