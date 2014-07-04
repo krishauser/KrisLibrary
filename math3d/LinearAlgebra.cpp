@@ -309,7 +309,7 @@ bool Eigenvalues(const Matrix2& A,Real& lambda1,Real& lambda2)
   Real det=A.determinant();
   Real temp2 = Sqr(trace) - 4.0*det;
   if(temp2 < 0) return false;
-  Real temp=Sqrt(temp);
+  Real temp=Sqrt(temp2);
   lambda1 = 0.5*(trace + temp);
   lambda2 = 0.5*(trace - temp);
   return true;
