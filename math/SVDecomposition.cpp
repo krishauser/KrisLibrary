@@ -243,6 +243,15 @@ as a vector w[1..n]. The matrix V (not the transpose V T ) is output as v[1..n,1
 using namespace std;
 
 template <class T>
+void SVDecomposition<T>::clear()
+{
+	U.clear();
+	W.clear();
+	V.clear();
+}
+
+
+template <class T>
 void SVDecomposition<T>::setIdentity(int m,int n)
 {
   U.resize(m,n,0);
@@ -478,6 +487,14 @@ RobustSVD<T>::RobustSVD()
   :zeroElementEpsilon(Epsilon),preMultiply(true),postMultiply(false)
 {
   svd.maxIters = 500;
+}
+
+template <class T>
+void RobustSVD<T>::clear()
+{
+	Post.clear();
+	svd.clear();
+	Pre.clear();
 }
 
 template <class T>
