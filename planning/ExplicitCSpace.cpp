@@ -23,6 +23,38 @@ void ExplicitCSpace::CheckObstacles(const Config& q,vector<bool>& infeasible)
     infeasible[i] = !IsFeasible(q,i);
 }
 
+void ExplicitCSpace::GetFeasibleNames(const Config& q,vector<std::string>& names)
+{
+  names.resize(0);
+  vector<bool> constraints;
+  CheckObstacles(q,constraints);
+  for(size_t i=0;i<constraints.size();i++) {
+    if(!constraints[i])
+      names.push_back(ObstacleName(i));
+  }
+}
+
+void ExplicitCSpace::GetInfeasibleNames(const Config& q,vector<std::string>& names)
+{
+  names.resize(0);
+  vector<bool> constraints;
+  CheckObstacles(q,constraints);
+  for(size_t i=0;i<constraints.size();i++) {
+    if(constraints[i])
+      names.push_back(ObstacleName(i));
+  }
+}
+
+void ExplicitCSpace::PrintInfeasibleNames(const Config& q,std::ostream& out,const char* prefix,const char* suffix)
+{
+  vector<bool> constraints;
+  CheckObstacles(q,constraints);
+  for(size_t i=0;i<constraints.size();i++) {
+    if(constraints[i])
+      out<<prefix<<ObstacleName(i)<<suffix;
+  }
+}
+
 EdgePlanner* ExplicitCSpace::LocalPlanner(const Config& a,const Config& b)
 {
   return new ExplicitEdgePlanner(this,a,b);

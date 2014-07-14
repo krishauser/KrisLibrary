@@ -41,6 +41,13 @@ public:
   virtual bool IsFeasible(const Config&);
   ///Returns a vector indicating which obstacles are violated
   virtual void CheckObstacles(const Config&,std::vector<bool>& infeasible);
+
+  ///Gets a list of feasible obstacles for the given configuration
+  void GetFeasibleNames(const Config& q,std::vector<std::string>& names);
+  ///Gets a list of infeasible obstacles for the given configuration
+  void GetInfeasibleNames(const Config& q,std::vector<std::string>& names);
+  ///Prints out the list of infeasible obstacles for the given configuration
+  void PrintInfeasibleNames(const Config& q,std::ostream& out=std::cout,const char* prefix="",const char* suffix="\n");
 };
 
 /** @brief Converges an ExplicitCSpace to a regular CSpace based on one
