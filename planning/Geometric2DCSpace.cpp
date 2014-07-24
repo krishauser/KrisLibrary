@@ -595,7 +595,7 @@ class Geometric2DEdgePlanner : public ExplicitEdgePlanner
 {
 public:
   Geometric2DEdgePlanner(const Config& _a,const Config& _b,Geometric2DCSpace* _space)
-    :ExplicitEdgePlanner(space,_a,_b,false),gspace(_space),done(false),failed(false)
+    :ExplicitEdgePlanner(_space,_a,_b,false),gspace(_space),done(false),failed(false)
   {
     s.a.set(_a(0),_a(1));
     s.b.set(_b(0),_b(1));
