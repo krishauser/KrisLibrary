@@ -2,6 +2,7 @@
 #include <utils/AnyCollection.h>
 #include <utils/stringutils.h>
 #include "OptimalMotionPlanner.h"
+#include "PointLocation.h"
 #include "SBL.h"
 #include "Timer.h"
 

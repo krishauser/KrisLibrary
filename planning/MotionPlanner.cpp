@@ -1,4 +1,5 @@
 #include "MotionPlanner.h"
+#include "PointLocation.h"
 #include <graph/Path.h>
 #include <math/random.h>
 #include <errors.h>
@@ -40,6 +41,7 @@ struct ClosestMilestoneCallback : public Node::Callback
 RoadmapPlanner::RoadmapPlanner(CSpace* s)
   :space(s)
 {
+  pointLocator = new NaivePointLocation(roadmap.nodes,s);
 }
 
 RoadmapPlanner::~RoadmapPlanner()
@@ -52,6 +54,7 @@ void RoadmapPlanner::Cleanup()
 {
   roadmap.Cleanup();
   ccs.Clear();
+  pointLocator->OnClear();
 }
 
 void RoadmapPlanner::GenerateConfig(Config& x)
@@ -62,7 +65,9 @@ void RoadmapPlanner::GenerateConfig(Config& x)
 int RoadmapPlanner::AddMilestone(const Config& x)
 {
   ccs.AddNode();
-  return roadmap.AddNode(x);
+  int res=roadmap.AddNode(x);
+  pointLocator->OnAppend();
+  return res;
 }
 
 int RoadmapPlanner::TestAndAddMilestone(const Config& x)
@@ -92,11 +97,24 @@ SmartPointer<EdgePlanner> RoadmapPlanner::TestAndConnectEdge(int i,int j)
 
 void RoadmapPlanner::ConnectToNeighbors(int i,Real connectionThreshold,bool ccReject)
 {
-  for(size_t j=0;j<roadmap.nodes.size();j++) {
-    if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
-    else if(i==(int)j || roadmap.HasEdge(i,j)) continue;
-    if(space->Distance(roadmap.nodes[i],roadmap.nodes[j]) < connectionThreshold) {
+  vector<int> nn;
+  vector<Real> distances;
+  if(pointLocator->Close(roadmap.nodes[i],connectionThreshold,nn,distances)) {
+    for(size_t k=0;k<nn.size();k++) {
+      int j=nn[k];
+      if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
+      else if(i==(int)j || roadmap.HasEdge(i,j)) continue;
       TestAndConnectEdge(i,j);
+    }
+  }
+  else {
+    //fall back on naive point location
+    for(size_t j=0;j<roadmap.nodes.size();j++) {
+      if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
+      else if(i==(int)j || roadmap.HasEdge(i,j)) continue;
+      if(space->Distance(roadmap.nodes[i],roadmap.nodes[j]) < connectionThreshold) {
+	TestAndConnectEdge(i,j);
+      }
     }
   }
 }
@@ -104,34 +122,51 @@ void RoadmapPlanner::ConnectToNeighbors(int i,Real connectionThreshold,bool ccRe
 void RoadmapPlanner::ConnectToNearestNeighbors(int i,int k,bool ccReject)
 {
   if(k <= 0) return;
-  set<pair<Real,int> > knn;
-  pair<Real,int> node;
-  Real worst=Inf;
-  for(size_t j=0;j<roadmap.nodes.size();j++) {
-    if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
-    else if(i==(int)j) continue;
-    node.first = space->Distance(roadmap.nodes[i],roadmap.nodes[j]);
-    node.second = j;
-    if(node.first < worst) {
-      knn.insert(node);
-
-      if(ccReject) {  //oversample candidate nearest neighbors
-	if((int)knn.size() > k*4)
-	  knn.erase(--knn.end());
-      }
-      else {  //only keep k nearest neighbors
-	if(knn.size() > k)
-	  knn.erase(--knn.end());
-      }
-      worst = (--knn.end())->first;
+  vector<int> nn;
+  vector<Real> distances;
+  if(pointLocator->KNN(roadmap.nodes[i],(ccReject?k*4:k),nn,distances)) {
+    //assume the k nearest neighbors are sorted by distance
+    int numTests=0;
+    for(size_t m=0;m<nn.size();m++) {
+      int j=nn[m];
+      if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
+      else if(i==(int)j) continue;
+      TestAndConnectEdge(i,j);
+      numTests++;
+      if(numTests == k) break;
     }
   }
-  int numTests=0;
-  for(set<pair<Real,int> >::const_iterator j=knn.begin();j!=knn.end();j++) {
-    if(ccReject && ccs.SameComponent(i,j->second)) continue;
-    TestAndConnectEdge(i,j->second);
-    numTests++;
-    if(numTests == k) break;
+  else {
+    //fall back on naive
+    set<pair<Real,int> > knn;
+    pair<Real,int> node;
+    Real worst=Inf;
+    for(size_t j=0;j<roadmap.nodes.size();j++) {
+      if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
+      else if(i==(int)j) continue;
+      node.first = space->Distance(roadmap.nodes[i],roadmap.nodes[j]);
+      node.second = j;
+      if(node.first < worst) {
+	knn.insert(node);
+	
+	if(ccReject) {  //oversample candidate nearest neighbors
+	  if((int)knn.size() > k*4)
+	    knn.erase(--knn.end());
+	}
+	else {  //only keep k nearest neighbors
+	  if((int)knn.size() > k)
+	    knn.erase(--knn.end());
+	}
+	worst = (--knn.end())->first;
+      }
+    }
+    int numTests=0;
+    for(set<pair<Real,int> >::const_iterator j=knn.begin();j!=knn.end();j++) {
+      if(ccReject && ccs.SameComponent(i,j->second)) continue;
+      TestAndConnectEdge(i,j->second);
+      numTests++;
+      if(numTests == k) break;
+    }
   }
 }
 

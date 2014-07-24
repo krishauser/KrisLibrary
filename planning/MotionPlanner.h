@@ -11,6 +11,8 @@
 #include "EdgePlanner.h"
 #include "Path.h"
 
+class PointLocationBase;
+
 /** @defgroup MotionPlanning
  * @brief Classes to assist in motion planning.
  */
@@ -44,6 +46,7 @@ public:
   CSpace* space;
   Roadmap roadmap;
   Graph::ConnectedComponents ccs;
+  SmartPointer<PointLocationBase> pointLocator;
 };
 
 
