@@ -1,7 +1,15 @@
 #include "OptimalMotionPlanner.h"
+#include "PointLocation.h"
 #include <math/random.h>
 #include <graph/Path.h>
 #include <Timer.h>
+
+//if this is on, this will check any optimal edges as they are added
+#define PRECHECK_OPTIMAL_EDGES 1
+#define RRG_BIDIRECTIONAL 0
+//Do not do heuristic pruning with RRG_BIDIRECTIONAL
+#define HEURISTIC_PRUNING 0
+#define ELLIPSOID_PRUNING 1
 
 class EdgeDistance
 {
@@ -20,45 +28,153 @@ class EdgeDistance
 
 
 PRMStarPlanner::PRMStarPlanner(CSpace* space)
-  :RoadmapPlanner(space),lazy(false),randomNeighbors(false),connectByRadius(false),connectRadiusConstant(1),connectionThreshold(Inf),spp(roadmap)
+  :RoadmapPlanner(space),lazy(false),rrg(false),connectByRadius(false),connectRadiusConstant(1),connectionThreshold(Inf),lazyCheckThreshold(Inf),spp(roadmap),sppGoal(roadmap)
 {}
 
 void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
 {
   Cleanup();
+  visibleEdges.clear();
   start = AddMilestone(qstart);
   goal = AddMilestone(qgoal);
   Assert(start == 0 && goal == 1);
   spp.InitializeSource(start);  
+  sppGoal.InitializeSource(goal);
 
   numPlanSteps = 0;
   numEdgeChecks = 0;
-  tCheck=tKnn=tConnect=tLazy=0;
+  numEdgePrechecks = 0;
+  tCheck=tKnn=tConnect=tLazy=tLazyCheck=0;
 }
 void PRMStarPlanner::PlanMore()
 {
   numPlanSteps ++;
   EdgeDistance distanceWeightFunc;
   Vector x;
-  Timer timer;
-  GenerateConfig(x);
-  if(!space->IsFeasible(x)) {
-    tCheck += timer.ElapsedTime();
-    return;
-  }
-  tCheck += timer.ElapsedTime();
-  timer.Reset();
-  int m = -1;
 
+  bool useSpp = (rrg || lazy);
+#if PRECHECK_OPTIMAL_EDGES
+  bool useSppGoal = (lazy);
+#else
+  bool useSppGoal = false;
+#endif
+
+  Real goalDist = spp.d[goal];
+  Real fudgeFactor = 1.0+spp.epsilon;
+  //Real fudgeFactor = 1.0;
+
+  Timer timer;
+  int m = -1;
+  if(!rrg) {
+    //PRM* expansion strategy
+    GenerateConfig(x);
+#if ELLIPSOID_PRUNING
+    if((space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]))*fudgeFactor >= goalDist) {
+      return;
+    }
+#endif
+    if(!space->IsFeasible(x)) {
+      tCheck += timer.ElapsedTime();
+      return;
+    }
+    tCheck += timer.ElapsedTime();
+  }
+  else {
+    //RRG expansion strategy
+    GenerateConfig(x);
+    //KNN call has a bit of duplication with connectByRadius, below
+    int nn;
+    vector<int> neighbors;
+    if(RRG_BIDIRECTIONAL || lazy) {
+      KNN(x,1,neighbors);
+      nn = neighbors[0];
+      tKnn += timer.ElapsedTime();
+    }
+    else {
+      //this is a really inefficient way of getting the closest neighbor
+      //connected to the start
+      bool good = false;
+      for(int i=1;i<100;i+=10) {
+	KNN(x,i,neighbors);
+	//only connect to nodes attached to start
+	for(size_t j=0;j<neighbors.size();j++) {
+	  nn = neighbors[j];
+#if HEURISTIC_PRUNING
+	  if(spp.d[nn]*fudgeFactor < goalDist) {
+	    good = true;
+	    break;
+	  }
+#else
+	  if(!IsInf(spp.d[nn])) {
+	    good = true;
+	    break;
+	  }
+#endif //HEURISTIC_PRUNING
+	}
+	if(good) break;
+      }
+      tKnn += timer.ElapsedTime();
+      if(!good) return;
+    } //not RRT_BIDIRECTIONAL
+    timer.Reset();
+    Real rad = connectRadiusConstant*Pow(Log(Real(roadmap.nodes.size()))/Real(roadmap.nodes.size()),1.0/x.n);
+    if(rad > connectionThreshold) rad = connectionThreshold;
+    Real d = space->Distance(roadmap.nodes[nn],x);
+    if(d > rad) {
+      Config xnew;
+      space->Interpolate(roadmap.nodes[nn],x,rad/d,xnew);
+      x = xnew;
+      d = rad;
+    }
+#if ELLIPSOID_PRUNING
+    if((space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]))*fudgeFactor >= goalDist) {
+      return;
+    }
+#endif
+    if(!space->IsFeasible(x)) {
+      tCheck += timer.ElapsedTime();
+      return;
+    }
+    tCheck += timer.ElapsedTime();
+    timer.Reset();
+
+    SmartPointer<EdgePlanner> e = space->LocalPlanner(x,roadmap.nodes[nn]);
+    bool efeasible = false;
+    if(!lazy || d > lazyCheckThreshold) {
+      numEdgeChecks++;
+      if(!e->IsVisible()) {
+	tConnect += timer.ElapsedTime();
+	return;
+      }
+      efeasible = true;
+      tConnect += timer.ElapsedTime();
+    }
+
+    m=AddMilestone(x);
+    if(efeasible) visibleEdges.insert(pair<int,int>(nn,m));
+    roadmap.AddEdge(m,nn,e);
+    Assert(m==(int)spp.p.size());
+    spp.p.push_back(-1);
+    spp.d.push_back(Inf);
+    if(useSpp) {
+      spp.DecreaseUpdate_Undirected(m,nn,distanceWeightFunc);
+    }
+    if(useSppGoal) {
+      sppGoal.p.push_back(-1);
+      sppGoal.d.push_back(Inf);
+      sppGoal.DecreaseUpdate_Undirected(m,nn,distanceWeightFunc);
+    }
+  }
+
+  timer.Reset();
   vector<int> neighbors;
   if(connectByRadius) {
     Real rad = connectRadiusConstant*Pow(Log(Real(roadmap.nodes.size()))/Real(roadmap.nodes.size()),1.0/x.n);
     if(rad > connectionThreshold) rad = connectionThreshold;
-    KNN(x,1,neighbors);
-    int nearest = neighbors[0];
     Neighbors(x,rad,neighbors);
-    if(neighbors.empty())
-      neighbors.push_back(nearest);
+    if(!rrg && neighbors.empty()) {
+      KNN(x,1,neighbors);
+    }
   }
   else {
     int kmax = int(((1.0+1.0/x.n)*E)*Log(Real(roadmap.nodes.size())));
@@ -68,14 +184,13 @@ void PRMStarPlanner::PlanMore()
     KNN(x,kmax,neighbors);
   }  
   tKnn += timer.ElapsedTime();
-  timer.ElapsedTime();
+  timer.Reset();
 
-  Real goalDist = spp.d[goal];
   for(size_t i=0;i<neighbors.size();i++) {
     int n = neighbors[i];
     if(n == m || (m >= 0 && roadmap.HasEdge(m,n)))
       continue;
-    if(lazy && (n!=goal && IsInf(spp.d[n])))
+    if(rrg && (n!=goal && IsInf(spp.d[n])))
       continue;
     //check for shorter connections into m and neighbors[i]
     Assert(n >= 0 && n < (int)roadmap.nodes.size() && n != m);
@@ -87,27 +202,67 @@ void PRMStarPlanner::PlanMore()
       Assert(m==(int)spp.p.size());
       spp.p.push_back(-1);
       spp.d.push_back(Inf);
+      if(useSppGoal) {
+	sppGoal.p.push_back(-1);
+	sppGoal.d.push_back(Inf);
+      }
     }
 
     const Config& xn = roadmap.nodes[n];
     bool add = false;
     SmartPointer<EdgePlanner> e;
     //don't connect points that aren't potentially optimal
-    if(!lazy || spp.d[n] + d < spp.d[m] || spp.d[m] + d < spp.d[n]) {
+    /* if(true) {*/
+    if(!rrg || (spp.d[n] + d)*fudgeFactor < spp.d[m] || (spp.d[m] + d)*fudgeFactor < spp.d[n]) {
       e = space->LocalPlanner(x,xn);
       Assert(e->Space() != NULL);
-      if(!lazy) { numEdgeChecks++; if(e->IsVisible()) add=true; }
-      else add=true;
+
+      //non-lazy -- check all edges
+      bool doCheck = !lazy;
+      if(lazy) {
+#if PRECHECK_OPTIMAL_EDGES
+	//if this edge will become part of an optimal path -- check it now
+	//rather than waiting for the lazy update
+	if((spp.d[n] + d + sppGoal.d[m])*fudgeFactor < goalDist || (spp.d[m] + d + sppGoal.d[n])*fudgeFactor < goalDist) {
+	  doCheck=true;
+	  numEdgePrechecks ++;
+	}
+#endif
+	//long enough -- check it now
+	if(d > lazyCheckThreshold) {
+	  doCheck = true;
+	}
+      }
+
+      if(doCheck) {
+	//do the check
+	numEdgeChecks++;
+	if(e->IsVisible()) {
+	  pair<int,int> epair(m,n);
+	  if(epair.first > epair.second)
+	    swap(epair.first,epair.second);
+	  visibleEdges.insert(epair);
+	  add=true; 
+	}
+      }
+      else
+	//add it now without checking, lazy style
+	add = true;
     }
     if(add) {
       roadmap.AddEdge(m,n,e);
-      if(lazy) 
+      if(useSpp) 
 	spp.DecreaseUpdate_Undirected(m,n,distanceWeightFunc);
+      if(useSppGoal)
+	sppGoal.DecreaseUpdate_Undirected(m,n,distanceWeightFunc);
     }
   }
   tConnect += timer.ElapsedTime();
   if(lazy) {    
-    if(spp.d[goal] < goalDist) {
+    static const int batchSize=100;
+    static int lastCheckTime = 0;
+    if((spp.epsilon > 0 && numPlanSteps >= lastCheckTime+batchSize) || spp.d[goal] < goalDist) {
+      lastCheckTime = numPlanSteps;
       //found an improved path to the goal! do checking
       timer.Reset();
       //printf("Candidate improvement to cost %g\n",spp.d[goal]);
@@ -121,6 +276,10 @@ void PRMStarPlanner::PlanMore()
 
 void PRMStarPlanner::Neighbors(const Config& x,Real rad,vector<int>& neighbors)
 {
+  vector<Real> distances;
+  bool res=pointLocator->Close(x,rad,neighbors,distances);
+  Assert(res==true);
+  /*
   set<pair<Real,int> > nn;
   if(!randomNeighbors) {
     //radius rad neighbors
@@ -145,10 +304,15 @@ void PRMStarPlanner::Neighbors(const Config& x,Real rad,vector<int>& neighbors)
   for(set<pair<Real,int> >::const_iterator j=nn.begin();j!=nn.end();j++) {
     neighbors.push_back(j->second);
   }
+  */
 }
 
 void PRMStarPlanner::KNN(const Config& x,int k,vector<int>& neighbors)
 {
+  vector<Real> distances;
+  bool res=pointLocator->KNN(x,k,neighbors,distances);
+  Assert(res==true);
+  /*
   //k nearest vs k random neighbors
   neighbors.resize(k);
   if(!randomNeighbors) {
@@ -182,6 +346,7 @@ void PRMStarPlanner::KNN(const Config& x,int k,vector<int>& neighbors)
     }
     neighbors.resize(k);
   }
+  */
 }
 
 bool PRMStarPlanner::GetPath(MilestonePath& path)
@@ -192,15 +357,16 @@ bool PRMStarPlanner::GetPath(MilestonePath& path)
 
 bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
 {
-  if(!lazy) {
+  bool useSpp = (rrg || lazy);
+  if(!useSpp) {
     EdgeDistance distanceWeightFunc;
     spp.InitializeSource(a);
     spp.FindPath_Undirected(b,distanceWeightFunc);
   }
   else {
     Assert(a==start);
-    EdgeDistance distanceWeightFunc;
-    Assert(spp.HasShortestPaths_Undirected(a,distanceWeightFunc));
+    //EdgeDistance distanceWeightFunc;
+    //Assert(spp.HasShortestPaths_Undirected(a,distanceWeightFunc));
   }
   if(IsInf(spp.d[b])) return false;
   if(!Graph::GetAncestorPath(spp.p,b,a,nodes)) {
@@ -241,6 +407,11 @@ bool PRMStarPlanner::CheckPath(int a,int b)
 {
   EdgeDistance distanceWeightFunc;
   Assert(lazy);
+#if PRECHECK_OPTIMAL_EDGES
+  bool useSppGoal = true;
+#else
+  bool useSppGoal = false;
+#endif
   Assert(a==start);
   //printf("Done with planning step\n");
   while(!IsInf(spp.d[b])) {
@@ -252,6 +423,7 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       //printf("GetPath returned false\n");
       return false;
     }
+    Timer timer;
     bool feas = true;
     for(size_t k=0;k<path.edges.size();k++) {
       int i;
@@ -260,17 +432,28 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       else
 	i=(int)path.edges.size()-1-(int)k/2;
       Assert(i >= 0 && i+1 < (int)npath.size());
+      //check if it's been determined to be visible
+      pair<int,int> epair(npath[i],npath[i+1]);
+      if(epair.first > epair.second)
+	swap(epair.first,epair.second);
+      if(visibleEdges.count(epair)!=0) continue;
+      //it's not, now check it
       SmartPointer<EdgePlanner>* e = roadmap.FindEdge(npath[i],npath[i+1]);
       numEdgeChecks++;
       if(!(*e)->IsVisible()) {
+	tLazyCheck += timer.ElapsedTime();
 	//delete edge
 	//printf("Deleting edge %d %d...\n",npath[i],npath[i+1]);
 	roadmap.DeleteEdge(npath[i],npath[i+1]);
 	spp.DeleteUpdate_Undirected(npath[i],npath[i+1],distanceWeightFunc);
+	if(useSppGoal)
+	  sppGoal.DeleteUpdate_Undirected(npath[i],npath[i+1],distanceWeightFunc);
 	//Assert(spp.HasShortestPaths_Undirected(0,distanceWeightFunc));
 	feas = false;
 	break;
       }
+      else
+	visibleEdges.insert(epair);
     }
     /*
     if(!feas) {
@@ -282,6 +465,8 @@ bool PRMStarPlanner::CheckPath(int a,int b)
     */
     
     if(feas) {
+      tLazyCheck += timer.ElapsedTime();
+      Assert(path.IsFeasible());
       return true;
     }
   }

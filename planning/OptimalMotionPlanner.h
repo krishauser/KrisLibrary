@@ -2,7 +2,7 @@
 #define OPTIMAL_MOTION_PLANNER_H
 
 #include "MotionPlanner.h"
-#include <graph/ShortestPaths.h>
+#include <graph/ApproximateShortestPaths.h>
 
 class PRMStarPlanner : public RoadmapPlanner
 {
@@ -26,9 +26,8 @@ class PRMStarPlanner : public RoadmapPlanner
   //configuration variables
   ///Set lazy to true if you wish to do lazy planning (default false)
   bool lazy;
-  ///Set random neighbors to true if you wish to pick random neighbors
-  ///(faster but not asymptotically optimal)
-  bool randomNeighbors;
+  ///Set rrg to true if you wish to use the RRG* algorithm rather than PRM*
+  bool rrg;
   ///If this is false, uses k-nearest neighbors. If this is true, uses radius
   ///gamma * (log(n)/n)^(1/d) where n is the number of milestones and d is
   ///dimension.
@@ -38,15 +37,19 @@ class PRMStarPlanner : public RoadmapPlanner
   ///Set this value to limit the maximum distance of attempted
   ///connections
   Real connectionThreshold;
+  ///If lazy planning, check all edges with length greater than this threshold
+  Real lazyCheckThreshold;
 
   int start,goal;
-  typedef Graph::ShortestPathProblem<Config,SmartPointer<EdgePlanner> > ShortestPathProblem;
-  ShortestPathProblem spp;
+  typedef Graph::ApproximateShortestPathProblem<Config,SmartPointer<EdgePlanner> > ShortestPathProblem;
+  ShortestPathProblem spp,sppGoal;
+  set<pair<int,int> > visibleEdges;
 
   //statistics
   int numPlanSteps;
-  Real tCheck, tKnn, tConnect, tLazy;
+  Real tCheck, tKnn, tConnect, tLazy, tLazyCheck;
   int numEdgeChecks;
+  int numEdgePrechecks;
 };
 
 
