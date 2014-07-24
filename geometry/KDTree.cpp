@@ -1,21 +1,30 @@
 #include "KDTree.h"
 #include <math/metric.h>
+#include <math/random.h>
 #include <utils/arrayutils.h>
 #include <errors.h>
 using namespace Geometry;
 using namespace std;
 
+Real Distance(const Vector& a,const Vector& b,Real norm,const Vector& weights)
+{
+  if(weights.empty()) 
+    return Distance(a,b,norm);
+  else 
+    return Distance_Weighted(a,b,norm,weights);
+}
+
 struct DDimensionCmp
 {
-  typedef KDTree::Point Point;
-  DDimensionCmp(int _d) : d(_d) {}
-  inline bool operator ()(const Point& a, const Point& b) const{
-    return (*a.pt)[d] < (*b.pt)[d];
-  }
   int d;
+  DDimensionCmp(int _d) : d(_d) {}
+  bool operator () (const KDTree::Point& a,const KDTree::Point& b) const {
+    return a.pt[d] < b.pt[d];
+  }
 };
 
 inline bool Pos(const Vector& x,int dim,Real val) { return x(dim)>val; }
+inline bool Pos(const KDTree::Point& x,int dim,Real val) { return x.pt(dim)>val; }
 
 inline int _MaxDist(Real* dist, int k)
 {
@@ -26,41 +35,58 @@ inline int _MaxDist(Real* dist, int k)
 } 
 
 
-KDTree* KDTree::Create(const std::vector<Vector>& p, int k, int depth)
+KDTree* KDTree::Create(const std::vector<Vector>& p, int k, int maxDepth)
 {
   std::vector<Point> pts(p.size());
   for(size_t i=0; i<p.size();i++) {
-    pts[i].pt=&p[i];
-    pts[i].index=(int)i;
+    pts[i].pt = p[i];
+    pts[i].id=(int)i;
   }
-  return new KDTree(pts,k,depth);
+  return new KDTree(pts,k,0,maxDepth);
 }
 
-KDTree::KDTree(std::vector<Point>& p, int k, int depth, int _d)
+KDTree::KDTree()
 {
+  depth = 0;
+  splitDim = -1;
+  splitVal = 0;
+  pos = neg = NULL;
+}
+
+KDTree::KDTree(const std::vector<Point>& _pts,int k, int _depth, int maxDepth)
+{
+  depth = _depth;
   //the while loop goes through the possibility that the data are all in
   //the d-plane
-  if(depth > 0 && p.size()>=2) {
+  if(maxDepth > depth && _pts.size()>=2) {
     for(int i=0;i<k;i++) {   //test out different dimensions to split
-      dim = (_d+i) % k;
-      val = Select(p,dim,p.size()/2);
+      splitDim = (_depth+i) % k;
+      splitVal = Select(_pts,splitDim,_pts.size()/2);
       std::vector<Point> p1,p2;
-      for(size_t i=0;i<p.size();i++) {
-	if(Pos(p[i],dim,val)) p1.push_back(p[i]);
-	else p2.push_back(p[i]);
+      std::vector<int> i1,i2;
+      for(size_t i=0;i<_pts.size();i++) {
+	if(Pos(_pts[i],splitDim,splitVal)) 
+	  p1.push_back(_pts[i]);
+	else 
+	  p2.push_back(_pts[i]);
       }
       if(!p1.empty() && !p2.empty()) { //go down another level
-	p.clear();
-	pos = new KDTree(p1,k,depth-1,dim+1);
-	neg = new KDTree(p2,k,depth-1,dim+1);
+	pos = new KDTree(p1,k,depth+1,maxDepth);
+	neg = new KDTree(p2,k,depth+1,maxDepth);
 	return;
       }
     }
     //can't split these points
   }
-  dim=-1;
+  splitDim=-1;
   pos=neg=NULL;
-  pts=p;
+  pts=_pts;
+}
+
+KDTree::~KDTree()
+{
+  SafeDelete(pos);
+  SafeDelete(neg);
 }
 
 int KDTree::MaxDepth() const
@@ -92,22 +118,87 @@ int KDTree::MinLeafSize() const
 }
 
 
+int KDTree::TreeSize() const
+{
+  if(IsLeaf()) return 1;
+  return pos->TreeSize() + neg->TreeSize();
+}
+
+bool KDTree::Split(int dimension)
+{
+  Assert(IsLeaf());
+  if(pts.size() <= 1) {
+    return false;
+  }
+  splitDim = dimension;
+  if(dimension < 0)
+    splitDim = RandInt(pts[0].pt.n);
+  splitVal = Select(pts,splitDim,pts.size()/2);
+  std::vector<Point> p1,p2;
+  for(size_t i=0;i<pts.size();i++) {
+    if(Pos(pts[i],splitDim,splitVal)) p1.push_back(pts[i]);
+    else p2.push_back(pts[i]);
+  }
+  if(!p1.empty() && !p2.empty()) { //go down another level
+    pts.clear();
+    pos = new KDTree();
+    neg = new KDTree();
+    pos->pts = p1;
+    neg->pts = p2;
+    pos->depth = depth+1;
+    neg->depth = depth+1;
+    return true;
+  }
+  else {
+    splitDim = -1;
+    return false;
+  }
+}
+
+void KDTree::Join()
+{
+  if(IsLeaf()) return;
+  pos->Join();
+  neg->Join();
+  pts = pos->pts;
+  pts.insert(pts.end(),neg->pts.begin(),neg->pts.end());
+  splitDim = -1;
+  SafeDelete(pos);
+  SafeDelete(neg);
+}
+
+void KDTree::Clear()
+{
+  splitDim = -1;
+  splitVal = 0;
+  depth = 0;
+  pts.clear();
+  SafeDelete(pos);
+  SafeDelete(neg);
+}
+
+KDTree* KDTree::Insert(const Vector& p,int id,int maxLeafPoints)
+{
+  KDTree* node = Locate(p);
+  Assert(node->IsLeaf());
+  //just add to the node
+  node->pts.resize(node->pts.size()+1);
+  node->pts.back().pt = p;
+  node->pts.back().id = id;
+  if((int)node->pts.size() >= maxLeafPoints) {
+    //split
+    if(node->Split(node->depth % p.n))
+      return node->Locate(p);
+  }
+  return node;
+}
+
 KDTree* KDTree::Locate(const Vector& p)
 {
   if(IsLeaf()) return this;
-  if(Pos(p,dim,val)) return pos->Locate(p);
+  if(Pos(p,splitDim,splitVal)) return pos->Locate(p);
   else return neg->Locate(p);
 } 
-
-bool KDTree::Remove(int i) {
-  Assert(IsLeaf());
-  for(size_t k=0;k<pts.size();k++)
-    if(i == pts[k].index) {
-      pts.erase(pts.begin()+k);
-      return true;
-    }
-  return false;
-}
 
 int KDTree::ClosestPoint(const Vector& pt,Real& dist) const
 {
@@ -132,6 +223,47 @@ int KDTree::PointWithin(const Vector& pt,Real& dist) const
   return idx;
 }
 
+void KDTree::ClosePoints(const Vector& pt,Real radius,std::vector<Real>& distances,std::vector<int>& ids) const
+{
+  if(IsLeaf()) {
+    Real r2 = Sqr(radius);
+    for(size_t i=0;i<pts.size();i++) {
+      Real d2=pt.distanceSquared(pts[i].pt);
+      if(d2 < r2) {
+	distances.push_back(Sqrt(d2));
+	ids.push_back(pts[i].id);
+      }
+    }
+  }
+  else {
+    if(splitVal - pt[splitDim] <= radius)
+      pos->ClosePoints(pt,radius,distances,ids);
+    if(pt[splitDim] - splitVal <= radius)    
+      neg->ClosePoints(pt,radius,distances,ids);
+  }
+}
+
+void KDTree::ClosePoints(const Vector& pt,Real radius,Real n,const Vector& w,std::vector<Real>& distances,std::vector<int>& ids) const
+{
+  if(IsLeaf()) {
+    for(size_t i=0;i<pts.size();i++) {
+      Real d=Distance(pts[i].pt,pt,n,w);
+      if(d < radius) {
+	distances.push_back(d);
+	ids.push_back(pts[i].id);
+      }
+    }
+  }
+  else {
+    Real weight=(w.empty()?1.0:w[splitDim]);
+    if((splitVal - pt[splitDim])*weight <= radius)
+      pos->ClosePoints(pt,radius,n,w,distances,ids);
+    if((pt[splitDim] - splitVal)*weight <= radius)    
+      neg->ClosePoints(pt,radius,n,w,distances,ids);
+  }
+}
+
+
 void KDTree::KClosestPoints(const Vector& pt,int k,Real* dist,int* idx) const
 {
   for(int i=0;i<k;i++) {
@@ -154,7 +286,7 @@ void KDTree::KClosestPoints(const Vector& pt,int k,Real n,const Vector& w,Real* 
 
 Real KDTree::Select(const std::vector<Point>& S, int d, int k)
 {
-  return (*ArrayUtils::nth_element(S,k,DDimensionCmp(d)).pt)[d];
+  return ArrayUtils::nth_element(S,k,DDimensionCmp(d)).pt[d];
   /*
   Assert(k >= 0 && k < S.size());
   int i=rand()%S.size();
@@ -177,16 +309,16 @@ void KDTree::_ClosestPoint(const Vector& pt,Real& dist,int& idx) const
   if(IsLeaf()) {
     //go through list,return closest pt if less than dist
     for(size_t i=0;i<pts.size();i++) {
-      Real d=Distance_L2((const Vector&)pts[i],pt);
+      Real d=Distance_L2(pts[i].pt,pt);
       if(d < dist) {
-	idx=pts[i].index;
+	idx=pts[i].id;
 	dist = d;
       }
     }
     return;
   }
 
-  Real d = pt(dim)-val;
+  Real d = pt(splitDim)-splitVal;
   if(d >= Zero) { //probably on pos side, check that first
     pos->_ClosestPoint(pt,dist,idx);
     if(d <= dist) //check - if necessary
@@ -204,9 +336,9 @@ void KDTree::_KClosestPoints(const Vector& pt,int k,Real* dist,int* idx,int& max
   if(IsLeaf()) {
     //go through list,return closest pts if less than dist
     for(size_t i=0;i<pts.size();i++) {
-      Real d=Distance_L2((const Vector&)pts[i],pt);
+      Real d=Distance_L2(pts[i].pt,pt);
       if(d < dist[maxdist]) {
-	idx[maxdist]=pts[i].index;
+	idx[maxdist]=pts[i].id;
 	dist[maxdist]=d;
 	maxdist = _MaxDist(dist,k);
       }
@@ -214,7 +346,7 @@ void KDTree::_KClosestPoints(const Vector& pt,int k,Real* dist,int* idx,int& max
     return;
   }
 
-  Real d = pt(dim)-val;
+  Real d = pt(splitDim)-splitVal;
   if(d >= Zero) { //probably on pos side, check that first
     pos->_KClosestPoints(pt,k,dist,idx,maxdist);
     if(d <= dist[maxdist]) //check - if necessary
@@ -227,23 +359,14 @@ void KDTree::_KClosestPoints(const Vector& pt,int k,Real* dist,int* idx,int& max
   }
 }
 
-
-Real Distance(const Vector& a,const Vector& b,Real norm,const Vector& weights)
-{
-  if(weights.empty()) 
-    return Distance(a,b,norm);
-  else 
-    return Distance_Weighted(a,b,norm,weights);
-}
-
 void KDTree::_ClosestPoint2(const Vector& pt,Real& dist,int& idx,Real norm,const Vector& weights) const
 {
   if(IsLeaf()) {
     //go through list,return closest pt if less than dist
     for(size_t i=0;i<pts.size();i++) {
-      Real d=Distance((const Vector&)pts[i],pt,norm,weights);
+      Real d=Distance(pts[i].pt,pt,norm,weights);
       if(d < dist) {
-	idx=pts[i].index;
+	idx=pts[i].id;
 	dist = d;
       }
     }
@@ -251,8 +374,8 @@ void KDTree::_ClosestPoint2(const Vector& pt,Real& dist,int& idx,Real norm,const
   }
 
   //d should be a lower bound on the distance from pt to points in the cell
-  Real d=pt(dim)-val;
-  if(!weights.empty())  d *= weights(dim);
+  Real d=pt(splitDim)-splitVal;
+  if(!weights.empty())  d *= weights(splitDim);
   if(d >= Zero) { //probably on pos side, check that first
     pos->_ClosestPoint2(pt,dist,idx,norm,weights);
     if(d <= dist) //check - if necessary
@@ -270,26 +393,30 @@ void KDTree::_KClosestPoints2(const Vector& pt,int k,Real* dist,int* idx,int& ma
   if(IsLeaf()) {
     //go through list,return closest pts if less than dist
     for(size_t i=0;i<pts.size();i++) {
-      Real d=Distance((const Vector&)pts[i],pt,norm,weights);
+      Real d=Distance(pts[i].pt,pt,norm,weights);
       if(d < dist[maxdist]) {
-	idx[maxdist]=pts[i].index;
+	idx[maxdist]=pts[i].id;
 	dist[maxdist]=d;
 	maxdist = _MaxDist(dist,k);
       }
     }
     /*
+    for(int i=0;i<depth;i++) cout<<" ";
     cout<<"dist: ";
     for(int i=0;i<k;i++)
       cout<<dist[i]<<" ";
-    cout<<", max "<<maxDist<<endl;
+    cout<<", max index "<<maxdist<<endl;
     getchar();
     */
     return;
   }
 
-  Real d = pt(dim)-val;
-  if(!weights.empty()) d*=weights(dim);
-  //cout<<"plane dist: "<<d<<endl;
+  Real d = pt(splitDim)-splitVal;
+  if(!weights.empty()) d*=weights(splitDim);
+  /*
+  for(int i=0;i<depth;i++) cout<<" ";
+  cout<<"plane dist: "<<d<<endl;
+  */
   if(d >= Zero) { //probably on pos side, check that first
     pos->_KClosestPoints2(pt,k,dist,idx,maxdist,norm,weights);
     if(d <= dist[maxdist]) //check - if necessary
