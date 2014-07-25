@@ -80,7 +80,7 @@ void PRMStarPlanner::PlanMore()
     tCheck += timer.ElapsedTime();
   }
   else {
-    //RRG expansion strategy
+    //RRT/RRG expansion strategy
     GenerateConfig(x);
     //KNN call has a bit of duplication with connectByRadius, below
     int nn;
@@ -186,16 +186,40 @@ void PRMStarPlanner::PlanMore()
   tKnn += timer.ElapsedTime();
   timer.Reset();
 
+  //sort neighbors with respect to increasing d[n] + d
+  {
+    vector<pair<Real,int> > queue;
+    for(size_t i=0;i<neighbors.size();i++) {
+      int n = neighbors[i];
+      if(n == m || (m >= 0 && roadmap.HasEdge(m,n)))
+	continue;
+      if(rrg && (n!=goal && IsInf(spp.d[n])))
+	continue;
+      Real d = space->Distance(x,roadmap.nodes[n]);
+      if(d > connectionThreshold) continue;
+      queue.push_back(pair<Real,int>(spp.d[n]+d,n));
+    }
+    sort(queue.begin(),queue.end());
+    neighbors.resize(queue.size());
+    for(size_t i=0;i<queue.size();i++)
+      neighbors[i] = queue[i].second;
+  }
+
   for(size_t i=0;i<neighbors.size();i++) {
+    //check for shorter connections into m and neighbors[i]
     int n = neighbors[i];
+    /*
+    //this part becomes unnecessary due to sorting above
     if(n == m || (m >= 0 && roadmap.HasEdge(m,n)))
       continue;
     if(rrg && (n!=goal && IsInf(spp.d[n])))
       continue;
-    //check for shorter connections into m and neighbors[i]
     Assert(n >= 0 && n < (int)roadmap.nodes.size() && n != m);
     Real d = space->Distance(x,roadmap.nodes[n]);
     if(d > connectionThreshold) continue;
+    */
+
+    Real d = space->Distance(x,roadmap.nodes[n]);
 
     if(m==-1) {
       m=AddMilestone(x);  
@@ -208,12 +232,11 @@ void PRMStarPlanner::PlanMore()
       }
     }
 
-    const Config& xn = roadmap.nodes[n];
     bool add = false;
     SmartPointer<EdgePlanner> e;
     //don't connect points that aren't potentially optimal
-    /* if(true) {*/
     if(!rrg || (spp.d[n] + d)*fudgeFactor < spp.d[m] || (spp.d[m] + d)*fudgeFactor < spp.d[n]) {
+      const Config& xn = roadmap.nodes[n];
       e = space->LocalPlanner(x,xn);
       Assert(e->Space() != NULL);
 
@@ -249,6 +272,11 @@ void PRMStarPlanner::PlanMore()
 	//add it now without checking, lazy style
 	add = true;
     }
+    /*else {
+      if(n==goal) printf("Candidate neighbor to goal rejected due to cost: %g+%g > %g (fudge factor %g)\n",spp.d[m],d,spp.d[n],fudgeFactor);
+    }
+    */
+
     if(add) {
       roadmap.AddEdge(m,n,e);
       if(useSpp) 
