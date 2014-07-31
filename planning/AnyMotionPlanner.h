@@ -141,7 +141,7 @@ class MotionPlannerInterface
  * - rrt: the Rapidly Exploring Random Trees algorithm
  * - sbl: the Single-Query Bidirectional Lazy planner
  * - sblprt: the probabilistic roadmap of trees (PRT) algorithm with SBL as the inter-root planner.
- * - rrt*: the RRT* algorithm for optimal motion planning (interface not implemented yet)
+ * - rrt*: the RRT* algorithm for optimal motion planning
  * - prm*: the PRM* algorithm for optimal motion planning
  * - lazyprm*: the Lazy-PRM* algorithm for optimal motion planning
  * - lazyrrg*: the Lazy-RRG* algorithm for optimal motion planning
