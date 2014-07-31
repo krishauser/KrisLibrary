@@ -16,7 +16,6 @@ RigidRobot2DCSpace::RigidRobot2DCSpace()
 void RigidRobot2DCSpace::DrawWorkspaceGL() const
 {
   //blank out background (light yellow)
-  /*
   glColor3f(1,1,0.5);
   glBegin(GL_QUADS);
   glVertex2f(domain.bmin.x,domain.bmin.y);
@@ -24,7 +23,6 @@ void RigidRobot2DCSpace::DrawWorkspaceGL() const
   glVertex2f(domain.bmax.x,domain.bmax.y);
   glVertex2f(domain.bmin.x,domain.bmax.y);
   glEnd();
-  */
 
   //draw obstacles (dark grey)
   glColor3f(0.2,0.2,0.2);
