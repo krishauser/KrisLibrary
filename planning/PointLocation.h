@@ -67,6 +67,25 @@ class RandomPointLocation : public PointLocationBase
   virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
 };
 
+/** @brief The approximate O(k) point location algorithm that returns the closest
+ * of k randomly chosen points.
+ */
+class RandomBestPointLocation : public PointLocationBase
+{
+ public:
+  RandomBestPointLocation(std::vector<Vector>& points,CSpace* _space,int k=1);
+  virtual void OnAppend() {}
+  virtual bool OnDelete(int id) { return true; }
+  virtual bool OnClear() { return true; }
+  virtual bool Exact() { return false; }
+  virtual bool NN(const Vector& p,int& nn,Real& distance);
+  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
+
+  CSpace* space;
+  int k;
+};
+
+
 /** @brief An accelerated point location algorithm that uses a K-D tree.
  *
  * Uses an L-n norm, optionally with weights.

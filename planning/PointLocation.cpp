@@ -83,6 +83,50 @@ bool RandomPointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::ve
   return true;
 }
 
+RandomBestPointLocation::RandomBestPointLocation(vector<Vector>& points,CSpace* _space,int _k) 
+  :PointLocationBase(points),space(_space),k(_k)
+{}
+
+bool RandomBestPointLocation::NN(const Vector& p,int& nn,Real& distance) 
+{ 
+  distance = Inf;
+  nn = -1;
+  for(int i=0;i<k;i++) {
+    int n = RandInt(points.size());
+    Real d = space->Distance(points[n],p);
+    if(d < distance) {
+      nn = n;
+      distance = d;
+    }
+  }
+  return true;
+}
+bool RandomBestPointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances) 
+{ 
+  set<pair<Real,int> > knn;
+  Real dmax = Inf;
+  int count = k*this->k;
+  for(int i=0;i<count;i++) {
+    int n = RandInt(points.size());
+    Real d=space->Distance(points[n],p);
+    if(d > 0 && d < dmax) {
+      pair<Real,int> idx(d,n);
+      knn.insert(idx);
+      if((int)knn.size() > k)
+	knn.erase(--knn.end());
+      dmax = (--knn.end())->first;
+    }
+  }
+  nn.resize(0);
+  distances.resize(0);
+  for(set<pair<Real,int> >::const_iterator j=knn.begin();j!=knn.end();j++) {
+    nn.push_back(j->second);
+    distances.push_back(j->first);
+  }
+  return true;
+}
+
+
 KDTreePointLocation::KDTreePointLocation(vector<Vector>& points) 
   :PointLocationBase(points),norm(2.0)
 {}
