@@ -16,6 +16,8 @@ class PRMStarPlanner : public RoadmapPlanner
   void KNN(const Config& x,int k,vector<int>& nn);
   ///Helper: perform neighbor query limited by radius r
   void Neighbors(const Config& x,Real r,vector<int>& neighbors);
+  ///Helper: returns true if there exists a feasible path from start to goal
+  bool HasPath() const;
   ///Helper: get path from start to goal
   bool GetPath(MilestonePath& path);
   ///Helper: get path from milestone a to b
