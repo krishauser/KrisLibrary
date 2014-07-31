@@ -209,7 +209,7 @@ void PRMStarPlanner::PlanMore()
     //check for shorter connections into m and neighbors[i]
     int n = neighbors[i];
     /*
-    //this part becomes unnecessary due to sorting above
+    //this checking becomes unnecessary due to neighborhood sorting above
     if(n == m || (m >= 0 && roadmap.HasEdge(m,n)))
       continue;
     if(rrg && (n!=goal && IsInf(spp.d[n])))
@@ -381,6 +381,21 @@ bool PRMStarPlanner::GetPath(MilestonePath& path)
 {
   vector<int> nodes;
   return GetPath(start,goal,nodes,path);
+}
+
+bool PRMStarPlanner::HasPath() const
+{
+  bool useSpp = (rrg || lazy);
+  if(!useSpp) {
+    EdgeDistance distanceWeightFunc;
+    ShortestPathProblem spptemp(roadmap);
+    spptemp.InitializeSource(0);
+    spptemp.FindPath_Undirected(1,distanceWeightFunc);
+    if(IsInf(spptemp.d[1])) return false;
+    return true;
+  }
+  if(IsInf(spp.d[1])) return false;
+  return true;
 }
 
 bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
