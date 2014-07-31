@@ -4,6 +4,7 @@
 #include "OptimalMotionPlanner.h"
 #include "PointLocation.h"
 #include "SBL.h"
+#include "FMMMotionPlanner.h"
 #include "Timer.h"
 
 #if HAVE_TINYXML
@@ -142,8 +143,8 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return prm.ccs.NumComponents(); }
   virtual bool IsConnected(int ma,int mb) const { return prm.AreConnected(ma,mb); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { prm.CreatePath(ma,mb,path); }
-  virtual bool IsSolved() const { return false; }
-  virtual void GetSolution(MilestonePath& path) { return; }
+  virtual bool IsSolved() const { return IsConnected(0,1); }
+  virtual void GetSolution(MilestonePath& path) { GetPath(0,1,path); }
   virtual void GetRoadmap(RoadmapPlanner& roadmap) { roadmap = prm; }
 
   RoadmapPlanner prm;
@@ -302,7 +303,24 @@ class SBLInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return 2; }
   virtual bool IsConnected(int ma,int mb) const { return sbl->IsDone(); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { sbl->CreatePath(path); if(ma == 1) ReversePath(path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) { printf("TODO: get SBL roadmap\n"); }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) {
+    roadmap.AddMilestone(qStart);
+    roadmap.AddMilestone(qGoal);
+    GetRoadmapRecurse(sbl->tStart->root,roadmap,0);
+    GetRoadmapRecurse(sbl->tGoal->root,roadmap,1);
+  }
+  void GetRoadmapRecurse(SBLTree::Node* n,RoadmapPlanner& roadmap,int nIndex=-1)
+  {
+    if(nIndex < 0)
+      nIndex = roadmap.AddMilestone(*n);
+    SBLTree::Node* c=n->getFirstChild();
+    while(c != NULL) {
+      int cIndex = roadmap.AddMilestone(*c);
+      roadmap.ConnectEdge(nIndex,cIndex,c->edgeFromParent());
+      GetRoadmapRecurse(c,roadmap,cIndex);
+      c = c->getNextSibling();
+    }
+  }
 
   SmartPointer<SBLPlanner> sbl;
   Config qStart,qGoal;
@@ -379,12 +397,10 @@ class PRMStarInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return 1; }
   virtual bool IsConnected(int ma,int mb) const { 
     Assert(ma==0 && mb==1);
-    if(IsInf(planner.spp.d[mb])) return false;
-    return true;
+    return planner.HasPath();
   }
   virtual void GetPath(int ma,int mb,MilestonePath& path) {
     Assert(ma==0 && mb==1);
-    if(IsInf(planner.spp.d[mb])) return;
     planner.GetPath(path);
   }
   virtual void GetRoadmap(RoadmapPlanner& roadmap) { roadmap.roadmap = planner.roadmap; }
@@ -392,6 +408,88 @@ class PRMStarInterface  : public MotionPlannerInterface
   PRMStarPlanner planner;
   Config qStart,qGoal;
 };
+
+class FMMInterface  : public MotionPlannerInterface
+{
+ public:
+  FMMInterface(CSpace* space,bool _anytime)
+    : planner(space),anytime(_anytime),iterationCount(0)
+    {}
+  virtual ~FMMInterface() {}
+  virtual bool CanAddMilestone() const { if(qStart.n != 0 && qGoal.n != 0) return false; return true; }
+  virtual int AddMilestone(const Config& q) {
+    if(qStart.n == 0) {
+      qStart = q;
+      return 0;
+    }
+    else if(qGoal.n == 0) {
+      qGoal = q;
+      planner.Init(qStart,qGoal);
+      return 1;
+    }
+    AssertNotReached();
+    return -1;
+  }
+  virtual void GetMilestone(int i,Config& q) { 
+    if(i==0) q=qStart;
+    if(i==1) q=qGoal;
+    return;
+  }
+  virtual int PlanMore() { 
+    iterationCount++;
+    if(anytime) {
+      int d=qStart.n;
+      Real scaleFactor = Pow(0.5,1.0/Real(d));
+      planner.resolution *= scaleFactor;
+
+      planner.SolveFMM();
+    }
+    else
+      planner.SolveFMM();
+    return -1;
+  }
+  virtual int NumIterations() const { return iterationCount; }
+  virtual int NumMilestones() const { return 2; }
+  virtual int NumComponents() const { return 1; }
+  virtual bool IsConnected(int ma,int mb) const { 
+    Assert(ma==0 && mb==1);
+    if(planner.solution.edges.empty()) return false;
+    return true;
+  }
+  virtual void GetPath(int ma,int mb,MilestonePath& path) {
+    Assert(ma==0 && mb==1);
+    path = planner.solution;
+  }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) { 
+    //simply output all the visited grid cells
+    if(planner.distances.numValues()==0) return;
+    vector<int> index(qStart.n,0);
+    do {
+      if(!IsInf(planner.distances[index])) {
+	Vector config = planner.FromGrid(index);
+	roadmap.AddMilestone(config);
+      }
+    } while(IncrementIndex(index,planner.distances.dims)==0);
+
+    if(planner.solution.edges.empty()) {
+      //add debugging path
+      int prev = -1;
+      for(size_t i=0;i<planner.failedCheck.edges.size();i++) {
+	if(prev < 0) 
+	  prev = roadmap.AddMilestone(planner.failedCheck.GetMilestone(0));
+	int n = roadmap.AddMilestone(planner.failedCheck.GetMilestone(i+1));
+	roadmap.ConnectEdge(prev,n,planner.failedCheck.edges[i]);
+	prev = n;
+      }
+    }
+  }
+
+  FMMMotionPlanner planner;
+  Config qStart,qGoal;
+  bool anytime;
+  int iterationCount;
+};
+
 
 PiggybackMotionPlanner::PiggybackMotionPlanner(const SmartPointer<MotionPlannerInterface>& _mp)
   :mp(_mp)
@@ -417,10 +515,7 @@ int PointToSetMotionPlanner::PlanMore()
       sampleGoalCounter = 0;
       Config q;
       if(SampleGoal(q)) {
-	AddMilestone(q);
-	int n=mp->AddMilestone(q);
-	goalNodes.push_back(n);
-	return n;
+	return AddMilestone(q);
       }
       else
 	return -1;
@@ -480,8 +575,9 @@ MotionPlannerFactory::MotionPlannerFactory()
    ignoreConnectedComponents(false),
    perturbationRadius(0.1),perturbationIters(5),
    bidirectional(true),
-   useGrid(true),gridResolution(0.1),randomizeFrequency(50),
-   storeEdges(false),shortcut(false),restart(false)
+   useGrid(true),gridResolution(0),randomizeFrequency(50),
+   storeEdges(false),shortcut(false),restart(false),
+   restartTermCond("{foundSolution:1;maxIters:1000}")
 {}
 
 MotionPlannerInterface* MotionPlannerFactory::Create(const MotionPlanningProblem& problem)
@@ -539,10 +635,45 @@ MotionPlannerInterface* MotionPlannerFactory::ApplyModifiers(MotionPlannerInterf
     norestart.restart = false;
     return new RestartMotionPlanner(norestart,problem,iterTerm);
   }
-  else if(shortcut)
+  else if(shortcut) {
     return new ShortcutMotionPlanner(planner);
+  }
   else
     return planner;
+}
+
+bool ReadPointLocation(const string& str,RoadmapPlanner& planner)
+{
+  if(str.empty()) return false; //use default
+  stringstream ss(str);
+  string type;
+  ss>>type;
+  if(type=="random") {
+    planner.pointLocator = new RandomPointLocation(planner.roadmap.nodes);
+    return true;
+  }
+  else if(type=="randombest") {
+    int k;
+    ss >> k;
+    if(!ss) {
+      fprintf(stderr,"Error reading point location string \"randombest [k]\"\n");
+      return false;
+    }
+    planner.pointLocator = new RandomBestPointLocation(planner.roadmap.nodes,planner.space,k);
+    return true;
+  }
+  else if(type=="kdtree") {
+    Vector weights;
+    ss >> weights;
+    if(!ss)
+      weights.resize(0);
+    planner.pointLocator = new KDTreePointLocation(planner.roadmap.nodes,2,weights);
+    return true;
+  }
+  else {
+    fprintf(stderr,"Unsupported point location type %s\n",type.c_str());
+    return false;
+  }
 }
 
 MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
@@ -554,10 +685,13 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     prm->connectionThreshold = connectionThreshold;
     prm->ignoreConnectedComponents = ignoreConnectedComponents;
     prm->storeEdges=storeEdges;
+    ReadPointLocation(pointLocation,prm->prm);
     return prm;
   }
   else if(type=="any" || type=="sbl") {
-    SBLInterface* sbl = new SBLInterface(space,useGrid,gridResolution,randomizeFrequency);
+    Real res=gridResolution;
+    if(gridResolution <= 0) res = 0.1;
+    SBLInterface* sbl = new SBLInterface(space,useGrid,res,randomizeFrequency);
     sbl->sbl->maxExtendDistance = perturbationRadius;
     sbl->sbl->maxExtendIters = perturbationIters;
     sbl->sbl->edgeConnectionThreshold = connectionThreshold;
@@ -588,17 +722,117 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     PRMStarInterface* prm = new PRMStarInterface(space);
     prm->planner.lazy = false;
     prm->planner.connectionThreshold = connectionThreshold;
+    ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with PRM* planner\n");
+    return prm;
+  }
+  else if(type=="rrt*") {
+    PRMStarInterface* prm = new PRMStarInterface(space);
+    prm->planner.rrg = true;
+    prm->planner.lazy = false;
+    prm->planner.connectionThreshold = connectionThreshold;
+    ReadPointLocation(pointLocation,prm->planner);
+    if(shortcut || restart) 
+      printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with RRT* planner\n");
     return prm;
   }
   else if(type=="lazyprm*") {
     PRMStarInterface* prm = new PRMStarInterface(space);
     prm->planner.lazy = true;
     prm->planner.connectionThreshold = connectionThreshold;
+    ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-PRM* planner\n");
     return prm;
+  }
+  else if(type=="lazyrrg*") {
+    PRMStarInterface* prm = new PRMStarInterface(space);
+    prm->planner.lazy = true;
+    prm->planner.rrg = true;
+    prm->planner.connectionThreshold = connectionThreshold;
+    ReadPointLocation(pointLocation,prm->planner);
+    if(shortcut || restart) 
+      printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-RRG* planner\n");
+    return prm;
+  }
+  else if(type=="fmm") {
+    FMMInterface* fmm = new FMMInterface(space,false);
+    int d;
+    Vector q;
+    space->Sample(q);
+    d = q.n;
+    if(!domainMin.empty()) {
+      if(domainMin.size()==1)  //single number
+	fmm->planner.bmin.resize(d,domainMin[0]);
+      else if(domainMin.size() == d)
+	fmm->planner.bmin = domainMin;
+      else if(domainMin.size() > d) {
+	fmm->planner.bmin = domainMin;
+	fmm->planner.bmin.n = d;
+      }
+      else {
+	printf("MotionPlannerInterface: Warning, domainMin is of incorrect size, ignoring\n");
+      }
+    }
+    if(!domainMax.empty()) {
+      if(domainMax.size()==1)  //single number
+	fmm->planner.bmax.resize(d,domainMax[0]);
+      else if(domainMax.size() == d)
+	fmm->planner.bmax = domainMax;
+      else if(domainMax.size() > d) {
+	fmm->planner.bmax = domainMax;
+	fmm->planner.bmax.n = d;
+      }
+      else {
+	printf("MotionPlannerInterface: Warning, domainMax is of incorrect size, ignoring\n");
+      }
+    }
+    if(gridResolution > 0) {
+      fmm->planner.resolution.resize(d,gridResolution);
+    }
+    if(restart) 
+      printf("MotionPlannerInterface: Warning, restart is incompatible with FMM planner\n");
+    return fmm;
+  }
+  else if(type=="fmm*") {
+    FMMInterface* fmm = new FMMInterface(space,true);
+    int d;
+    Vector q;
+    space->Sample(q);
+    d = q.n;
+    if(!domainMin.empty()) {
+      if(domainMin.size()==1)  //single number
+	fmm->planner.bmin.resize(d,domainMin[0]);
+      else if(domainMin.size() == d)
+	fmm->planner.bmin = domainMin;
+      else if(domainMin.size() > d) {
+	fmm->planner.bmin = domainMin;
+	fmm->planner.bmin.n = d;
+      }
+      else {
+	printf("MotionPlannerInterface: Warning, domainMin is of incorrect size, ignoring\n");
+      }
+    }
+    if(!domainMax.empty()) {
+      if(domainMax.size()==1)  //single number
+	fmm->planner.bmax.resize(d,domainMax[0]);
+      else if(domainMax.size() == d)
+	fmm->planner.bmax = domainMax;
+      else if(domainMax.size() > d) {
+	fmm->planner.bmax = domainMax;
+	fmm->planner.bmax.n = d;
+      }
+      else {
+	printf("MotionPlannerInterface: Warning, domainMax is of incorrect size, ignoring\n");
+      }
+    }
+    if(gridResolution > 0) {
+      fmm->planner.resolution.resize(d,gridResolution);
+    }
+    if(restart) 
+      printf("MotionPlannerInterface: Warning, restart is incompatible with FMM* planner\n");
+    return fmm;
   }
   else {
     FatalError("MotionPlannerFactory: Planner type %s is unknown",type.c_str());
@@ -666,6 +900,12 @@ bool MotionPlannerFactory::LoadJSON(const string& str)
   items["perturbationIters"].as(perturbationIters);
   items["bidirectional"].as(bidirectional);
   items["useGrid"].as(useGrid);
+  vector<Real> dmin,dmax;
+  if(items["domainMin"].asvector(dmin))
+    domainMin = dmin;
+  if(items["domainMax"].asvector(dmax))
+    domainMax = dmax;
+  items["pointLocation"].as(pointLocation);
   items["gridResolution"].as(gridResolution);
   items["randomizeFrequency"].as(randomizeFrequency);
   items["storeEdges"].as(storeEdges);
@@ -688,6 +928,9 @@ string MotionPlannerFactory::SaveJSON() const
   items["useGrid"] = useGrid;
   items["gridResolution"] = gridResolution;
   items["randomizeFrequency"] = randomizeFrequency;
+  items["domainMin"] = vector<Real>(domainMin);
+  items["domainMax"] = vector<Real>(domainMax);
+  items["pointLocation"] = pointLocation;
   items["storeEdges"] = storeEdges;
   items["shortcut"] = shortcut;
   items["restart"] = restart;
@@ -702,7 +945,9 @@ string MotionPlannerFactory::SaveJSON() const
 
 RestartMotionPlanner::RestartMotionPlanner(const MotionPlannerFactory& _factory,const MotionPlanningProblem& _problem,const HaltingCondition& _iterTermCond)
   :PiggybackMotionPlanner(NULL),factory(_factory),problem(_problem),iterTermCond(_iterTermCond),numIters(0)
-{}
+{
+  mp = factory.Create(problem);
+}
 
 std::string RestartMotionPlanner::Plan(MilestonePath& path,const HaltingCondition& cond)
 {
@@ -758,18 +1003,26 @@ std::string RestartMotionPlanner::Plan(MilestonePath& path,const HaltingConditio
 
 int RestartMotionPlanner::PlanMore()
 {
-  if(!mp)
-    mp = factory.Create(problem);
   int res=mp->PlanMore();
   numIters++;
-  if(iterTermCond.foundSolution) {
-    if(mp->IsSolved()) {
-      MilestonePath path;
-      mp->GetSolution(path);
-      if(path.Length() < bestPath.Length())
-	bestPath = path;
+  if(mp->IsSolved()) {
+    //update best path
+    MilestonePath path;
+    mp->GetSolution(path);
+    if(bestPath.edges.empty() || path.Length() < bestPath.Length()) {
+      bestPath = path;
     }
+    if(iterTermCond.foundSolution) {
+      //create a new planner
+      mp = NULL;
+      mp = factory.Create(problem);
+      return res;
+    }
+  }
+  if(mp->NumIterations() > iterTermCond.maxIters) {
+    //create a new planner
     mp = NULL;
+    mp = factory.Create(problem);    
   }
   return res;
 }

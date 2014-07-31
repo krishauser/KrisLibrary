@@ -127,6 +127,7 @@ class MotionPlannerInterface
   ///Returns a full-blown roadmap representation of the roadmap
   virtual void GetRoadmap(RoadmapPlanner& roadmap) {}
 };
+
 /** @brief A motion planner creator.
  * 
  * User calls Create(space) to create a planner. After Create, the planner pointer must be deleted.
@@ -140,9 +141,12 @@ class MotionPlannerInterface
  * - rrt: the Rapidly Exploring Random Trees algorithm
  * - sbl: the Single-Query Bidirectional Lazy planner
  * - sblprt: the probabilistic roadmap of trees (PRT) algorithm with SBL as the inter-root planner.
+ * - rrt*: the RRT* algorithm for optimal motion planning (interface not implemented yet)
  * - prm*: the PRM* algorithm for optimal motion planning
  * - lazyprm*: the Lazy-PRM* algorithm for optimal motion planning
- * - rrt*: the RRT* algorithm for optimal motion planning (interface not implemented yet)
+ * - lazyrrg*: the Lazy-RRG* algorithm for optimal motion planning
+ * - fmm: the fast marching method algorithm for resolution-complete optimal motion planning
+ * - fmm*: an anytime fast marching method algorithm for optimal motion planning
  *
  * Multi-query planners include PRM and SBLPRT. 
  *
@@ -175,19 +179,21 @@ class MotionPlannerFactory
   string SaveJSON() const;
 
   string type;
-  int knn;                 //for PRM
-  Real connectionThreshold;//for PRM,RRT,SBL,PRM*,LazyPRM*
-  bool ignoreConnectedComponents; //for PRM
-  Real perturbationRadius; //for Perturbation,EST,RRT,SBL,SBLPRT
-  int perturbationIters;   //for SBL
-  bool bidirectional;      //for RRT
-  bool useGrid;            //for SBL
-  Real gridResolution;     //for SBL
-  int randomizeFrequency;  //for SBL
-  bool storeEdges;         //if local planner data is stored during planning
-  bool shortcut;           //if you wish to perform shortcutting afterwards
-  bool restart;            //if you wish to restart the planner to get better paths with the remaining time
-  string restartTermCond;  //used if restart is true, JSON string defining termination condition
+  int knn;                 //for PRM (default 10)
+  Real connectionThreshold;//for PRM,RRT,SBL,SBLPRT,RRT*,PRM*,LazyPRM*,LazyRRG* (default Inf)
+  bool ignoreConnectedComponents; //for PRM (default false)
+  Real perturbationRadius; //for Perturbation,EST,RRT,SBL,SBLPRT (default 0.1)
+  int perturbationIters;   //for SBL (default 5)
+  bool bidirectional;      //for RRT (default true)
+  bool useGrid;            //for SBL, SBLPRT (default true): for SBL, uses grid-based random point selection
+  Real gridResolution;     //for SBL, SBLPRT, FMM, FMM* (default 0): if nonzero, for SBL, specifies point selection grid size (default 0.1), for FMM / FMM*, specifies resolution (default 1/8 of domain)
+  int randomizeFrequency;  //for SBL, SBLPRT (default 50): how often the grid projection is randomly perturbed
+  Vector domainMin,domainMax; //for FMM, FMM* (default empty): optional bounds on the CSpace feasible set, default uses a dynamic domain
+  string pointLocation;    //for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("kdtree" supported, optionally followed by a weight vector)
+  bool storeEdges;         //if local planner data is stored during planning (false may save memory, default)
+  bool shortcut;           //if you wish to perform shortcutting afterwards (default false)
+  bool restart;            //if you wish to restart the planner to get better paths with the remaining time (default false)
+  string restartTermCond;  //used if restart is true, JSON string defining termination condition (default "{foundSolution:1;maxIters:1000}")
 };
 
 
