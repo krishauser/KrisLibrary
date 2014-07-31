@@ -11,6 +11,118 @@
 #include <tinyxml.h>
 #endif
 
+
+
+
+/** @brief Helper class for higher-order planners -- passes all calls to another motion planner.
+ */
+class PiggybackMotionPlanner : public MotionPlannerInterface
+{
+ public:
+  PiggybackMotionPlanner(const SmartPointer<MotionPlannerInterface>& mp);
+  virtual int PlanMore() { return mp->PlanMore(); }
+  virtual void PlanMore(int numIters) { for(int i=0;i<numIters;i++) PlanMore(); }
+  virtual int NumIterations() const { return mp->NumIterations(); }
+  virtual int NumMilestones() const { return mp->NumMilestones(); }
+  virtual int NumComponents() const { return mp->NumComponents(); }
+  virtual bool CanAddMilestone() const { return mp->CanAddMilestone(); }
+  virtual int AddMilestone(const Config& q) { return mp->AddMilestone(q); }
+  virtual void GetMilestone(int i,Config& q) { return mp->GetMilestone(i,q); }
+  virtual void ConnectHint(int m) { mp->ConnectHint(m); }
+  virtual bool ConnectHint(int ma,int mb) { return mp->ConnectHint(ma,mb); }
+  virtual bool IsConnected(int ma,int mb) const { return mp->IsConnected(ma,mb); }
+  virtual bool IsLazy() const { return mp->IsLazy(); }
+  virtual bool IsLazyConnected(int ma,int mb) const { return mp->IsLazyConnected(ma,mb); }
+  virtual bool CheckPath(int ma,int mb) { return mp->CheckPath(ma,mb); }
+  virtual void GetPath(int ma,int mb,MilestonePath& path) { mp->GetPath(ma,mb,path); }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) { mp->GetRoadmap(roadmap); }
+  virtual bool IsSolved() { return mp->IsSolved(); }
+  virtual void GetSolution(MilestonePath& path) { return mp->GetSolution(path); }
+
+  SmartPointer<MotionPlannerInterface> mp;
+};
+
+/** @brief Tries to produce a path between a start node and a goal space.
+ * Does so via goal sampling.
+ */
+class PointToSetMotionPlanner : public PiggybackMotionPlanner
+{
+ public:
+  PointToSetMotionPlanner(const SmartPointer<MotionPlannerInterface>& mp,const Config& qstart,CSpace* goalSpace);
+  virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
+  virtual int PlanMore();
+  virtual bool IsSolved();
+  virtual void GetSolution(MilestonePath& path);
+  virtual bool SampleGoal(Config& q);
+  ///User can add goal nodes manually via this method
+  virtual int AddMilestone(const Config& q);
+
+  CSpace* goalSpace;
+
+  ///Setting: the planner samples a new goal configuration every n*(|goalNodes|+1) iterations
+  int sampleGoalPeriod;
+  ///Incremented each iteration, when it hits sampleGoalPeriod a goal should be sampled
+  int sampleGoalCounter;
+  ///These are the indices of goal configurations
+  vector<int> goalNodes;
+};
+
+/** @brief A multiple-restart motion planner that turns a feasible motion planner into an anytime
+ * optimal motion planner by keeping the best path found so far.
+ */
+class RestartMotionPlanner : public PiggybackMotionPlanner
+{
+ public:
+  RestartMotionPlanner(const MotionPlannerFactory& factory,const MotionPlanningProblem& problem,const HaltingCondition& iterTermCond);
+  virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
+  virtual int PlanMore();
+  virtual int AddMilestone(const Config& q);
+  virtual bool IsConnected(int ma,int mb) const;
+  virtual void GetPath(int ma,int mb,MilestonePath& path);
+  virtual bool IsSolved() { return !bestPath.edges.empty(); }
+  virtual void GetSolution(MilestonePath& path) { path = bestPath; }
+  virtual int NumIterations() const { return numIters; }
+
+  MotionPlannerFactory factory;
+  MotionPlanningProblem problem;
+  HaltingCondition iterTermCond;
+  MilestonePath bestPath;
+  int numIters;
+};
+
+
+/** @brief A multiple-restart motion planner that turns a feasible motion planner into an anytime
+ * optimal motion planner by keeping the best path found so far and
+ * shortcutting the best path.
+ */
+class RestartShortcutMotionPlanner : public RestartMotionPlanner
+{
+ public:
+  RestartShortcutMotionPlanner(const MotionPlannerFactory& factory,const MotionPlanningProblem& problem,const HaltingCondition& iterTermCond);
+  virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
+  virtual int PlanMore();
+
+  bool shortcutMode;
+  int numShortcutIters;
+};
+
+/** @brief Plans a path and then tries to shortcut it with the remaining time.
+ */
+class ShortcutMotionPlanner : public PiggybackMotionPlanner
+{
+ public:
+  ShortcutMotionPlanner(const SmartPointer<MotionPlannerInterface>& mp);
+  virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
+  virtual int PlanMore();
+  virtual bool IsSolved() { return !bestPath.edges.empty(); }
+  virtual void GetSolution(MilestonePath& path) { path = bestPath; }
+  virtual int NumIterations() const { return numIters; }
+
+  MilestonePath bestPath;
+  int numIters;
+};
+
+
 HaltingCondition::HaltingCondition()
   :foundSolution(true),maxIters(1000),timeLimit(Inf),costThreshold(0),costImprovementPeriod(Inf),costImprovementThreshold(0)
 {}
@@ -577,7 +689,7 @@ MotionPlannerFactory::MotionPlannerFactory()
    bidirectional(true),
    useGrid(true),gridResolution(0),randomizeFrequency(50),
    storeEdges(false),shortcut(false),restart(false),
-   restartTermCond("{foundSolution:1;maxIters:1000}")
+   restartTermCond("{foundSolution:1,maxIters:1000}")
 {}
 
 MotionPlannerInterface* MotionPlannerFactory::Create(const MotionPlanningProblem& problem)
@@ -624,7 +736,8 @@ MotionPlannerInterface* MotionPlannerFactory::ApplyModifiers(MotionPlannerInterf
     delete planner;
     MotionPlannerFactory norestart = *this;
     norestart.restart = false;
-    return new RestartMotionPlanner(norestart,problem,iterTerm);
+    norestart.shortcut = false;
+    return new RestartShortcutMotionPlanner(norestart,problem,iterTerm);
   }
   else if(restart) {
     HaltingCondition iterTerm;
@@ -949,6 +1062,34 @@ RestartMotionPlanner::RestartMotionPlanner(const MotionPlannerFactory& _factory,
   mp = factory.Create(problem);
 }
 
+int RestartMotionPlanner::AddMilestone(const Config& q)
+{
+  int m = mp->AddMilestone(q);
+  //save for later to support point-to-point initialization paradigm:
+  //Create(space), AddMilestone(start), AddMilestone(goal)
+  if(m == 0) {
+    Assert(problem.qstart.empty());
+    problem.qstart = q;
+  }
+  if(m == 1) {
+    Assert(problem.qgoal.empty());
+    problem.qgoal = q;
+  }
+  return m;
+}
+
+bool RestartMotionPlanner::IsConnected(int ma,int mb) const
+{
+  if(ma == 0 && mb == 1) return !bestPath.edges.empty();
+  return mp->IsConnected(ma,mb);
+}
+
+void RestartMotionPlanner::GetPath(int ma,int mb,MilestonePath& path)
+{
+  if(ma == 0 && mb == 1) path = bestPath;
+  else mp->GetPath(ma,mb,path);
+}
+
 std::string RestartMotionPlanner::Plan(MilestonePath& path,const HaltingCondition& cond)
 {
   if(cond.foundSolution) {
@@ -1026,6 +1167,110 @@ int RestartMotionPlanner::PlanMore()
   }
   return res;
 }
+
+RestartShortcutMotionPlanner::RestartShortcutMotionPlanner(const MotionPlannerFactory& _factory,const MotionPlanningProblem& _problem,const HaltingCondition& _iterTermCond)
+  :RestartMotionPlanner(_factory,_problem,_iterTermCond),shortcutMode(false),numShortcutIters(0)
+{
+}
+
+std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const HaltingCondition& cond)
+{
+  if(cond.foundSolution) {
+    fprintf(stderr,"RestartShortcutMotionPlanner: warning, termination condition wants to stop at first solution. Ignoring\n");
+  }
+  bestPath.edges.clear();
+  Real lastOuterCheckTime = 0, lastOuterCheckValue = 0;
+  Timer timer;
+  numIters = 0;
+  while(numIters<cond.maxIters) {
+    shortcutMode = false;
+    Real t=timer.ElapsedTime();
+    if(t > cond.timeLimit) {
+      path = bestPath;
+      return "timeLimit";
+    }
+    if(!bestPath.edges.empty() && t > lastOuterCheckTime + cond.costImprovementPeriod) {
+      Real len = bestPath.Length();
+      if(len < cond.costThreshold)
+	return "costThreshold";
+      if(lastOuterCheckValue - len < cond.costImprovementThreshold) {
+	path = bestPath;
+	return "costImprovement";
+      }
+      lastOuterCheckTime = t;
+      lastOuterCheckValue = len;
+    }
+
+    Timer mpTimer;
+    HaltingCondition myTermCond = iterTermCond;
+    if(t + iterTermCond.timeLimit > cond.timeLimit)
+      myTermCond.timeLimit = cond.timeLimit - t;
+    if(numIters + iterTermCond.maxIters > cond.maxIters)
+      myTermCond.maxIters = cond.maxIters - numIters;
+    //TODO: cost improvement checking
+    mp = factory.Create(problem);
+    cout<<"Starting new sub-plan at time "<<t<<", "<<myTermCond.maxIters<<" iters, "<<myTermCond.timeLimit<<" seconds"<<endl;
+    mp->Plan(path,myTermCond);
+    cout<<"  Result: ";
+    if(path.edges.empty())
+      cout<<"Failure"<<endl;
+    else
+      cout<<"Length "<<path.Length()<<endl;
+    cout<<"  Expended "<<mp->NumIterations()<<" iterations"<<endl;
+    if(!path.edges.empty() && (bestPath.edges.empty() || path.Length() < bestPath.Length())) {
+      //update best path
+      bestPath = path;
+    }
+    //do shortcutting on BEST path
+    numIters += mp->NumIterations();
+    int numMpIters = mp->NumIterations();
+    while(mpTimer.ElapsedTime() < myTermCond.timeLimit && numMpIters < myTermCond.maxIters) {
+      bestPath.Reduce(1);
+      numMpIters++;
+      numIters++;
+      shortcutMode = true;
+    }
+  }
+  path = bestPath;
+  return "maxIters";  
+}
+
+int RestartShortcutMotionPlanner::PlanMore()
+{
+  if(shortcutMode) {
+    numShortcutIters ++;
+    bestPath.Reduce(1);
+    if(numShortcutIters + mp->NumIterations() >= iterTermCond.maxIters) {
+      //finished planning and shortcutting, create a new planner and switch
+      //back to planning mode
+      mp = NULL;
+      mp = factory.Create(problem);    
+      shortcutMode = false;
+      numShortcutIters = 0;
+    }
+  }
+  else  {
+    //regular planning mode
+    int res=mp->PlanMore();
+    numIters++;
+    if(mp->IsSolved()) {
+      //update best path
+      MilestonePath path;
+      mp->GetSolution(path);
+      if(bestPath.edges.empty() || path.Length() < bestPath.Length()) {
+	bestPath = path;
+      }
+      shortcutMode = true;
+    }
+    if(mp->NumIterations() >= iterTermCond.maxIters) {
+      //create a new planner
+      mp = NULL;
+      mp = factory.Create(problem);    
+    }
+    return res;
+  }
+}
+
 
 ShortcutMotionPlanner::ShortcutMotionPlanner(const SmartPointer<MotionPlannerInterface>& mp)
   :PiggybackMotionPlanner(mp),numIters(0)
