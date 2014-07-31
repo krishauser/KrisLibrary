@@ -95,7 +95,15 @@ void SBLPlannerWithGrid::Init(const Config& qStart,const Config& qGoal)
 
   s->A.h.resize(qStart.n,gridDivision);
   g->A.h.resize(qStart.n,gridDivision);
-
+  //this is kinda stupid, should figure out a cleaner way to do this
+  if(qStart.n < (int)s->A.subsetToFull.mapping.size()) {
+    s->A.subsetToFull.mapping.resize(qStart.n);
+    g->A.subsetToFull.mapping.resize(qStart.n);
+    s->A.temp.resize(qStart.n);
+    g->A.temp.resize(qStart.n);
+    s->A.subdiv.h.n = qStart.n;
+    g->A.subdiv.h.n = qStart.n;
+  }
   if(CheckPath(s->root,g->root)) {
     cout<<"SBLPlanner::Init(): Start and goal connected!"<<endl;
   }
