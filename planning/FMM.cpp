@@ -4,7 +4,7 @@
 #include <utils/combination.h>
 #include <math/math.h>
 #include <math/misc.h>
-#include <math/Vector.h>
+#include <math/vector.h>
 #include <utils/ioutils.h>
 #include <fstream>
 #include <Timer.h>

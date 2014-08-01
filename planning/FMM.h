@@ -2,7 +2,7 @@
 #define PLANNING_FMM_H
 
 #include <structs/arraynd.h>
-#include <math/Vector.h>
+#include <math/vector.h>
 using namespace Math;
 
 /** @brief Performs an N-dimensional Fast Marching Method search on a variable-
