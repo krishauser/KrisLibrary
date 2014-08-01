@@ -336,3 +336,5 @@ bool KinematicCSpaceAdaptor::IsValidReverseControl(const State& x1,const Control
 void KinematicCSpaceAdaptor::SampleReverseControl(const State& x,ControlInput& u) { SampleControl(x,u); }
 
 void KinematicCSpaceAdaptor::BiasedSampleReverseControl(const State& x1,const State& xDest,ControlInput& u) { BiasedSampleControl(x1,xDest,u); }
+
+void KinematicCSpaceAdaptor::Properties(PropertyMap& map) const { base->Properties(map); map.set("dynamic",1); }

@@ -24,6 +24,7 @@ public:
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
   virtual void Midpoint(const Config& x,const Config& y,Config& out);
+  virtual void Properties(PropertyMap&) const;
 
   Real angleDistanceWeight;
   Real visibilityEpsilon;

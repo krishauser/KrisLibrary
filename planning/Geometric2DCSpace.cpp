@@ -656,3 +656,21 @@ Real Geometric2DCSpace::Distance(const Config& x, const Config& y)
   if(euclideanSpace) return Distance_L2(x,y);
   else return Distance_LInf(x,y);
 }
+
+void Geometric2DCSpace::Properties(PropertyMap& map) const
+{
+  map.set("cartesian",1);
+  map.set("geodesic",1);
+  if(euclideanSpace)
+    map.set("metric","euclidean");
+  else
+    map.set("metric","Linf");
+  Real v = (domain.bmax.x-domain.bmin.x)*(domain.bmax.y-domain.bmin.y);
+  map.set("volume",v);
+  map.set("diameter",domain.bmin.distance(domain.bmax));
+  vector<Real> bmin(2),bmax(2);
+  domain.bmin.get(bmin[0],bmin[1]);
+  domain.bmax.get(bmax[0],bmax[1]);
+  map.setArray("minimum",bmin);
+  map.setArray("maximum",bmax);
+}

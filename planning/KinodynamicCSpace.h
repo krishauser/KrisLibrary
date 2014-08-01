@@ -219,6 +219,7 @@ class KinematicCSpaceAdaptor : public KinodynamicCSpace
   virtual bool IsValidReverseControl(const State& x1,const ControlInput& u);
   virtual void SampleReverseControl(const State& x,ControlInput& u);
   virtual void BiasedSampleReverseControl(const State& x1,const State& xDest,ControlInput& u);
+  virtual void Properties(PropertyMap& map) const;
 
   CSpace* base;
   Real maxNeighborhoodRadius;

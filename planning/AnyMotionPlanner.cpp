@@ -35,7 +35,7 @@ class PiggybackMotionPlanner : public MotionPlannerInterface
   virtual bool IsLazyConnected(int ma,int mb) const { return mp->IsLazyConnected(ma,mb); }
   virtual bool CheckPath(int ma,int mb) { return mp->CheckPath(ma,mb); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { mp->GetPath(ma,mb,path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) { mp->GetRoadmap(roadmap); }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { mp->GetRoadmap(roadmap); }
   virtual bool IsSolved() { return mp->IsSolved(); }
   virtual void GetSolution(MilestonePath& path) { return mp->GetSolution(path); }
 
@@ -182,7 +182,13 @@ std::string MotionPlannerInterface::Plan(MilestonePath& path,const HaltingCondit
   Timer timer;
   for(int iters=0;iters<cond.maxIters;iters++) {
     Real t=timer.ElapsedTime();
-    if(t > cond.timeLimit) return "timeLimit";
+    if(t > cond.timeLimit) {
+      if(foundPath) {
+	//get the final path
+	GetSolution(path);
+      }
+      return "timeLimit";
+    }
     //check for cost improvements
     if(foundPath && t > lastCheckTime + cond.costImprovementPeriod) {
       GetSolution(path);
@@ -208,7 +214,18 @@ std::string MotionPlannerInterface::Plan(MilestonePath& path,const HaltingCondit
       }
     }
   }
+  if(foundPath) {
+    //get the final path
+    GetSolution(path);
+  }
   return "maxIters";
+}
+
+void MotionPlannerInterface::GetStats(PropertyMap& stats) const
+{
+  stats.set("numIters",NumIterations());
+  stats.set("numMilestones",NumMilestones());
+  stats.set("numComponents",NumComponents());
 }
 
 class RoadmapPlannerInterface  : public MotionPlannerInterface
@@ -257,7 +274,7 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
   virtual void GetPath(int ma,int mb,MilestonePath& path) { prm.CreatePath(ma,mb,path); }
   virtual bool IsSolved() const { return IsConnected(0,1); }
   virtual void GetSolution(MilestonePath& path) { GetPath(0,1,path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) { roadmap = prm; }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { roadmap = prm; }
 
   RoadmapPlanner prm;
   int knn;
@@ -276,7 +293,7 @@ void GetRoadmapIter(TreeRoadmapPlanner::Node* node,RoadmapPlanner& roadmap,int p
     GetRoadmapIter(c,roadmap,nindex);
 }
 
-void GetRoadmap(TreeRoadmapPlanner& planner,RoadmapPlanner& roadmap)
+void GetRoadmap(const TreeRoadmapPlanner& planner,RoadmapPlanner& roadmap)
 {
   roadmap.Cleanup();
   for(size_t i=0;i<planner.connectedComponents.size();i++) {
@@ -311,7 +328,7 @@ class RRTInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return rrt.connectedComponents.size(); }
   virtual bool IsConnected(int ma,int mb) const { return rrt.milestones[ma]->connectedComponent == rrt.milestones[mb]->connectedComponent; }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { rrt.CreatePath(rrt.milestones[ma],rrt.milestones[mb],path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) { ::GetRoadmap(rrt,roadmap); }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { ::GetRoadmap(rrt,roadmap); }
 
   RRTPlanner rrt;
   int numIters;
@@ -345,7 +362,7 @@ class BiRRTInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     rrt.CreatePath(path);
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) { ::GetRoadmap(rrt,roadmap); }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { ::GetRoadmap(rrt,roadmap); }
 
   BidirectionalRRTPlanner rrt;
   int numIters;
@@ -415,13 +432,13 @@ class SBLInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return 2; }
   virtual bool IsConnected(int ma,int mb) const { return sbl->IsDone(); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { sbl->CreatePath(path); if(ma == 1) ReversePath(path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) {
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const {
     roadmap.AddMilestone(qStart);
     roadmap.AddMilestone(qGoal);
     GetRoadmapRecurse(sbl->tStart->root,roadmap,0);
     GetRoadmapRecurse(sbl->tGoal->root,roadmap,1);
   }
-  void GetRoadmapRecurse(SBLTree::Node* n,RoadmapPlanner& roadmap,int nIndex=-1)
+  void GetRoadmapRecurse(SBLTree::Node* n,RoadmapPlanner& roadmap,int nIndex=-1) const
   {
     if(nIndex < 0)
       nIndex = roadmap.AddMilestone(*n);
@@ -480,9 +497,23 @@ class SBLPRTInterface  : public MotionPlannerInterface
 class PRMStarInterface  : public MotionPlannerInterface
 {
  public:
-  PRMStarInterface(CSpace* space)
-    : planner(space)
-    {}
+  PRMStarInterface(CSpace* space) : planner(space)
+  {
+    PropertyMap props;
+    space->Properties(props);
+    int d;
+    Vector q;
+    space->Sample(q);
+    d = q.n;
+    Real v;
+    if(props.get("volume",v))
+      planner.connectRadiusConstant = Pow(v,1.0/Real(d));
+    else
+      planner.connectRadiusConstant = 1;
+
+    //TEMP: test keeping this at a constant regardless of space volume?
+    //planner.connectRadiusConstant = 1;
+  }
   virtual ~PRMStarInterface() {}
   virtual bool CanAddMilestone() const { if(qStart.n != 0 && qGoal.n != 0) return false; return true; }
   virtual int AddMilestone(const Config& q) {
@@ -515,7 +546,18 @@ class PRMStarInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     planner.GetPath(path);
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) { roadmap.roadmap = planner.roadmap; }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { roadmap.roadmap = planner.roadmap; }
+  virtual void GetStats(PropertyMap& stats) const {
+    MotionPlannerInterface::GetStats(stats);
+    stats.set("configCheckTime",planner.tCheck);
+    stats.set("knnTime",planner.tKnn);
+    stats.set("connectTime",planner.tConnect);
+    if(planner.lazy)
+      stats.set("lazyPathCheckTime",planner.tLazy);
+    stats.set("numEdgeChecks",planner.numEdgeChecks);
+    if(planner.lazy)
+      stats.set("numEdgesPrechecked",planner.numEdgePrechecks);
+  }
 
   PRMStarPlanner planner;
   Config qStart,qGoal;
@@ -572,7 +614,7 @@ class FMMInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     path = planner.solution;
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) { 
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
     //simply output all the visited grid cells
     if(planner.distances.numValues()==0) return;
     vector<int> index(qStart.n,0);
@@ -595,6 +637,16 @@ class FMMInterface  : public MotionPlannerInterface
       }
     }
   }
+  virtual void GetStats(PropertyMap& stats) const {
+    MotionPlannerInterface::GetStats(stats);
+    if(planner.dynamicDomain) {
+      vector<Real> bmin(planner.bmin),bmax(planner.bmax);
+      stats.setArray("gridMin",bmin);
+      stats.setArray("gridMax",bmax);
+    }
+    stats.set("gridSize",planner.distances.numValues());
+  }
+
 
   FMMMotionPlanner planner;
   Config qStart,qGoal;
@@ -684,6 +736,7 @@ MotionPlannerFactory::MotionPlannerFactory()
   :type("any"),
    knn(10),
    connectionThreshold(Inf),
+   suboptimalityFactor(0),
    ignoreConnectedComponents(false),
    perturbationRadius(0.1),perturbationIters(5),
    bidirectional(true),
@@ -776,11 +829,17 @@ bool ReadPointLocation(const string& str,RoadmapPlanner& planner)
     return true;
   }
   else if(type=="kdtree") {
-    Vector weights;
-    ss >> weights;
-    if(!ss)
-      weights.resize(0);
-    planner.pointLocator = new KDTreePointLocation(planner.roadmap.nodes,2,weights);
+    PropertyMap props;
+    planner.space->Properties(props);
+    int euclidean;
+    if(props.get("euclidean",euclidean) && euclidean == 0)
+      fprintf(stderr,"MotionPlannerFactory: Warning, requesting K-D tree point location for non-euclidean space\n");
+
+    vector<Real> weights;
+    if(props.getArray("metricWeights",weights))
+      planner.pointLocator = new KDTreePointLocation(planner.roadmap.nodes,2,weights);
+    else
+      planner.pointLocator = new KDTreePointLocation(planner.roadmap.nodes);
     return true;
   }
   else {
@@ -845,6 +904,8 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     prm->planner.rrg = true;
     prm->planner.lazy = false;
     prm->planner.connectionThreshold = connectionThreshold;
+    prm->planner.spp.epsilon = suboptimalityFactor;
+    prm->planner.sppGoal.epsilon = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with RRT* planner\n");
@@ -852,8 +913,12 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
   }
   else if(type=="lazyprm*") {
     PRMStarInterface* prm = new PRMStarInterface(space);
+    //prm->planner.connectByRadius = true;
+    prm->planner.connectByRadius = false;
     prm->planner.lazy = true;
     prm->planner.connectionThreshold = connectionThreshold;
+    prm->planner.spp.epsilon = suboptimalityFactor;
+    prm->planner.sppGoal.epsilon = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-PRM* planner\n");
@@ -861,26 +926,36 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
   }
   else if(type=="lazyrrg*") {
     PRMStarInterface* prm = new PRMStarInterface(space);
+    //prm->planner.connectByRadius = true;
+    prm->planner.connectByRadius = false;
     prm->planner.lazy = true;
     prm->planner.rrg = true;
     prm->planner.connectionThreshold = connectionThreshold;
+    prm->planner.spp.epsilon = suboptimalityFactor;
+    prm->planner.sppGoal.epsilon = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-RRG* planner\n");
     return prm;
   }
-  else if(type=="fmm") {
-    FMMInterface* fmm = new FMMInterface(space,false);
+  else if(type=="fmm" || type=="fmm*") {
+    FMMInterface* fmm = new FMMInterface(space,(type=="fmm*"));
     int d;
     Vector q;
     space->Sample(q);
     d = q.n;
-    if(!domainMin.empty()) {
+    vector<Real> domainMin, domainMax;
+    PropertyMap props;
+    space->Properties(props); 
+    int euclidean;
+    if(props.get("euclidean",euclidean) && euclidean == 0)
+      fprintf(stderr,"MotionPlannerFactory: Warning, FMM used in non-euclidean space\n");
+    if(props.getArray("minimum",domainMin)) {
       if(domainMin.size()==1)  //single number
 	fmm->planner.bmin.resize(d,domainMin[0]);
-      else if(domainMin.size() == d)
+      else if((int)domainMin.size() == d)
 	fmm->planner.bmin = domainMin;
-      else if(domainMin.size() > d) {
+      else if((int)domainMin.size() > d) {
 	fmm->planner.bmin = domainMin;
 	fmm->planner.bmin.n = d;
       }
@@ -888,12 +963,12 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
 	printf("MotionPlannerInterface: Warning, domainMin is of incorrect size, ignoring\n");
       }
     }
-    if(!domainMax.empty()) {
+    if(props.getArray("maximum",domainMax)) {
       if(domainMax.size()==1)  //single number
 	fmm->planner.bmax.resize(d,domainMax[0]);
-      else if(domainMax.size() == d)
+      else if((int)domainMax.size() == d)
 	fmm->planner.bmax = domainMax;
-      else if(domainMax.size() > d) {
+      else if((int)domainMax.size() > d) {
 	fmm->planner.bmax = domainMax;
 	fmm->planner.bmax.n = d;
       }
@@ -903,48 +978,14 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     }
     if(gridResolution > 0) {
       fmm->planner.resolution.resize(d,gridResolution);
+      vector<Real> weights;
+      if(props.getArray("metricWeights",weights)) {
+	for(int i=0;i<d;i++)
+	  fmm->planner.resolution[i] = d/weights[i];
+      }
     }
     if(restart) 
       printf("MotionPlannerInterface: Warning, restart is incompatible with FMM planner\n");
-    return fmm;
-  }
-  else if(type=="fmm*") {
-    FMMInterface* fmm = new FMMInterface(space,true);
-    int d;
-    Vector q;
-    space->Sample(q);
-    d = q.n;
-    if(!domainMin.empty()) {
-      if(domainMin.size()==1)  //single number
-	fmm->planner.bmin.resize(d,domainMin[0]);
-      else if(domainMin.size() == d)
-	fmm->planner.bmin = domainMin;
-      else if(domainMin.size() > d) {
-	fmm->planner.bmin = domainMin;
-	fmm->planner.bmin.n = d;
-      }
-      else {
-	printf("MotionPlannerInterface: Warning, domainMin is of incorrect size, ignoring\n");
-      }
-    }
-    if(!domainMax.empty()) {
-      if(domainMax.size()==1)  //single number
-	fmm->planner.bmax.resize(d,domainMax[0]);
-      else if(domainMax.size() == d)
-	fmm->planner.bmax = domainMax;
-      else if(domainMax.size() > d) {
-	fmm->planner.bmax = domainMax;
-	fmm->planner.bmax.n = d;
-      }
-      else {
-	printf("MotionPlannerInterface: Warning, domainMax is of incorrect size, ignoring\n");
-      }
-    }
-    if(gridResolution > 0) {
-      fmm->planner.resolution.resize(d,gridResolution);
-    }
-    if(restart) 
-      printf("MotionPlannerInterface: Warning, restart is incompatible with FMM* planner\n");
     return fmm;
   }
   else {
@@ -976,6 +1017,7 @@ bool MotionPlannerFactory::Load(TiXmlElement* e)
   }
   e->QueryValueAttribute("knn",&knn);
   e->QueryValueAttribute("connectionThreshold",&connectionThreshold);
+  e->QueryValueAttribute("suboptimalityFactor",&suboptimalityFactor);
   e->QueryValueAttribute("ignoreConnectedComponents",&ignoreConnectedComponents);
   e->QueryValueAttribute("perturbationRadius",&perturbationRadius);
   e->QueryValueAttribute("perturbationIters",&perturbationIters);
@@ -987,6 +1029,8 @@ bool MotionPlannerFactory::Load(TiXmlElement* e)
   e->QueryValueAttribute("shortcut",&shortcut);
   e->QueryValueAttribute("restart",&restart);
   e->QueryValueAttribute("restartTermCond",&restartTermCond);
+  if(e->Attribute("pointLocation"))
+    pointLocation = e->Attribute("pointLocation");
   return true;
 #else
   return false;
@@ -1007,17 +1051,13 @@ bool MotionPlannerFactory::LoadJSON(const string& str)
   if(!items["type"].as(typestr)) return false;
   type = typestr;
   items["knn"].as(knn);
+  items["suboptimalityFactor"].as(suboptimalityFactor);
   items["connectionThreshold"].as(connectionThreshold);
   items["ignoreConnectedComponents"].as(ignoreConnectedComponents);
   items["perturbationRadius"].as(perturbationRadius);
   items["perturbationIters"].as(perturbationIters);
   items["bidirectional"].as(bidirectional);
   items["useGrid"].as(useGrid);
-  vector<Real> dmin,dmax;
-  if(items["domainMin"].asvector(dmin))
-    domainMin = dmin;
-  if(items["domainMax"].asvector(dmax))
-    domainMax = dmax;
   items["pointLocation"].as(pointLocation);
   items["gridResolution"].as(gridResolution);
   items["randomizeFrequency"].as(randomizeFrequency);
@@ -1041,8 +1081,6 @@ string MotionPlannerFactory::SaveJSON() const
   items["useGrid"] = useGrid;
   items["gridResolution"] = gridResolution;
   items["randomizeFrequency"] = randomizeFrequency;
-  items["domainMin"] = vector<Real>(domainMin);
-  items["domainMax"] = vector<Real>(domainMax);
   items["pointLocation"] = pointLocation;
   items["storeEdges"] = storeEdges;
   items["shortcut"] = shortcut;
@@ -1239,6 +1277,7 @@ int RestartShortcutMotionPlanner::PlanMore()
 {
   if(shortcutMode) {
     numShortcutIters ++;
+    numIters ++;
     bestPath.Reduce(1);
     if(numShortcutIters + mp->NumIterations() >= iterTermCond.maxIters) {
       //finished planning and shortcutting, create a new planner and switch
@@ -1248,6 +1287,7 @@ int RestartShortcutMotionPlanner::PlanMore()
       shortcutMode = false;
       numShortcutIters = 0;
     }
+    return -1;
   }
   else  {
     //regular planning mode

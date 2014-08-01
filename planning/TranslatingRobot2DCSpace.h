@@ -22,6 +22,7 @@ public:
   virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
   virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b,int obstacle);
   virtual Real Distance(const Config& x, const Config& y);
+  virtual void Properties(PropertyMap&) const;
 
   Real visibilityEpsilon;
   AABB2D domain;

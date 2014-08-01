@@ -42,3 +42,7 @@ Real PerturbationCSpace::ObstacleDistance(const Config& a,int obstacle)
   return baseSpace->ObstacleDistance(Perturb(a,perturbations[obstacle]));
 }
 
+void PerturbationCSpace::Properties(PropertyMap& map) const
+{
+  baseSpace->Properties(map);
+}

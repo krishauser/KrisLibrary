@@ -123,6 +123,28 @@ bool SpaceTimeCSpace::ConnectionControl(const State& x,const State& xGoal,Contro
   return false;
 }
 
+void SpaceTimeCSpace::Properties(PropertyMap& map) const
+{
+  base->Properties(map);
+  std::vector<Real> minimum,maximum;
+  if(map.getArray("minimum",minimum)) {
+    minimum.insert(minimum.begin(),-Inf);
+    map.setArray("minimum",minimum);
+  }
+  if(map.getArray("maximum",maximum)) {
+    maximum.insert(maximum.begin(),-Inf);
+    map.setArray("maximum",maximum);
+  }
+  std::vector<Real> weights;
+  if(!map.getArray("metricWeights",weights)) {
+    Vector x;
+    base->Sample(x);
+    weights.resize(x.n+1,1.0);
+  }
+  weights[0] = timeDistanceWeight;
+  map.setArray("metricWeights",weights);
+}
+
 bool SpaceTimeFeasible(Real t,const Config& q,SpaceTimeCSpace* space)
 {
   Config x;

@@ -16,6 +16,7 @@ public:
   virtual int NumObstacles();
   virtual std::string ObstacleName(int obstacle);
   virtual Real ObstacleDistance(const Config& a,int obstacle);
+  virtual void Properties(PropertyMap& map) const;
 
   CSpace* baseSpace;
   std::vector<Vector> perturbations;

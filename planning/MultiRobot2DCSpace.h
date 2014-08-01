@@ -30,6 +30,7 @@ public:
   virtual bool IsFeasible(const Config& x);
   virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
   virtual Real Distance(const Config& x, const Config& y);
+  virtual void Properties(PropertyMap&) const;
 
   bool allowRotation;
   Real angleDistanceWeight;

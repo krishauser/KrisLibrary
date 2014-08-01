@@ -47,6 +47,10 @@ public:
     if(baseSpace) baseSpace->Midpoint(x,y,out);
     else CSpace::Midpoint(x,y,out);
   }
+  virtual void Properties(PropertyMap& map) const {
+    if(baseSpace) baseSpace->Properties(map);
+    else CSpace::Properties(map);
+  }
 
   CSpace* baseSpace;
 };
@@ -70,6 +74,14 @@ public:
   virtual void Sample(Config& x) { SampleNeighborhood(center,radius,x); }
   virtual bool IsFeasible(const Config& x) { 
     return (Distance(x,center) < radius); 
+  }
+  virtual void Properties(PropertyMap& map) const {
+    PiggybackCSpace::Properties(map);
+    map.set("volume",Pow(2.0*radius,center.n));
+    Vector vmin=center-Vector(center.n,radius);
+    Vector vmax=center+Vector(center.n,radius);
+    map.setArray("minimum",vmin);
+    map.setArray("maximum",vmax);
   }
 
   Config center;

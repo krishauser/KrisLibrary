@@ -124,3 +124,18 @@ Real TranslatingRobot2DCSpace::Distance(const Config& x, const Config& y)
   return Vector2(x(0),x(1)).distance(Vector2(y(0),y(1)));
 }
 
+
+void TranslatingRobot2DCSpace::Properties(PropertyMap& map) const
+{
+  map.set("cartesian",1);
+  map.set("geodesic",1);
+  map.set("metric","euclidean");
+  Real v = (domain.bmax.x-domain.bmin.x)*(domain.bmax.y-domain.bmin.y);
+  map.set("volume",v);
+  map.set("diameter",domain.bmin.distance(domain.bmax));
+  vector<Real> bmin(2),bmax(2);
+  domain.bmin.get(bmin[0],bmin[1]);
+  domain.bmax.get(bmax[0],bmax[1]);
+  map.setArray("minimum",bmin);
+  map.setArray("maximum",bmax);
+}

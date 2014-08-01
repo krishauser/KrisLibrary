@@ -21,4 +21,9 @@ void CSpace::Midpoint(const Config& x, const Config& y, Config& out)
   out.inplaceMul(Half);
 }
 
-
+void CSpace::Properties(PropertyMap& map) const
+{
+  map.set("cartesian",1);
+  map.set("geodesic",1);
+  map.set("metric","euclidean");
+}

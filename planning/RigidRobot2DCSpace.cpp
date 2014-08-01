@@ -139,3 +139,23 @@ void RigidRobot2DCSpace::Midpoint(const Config& x,const Config& y,Config& out)
   CSpace::Interpolate(x,y,0.5,out);
   out(2) = AngleInterp(AngleNormalize(x(2)),AngleNormalize(y(2)),0.5);
 }
+
+void RigidRobot2DCSpace::Properties(PropertyMap& map) const
+{
+  map.set("cartesian",0);
+  map.set("geodesic",1);
+  map.set("metric","weighted euclidean");
+  vector<Real> w(3,1.0);
+  w[2] = angleDistanceWeight;
+  map.setArray("metricWeights",w);
+  Real v = (domain.bmax.x-domain.bmin.x)*(domain.bmax.y-domain.bmin.y)*angleDistanceWeight*TwoPi;
+  map.set("volume",v);
+  map.set("diameter",Sqrt(domain.bmin.distanceSquared(domain.bmax)+Sqr(angleDistanceWeight*TwoPi)));
+  vector<Real> bmin(3),bmax(3);
+  domain.bmin.get(bmin[0],bmin[1]);
+  domain.bmax.get(bmax[0],bmax[1]);
+  bmin[2]=0;
+  bmax[2]=TwoPi;
+  map.setArray("minimum",bmin);
+  map.setArray("maximum",bmax);
+}

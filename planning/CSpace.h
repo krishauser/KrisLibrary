@@ -3,6 +3,7 @@
 
 #include <math/vector.h>
 #include <math/metric.h>
+#include <utils/PropertyMap.h>
 using namespace Math;
 typedef Vector Config;
 
@@ -27,6 +28,29 @@ public:
 
   ///for local planners using obstacle distance
   virtual Real ObstacleDistance(const Config& a) { return Inf; }
+
+  /** @brief Returns properties of the space that might be useful for planners.
+   *
+   * Typical properties may include
+   * - name (string): an identifier for the space
+   * - cartesian (0 or 1): whether its a euclidean space
+   * - submanifold (0 or 1): whether its a submanifold space
+   * - volume (real): volume of the space
+   * - diameter (real): maximum distance between any two points in the space
+   * - minimum (real array): minimum element of the space
+   * - maximum (real array): maximum element of the space
+   * - intrinsicDimension (real): for submanifolds, intrinsic dimension of
+   *   space
+   * - geodesic (0 or 1): whether interpolation is along geodesics
+   * - metric (string): the type of metric ("euclidean", "weighted euclidean",
+   *   "mahalanobis", "manhattan", "weighted manhattan", "Linf",
+   *   "weighted Linf")
+   * - metricWeights (real array): the metric weight vector
+   * Empty values indicate that the property is unknown.
+   *
+   * Default implementation returns the properties of a Euclidean space.
+   */
+  virtual void Properties(PropertyMap&) const;
 };
 
 #endif

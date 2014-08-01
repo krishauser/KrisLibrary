@@ -49,6 +49,7 @@ void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
 void PRMStarPlanner::PlanMore()
 {
   numPlanSteps ++;
+  Real optCounter = Real(numPlanSteps)+1.0;
   EdgeDistance distanceWeightFunc;
   Vector x;
 
@@ -82,6 +83,12 @@ void PRMStarPlanner::PlanMore()
   else {
     //RRT/RRG expansion strategy
     GenerateConfig(x);
+#if ELLIPSOID_PRUNING
+    if((space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]))*fudgeFactor >= goalDist) {
+      //printf("Ellipsoid pruned, distance %g\n",space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]));
+      return;
+    }
+#endif
     //KNN call has a bit of duplication with connectByRadius, below
     int nn;
     vector<int> neighbors;
@@ -117,7 +124,7 @@ void PRMStarPlanner::PlanMore()
       if(!good) return;
     } //not RRT_BIDIRECTIONAL
     timer.Reset();
-    Real rad = connectRadiusConstant*Pow(Log(Real(roadmap.nodes.size()))/Real(roadmap.nodes.size()),1.0/x.n);
+    Real rad = connectRadiusConstant*Pow(Log(optCounter)/optCounter,1.0/x.n);
     if(rad > connectionThreshold) rad = connectionThreshold;
     Real d = space->Distance(roadmap.nodes[nn],x);
     if(d > rad) {
@@ -126,11 +133,6 @@ void PRMStarPlanner::PlanMore()
       x = xnew;
       d = rad;
     }
-#if ELLIPSOID_PRUNING
-    if((space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]))*fudgeFactor >= goalDist) {
-      return;
-    }
-#endif
     if(!space->IsFeasible(x)) {
       tCheck += timer.ElapsedTime();
       return;
@@ -147,7 +149,6 @@ void PRMStarPlanner::PlanMore()
 	return;
       }
       efeasible = true;
-      tConnect += timer.ElapsedTime();
     }
 
     m=AddMilestone(x);
@@ -164,12 +165,13 @@ void PRMStarPlanner::PlanMore()
       sppGoal.d.push_back(Inf);
       sppGoal.DecreaseUpdate_Undirected(m,nn,distanceWeightFunc);
     }
+    tConnect += timer.ElapsedTime();
   }
 
   timer.Reset();
   vector<int> neighbors;
   if(connectByRadius) {
-    Real rad = connectRadiusConstant*Pow(Log(Real(roadmap.nodes.size()))/Real(roadmap.nodes.size()),1.0/x.n);
+    Real rad = connectRadiusConstant*Pow(Log(optCounter)/optCounter,1.0/x.n);
     if(rad > connectionThreshold) rad = connectionThreshold;
     Neighbors(x,rad,neighbors);
     if(!rrg && neighbors.empty()) {
@@ -177,7 +179,7 @@ void PRMStarPlanner::PlanMore()
     }
   }
   else {
-    int kmax = int(((1.0+1.0/x.n)*E)*Log(Real(roadmap.nodes.size())));
+    int kmax = int(((1.0+1.0/x.n)*E)*Log(optCounter));
     assert(kmax >= 1);
     if(kmax > (int)roadmap.nodes.size()-1)
       kmax = roadmap.nodes.size()-1;
@@ -297,6 +299,8 @@ void PRMStarPlanner::PlanMore()
       if(CheckPath(start,goal)) {
 	//printf("Found an improved path to goal with cost %g (before it was %g)\n",spp.d[goal],goalDist);
       }
+      //else
+	//printf("Failed CheckPath, going back to old distance, d=%g\n",spp.d[goal]);
       tLazy += timer.ElapsedTime();
     }
   }
@@ -319,7 +323,7 @@ void PRMStarPlanner::Neighbors(const Config& x,Real rad,vector<int>& neighbors)
     }
   }
   else {
-    int num = int(Log(Real(roadmap.nodes.size())));
+    int num = int(Log(Real(numPlanSteps+1)));
     for(int k=0;k<num;k++) {
       int i = RandInt(roadmap.nodes.size());
       Real d=space->Distance(roadmap.nodes[i],x);
@@ -389,12 +393,12 @@ bool PRMStarPlanner::HasPath() const
   if(!useSpp) {
     EdgeDistance distanceWeightFunc;
     ShortestPathProblem spptemp(roadmap);
-    spptemp.InitializeSource(0);
-    spptemp.FindPath_Undirected(1,distanceWeightFunc);
-    if(IsInf(spptemp.d[1])) return false;
+    spptemp.InitializeSource(start);
+    spptemp.FindPath_Undirected(goal,distanceWeightFunc);
+    if(IsInf(spptemp.d[goal])) return false;
     return true;
   }
-  if(IsInf(spp.d[1])) return false;
+  if(IsInf(spp.d[goal])) return false;
   return true;
 }
 
@@ -414,6 +418,7 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
   if(IsInf(spp.d[b])) return false;
   if(!Graph::GetAncestorPath(spp.p,b,a,nodes)) {
     printf("PRMStarPlanner: Unable to find path from %d to %d\n",a,b);
+    //debugging:
     printf("node,distance,parent,edge weight,edge feasible\n");
     for(int i=0;i<20;i++) {
       Real w = 0;
@@ -509,7 +514,7 @@ bool PRMStarPlanner::CheckPath(int a,int b)
     
     if(feas) {
       tLazyCheck += timer.ElapsedTime();
-      Assert(path.IsFeasible());
+      //Assert(path.IsFeasible());
       return true;
     }
   }

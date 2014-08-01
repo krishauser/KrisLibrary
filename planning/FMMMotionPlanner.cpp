@@ -37,10 +37,20 @@ void FMMMotionPlanner::Init(const Config& a,const Config& b)
       bmin[i] = Min(a[i],b[i])-d*0.5;
     for(int i=0;i<bmax.n;i++)
       bmax[i] = Max(a[i],b[i])+d*0.5;
-    cout<<bmin<<" -> "<<bmax<<endl;
     if(resolution.empty()) {
-      resolution.resize(a.n);
-      resolution.set(d * 0.25);
+      PropertyMap props;
+      space->Properties(props);
+      vector<Real> weights;
+      if(props.getArray("metricWeights",weights)) {
+	Assert((int)weights.size()==a.n);
+	resolution.resize(a.n);
+	for(int i=0;i<bmin.n;i++)
+	  resolution[i] = d*0.25/weights[i];
+      }
+      else {
+	resolution.resize(a.n);
+	resolution.set(d * 0.25);
+      }
     }
   }
 }
@@ -160,7 +170,7 @@ bool FMMMotionPlanner::SolveFMM()
   }
   else {
     if(!solution.edges.empty() && solution.Length() < pathCheck.Length()) {
-      printf("SolveFMM: Warning, higher resolution found a longer feasible path\n");
+      printf("SolveFMM: Warning, higher resolution found a longer feasible path: %g vs %g\n",pathCheck.Length(),solution.Length());
       return false;
     }
     else {

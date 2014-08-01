@@ -192,3 +192,36 @@ Real MultiRobot2DCSpace::Distance(const Config& x, const Config& y)
   return Sqrt(d2);
 }
 
+
+void MultiRobot2DCSpace::Properties(PropertyMap& map) const
+{
+  int stride = (allowRotation ? 3 : 2);
+  if(allowRotation)
+    map.set("cartesian",0);
+  else
+    map.set("cartesian",0);
+  map.set("geodesic",1);
+  map.set("metric","weighted euclidean");
+  vector<Real> w(stride*robots.size(),1.0);
+  if(allowRotation) {
+    for(size_t i=0;i<robots.size();i++)
+      w[3*i+2] = angleDistanceWeight;
+  }
+  map.setArray("metricWeights",w);
+  Real v = (domain.bmax.x-domain.bmin.x)*(domain.bmax.y-domain.bmin.y);
+  if(allowRotation) v*=angleDistanceWeight*TwoPi;
+  v = Pow(v,robots.size());
+  map.set("volume",v);
+  map.set("diameter",Sqrt(robots.size()*domain.bmin.distanceSquared(domain.bmax) + (allowRotation ? robots.size()*Sqr(angleDistanceWeight*TwoPi) : 0))); 
+ vector<Real> bmin(stride*robots.size()),bmax(stride*robots.size());
+  for(size_t i=0;i<robots.size();i++) {
+    domain.bmin.get(bmin[stride*i+0],bmin[stride*i+1]);
+    domain.bmax.get(bmax[stride*i+0],bmax[stride*i+1]);
+    if(allowRotation) {
+      bmin[stride*i+2]=0;
+      bmax[stride*i+2]=TwoPi;
+    }
+  }
+  map.setArray("minimum",bmin);
+  map.setArray("maximum",bmax);
+}

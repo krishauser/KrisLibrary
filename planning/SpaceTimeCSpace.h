@@ -36,6 +36,7 @@ class SpaceTimeCSpace : public KinodynamicCSpace
   virtual bool IsValidControl(const State& x,const ControlInput& u);
   virtual void SampleControl(const State& x,ControlInput& u);
   virtual bool ConnectionControl(const State& x,const State& xGoal,ControlInput& u);
+  virtual void Properties(PropertyMap& map) const;
 
   KinodynamicCSpace* base;
   Real maxTimeStep;

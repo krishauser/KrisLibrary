@@ -19,6 +19,7 @@ class CVSpace : public CSpace
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
   virtual void Midpoint(const Config& x,const Config& y,Config& out);
+  virtual void Properties(PropertyMap& props) const;
 
   static void GetState(const Config& x,Config& q,Vector& v);
   static void GetConfig(const Config& x,Config& q);
@@ -44,6 +45,7 @@ class HermiteCSpace : public CVSpace
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
   virtual void Midpoint(const Config& x,const Config& y,Config& out);
+  virtual void Properties(PropertyMap& props) const;
 
   GeodesicManifold* manifold;
 };

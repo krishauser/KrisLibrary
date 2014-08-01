@@ -69,6 +69,40 @@ void CVSpace::Midpoint(const Config& x,const Config& y,Config& out)
   Interpolate(x,y,0.5,out);
 }
 
+void CVSpace::Properties(PropertyMap& props) const
+{
+  PropertyMap vprops;
+  baseSpace->Properties(props);
+  if(velSpace) velSpace->Properties(vprops);
+  int xeuclidean,veuclidean;
+  if(props.get("euclidean",xeuclidean)) {
+    if(vprops.get("euclidean",veuclidean) && veuclidean==0)
+      props.set("euclidean",0);
+  }
+  std::vector<Real> xbound,vbound,weights,vweights;
+  if(props.getArray("minimum",xbound)) {
+    if(vprops.getArray("minimum",vbound)) 
+      xbound.insert(xbound.end(),vbound.begin(),vbound.end());
+    else
+      xbound.resize(xbound.size()*2,Inf);
+    props.setArray("minimum",xbound);
+  }
+  if(props.getArray("maximum",xbound)) {
+    if(vprops.getArray("maximum",vbound)) 
+      xbound.insert(xbound.end(),vbound.begin(),vbound.end());
+    else
+      xbound.resize(xbound.size()*2,Inf);
+    props.setArray("maximum",xbound);
+  }
+  if(props.getArray("metricWeights",weights)) {
+    if(vprops.getArray("metricWeights",vweights)) 
+      weights.insert(weights.end(),vweights.begin(),vweights.end());
+    else
+      weights.resize(weights.size()*2,1.0);
+    props.setArray("metricWeights",weights);
+  }
+}
+
 void CVSpace::GetState(const Config& x,Config& q,Vector& v)
 {
   q.resize(x.n/2);
@@ -198,6 +232,14 @@ void HermiteCSpace::Midpoint(const Config& x,const Config& y,Config& out)
 {
   Interpolate(x,y,0.5,out);
 }
+
+void HermiteCSpace::Properties(PropertyMap& props) const
+{
+  CVSpace::Properties(props);
+  props.set("geodesic",1);
+  props.set("metric","hermite upper bound");
+}
+
 
 HermiteGeodesicManifold::HermiteGeodesicManifold(HermiteCSpace* _space)
   :space(_space)

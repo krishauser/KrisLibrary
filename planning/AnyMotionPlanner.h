@@ -125,7 +125,9 @@ class MotionPlannerInterface
   ///For single-query planners, returns the solution path
   virtual void GetSolution(MilestonePath& path) { return GetPath(0,1,path); }
   ///Returns a full-blown roadmap representation of the roadmap
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) {}
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const {}
+  ///Returns some named statistics about the planner, implementation-dependent
+  virtual void GetStats(PropertyMap& stats) const;
 };
 
 /** @brief A motion planner creator.
@@ -181,6 +183,7 @@ class MotionPlannerFactory
   string type;
   int knn;                 //for PRM (default 10)
   Real connectionThreshold;//for PRM,RRT,SBL,SBLPRT,RRT*,PRM*,LazyPRM*,LazyRRG* (default Inf)
+  Real suboptimalityFactor;//for RRT*, LazyPRM*, LazyRRG* (default 0)
   bool ignoreConnectedComponents; //for PRM (default false)
   Real perturbationRadius; //for Perturbation,EST,RRT,SBL,SBLPRT (default 0.1)
   int perturbationIters;   //for SBL (default 5)
@@ -188,8 +191,7 @@ class MotionPlannerFactory
   bool useGrid;            //for SBL, SBLPRT (default true): for SBL, uses grid-based random point selection
   Real gridResolution;     //for SBL, SBLPRT, FMM, FMM* (default 0): if nonzero, for SBL, specifies point selection grid size (default 0.1), for FMM / FMM*, specifies resolution (default 1/8 of domain)
   int randomizeFrequency;  //for SBL, SBLPRT (default 50): how often the grid projection is randomly perturbed
-  Vector domainMin,domainMax; //for FMM, FMM* (default empty): optional bounds on the CSpace feasible set, default uses a dynamic domain
-  string pointLocation;    //for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("kdtree" supported, optionally followed by a weight vector)
+  string pointLocation;    //for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("random", "randombest [k]", "kdtree" supported)
   bool storeEdges;         //if local planner data is stored during planning (false may save memory, default)
   bool shortcut;           //if you wish to perform shortcutting afterwards (default false)
   bool restart;            //if you wish to restart the planner to get better paths with the remaining time (default false)

@@ -90,6 +90,7 @@ public:
   virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b,int obstacle);
   virtual Real Distance(const Config& x, const Config& y);
   virtual Real ObstacleDistance(const Config& x) { return ObstacleDistance(Vector2(x(0),x(1))); }
+  virtual void Properties(PropertyMap&) const;
 
   bool euclideanSpace;
   Real visibilityEpsilon;
