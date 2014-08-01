@@ -125,7 +125,7 @@ void PropertyMap::Print(ostream& out) const
   out<<"{"<<endl;
   for(map<string,string>::const_iterator i=begin();i!=end();i++) {
     out<<"   "<<i->first<<" : ";
-    OutputQuotedString(out,i->second);
+    SafeOutputString(out,i->second);
     if(i != --end())
       out<<",";
     out<<endl;
@@ -193,8 +193,9 @@ bool PropertyMap::getArray(const std::string& key,std::vector<std::string>& valu
   string temp;
   values.resize(0);
   while(ss) {
-    SafeInputString(ss,temp);
-    values.push_back(temp);
+    if(SafeInputString(ss,temp)) {
+      values.push_back(temp);
+    }
   }
   return true;
 }

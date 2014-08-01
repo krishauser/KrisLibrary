@@ -128,7 +128,8 @@ bool PropertyMap::getArray(const std::string& key,std::vector<T>& values) const
   values.resize(0);
   while(ss) {
     ss>>temp;
-    values.push_back(temp);
+    if(ss) 
+      values.push_back(temp);
   }
   return true;
 }
