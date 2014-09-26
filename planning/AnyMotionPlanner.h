@@ -11,6 +11,7 @@ class MotionPlanningProblem;
 class MotionPlannerInterface;
 class PointToSetMotionPlanner;
 class MotionPlannerFactory;
+class PropertyMap;
 
 /** @ingroup MotionPlanning
  * @brief A termination condition for a planner.  Supports max iteration count,

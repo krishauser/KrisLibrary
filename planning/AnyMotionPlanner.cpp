@@ -1,6 +1,8 @@
 #include "AnyMotionPlanner.h"
+#include <math/sample.h>
 #include <utils/AnyCollection.h>
 #include <utils/stringutils.h>
+#include <utils/PropertyMap.h>
 #include "OptimalMotionPlanner.h"
 #include "PointLocation.h"
 #include "SBL.h"
@@ -101,9 +103,11 @@ class RestartShortcutMotionPlanner : public RestartMotionPlanner
   RestartShortcutMotionPlanner(const MotionPlannerFactory& factory,const MotionPlanningProblem& problem,const HaltingCondition& iterTermCond);
   virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
   virtual int PlanMore();
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const;
 
   bool shortcutMode;
   int numShortcutIters;
+  vector<MilestonePath> candidatePaths;
 };
 
 /** @brief Plans a path and then tries to shortcut it with the remaining time.
@@ -499,15 +503,23 @@ class PRMStarInterface  : public MotionPlannerInterface
  public:
   PRMStarInterface(CSpace* space) : planner(space)
   {
+    //planner.connectByRadius = true;
+    planner.connectByRadius = false;
     PropertyMap props;
     space->Properties(props);
     int d;
-    Vector q;
-    space->Sample(q);
-    d = q.n;
+    if(props.get("intrinsicDimension",d))
+      ;
+    else {
+      Vector q;
+      space->Sample(q);
+      d = q.n;
+    }
     Real v;
-    if(props.get("volume",v))
+    if(props.get("volume",v)) {
       planner.connectRadiusConstant = Pow(v,1.0/Real(d));
+      printf("Connection radius constant %g\n",planner.connectRadiusConstant);
+    }
     else
       planner.connectRadiusConstant = 1;
 
@@ -546,7 +558,12 @@ class PRMStarInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     planner.GetPath(path);
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { roadmap.roadmap = planner.roadmap; }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
+    if(planner.lazy)
+      roadmap.roadmap = planner.LBroadmap;
+    else
+      roadmap.roadmap = planner.roadmap;       
+  }
   virtual void GetStats(PropertyMap& stats) const {
     MotionPlannerInterface::GetStats(stats);
     stats.set("configCheckTime",planner.tCheck);
@@ -554,6 +571,7 @@ class PRMStarInterface  : public MotionPlannerInterface
     stats.set("connectTime",planner.tConnect);
     if(planner.lazy)
       stats.set("lazyPathCheckTime",planner.tLazy);
+    stats.set("shortestPathsTime",planner.tShortestPaths);
     stats.set("numEdgeChecks",planner.numEdgeChecks);
     if(planner.lazy)
       stats.set("numEdgesPrechecked",planner.numEdgePrechecks);
@@ -903,9 +921,9 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     PRMStarInterface* prm = new PRMStarInterface(space);
     prm->planner.rrg = true;
     prm->planner.lazy = false;
+    prm->planner.bidirectional = bidirectional;
     prm->planner.connectionThreshold = connectionThreshold;
-    prm->planner.spp.epsilon = suboptimalityFactor;
-    prm->planner.sppGoal.epsilon = suboptimalityFactor;
+    prm->planner.suboptimalityFactor = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with RRT* planner\n");
@@ -913,12 +931,9 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
   }
   else if(type=="lazyprm*") {
     PRMStarInterface* prm = new PRMStarInterface(space);
-    //prm->planner.connectByRadius = true;
-    prm->planner.connectByRadius = false;
     prm->planner.lazy = true;
     prm->planner.connectionThreshold = connectionThreshold;
-    prm->planner.spp.epsilon = suboptimalityFactor;
-    prm->planner.sppGoal.epsilon = suboptimalityFactor;
+    prm->planner.suboptimalityFactor = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-PRM* planner\n");
@@ -926,13 +941,11 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
   }
   else if(type=="lazyrrg*") {
     PRMStarInterface* prm = new PRMStarInterface(space);
-    //prm->planner.connectByRadius = true;
-    prm->planner.connectByRadius = false;
     prm->planner.lazy = true;
     prm->planner.rrg = true;
+    prm->planner.bidirectional = bidirectional;
     prm->planner.connectionThreshold = connectionThreshold;
-    prm->planner.spp.epsilon = suboptimalityFactor;
-    prm->planner.sppGoal.epsilon = suboptimalityFactor;
+    prm->planner.suboptimalityFactor = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
       printf("MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-RRG* planner\n");
@@ -983,6 +996,10 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
 	for(int i=0;i<d;i++)
 	  fmm->planner.resolution[i] = d/weights[i];
       }
+    }
+    //TODO: turn off dynamic domain?
+    if(!domainMin.empty() && !domainMax.empty() && gridResolution > 0) {
+      fmm->planner.dynamicDomain = false;
     }
     if(restart) 
       printf("MotionPlannerInterface: Warning, restart is incompatible with FMM planner\n");
@@ -1217,6 +1234,7 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
     fprintf(stderr,"RestartShortcutMotionPlanner: warning, termination condition wants to stop at first solution. Ignoring\n");
   }
   bestPath.edges.clear();
+  candidatePaths.resize(0);
   Real lastOuterCheckTime = 0, lastOuterCheckValue = 0;
   Timer timer;
   numIters = 0;
@@ -1255,15 +1273,35 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
     else
       cout<<"Length "<<path.Length()<<endl;
     cout<<"  Expended "<<mp->NumIterations()<<" iterations"<<endl;
-    if(!path.edges.empty() && (bestPath.edges.empty() || path.Length() < bestPath.Length())) {
-      //update best path
-      bestPath = path;
+    if(!path.edges.empty()) {
+      candidatePaths.push_back(path);
+      if(bestPath.edges.empty() || path.Length() < bestPath.Length()) {
+	//update best path
+	bestPath = path;
+      }
     }
-    //do shortcutting on BEST path
+    if(candidatePaths.empty()) continue;
+
+    //do shortcutting on all candidate paths
+    Real bestPathLength = bestPath.Length();
+    vector<Real> samplingWeights(candidatePaths.size());
+    for(size_t i=0;i<candidatePaths.size();i++) 
+      samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
     numIters += mp->NumIterations();
     int numMpIters = mp->NumIterations();
     while(mpTimer.ElapsedTime() < myTermCond.timeLimit && numMpIters < myTermCond.maxIters) {
-      bestPath.Reduce(1);
+      //round robin
+      //int index=numMpIters%candidatePaths.size();
+      //sample
+      int index=WeightedSample(samplingWeights);
+      if(candidatePaths[index].Reduce(1)) {
+	if(candidatePaths[index].Length() < bestPathLength) {
+	  bestPath = candidatePaths[index];
+	  bestPathLength = candidatePaths[index].Length();
+	  for(size_t i=0;i<candidatePaths.size();i++) 
+	    samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
+	}
+      }
       numMpIters++;
       numIters++;
       shortcutMode = true;
@@ -1276,10 +1314,21 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
 int RestartShortcutMotionPlanner::PlanMore()
 {
   if(shortcutMode) {
+    Assert(!candidatePaths.empty());
     numShortcutIters ++;
     numIters ++;
-    bestPath.Reduce(1);
-    if(numShortcutIters + mp->NumIterations() >= iterTermCond.maxIters) {
+    Real bestPathLength = bestPath.Length();
+    vector<Real> samplingWeights(candidatePaths.size());
+    for(size_t i=0;i<candidatePaths.size();i++) 
+      samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
+    int index = WeightedSample(samplingWeights);
+    //round robin
+    //int index = numShortcutIters % candidatePaths.size();
+    if(candidatePaths[index].Reduce(1)) {
+      if(candidatePaths[index].Length() < bestPathLength) 
+	bestPath = candidatePaths[index];
+    }
+    if(numShortcutIters /*+ mp->NumIterations()*/ >= iterTermCond.maxIters) {
       //finished planning and shortcutting, create a new planner and switch
       //back to planning mode
       mp = NULL;
@@ -1297,17 +1346,39 @@ int RestartShortcutMotionPlanner::PlanMore()
       //update best path
       MilestonePath path;
       mp->GetSolution(path);
+      candidatePaths.push_back(path);
       if(bestPath.edges.empty() || path.Length() < bestPath.Length()) {
 	bestPath = path;
       }
       shortcutMode = true;
     }
+    if(mp->NumIterations() >= iterTermCond.maxIters && !candidatePaths.empty()) {
+      shortcutMode = true;
+    }
+    /*
     if(mp->NumIterations() >= iterTermCond.maxIters) {
       //create a new planner
       mp = NULL;
       mp = factory.Create(problem);    
     }
+    */
     return res;
+  }
+}
+
+void RestartShortcutMotionPlanner::GetRoadmap(RoadmapPlanner& roadmap) const
+{
+  if(candidatePaths.empty()) {
+    mp->GetRoadmap(roadmap);
+    return;
+  }
+  for(size_t i=0;i<candidatePaths.size();i++) {
+    int prev = roadmap.AddMilestone(candidatePaths[i].GetMilestone(0));
+    for(size_t j=0;j<candidatePaths[i].edges.size();j++) {
+      int n = roadmap.AddMilestone(candidatePaths[i].GetMilestone(j+1));
+      roadmap.ConnectEdge(prev,n,candidatePaths[i].edges[j]);
+      prev = n;
+    }
   }
 }
 
