@@ -33,6 +33,12 @@ class PointLocationBase
   ///their distances.  Subclasses should return false if close-neighbor 
   ///queries are not supported.
   virtual bool Close(const Vector& p,Real r,std::vector<int>& neighbors,std::vector<Real>& distances) { return false; }
+  ///Same as NN, but with a filter
+  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance) { return false; }
+  ///Same as KNN, but with a filter
+  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) { return false; }
+  ///Same as close, but with a filter
+  virtual bool FilteredClose(const Vector& p,Real r,bool (*filter)(int),std::vector<int>& neighbors,std::vector<Real>& distances) { return false; }
 
   std::vector<Vector>& points;
 };
@@ -48,6 +54,10 @@ class NaivePointLocation : public PointLocationBase
   virtual bool NN(const Vector& p,int& nn,Real& distance);
   virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
   virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances);
+  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance);
+  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances);
+  virtual bool FilteredClose(const Vector& p,Real r,bool (*filter)(int),std::vector<int>& neighbors,std::vector<Real>& distances);
+
 
   CSpace* space;
 };
@@ -65,6 +75,8 @@ class RandomPointLocation : public PointLocationBase
   virtual bool Exact() { return false; }
   virtual bool NN(const Vector& p,int& nn,Real& distance);
   virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
+  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance);
+  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances);
 };
 
 /** @brief The approximate O(k) point location algorithm that returns the closest
@@ -80,6 +92,8 @@ class RandomBestPointLocation : public PointLocationBase
   virtual bool Exact() { return false; }
   virtual bool NN(const Vector& p,int& nn,Real& distance);
   virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
+  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance);
+  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances);
 
   CSpace* space;
   int k;

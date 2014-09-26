@@ -62,6 +62,58 @@ bool NaivePointLocation::Close(const Vector& p,Real r,std::vector<int>& nn,std::
   return true;
 }
 
+bool NaivePointLocation::FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance)
+{ 
+  nn = -1;
+  distance = Inf;
+  for(size_t i=0;i<points.size();i++) {
+    Real d=space->Distance(points[i],p);
+    if(d < distance && filter((int)i)) {
+      nn = (int)i;
+      distance = d;
+    }
+  }
+  return true;
+}
+
+bool NaivePointLocation::FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) 
+{ 
+  set<pair<Real,int> > knn;
+  Real dmax = Inf;
+  for(size_t i=0;i<points.size();i++) {
+    Real d=space->Distance(points[i],p);
+    if(d > 0 && d < dmax  && filter((int)i)) {
+      pair<Real,int> idx(d,i);
+      knn.insert(idx);
+      if((int)knn.size() > k)
+	knn.erase(--knn.end());
+      dmax = (--knn.end())->first;
+    }
+  }
+  nn.resize(0);
+  distances.resize(0);
+  for(set<pair<Real,int> >::const_iterator j=knn.begin();j!=knn.end();j++) {
+    nn.push_back(j->second);
+    distances.push_back(j->first);
+  }
+  return true;
+}
+
+bool NaivePointLocation::FilteredClose(const Vector& p,Real r,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) 
+{ 
+  nn.resize(0);
+  distances.resize(0);
+  for(size_t i=0;i<points.size();i++) {
+    Real d=space->Distance(points[i],p);
+    if(d < r && filter((int)i)) {
+      nn.push_back((int)i);
+      distances.push_back(d);
+    }
+  }
+  return true;
+}
+
+
 RandomPointLocation::RandomPointLocation(vector<Vector>& points) 
   :PointLocationBase(points)
 {}
@@ -78,6 +130,29 @@ bool RandomPointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::ve
   distances.resize(k);
   for(int i=0;i<k;i++) {
     nn[i] = RandInt(points.size());
+    distances[i] = 0;
+  }
+  return true;
+}
+
+bool RandomPointLocation::FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance) 
+{ 
+  distance = 0;
+  while(true) {
+    nn = RandInt(points.size());
+    if(filter(nn)) return true;
+  }
+  return false;
+}
+bool RandomPointLocation::FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) 
+{ 
+  nn.resize(k);
+  distances.resize(k);
+  for(int i=0;i<k;i++) {
+    while(true) {
+      nn[i] = RandInt(points.size());
+      if(filter(nn[i])) break;
+    }
     distances[i] = 0;
   }
   return true;
@@ -110,6 +185,45 @@ bool RandomBestPointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std
     int n = RandInt(points.size());
     Real d=space->Distance(points[n],p);
     if(d > 0 && d < dmax) {
+      pair<Real,int> idx(d,n);
+      knn.insert(idx);
+      if((int)knn.size() > k)
+	knn.erase(--knn.end());
+      dmax = (--knn.end())->first;
+    }
+  }
+  nn.resize(0);
+  distances.resize(0);
+  for(set<pair<Real,int> >::const_iterator j=knn.begin();j!=knn.end();j++) {
+    nn.push_back(j->second);
+    distances.push_back(j->first);
+  }
+  return true;
+}
+
+bool RandomBestPointLocation::FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance) 
+{ 
+  distance = Inf;
+  nn = -1;
+  for(int i=0;i<k;i++) {
+    int n = RandInt(points.size());
+    Real d = space->Distance(points[n],p);
+    if(d < distance && filter(i)) {
+      nn = n;
+      distance = d;
+    }
+  }
+  return true;
+}
+bool RandomBestPointLocation::FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) 
+{ 
+  set<pair<Real,int> > knn;
+  Real dmax = Inf;
+  int count = k*this->k;
+  for(int i=0;i<count;i++) {
+    int n = RandInt(points.size());
+    Real d=space->Distance(points[n],p);
+    if(d > 0 && d < dmax  && filter(n)) {
       pair<Real,int> idx(d,n);
       knn.insert(idx);
       if((int)knn.size() > k)
