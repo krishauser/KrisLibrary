@@ -312,7 +312,7 @@ bool BisectionEpsilonEdgePlanner::Plan(Config*& pre,Config*& post)
 
 bool BisectionEpsilonEdgePlanner::Done() const
 {
-  return q.empty() || q.top().length <= epsilon;
+  return q.empty() || q.top().length <= epsilon || IsInf(q.top().length);
 }
 
 bool BisectionEpsilonEdgePlanner::Failed() const
