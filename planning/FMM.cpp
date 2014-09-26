@@ -193,6 +193,57 @@ struct SimplexEnumerator
     }
     return true;
   }
+
+  void prune(Real upperBound,const ArrayND<Real>& distances) {
+    vector<int> prunedAxes;
+    for(size_t i=0;i<candidates.size();i++) {
+      if(candidates[i].empty()) continue;
+      //pruned index must not be active in current enumerator state!
+      bool isActive = (find(axisIndex.begin(),axisIndex.end(),(int)i) != axisIndex.end());
+      if(isActive) continue;
+
+      vector<int> n = node;
+      for(size_t j=0;j<candidates[i].size();j++) {
+	n[i] = node[i] + candidates[i][j];
+	if(distances[n] >= upperBound) {
+	  //delete candidate
+	  candidates[i].erase(candidates[i].begin()+j);
+	  j--;
+	}
+      }
+      if(candidates[i].empty()) prunedAxes.push_back(i);
+    }
+    if(!prunedAxes.empty()) {
+      //need to change current status
+      //occupied is a list of occupied axes
+      //axisIndex is a subset of the indices of the occupied axes
+      occupied.resize(0);
+      for(size_t i=0;i<node.size();i++)
+	if(!candidates[i].empty()) occupied.push_back(i);
+      /*
+      printf("Pruned: ");
+      for(size_t i=0;i<prunedAxes.size();i++)
+	printf("%d ",prunedAxes[i]);
+      printf("\n");
+      printf("AxisIndex: ");
+      for(size_t i=0;i<axisIndex.size();i++)
+	printf("%d ",axisIndex[i]);
+      printf("\n");
+      */
+      int k = 0;
+      for(size_t i=0;i<axisIndex.size();i++) {
+	while(k < (int)prunedAxes.size() && axisIndex[i] >= prunedAxes[k]) {
+	  Assert(axisIndex[i] != prunedAxes[k]);
+	  k++;
+	}
+	Assert(axisIndex[i] >= k);
+	axisIndex[i] -= k;
+	Assert(axisIndex[i] >= 0 && axisIndex[i] < (int)occupied.size());
+      }
+      for(size_t i=0;i<candidateSizes.size();i++)
+	Assert(candidateSizes[i] == (int)candidates[occupied[axisIndex[i]]].size());
+    }
+  }
 };
 
 bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Real>& costs,ArrayND<Real>& distances)
@@ -252,13 +303,18 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
       do {
 	numSimplices++;
 	s.getOffsets(simplex);
+	Real dcand;
 	if(simplex.size() == 1)
-	  best = Min(best,distances.values[simplex[0]]+c);
+	  dcand = distances.values[simplex[0]]+c;
 	else {
 	  d.resize(simplex.size());
 	  for(size_t i=0;i<simplex.size();i++)
 	    d[i] = distances.values[simplex[i]];
-	  best = Min(best,best_diag_distanceN(d)*c);
+	  dcand = best_diag_distanceN(d)*c;
+	}
+	if(dcand < best) {
+	  best = dcand;
+	  s.prune(best,distances);
 	}
       } while(s.next());
 #if DO_TIMING
@@ -465,13 +521,18 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
       do {
 	numSimplices++;
 	s.getOffsets(simplex);
+	Real dcand;
 	if(simplex.size() == 1)
-	  best = Min(best,distances.values[simplex[0]]+c);
+	  dcand = distances.values[simplex[0]]+c;
 	else {
 	  d.resize(simplex.size());
 	  for(size_t i=0;i<simplex.size();i++)
 	    d[i] = distances.values[simplex[i]];
-	  best = Min(best,best_diag_distanceN(d)*c);
+	  dcand = best_diag_distanceN(d)*c;
+	}
+	if(dcand < best) {
+	  best = dcand;
+	  s.prune(best,distances);
 	}
       } while(s.next());
 #if DO_TIMING
@@ -554,8 +615,11 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
   assert(startorig.size() == bmin.size());
   assert(startorig.size() == bmax.size());
   vector<int> dims(res.size());
-  for(int i=0;i<res.n;i++)
+  for(int i=0;i<res.n;i++) {
     dims[i] = (int)Ceil((bmax[i]-bmin[i])/res[i]);
+    if(dims[i] == ((bmax[i]-bmin[i])/res[i])) //upper bound is identically an integer
+      dims[i] ++;
+  }
   //normalize start and goal
   Vector start,goal;
   start.resize(startorig.n);
@@ -641,13 +705,18 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
       do {
 	numSimplices++;
 	s.getOffsets(simplex);
+	Real dcand;
 	if(simplex.size() == 1)
-	  best = Min(best,distances.values[simplex[0]]+c);
+	  dcand = distances.values[simplex[0]]+c;
 	else {
 	  d.resize(simplex.size());
 	  for(size_t i=0;i<simplex.size();i++)
 	    d[i] = distances.values[simplex[i]];
-	  best = Min(best,best_diag_distanceN(d)*c);
+	  dcand = best_diag_distanceN(d)*c;
+	}
+	if(dcand < best) {
+	  best = dcand;
+	  s.prune(best,distances);
 	}
       } while(s.next());
 #if DO_TIMING
@@ -746,8 +815,11 @@ Real EvalMultilinear(const ArrayND<Real>& field,const Vector& point)
     }
   }
   vector<int> high(point.size());
-  for(size_t i=0;i<low.size();i++)
+  for(size_t i=0;i<low.size();i++) {
     high[i] = low[i]+1;
+    if(low[i] < 0) //grid on that dimension has size 1
+      low[i] = 0;
+  }
 
   vector<int> vertex(low);
   Real s = 0.0;
