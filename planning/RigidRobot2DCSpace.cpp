@@ -39,6 +39,13 @@ void RigidRobot2DCSpace::DrawRobotGL(const Config& x) const
 
   //draw robot greyish blue
   temp.DrawGL();
+  //draw outline
+  glPushAttrib(GL_CURRENT_BIT | GL_LINE_BIT);
+  glLineWidth(1.0);
+  glColor3f(0,0,0);
+  temp.DrawOutlinesGL();
+  glPopAttrib();
+
 }
 
 void RigidRobot2DCSpace::DrawGL(const Config& x) const
