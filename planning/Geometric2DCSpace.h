@@ -28,6 +28,7 @@ class Geometric2DCollection
   void Add(const GeometricPrimitive2D& geom);
   void Clear();
   void DrawGL() const;
+  void DrawOutlinesGL() const;
   void ToPolygons(vector<vector<Vector2> >& polys) const;
 
   //distance query

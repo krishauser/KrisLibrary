@@ -373,6 +373,35 @@ bool Geometric2DCollection::Collides(const Geometric2DCollection& geom,int obsta
 }
 
 
+void Geometric2DCollection::DrawOutlinesGL() const
+{
+  for(size_t i=0;i<aabbs.size();i++) {
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(aabbs[i].bmin.x,aabbs[i].bmin.y);
+    glVertex2f(aabbs[i].bmax.x,aabbs[i].bmin.y);
+    glVertex2f(aabbs[i].bmax.x,aabbs[i].bmax.y);
+    glVertex2f(aabbs[i].bmin.x,aabbs[i].bmax.y);
+    glEnd();
+  }
+  for(size_t i=0;i<boxes.size();i++) {
+    glBegin(GL_LINE_LOOP);
+    glVertex2v(boxes[i].origin);
+    glVertex2v(boxes[i].origin+boxes[i].dims.x*boxes[i].xbasis);
+    glVertex2v(boxes[i].origin+boxes[i].dims.x*boxes[i].xbasis+boxes[i].dims.y*boxes[i].ybasis);
+    glVertex2v(boxes[i].origin+boxes[i].dims.y*boxes[i].ybasis);
+    glEnd();
+  }
+  for(size_t i=0;i<triangles.size();i++) {
+    glBegin(GL_LINE_LOOP);
+    glVertex2v(triangles[i].a);
+    glVertex2v(triangles[i].b);
+    glVertex2v(triangles[i].c);
+    glEnd();
+  }
+  for(size_t i=0;i<circles.size();i++) {
+    drawWireCircle2D(circles[i].center,circles[i].radius);
+  }
+}
 
 void Geometric2DCollection::DrawGL() const
 {
@@ -511,7 +540,9 @@ bool Geometric2DCSpace::ObstacleOverlap(const Triangle2D& tri) const
 void Geometric2DCSpace::DrawGL() const
 {
   //blank out background (light yellow)
-  glColor3f(1,1,0.5);
+  //glColor3f(1,1,0.5);
+  //blank out background (white)
+  glColor3f(1,1,1);
   glBegin(GL_QUADS);
   glVertex2f(domain.bmin.x,domain.bmin.y);
   glVertex2f(domain.bmax.x,domain.bmin.y);
