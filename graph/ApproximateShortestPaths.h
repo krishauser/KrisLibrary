@@ -7,8 +7,8 @@ namespace Graph {
 
 /** @ingroup Graph
  * @brief Approximate single-source shortest paths, whose output is at most
- * (1+epsilon) times the true shortest path.  This can be faster than
- * running true shortest paths
+ * (1+epsilon)^d times the true shortest path, where d is the depth of the node.
+ * This can be somewhat faster than running true shortest paths
  * 
  * @sa ShortestPathProblem
  */
