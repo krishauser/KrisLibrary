@@ -24,12 +24,20 @@ class PRMStarPlanner : public RoadmapPlanner
   bool GetPath(int a,int b,vector<int>& nodes,MilestonePath& path);
   ///Helper: check feasibility of path from milestone a to b for lazy planning
   bool CheckPath(int a,int b);
+  ///Helper: add a milestone and update data structures
+  virtual int AddMilestone(const Config& x);
+  ///Helper: add a (feasible) edge, and update data structures
+  virtual void ConnectEdge(int i,int j,const SmartPointer<EdgePlanner>& e);
+  ///Helper: add an unchecked edge, and update data structures
+  void ConnectEdgeLazy(int i,int j,const SmartPointer<EdgePlanner>& e);
 
   //configuration variables
   ///Set lazy to true if you wish to do lazy planning (default false)
   bool lazy;
   ///Set rrg to true if you wish to use the RRG* algorithm rather than PRM*
   bool rrg;
+  ///Set this to true for bidirectional planning
+  bool bidirectional;
   ///If this is false, uses k-nearest neighbors. If this is true, uses radius
   ///gamma * (log(n)/n)^(1/d) where n is the number of milestones and d is
   ///dimension.
@@ -41,15 +49,17 @@ class PRMStarPlanner : public RoadmapPlanner
   Real connectionThreshold;
   ///If lazy planning, check all edges with length greater than this threshold
   Real lazyCheckThreshold;
+  ///For suboptimal planning (like LBT-RRT*), default 0
+  Real suboptimalityFactor;
 
   int start,goal;
-  typedef Graph::ApproximateShortestPathProblem<Config,SmartPointer<EdgePlanner> > ShortestPathProblem;
-  ShortestPathProblem spp,sppGoal;
-  set<pair<int,int> > visibleEdges;
+  typedef Graph::ShortestPathProblem<Config,SmartPointer<EdgePlanner> > ShortestPathProblem;
+  ShortestPathProblem spp,sppGoal,sppLB,sppLBGoal;
+  Roadmap LBroadmap;
 
   //statistics
   int numPlanSteps;
-  Real tCheck, tKnn, tConnect, tLazy, tLazyCheck;
+  Real tCheck, tKnn, tConnect, tLazy, tLazyCheck, tShortestPaths;
   int numEdgeChecks;
   int numEdgePrechecks;
 };
