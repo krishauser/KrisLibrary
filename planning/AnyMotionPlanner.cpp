@@ -518,7 +518,6 @@ class PRMStarInterface  : public MotionPlannerInterface
     Real v;
     if(props.get("volume",v)) {
       planner.connectRadiusConstant = Pow(v,1.0/Real(d));
-      printf("Connection radius constant %g\n",planner.connectRadiusConstant);
     }
     else
       planner.connectRadiusConstant = 1;
