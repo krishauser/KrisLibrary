@@ -1,6 +1,7 @@
 #include "MotionPlanner.h"
 #include "PointLocation.h"
 #include <graph/Path.h>
+#include <graph/ShortestPaths.h>
 #include <math/random.h>
 #include <errors.h>
 
@@ -8,6 +9,21 @@ typedef TreeRoadmapPlanner::Node Node;
 using namespace std;
 
 //Graph search callbacks
+class EdgeDistance
+{
+ public:
+  Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
+  {
+    assert(e->Space() != NULL);
+    Real res = e->Space()->Distance(e->Start(),e->Goal());
+    if(res <= 0) {
+      printf("RoadmapPlanner: Warning, edge has nonpositive length %g\n",res);
+      return Epsilon;
+    }
+    return res;
+  }
+};
+
 
 // SetComponentCallback: sets all components to c
 struct SetComponentCallback : public Node::Callback
@@ -183,10 +199,27 @@ void RoadmapPlanner::Generate(int numSamples,Real connectionThreshold)
 void RoadmapPlanner::CreatePath(int i,int j,MilestonePath& path)
 {
   Assert(ccs.SameComponent(i,j));
-  Graph::PathIntCallback callback(roadmap.nodes.size(),j);
-  roadmap._BFS(i,callback);
+  //Graph::PathIntCallback callback(roadmap.nodes.size(),j);
+  //roadmap._BFS(i,callback);
+  EdgeDistance distanceWeightFunc;
+  Graph::ShortestPathProblem<Config,SmartPointer<EdgePlanner> > spp(roadmap);
+  spp.InitializeSource(i);
+  spp.FindPath_Undirected(j,distanceWeightFunc);
+  if(IsInf(spp.d[j])) {
+    FatalError("RoadmapPlanner::CreatePath: SameComponent is true, but no shortest path?");
+    return;
+  }
+
   list<int> nodes;
-  Graph::GetAncestorPath(callback.parents,j,i,nodes);
+  //Graph::GetAncestorPath(callback.parents,j,i,nodes);
+  bool res=Graph::GetAncestorPath(spp.p,j,i,nodes);
+  if(!res) {
+    FatalError("RoadmapPlanner::CreatePath: GetAncestorPath returned false");
+    return;
+  }
+  if(nodes.front() != i || nodes.back() != j) {
+    FatalError("RoadmapPlanner::CreatePath: GetAncestorPath didn't return correct path? %d to %d vs %d to %d",nodes.front(),nodes.back(),i,j);
+  }
   Assert(nodes.front()==i);
   Assert(nodes.back()==j);
   path.edges.clear();
