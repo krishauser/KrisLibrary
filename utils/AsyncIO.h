@@ -75,14 +75,16 @@ class AsyncReaderQueue : public AsyncReader
   virtual ~AsyncReaderQueue() {}
   ///Called by subclass to add a message onto the queue
   void OnRead(const string& msg);
+  void OnRead_NoLock(const string& msg);
 
   ///Resets the queue and history
   virtual void Reset();
   virtual int MessageCount() { return (int)msgCount; }
-  virtual int NewMessageCount() { return (int)msgQueue.size(); }
-  virtual string LastMessage() { return msgLast; }
+  virtual int NewMessageCount();
+  virtual string LastMessage();
   virtual vector<string> NewMessages();
 
+  Mutex mutex;
   size_t queueMax;
   size_t msgCount;
   string msgLast;
@@ -106,12 +108,14 @@ class AsyncWriterQueue : public AsyncWriter
   bool WriteAvailable() const { return !msgQueue.empty(); }
   ///Called by subclass to get the next message to deliver to the destination
   string OnWrite();
+  string OnWrite_NoLock();
 
   virtual void Reset();
   virtual void SendMessage(const string& msg);
   virtual int SentMessageCount() { return msgCount+msgQueue.size(); }
   virtual int DeliveredMessageCount() { return (int)msgCount; }
 
+  Mutex mutex;
   size_t queueMax;
   size_t msgCount;
   deque<string> msgQueue;
@@ -129,10 +133,12 @@ class AsyncPipeQueue
   ///Interfaces that subclasses should use in Work()
   ///Called by subclass to add a message onto the queue
   void OnRead(const string& msg) { return reader.OnRead(msg); }
+  void OnRead_NoLock(const string& msg) { return reader.OnRead_NoLock(msg); }
   ///Called by subclass to see whether there's a message to send
   bool WriteAvailable() const { return writer.WriteAvailable(); }
   ///Called by subclass to get the next message to send to the destination
   string OnWrite() { return writer.OnWrite(); }
+  string OnWrite_NoLock() { return writer.OnWrite_NoLock(); }
 
   ///Receive functions
   int MessageCount() { return reader.MessageCount(); }
@@ -185,6 +191,7 @@ class SocketClientTransport : public AsyncTransport
 
   string addr;
   File socket;
+  Mutex mutex;
   char buf[4096];
 };
 
@@ -194,6 +201,7 @@ class SocketServerTransport : public AsyncTransport
 {
  public:
   SocketServerTransport(const char* addr,int maxclients=1);
+  ~SocketServerTransport();
   virtual bool Start();
   virtual bool Stop();
   virtual bool ReadReady();
@@ -206,6 +214,7 @@ class SocketServerTransport : public AsyncTransport
   string addr;
   int serversocket;
   int maxclients;
+  Mutex mutex;
   vector<SmartPointer<File> > clientsockets;
   int currentclient;
   char buf[4096];
@@ -234,7 +243,6 @@ class AsyncReaderThread : public AsyncReaderQueue
   double timeout;
 
   Timer timer;
-  Mutex mutex;
   double lastReadTime;
 };
 
@@ -260,6 +268,7 @@ class AsyncPipeThread : public AsyncPipeQueue
 
   Timer timer;
   Mutex mutex;
+  Condition messageAvailable;
   double lastReadTime;
   double lastWriteTime;
 };

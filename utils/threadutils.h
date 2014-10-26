@@ -15,9 +15,11 @@
 
 #if USE_BOOST_THREADS
 #include <boost/thread.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
 typedef boost::thread Thread;
 typedef boost::mutex Mutex;
 typedef boost::mutex::scoped_lock ScopedLock;
+typedef boost::interprocess::interprocess_condition Condition;
 inline Thread ThreadStart(void* (*fn)(void*),void* data=NULL) { return boost::thread(fn,data); }
 inline void ThreadJoin(Thread& thread) { thread.join(); }
 inline void ThreadYield() { boost::this_thread::yield(); }
@@ -36,8 +38,12 @@ inline void ThreadJoin(Thread& thread) { pthread_join(thread,NULL); }
 inline void ThreadYield() { pthread_yield(); }
 struct Mutex
 {
-	Mutex() { mutex = PTHREAD_MUTEX_INITIALIZER; }
-	pthread_mutex_t mutex;
+  Mutex() { mutex = PTHREAD_MUTEX_INITIALIZER; }
+  ~Mutex() { pthread_mutex_destroy(&mutex); }
+  void lock() { pthread_mutex_lock(&mutex);  }
+  bool trylock() { return (pthread_mutex_lock(&mutex) == 0); }
+  void unlock() { pthread_mutex_unlock(&mutex);  }
+  pthread_mutex_t mutex;
 };
 
 struct ScopedLock
@@ -45,6 +51,17 @@ struct ScopedLock
   ScopedLock(Mutex& _mutex) :mutex(_mutex) { pthread_mutex_lock(&mutex.mutex);  }
   ~ScopedLock() { pthread_mutex_unlock(&mutex.mutex); }
   Mutex& mutex;
+};
+
+struct Condition
+{
+  Condition() { cond = PTHREAD_COND_INITIALIZER; }
+  ~Condition() { pthread_cond_destroy(&cond); }
+  void wait(ScopedLock& lock) { pthread_cond_wait(&cond,&lock.mutex.mutex); }
+  void notify_one() { pthread_cond_signal(&cond); }
+  void notify_all() { pthread_cond_broadcast(&cond); }
+
+  pthread_cond_t cond;
 };
 
 #endif //USE_PTHREADS
