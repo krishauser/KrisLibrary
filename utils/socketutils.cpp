@@ -1,4 +1,5 @@
 #include "socketutils.h"
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -177,8 +178,8 @@ SOCKET Connect(const char* addr)
   serv_addr.sin_port = htons(port);
 
   if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-    fprintf(stderr,"Connect: Connect to %s:%d failed\n",host,port);
-    perror("Connect error:");
+    fprintf(stderr,"Connect: Connect to server %s:%d failed\n",host,port);
+    perror("  Connect error");
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET;
@@ -257,6 +258,37 @@ SOCKET Accept(SOCKET sockfd)
   return clientsocket;
 }
 
+SOCKET Accept(SOCKET sockfd,double timeout)
+{
+  if(!EnsureSocketStarted()) return INVALID_SOCKET;
+
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(sockfd, &rfds);
+
+  timeval tv;
+  double secs = floor(timeout);
+  tv.tv_sec = (int)secs;
+  tv.tv_usec = (timeout-secs)*1000000;
+
+  int result = select(sockfd + 1, &rfds, (fd_set *) 0, (fd_set *) 0, &tv);
+  if(result > 0) {
+    struct sockaddr_in cli_addr;
+    socklen_t clilen = sizeof(cli_addr);
+    SOCKET clientsocket = accept(sockfd, (struct sockaddr *)&cli_addr, 
+				 &clilen);
+    return clientsocket;
+  }
+  else  {
+    if(result < 0) {
+      printf("Error using select()\n");
+    }
+     //always here, even if i connect from another application
+    return INVALID_SOCKET;
+  }
+}
+
+
 void SetNonblock(SOCKET sockfd)
 {
 #ifdef WIN32
@@ -271,8 +303,10 @@ void SetNonblock(SOCKET sockfd)
 void CloseSocket(SOCKET sockfd)
 {
 #ifdef WIN32
+	shutdown(sockfd,SD_BOTH);
 	closesocket(sockfd);
 #else
+	shutdown(sockfd,SHUT_RDWR);
 	close(sockfd);
 #endif
 }

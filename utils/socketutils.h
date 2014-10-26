@@ -32,6 +32,10 @@ SOCKET Bind(const char* addr,bool block=true);
 ///file descriptor.
 SOCKET Accept(SOCKET sockfd);
 
+///Accepts a connection on the server socket, returns the connection socket
+///file descriptor.  This version uses a timeout
+SOCKET Accept(SOCKET sockfd,double timeout);
+
 ///Sets a socket to nonblocking mode
 void SetNonblock(SOCKET sockfd);
 

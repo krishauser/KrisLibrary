@@ -67,7 +67,7 @@ inline bool FileWrite(FILE_POINTER x, const void* d, int size)
   return (size == s);
 }
 
-inline int SocketClose(int fd) { return closesocket(fd); }
+inline int SocketClose(int fd) { shutdown(fd,SD_BOTH); return closesocket(fd); }
 
 inline int SocketRead(int fd,char* data,int size) { return recv(fd,data,size,0); }
 
@@ -121,7 +121,7 @@ inline bool FileWrite(FILE_POINTER x, const void* d, int size)
   return (int)fwrite(d,1,size,x)==size;
 }
 
-inline int SocketClose(int fd) { return close(fd); }
+inline int SocketClose(int fd) { shutdown(fd,SHUT_RDWR); return close(fd); }
 
 inline int SocketRead(int fd,char* data,int size) { return read(fd,data,size); }
 
