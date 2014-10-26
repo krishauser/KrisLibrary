@@ -498,6 +498,18 @@ class SBLPRTInterface  : public MotionPlannerInterface
 };
 
 
+void CalcCCs(RoadmapPlanner& roadmap)
+{
+  roadmap.ccs.Clear();
+  for(size_t i=0;i<roadmap.roadmap.nodes.size();i++)
+    roadmap.ccs.AddNode();
+  for(size_t i=0;i<roadmap.roadmap.nodes.size();i++) {
+    Graph::EdgeIterator<SmartPointer<EdgePlanner> > e;
+    for(roadmap.roadmap.Begin(i,e);!e.end();e++)
+      roadmap.ccs.AddEdge(i,e.target());
+  }
+}
+
 class PRMStarInterface  : public MotionPlannerInterface
 {
  public:
@@ -561,7 +573,8 @@ class PRMStarInterface  : public MotionPlannerInterface
     if(planner.lazy)
       roadmap.roadmap = planner.LBroadmap;
     else
-      roadmap.roadmap = planner.roadmap;       
+      roadmap.roadmap = planner.roadmap;
+    CalcCCs(roadmap);
   }
   virtual void GetStats(PropertyMap& stats) const {
     MotionPlannerInterface::GetStats(stats);
