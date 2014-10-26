@@ -236,7 +236,7 @@ bool AnyGeometry3D::Save(ostream& out) const
   out<<TypeName()<<endl;
   switch(type) {
   case Primitive:
-    FatalError("Can't save geometric primitives yet");
+    out<<this->AsPrimitive()<<endl;
     break;
   case TriangleMesh:
     out<<this->AsTriangleMesh()<<endl;
