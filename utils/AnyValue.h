@@ -48,10 +48,13 @@ class AnyValue
    const std::type_info & type() const {
      return content ? content->type() : typeid(void);
    }
-   
+   template <class T>
+   bool hastype() const { 
+	   return &type() == &typeid(T);
+   }
    template <class ValueType>
    bool operator == (const ValueType &rhs) const {
-     if(type() != typeid(ValueType)) return false;
+     if(&type() != &typeid(ValueType)) return false;
      return *AnyCast<ValueType>(this) == rhs;
    }
 
@@ -87,7 +90,7 @@ class AnyValue
 template<typename ValueType>
 ValueType * AnyCast(AnyValue * operand)
 {
-  return operand && operand->type() == typeid(ValueType)
+  return operand && &operand->type() == &typeid(ValueType)
     ? &static_cast<AnyValue::holder<ValueType> *>(operand->content)->held
     : 0;
 }
