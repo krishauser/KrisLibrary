@@ -4,7 +4,7 @@
 #include <myfile.h>
 #include <string>
 #include <vector>
-#include <deque>
+#include <list>
 #include <Timer.h>
 #include <errors.h>
 #include <math/math.h>
@@ -88,7 +88,7 @@ class AsyncReaderQueue : public AsyncReader
   size_t queueMax;
   size_t msgCount;
   string msgLast;
-  deque<string> msgQueue;
+  list<string> msgQueue;
 };
 
 /** @brief Asynchronous writer with queue.
@@ -118,7 +118,7 @@ class AsyncWriterQueue : public AsyncWriter
   Mutex mutex;
   size_t queueMax;
   size_t msgCount;
-  deque<string> msgQueue;
+  list<string> msgQueue;
 };
 
 /** @brief Asynchronous reader/writer with queues.
@@ -246,7 +246,7 @@ class AsyncReaderThread : public AsyncReaderQueue
   double lastReadTime;
 };
 
-///An asynchronous reader that uses multithreading.
+///An asynchronous read/writer that uses multithreading.
 ///Subclass will define what that particular process is (usually blocking I/O)
 ///by overloading the Callback() function.
 ///If no read/write has occurred for 'timeout' seconds, then the thread will quit
@@ -259,6 +259,8 @@ class AsyncPipeThread : public AsyncPipeQueue
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
+  inline bool Connected() { return initialized && transport->WriteReady(); }
+  inline bool WriteReady() { return Connected(); }
 
   SmartPointer<AsyncTransport> transport;
 
