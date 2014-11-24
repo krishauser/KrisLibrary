@@ -1,6 +1,7 @@
 #include "PointLocation.h"
 #include <math/random.h>
 #include <set>
+#include <algorithm>
 using namespace std;
 
 PointLocationBase::PointLocationBase(vector<Vector>& _points)
