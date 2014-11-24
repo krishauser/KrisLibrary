@@ -47,7 +47,9 @@ string AsyncReaderQueue::LastMessage()
 vector<string> AsyncReaderQueue::NewMessages()
 {
   ScopedLock lock(mutex);
-  vector<string> res(msgQueue.begin(),msgQueue.end());
+  if(msgQueue.empty()) { msgLast=""; return vector<string>(); }
+  vector<string> res(msgQueue.size());
+  copy(msgQueue.begin(),msgQueue.end(),res.begin());
   msgLast=res.back(); 
   msgQueue.clear();
   return res;
@@ -189,10 +191,12 @@ void* pipe_read_worker_thread_func(void * ptr)
       fprintf(stderr,"AsyncReaderThread: abnormal termination\n");
       return NULL;
     } 
+    if(res[0] == 0) continue;
     
     {
       ScopedLock lock(data->mutex);     
-      data->OnRead_NoLock(res);
+	  //don't do _NoLock: the read queue needs locking
+      data->OnRead(res);
       data->lastReadTime = data->timer.ElapsedTime();
       //mutex unlocked
     }
@@ -207,8 +211,9 @@ void* pipe_write_worker_thread_func(void * ptr)
   while(data->timer.ElapsedTime() < data->lastWriteTime + data->timeout) {
     string send;
     {
-      ScopedLock lock(data->mutex);     
-      send = data->OnWrite_NoLock();
+      ScopedLock lock(data->mutex);
+	  //don't do _NoLock: the write queue needs locking
+      send = data->OnWrite();
       data->lastWriteTime = data->timer.ElapsedTime();
       //mutex unlocked
     }
