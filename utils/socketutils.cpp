@@ -59,7 +59,7 @@ public:
         return false;
     }
     else {
-        printf("The Winsock 2.2 dll was found okay\n");
+        printf("The Winsock 2.2 dll was found successfully\n");
 	started = true;
 	return true;
     }
@@ -71,7 +71,7 @@ static WSASocketGlobal gWSASocketObject;
 bool EnsureSocketStarted() 
 {
   if(gWSASocketObject.failed) return false;
-  if(gWSASocketObject.started) return false;  
+  if(gWSASocketObject.started) return true;  
   return gWSASocketObject.Init();
 }
 
