@@ -189,6 +189,7 @@ void* pipe_read_worker_thread_func(void * ptr)
     const char* res = data->transport->DoRead();
     if(!res) {
       fprintf(stderr,"AsyncReaderThread: abnormal termination\n");
+      data->Stop();
       return NULL;
     } 
     if(res[0] == 0) continue;
@@ -220,6 +221,7 @@ void* pipe_write_worker_thread_func(void * ptr)
     if(!send.empty()) {
       if(!data->transport->DoWrite(send.c_str())) {
 	fprintf(stderr,"AsyncPipeThread: abnormal termination\n");
+	data->Stop();
 	return NULL;
       }
     }
