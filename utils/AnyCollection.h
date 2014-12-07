@@ -29,6 +29,7 @@ struct AnyKeyable
   AnyKeyable(float value);
   AnyKeyable(double value);
   AnyKeyable(const std::string& value);
+  AnyKeyable(const char* value);
   size_t hash() const;
   bool operator == (const AnyKeyable& rhs) const;
 
@@ -90,8 +91,16 @@ class AnyCollection
   ///returns the number of sub-elements in the collection, or 1 if it is a
   ///primitive data type
   size_t size() const;
+  ///returns true if this is a null 
+  bool null() const;
   ///returns true if it is a non-primitive data type
   bool collection() const;
+  ///returns true if this is a primitive data type
+  bool isvalue() const;
+  ///returns true if this is an array data type
+  bool isarray() const;
+  ///returns true if this is a map data type
+  bool ismap() const;
   ///depth of nesting: 0 for a primitive data type, 1 for vector or map etc
   size_t depth() const;
   ///cast to AnyValue, if this is a primitive data type
@@ -118,9 +127,13 @@ class AnyCollection
   void resize(size_t n);
   //clears to an empty type
   void clear();
+  //accessors
   SmartPointer<AnyCollection> find(int i) const;
   SmartPointer<AnyCollection> find(const char* str) const;
   SmartPointer<AnyCollection> find(AnyKeyable key) const;
+  SmartPointer<AnyCollection> insert(int i);
+  SmartPointer<AnyCollection> insert(const char* str);
+  SmartPointer<AnyCollection> insert(AnyKeyable key);
   AnyCollection& operator[](int i);
   const AnyCollection& operator[](int i) const;
   AnyCollection& operator[](const char* str);
@@ -137,6 +150,8 @@ class AnyCollection
   AnyCollection& operator = (const AnyCollection& rhs);
   ///set to a value
   AnyCollection& operator = (AnyValue value);
+  ///set to a C-string
+  AnyCollection& operator = (const char* str) { return operator = (std::string(str)); }
   ///set to an array
   template <class T>
   AnyCollection& operator = (const std::vector<T>& array);
@@ -152,7 +167,15 @@ class AnyCollection
   ///either ".K" where K is a map key reference or "[K]" where K can be an
   ///integer string, as long as this is an array type.  Otherwise array
   ///references of the form "[K]" are treated as string keys into a map.
-  AnyCollection* lookup(const std::string& reference,char delim='.',char lbracket='[',char rbracket=']');
+  SmartPointer<AnyCollection> lookup(const std::string& reference,bool insert=false,char delim='.',char lbracket='[',char rbracket=']');
+  SmartPointer<AnyCollection> lookup(const std::vector<std::string>& path,bool insert=false);
+  SmartPointer<AnyCollection> lookup(const std::vector<AnyKeyable>& path,bool insert=false);
+  ///parse a reference string into a path
+  static bool parse_reference(const std::string& reference,std::vector<std::string>& path,char delim='.',char lbracket='[',char rbracket=']');
+  ///converts a string path to a key path matching the array/map structure of
+  ///this object.  will be smart in converting string keys to integer keys
+  ///if this object contains an integer key matching the string
+  bool match_path(const std::vector<std::string>& path,std::vector<AnyKeyable>& key_path) const;
 
   ///Looks up a composite reference string where array references of the
   ///form [K1:K2] are treated as slices and [K1,K2,...,Kn] are multiple
@@ -160,12 +183,24 @@ class AnyCollection
   ///to the items
   SmartPointer<AnyCollection> slice(const std::string& reference,const char* delims=".[]:,");
 
+  ///Adds all elements referenced by the given paths into a sub-collection,
+  ///copying the nesting structure of this item.
+  ///
+  ///TODO: slice references are not done yet. 
+  ///
+  ///Example:
+  /// {a:[1,2,3,4],b:[5,6],c:{foo:7,bar:8}}.subcollection(["a[1]","a[2]","c[foo]"]) 
+  /// => {a:{1:2,2:3},c:{foo:7}}
+  bool subcollection(const std::vector<std::string>& paths,AnyCollection& subset,const char* delims=".[]:,");
+
   ///if this is a collection, returns the list of sub-collections
   void enumerate(std::vector<SmartPointer<AnyCollection> >& collections) const;
   ///returns an enumerated list of keys contained within
   void enumerate_keys(std::vector<AnyKeyable>& elements) const;
   ///returns an enumerated list of primitive values contained within
   void enumerate_values(std::vector<AnyValue>& elements) const;
+  ///returns an enumerated list of keys contained within
+  void enumerate_keys_dfs(std::vector<std::vector<AnyKeyable> >& paths) const;
   ///returns an enumerated list of elements contained within
   void enumerate_values_dfs(std::vector<AnyValue>& elements) const;
 
@@ -176,6 +211,12 @@ class AnyCollection
   ///Same as merge, but when indices clash, the collection elements of other
   ///are also merged
   void deepmerge(const AnyCollection& other);
+  ///recursively fills the primitive entries of this collection with the
+  ///corresponding items in the universe.  If checkSuperset = true,
+  ///then this will check to see if the universe contains a superset of keys.
+  ///false is returned if the universe does not match the structure of this
+  ///collection
+  bool fill(AnyCollection& universe,bool checkSuperset=false);
 
   ///Reads in JSON format
   bool read(std::istream& in);

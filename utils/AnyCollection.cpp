@@ -76,7 +76,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       //check for invalid values
       for(size_t i=0;i<str.length();i++) {
 	if(!(isalnum(str[i])||str[i]=='_')) {
-	  std::cerr<<"Invalid basic data type \""<<str<<"\""<<std::endl;
+	  std::cerr<<"ReadyValue: Invalid basic data type \""<<str<<"\""<<std::endl;
 	  return false;
 	}
       }
@@ -89,7 +89,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
 
 void WriteValue(const AnyValue& value,std::ostream& out)
 {
-	const std::type_info* type = &value.type();
+  const std::type_info* type = &value.type();
   if(type == &typeid(bool)) {
     if(*AnyCast<bool>(&value)==true)
       out<<"true";
@@ -116,7 +116,7 @@ void WriteValue(const AnyValue& value,std::ostream& out)
 template <class T>
 bool BasicNumericalCoerceCast(const AnyValue& value,T& result)
 {
-	const std::type_info* type = &value.type();
+  const std::type_info* type = &value.type();
   if(type == &typeid(bool)) result=T(*AnyCast<bool>(&value)); 
   else if(type == &typeid(char)) result=T(*AnyCast<char>(&value));
   else if(type == &typeid(unsigned char)) result=T(*AnyCast<unsigned char>(&value));
@@ -140,7 +140,7 @@ template <> bool CoerceCast<double>(const AnyValue& value,double& result) { retu
 
 template <> bool LexicalCast(const AnyValue& value,std::string& result)
 {
-	const std::type_info* type = &value.type();
+  const std::type_info* type = &value.type();
   if(type == &typeid(bool)) return LexicalCast(*AnyCast<bool>(&value),result); 
   else if(type == &typeid(char)) return LexicalCast(*AnyCast<char>(&value),result);
   else if(type == &typeid(unsigned char)) return LexicalCast(*AnyCast<unsigned char>(&value),result);
@@ -200,10 +200,14 @@ AnyKeyable::AnyKeyable(const std::string& _value)
   :value(_value)
 {}
 
+AnyKeyable::AnyKeyable(const char* _value)
+  :value(std::string(_value))
+{}
+
 bool AnyKeyable::operator == (const AnyKeyable& rhs) const
 {
-	const std::type_info* type = &value.type();
-	const std::type_info* rhstype = &rhs.value.type();
+  const std::type_info* type = &value.type();
+  const std::type_info* rhstype = &rhs.value.type();
   if(type != rhstype) return false;
   if(value.empty()) return true;  
   if(type == &typeid(bool)) 
@@ -230,7 +234,7 @@ bool AnyKeyable::operator == (const AnyKeyable& rhs) const
 size_t AnyKeyable::hash() const
 {
   if(value.empty()) return 0;
-	const std::type_info* type = &value.type();
+  const std::type_info* type = &value.type();
   if(type == &typeid(bool)) 
     return std::tr1::hash<bool>()(*AnyCast<bool>(&value));
   if(type == &typeid(char)) 
@@ -284,10 +288,21 @@ bool AnyCollection::asvector(std::vector<AnyValue>& values) const
 
 void AnyCollection::resize(size_t n)
 {
+  if(type == Value) {
+    //TODO: check to see if there are integer entries
+    FatalError("AnyCollection::resize(): Cannot resize value without clearing first\n");
+  }
+  if(type == Map) {
+    std::cout<<*this<<std::endl;
+    //TODO: check to see if there are integer entries
+    FatalError("AnyCollection::resize(): Cannot resize map without clearing first\n");
+  }
   type = Array;
-  array.resize(n);
-  for(size_t i=0;i<n;i++)
-    array[i] = new AnyCollection;
+  array.resize(n,NULL);
+  for(size_t i=0;i<n;i++) {
+    if(!array[i])
+      array[i] = new AnyCollection;
+  }
 }
 
 void AnyCollection::clear()
@@ -297,69 +312,316 @@ void AnyCollection::clear()
   map.clear();
 }
 
-AnyCollection* AnyCollection::lookup(const std::string& reference,char delim,char lbracket,char rbracket)
+SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<std::string>& path,bool doinsert)
 {
-  if(reference.empty()) return this;
-  if(reference[0]==delim) {
-    if(type != Map) {
-      fprintf(stderr,"AnyCollection: lookup reference %s in a non-map type\n",reference.c_str());
-      return NULL;
-    }
-    //parse out the key lookup
-    int pos = reference.length();
-    for(size_t i=1;i<reference.length();i++)
-      if(reference[i] == lbracket || reference[i] == delim) {
-	pos = (int)i;
-      }
-    std::string key = reference.substr(1,pos-1);
-    AnyCollection* res=find(key);
-    if(res) return res->lookup(reference.substr(pos,reference.length()-pos),delim,lbracket,rbracket);
-    return NULL;
+  if(path.empty()) {
+    SmartPointer<AnyCollection> res = new AnyCollection;
+    res->shallow_copy(*this);
+    return res;
   }
-  else if(reference[0]==lbracket) {
-    //parse until rbracket is found
-    int pos = -1;
-    for(size_t i=1;i<reference.length();i++)
-      if(reference[i] == rbracket) {
-	pos = (int)i;
+  SmartPointer<AnyCollection> entry;
+  if(type == Array) {
+    int index;
+    if(!LexicalCast(path[0],index)) {
+      if(doinsert) {
+	entry = insert(path[0]);
       }
-    if(pos < 0) {
-      fprintf(stderr,"AnyCollection: lookup reference %s has unterminated bracket\n",reference.c_str());
-      return NULL;
-    }
-    std::string key = reference.substr(1,pos-1);
-    if(type == Array) {
-      //cast to an integer
-      if(!IsValidInteger(key.c_str())) {
-	fprintf(stderr,"AnyCollection: lookup index %s is not a valid integer\n",key.c_str());
+      else {
 	return NULL;
       }
-      int index;
-      std::stringstream ss(key);
-      ss>>index;
-      AnyCollection* res=find(index);
-      if(res) return res->lookup(reference.substr(pos+1,reference.length()-pos-1),delim,lbracket,rbracket);
-      return NULL;
     }
     else {
-      //lookup 
-      AnyCollection* res=find(key);
-      if(!res) {
-	//try parsing res into a keyable type
-	AnyKeyable keyable;
-	std::stringstream ss(key);
-	if(ReadValue(keyable.value,ss,""))
-	  res=find(keyable);
+      entry = find(index);
+      if(!entry) {
+	if(doinsert) {
+	  entry = insert(index);
+	  Assert(entry != NULL); 
+	}
+	else return NULL;
       }
-      if(res) return res->lookup(reference.substr(pos+1,reference.length()-pos-1),delim,lbracket,rbracket);
-      fprintf(stderr,"AnyCollection: lookup index %s doesnt exist\n",key.c_str());
-      return NULL;
+    }
+  }
+  else if(type == Map || type == None) {
+    entry = find(path[0]);
+    if(!entry) {
+      //try casting to int
+      int index;
+      if(LexicalCast(path[0],index)) {
+	entry = find(index);
+	if(!entry) {
+	  if(doinsert) {
+	    entry = insert(index);
+	  }
+	}
+      }
+      else {
+	if(doinsert) {
+	  entry = insert(path[0]);
+	}
+      }
     }
   }
   else {
-    fprintf(stderr,"AnyCollection: cannot lookup reference %s in a primitive type\n",reference.c_str());
+    if(doinsert) 
+      FatalError("Trying to insert \"%s\" into a primitive value type\n",path[0].c_str());
+  }
+
+  if(!entry) {
+    Assert(!doinsert);
     return NULL;
   }
+
+  for(size_t i=1;i<path.size();i++) {
+    SmartPointer<AnyCollection> child;
+    if(entry->type == Array) {
+      int index;
+      if(!LexicalCast(path[i],index)) {
+	return NULL;
+      }
+      child = entry->find(index);
+      if(!child) {
+	if(doinsert) {
+	  child = entry->insert(index);
+	  Assert(child != NULL); 
+	}
+	else return NULL;
+      }
+    }
+    else if(entry->type == Map || entry->type == None) {
+      child = entry->find(path[i]);
+      if(!child) {
+	//try casting to int
+	int index;
+	if(LexicalCast(path[i],index)) {
+	  child = entry->find(index);
+	  if(!child) {
+	    if(doinsert) {
+	      child = entry->insert(index);
+	      Assert(child != NULL);
+	    }
+	  }
+	}
+	else {
+	  if(doinsert) {
+	    child = entry->insert(path[i]);
+	  }
+	}
+      }
+    }
+    else {
+      if(doinsert) 
+	FatalError("Trying to insert \"%s\" into a primitive value type\n",path[i].c_str());
+    }
+    if(!child) {
+      Assert(!doinsert);
+      return NULL;
+    }
+    entry = child;
+  }
+  if(!entry)
+    Assert(!doinsert);
+  return entry;
+}
+
+SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<AnyKeyable>& path,bool doinsert)
+{
+  if(path.empty()) {
+    SmartPointer<AnyCollection> res = new AnyCollection;
+    res->shallow_copy(*this);
+    return res;
+  }
+  SmartPointer<AnyCollection> entry;
+  if(doinsert) entry = insert(path[0]);
+  else entry = find(path[0]);
+  if(!entry) {
+    Assert(!doinsert);
+    return NULL;
+  }
+  for(size_t i=1;i<path.size();i++) {
+    if(doinsert) entry = entry->insert(path[i]);
+    else entry = entry->find(path[i]);
+    if(!entry) {
+      Assert(!doinsert);
+      return NULL;
+    }
+  }
+  return entry;
+}
+
+bool AnyCollection::parse_reference(const std::string& reference,std::vector<std::string>& path,char delim,char lbracket,char rbracket)
+{
+  path.resize(0);
+  //can have a . at the beginning of the reference
+  int mode = 0; //0 = waiting, 1 = reading member key, 2 = reading array key, 3 = reading quoted member key, 4 = reading quoted array key, 5 = read quoted array key
+  size_t start = 0;
+  for(size_t i=0;i<reference.size();i++) {
+    switch(mode) {
+    case 0:
+      if(reference[i]==delim) {
+	mode = 1;
+	start = (int)i+1;
+      }
+      else if(reference[i]==lbracket) {
+	mode = 2;
+	start = (int)i+1;
+      }
+      else {
+	if(reference[i]==rbracket) {
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",i);
+	  return false;
+	}
+	if(i!=0) {
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected string in position %d\n",i);
+	  return false;
+	}
+	mode = 1;
+	start = 0;
+      }
+      break;
+    case 1: //reading member key
+      if(reference[i]=='\"') {
+	if(i>start+1) {
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation at position %d\n",i);
+	  return false;
+	}
+	mode = 3;
+	start = i+1;
+      }
+      else if(reference[i]==delim || reference[i]==lbracket) { 
+	//read out path entry
+	if(i<start+1) {
+	  fprintf(stderr,"AnyCollection::parse_reference: empty reference string in position %d, start of ref in position %d\n",i,start);
+	  return false;
+	}
+	path.push_back(reference.substr(start,i-start));
+	start = (int)i+1;
+	if(reference[i]==lbracket) mode = 2;  //ending at lbracket
+	else mode = 1; //ending at delim
+      }
+      else if(reference[i]==rbracket) {
+	fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",i);
+	return false;
+      }
+      break;
+    case 2: //reading array key
+      if(reference[i]=='\"') {
+	if(i>start+1) {
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation in key at position %d\n",i);
+	  return false;
+	}
+	mode = 4;
+	start = i+1;
+      }
+      else if(reference[i]==rbracket) {
+	path.push_back(reference.substr(start,i-start));
+	mode = 0;
+      }
+      else if(reference[i]==lbracket || reference[i]==delim) {
+	fprintf(stderr,"AnyCollection::parse_reference: unexpected character %c in key in position %d\n",reference[i],i);
+	return false;
+      }
+      break;
+    case 3: //reading quoted member key
+      if(reference[i]=='\"') {
+	path.push_back(reference.substr(start,i-start));
+	mode = 0;
+      }
+      break;
+    case 4: //reading quoted array key
+      if(reference[i]=='\"') {
+	path.push_back(reference.substr(start,i-start));
+	mode = 5;
+      }
+      break;
+    case 5: //end of quoted array key
+      if(reference[i]!=rbracket) {
+	fprintf(stderr,"AnyCollection::parse_reference: quoted array key must be followed by right bracket at position %d\n",i);
+	return false;
+      }
+      mode = 0;
+      break;
+    }
+  }
+  //invalid end modes: 2,3,4,5
+  if(mode == 1) { // .member_name
+    path.push_back(reference.substr(start,reference.length()-start));
+  }
+  if(mode >= 2) {
+    fprintf(stderr,"AnyCollection::parse_reference: unexpected termination of reference\n");
+    return false;
+  }
+  return true;
+}
+
+bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<AnyKeyable>& key_path) const
+{
+  key_path.resize(path.size());
+  if(path.empty()) return true;
+  SmartPointer<AnyCollection> entry;
+  if(type == Array) {
+    int index;
+    if(!LexicalCast(path[0],index)) {
+      fprintf(stderr,"AnyCollection::lookup(): invalid array index %s\n",path[0].c_str());
+      return false;
+    }
+    key_path[0] = AnyKeyable(index);
+    entry = find(index);
+    if(!entry) return false;
+  }
+  else if(type == Map) {
+    entry = find(path[0]);
+    if(!entry) {
+      //try casting to int
+      int index;
+      if(LexicalCast(path[0],index)) {
+	entry = find(index);
+	key_path[0] = AnyKeyable(index);
+      }
+    }
+    else
+      key_path[0] = AnyKeyable(path[0]);
+    if(!entry) return false;
+  }
+  else return false;
+
+  for(size_t i=1;i<path.size();i++) {
+    SmartPointer<AnyCollection> child;
+    if(type == Array) {
+      int index;
+      if(!LexicalCast(path[i],index)) {
+	fprintf(stderr,"AnyCollection::lookup(): invalid array index %s\n",path[i].c_str());
+	return false;
+      }
+      key_path[i] = AnyKeyable(index);
+      child = entry->find(index);
+    }
+    else if(type == Map) {
+      child = entry->find(path[i]);
+      if(!child) {
+	//try casting to int
+	int index;
+	if(LexicalCast(path[i],index)) {
+	  child = entry->find(index);
+	  key_path[i] = AnyKeyable(index);
+	}
+      }
+      else
+	key_path[i] = AnyKeyable(path[i]);
+    }
+    if(!child) return false;
+    entry = child;
+  }
+  return true;
+}
+
+SmartPointer<AnyCollection> AnyCollection::lookup(const std::string& reference,bool insert,char delim,char lbracket,char rbracket)
+{
+  std::vector<std::string> path;
+  if(!parse_reference(reference,path,delim,lbracket,rbracket)) {
+    fprintf(stderr,"AnyCollection::lookup: unable to parse reference string %s\n",reference.c_str());
+    return NULL;
+  }
+  return lookup(path,insert);
 }
 
 SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,const char* delims)
@@ -370,12 +632,12 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
     res->shallow_copy(*this);
     return res;
   }
-  char delim = delims[0];
+  char member = delims[0];
   char lbracket = delims[1];
   char rbracket = delims[2];
   char colon = delims[3];
   char comma = delims[4];
-  if(reference[0]==delim) {
+  if(reference[0]==member) {
     if(type != Map) {
       fprintf(stderr,"AnyCollection: slice reference %s in a non-map type\n",reference.c_str());
       return NULL;
@@ -383,11 +645,11 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
     //parse out the key lookup
     int pos = reference.length();
     for(size_t i=1;i<reference.length();i++)
-      if(reference[i] == lbracket || reference[i] == delim) {
+      if(reference[i] == lbracket || reference[i] == member) {
 	pos = (int)i;
       }
     std::string key = reference.substr(1,pos-1);
-    AnyCollection* res=find(key);
+    SmartPointer<AnyCollection> res=find(key);
     if(res) return res->slice(reference.substr(pos,reference.length()-pos),delims);
     return NULL;
   }
@@ -415,13 +677,13 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	int index;
 	std::stringstream ss(key);
 	ss>>index;
-	AnyCollection* res=find(index);
+	SmartPointer<AnyCollection> res=find(index);
 	if(res) return res->slice(reference.substr(pos+1,reference.length()-pos-1),delims);
 	return NULL;
       }
       else {
 	//lookup 
-	AnyCollection* res=find(key);
+	SmartPointer<AnyCollection> res=find(key);
 	if(res) return res->slice(reference.substr(pos+1,reference.length()-pos-1),delims);
 	return NULL;
       }
@@ -493,6 +755,47 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
   }
 }
 
+bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyCollection& subset,const char* delims)
+{
+  subset.clear();
+
+  char member = delims[0];
+  char lbracket = delims[1];
+  char rbracket = delims[2];
+  char colon = delims[3];
+  char comma = delims[4];
+
+  for(size_t i=0;i<paths.size();i++) {
+    if(paths[i].empty()) //matches whole thing
+      subset.deepmerge(*this);
+    else {
+      std::vector<std::string> path;
+      if(!parse_reference(paths[i],path,member,lbracket,rbracket)) {
+	fprintf(stderr,"AnyCollection::subcollection(): error parsing path %s\n",paths[i].c_str());
+	return false;
+      }
+      //parse strings into ints if necessary
+      std::vector<AnyKeyable> key_path(path.size());
+      for(size_t j=0;j<path.size();j++) {
+	if(IsValidInteger(path[j].c_str())) {
+	  int index;
+	  LexicalCast(path[j],index);
+	  key_path[j] = AnyKeyable(index);
+	}
+	else
+	  key_path[j] = AnyKeyable(path[j]);
+      }
+      SmartPointer<AnyCollection> item = lookup(key_path);
+      if(!item) {
+	fprintf(stderr,"AnyCollection::subcollection(): invalid item %s\n",paths[i].c_str());
+	return false;
+      }
+      subset.lookup(key_path,true)->deepmerge(*item);
+    }
+  }   
+  return true;
+}
+
 SmartPointer<AnyCollection> AnyCollection::find(int i) const
 {
   if(type == Array) {
@@ -515,10 +818,9 @@ SmartPointer<AnyCollection> AnyCollection::find(const char* str) const
 SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
 {
   if(type == Array) {
-	  const std::type_info* keytype = &key.value.type();
-    if(keytype == &typeid(int)) 
+    if(key.value.hastype<int>())
       return find(*AnyCast<int>(&key.value));
-    else if(keytype == &typeid(unsigned int))
+    else if(key.value.hastype<unsigned int>())
       return find(*AnyCast<unsigned int>(&key.value));
     else 
       return NULL;
@@ -531,10 +833,107 @@ SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
   return NULL;
 }
 
-AnyCollection& AnyCollection::operator[](int i)
+SmartPointer<AnyCollection> AnyCollection::insert(int index)
 {
   if(type == None) {
-    if(i==0) { // first array reference
+    if(index==0) { // first array reference
+      type = Array;
+      array.resize(0);
+    }
+    else {  // first map reference
+      type = Map;
+      map.clear();
+    }
+  }
+  if(type == Array) {
+    if(index == (int)array.size()) { //resize by one
+      array.resize(index+1);
+      for(int i=index;i<(int)array.size();i++)
+	array[i] = new AnyCollection();
+    }
+    else if(index > (int)array.size()) {
+      //convert to a map
+      //cast array to a map
+      type = Map;
+      map.clear();
+      for(size_t i=0;i<array.size();i++)
+	map[(int)i] = array[i];
+      array.clear();
+      map[index] = new AnyCollection();
+      return map[index];
+    }
+    return array[index];
+  }
+  else if(type == Map) {
+    AnyKeyable key(index);
+    return insert(key);
+  }
+  FatalError("AnyCollection: Can't insert into non-collection types");
+  return NULL;
+}
+
+SmartPointer<AnyCollection> AnyCollection::insert(const char* str)
+{
+  return insert(AnyKeyable(std::string(str)));
+}
+
+SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
+{
+  if(type == None) {
+    //if the key is an integer, try turning it into an array
+    if(key.value.hastype<int>())
+      return insert(*AnyCast<int>(&key.value));
+    else if(key.value.hastype<unsigned int>())
+      return insert((int)(*AnyCast<unsigned int>(&key.value)));
+
+    //coerce to a map type
+    type = Map;
+    map.clear();
+  }
+  if(type == Array) {
+    if(!key.value.hastype<int>() && !key.value.hastype<unsigned int>()) {
+      //cast array to a map
+      type = Map;
+      map.clear();
+      for(size_t i=0;i<array.size();i++)
+	map[(int)i] = array[i];
+      array.clear();
+    }
+  }
+
+  if(type == Array) {
+    int index;
+    if(key.value.hastype<int>())
+      return insert(*AnyCast<int>(&key.value));
+    else if(key.value.hastype<unsigned int>())
+      return insert((int)(*AnyCast<unsigned int>(&key.value)));
+    else {
+      FatalError("AnyCollection: can't lookup arrays with non-integer types");
+      return NULL;
+    }
+    if(index >= (int)array.size()) {
+      array.resize(index+1);
+      for(int i=index;i<(int)array.size();i++)
+	array[i] = new AnyCollection();
+    }
+    return array[index];
+  }
+  else if(type == Map) {
+    MapType::iterator i=map.find(key);
+    if(i == map.end()) {
+      map[key] = new AnyCollection;
+      return map[key];
+    }
+    return i->second;
+  }
+  FatalError("AnyCollection: Can't lookup non-collection types");
+  return NULL;
+}
+
+AnyCollection& AnyCollection::operator[](int index)
+{
+  if(type == None) {
+    if(index==0) { // first array reference
       type = Array;
       array.resize(0);
     }
@@ -545,14 +944,15 @@ AnyCollection& AnyCollection::operator[](int i)
   }
 
   if(type == Array) {
-    if(i == (int)array.size()) { //resize by 1
-      array.resize(i+1);
-      array[i] = new AnyCollection();
+    if(index >= (int)array.size()) { //resize 
+      array.resize(index+1);
+      for(int i=index;i<(int)array.size();i++)
+	array[i] = new AnyCollection();
     }
-    return *array[i];
+    return *array[index];
   }
   else if(type == Map) {
-    AnyKeyable key(i);
+    AnyKeyable key(index);
     return operator[](key);
   }
   FatalError("AnyCollection: Can't index into non-collection types");
@@ -590,7 +990,7 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
     map.clear();
   }
   if(type == Array) {
-    if(key.value.hastype<int>() && key.value.hastype<unsigned int>()) {
+    if(!key.value.hastype<int>() && !key.value.hastype<unsigned int>()) {
       //cast array to a map
       type = Map;
       map.clear();
@@ -602,18 +1002,18 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
 
   if(type == Array) {
     int index;
-	const std::type_info* keytype = &key.value.type();
-    if(keytype == &typeid(int))
+    if(key.value.hastype<int>())
       index = *AnyCast<int>(&key.value);
-    else if(keytype == &typeid(unsigned int))
+    else if(key.value.hastype<unsigned int>())
       index = (int)(*AnyCast<unsigned int>(&key.value));
     else {
       FatalError("AnyCollection: can't lookup arrays with non-integer types");
       return *this;
     }
-    if(index == (int)array.size()) {
+    if(index >= (int)array.size()) {
       array.resize(index+1);
-      array[index] = new AnyCollection();
+      for(int i=index;i<(int)array.size();i++)
+	array[i] = new AnyCollection();
     }
     return *array[index];
   }
@@ -632,10 +1032,9 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
 const AnyCollection& AnyCollection::operator[](AnyKeyable key) const
 {
   if(type == Array) {
-	const std::type_info* keytype = &key.value.type();
-    if(keytype == &typeid(int))
+    if(key.value.hastype<int>())
       return *array[*AnyCast<int>(&key.value)];
-    else if(keytype == &typeid(unsigned int))
+    else if(key.value.hastype<unsigned int>())
       return *array[*AnyCast<unsigned int>(&key.value)];
     else {
       FatalError("AnyCollection: can't lookup arrays with non-integer types");
@@ -706,9 +1105,29 @@ size_t AnyCollection::size() const
   else return 0;
 }
 
+bool AnyCollection::null() const
+{
+  return type == None; 
+}
+
 bool AnyCollection::collection() const
 {
   return (type == Array || type == Map);
+}
+
+bool AnyCollection::isvalue() const
+{
+  return type == Value;
+}
+
+bool AnyCollection::isarray() const
+{
+  return type == Array;
+}
+
+bool AnyCollection::ismap() const
+{
+  return type == Map;
 }
 
 size_t AnyCollection::depth() const
@@ -769,6 +1188,38 @@ void AnyCollection::enumerate_values(std::vector<AnyValue>& elements) const
     for(MapType::const_iterator i=map.begin();i!=map.end();i++)
       if(i->second->type == Value)
 	elements.push_back(i->second->value);
+  }
+}
+
+void AnyCollection::enumerate_keys_dfs(std::vector<std::vector<AnyKeyable> >& paths) const
+{
+  if(type == Value) {
+    paths.resize(1);
+    paths[0].clear();
+  }
+  else if(type == Array) {
+    for(size_t i=0;i<array.size();i++) {
+      std::vector<std::vector<AnyKeyable> > subpaths;
+      array[i]->enumerate_keys_dfs(subpaths);
+      for(size_t j=0;j<subpaths.size();j++) {
+	paths.resize(paths.size()+1);
+	paths.back().resize(subpaths[j].size()+1);
+	paths.back()[0] = AnyKeyable(int(i));
+	copy(subpaths[j].begin(),subpaths[j].end(),paths.back().begin()+1);
+      }
+    }
+  }
+  else if(type == Map) {
+    for(MapType::const_iterator i=map.begin();i!=map.end();i++) {
+      std::vector<std::vector<AnyKeyable> > subpaths;
+      i->second->enumerate_keys_dfs(subpaths);
+      for(size_t j=0;j<subpaths.size();j++) {
+	paths.resize(paths.size()+1);
+	paths.back().resize(subpaths[j].size()+1);
+	paths.back()[0] = AnyKeyable(i->first);
+	copy(subpaths[j].begin(),subpaths[j].end(),paths.back().begin()+1);
+      }
+    }
   }
 }
 
@@ -864,6 +1315,41 @@ void AnyCollection::deepmerge(const AnyCollection& other)
       }
     }
   }
+}
+
+bool AnyCollection::fill(AnyCollection& universe,bool checkSuperset)
+{
+  if(!collection()) {
+    *this = universe;
+    return true;
+  }
+  if(type == Array) {
+    if(universe.type != Array) return false;
+    if(universe.array.size() < array.size()) {
+      if(checkSuperset) return false;
+      for(size_t i=0;i<universe.array.size();i++) {
+	if(!array[i]->fill(*universe.array[i],checkSuperset)) return false;
+      }
+    }
+    else {
+      for(size_t i=0;i<array.size();i++) {
+	if(!array[i]->fill(*universe.array[i],checkSuperset)) return false;
+      }
+    }
+  }
+  else {
+    if(universe.type != Map) return false;
+    for(MapType::iterator i=map.begin();i!=map.end();i++) {
+      MapType::iterator j = universe.map.find(i->first);
+      if(j == universe.map.end()) {
+	if(checkSuperset) return false;
+      }
+      else {
+	if(!i->second->fill(*j->second,checkSuperset)) return false;
+      }
+    }
+  }
+  return true;
 }
 
 bool AnyCollection::read(const char* data)
