@@ -47,7 +47,9 @@ void IncrementStringDigits(char* str);
 void IncrementStringDigits(std::string& str);
 
 std::string ToBase64(const std::string& in);
+std::string ToBase64(const char* in,int length);
 std::string FromBase64(const std::string& in);
+std::string FromBase64(const char* in);
 
 ///Dos-unix endline conversion
 int LengthWithDOSEndlines(const char* str);

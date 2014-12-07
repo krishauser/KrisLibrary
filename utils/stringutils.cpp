@@ -637,10 +637,21 @@ std::string ToBase64(const std::string& in)
   return base64_encode(in.c_str(),in.length());
 }
 
+std::string ToBase64(const char* in,int length)
+{
+  return base64_encode(in,length);
+}
+
 std::string FromBase64(const std::string& in)
 {
   return base64_decode(in.c_str(),in.length());
 }
+
+std::string FromBase64(const char* in)
+{
+  return base64_decode(in,strlen(in));
+}
+
 
 std::vector<std::string> Split(const std::string& str, const std::string& delim)
 {
