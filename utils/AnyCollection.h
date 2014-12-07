@@ -317,7 +317,7 @@ bool AnyCollection::asvector(std::vector<T>& values) const
   for(size_t i=0;i<values.size();i++) {
     bool res = CoerceCast<T>(anyvalues[i],values[i]);
     if(!res) {
-      printf("Coerce cast %s to %s failed for element %d\n",anyvalues[i].type().name(),typeid(T).name(),i);
+      printf("Coerce cast %s to %s failed for element %d\n",anyvalues[i].type().name(),typeid(T).name(),(int)i);
       return false;
     }
   }
