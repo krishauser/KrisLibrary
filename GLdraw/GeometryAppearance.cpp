@@ -13,6 +13,11 @@ void draw(const Geometry::AnyGeometry3D& geom)
 {
   if(geom.type == AnyGeometry3D::PointCloud) 
     drawPoints(geom);
+  else if(geom.type == AnyGeometry3D::Group) {
+    const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
+    for(size_t i=0;i<subgeoms.size();i++)
+      draw(subgeoms[i]);
+  }
   else
     drawFaces(geom);
 }
@@ -22,8 +27,13 @@ void drawPoints(const Geometry::AnyGeometry3D& geom)
   const vector<Vector3>* verts = NULL;
   if(geom.type == AnyGeometry3D::TriangleMesh) 
     verts = &AnyCast<Meshing::TriMesh>(&geom.data)->verts;
-  if(geom.type == AnyGeometry3D::PointCloud) 
+  else if(geom.type == AnyGeometry3D::PointCloud) 
     verts = &AnyCast<Meshing::PointCloud3D>(&geom.data)->points;
+  else if(geom.type == AnyGeometry3D::Group) {
+    const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
+    for(size_t i=0;i<subgeoms.size();i++)
+      drawPoints(subgeoms[i]);
+  }
   if(verts) {
     glBegin(GL_POINTS);
     for(size_t i=0;i<verts->size();i++) {
@@ -38,13 +48,18 @@ void drawFaces(const Geometry::AnyGeometry3D& geom)
   const Meshing::TriMesh* trimesh = NULL;
   if(geom.type == AnyGeometry3D::TriangleMesh) 
     trimesh = AnyCast<Meshing::TriMesh>(&geom.data);
-  
-  //draw the mesh
-  if(trimesh) 
-    DrawGLTris(*trimesh);
+  else if(geom.type == AnyGeometry3D::Group) {
+    const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
+    for(size_t i=0;i<subgeoms.size();i++)
+      drawFaces(subgeoms[i]);
+  }
+  else if(geom.type == AnyGeometry3D::Primitive) 
+    draw(*AnyCast<GeometricPrimitive3D>(&geom.data));  
 
-  if(geom.type == AnyGeometry3D::Primitive) 
-    draw(*AnyCast<GeometricPrimitive3D>(&geom.data));
+  //draw the mesh
+  if(trimesh) {
+    DrawGLTris(*trimesh);
+  }
 }
 
 void drawWorld(const Geometry::AnyCollisionGeometry3D& geom)
@@ -97,6 +112,11 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
     fprintf(stderr,"TODO: draw expanded primitive\n");
     draw(geom.AsPrimitive());
   }
+  else if(geom.type == Geometry::AnyCollisionGeometry3D::Group) {
+    std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = geom.GroupCollisionData();
+    for(size_t i=0;i<subgeoms.size();i++)
+      drawExpanded(subgeoms[i],p);
+  }
 }	  
 
 
@@ -135,6 +155,19 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       }
     }
   }
+  else if(geom->type == AnyGeometry3D::Group) {
+    const std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = _geom.GroupCollisionData();
+    subAppearances.resize(subgeoms.size());
+    for(size_t i=0;i<subAppearances.size();i++) {
+      subAppearances[i].Set(subgeoms[i]);
+      subAppearances[i].vertexSize = vertexSize;
+      subAppearances[i].edgeSize = edgeSize;
+      subAppearances[i].lightFaces = lightFaces;
+      subAppearances[i].vertexColor = vertexColor;
+      subAppearances[i].edgeColor = edgeColor;
+      subAppearances[i].faceColor = faceColor;
+    }
+  }
   else
     drawFaces = true;
   Refresh();
@@ -162,6 +195,19 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       }
     }
   }
+  else if(geom->type == AnyGeometry3D::Group) {
+    const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
+    subAppearances.resize(subgeoms.size());
+    for(size_t i=0;i<subAppearances.size();i++) {
+      subAppearances[i].Set(subgeoms[i]);
+      subAppearances[i].vertexSize = vertexSize;
+      subAppearances[i].edgeSize = edgeSize;
+      subAppearances[i].lightFaces = lightFaces;
+      subAppearances[i].vertexColor = vertexColor;
+      subAppearances[i].edgeColor = edgeColor;
+      subAppearances[i].faceColor = faceColor;
+    }
+  }
   else
     drawFaces = true;
 }
@@ -172,9 +218,9 @@ void GeometryAppearance::DrawGL()
     const vector<Vector3>* verts = NULL;
     if(geom->type == AnyGeometry3D::ImplicitSurface) 
       verts = &mesh.verts;
-    if(geom->type == AnyGeometry3D::TriangleMesh) 
+    else if(geom->type == AnyGeometry3D::TriangleMesh) 
       verts = &AnyCast<Meshing::TriMesh>(&geom->data)->verts;
-    if(geom->type == AnyGeometry3D::PointCloud) 
+    else if(geom->type == AnyGeometry3D::PointCloud) 
       verts = &AnyCast<Meshing::PointCloud3D>(&geom->data)->points;
     if(verts) {
       //compile the vertex display list
@@ -285,9 +331,9 @@ void GeometryAppearance::DrawGL()
 	  glEnd();
 	}
       }
-      if(geom->type == AnyGeometry3D::Primitive) 
+      if(geom->type == AnyGeometry3D::Primitive) {
 	draw(*AnyCast<GeometricPrimitive3D>(&geom->data));
-
+      }
       faceDisplayList.endCompile();
     }
     faceDisplayList.call();
@@ -309,6 +355,11 @@ void GeometryAppearance::DrawGL()
   }
 
   //TODO edges?
+  
+  //for group geometries
+  for(size_t i=0;i<subAppearances.size();i++) {
+    subAppearances[i].DrawGL();
+  }
 }
 
 } //namespace GLDraw

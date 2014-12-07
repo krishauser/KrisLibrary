@@ -43,6 +43,8 @@ class GeometryAppearance
   Meshing::TriMesh mesh;
   ///The display lists
   GLDisplayList vertexDisplayList,faceDisplayList;
+  ///For group geometries
+  std::vector<GeometryAppearance> subAppearances;
 
   bool drawVertices,drawEdges,drawFaces;
   float vertexSize,edgeSize;
