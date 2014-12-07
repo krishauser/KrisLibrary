@@ -10,92 +10,52 @@
 #include <math/math.h>
 #include "SmartPointer.h"
 #include "threadutils.h"
-using namespace std;
 
-/** @brief Asynchronous reader base class.
- * 
- * Message storage is implemented by subclass. It may store an internal queue of messages.
- * @sa AsyncReaderQueue
+/** @brief Asynchronous reader with queue.
  *
+ * Stores the last message and the newest queueMax messages from some other process / subclass.
+ * 
  * Usage is to call NewMessages() or NewestMessage() to get the latest message. This will also
  * flush the queue.
  * 
  * To do a non-blocking check for new messages without flushing the queue, call NewMessageCount().
- *
- * Event-driven readers can be implemented by overloading the Work() class.  The user must
- * then periodically call Work() to allow the reader to process messages.
  */
-class AsyncReader
-{
- public:
-  AsyncReader() {}
-  virtual ~AsyncReader() {}
-  virtual void Reset() {}
-  virtual void Work() {}
-  virtual int MessageCount() { return 0; }
-  virtual int NewMessageCount() { return 0; }
-  virtual string LastMessage() { return ""; }
-  virtual vector<string> NewMessages() { return vector<string>(); }
-  virtual string NewestMessage() { if(NewMessageCount()>0) return NewMessages().back(); return LastMessage(); }
-};
-
-/** @brief Asynchronous writer base class.
- * 
- * Message queuing can be implemented in the subclass.
- * @sa AsyncWriterQueue.
- *
- * The usage is to call SendMessage().  The writer will then somehow
- * send it to a receiver (as implemented by the subclass).
- *
- * Event-driven writers can be implemented by overloading the Work() class.  The user must
- * then periodically call Work() to allow the reader to process messages.
- */
-class AsyncWriter
-{
- public:
-  AsyncWriter() {}
-  virtual ~AsyncWriter() {}
-  virtual void Reset() { }
-  virtual void Work() {}
-  virtual void SendMessage(const string& msg) {}
-  virtual int SentMessageCount() { return 0; }
-  virtual int DeliveredMessageCount() { return 0; }
-};
-
-
-/** @brief Asynchronous reader with queue.
- *
- * stores the last message and the newest queueMax messages.
- */
-class AsyncReaderQueue : public AsyncReader
+class AsyncReaderQueue
 {
  public:
   ///This will keep only the newest queueMax messages
   AsyncReaderQueue(size_t queueMax=1000);
   virtual ~AsyncReaderQueue() {}
   ///Called by subclass to add a message onto the queue
-  void OnRead(const string& msg);
-  void OnRead_NoLock(const string& msg);
+  void OnRead(const std::string& msg);
+  void OnRead_NoLock(const std::string& msg);
 
   ///Resets the queue and history
   virtual void Reset();
-  virtual int MessageCount() { return (int)msgCount; }
-  virtual int NewMessageCount();
-  virtual string LastMessage();
-  virtual vector<string> NewMessages();
+  ///Do some work to read messages from sender -- must be done by subclass
+  virtual void Work() {}
+  int MessageCount() { return (int)msgCount; }
+  int NewMessageCount();
+  std::string LastMessage();
+  std::vector<std::string> NewMessages();
+  std::string NewestMessage() { if(NewMessageCount()>0) return NewMessages().back(); return LastMessage(); }
 
   Mutex mutex;
   size_t queueMax;
   size_t msgCount;
-  string msgLast;
-  list<string> msgQueue;
+  std::string msgLast;
+  std::list<std::string> msgQueue;
 };
 
 /** @brief Asynchronous writer with queue.
  *
  * Sends the latest queueMax messages.
+ *
+ * The usage is to call SendMessage().  The writer will then somehow
+ * send it to a receiver (as implemented by the subclass or some external
+ * monitor).
  */
-class AsyncWriterQueue : public AsyncWriter
+class AsyncWriterQueue 
 {
  public:
   ///This will keep only the newest recvQueueMax messages sent, and will only
@@ -107,18 +67,21 @@ class AsyncWriterQueue : public AsyncWriter
   ///Called by subclass to see whether there's a message to send
   bool WriteAvailable() const { return !msgQueue.empty(); }
   ///Called by subclass to get the next message to deliver to the destination
-  string OnWrite();
-  string OnWrite_NoLock();
+  std::string OnWrite();
+  std::string OnWrite_NoLock();
 
+  ///Resets the queue and history
   virtual void Reset();
-  virtual void SendMessage(const string& msg);
-  virtual int SentMessageCount() { return msgCount+msgQueue.size(); }
-  virtual int DeliveredMessageCount() { return (int)msgCount; }
+  ///Do some work to write messages to receiver -- must be done by subclass
+  virtual void Work() {}
+  void SendMessage(const std::string& msg);
+  int SentMessageCount() { return msgCount+msgQueue.size(); }
+  int DeliveredMessageCount() { return (int)msgCount; }
 
   Mutex mutex;
   size_t queueMax;
   size_t msgCount;
-  list<string> msgQueue;
+  std::list<std::string> msgQueue;
 };
 
 /** @brief Asynchronous reader/writer with queues.
@@ -128,27 +91,27 @@ class AsyncPipeQueue
  public:
   AsyncPipeQueue(size_t recvQueueSize=1000,size_t writeQueueSize=1000);
   virtual void Reset() { reader.Reset(); writer.Reset(); }
-  virtual void Work() { reader.Work(); writer.Work(); }
+  virtual void Work() {}
 
   ///Interfaces that subclasses should use in Work()
   ///Called by subclass to add a message onto the queue
-  void OnRead(const string& msg) { return reader.OnRead(msg); }
-  void OnRead_NoLock(const string& msg) { return reader.OnRead_NoLock(msg); }
+  void OnRead(const std::string& msg) { return reader.OnRead(msg); }
+  void OnRead_NoLock(const std::string& msg) { return reader.OnRead_NoLock(msg); }
   ///Called by subclass to see whether there's a message to send
   bool WriteAvailable() const { return writer.WriteAvailable(); }
   ///Called by subclass to get the next message to send to the destination
-  string OnWrite() { return writer.OnWrite(); }
-  string OnWrite_NoLock() { return writer.OnWrite_NoLock(); }
+  std::string OnWrite() { return writer.OnWrite(); }
+  std::string OnWrite_NoLock() { return writer.OnWrite_NoLock(); }
 
   ///Receive functions
   int MessageCount() { return reader.MessageCount(); }
   int NewMessageCount() { return reader.NewMessageCount(); }
-  string LastMessage() { return reader.LastMessage(); }
-  vector<string> NewMessages() { return reader.NewMessages(); }
-  string NewestMessage() { return reader.NewestMessage(); }
+  std::string LastMessage() { return reader.LastMessage(); }
+  std::vector<std::string> NewMessages() { return reader.NewMessages(); }
+  std::string NewestMessage() { return reader.NewestMessage(); }
 
   ///Send functions
-  void SendMessage(const string& msg) { writer.SendMessage(msg); }
+  void SendMessage(const std::string& msg) { writer.SendMessage(msg); }
   int SentMessageCount() { return writer.SentMessageCount(); }
   int DeliveredMessageCount() { return writer.DeliveredMessageCount(); }
 
@@ -157,11 +120,14 @@ class AsyncPipeQueue
   AsyncWriterQueue writer;
 };
 
-class AsyncTransport
+/** @brief A base class for a transport protocol for
+ * unstructured data.
+ */
+class TransportBase
 {
  public:
-  AsyncTransport() {}
-  virtual ~AsyncTransport() {}
+  TransportBase() {}
+  virtual ~TransportBase() {}
   ///Subclasses -- can the object read?
   virtual bool Start() { return true; }
   virtual bool Stop() { return true; }
@@ -174,22 +140,60 @@ class AsyncTransport
   virtual const char* DoRead() { return NULL; }
   ///Subclasses -- in thread, do some I/O and processing (which may block)
   ///If false is returned, there is some error and the thread quits
-  virtual bool DoWrite(const char* msg) { return false; }
+  virtual bool DoWrite(const char* msg) { return DoWrite(msg,strlen(msg)); }
+  ///Subclasses -- in thread, do some I/O and processing (which may block)
+  ///If false is returned, there is some error and the thread quits
+  virtual bool DoWrite(const char* msg,int length) { return false; }
 };
 
-/** @brief A transport protocol that connects as a client to the given address. */
-class SocketClientTransport : public AsyncTransport
+
+/** @brief A transport protocol that uses STL streams.
+ *
+ * Stream format is controlled by the format member.  By default uses
+ * IntLengthPrepended.
+ *
+ * - IntLengthPrepended: prepends the integer length of the string.
+ * - NullTerminated: simply writes NULL-terminated strings (messages
+ *   must not contain 0 bytes in them!)
+ * - Ascii: writes raw strings, possibly quoted, separated by an endline '\n'.
+ * - Base64: writes Base64 encoded raw messages, separated by an endline '\n'.
+ */
+class StreamTransport : public TransportBase
 {
  public:
+  std::istream* in;
+  std::ostream* out;
+  enum Format { IntLengthPrepended, NullTerminated, Ascii, Base64 };
+  Format format;
+  std::string buffer;
+
+  StreamTransport(std::istream& in);
+  StreamTransport(std::ostream& out);
+  StreamTransport(std::istream& in,std::ostream& out);
+  virtual ~StreamTransport() {}
+  virtual bool ReadReady() { return (in != NULL) && *in; }
+  virtual bool WriteReady() { return (out != NULL) && *out; }
+  virtual const char* DoRead();
+  virtual bool DoWrite(const char* msg,int length);
+};
+
+
+/** @brief A transport protocol that connects as a client to the given address. */
+class SocketClientTransport : public TransportBase
+{
+ public:
+  ///Opens a new client socket on the given address
   SocketClientTransport(const char* addr);
+  ///Initializes with an already open socket
+  SocketClientTransport(const char* addr,SOCKET socket);
   virtual bool Start();
   virtual bool Stop();
   ///Reads a string (4 byte length + data). Note: blocking
   virtual const char* DoRead();
   ///Writes a string (4 byte length + data). Note: blocking.
-  virtual bool DoWrite (const char* str);
+  virtual bool DoWrite (const char* str,int length);
 
-  string addr;
+  std::string addr;
   File socket;
   Mutex mutex;
   char buf[4096];
@@ -197,7 +201,7 @@ class SocketClientTransport : public AsyncTransport
 
 /** @brief A transport protocol that hosts a client and sends messages to
  * the clients after they connect . */
-class SocketServerTransport : public AsyncTransport
+class SocketServerTransport : public TransportBase
 {
  public:
   SocketServerTransport(const char* addr,int maxclients=1);
@@ -209,34 +213,71 @@ class SocketServerTransport : public AsyncTransport
   ///Reads a string (4 byte length + data) from all clients. Note: blocking
   virtual const char* DoRead();
   ///Writes a string (4 byte length + data) to all clients. Note: blocking.
-  virtual bool DoWrite (const char* str);
+  virtual bool DoWrite (const char* str,int length);
 
-  string addr;
+  std::string addr;
   int serversocket;
   int maxclients;
   Mutex mutex;
-  vector<SmartPointer<File> > clientsockets;
+  std::vector<SmartPointer<File> > clientsockets;
   int currentclient;
   char buf[4096];
 };
 
+/** @brief An synchronous reader/writer.
+ * User/subclass will initialize the transport protocol (usually blocking I/O)
+ * by setting the transport member.
+ *
+ * User will call a work loop:
+ *   pipe.Start();
+ *   while(not done) pipe.Work(); 
+ *   pipe.Stop();
+ *
+ * The read / write queues are asynchronous so it is safe to call SendMessage,
+ * NewestMessage, NewMessages from another thread.
+ */
+class SyncPipe : public AsyncPipeQueue
+{
+ public:
+  SyncPipe();
+  virtual ~SyncPipe();
+  virtual void Reset();
+  virtual void Work();
+  ///Subclasses: override these to implement custom starting and stopping routines
+  virtual bool Start() { initialized = true; return true; }
+  virtual void Stop() { initialized = false; }
+  inline bool Connected() { return initialized && (transport->WriteReady() || transport->ReadReady()); }
+  inline bool WriteReady() { return initialized && transport->WriteReady(); }
+  inline bool ReadyReady() { return initialized && transport->ReadReady(); }
 
-///An asynchronous reader that uses multithreading.
-///Subclass will define what that particular process is (usually blocking I/O)
-///by overloading the Callback() function.
-///If no read has occurred for 'timeout' seconds, then the thread will quit
+  SmartPointer<TransportBase> transport;
+
+  bool initialized;
+  Timer timer;
+  double lastReadTime,lastWriteTime;
+};
+
+
+/** @brief An asynchronous reader that uses multithreading.
+ * User/subclass will initialize the transport protocol (usually blocking I/O)
+ * by setting the transport member.
+ *
+ * If no read has occurred for 'timeout' seconds, then the thread will quit
+ *
+ * Stop() or destructor will quit the read thread.
+ */
 class AsyncReaderThread : public AsyncReaderQueue
 {
  public:
   AsyncReaderThread(double timeout=Math::Inf);
   virtual ~AsyncReaderThread();
   virtual void Reset();
-  virtual void Work() { AssertNotReached(); }
+  virtual void Work() { fprintf(stderr,"No need to call Work on AsyncReaderThread\n"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
 
-  SmartPointer<AsyncTransport> transport;
+  SmartPointer<TransportBase> transport;
 
   bool initialized;
   Thread thread;
@@ -246,23 +287,29 @@ class AsyncReaderThread : public AsyncReaderQueue
   double lastReadTime;
 };
 
-///An asynchronous read/writer that uses multithreading.
-///Subclass will define what that particular process is (usually blocking I/O)
-///by overloading the Callback() function.
-///If no read/write has occurred for 'timeout' seconds, then the thread will quit
+/** @brief An asynchronous read/writer that uses multithreading.
+ * Subclass will define the transport protocol by setting the transport member
+ * (usually blocking I/O).
+ * 
+ * If no read/write has occurred for 'timeout' seconds, then the thread will quit
+ *
+ * Stop() or destructor will quit the read/write threads.
+ */
 class AsyncPipeThread : public AsyncPipeQueue
 {
  public:
   AsyncPipeThread(double timeout=Math::Inf);
   virtual ~AsyncPipeThread();
   virtual void Reset();
+  virtual void Work() { fprintf(stderr,"No need to call Work on AsyncReaderThread\n"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
-  inline bool Connected() { return initialized && transport->WriteReady(); }
-  inline bool WriteReady() { return Connected(); }
+  inline bool Connected() { return initialized && (transport->WriteReady() || transport->ReadReady()); }
+  inline bool WriteReady() { return initialized && transport->WriteReady(); }
+  inline bool ReadyReady() { return initialized && transport->ReadReady(); }
 
-  SmartPointer<AsyncTransport> transport;
+  SmartPointer<TransportBase> transport;
 
   bool initialized;
   Thread readThread,writeThread;
@@ -270,12 +317,16 @@ class AsyncPipeThread : public AsyncPipeQueue
 
   Timer timer;
   Mutex mutex;
-  Condition messageAvailable;
   double lastReadTime;
   double lastWriteTime;
 };
 
 
+/** @brief Launches a thread for asynchronous reading from a socket.
+ * 
+ * Calling thread can safely use the AsyncReaderQueue methods e.g., 
+ * NewMessageCount, NewMessage, NewestMessage while the thread is running.
+ */
 class SocketReadWorker : public AsyncReaderThread
 {
  public:
@@ -289,6 +340,13 @@ class SocketReadWorker : public AsyncReaderThread
   }
 };
 
+/** @brief Launches a thread for asynchronous bidirectional communication with
+ * a socket.
+ * 
+ * Calling thread can safely use the AsyncPipeQueue methods e.g., 
+ * SendMessage, NewMessageCount, NewMessage, NewestMessage while the thread 
+ * is running.
+ */
 class SocketPipeWorker : public AsyncPipeThread
 {
  public:
@@ -299,6 +357,12 @@ class SocketPipeWorker : public AsyncPipeThread
       transport = new SocketServerTransport(addr);
     else
       transport = new SocketClientTransport(addr);
+  }
+
+  SocketPipeWorker(const char* addr,SOCKET socket,double timeout=Math::Inf)
+    :AsyncPipeThread(timeout)
+  {
+    transport = new SocketClientTransport(addr,socket);
   }
 };
 

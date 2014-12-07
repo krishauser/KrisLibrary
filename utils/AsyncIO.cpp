@@ -1,9 +1,12 @@
 #include "AsyncIO.h"
 #include "socketutils.h"
+#include "ioutils.h"
+#include "stringutils.h"
 #include <iostream>
 #ifndef WIN32
 #include <unistd.h>
 #endif
+using namespace std;
 
 AsyncReaderQueue::AsyncReaderQueue(size_t _queueMax)
   :queueMax(_queueMax),msgCount(0)
@@ -95,8 +98,57 @@ AsyncPipeQueue::AsyncPipeQueue(size_t _recvQueueMax,size_t _sendQueueMax)
   :reader(_recvQueueMax),writer(_sendQueueMax)
 {}
 
+
+SyncPipe::SyncPipe()
+  :AsyncPipeQueue(),initialized(false),lastReadTime(-1),lastWriteTime(-1)
+{
+}
+
+SyncPipe::~SyncPipe()
+{
+  Stop();
+}
+
+void SyncPipe::Reset()
+{
+  Stop();
+  AsyncPipeQueue::Reset();
+  Start();
+}
+
+void SyncPipe::Work()
+{
+  bool readerr=false,writeerr=false;
+  if(transport->ReadReady()) {
+    const char* res = transport->DoRead();
+    if(res) {
+      if(res[0] != 0) {
+	AsyncPipeQueue::OnRead(res);
+	lastReadTime = timer.ElapsedTime();
+      }
+    }
+    else
+      readerr = true;
+  }
+  if(transport->WriteReady()) {
+    string str = AsyncPipeQueue::OnWrite();
+    if(!str.empty()) {
+      lastWriteTime = timer.ElapsedTime();
+      if(!transport->DoWrite(str.c_str()))
+	writeerr = true;
+    }
+  }
+  if(readerr) {
+    printf("SyncPipe::Work(): An error occurred during reading\n");
+  }
+  if(writeerr) {
+    printf("SyncPipe::Work(): An error occurred during writing\n");
+  }
+}
+
+
 AsyncReaderThread::AsyncReaderThread(double _timeout)
-  :AsyncReaderQueue(1),initialized(false),timeout(_timeout),lastReadTime(-1)
+  :AsyncReaderQueue(),initialized(false),timeout(_timeout),lastReadTime(-1)
 {
 }
 
@@ -166,7 +218,7 @@ void AsyncReaderThread::Stop()
 
 
 AsyncPipeThread::AsyncPipeThread(double _timeout)
-  :AsyncPipeQueue(1),initialized(false),timeout(_timeout),lastReadTime(-1)
+  :AsyncPipeQueue(),initialized(false),timeout(_timeout),lastReadTime(-1)
 {
 }
 
@@ -208,7 +260,7 @@ void* pipe_read_worker_thread_func(void * ptr)
 void* pipe_write_worker_thread_func(void * ptr)
 {
   AsyncPipeThread* data = reinterpret_cast<AsyncPipeThread*>(ptr);
-  while(data->timer.ElapsedTime() < data->lastWriteTime + data->timeout) {
+  while(data->initialized && data->timer.ElapsedTime() < data->lastWriteTime + data->timeout) {
     string send;
     {
       ScopedLock lock(data->mutex);
@@ -253,10 +305,105 @@ void AsyncPipeThread::Stop()
   }
 }
 
+StreamTransport::StreamTransport(std::istream& _in)
+  :in(&_in),out(NULL),format(IntLengthPrepended)
+{}
+
+StreamTransport::StreamTransport(std::ostream& _out)
+  :in(NULL),out(&_out),format(IntLengthPrepended)
+{}
+
+StreamTransport::StreamTransport(std::istream& _in,std::ostream& _out)
+  :in(&_in),out(&_out),format(IntLengthPrepended)
+{}
+
+const char* StreamTransport::DoRead()
+{
+  if(!in) return NULL;
+  buffer = "";
+  switch(format) {
+  case IntLengthPrepended:
+    {
+      char buf[4097];
+      int len;
+      in->read(reinterpret_cast<char*>(&len),sizeof(len));
+      if(!*in) return NULL;
+      while((int)buffer.length() < len) {
+	int size = Max(4096,len-(int)buffer.length());
+	in->read(buf,size);
+	if(!*in) return NULL;
+	buf[size] = 0;
+	buffer += buf;
+      }
+    }
+    break;
+  case NullTerminated:
+    {
+      int c;
+      while((c = in->get()) != EOF) {
+	if(!(*in)) return NULL;
+	buffer += c;
+      }
+    }
+    break;
+  case Ascii:
+    if(!SafeInputString(*in,buffer)) return NULL;
+  
+    break;
+  case Base64:
+    {
+      string base64;
+      (*in) >> base64;
+      if(!(*in)) return NULL;
+      buffer = FromBase64(base64);
+    }
+    break;
+  }
+  return buffer.c_str();
+}
+
+bool StreamTransport::DoWrite(const char* msg,int length)
+{
+  if(!out) return false;
+  switch(format) {
+  case IntLengthPrepended:
+    {
+      out->write(reinterpret_cast<const char*>(&length),sizeof(length));
+      out->write(msg,length);
+    }
+    break;
+  case NullTerminated:
+    {
+      out->write(msg,length);
+      char c=0;
+      out->write(&c,1);
+    }
+    break;
+  case Ascii:
+    if(msg[length] != 0) { fprintf(stderr,"StreamTransport: not writing a NULL-terminated string, Ascii mode\n"); return false; }
+    SafeOutputString(*out,buffer);
+    (*out) << '\n';
+    break;
+  case Base64:
+    {
+      string base64 = ToBase64(msg,length);
+      (*out) << base64 << '\n';
+    }
+    break;
+  }
+  if(!*out) return false;
+  return true;
+}
 
 SocketClientTransport::SocketClientTransport(const char* _addr)
   :addr(_addr)
 {
+}
+
+SocketClientTransport::SocketClientTransport(const char* _addr,SOCKET sock)
+  :addr(_addr)
+{
+  socket.OpenTCPSocket(sock);
 }
 
 const char* SocketClientTransport::DoRead()
@@ -273,6 +420,7 @@ bool SocketClientTransport::Start()
 {
   cout<<"SocketClientTransport: Creating socket on "<<addr<<"..."<<endl;
   bool opened = false;
+  if(socket.Position() >= 0) opened = true;
   while(!opened) {
     if(!socket.Open(addr.c_str(),FILECLIENT)) {
       fprintf(stderr,"SocketTransport: Unable to open address... waiting\n");
@@ -293,10 +441,13 @@ bool SocketClientTransport::Stop()
   return true;
 }
 
-bool SocketClientTransport::DoWrite(const char* str)
+bool SocketClientTransport::DoWrite(const char* str,int length)
 {
   ScopedLock(mutex);
-  return socket.WriteString(str);
+  assert(sizeof(int)==4);
+  if(!socket.WriteData(&length,4)) 
+    return false;
+  return socket.WriteData(str,length);
 }
 
 
@@ -380,7 +531,7 @@ const char* SocketServerTransport::DoRead()
   return NULL;
 }
 
-bool SocketServerTransport::DoWrite(const char* str)
+bool SocketServerTransport::DoWrite(const char* str,int length)
 {
   ScopedLock(mutex);
   if((int)clientsockets.size() < maxclients) {
@@ -397,7 +548,7 @@ bool SocketServerTransport::DoWrite(const char* str)
   }
 
   for(size_t i=0;i<clientsockets.size();i++) {
-    if(!clientsockets[i]->WriteString(str)) {
+    if(!clientsockets[i]->WriteData(&length,4) || !clientsockets[i]->WriteData(str,length)) {
       printf("SocketServer: Lost client %d\n",i);
       //close the client
       clientsockets[i] = NULL;
