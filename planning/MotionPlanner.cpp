@@ -14,6 +14,7 @@ class EdgeDistance
  public:
   Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
   {
+    if(!e) return 1.0;
     assert(e->Space() != NULL);
     Real res = e->Space()->Distance(e->Start(),e->Goal());
     if(res <= 0) {
