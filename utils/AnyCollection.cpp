@@ -467,11 +467,11 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       }
       else {
 	if(reference[i]==rbracket) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",i);
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",(int)i);
 	  return false;
 	}
 	if(i!=0) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected string in position %d\n",i);
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected string in position %d\n",(int)i);
 	  return false;
 	}
 	mode = 1;
@@ -481,7 +481,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
     case 1: //reading member key
       if(reference[i]=='\"') {
 	if(i>start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation at position %d\n",i);
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation at position %d\n",(int)i);
 	  return false;
 	}
 	mode = 3;
@@ -490,7 +490,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       else if(reference[i]==delim || reference[i]==lbracket) { 
 	//read out path entry
 	if(i<start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: empty reference string in position %d, start of ref in position %d\n",i,start);
+	  fprintf(stderr,"AnyCollection::parse_reference: empty reference string in position %d, start of ref in position %d\n",(int)i,(int)start);
 	  return false;
 	}
 	path.push_back(reference.substr(start,i-start));
@@ -499,14 +499,14 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
 	else mode = 1; //ending at delim
       }
       else if(reference[i]==rbracket) {
-	fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",i);
+	fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",(int)i);
 	return false;
       }
       break;
     case 2: //reading array key
       if(reference[i]=='\"') {
 	if(i>start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation in key at position %d\n",i);
+	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation in key at position %d\n",(int)i);
 	  return false;
 	}
 	mode = 4;
@@ -517,7 +517,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
 	mode = 0;
       }
       else if(reference[i]==lbracket || reference[i]==delim) {
-	fprintf(stderr,"AnyCollection::parse_reference: unexpected character %c in key in position %d\n",reference[i],i);
+	fprintf(stderr,"AnyCollection::parse_reference: unexpected character %c in key in position %d\n",reference[i],(int)i);
 	return false;
       }
       break;
@@ -535,7 +535,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       break;
     case 5: //end of quoted array key
       if(reference[i]!=rbracket) {
-	fprintf(stderr,"AnyCollection::parse_reference: quoted array key must be followed by right bracket at position %d\n",i);
+	fprintf(stderr,"AnyCollection::parse_reference: quoted array key must be followed by right bracket at position %d\n",(int)i);
 	return false;
       }
       mode = 0;
@@ -1375,7 +1375,7 @@ bool AnyCollection::read(std::istream& in)
     SmartPointer<AnyCollection> value;
     value = new AnyCollection();
     if(!value->read(in)) {
-      fprintf(stderr,"AnyCollection(): read failed on array item %d\n",array.size());
+      fprintf(stderr,"AnyCollection(): read failed on array item %d\n",(int)array.size());
       return false;
     }
     array.push_back(value);
@@ -1387,14 +1387,14 @@ bool AnyCollection::read(std::istream& in)
       }
       value = new AnyCollection();
       if(!value->read(in)) {
-	fprintf(stderr,"AnyCollection(): read failed on array item %d\n",array.size());
+	fprintf(stderr,"AnyCollection(): read failed on array item %d\n",(int)array.size());
 	return false;
       }
       array.push_back(value);
       EatWhitespace(in);
     }
     if(!in) {
-      fprintf(stderr,"AnyCollection(): file ended before end-of-list item %d\n",array.size());
+      fprintf(stderr,"AnyCollection(): file ended before end-of-list item %d\n",(int)array.size());
       return false;
     }
     in.get();
@@ -1414,7 +1414,7 @@ bool AnyCollection::read(std::istream& in)
     SmartPointer<AnyCollection> value;
     while(true) {
       if(!ReadValue(key.value,in,":")) {
-	fprintf(stderr,"AnyCollection(): read failed on map item %d\n",map.size());
+	fprintf(stderr,"AnyCollection(): read failed on map item %d\n",(int)map.size());
 	return false;
       }
       EatWhitespace(in);
