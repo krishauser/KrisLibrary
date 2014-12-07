@@ -507,7 +507,7 @@ bool File::ReadString(char* str, int bufsize)
 			{
 				c = ReadChar(file);
 				if(c==EOF) {
-				  fprintf(stderr,"File::ReadString hit end of file without finding null character\n");
+				  if(i != 0) fprintf(stderr,"File::ReadString hit end of file without finding null character\n");
 				  return false;
 				}
 				str[i]=c;
