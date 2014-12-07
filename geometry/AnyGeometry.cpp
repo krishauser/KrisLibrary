@@ -27,6 +27,10 @@ AnyGeometry3D::AnyGeometry3D(const Meshing::VolumeGrid& grid)
   :type(ImplicitSurface),data(grid)
 {}
 
+AnyGeometry3D::AnyGeometry3D(const vector<AnyGeometry3D>& group)
+  :type(Group),data(group)
+{}
+
 AnyGeometry3D::AnyGeometry3D(const AnyGeometry3D& geom)
   :type(geom.type),data(geom.data)
 {}
@@ -38,6 +42,7 @@ const char* AnyGeometry3D::TypeName(Type type)
   case TriangleMesh: return "TriangleMesh";
   case PointCloud: return "PointCloud";
   case ImplicitSurface: return "ImplicitSurface";
+  case Group: return "Group";
   default: return "Error";
   }
 }
@@ -53,6 +58,8 @@ bool AnyGeometry3D::Empty() const
     return AsPointCloud().points.empty();
   case ImplicitSurface:
     return false;
+  case Group:
+    return AsGroup().empty();
   }
   return false;
 }
@@ -68,14 +75,15 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D>& geoms)
   }
   else {
     type = geoms[nonempty[0]].type;
+    bool group = false;
     for(size_t i=1;i<nonempty.size();i++)
       if(geoms[nonempty[i]].type != type) {
-	printf("Type %s vs %s\n",AnyGeometry3D::TypeName(type),geoms[nonempty[i]].TypeName());
-	FatalError("Can't mix multiple geometry types together yet\n");
+	//its' a group type
+	group = true;
       }
     switch(type) {
     case Primitive:
-      FatalError("Can't mix multiple primitive geometries together yet\n");
+      group = true;
       break;
     case TriangleMesh:
       {
@@ -88,11 +96,24 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D>& geoms)
       }
       break;
     case PointCloud:
-      FatalError("Can't mix multiple point clouds together yet\n");
+      group = true;
       break;
     case ImplicitSurface:
-      FatalError("Can't mix multiple volume grids together yet\n");
+      group = true;
       break;
+    case Group:
+      //don't need to add an extra level of hierarchy
+      {
+	vector<AnyGeometry3D> items;
+	for(size_t i=0;i<nonempty.size();i++)
+	  items.insert(items.end(),geoms[nonempty[i]].AsGroup().begin(),geoms[nonempty[i]].AsGroup().end());
+	data = items;
+      }
+      break;
+    }
+    if(group) {
+      type = Group;
+      data = geoms;
     }
   }
 }
@@ -112,6 +133,8 @@ size_t AnyGeometry3D::NumElements() const
       IntTriple size = AsImplicitSurface().value.size();
       return size.a*size.b*size.c;
     }
+  case Group:
+    return AsGroup().size();
   }
   return 0;
 }
@@ -185,6 +208,8 @@ bool AnyGeometry3D::Save(const char* fn) const
     return true;
     }
     break;
+  case Group:
+    break;
   }
   //default save
   ofstream out(fn,ios::out);
@@ -227,6 +252,10 @@ bool AnyGeometry3D::Load(istream& in)
     data = Meshing::VolumeGrid();
     in >> this->AsImplicitSurface();
   }
+  else if(typestr == "Group") {
+    fprintf(stderr,"AnyGeometry::Load(): TODO: groups\n");
+    return false;
+  }
   if(!in) return false;
   return true;
 }
@@ -247,6 +276,9 @@ bool AnyGeometry3D::Save(ostream& out) const
   case ImplicitSurface:
     out<<this->AsImplicitSurface()<<endl;
     break;
+  case Group:
+    fprintf(stderr,"AnyGeometry::Save(): TODO: groups\n");
+    return false;
   }
   return true;
 }
@@ -278,6 +310,13 @@ void AnyGeometry3D::Transform(const Matrix4& T)
       AsImplicitSurface().bb.bmax = T*AsImplicitSurface().bb.bmax;
     }
     break;
+  case Group:
+    {
+      vector<AnyGeometry3D>& items = AsGroup();
+      for(size_t i=0;i<items.size();i++)
+	items[i].Transform(T);
+    }
+    break;
   }
 }
 
@@ -303,6 +342,15 @@ AABB3D AnyGeometry3D::GetAABB() const
     return bb;
   case ImplicitSurface:
     AsImplicitSurface().bb;
+    break;
+  case Group:
+    {
+      const vector<AnyGeometry3D>& items = AsGroup();
+      for(size_t i=0;i<items.size();i++) {
+	AABB3D itembb = items[i].GetAABB();
+	bb.setUnion(itembb);
+      }
+    }
     break;
   }
   return bb;
@@ -339,6 +387,14 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid)
   InitCollisions();
 }
 
+
+AnyCollisionGeometry3D::AnyCollisionGeometry3D(const vector<AnyGeometry3D>& items)
+  :AnyGeometry3D(items),margin(0)
+{
+  InitCollisions();
+}
+
+
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyGeometry3D& geom)
   :AnyGeometry3D(geom),margin(0)
 {
@@ -366,6 +422,15 @@ void AnyCollisionGeometry3D::InitCollisions()
     break;
   case PointCloud:
     collisionData = CollisionPointCloud(AsPointCloud());
+  case Group:
+    {
+      collisionData = vector<AnyCollisionGeometry3D>();
+      vector<AnyCollisionGeometry3D>& colitems = GroupCollisionData();
+      vector<AnyGeometry3D>& items = AsGroup();
+      colitems.resize(items.size());
+      for(size_t i=0;i<items.size();i++)
+	colitems[i] = AnyCollisionGeometry3D(items[i]);
+    }
     break;
   }
 }
@@ -391,6 +456,14 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
       Box3D b = GetBB();
       b.getAABB(bb);
       return bb;
+    }
+  case Group:
+    {
+      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      AABB3D bb;
+      bb.minimize();
+      for(size_t i=0;i<items.size();i++)
+	bb.setUnion(items[i].GetAABB());
     }
   }
   AssertNotReached();
@@ -423,6 +496,12 @@ Box3D AnyCollisionGeometry3D::GetBB() const
   case ImplicitSurface:
     b.setTransformed(AsImplicitSurface().bb,ImplicitSurfaceCollisionData());
     break;
+  case Group:
+    {
+      AABB3D bb = GetAABB();
+      b.set(bb);
+    }
+    break;
   }
   return b;
 }
@@ -442,6 +521,8 @@ RigidTransform AnyCollisionGeometry3D::GetTransform() const
     return TriangleMeshCollisionData().currentTransform;
   case PointCloud:
     return PointCloudCollisionData().currentTransform;
+  case Group:
+    return GroupCollisionData()[0].GetTransform();
   }
   AssertNotReached();
   RigidTransform T;
@@ -461,6 +542,13 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform& T)
     break;
   case PointCloud:
     PointCloudCollisionData().currentTransform = T;
+    break;
+  case Group:
+    {
+      vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      for(size_t i=0;i<items.size();i++)
+	items[i].SetTransform(T);
+    }
     break;
   }
 }
@@ -488,6 +576,14 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt) const
 	dmin = Min(dmin,ptlocal.distanceSquared(pc.points[i]));
       return Min(Sqrt(dmin)-margin,0.0);
     }
+  case Group:
+    {
+      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      Real dmin = Inf;
+      for(size_t i=0;i<items.size();i++)
+	dmin = Min(dmin,items[i].Distance(pt));
+      return Min(Sqrt(dmin)-margin,0.0);
+    }
   }
   return Inf;
 }
@@ -498,7 +594,7 @@ bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real
 	      vector<int>& gridelements,size_t maxContacts)
 {
   if(a.type != GeometricPrimitive3D::Point && a.type != GeometricPrimitive3D::Sphere) {
-    FatalError("Can't collide an implicit surface and a primitive yet\n");
+    FatalError("Can't collide an implicit surface and a non-sphere primitive yet\n");
   }
   if(a.type == GeometricPrimitive3D::Point) {
     const Vector3& pt = *AnyCast<Vector3>(&a.data);
@@ -653,6 +749,23 @@ bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin
       return true;
     }
     return false;
+  case AnyCollisionGeometry3D::Group:
+    {
+      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      elements1.resize(0);
+      elements2.resize(0);
+      for(size_t i=0;i<bitems.size();i++) {
+	vector<int> e1,e2;
+	if(Collides(a,Ta,margin+b.margin,bitems[i],e1,e2,maxContacts)) {
+	  for(size_t j=0;j<e1.size();j++) {
+	    elements1.push_back(e1[j]);
+	    elements2.push_back((int)i);
+	  }
+	  if(elements2.size() >= maxContacts) return true;
+	}
+      }
+      return !elements1.empty();
+    }
   default:
     FatalError("Invalid type");
   }
@@ -680,6 +793,23 @@ bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,Real margin,
     return ::Collides(a,Ta,b.TriangleMeshCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
   case AnyCollisionGeometry3D::PointCloud:
     return ::Collides(a,Ta,b.PointCloudCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
+  case AnyCollisionGeometry3D::Group:
+    {
+      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      elements1.resize(0);
+      elements2.resize(0);
+      for(size_t i=0;i<bitems.size();i++) {
+	vector<int> e1,e2;
+	if(Collides(a,Ta,margin+b.margin,bitems[i],e1,e2,maxContacts)) {
+	  for(size_t j=0;j<e1.size();j++) {
+	    elements1.push_back(e1[j]);
+	    elements2.push_back((int)i);
+	  }
+	  if(elements2.size() >= maxContacts) return true;
+	}
+      }
+      return !elements1.empty();
+    }
   default:
     FatalError("Invalid type");
   }
@@ -706,6 +836,23 @@ bool Collides(const CollisionMesh& a,Real margin,const AnyCollisionGeometry3D& b
     return ::Collides(a,b.TriangleMeshCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
   case AnyCollisionGeometry3D::PointCloud:
     return ::Collides(a,b.PointCloudCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
+  case AnyCollisionGeometry3D::Group:
+    {
+      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      elements1.resize(0);
+      elements2.resize(0);
+      for(size_t i=0;i<bitems.size();i++) {
+	vector<int> e1,e2;
+	if(Collides(a,margin+b.margin,bitems[i],e1,e2,maxContacts)) {
+	  for(size_t j=0;j<e1.size();j++) {
+	    elements1.push_back(e1[j]);
+	    elements2.push_back((int)i);
+	  }
+	  if(elements2.size() >= maxContacts) return true;
+	}
+      }
+      return !elements1.empty();
+    }
   default:
     FatalError("Invalid type");
   }
@@ -732,10 +879,43 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
     return ::Collides(b.TriangleMeshCollisionData(),a,margin+b.margin,elements2,elements1,maxContacts);
   case AnyCollisionGeometry3D::PointCloud:
     return ::Collides(a,b.PointCloudCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
+  case AnyCollisionGeometry3D::Group:
+    {
+      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      elements1.resize(0);
+      elements2.resize(0);
+      for(size_t i=0;i<bitems.size();i++) {
+	vector<int> e1,e2;
+	if(Collides(a,margin+b.margin,bitems[i],e1,e2,maxContacts)) {
+	  for(size_t j=0;j<e1.size();j++) {
+	    elements1.push_back(e1[j]);
+	    elements2.push_back((int)i);
+	  }
+	  if(elements2.size() >= maxContacts) return true;
+	}
+      }
+      return !elements1.empty();
+    }
   default:
     FatalError("Invalid type");
   }
   return false;
+}
+
+bool Collides(const vector<AnyCollisionGeometry3D>& group,Real margin,const AnyCollisionGeometry3D& b,
+	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
+{
+  for(size_t i=0;i<group.size();i++) {
+    vector<int> ei1,ei2;
+    if(group[i].WithinDistance(b,margin,ei1,ei2,maxContacts-(int)elements1.size())) {
+      for(size_t j=0;j<ei1.size();j++) {
+	elements1.push_back((int)i);
+	elements2.push_back((int)ei2[j]);
+      }
+      if(elements2.size()>=maxContacts) return true;
+    }
+  }
+  return !elements2.empty();
 }
 
 
@@ -757,6 +937,8 @@ bool AnyCollisionGeometry3D::Collides(const AnyCollisionGeometry3D& geom,
     return ::Collides(TriangleMeshCollisionData(),margin,geom,elements1,elements2,maxContacts);
   case PointCloud:
     return ::Collides(PointCloudCollisionData(),margin,geom,elements1,elements2,maxContacts);
+  case Group:
+    return ::Collides(GroupCollisionData(),margin,geom,elements1,elements2,maxContacts);
   default:
     FatalError("Invalid type");
   }
@@ -793,6 +975,8 @@ bool AnyCollisionGeometry3D::WithinDistance(const AnyCollisionGeometry3D& geom,R
     return ::Collides(TriangleMeshCollisionData(),margin+tol,geom,elements1,elements2,maxContacts);
   case PointCloud:
     return ::Collides(PointCloudCollisionData(),margin+tol,geom,elements1,elements2,maxContacts);
+  case Group:
+    return ::Collides(GroupCollisionData(),margin+tol,geom,elements1,elements2,maxContacts);
   default:
     FatalError("Invalid type");
   }
@@ -862,6 +1046,23 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D& r,Real* distance,int* element)
       if(distance) *distance = closest;
       if(element) *element = closestpt;
       return closestpt >= 0;
+    }
+  case Group:
+    {
+      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      Real closest = Inf;
+      for(size_t i=0;i<items.size();i++) {
+	Real d;
+	int elem;
+	if(items[i].RayCast(r,&d,&elem)) {
+	  if(d < closest) {
+	    closest = d;
+	    if(element) *element = (int)i;
+	  }
+	}
+      }
+      if(distance) *distance = closest;
+      return !IsInf(closest);
     }
   }  
   return false;

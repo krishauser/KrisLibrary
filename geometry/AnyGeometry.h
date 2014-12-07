@@ -25,14 +25,16 @@ class AnyGeometry3D
    * - TriangleMesh: TriMesh
    * - PointCloud: PointCloud3D
    * - ImplicitSurface: VolumeGrid
+   * - Group: vector<AnyGeometry3D>
    */
-  enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface };
+  enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface, Group };
 
   AnyGeometry3D();
   AnyGeometry3D(const GeometricPrimitive3D& primitive);
   AnyGeometry3D(const Meshing::TriMesh& mesh);
   AnyGeometry3D(const Meshing::PointCloud3D& pc);
   AnyGeometry3D(const Meshing::VolumeGrid& grid);
+  AnyGeometry3D(const vector<AnyGeometry3D>& items);
   AnyGeometry3D(const AnyGeometry3D& geom);
   static const char* TypeName(Type type);
   const char* TypeName() const { return AnyGeometry3D::TypeName(type); }
@@ -40,10 +42,12 @@ class AnyGeometry3D
   const Meshing::TriMesh& AsTriangleMesh() const { return *AnyCast<Meshing::TriMesh>(&data); }
   const Meshing::PointCloud3D& AsPointCloud() const { return *AnyCast<Meshing::PointCloud3D>(&data); }
   const Meshing::VolumeGrid& AsImplicitSurface() const { return *AnyCast<Meshing::VolumeGrid>(&data); }
+  const vector<AnyGeometry3D>& AsGroup() const { return *AnyCast<vector<AnyGeometry3D> >(&data); }
   GeometricPrimitive3D& AsPrimitive() { return *AnyCast<GeometricPrimitive3D>(&data); }
   Meshing::TriMesh& AsTriangleMesh() { return *AnyCast<Meshing::TriMesh>(&data); }
   Meshing::PointCloud3D& AsPointCloud() { return *AnyCast<Meshing::PointCloud3D>(&data); }
   Meshing::VolumeGrid& AsImplicitSurface() { return *AnyCast<Meshing::VolumeGrid>(&data); }
+  vector<AnyGeometry3D>& AsGroup() { return *AnyCast<vector<AnyGeometry3D> >(&data); }
   static bool CanLoadExt(const char* ext);
   static bool CanSaveExt(const char* ext);
   bool Load(const char* fn);
@@ -76,6 +80,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc);
   AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid);
   AnyCollisionGeometry3D(const AnyGeometry3D& geom);
+  AnyCollisionGeometry3D(const vector<AnyGeometry3D>& group);
   AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom);
   ///May be called after Load()
   void InitCollisions();
@@ -83,10 +88,12 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   const CollisionMesh& TriangleMeshCollisionData() const { return *AnyCast<CollisionMesh>(&collisionData); }
   const CollisionPointCloud& PointCloudCollisionData() const { return *AnyCast<CollisionPointCloud>(&collisionData); }
   const RigidTransform& ImplicitSurfaceCollisionData() const { return *AnyCast<RigidTransform>(&collisionData); }
+  const vector<AnyCollisionGeometry3D>& GroupCollisionData() const { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
   RigidTransform& PrimitiveCollisionData() { return *AnyCast<RigidTransform>(&collisionData); }
   CollisionMesh& TriangleMeshCollisionData() { return *AnyCast<CollisionMesh>(&collisionData); }
   CollisionPointCloud& PointCloudCollisionData() { return *AnyCast<CollisionPointCloud>(&collisionData); }
   RigidTransform& ImplicitSurfaceCollisionData() { return *AnyCast<RigidTransform>(&collisionData); }
+  vector<AnyCollisionGeometry3D>& GroupCollisionData() { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
   AABB3D GetAABB() const;
   Box3D GetBB() const;
   ///Gets the active transform
@@ -110,6 +117,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
    * - TriangleMesh: CollisionMesh
    * - PointCloud: CollisionPointCloud
    * - VolumeGrid: RigidTransform
+   * - Group: vector<AnyCollisionGeometry3D>
    */
   AnyValue collisionData;
   ///Amount by which the underlying geometry is "fattened"
