@@ -150,6 +150,15 @@ class AnyCollection
   AnyCollection& operator = (const AnyCollection& rhs);
   ///set to a value
   AnyCollection& operator = (AnyValue value);
+  ///set to a primitive data type that can accidentally be cast to a char*
+  AnyCollection& operator = (bool v) { return operator = (AnyValue(v)); }
+  AnyCollection& operator = (char v) { return operator = (AnyValue(v)); }
+  AnyCollection& operator = (unsigned char v) { return operator = (AnyValue(v)); }
+  AnyCollection& operator = (int v) { return operator = (AnyValue(v)); }
+  AnyCollection& operator = (unsigned int v) { return operator = (AnyValue(v)); }
+  AnyCollection& operator = (float v) { return operator = (AnyValue(v)); }
+  AnyCollection& operator = (double v) { return operator = (AnyValue(v)); }
+  AnyCollection& operator = (const std::string& str) { return operator = (AnyValue(str)); }
   ///set to a C-string
   AnyCollection& operator = (const char* str) { return operator = (std::string(str)); }
   ///set to an array
