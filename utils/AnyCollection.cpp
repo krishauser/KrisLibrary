@@ -76,7 +76,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       //check for invalid values
       for(size_t i=0;i<str.length();i++) {
 	if(!(isalnum(str[i])||str[i]=='_')) {
-	  std::cerr<<"ReadyValue: Invalid basic data type \""<<str<<"\""<<std::endl;
+	  std::cerr<<"ReadValue: Invalid basic data type \""<<str<<"\""<<std::endl;
 	  return false;
 	}
       }
@@ -847,8 +847,9 @@ SmartPointer<AnyCollection> AnyCollection::insert(int index)
   }
   if(type == Array) {
     if(index == (int)array.size()) { //resize by one
+      size_t start = array.size();
       array.resize(index+1);
-      for(int i=index;i<(int)array.size();i++)
+      for(int i=start;i<(int)array.size();i++)
 	array[i] = new AnyCollection();
     }
     else if(index > (int)array.size()) {
@@ -912,8 +913,9 @@ SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
       return NULL;
     }
     if(index >= (int)array.size()) {
+      size_t start = array.size();
       array.resize(index+1);
-      for(int i=index;i<(int)array.size();i++)
+      for(size_t i=start;i<array.size();i++)
 	array[i] = new AnyCollection();
     }
     return array[index];
@@ -945,8 +947,9 @@ AnyCollection& AnyCollection::operator[](int index)
 
   if(type == Array) {
     if(index >= (int)array.size()) { //resize 
+      size_t start = array.size();
       array.resize(index+1);
-      for(int i=index;i<(int)array.size();i++)
+      for(size_t i=start;i<array.size();i++)
 	array[i] = new AnyCollection();
     }
     return *array[index];
@@ -1011,8 +1014,9 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
       return *this;
     }
     if(index >= (int)array.size()) {
+      size_t start = array.size();
       array.resize(index+1);
-      for(int i=index;i<(int)array.size();i++)
+      for(int i=start;i<(int)array.size();i++)
 	array[i] = new AnyCollection();
     }
     return *array[index];
@@ -1029,6 +1033,8 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
   return *this;
 }
 
+const static AnyCollection nullCollection;
+
 const AnyCollection& AnyCollection::operator[](AnyKeyable key) const
 {
   if(type == Array) {
@@ -1037,6 +1043,7 @@ const AnyCollection& AnyCollection::operator[](AnyKeyable key) const
     else if(key.value.hastype<unsigned int>())
       return *array[*AnyCast<unsigned int>(&key.value)];
     else {
+      return nullCollection;
       FatalError("AnyCollection: can't lookup arrays with non-integer types");
       return *this;
     }
@@ -1044,11 +1051,16 @@ const AnyCollection& AnyCollection::operator[](AnyKeyable key) const
   else if(type == Map) {
     MapType::const_iterator i=map.find(key);
     if(i == map.end()) {
-      FatalError("AnyCollection: Can't find key\n");
+      return nullCollection;
+      std::cerr<<"AnyCollection: const [] accessor can't find key";
+      WriteValue(key.value,std::cerr);
+      std::cerr<<std::endl;
+      Abort();
       return *this;
     }
     return *i->second;
   }
+  return nullCollection;
   FatalError("AnyCollection: Can't lookup non-collection types");
   return *this;
 
