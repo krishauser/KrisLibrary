@@ -116,6 +116,20 @@ void SyncPipe::Reset()
   Start();
 }
 
+bool SyncPipe::Start() 
+{ 
+  if(!transport) return false;
+  if(!transport->Start()) return false;
+  initialized = true; 
+  return true; 
+}
+
+void SyncPipe::Stop() { 
+  if(!transport) return;
+  transport->Stop();
+  initialized = false; 
+}
+
 void SyncPipe::Work()
 {
   bool readerr=false,writeerr=false;
@@ -171,6 +185,7 @@ void* read_worker_thread_func(void * ptr)
     const char* res = data->transport->DoRead();
     if(!res) {
       fprintf(stderr,"AsyncReaderThread: abnormal termination, read failed\n");
+      data->Stop();
       return NULL;
     }
     if(res[0] == 0) continue;
@@ -234,47 +249,46 @@ void AsyncPipeThread::Reset()
   Start();
 }
 
-void* pipe_read_worker_thread_func(void * ptr)
+void* pipe_worker_thread_func(void * ptr)
 {
   AsyncPipeThread* data = reinterpret_cast<AsyncPipeThread*>(ptr);
-  while(data->timer.ElapsedTime() < data->lastReadTime + data->timeout) {
-    const char* res = data->transport->DoRead();
-    if(!res) {
-      fprintf(stderr,"AsyncReaderThread: abnormal termination\n");
-      data->Stop();
+  while(data->initialized) {
+    double t = data->timer.ElapsedTime();
+    if(t >= data->lastReadTime + data->timeout && t >= data->lastWriteTime + data->timeout) {
+      //explicit close or timeout
       return NULL;
-    } 
-    if(res[0] == 0) continue;
-    
-    {
-      ScopedLock lock(data->mutex);     
-	  //don't do _NoLock: the read queue needs locking
-      data->OnRead(res);
-      data->lastReadTime = data->timer.ElapsedTime();
-      //mutex unlocked
     }
-    ThreadYield();
-  }
-  return NULL;
-}
-
-void* pipe_write_worker_thread_func(void * ptr)
-{
-  AsyncPipeThread* data = reinterpret_cast<AsyncPipeThread*>(ptr);
-  while(data->initialized && data->timer.ElapsedTime() < data->lastWriteTime + data->timeout) {
-    string send;
-    {
-      ScopedLock lock(data->mutex);
-	  //don't do _NoLock: the write queue needs locking
-      send = data->OnWrite();
-      data->lastWriteTime = data->timer.ElapsedTime();
-      //mutex unlocked
-    }
-    if(!send.empty()) {
-      if(!data->transport->DoWrite(send.c_str())) {
-	fprintf(stderr,"AsyncPipeThread: abnormal termination\n");
+    if(data->transport->ReadReady()) {
+      const char* res = data->transport->DoRead();
+      if(!res) {
+	fprintf(stderr,"AsyncPipeThread: abnormal termination, read failed\n");
 	data->Stop();
+	fprintf(stderr,"Stopped...\n");
 	return NULL;
+      } 
+      if(res[0] != 0) { //nonempty string
+	ScopedLock lock(data->mutex);     
+	//don't do _NoLock: the read queue needs locking
+	data->OnRead(res);
+	data->lastReadTime = data->timer.ElapsedTime();
+	//mutex unlocked
+      }
+    }
+    if(data->transport->WriteReady()) {
+      string send;
+      {
+	ScopedLock lock(data->mutex);
+	//don't do _NoLock: the write queue needs locking
+	send = data->OnWrite();
+	data->lastWriteTime = data->timer.ElapsedTime();
+	//mutex unlocked
+      }
+      if(!send.empty()) {
+	if(!data->transport->DoWrite(send.c_str())) {
+	  fprintf(stderr,"AsyncPipeThread: abnormal termination, write failed\n");
+	  data->Stop();
+	  return NULL;
+	}
       }
     }
     ThreadYield();
@@ -282,16 +296,14 @@ void* pipe_write_worker_thread_func(void * ptr)
   return NULL;
 }
 
-
 bool AsyncPipeThread::Start()
 {
   if(!transport) return false;
   if(!initialized) {
     if(!transport->Start()) return false;
     lastReadTime = lastWriteTime = 0;
-    readThread = ThreadStart(pipe_read_worker_thread_func,this);
-    writeThread = ThreadStart(pipe_write_worker_thread_func,this);
     initialized = true;
+    workerThread = ThreadStart(pipe_worker_thread_func,this);
   }
   return true;
 }
@@ -300,8 +312,7 @@ void AsyncPipeThread::Stop()
 {
   if(initialized) {
     timeout = 0;
-    ThreadJoin(readThread);
-    ThreadJoin(writeThread);
+    ThreadJoin(workerThread);
     transport->Stop();
     initialized = false;
   }
@@ -408,11 +419,21 @@ SocketClientTransport::SocketClientTransport(const char* _addr,SOCKET sock)
   socket.OpenTCPSocket(sock);
 }
 
+bool SocketClientTransport::ReadReady()
+{
+  return socket.ReadAvailable();
+}
+
+bool SocketClientTransport::WriteReady()
+{
+  return socket.WriteAvailable();
+}
+
 const char* SocketClientTransport::DoRead()
 {
   ScopedLock(mutex);
   if(!socket.ReadString(buf,4096)) {
-    cout<<"SocketReadWorker: Error reading string..."<<endl;
+    cout<<"SocketClientTransport: Error reading string on "<<addr<<"..."<<endl;
     return NULL;
   }
   return buf;
@@ -422,7 +443,7 @@ bool SocketClientTransport::Start()
 {
   cout<<"SocketClientTransport: Creating socket on "<<addr<<"..."<<endl;
   bool opened = false;
-  if(socket.Position() >= 0) opened = true;
+  if(socket.IsOpen()) opened = true;
   while(!opened) {
     if(!socket.Open(addr.c_str(),FILECLIENT)) {
       fprintf(stderr,"SocketTransport: Unable to open address... waiting\n");
@@ -437,9 +458,11 @@ bool SocketClientTransport::Start()
 
 bool SocketClientTransport::Stop()
 {
-  cout<<"SocketClientTransport: Stopping."<<endl;
   ScopedLock(mutex);
-  socket.Close();
+  if(socket.IsOpen()) {
+    cout<<"SocketClientTransport: Closing "<<addr<<endl;
+    socket.Close();
+  }
   return true;
 }
 
@@ -486,7 +509,8 @@ bool SocketServerTransport::Stop()
 
 bool SocketServerTransport::ReadReady()
 {
-  return !clientsockets.empty();
+  return true;
+  //return !clientsockets.empty();
 }
 
 bool SocketServerTransport::WriteReady()
@@ -511,13 +535,22 @@ const char* SocketServerTransport::DoRead()
     return buf;
   }
 
+  int iters=0;
   currentclient = (currentclient+1) % clientsockets.size();
   while(!clientsockets.empty()) {
     //loop through the sockets
-    if(clientsockets[currentclient]->ReadString(buf,4096))
+    if(!clientsockets[currentclient]->ReadAvailable()) {
+      currentclient = (currentclient+1) % clientsockets.size();
+      //if we've looped through all clients, break
+      iters++;
+      if(iters == (int)clientsockets.size()) break;
+      continue;
+    }
+    if(clientsockets[currentclient]->ReadString(buf,4096)) {
       return buf;
+    }
     //close the client
-    printf("SocketServer: Lost client %d\n",currentclient);
+    printf("SocketServerTransport: Lost client %d\n",currentclient);
     clientsockets[currentclient] = NULL;
     clientsockets[currentclient] = clientsockets.back();
     clientsockets.resize(clientsockets.size()-1);
@@ -551,7 +584,7 @@ bool SocketServerTransport::DoWrite(const char* str,int length)
 
   for(size_t i=0;i<clientsockets.size();i++) {
     if(!clientsockets[i]->WriteData(&length,4) || !clientsockets[i]->WriteData(str,length)) {
-      printf("SocketServer: Lost client %d\n",i);
+      printf("SocketServerTransport: Lost client %d\n",(int)i);
       //close the client
       clientsockets[i] = NULL;
       clientsockets[i] = clientsockets.back();

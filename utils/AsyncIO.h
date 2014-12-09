@@ -186,6 +186,8 @@ class SocketClientTransport : public TransportBase
   SocketClientTransport(const char* addr);
   ///Initializes with an already open socket
   SocketClientTransport(const char* addr,SOCKET socket);
+  virtual bool ReadReady();
+  virtual bool WriteReady();
   virtual bool Start();
   virtual bool Stop();
   ///Reads a string (4 byte length + data). Note: blocking
@@ -244,11 +246,11 @@ class SyncPipe : public AsyncPipeQueue
   virtual void Reset();
   virtual void Work();
   ///Subclasses: override these to implement custom starting and stopping routines
-  virtual bool Start() { initialized = true; return true; }
-  virtual void Stop() { initialized = false; }
+  virtual bool Start();
+  virtual void Stop();
   inline bool Connected() { return initialized && (transport->WriteReady() || transport->ReadReady()); }
   inline bool WriteReady() { return initialized && transport->WriteReady(); }
-  inline bool ReadyReady() { return initialized && transport->ReadReady(); }
+  inline bool ReadReady() { return initialized && transport->ReadReady(); }
 
   SmartPointer<TransportBase> transport;
 
@@ -307,12 +309,12 @@ class AsyncPipeThread : public AsyncPipeQueue
   virtual void Stop();
   inline bool Connected() { return initialized && (transport->WriteReady() || transport->ReadReady()); }
   inline bool WriteReady() { return initialized && transport->WriteReady(); }
-  inline bool ReadyReady() { return initialized && transport->ReadReady(); }
+  inline bool ReadReady() { return initialized && transport->ReadReady(); }
 
   SmartPointer<TransportBase> transport;
 
   bool initialized;
-  Thread readThread,writeThread;
+  Thread workerThread;
   double timeout;
 
   Timer timer;
