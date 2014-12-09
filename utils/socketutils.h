@@ -42,5 +42,14 @@ void SetNonblock(SOCKET sockfd);
 ///Cross platform socket close
 void CloseSocket(SOCKET sockfd);
 
+///Returns true if data exists to read from
+bool ReadAvailable(SOCKET socketfd);
+
+///Returns true if the socket is not busy sending data
+bool WriteAvailable(SOCKET socketfd);
+
+///Returns true if the socket is in an exception state
+bool HasException(SOCKET socketfd);
+
 #endif
 

@@ -65,7 +65,7 @@ public:
 
 	bool Seek(int, int from = FILESEEKCURRENT);
 	int Position() const;
-	int Length();
+	int Length() const;
 
 	bool ReadData(void*, int size);
 	bool WriteData(const void*, int size);
@@ -75,6 +75,10 @@ public:
 
 	void* GetDataBuffer() const;
 	void ResizeDataBuffer(int size);
+
+	bool IsOpen() const;
+	bool ReadAvailable(int numbytes=1) const;
+	bool WriteAvailable(int numbytes=1) const;
 
 private:
 	int mode;		//file read/write mode

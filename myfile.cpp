@@ -384,7 +384,7 @@ bool File::Seek(int p, int from)
 	return true;
 }
 
-int File::Length()
+int File::Length() const
 {
 	switch(srctype)
 	{
@@ -584,6 +584,53 @@ bool File::WriteString(const char* str)
     break;
   default:
     return WriteData(str, (int)(strlen(str)+1));
+  }
+}
+
+bool File::IsOpen() const
+{
+  if(srctype == MODE_TCPSOCKET || mode == MODE_UDPSOCKET) {
+    if(socket == INVALID_SOCKET) return false;
+    return true;
+  }
+  if(file == INVALID_FILE_POINTER) return false;
+  return true;
+}
+
+bool File::ReadAvailable(int numbytes) const
+{
+  if(!IsOpen()) return false;
+  if(!(mode & FILEREAD)) return false;
+  switch(srctype) {
+  case MODE_MYFILE:
+  case MODE_EXTFILE:
+  case MODE_MYDATA:
+  case MODE_EXTDATA:
+    return Position()+numbytes <= Length();
+  case MODE_TCPSOCKET:
+  case MODE_UDPSOCKET:
+    return ::ReadAvailable(socket);
+  default:
+    return false;
+  }
+}
+
+bool File::WriteAvailable(int numbytes) const
+{
+  if(!IsOpen()) return false;
+  if(!(mode & FILEREAD)) return false;
+  switch(srctype) {
+  case MODE_MYFILE:
+  case MODE_EXTFILE:
+  case MODE_MYDATA:
+    return true;
+  case MODE_EXTDATA:
+    return Position()+numbytes <= Length();
+  case MODE_TCPSOCKET:
+  case MODE_UDPSOCKET:
+    return ::WriteAvailable(socket);
+  default:
+    return false;
   }
 }
 

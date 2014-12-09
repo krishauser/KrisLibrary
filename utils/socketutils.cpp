@@ -310,3 +310,97 @@ void CloseSocket(SOCKET sockfd)
 	close(sockfd);
 #endif
 }
+
+
+bool ReadAvailable(SOCKET socketfd)
+{ 
+  fd_set fds;
+  timeval tv;
+  // clear the set ahead of time
+  FD_ZERO(&fds);
+  
+  // add our descriptors to the set
+  FD_SET(socketfd, &fds);
+
+#ifdef WIN32
+  int n = 0; //this parameter is ignored
+#else
+  int n = socketfd + 1;
+#endif 
+
+  // wait until either socket has data ready to be recv()d (timeout 10.5 secs)
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+  int rv = select(n, &fds, NULL, NULL, &tv);
+
+  if (rv == -1) {
+    perror("select"); // error occurred in select()
+    return false;
+  } else if (rv == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+bool WriteAvailable(SOCKET socketfd)
+{ 
+  fd_set fds;
+  timeval tv;
+  // clear the set ahead of time
+  FD_ZERO(&fds);
+  
+  // add our descriptors to the set
+  FD_SET(socketfd, &fds);
+
+#ifdef WIN32
+  int n = 0; //this parameter is ignored
+#else
+  int n = socketfd + 1;
+#endif 
+
+  // wait until either socket has data ready to be recv()d (timeout 10.5 secs)
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+  int rv = select(n, NULL, &fds, NULL, &tv);
+
+  if (rv == -1) {
+    perror("select"); // error occurred in select()
+    return false;
+  } else if (rv == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+bool HasException(SOCKET socketfd)
+{ 
+  fd_set fds;
+  timeval tv;
+  // clear the set ahead of time
+  FD_ZERO(&fds);
+  
+  // add our descriptors to the set
+  FD_SET(socketfd, &fds);
+
+#ifdef WIN32
+  int n = 0; //this parameter is ignored
+#else
+  int n = socketfd + 1;
+#endif 
+
+  // wait until either socket has data ready to be recv()d (timeout 10.5 secs)
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+  int rv = select(n, NULL, NULL, &fds, &tv);
+
+  if (rv == -1) {
+    perror("select"); // error occurred in select()
+    return false;
+  } else if (rv == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
