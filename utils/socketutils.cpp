@@ -339,7 +339,11 @@ bool ReadAvailable(SOCKET socketfd)
   } else if (rv == 0) {
     return false;
   } else {
-    return true;
+    if(FD_ISSET(socketfd, &fds))
+      return true;
+    else
+      printf("ReadAvailable: weird, select returned 1 but the FD set is not set\n");
+    return false;
   }
 }
 
@@ -370,7 +374,11 @@ bool WriteAvailable(SOCKET socketfd)
   } else if (rv == 0) {
     return false;
   } else {
-    return true;
+    if(FD_ISSET(socketfd, &fds))
+      return true;
+    else
+      printf("WriteAvailable: weird, select returned 1 but the FD set is not set\n");
+    return false;
   }
 }
 
@@ -401,6 +409,10 @@ bool HasException(SOCKET socketfd)
   } else if (rv == 0) {
     return false;
   } else {
-    return true;
+    if(FD_ISSET(socketfd, &fds))
+      return true;
+    else
+      printf("HasException: weird, select returned 1 but the FD set is not set\n");
+    return false;
   }
 }
