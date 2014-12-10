@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include <utils/socketutils.h>
+#include <utils/threadutils.h>
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -423,12 +424,16 @@ bool File::ReadData(void* d, int size)
 		    int totalread = 0;
 		    while(totalread < size) {
 		      int n=SocketRead(socket,buffer+totalread,size-totalread);
-		      if(n == 0) 
+		      if(n == 0) {
+			printf("File(socket): socketRead returned 0, connection shutdown\n");
 			return false;
+		      }
 		      if(n < 0) {
-			if(errno==EWOULDBLOCK)
+			if(errno==EWOULDBLOCK) {
+			  ThreadSleep(0.001);
 			  //just spin?
 			  continue;
+			}
 			perror("Unhandled error in socket read");
 			return false;
 		      }
@@ -472,8 +477,13 @@ bool File::WriteData(const void* d, int size)
 		    int totalsent = 0;
 		    while(totalsent < size) {
 		      int n = SocketWrite(socket,msg+totalsent,size-totalsent);
-		      if(n <= 0) {
+		      if(n < 0) {
+			perror("File(socket) SocketWrite");
 			return false;
+		      }
+		      if(n == 0) {
+			printf("File(socket): SocketWrite returned %d, what does it mean?\n",n);
+			ThreadSleep(0.001);
 		      }
 		      totalsent += n;
 		    }
@@ -570,7 +580,7 @@ bool File::WriteString(const char* str)
   case MODE_TCPSOCKET:
   case MODE_UDPSOCKET:
     if(strlen(str) > 0xffffffff) {
-      fprintf(stderr,"File::WriteString: string must be no longer than 65536\n");
+      fprintf(stderr,"File::WriteString: string must be no longer than 2^32\n");
       return false;
     }
     else {
@@ -579,7 +589,7 @@ bool File::WriteString(const char* str)
       if(!WriteData(&slen,4)) {
 	return false;
       }
-      return WriteData(str,(int)strlen(str));
+      return WriteData(str,slen);
     }
     break;
   default:
