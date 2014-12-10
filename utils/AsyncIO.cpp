@@ -73,8 +73,13 @@ string AsyncWriterQueue::OnWrite_NoLock()
 {
   if(msgQueue.empty()) return "";
   string res = msgQueue.front();
-  while(msgQueue.size()>=queueMax)
+  if(msgQueue.size() >= queueMax) {
+    printf("AsyncWriterQueue: Message queue overflowing!\n");
+    printf("   solution: slow down rate of sending via SendMessage\n");
+  }
+  while(msgQueue.size()>=queueMax) {
     msgQueue.pop_front();
+  }
   msgQueue.pop_front();
   msgCount += 1;
   return res;
@@ -90,6 +95,10 @@ void AsyncWriterQueue::Reset()
 void AsyncWriterQueue::SendMessage(const string& msg)
 {
   ScopedLock lock(mutex);
+  //prevent message queue from growing too big
+  while(msgQueue.size()>=queueMax) {
+    msgQueue.pop_front();
+  }
   msgQueue.push_back(msg);
 }
 
@@ -185,7 +194,8 @@ void* read_worker_thread_func(void * ptr)
     const char* res = data->transport->DoRead();
     if(!res) {
       fprintf(stderr,"AsyncReaderThread: abnormal termination, read failed\n");
-      data->Stop();
+      data->transport->Stop();
+      data->initialized = false;
       return NULL;
     }
     if(res[0] == 0) continue;
@@ -251,6 +261,7 @@ void AsyncPipeThread::Reset()
 
 void* pipe_worker_thread_func(void * ptr)
 {
+  int iters=0;
   AsyncPipeThread* data = reinterpret_cast<AsyncPipeThread*>(ptr);
   while(data->initialized) {
     double t = data->timer.ElapsedTime();
@@ -262,8 +273,8 @@ void* pipe_worker_thread_func(void * ptr)
       const char* res = data->transport->DoRead();
       if(!res) {
 	fprintf(stderr,"AsyncPipeThread: abnormal termination, read failed\n");
-	data->Stop();
-	fprintf(stderr,"Stopped...\n");
+	data->transport->Stop();
+	data->initialized = false;
 	return NULL;
       } 
       if(res[0] != 0) { //nonempty string
@@ -286,9 +297,18 @@ void* pipe_worker_thread_func(void * ptr)
       if(!send.empty()) {
 	if(!data->transport->DoWrite(send.c_str())) {
 	  fprintf(stderr,"AsyncPipeThread: abnormal termination, write failed\n");
-	  data->Stop();
+	  data->transport->Stop();
 	  return NULL;
 	}
+      }
+    }
+    else {
+      if(data->WriteAvailable()) {
+	if(iters % 100 == 0)
+	  fprintf(stderr,"AsyncPipeThread: Data is ready to send, waiting for transport to be ready\n");
+	iters++;
+
+	ThreadSleep(0.01);
       }
     }
     ThreadYield();
@@ -446,7 +466,7 @@ bool SocketClientTransport::Start()
   if(socket.IsOpen()) opened = true;
   while(!opened) {
     if(!socket.Open(addr.c_str(),FILECLIENT)) {
-      fprintf(stderr,"SocketTransport: Unable to open address... waiting\n");
+      fprintf(stderr,"SocketClientTransport: Unable to connect to %s... waiting\n",addr.c_str());
       ThreadSleep(1);
     }
     else
