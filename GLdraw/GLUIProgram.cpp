@@ -142,6 +142,10 @@ void GLUIProgramBase::MotionFunc(int x,int y) { }
 void GLUIProgramBase::PassiveMotionFunc(int x,int y) {  }
 void GLUIProgramBase::IdleFunc() { }
 
+void GLUIProgramBase::ControlFunc (int id) { 
+  cerr<<"Warning, GLUI not defined"<<endl;
+}
+
 int GLUIProgramBase::Run(const char *window_title,unsigned int mode)
 {
   cerr<<"Warning, GLUI not defined"<<endl;
