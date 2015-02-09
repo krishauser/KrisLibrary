@@ -106,7 +106,6 @@ public:
 	    pointsize += sizes[i];
 	  vector<char> buffer(pointsize);
 	  for(int i=0;i<numPoints;i++) {
-	    printf("PCD parser: Reading point %d\n",i);
 	    in.read(&buffer[0],pointsize);
 	    if(!in) {
 	      fprintf(stderr,"PCD parser: Error reading data for point %d\n",i);
