@@ -6,12 +6,17 @@
 #include <errors.h>
 
 #if HAVE_ASSIMP
+#if ASSIMP_MAJOR_VERSION==2
+#include <assimp/assimp.hpp>      // C++ importer interface
+#include <assimp/aiScene.h>           // Output data structure
+#include <assimp/aiPostProcess.h>     // Post processing flags
+#else
 #include <assimp/Importer.hpp>      // C++ importer interface
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
-
+#endif //ASSIMP_MAJOR_VERSION
 using namespace Assimp;
-#endif
+#endif //HAVE_ASSIMP
 
 
 namespace Meshing {

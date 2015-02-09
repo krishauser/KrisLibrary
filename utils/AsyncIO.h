@@ -7,6 +7,7 @@
 #include <list>
 #include <Timer.h>
 #include <errors.h>
+#include <string.h>
 #include <math/math.h>
 #include "SmartPointer.h"
 #include "threadutils.h"

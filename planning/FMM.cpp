@@ -9,6 +9,7 @@
 #include <fstream>
 #include <Timer.h>
 #include <iostream>
+#include <algorithm>
 using namespace std;
 using namespace Math;
 
@@ -199,7 +200,7 @@ struct SimplexEnumerator
     for(size_t i=0;i<candidates.size();i++) {
       if(candidates[i].empty()) continue;
       //pruned index must not be active in current enumerator state!
-      bool isActive = (find(axisIndex.begin(),axisIndex.end(),(int)i) != axisIndex.end());
+      bool isActive = (std::find(axisIndex.begin(),axisIndex.end(),(int)i) != axisIndex.end());
       if(isActive) continue;
 
       vector<int> n = node;

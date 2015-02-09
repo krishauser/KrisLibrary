@@ -451,7 +451,7 @@ bool SocketClientTransport::WriteReady()
 
 const char* SocketClientTransport::DoRead()
 {
-  ScopedLock(mutex);
+  ScopedLock lock(mutex);
   if(!socket.ReadString(buf,4096)) {
     cout<<"SocketClientTransport: Error reading string on "<<addr<<"..."<<endl;
     return NULL;
@@ -478,7 +478,7 @@ bool SocketClientTransport::Start()
 
 bool SocketClientTransport::Stop()
 {
-  ScopedLock(mutex);
+  ScopedLock lock(mutex);
   if(socket.IsOpen()) {
     cout<<"SocketClientTransport: Closing "<<addr<<endl;
     socket.Close();
@@ -488,7 +488,7 @@ bool SocketClientTransport::Stop()
 
 bool SocketClientTransport::DoWrite(const char* str,int length)
 {
-  ScopedLock(mutex);
+  ScopedLock lock(mutex);
   assert(sizeof(int)==4);
   if(!socket.WriteData(&length,4)) 
     return false;
@@ -519,7 +519,7 @@ bool SocketServerTransport::Start()
 
 bool SocketServerTransport::Stop()
 {
-  ScopedLock(mutex);
+  ScopedLock lock(mutex);
   for(size_t i=0;i<clientsockets.size();i++)
     clientsockets[i] = NULL;
   clientsockets.resize(0);
@@ -540,7 +540,7 @@ bool SocketServerTransport::WriteReady()
 
 const char* SocketServerTransport::DoRead()
 {
-  ScopedLock(mutex);
+  ScopedLock lock(mutex);
   if((int)clientsockets.size() < maxclients) {
     SOCKET clientsock = Accept(serversocket,5.0);
     if(clientsock != INVALID_SOCKET) {
@@ -588,7 +588,7 @@ const char* SocketServerTransport::DoRead()
 
 bool SocketServerTransport::DoWrite(const char* str,int length)
 {
-  ScopedLock(mutex);
+  ScopedLock lock(mutex);
   if((int)clientsockets.size() < maxclients) {
     SOCKET clientsock = Accept(serversocket,5.0);
     if(clientsock != INVALID_SOCKET) {
