@@ -422,6 +422,7 @@ void AnyCollisionGeometry3D::InitCollisions()
     break;
   case PointCloud:
     collisionData = CollisionPointCloud(AsPointCloud());
+    break;
   case Group:
     {
       collisionData = vector<AnyCollisionGeometry3D>();
