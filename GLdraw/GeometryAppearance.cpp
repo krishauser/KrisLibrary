@@ -154,6 +154,49 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 			    (col&0xff) / 255.0);
       }
     }
+    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("rgba",rgb)) {
+      //convert real to hex to GLcolor
+      //following PCD, this is actuall A-RGB
+      vertexColors.resize(rgb.size());
+      for(size_t i=0;i<rgb.size();i++) {
+	int col = (int)rgb[i];
+	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
+			    ((col&0xff00)>>8) / 255.0,
+			    (col&0xff) / 255.0,
+			    ((col&0xff000000)>>24) / 255.0);
+      }
+    }
+    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("opacity",rgb)) {
+      if(!vertexColors.empty()) {
+	//already assigned color, just get opacity
+	for(size_t i=0;i<rgb.size();i++) {
+	  vertexColors[i].rgba[3] = rgb[i];
+	}
+      }
+      else {
+	vertexColors.resize(rgb.size());
+	for(size_t i=0;i<rgb.size();i++) {
+	  vertexColors[i] = vertexColor.rgba;
+	  vertexColors[i].rgba[3] = rgb[i];
+	}
+      }
+    }
+    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("c",rgb)) {
+      //this is a weird opacity in UINT byte format
+      if(!vertexColors.empty()) {
+	//already assigned color, just get opacity
+	for(size_t i=0;i<rgb.size();i++) {
+	  vertexColors[i].rgba[3] = rgb[i]/255.0;
+	}
+      }
+      else {
+	vertexColors.resize(rgb.size());
+	for(size_t i=0;i<rgb.size();i++) {
+	  vertexColors[i] = vertexColor.rgba;
+	  vertexColors[i].rgba[3] = rgb[i]/255.0;
+	}
+      }
+    }
   }
   else if(geom->type == AnyGeometry3D::Group) {
     const std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = _geom.GroupCollisionData();
@@ -238,7 +281,7 @@ void GeometryAppearance::DrawGL()
       }
       //do the drawing
       glDisable(GL_LIGHTING);
-      if(vertexColor.rgba[3] != 1.0) {
+      if(vertexColor.rgba[3] != 1.0 || !vertexColors.empty()) {
 	glEnable(GL_BLEND); 
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
       }
@@ -248,7 +291,7 @@ void GeometryAppearance::DrawGL()
 
       vertexDisplayList.call();
 
-      if(vertexColor.rgba[3] != 1.0) {
+      if(vertexColor.rgba[3] != 1.0 || !vertexColors.empty()) {
 	glDisable(GL_BLEND); 
       }
     }
