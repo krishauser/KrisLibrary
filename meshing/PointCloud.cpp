@@ -4,13 +4,14 @@
 #include <sstream>
 #include <fstream>
 #include <stdlib.h>
+#include <string.h>
 
 using namespace Meshing;
 
 class PCLParser : public SimpleParser
 {
 public:
-  enum {NORMAL, READING_FIELDS };
+  enum {NORMAL, READING_FIELDS, READING_TYPES, READING_SIZES, READING_COUNTS };
   PCLParser(istream& in,PointCloud3D& _pc)
     :SimpleParser(in),pc(_pc),state(NORMAL),numPoints(-1)
   {}
@@ -21,6 +22,41 @@ public:
     if(state == READING_FIELDS) {
       pc.propertyNames.push_back(word);
     }
+    else if(state == READING_TYPES) {
+      if(word != "F" && word != "U" && word != "I") {
+	fprintf(stderr,"PCD parser: Invalid PCD TYPE %s\n",word.c_str());
+	return Error;
+      }
+      types.push_back(word);
+    }
+    else if(state == READING_COUNTS) {
+      if(!IsValidInteger(word.c_str())) {
+	fprintf(stderr,"PCD parser: Invalid PCD COUNT string %s, must be integer\n",word.c_str());
+	return Error;
+      }
+      stringstream ss(word);
+      int count;
+      ss>>count;
+      if(count != 0) {
+	fprintf(stderr,"PCD parser: Invalid PCD COUNT %s, we only handle counts of 1\n",word.c_str());
+	return Error;
+      }
+      counts.push_back(count);
+    }
+    else if(state == READING_SIZES) {
+      if(!IsValidInteger(word.c_str())) {
+	fprintf(stderr,"PCD parser: Invalid PCD SIZE string %s, must be integer\n",word.c_str());
+	return Error;
+      }
+      stringstream ss(word);
+      int size;
+      ss>>size;
+      if(size <= 0) {
+	fprintf(stderr,"PCD parser: Invalid PCD SIZE %s, must be positive\n",word.c_str());
+	return Error;
+      }
+      sizes.push_back(size);
+    }
     else {
       if(word == "POINTS") {
 	string points;
@@ -28,49 +64,132 @@ public:
 	stringstream ss(points);
 	ss>>numPoints;
 	if(!ss) {
-	  fprintf(stderr,"Unable to read integer POINTS\n");
+	  fprintf(stderr,"PCD parser: Unable to read integer POINTS\n");
 	  return Error;
 	}
       }
       else if(word == "FIELDS") {
 	state = READING_FIELDS;
       }
+      else if(word == "COUNT") {
+	state = READING_COUNTS;
+      }
+      else if(word == "TYPE") {
+	state = READING_TYPES;
+      }
+      else if(word == "SIZE") {
+	state = READING_SIZES;
+      }
       else if(word == "DATA") {
 	string datatype;
 	if(!ReadLine(datatype)) return Error;
 	datatype = Strip(datatype);
-	if(datatype != "ascii") {
-	  fprintf(stderr,"DATA is not ascii, can't parse binary yet\n");
-	  return Error;
-	}
-	if(numPoints < 0) {
-	  fprintf(stderr,"DATA specified before POINTS element\n");
-	  return Error;
-	}
-	string line;
-	for(int i=0;i<numPoints;i++) {
+	if(datatype == "binary") {
+	  //pull in the endline
 	  int c = in.get();
-	  assert(c=='\n' || c==EOF);
-	  lineno++;
-	  if(c==EOF) {
-	    fprintf(stderr,"Premature end of DATA element\n");
+	  assert(c == '\n');
+	  //read in binary data
+	  if(numPoints < 0) {
+	    fprintf(stderr,"PCD parser: DATA specified before POINTS element\n");
 	    return Error;
 	  }
-	  if(!ReadLine(line)) {
-	    fprintf(stderr,"Error reading point %d\n",i);
+	  if(sizes.size() != pc.propertyNames.size()) {
+	    fprintf(stderr,"PCD parser: Invalid number of SIZE elements\n");
 	    return Error;
 	  }
-	  vector<string> elements = Split(line," ");
-	  if(elements.size() != pc.propertyNames.size()) {
-	    fprintf(stderr,"DATA element %d has length %d, but %d properties specified\n",i,elements.size(),pc.propertyNames.size());
+	  if(types.size() != pc.propertyNames.size()) {
+	    fprintf(stderr,"PCD parser: Invalid number of TYPE elements\n");
 	    return Error;
 	  }
-	  Vector v(elements.size());
-	  for(size_t k=0;k<elements.size();k++) {
-	    stringstream ss(elements[k]);
-	    ss>>v[k];
+	  int pointsize = 0;
+	  for(size_t i=0;i<sizes.size();i++)
+	    pointsize += sizes[i];
+	  vector<char> buffer(pointsize);
+	  for(int i=0;i<numPoints;i++) {
+	    printf("PCD parser: Reading point %d\n",i);
+	    in.read(&buffer[0],pointsize);
+	    if(!in) {
+	      fprintf(stderr,"PCD parser: Error reading data for point %d\n",i);
+	      return Error;
+	    }
+	    //parse the point and add it
+	    Vector v(pc.propertyNames.size());
+	    int ofs = 0;
+	    for(size_t j=0;j<sizes.size();j++) {
+	      if(types[j] == "F") {
+		if(sizes[j] == 4) {
+		  float f;
+		  memcpy(&f,&buffer[ofs],sizes[j]);
+		  v[j] = f;
+		}
+		else if(sizes[j] == 8) {
+		  double f;
+		  memcpy(&f,&buffer[ofs],sizes[j]);
+		  v[j] = f;
+		}
+		else {
+		  fprintf(stderr,"PCD parser: Invalid float size %d\n",sizes[j]);
+		  return Error;
+		}
+	      }
+	      else if(types[j] == "U") {
+		if(sizes[j] > 4) {
+		  fprintf(stderr,"PCD parser: Invalid unsigned int size %d\n",sizes[j]);
+		  return Error;		  
+		}
+		unsigned i=0;
+		memcpy(&i,&buffer[ofs],sizes[j]);
+		v[j] = Real(i);
+	      }
+	      else if(types[j] == "I") {
+		fprintf(stderr,"PCD parser: Invalid int size %d\n",sizes[j]);
+		int i=0;
+		memcpy(&i,&buffer[ofs],sizes[j]);
+		v[j] = Real(i);
+	      }
+	      else {
+		fprintf(stderr,"PCD parser: Invalid type %s\n",types[i].c_str());
+		return Error;
+	      }
+	      ofs += sizes[j];
+	    }
+	    pc.properties.push_back(v);
 	  }
-	  pc.properties.push_back(v);
+	}
+	else if(datatype == "ascii") {
+	  if(numPoints < 0) {
+	    fprintf(stderr,"PCD parser: DATA specified before POINTS element\n");
+	    return Error;
+	  }
+	  string line;
+	  for(int i=0;i<numPoints;i++) {
+	    int c = in.get();
+	    assert(c=='\n' || c==EOF);
+	    lineno++;
+	    if(c==EOF) {
+	      fprintf(stderr,"PCD parser: Premature end of DATA element\n");
+	      return Error;
+	    }
+	    if(!ReadLine(line)) {
+	      fprintf(stderr,"PCD parser: Error reading point %d\n",i);
+	      return Error;
+	    }
+	    vector<string> elements = Split(line," ");
+	    if(elements.size() != pc.propertyNames.size()) {
+	      fprintf(stderr,"PCD parser: DATA element %d has length %d, but %d properties specified\n",i,elements.size(),pc.propertyNames.size());
+	      return Error;
+	    }
+	    Vector v(elements.size());
+	    for(size_t k=0;k<elements.size();k++) {
+	      stringstream ss(elements[k]);
+	      ss>>v[k];
+	    }
+	    pc.properties.push_back(v);
+	  }
+	}
+	else {
+	  fprintf(stderr,"PCD parser: DATA is not spcified as ascii or binary\n");
+	  return Error;
 	}
       }
       else {
@@ -79,9 +198,12 @@ public:
 	pc.settings[word] = Strip(value);
 
 	if(word == "VERSION") {
-	  if(pc.settings[word] != "0.7") {
-	    fprintf(stderr,"Warning, PCL version 0.7 expected, got %s\n",pc.settings[word].c_str());
+	  if(pc.settings[word] != "0.7" && pc.settings[word] != ".7") {
+	    fprintf(stderr,"PCD parser: Warning, PCD version 0.7 expected, got %s\n",pc.settings[word].c_str());
 	  }
+	}
+	else {
+	  printf("PCD parser: Read property \"%s\" = \"%s\"\n",word.c_str(),pc.settings[word].c_str());
 	}
       }
     }
@@ -90,13 +212,17 @@ public:
   virtual Result InputPunct(const string& punct) { return Continue; }
   virtual Result InputEndLine()
   {
-    if(state == READING_FIELDS) state=NORMAL;
+    if(state != NORMAL) state=NORMAL;
     return Continue;
   }
 
   PointCloud3D& pc;
   int state;
   int numPoints;
+  //for binary data
+  vector<string> types;
+  vector<int> sizes;
+  vector<int> counts;
 };
 
 
@@ -122,7 +248,7 @@ bool PointCloud3D::LoadPCL(istream& in)
 {
   PCLParser parser(in,*this);
   if(!parser.Read()) {
-    fprintf(stderr,"Unable to parse PCL file\n");
+    fprintf(stderr,"PCD parser: Unable to parse PCD file\n");
     return false;
   }
   int elemIndex[3] = {-1,-1,-1};
@@ -132,8 +258,8 @@ bool PointCloud3D::LoadPCL(istream& in)
     if(propertyNames[i]=="z") elemIndex[2] = (int)i;
   }
   if(elemIndex[0]<0 || elemIndex[1]<0 || elemIndex[2]<0) {
-    fprintf(stderr,"Warning, PCL file does not have x, y or z\n");
-    fprintf(stderr,"Properties:");
+    fprintf(stderr,"PCD parser: Warning, PCD file does not have x, y or z\n");
+    fprintf(stderr,"  Properties:");
     for(size_t i=0;i<propertyNames.size();i++)
       fprintf(stderr," \"%s\"",propertyNames[i].c_str());
     fprintf(stderr,"\n");
