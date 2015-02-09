@@ -269,9 +269,10 @@ bool PointCloud3D::LoadPCL(istream& in)
   for(size_t i=0;i<properties.size();i++) {
     points[i].set(properties[i][elemIndex[0]],properties[i][elemIndex[1]],properties[i][elemIndex[2]]);
   }
+  printf("PCD parser: %d points read\n",points.size());
 
   if(properties.size()==3 && elemIndex[0]==0 && elemIndex[1]==1 && elemIndex[2]==2) {
-    //go ahead and take out the properties
+    //x,y,z are the only properties, go ahead and take them out
     propertyNames.resize(0);
     properties.resize(0);
   }
@@ -332,10 +333,36 @@ bool PointCloud3D::SavePCL(ostream& out) const
 
 void PointCloud3D::Transform(const Matrix4& mat)
 {
-  //TODO: anything with normals?
+  bool hasNormals = false;
+  //names of the normal properties in the PCD file
+  static const char* nxprop = "normal_x", *nyprop = "normal_y", *nzprop = "normal_z";
+  int nxind = -1, nyind = -1, nzind = -1;
+  for(size_t i=0;i<propertyNames.size();i++) {
+    if(propertyNames[i] == nxprop) {
+      nxind = (int)i;
+      continue;
+    }
+    if(propertyNames[i] == nyprop) {
+      nyind = (int)i;
+      continue;
+    }
+    if(propertyNames[i] == nzprop) {
+      nzind = (int)i;
+      continue;
+    }
+  }
+  hasNormals = (nxind >= 0 && nyind >= 0 && nzind >= 0);
+
   for(size_t i=0;i<points.size();i++) {
     Vector3 temp=points[i];
     mat.mulPoint(temp,points[i]);
+    //transform normals if this has them
+    if(hasNormals) {
+      Vector3 temp2;
+      temp.set(properties[i][nxind],properties[i][nyind],properties[i][nzind]);
+      mat.mulVector(temp,temp2);
+      temp2.get(properties[i][nxind],properties[i][nyind],properties[i][nzind]);
+    }
   }
 }
 
