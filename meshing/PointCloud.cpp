@@ -37,7 +37,7 @@ public:
       stringstream ss(word);
       int count;
       ss>>count;
-      if(count != 0) {
+      if(count != 1) {
 	fprintf(stderr,"PCD parser: Invalid PCD COUNT %s, we only handle counts of 1\n",word.c_str());
 	return Error;
       }
