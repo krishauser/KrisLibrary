@@ -550,7 +550,7 @@ static inline bool is_base64(unsigned char c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
-std::string base64_encode(const char* bytes_to_encode, unsigned int in_len, std::string& ret) {
+void base64_encode(const char* bytes_to_encode, unsigned int in_len, std::string& ret) {
   unsigned int out_len = (in_len+2)/3*4;
   ret.resize(out_len);
   int i = 0;
