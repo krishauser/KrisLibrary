@@ -46,6 +46,11 @@ int DetectNumericalPattern(const char* str,char prefix[],char suffix[],int& numD
 void IncrementStringDigits(char* str);
 void IncrementStringDigits(std::string& str);
 
+void ToBase64(const std::string& in,std::string& out);
+void ToBase64(const char* in,int length,std::string& out);
+void FromBase64(const std::string& in,std::string& out);
+void FromBase64(const char* in,std::string& out);
+
 std::string ToBase64(const std::string& in);
 std::string ToBase64(const char* in,int length);
 std::string FromBase64(const std::string& in);
