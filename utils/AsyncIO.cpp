@@ -157,7 +157,7 @@ void SyncPipe::Work()
     string str = AsyncPipeQueue::OnWrite();
     if(!str.empty()) {
       lastWriteTime = timer.ElapsedTime();
-      if(!transport->DoWrite(str.c_str()))
+      if(!transport->DoWrite(str.c_str(),str.size()))
 	writeerr = true;
     }
   }
@@ -295,7 +295,7 @@ void* pipe_worker_thread_func(void * ptr)
 	//mutex unlocked
       }
       if(!send.empty()) {
-	if(!data->transport->DoWrite(send.c_str())) {
+	if(!data->transport->DoWrite(send.c_str(),send.length())) {
 	  fprintf(stderr,"AsyncPipeThread: abnormal termination, write failed\n");
 	  data->transport->Stop();
 	  return NULL;
