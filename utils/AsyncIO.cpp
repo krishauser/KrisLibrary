@@ -157,7 +157,7 @@ void SyncPipe::Work()
     string str = AsyncPipeQueue::OnWrite();
     if(!str.empty()) {
       lastWriteTime = timer.ElapsedTime();
-      if(!transport->DoWrite(str.c_str()))
+      if(!transport->DoWrite(str.c_str(),str.size()))
 	writeerr = true;
     }
   }
@@ -295,7 +295,7 @@ void* pipe_worker_thread_func(void * ptr)
 	//mutex unlocked
       }
       if(!send.empty()) {
-	if(!data->transport->DoWrite(send.c_str())) {
+	if(!data->transport->DoWrite(send.c_str(),send.length())) {
 	  fprintf(stderr,"AsyncPipeThread: abnormal termination, write failed\n");
 	  data->transport->Stop();
 	  return NULL;
@@ -311,7 +311,8 @@ void* pipe_worker_thread_func(void * ptr)
 	ThreadSleep(0.01);
       }
     }
-    ThreadYield();
+    //ThreadYield();
+    ThreadSleep(0.001);
   }
   return NULL;
 }
@@ -431,12 +432,14 @@ bool StreamTransport::DoWrite(const char* msg,int length)
 SocketClientTransport::SocketClientTransport(const char* _addr)
   :addr(_addr)
 {
+
 }
 
 SocketClientTransport::SocketClientTransport(const char* _addr,SOCKET sock)
   :addr(_addr)
 {
   socket.OpenTCPSocket(sock);
+  buf.reserve(4096);
 }
 
 bool SocketClientTransport::ReadReady()
@@ -449,14 +452,33 @@ bool SocketClientTransport::WriteReady()
   return socket.WriteAvailable();
 }
 
+bool ReadIntPrependedString(File& file,std::string& buf)
+{
+  int slen;
+  if(!file.ReadData(&slen,4)) {
+    fprintf(stderr,"Socket::ReadString read length failed\n");
+    return false;
+  }
+  if(slen < 0) {
+    fprintf(stderr,"ReadIntPrependedString read length %d is negative\n",slen);
+    return false;
+  }
+  buf.resize(slen);
+  if(!file.ReadData(&buf[0],slen)) {
+    fprintf(stderr,"ReadIntPrependedString read string failed\n");
+    return false;
+  }
+  return true;
+}
+
 const char* SocketClientTransport::DoRead()
 {
   ScopedLock lock(mutex);
-  if(!socket.ReadString(buf,4096)) {
+  if(!ReadIntPrependedString(socket,buf)) {
     cout<<"SocketClientTransport: Error reading string on "<<addr<<"..."<<endl;
     return NULL;
   }
-  return buf;
+  return buf.c_str();
 }
 
 bool SocketClientTransport::Start()
@@ -499,6 +521,7 @@ bool SocketClientTransport::DoWrite(const char* str,int length)
 SocketServerTransport::SocketServerTransport(const char* _addr,int _maxclients)
   :addr(_addr),serversocket(-1),maxclients(_maxclients),currentclient(-1)
 {
+  buf.reserve(4096);
 }
 
 SocketServerTransport::~SocketServerTransport()
@@ -551,8 +574,8 @@ const char* SocketServerTransport::DoRead()
   }
   if(clientsockets.empty()) {
     //tolerant of failed clients
-    buf[0] = 0;
-    return buf;
+    buf.resize(0);
+    return buf.c_str();
   }
 
   int iters=0;
@@ -566,8 +589,8 @@ const char* SocketServerTransport::DoRead()
       if(iters == (int)clientsockets.size()) break;
       continue;
     }
-    if(clientsockets[currentclient]->ReadString(buf,4096)) {
-      return buf;
+    if(ReadIntPrependedString(*clientsockets[currentclient],buf)) {
+      return buf.c_str();
     }
     //close the client
     printf("SocketServerTransport: Lost client %d\n",currentclient);
@@ -581,8 +604,8 @@ const char* SocketServerTransport::DoRead()
     currentclient = currentclient % clientsockets.size();
   }
   //should we be tolerant of failed clients?
-  buf[0] = 0;
-  return buf;
+  buf.resize(0);
+  return buf.c_str();
   return NULL;
 }
 

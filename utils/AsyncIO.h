@@ -199,7 +199,7 @@ class SocketClientTransport : public TransportBase
   std::string addr;
   File socket;
   Mutex mutex;
-  char buf[4096];
+  std::string buf;
 };
 
 /** @brief A transport protocol that hosts a client and sends messages to
@@ -224,7 +224,7 @@ class SocketServerTransport : public TransportBase
   Mutex mutex;
   std::vector<SmartPointer<File> > clientsockets;
   int currentclient;
-  char buf[4096];
+  std::string buf;
 };
 
 /** @brief An synchronous reader/writer.
