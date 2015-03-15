@@ -250,8 +250,8 @@ void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells)
       }
     }
     if(d.z > 0) { //check +z face
-      if((cellCorner.z+1.0)-s.a.z < param*d.z)
-	param = ((cellCorner.z+1.0)-s.a.z)*invdz; {
+      if((cellCorner.z+1.0)-s.a.z < param*d.z) {
+	param = ((cellCorner.z+1.0)-s.a.z)*invdz; 
 	closest = 3;
       }
     }
@@ -319,24 +319,28 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
       closest = -1;
     }
     if(d.y > 0) { //check +y face
-      if((cellCorner.y+cellSize.y)-s.a.y < param*d.y)
+      if((cellCorner.y+cellSize.y)-s.a.y < param*d.y) {
 	param = ((cellCorner.y+cellSize.y)-s.a.y)/d.y;
-      closest = 2;
+	closest = 2;
+      }
     }
     else if(d.y < 0) { //check -y face
-      if(cellCorner.y-s.a.y > param*d.y)
+      if(cellCorner.y-s.a.y > param*d.y) {
 	param = (cellCorner.y-s.a.y)/d.y;
-      closest = -2;
+	closest = -2;
+      }
     }
     if(d.z > 0) { //check +z face
-      if((cellCorner.z+cellSize.z)-s.a.z < param*d.z)
+      if((cellCorner.z+cellSize.z)-s.a.z < param*d.z) {
 	param = ((cellCorner.z+cellSize.z)-s.a.z)/d.z;
-      closest = 3;
+	closest = 3;
+      }
     }
     else if(d.z < 0) { //check -y face
-      if(cellCorner.z-s.a.z > param*d.z)
+      if(cellCorner.z-s.a.z > param*d.z) {
 	param = (cellCorner.z-s.a.z)/d.z;
-      closest = -3;
+	closest = -3;
+      }
     }
     switch(closest) {
     case 0: param = 1; break;
