@@ -2,6 +2,8 @@
 #include "drawMesh.h"
 #include "drawgeometry.h"
 #include "drawextra.h"
+#include <meshing/PointCloud.h>
+#include <meshing/VolumeGrid.h>
 #include <meshing/MarchingCubes.h>
 #include <meshing/Expand.h>
 
@@ -253,6 +255,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   }
   else
     drawFaces = true;
+  Refresh();
 }
 
 void GeometryAppearance::DrawGL()
@@ -374,7 +377,7 @@ void GeometryAppearance::DrawGL()
 	  glEnd();
 	}
       }
-      if(geom->type == AnyGeometry3D::Primitive) {
+      else if(geom->type == AnyGeometry3D::Primitive) {
 	draw(*AnyCast<GeometricPrimitive3D>(&geom->data));
       }
       faceDisplayList.endCompile();
