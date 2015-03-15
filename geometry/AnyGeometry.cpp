@@ -1,6 +1,11 @@
 #include "AnyGeometry.h"
+#include <math3d/geometry3d.h>
+#include <meshing/VolumeGrid.h>
+#include <meshing/Voxelize.h>
+#include "CollisionPointCloud.h"
 #include <utils/stringutils.h>
 #include <meshing/IO.h>
+#include <Timer.h>
 #include <fstream>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +39,17 @@ AnyGeometry3D::AnyGeometry3D(const vector<AnyGeometry3D>& group)
 AnyGeometry3D::AnyGeometry3D(const AnyGeometry3D& geom)
   :type(geom.type),data(geom.data)
 {}
+
+const GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() const { return *AnyCast<GeometricPrimitive3D>(&data); }
+const Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() const { return *AnyCast<Meshing::TriMesh>(&data); }
+const Meshing::PointCloud3D& AnyGeometry3D::AsPointCloud() const { return *AnyCast<Meshing::PointCloud3D>(&data); }
+const Meshing::VolumeGrid& AnyGeometry3D::AsImplicitSurface() const { return *AnyCast<Meshing::VolumeGrid>(&data); }
+const vector<AnyGeometry3D>& AnyGeometry3D::AsGroup() const { return *AnyCast<vector<AnyGeometry3D> >(&data); }
+GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() { return *AnyCast<GeometricPrimitive3D>(&data); }
+Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() { return *AnyCast<Meshing::TriMesh>(&data); }
+Meshing::PointCloud3D& AnyGeometry3D::AsPointCloud() { return *AnyCast<Meshing::PointCloud3D>(&data); }
+Meshing::VolumeGrid& AnyGeometry3D::AsImplicitSurface() { return *AnyCast<Meshing::VolumeGrid>(&data); }
+vector<AnyGeometry3D>& AnyGeometry3D::AsGroup() { return *AnyCast<vector<AnyGeometry3D> >(&data); }
 
 const char* AnyGeometry3D::TypeName(Type type)
 {
@@ -407,6 +423,17 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geo
   InitCollisions();
 }
 
+  const RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() const { return *AnyCast<RigidTransform>(&collisionData); }
+  const CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() const { return *AnyCast<CollisionMesh>(&collisionData); }
+  const CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() const { return *AnyCast<CollisionPointCloud>(&collisionData); }
+  const RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() const { return *AnyCast<RigidTransform>(&collisionData); }
+  const vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() const { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
+  RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() { return *AnyCast<RigidTransform>(&collisionData); }
+  CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() { return *AnyCast<CollisionMesh>(&collisionData); }
+  CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() { return *AnyCast<CollisionPointCloud>(&collisionData); }
+  RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return *AnyCast<RigidTransform>(&collisionData); }
+  vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
+
 void AnyCollisionGeometry3D::InitCollisions()
 {
   switch(type) {
@@ -446,7 +473,12 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
       const GeometricPrimitive3D& g=AsPrimitive();
       GeometricPrimitive3D gT(g);
       gT.Transform(T);
-      return gT.GetAABB();
+      AABB3D res = gT.GetAABB();
+      if(margin != 0) {
+	res.bmin -= Vector3(margin);
+	res.bmax += Vector3(margin);
+      }
+      return res;
     }
     break;
   case TriangleMesh:
@@ -465,6 +497,11 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
       bb.minimize();
       for(size_t i=0;i<items.size();i++)
 	bb.setUnion(items[i].GetAABB());
+      if(margin != 0) {
+	bb.bmin -= Vector3(margin);
+	bb.bmax += Vector3(margin);
+      }
+      return bb;
     }
   }
   AssertNotReached();
@@ -476,33 +513,43 @@ Box3D AnyCollisionGeometry3D::GetBB() const
 {
   Box3D b;
   if(collisionData.empty()) {
-    if(type == Primitive) 
-      return AsPrimitive().GetBB();
-    b.set(AnyGeometry3D::GetAABB());
-    return b;
+    if(type == Primitive) {
+      b = AsPrimitive().GetBB();
+    }
+    else {
+      AABB3D aabb = AnyGeometry3D::GetAABB();
+      b.set(aabb);
+    }
   }
-  switch(type) {
-  case Primitive:
-    {
-      Box3D blocal = AsPrimitive().GetBB();
-      b.setTransformed(blocal,PrimitiveCollisionData());
+  else {
+    switch(type) {
+    case Primitive:
+      {
+	Box3D blocal = AsPrimitive().GetBB();
+	b.setTransformed(blocal,PrimitiveCollisionData());
+      }
+      break;
+    case TriangleMesh:
+      ::GetBB(TriangleMeshCollisionData(),b);
+      break;
+    case PointCloud:
+      ::GetBB(PointCloudCollisionData(),b);
+      break;
+    case ImplicitSurface:
+      b.setTransformed(AsImplicitSurface().bb,ImplicitSurfaceCollisionData());
+      break;
+    case Group:
+      {
+	AABB3D bb = GetAABB();
+	b.set(bb);
+      }
+      break;
     }
-    break;
-  case TriangleMesh:
-    ::GetBB(TriangleMeshCollisionData(),b);
-    break;
-  case PointCloud:
-    ::GetBB(PointCloudCollisionData(),b);
-    break;
-  case ImplicitSurface:
-    b.setTransformed(AsImplicitSurface().bb,ImplicitSurfaceCollisionData());
-    break;
-  case Group:
-    {
-      AABB3D bb = GetAABB();
-      b.set(bb);
-    }
-    break;
+  }
+  //expand by the margin
+  if(margin != 0) {
+    b.dims += Vector3(margin*2.0);
+    b.origin -= margin * (b.xbasis+b.ybasis+b.zbasis);
   }
   return b;
 }
@@ -599,7 +646,7 @@ bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real
   }
   if(a.type == GeometricPrimitive3D::Point) {
     const Vector3& pt = *AnyCast<Vector3>(&a.data);
-    bool res = (grid.TrilinearInterpolate(pt) <= margin);
+    bool res = (grid.TrilinearInterpolate(pt) + a.Distance(grid.bb) <= margin);
     if(res) {
       gridelements.resize(1);
       IntTriple cell;
@@ -609,7 +656,7 @@ bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real
     return res;
   }
   const Sphere3D* s=AnyCast<Sphere3D>(&a.data);
-  bool res = (grid.TrilinearInterpolate(s->center) <= margin+s->radius);  
+  bool res = (grid.TrilinearInterpolate(s->center) + a.Distance(grid.bb) <= margin+s->radius);  
   if(res) {
     gridelements.resize(1);
     IntTriple cell;
@@ -647,6 +694,10 @@ bool Collides(const GeometricPrimitive3D& a,const CollisionPointCloud& b,Real ma
   return !pcelements.empty();
 }
 
+
+
+
+
 bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,const Meshing::VolumeGrid& b,const RigidTransform& Tb,Real margin,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
@@ -661,22 +712,6 @@ bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,const Collis
   return false;
 }
 
-bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,const CollisionPointCloud& b,Real margin,
-	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
-{
-  RigidTransform btoa; btoa.mulInverseA(Ta,b.currentTransform);
-  for(size_t i=0;i<b.points.size();i++) {
-    if(a.TrilinearInterpolate(btoa*b.points[i]) <= margin) {
-      IntTriple cell;
-      a.GetIndex(b.points[i],cell);
-      elements1.push_back(cell.a*a.value.n*a.value.p + cell.b*a.value.p + cell.c);
-      elements2.push_back(i);
-      if(elements1.size() >= maxContacts) return true;
-    }
-  }
-  return false;
-}
-
 bool Collides(const CollisionMesh& a,const CollisionMesh& b,Real margin,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
@@ -684,35 +719,6 @@ bool Collides(const CollisionMesh& a,const CollisionMesh& b,Real margin,
   return !elements1.empty();
 }
 
-bool Collides(const CollisionMesh& a,const CollisionPointCloud& b,Real margin,
-	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
-{
-  Box3D abb,bbb;
-  GetBB(a,abb);
-  GetBB(b,bbb);
-  if(!abb.intersects(bbb)) return false;
-  for(size_t i=0;i<b.points.size();i++) {
-    vector<int> nearTris;
-    NearbyTriangles(a,b.currentTransform*b.points[i],margin,nearTris,maxContacts-elements1.size());
-    for(size_t k=0;k<nearTris.size();k++) {
-      elements1.push_back(nearTris[k]);
-      elements2.push_back(i);
-    }
-    if(elements1.size()>=maxContacts) return true;
-  }
-  return false;
-}
-
-bool Collides(const CollisionPointCloud& a,const CollisionPointCloud& b,Real margin,
-	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
-{
-  Box3D abb,bbb;
-  GetBB(a,abb);
-  GetBB(b,bbb);
-  if(!abb.intersects(bbb)) return false;
-  FatalError("Can't yet do point cloud-point cloud collision detection");
-  return false;
-}
 
 bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin,const AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
@@ -793,7 +799,8 @@ bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,Real margin,
   case AnyCollisionGeometry3D::TriangleMesh:
     return ::Collides(a,Ta,b.TriangleMeshCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
   case AnyCollisionGeometry3D::PointCloud:
-    return ::Collides(a,Ta,b.PointCloudCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
+    FatalError("Point cloud testing should be prioritized");
+    break;
   case AnyCollisionGeometry3D::Group:
     {
       const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
@@ -836,7 +843,8 @@ bool Collides(const CollisionMesh& a,Real margin,const AnyCollisionGeometry3D& b
   case AnyCollisionGeometry3D::TriangleMesh:
     return ::Collides(a,b.TriangleMeshCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
   case AnyCollisionGeometry3D::PointCloud:
-    return ::Collides(a,b.PointCloudCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
+    FatalError("Point cloud testing should be prioritized");
+    break;
   case AnyCollisionGeometry3D::Group:
     {
       const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
@@ -860,6 +868,29 @@ bool Collides(const CollisionMesh& a,Real margin,const AnyCollisionGeometry3D& b
   return false;
 }
 
+
+static Real gWithinDistanceMargin = 0;
+static const CollisionPointCloud* gWithinDistancePC = NULL;
+static const AnyCollisionGeometry3D* gWithinDistanceGeom = NULL;
+static vector<int>* gWithinDistanceElements1 = NULL;
+static vector<int>* gWithinDistanceElements2 = NULL;
+static size_t gWithinDistanceMaxContacts = 0;
+static GeometricPrimitive3D point_primitive(Vector3(0.0));
+bool withinDistance_PC_AnyGeom(void* obj)
+{
+  Point3D* p = reinterpret_cast<Point3D*>(obj);
+  Vector3 pw = gWithinDistancePC->currentTransform*(*p);
+  RigidTransform Tident; Tident.R.setIdentity(); Tident.t = pw;
+  vector<int> temp;
+  if(Collides(point_primitive,Tident,gWithinDistanceMargin,*gWithinDistanceGeom,temp,*gWithinDistanceElements1,gWithinDistanceMaxContacts)) {
+    printf("Colliding point %g %g %g distance %g\n",pw.x,pw.y,pw.z,gWithinDistanceGeom->Distance(pw));
+    gWithinDistanceElements2->push_back(p-&gWithinDistancePC->points[0]);
+    if(gWithinDistanceElements1->size() >= gWithinDistanceMaxContacts) 
+      return false;
+  }
+  return true;
+}
+
 bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
@@ -875,11 +906,62 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
       return false;
     }
   case AnyCollisionGeometry3D::ImplicitSurface:
-    return ::Collides(b.AsImplicitSurface(),b.GetTransform(),a,margin+b.margin,elements2,elements1,maxContacts);
   case AnyCollisionGeometry3D::TriangleMesh:
-    return ::Collides(b.TriangleMeshCollisionData(),a,margin+b.margin,elements2,elements1,maxContacts);
   case AnyCollisionGeometry3D::PointCloud:
-    return ::Collides(a,b.PointCloudCollisionData(),margin+b.margin,elements1,elements2,maxContacts);
+    {
+      Box3D abb;
+      GetBB(a,abb);
+      Box3D bbb = b.GetBB();
+      Box3D bbbexpanded = bbb;
+      bbbexpanded.dims += Vector3(margin*2.0);
+      bbbexpanded.origin -= margin*(bbb.xbasis+bbb.ybasis+bbb.zbasis);
+      //quick reject test
+      if(!abb.intersectsApprox(bbbexpanded)) return false;
+      RigidTransform Tw_a;
+      Tw_a.setInverse(a.currentTransform);
+      Box3D bbb_a;
+      bbb_a.setTransformed(bbbexpanded,Tw_a);
+      AABB3D baabb_a;
+      bbb_a.getAABB(baabb_a);
+      baabb_a.setIntersection(a.bblocal);
+      GridSubdivision::Index imin,imax;
+      a.grid.PointToIndex(Vector(3,baabb_a.bmin),imin);
+      a.grid.PointToIndex(Vector(3,baabb_a.bmax),imax);
+      int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
+      Timer timer;
+      if(numCells >(int) a.points.size()) {
+	RigidTransform Tident; Tident.setIdentity();
+	//test all points, linearly
+	for(size_t i=0;i<a.points.size();i++) {
+	  Vector3 p_w = a.currentTransform*a.points[i];
+	  Tident.t = p_w;
+	  vector<int> temp;
+	  if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
+	    elements2.push_back(i);
+	    if(elements2.size() >= maxContacts) {
+	      printf("Collision in time %g\n",timer.ElapsedTime());
+	      return true;
+	    }
+	  }
+	}
+	printf("No collision in time %g\n",timer.ElapsedTime());
+	return false;
+      }
+      else {
+	printf("Box testing\n");
+	gWithinDistanceMargin = margin;
+	gWithinDistancePC = &a;
+	gWithinDistanceGeom = &b;
+	gWithinDistanceElements1 = &elements1;
+	gWithinDistanceElements2 = &elements2;
+	gWithinDistanceMaxContacts = maxContacts;
+	bool collisionFree = a.grid.IndexQuery(imin,imax,withinDistance_PC_AnyGeom);
+	if(collisionFree) printf("No collision in time %g\n",timer.ElapsedTime());
+	else printf("Collision in time %g\n",timer.ElapsedTime());
+	return !collisionFree;
+      }
+    }
+    return false;
   case AnyCollisionGeometry3D::Group:
     {
       const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
@@ -929,6 +1011,10 @@ bool AnyCollisionGeometry3D::Collides(const AnyCollisionGeometry3D& geom) const
 bool AnyCollisionGeometry3D::Collides(const AnyCollisionGeometry3D& geom,
 				      vector<int>& elements1,vector<int>& elements2,size_t maxContacts) const
 {
+  //prioritize point cloud testing
+  if(geom.type == PointCloud && type != PointCloud)
+    return geom.Collides(*this,elements2,elements1,maxContacts);
+  //otherwise...
   switch(type) {
   case Primitive:
     return ::Collides(AsPrimitive(),GetTransform(),margin,geom,elements1,elements2,maxContacts);
@@ -1026,21 +1112,62 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D& r,Real* distance,int* element)
   case PointCloud:
     {
       const CollisionPointCloud& pc = PointCloudCollisionData();
-      Ray3D rlocal;
+      Line3D rlocal;
       pc.currentTransform.mulInverse(r.source,rlocal.source);
       pc.currentTransform.R.mulTranspose(r.direction,rlocal.direction);
+      Real tmin=0,tmax=Inf;
+      if(!rlocal.intersects(pc.bblocal,tmin,tmax)) return false;
       Real closest = Inf;
       int closestpt = -1;
       Sphere3D s;
       s.radius = margin;
-      Vector3 pr;
-      for(size_t i=0;i<pc.points.size();i++) {
-	s.center = pc.points[i];
-	Real tmin,tmax;
-	if(s.intersects(r,&tmin,&tmax)) {
-	  if(tmax >= 0 && tmin < closest) {
-	    closest = Max(tmin,0.0);
-	    closestpt = i;
+      if(margin < 1e-3) {
+	//rasterization method
+	Segment3D slocal;
+	rlocal.eval(tmin,slocal.a);
+	rlocal.eval(tmax,slocal.b);
+	//normalize to grid resolution
+	slocal.a.x /= pc.grid.h[0];
+	slocal.a.y /= pc.grid.h[1];
+	slocal.a.z /= pc.grid.h[2];
+	slocal.b.x /= pc.grid.h[0];
+	slocal.b.y /= pc.grid.h[1];
+	slocal.b.z /= pc.grid.h[2];
+	vector<IntTriple> cells;
+	Meshing::GetSegmentCells(slocal,cells);
+	GridSubdivision::Index ind;
+	ind.resize(3);
+	for(size_t i=0;i<cells.size();i++) {
+	  ind[0] = cells[i].a;
+	  ind[1] = cells[i].b;
+	  ind[2] = cells[i].c;
+	  //const list<void*>* objs = pc.grid.GetObjectSet(ind);
+	  //if(!objs) continue;
+	  GridSubdivision::HashTable::const_iterator objs = pc.grid.buckets.find(ind);
+	  if(objs != pc.grid.buckets.end()) {
+	    for(list<void*>::const_iterator k=objs->second.begin();k!=objs->second.end();k++) {
+	      Vector3* p = reinterpret_cast<Vector3*>(*k);
+	      s.center = *p;
+	      Real tmin,tmax;
+	      if(s.intersects(rlocal,&tmin,&tmax)) {
+		if(tmax >= 0 && tmin < closest) {
+		  closest = Max(tmin,0.0);
+		  closestpt = (p - &pc.points[0]);
+		}
+	      }
+	    }
+	  }
+	}
+      }
+      else {
+	for(size_t i=0;i<pc.points.size();i++) {
+	  s.center = pc.points[i];
+	  Real tmin,tmax;
+	  if(s.intersects(rlocal,&tmin,&tmax)) {
+	    if(tmax >= 0 && tmin < closest) {
+	      closest = Max(tmin,0.0);
+	      closestpt = i;
+	    }
 	  }
 	}
       }
