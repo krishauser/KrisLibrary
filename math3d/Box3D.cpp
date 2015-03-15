@@ -62,20 +62,23 @@ Real Box3D::distanceSquared(const Point3D& pt,Point3D& out) const
 {
   Point3D loc;
   toLocal(pt, loc);
-  if(loc.x < 0) loc.x = 0;
-  if(loc.y < 0) loc.y = 0;
-  if(loc.z < 0) loc.z = 0;
-  if(loc.x > dims.x) loc.x = dims.x;
-  if(loc.y > dims.y) loc.y = dims.y;
-  if(loc.z > dims.z) loc.z = dims.z;
-  Real norm2 = loc.normSquared();
+  out = loc;
+  if(loc.x < 0) out.x = 0;
+  if(loc.y < 0) out.y = 0;
+  if(loc.z < 0) out.z = 0;
+  if(loc.x > dims.x) out.x = dims.x;
+  if(loc.y > dims.y) out.y = dims.y;
+  if(loc.z > dims.z) out.z = dims.z;
+  Real norm2 = loc.distanceSquared(out);
+  loc = out;
   fromLocal(loc,out);
   return norm2;
 }
 
 bool Box3D::intersects(const Box3D& b) const
 {
-  cout<<"Not quite done... check split planes a's faces, b's faces, and a's edges x b's edges"<<endl;
+  cout<<"Box3D::intersects: Not quite done... check split planes a's faces, b's faces, and a's edges x b's edges"<<endl;
+  cout<<"  use intersectsApprox for now"<<endl;
   abort();
   return false;
 }
