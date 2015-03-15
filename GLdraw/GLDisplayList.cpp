@@ -54,7 +54,7 @@ void GLDisplayList::callAll() const
 void GLDisplayList::erase()
 {
   if(id && id.getRefCount()==1) {
-    //printf("Erasing list %d\n",*id);
+    //printf("Erasing OpenGL display list %d\n",*id);
     glDeleteLists(*id,count);
   }
   id=NULL;
