@@ -16,6 +16,9 @@ class PropertyMap;
 /** @ingroup MotionPlanning
  * @brief A termination condition for a planner.  Supports max iteration count,
  * time limit, absolute cost, and cost improvement conditions.
+ *
+ * Can be converted to/from JSON strings.  The format is very simple, simply
+ * a dictionary whose keys are the names of the attributes of this structure.
  */
 class HaltingCondition
 {
@@ -32,36 +35,11 @@ class HaltingCondition
   int maxIters;
   ///Stop when this time limit (in seconds) has expired (default Inf)
   Real timeLimit;
-  ///Stop when the solution cost decreases below the threshold
+  ///Stop when the solution cost decreases below the threshold (default 0)
   Real costThreshold;
-  ///Stop when the solution cost improvement over the given period of time decreases below the threshold (default inactive)
+  ///Stop when the solution cost improvement over the given period of time decreases below costImprovementThreshold (default inactive)
   Real costImprovementPeriod;
   Real costImprovementThreshold;
-};
-
-/** @brief A structure to specify the space, endpoints, and cost function of a 
- * motion planning problem.
- */
-class MotionPlanningProblem
-{
- public:
-  MotionPlanningProblem();
-  ///Create a point-to-point problem
-  MotionPlanningProblem(CSpace* space,const Config& a,const Config& b);
-  ///Create a point-to-set problem
-  MotionPlanningProblem(CSpace* space,const Config& a,CSpace* goalSet);
-  ///Create a set-to-set problem
-  MotionPlanningProblem(CSpace* space,CSpace* startSet,CSpace* goalSet);
-  ///Create an initial value problem (placeholder -- objectives not done yet)
-  MotionPlanningProblem(CSpace* space,const Config& a,void* objective);
-
-  CSpace* space;
-  ///Non-empty if the start/end point is given
-  Config qstart,qgoal;
-  ///Non-NULL if the start/end point must be in a given set
-  CSpace *startSet, *goalSet;
-  ///Placeholder -- objectives not done yet
-  void* objective;
 };
 
 /** @ingroup MotionPlanning
@@ -78,16 +56,21 @@ class MotionPlanningProblem
  * retrieved using GetSolution(p).
  *
  * Single-query, optimal motion planning usage is the same as Plan(), except
- * HaltingCondition.foundSolution should be set to false, and termination is
- * determined by the desired number of iterations, time limit, or cost
- * improvement.
+ * the halting condition must be changed:
+ * - HaltingCondition.foundSolution must be set to false
+ * - Set a termination criterion to the desired number of iterations
+ *   (HaltingCondition.maxIters), time limit (HaltingCondition.timeLimit),
+ *   or cost improvement (HaltingCondition.costThreshold  or
+ *   costImprovementPeriod and costImprovementThreshold).
  */
 class MotionPlannerInterface
 {
  public:
   MotionPlannerInterface() {}
   virtual ~MotionPlannerInterface() {}
-  ///Plans until a given termination condition holds true, returns the reason for termination
+  ///Plans until a given termination condition holds true, returns the
+  ///reason for termination.  The return string will be the attribute of
+  ///HaltingCondition that caused termination.
   virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
   ///Performs a planning unit and returns the added milestone
   virtual int PlanMore()=0;
@@ -131,9 +114,69 @@ class MotionPlannerInterface
   virtual void GetStats(PropertyMap& stats) const;
 };
 
+
+/** @brief A structure to specify the space, endpoints, and cost function of a 
+ * motion planning problem.
+ */
+class MotionPlanningProblem
+{
+ public:
+  MotionPlanningProblem();
+  ///Create a point-to-point problem
+  MotionPlanningProblem(CSpace* space,const Config& a,const Config& b);
+  ///Create a point-to-set problem
+  MotionPlanningProblem(CSpace* space,const Config& a,CSpace* goalSet);
+  ///Create a set-to-set problem
+  MotionPlanningProblem(CSpace* space,CSpace* startSet,CSpace* goalSet);
+  ///Create an initial value problem (placeholder -- objectives not done yet)
+  MotionPlanningProblem(CSpace* space,const Config& a,void* objective);
+
+  CSpace* space;
+  ///Non-empty if the start/end point is given
+  Config qstart,qgoal;
+  ///Non-NULL if the start/end point must be in a given set
+  CSpace *startSet, *goalSet;
+  ///Placeholder -- objectives not done yet
+  void* objective;
+};
+
 /** @brief A motion planner creator.
  * 
- * User calls Create(space) to create a planner. After Create, the planner pointer must be deleted.
+ * Standard usage is as follows:
+ * - Set up the factory's parameters, either loading by hand or from
+ *   JSON strings.
+ * - Set up your CSpace / MotionPlanningProblem as needed.
+ * - Create a planner via "MotionPlannerInterface* planner =
+ *   MotionPlannerFactory.Create(space,[start],[goal])", or "Create(problem)"
+ * - Set up your HaltingCondition.
+ * - Call planner->Plan(path,condition) and inspect the resulting path.
+ * - Delete the planner object
+ * 
+ * Example (assuming you have a space, start, and goal):
+ *
+ * @verbatim
+ * MotionPlanningFactory factory;
+ * factory.type = "any";  //do more setup of parameters here
+ * //an alternative way of setting up the parameters is as follows
+ * //factory.LoadJSON("{ type:\"rrt\", perturbationRadius:0.5, shortcut:1, restart=1 }");
+ * MotionPlannerInterface* planner = factory.Create(space,start,goal);
+ *
+ * //set up a condition to plan for 10s
+ * HaltingCondition cond;
+ * cond.foundSolution=false;
+ * cond.timeLimit = 10;
+ *
+ * //do the planning
+ * MilestonePath path;
+ * string res = planner->Plan(path,cond);
+ * if(path.edges.empty())  //failed
+ *   printf("Planning failed\n");
+ * else
+ *   printf("Planning succeeded, path has length %g\n",path.Length());
+ *
+ * //clean up the planner
+ * delete planner;
+ * @endverbatim
  * 
  * The type field can be left as "any", in which a default planning algorithm will be
  * used. Otherwise, a given planner algorithm can be designated as follows:
@@ -153,7 +196,20 @@ class MotionPlannerInterface
  *
  * Multi-query planners include PRM and SBLPRT. 
  *
- * The only cost function supported for optimal motion planners is the path length function.
+ * The only cost function currently supported for optimal motion planners
+ * is the path length cost.
+ *
+ * Standard kinematic planners (prm,lazyprm,perturbation,est,rrt,sbl,
+ * sblprt,fmm) can be adapted into to optimal planners by setting
+ * the shortcut field to true and/or the restart field to true. 
+ * - With shortcut=true, the path produced by the planner is shrunk
+ *   in a postprocessing stage by repeatedly shortcutting until the
+ *   remaining time is up.
+ * - With restart=true, planning proceeds in rounds, each round completely
+ *   restarting from scratch, and only the best path is stored.
+ *   To govern how long each of the rounds lasts, you must set the
+ *   restartTermCond field to a JSON string defining the HaltingCondition
+ *   for that round.
  */
 class MotionPlannerFactory
 {
@@ -182,21 +238,21 @@ class MotionPlannerFactory
   string SaveJSON() const;
 
   string type;
-  int knn;                 //for PRM (default 10)
-  Real connectionThreshold;//for PRM,RRT,SBL,SBLPRT,RRT*,PRM*,LazyPRM*,LazyRRG* (default Inf)
-  Real suboptimalityFactor;//for RRT*, LazyPRM*, LazyRRG* (default 0)
+  int knn;                 ///<for PRM (default 10)
+  Real connectionThreshold;///<for PRM,RRT,SBL,SBLPRT,RRT*,PRM*,LazyPRM*,LazyRRG* (default Inf)
+  Real suboptimalityFactor;///<for RRT*, LazyPRM*, LazyRRG* (default 0)
   bool ignoreConnectedComponents; //for PRM (default false)
-  Real perturbationRadius; //for Perturbation,EST,RRT,SBL,SBLPRT (default 0.1)
-  int perturbationIters;   //for SBL (default 5)
-  bool bidirectional;      //for RRT (default true)
-  bool useGrid;            //for SBL, SBLPRT (default true): for SBL, uses grid-based random point selection
-  Real gridResolution;     //for SBL, SBLPRT, FMM, FMM* (default 0): if nonzero, for SBL, specifies point selection grid size (default 0.1), for FMM / FMM*, specifies resolution (default 1/8 of domain)
-  int randomizeFrequency;  //for SBL, SBLPRT (default 50): how often the grid projection is randomly perturbed
-  string pointLocation;    //for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("random", "randombest [k]", "kdtree" supported)
-  bool storeEdges;         //if local planner data is stored during planning (false may save memory, default)
-  bool shortcut;           //if you wish to perform shortcutting afterwards (default false)
-  bool restart;            //if you wish to restart the planner to get better paths with the remaining time (default false)
-  string restartTermCond;  //used if restart is true, JSON string defining termination condition (default "{foundSolution:1;maxIters:1000}")
+  Real perturbationRadius; ///<for Perturbation,EST,RRT,SBL,SBLPRT (default 0.1)
+  int perturbationIters;   ///<for SBL (default 5)
+  bool bidirectional;      ///<for RRT (default true)
+  bool useGrid;            ///<for SBL, SBLPRT (default true): for SBL, uses grid-based random point selection
+  Real gridResolution;     ///<for SBL, SBLPRT, FMM, FMM* (default 0): if nonzero, for SBL, specifies point selection grid size (default 0.1), for FMM / FMM*, specifies resolution (default 1/8 of domain)
+  int randomizeFrequency;  ///<for SBL, SBLPRT (default 50): how often the grid projection is randomly perturbed
+  string pointLocation;    ///<for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("random", "randombest [k]", "kdtree" supported)
+  bool storeEdges;         ///<true if local planner data is stored during planning (false may save memory, default)
+  bool shortcut;           ///<true if you wish to perform shortcutting afterwards (default false)
+  bool restart;            ///<true if you wish to restart the planner to get better paths with the remaining time (default false)
+  string restartTermCond;  ///<used if restart is true, JSON string defining termination condition (default "{foundSolution:1;maxIters:1000}")
 };
 
 
