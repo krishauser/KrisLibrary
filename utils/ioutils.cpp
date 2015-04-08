@@ -194,14 +194,18 @@ bool SafeInputString(std::istream& in, std::string& str)
   if(in.peek() == EOF) return false;
   if(in.peek() == '\"') return InputQuotedString(in,str);
   else { //read until new whitespace
+    in >> str;
+    /*
     while(in) {
       char c = in.get();
       if(isspace(c) || c==EOF) 
 	return true;
       str += c;
     }
+    */
     if(in.eof()) return true;
-    return false; 
+    if(!in) return false;
+    return true; 
   }
 }
 
