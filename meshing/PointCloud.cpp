@@ -1,4 +1,5 @@
 #include "PointCloud.h"
+#include <math3d/AABB3D.h>
 #include <utils/SimpleParser.h>
 #include <utils/stringutils.h>
 #include <sstream>
@@ -225,6 +226,14 @@ public:
 };
 
 
+void PointCloud3D::Clear()
+{
+  points.clear();
+  propertyNames.clear();
+  properties.clear();
+  settings.clear();
+}
+
 bool PointCloud3D::LoadPCL(const char* fn)
 {
   ifstream in(fn,ios::in);
@@ -366,15 +375,114 @@ void PointCloud3D::Transform(const Matrix4& mat)
   }
 }
 
-bool PointCloud3D::GetProperty(const string& name,vector<Real>& items) const
+int PointCloud3D::PropertyIndex(const string& name) const
 {
   for(size_t i=0;i<propertyNames.size();i++) {
-    if(propertyNames[i] == name) {
-      items.resize(properties.size());
-      for(size_t k=0;k<properties.size();k++)
-	items[k] = properties[k][i];
-      return true;
+    if(propertyNames[i] == name) return (int)i;
+  }
+  return -1;
+}
+
+bool PointCloud3D::GetProperty(const string& name,vector<Real>& items) const
+{
+  int i = PropertyIndex(name);
+  if(i < 0) return false;
+  items.resize(properties.size());
+  for(size_t k=0;k<properties.size();k++)
+    items[k] = properties[k][i];
+  return true;
+}
+
+void PointCloud3D::SetProperty(const string& name,const vector<Real>& items)
+{
+  int i = PropertyIndex(name);
+  if(i >= 0) {
+    for(size_t k=0;k<properties.size();k++) {
+      properties[k][i] = items[k];
+    }
+    return;
+  }
+  else {
+    //add it
+    propertyNames.push_back(name);
+    for(size_t k=0;k<properties.size();k++) {
+      Vector oldval = properties[k];
+      properties[k].resize(propertyNames.size());
+      properties[k].copySubVector(0,oldval);
+      properties[k][propertyNames.size()-1] = items[k];
     }
   }
-  return false;
+}
+void PointCloud3D::RemoveProperty(const string& name)
+{
+  int i = PropertyIndex(name);
+  if(i >= 0) {
+    for(size_t k=0;k<properties.size();k++) {
+      for(size_t j=i+1;j<propertyNames.size();j++)
+	properties[k][j-1] = properties[k][j];
+      properties[k].n--;
+    }
+    propertyNames.erase(propertyNames.begin()+i);
+    return;
+  }
+  else
+    fprintf(stderr,"PointCloud3D::RemoveProperty: warning, property %s does not exist\n",name.c_str());
+}
+
+void PointCloud3D::GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud)
+{
+  AABB3D bb(bmin,bmax);
+  subcloud.Clear();
+  subcloud.propertyNames = propertyNames;
+  subcloud.settings = settings;
+  for(size_t i=0;i<points.size();i++)
+    if(bb.contains(points[i])) {
+      subcloud.points.push_back(points[i]);
+      subcloud.properties.push_back(properties[i]);
+    }
+}
+
+void PointCloud3D::GetSubCloud(const string& property,Real value,PointCloud3D& subcloud)
+{
+  GetSubCloud(property,value,value,subcloud);
+}
+
+void PointCloud3D::GetSubCloud(const string& property,Real minValue,Real maxValue,PointCloud3D& subcloud)
+{
+  subcloud.Clear();
+  subcloud.propertyNames = propertyNames;
+  subcloud.settings = settings;
+  if(property == "x") {
+    for(size_t i=0;i<points.size();i++)
+      if(minValue <= points[i].x && points[i].x <= maxValue) {
+	subcloud.points.push_back(points[i]);
+	subcloud.properties.push_back(properties[i]);
+      }
+  }
+  else if(property == "y") {
+    for(size_t i=0;i<points.size();i++)
+      if(minValue <= points[i].y && points[i].y <= maxValue) {
+	subcloud.points.push_back(points[i]);
+	subcloud.properties.push_back(properties[i]);
+      }
+  }
+  else if(property == "z") {
+    for(size_t i=0;i<points.size();i++)
+      if(minValue <= points[i].z && points[i].z <= maxValue) {
+	subcloud.points.push_back(points[i]);
+	subcloud.properties.push_back(properties[i]);
+      }
+  }
+  else {
+    int i=PropertyIndex(property);
+    if(i < 0) {
+      fprintf(stderr,"PointCloud3D::GetSubCloud: warning, property %s does not exist\n",property.c_str());
+      return;
+    }
+    for(size_t k=0;k<properties.size();k++)
+      if(minValue <= properties[k][i] && properties[k][i] <= maxValue) {
+	subcloud.points.push_back(points[k]);
+	subcloud.properties.push_back(properties[k]);
+      }
+  }
 }
