@@ -76,11 +76,15 @@ void AABB3D::getSize(Vector3& v) const
   v.sub(bmax,bmin);
 }
 
+Vector3 AABB3D::size() const { return bmax-bmin; }
+
 void AABB3D::getMidpoint(Point3D& p) const
 {
   p.add(bmax,bmin);
   p.inplaceMul(Half);
 }
+
+Vector3 AABB3D::midpoint() const { return (bmax+bmin)*0.5; }
 
 
 bool AABB3D::contains(const Vector3& v) const
@@ -116,6 +120,53 @@ Real AABB3D::distanceSquared(const Vector3& v,Vector3& out) const
   if(out.y > bmax.y) out.y=bmax.y;
   if(out.z > bmax.z) out.z=bmax.z;
   return out.distanceSquared(v);
+}
+
+Real AABB3D::distance(const AABB3D& bb) const
+{
+  Point3D x,y;
+  return distance(bb,x,y);
+}
+
+Real AABB3D::distance(const AABB3D& bb,Point3D& myclosest,Point3D& bbclosest) const
+{
+  if(bmax.x <= bb.bmin.x) {
+    myclosest.x = bmax.x;
+    bbclosest.x = bb.bmin.x;
+  }
+  else if(bmin.x >= bb.bmax.x) {
+    myclosest.x = bmin.x;
+    bbclosest.x = bb.bmax.x;
+  }
+  else { //overlap
+    myclosest.x = bmax.x;
+    bbclosest.x = bmax.x;
+  }
+  if(bmax.y <= bb.bmin.y) {
+    myclosest.y = bmax.y;
+    bbclosest.y = bb.bmin.y;
+  }
+  else if(bmin.y >= bb.bmax.y) {
+    myclosest.y = bmin.y;
+    bbclosest.y = bb.bmax.y;
+  }
+  else { //overlap
+    myclosest.y = bmax.y;
+    bbclosest.y = bmax.y;
+  }
+  if(bmax.z <= bb.bmin.z) {
+    myclosest.z = bmax.z;
+    bbclosest.z = bb.bmin.z;
+  }
+  else if(bmin.z >= bb.bmax.z) {
+    myclosest.z = bmin.z;
+    bbclosest.z = bb.bmax.z;
+  }
+  else { //overlap
+    myclosest.z = bmax.z;
+    bbclosest.z = bmax.z;
+  }
+  return myclosest.distance(bbclosest);
 }
 
 bool AABB3D::intersects(const AABB3D& a) const

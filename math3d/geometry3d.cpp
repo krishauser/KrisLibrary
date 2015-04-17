@@ -1067,6 +1067,7 @@ bool GeometricPrimitive3D::SupportsDistance(Type a,Type b)
   if((b == Point || b == Sphere))
     return (a==Point || a==Sphere || a==Segment || a==AABB || a==Box || a==Triangle);
   if(a==Segment && b==Segment) return true;
+  if(a==AABB && b==AABB) return true;
   return false;
 }
 
@@ -1148,6 +1149,8 @@ Real GeometricPrimitive3D::Distance(const AABB3D& b) const
     return b.distance(*AnyCast<Vector3>(&data));
   case Sphere:
     return Max(0.0,b.distance(AnyCast<Sphere3D>(&data)->center)-AnyCast<Sphere3D>(&data)->radius);
+  case AABB:
+    return b.distance(*AnyCast<AABB3D>(&data));
   default:
     return false;
   }
