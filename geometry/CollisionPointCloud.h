@@ -3,8 +3,10 @@
 
 #include <meshing/PointCloud.h>
 #include <math3d/geometry3d.h>
+#include <utils/SmartPointer.h>
 #include <limits.h>
 #include "GridSubdivision.h"
+#include "Octree.h"
 
 namespace Geometry {
 
@@ -27,6 +29,7 @@ class CollisionPointCloud : public Meshing::PointCloud3D
   RigidTransform currentTransform;
   Real gridResolution; ///< default value is 0, which auto-determines from point cloud
   GridSubdivision grid;
+  SmartPointer<OctreePointSet> octree;
 };
 
 ///Returns the orientd bounding box of the point cloud
@@ -42,6 +45,15 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g);
 ///primitive g.  O(min(n,c)) running time, where c is the number of grid
 ///cells within distance tol of the bounding box of g.
 void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Real tol,std::vector<int>& points,size_t maxContacts=INT_MAX);
+
+///Casts a ray at the point cloud (where each point is fattened by radius rad).
+///Returns index of the first point hit (-1 if none) and the colliding point
+///in pt. 
+int RayCast(const CollisionPointCloud& pc,Real rad,const Ray3D& r,Vector3& pt);
+
+///Same as RayCast, but the ray (and colliding point) are in the local
+///frame of the point cloud
+int RayCastLocal(const CollisionPointCloud& pc,Real rad,const Ray3D& r,Vector3& pt);
 
 } //namespace Geometry
 

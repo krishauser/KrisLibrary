@@ -18,6 +18,7 @@ CollisionPointCloud::CollisionPointCloud(const Meshing::PointCloud3D& _pc)
 
 void CollisionPointCloud::InitCollisions()
 {
+  Assert(points.size() > 0);
   Timer timer;
   bblocal.minimize();
   for(size_t i=0;i<points.size();i++)
@@ -51,7 +52,24 @@ void CollisionPointCloud::InitCollisions()
   int nmax = 0;
   for(GridSubdivision::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
     nmax = Max(nmax,(int)i->second.size());
-  printf("  %d nonempty buckets, max size %d, avg %g\n",grid.buckets.size(),nmax,Real(points.size())/grid.buckets.size());
+  printf("  %d nonempty grid buckets, max size %d, avg %g\n",grid.buckets.size(),nmax,Real(points.size())/grid.buckets.size());
+  timer.Reset();
+
+  //initialize the octree, 10 points per cell
+  octree = new OctreePointSet(bblocal,10);
+  for(size_t i=0;i<points.size();i++)
+    octree->Add(points[i],(int)i);
+  printf("  octree initialized in time %gs, %d nodes\n",timer.ElapsedTime(),octree->Size());
+  /*
+  //TEST: method 2.  Turns out to be much slower
+  timer.Reset();
+  octree = new OctreePointSet(bblocal,points.size());
+  octree->SplitToResolution(res);
+  for(size_t i=0;i<points.size();i++)
+    octree->Add(points[i],(int)i);
+  octree->Collapse(10);
+  printf("  octree 2 initialized in time %gs, %d nodes\n",timer.ElapsedTime(),octree->Size());
+  */
 }
 
 void GetBB(const CollisionPointCloud& pc,Box3D& b)
@@ -83,6 +101,17 @@ bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,
 
   AABB3D gbb = glocal.GetAABB();  
   gbb.setIntersection(pc.bblocal);
+
+  //octree overlap method
+  vector<Vector3> points;
+  vector<int> ids;
+  pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+  for(size_t i=0;i<points.size();i++) 
+    if(glocal.Distance(points[i]) <= tol) return true;
+  return false;
+
+  /*
+  //grid enumeration method
   GridSubdivision::Index imin,imax;
   pc.grid.PointToIndex(Vector(3,gbb.bmin),imin);
   pc.grid.PointToIndex(Vector(3,gbb.bmax),imax);
@@ -99,6 +128,7 @@ bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,
     bool collisionFree = pc.grid.IndexQuery(imin,imax,withinDistanceTest);
     return !collisionFree;
   }
+  */
 }
 
 static Real gDistanceTestValue = 0;
@@ -144,7 +174,7 @@ bool nearbyTest(void* obj)
   return true;
 }
 
-void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Real tol,std::vector<int>& points,size_t maxContacts)
+void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Real tol,std::vector<int>& pointIds,size_t maxContacts)
 {
   Box3D bb;
   GetBB(pc,bb);
@@ -158,6 +188,20 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
 
   AABB3D gbb = glocal.GetAABB();
   gbb.setIntersection(pc.bblocal);
+
+  //octree overlap method
+  vector<Vector3> points;
+  vector<int> ids;
+  pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+  for(size_t i=0;i<points.size();i++) 
+    if(glocal.Distance(points[i]) <= tol) {
+      pointIds.push_back(ids[i]);
+      if(pointIds.size()>=maxContacts) return;
+    }
+  return;
+
+  /*
+  //grid enumeration method
   GridSubdivision::Index imin,imax;
   pc.grid.PointToIndex(Vector(3,gbb.bmin),imin);
   pc.grid.PointToIndex(Vector(3,gbb.bmax),imax);
@@ -167,8 +211,8 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
     //test all points, linearly
     for(size_t i=0;i<pc.points.size();i++)
       if(glocal.Distance(pc.points[i]) <= tol) {
-	points.push_back(int(i));
-	if(points.size()>=maxContacts) return;
+	pointIds.push_back(int(i));
+	if(pointIds.size()>=maxContacts) return;
       }
   }
   else {
@@ -178,10 +222,94 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
     gNearbyTestObject = &glocal;
     gNearbyTestBranch = maxContacts;
     pc.grid.BoxQuery(Vector(3,gbb.bmin),Vector(3,gbb.bmax),nearbyTest);
-    points.resize(gNearbyTestResults.size());
+    pointIds.resize(gNearbyTestResults.size());
     for(size_t i=0;i<points.size();i++)
-      points[i] = gNearbyTestResults[i] - &pc.points[0];
+      pointIds[i] = gNearbyTestResults[i] - &pc.points[0];
   }
+  */
+}
+
+int RayCast(const CollisionPointCloud& pc,Real rad,const Ray3D& r,Vector3& pt)
+{
+  Ray3D rlocal;
+  pc.currentTransform.mulInverse(r.source,rlocal.source);
+  pc.currentTransform.R.mulTranspose(r.direction,rlocal.direction);
+  int res = RayCastLocal(pc,rad,rlocal,pt);
+  if(res >= 0) {
+    pt = pc.currentTransform*pt;
+  }
+  return res;
+}
+
+int RayCastLocal(const CollisionPointCloud& pc,Real rad,const Ray3D& r,Vector3& pt)
+{
+  Real tmin=0,tmax=Inf;
+  if(!((const Line3D&)r).intersects(pc.bblocal,tmin,tmax)) return -1;
+
+  int value = pc.octree->RayCast(r,rad);
+  if(value >= 0)
+    pt = pc.points[value];
+  return value;
+
+  /*
+  Real closest = Inf;
+  int closestpt = -1;
+  Sphere3D s;
+  s.radius = margin;
+  if(margin < 1e-3) {
+    //grid rasterization method
+    Segment3D slocal;
+    r.eval(tmin,slocal.a);
+    r.eval(tmax,slocal.b);
+    //normalize to grid resolution
+    slocal.a.x /= pc.grid.h[0];
+    slocal.a.y /= pc.grid.h[1];
+    slocal.a.z /= pc.grid.h[2];
+    slocal.b.x /= pc.grid.h[0];
+    slocal.b.y /= pc.grid.h[1];
+    slocal.b.z /= pc.grid.h[2];
+    vector<IntTriple> cells;
+    Meshing::GetSegmentCells(slocal,cells);
+    GridSubdivision::Index ind;
+    ind.resize(3);
+    for(size_t i=0;i<cells.size();i++) {
+      ind[0] = cells[i].a;
+      ind[1] = cells[i].b;
+      ind[2] = cells[i].c;
+      //const list<void*>* objs = pc.grid.GetObjectSet(ind);
+      //if(!objs) continue;
+      GridSubdivision::HashTable::const_iterator objs = pc.grid.buckets.find(ind);
+      if(objs != pc.grid.buckets.end()) {
+	for(list<void*>::const_iterator k=objs->second.begin();k!=objs->second.end();k++) {
+	  Vector3* p = reinterpret_cast<Vector3*>(*k);
+	  s.center = *p;
+	  Real tmin,tmax;
+	  if(s.intersects(r,&tmin,&tmax)) {
+	    if(tmax >= 0 && tmin < closest) {
+	      closest = Max(tmin,0.0);
+	      closestpt = (p - &pc.points[0]);
+	    }
+	  }
+	}
+      }
+    }
+  }
+  else {
+    //brute force method
+    for(size_t i=0;i<pc.points.size();i++) {
+      s.center = pc.points[i];
+      Real tmin,tmax;
+      if(s.intersects(r,&tmin,&tmax)) {
+	if(tmax >= 0 && tmin < closest) {
+	  closest = Max(tmin,0.0);
+	  closestpt = i;
+	}
+      }
+    }
+  }
+  pt = r.eval(closest);
+  return closestpt;
+  */
 }
 
 } //namespace Geometry
