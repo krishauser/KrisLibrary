@@ -9,13 +9,13 @@
 
 #include <utils/socketutils.h>
 #include <utils/threadutils.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 
 //platform-specific defines
 
-#ifdef WIN32
+#ifdef _WIN32
 
 inline FILE_POINTER FileOpen(const char* fn, int openmode)
 {

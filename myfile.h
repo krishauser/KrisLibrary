@@ -1,7 +1,7 @@
 #ifndef BASIC_FILE_H
 #define BASIC_FILE_H
 
-#ifdef WIN32
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 typedef HANDLE FILE_POINTER;
@@ -15,7 +15,7 @@ typedef UINT_PTR SOCKET;
 typedef FILE *FILE_POINTER;
 #define INVALID_FILE_POINTER NULL
 typedef int SOCKET;
-#endif // WIN32
+#endif // _WIN32
 
 ///Flags sent to Open: read or write mode (may be bitwise or-ed together)
 #define FILEREAD 0x1

@@ -1,7 +1,7 @@
 #include "textureops.h"
 #include <errors.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 
 bool LoadImageFromBitmap(HDC hdc, HBITMAP hbit, Image& img)
 {
@@ -52,7 +52,7 @@ bool LoadImageFromBitmap(HDC hdc, HBITMAP hbit, Image& img)
 	return true;
 }
 
-#endif //WIN32
+#endif //_WIN32
 
 
 int sumbits(unsigned int word)

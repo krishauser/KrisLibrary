@@ -18,9 +18,9 @@
 #include <fstream>
 using namespace std;
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
-#endif //WIN32
+#endif //_WIN32
 
 namespace Math {
 
@@ -424,7 +424,7 @@ void DebugVector(const char* name,const Vector& v)
     out << v <<endl;
     out.close();
 
-#if WIN32
+#if _WIN32
 	int pid=-1;
 #else
     int pid=fork();
@@ -469,7 +469,7 @@ void DebugMatrix(const char* name,const Matrix& v)
     out << v <<endl;
     out.close();
 
-#if WIN32
+#if _WIN32
 	int pid=-1;
 #else
     int pid=fork();

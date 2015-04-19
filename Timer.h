@@ -1,7 +1,7 @@
 #ifndef MY_TIMER_H
 #define MY_TIMER_H
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 typedef DWORD TimerCounterType;
 #else
@@ -11,7 +11,7 @@ typedef timespec TimerCounterType;
 #else
 typedef timeval TimerCounterType;
 #endif //_POSIX_MONOTONIC_CLOCK
-#endif //WIN32
+#endif //_WIN32
 
 class Timer
 {

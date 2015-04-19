@@ -3,10 +3,10 @@
 #include "GLError.h"
 #include <stdio.h>
 //#define GDI_AVAILABLE
-#if defined WIN32 && defined GDI_AVAILABLE
+#if defined _WIN32 && defined GDI_AVAILABLE
 #include <ole2.h>
 #include <image/gdi.h>
-#endif //WIN32 && GDI_AVAILABLE
+#endif //_WIN32 && GDI_AVAILABLE
 #include <image/ppm.h>
 
 #include <memory.h>

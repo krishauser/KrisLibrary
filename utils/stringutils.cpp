@@ -489,7 +489,10 @@ void StripExtension(std::string& str)
 
 
 
-#ifdef WIN32
+#ifdef _WIN32
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 void ToWideChar(const char* str, WCHAR* buf, int maxBuf)
 {
@@ -502,7 +505,7 @@ void ToWideChar(const char* str, WCHAR* buf, int maxBuf)
 	}
 }
 
-#endif //WIN32
+#endif //_WIN32
 
 
 
@@ -713,7 +716,7 @@ void SplitPath(const std::string& path,std::vector<std::string>& elements)
 
 std::string JoinPath(const std::vector<std::string>& elements)
 {
-#if WIN32
+#ifdef _WIN32
   char delim = '\\';
 #else
   char delim = '/';

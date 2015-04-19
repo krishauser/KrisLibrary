@@ -3,7 +3,7 @@
 
 #ifndef USE_BOOST_THREADS
 #ifndef USE_PTHREADS
-#ifdef WIN32
+#ifdef _WIN32
 #define USE_BOOST_THREADS 1
 #define USE_PTHREADS 0
 #else

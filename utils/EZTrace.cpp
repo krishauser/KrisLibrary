@@ -46,7 +46,7 @@ EZCallTrace::EZCallTrace(const char* name,const char* fmt,...)
     char buf [MAXBUF];
     va_list args;
     va_start(args, fmt);
-#ifdef WIN32
+#ifdef _WIN32
     _vsnprintf(buf, MAXBUF, fmt, args);
 #else
     vsnprintf(buf, MAXBUF, fmt, args);
