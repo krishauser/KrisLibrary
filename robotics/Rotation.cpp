@@ -529,3 +529,18 @@ void CenteredDifferenceAngularAccel(const Matrix3& R_1,const Matrix3& R0,const M
   ddr -= temp;
   ddr.getCrossProduct(a);
 }
+
+Real AxisRotationMagnitude(const Matrix3& R,const Vector3& a)
+{
+  Real cterm = R.trace() + a.dot(R*a);
+  Real sterm = a.x*(R(1,2)-R(2,1)) + a.y*(R(2,0)-R(0,2)) + a.z*(R(0,1)-R(1,0));
+  return Atan2(sterm,cterm);
+}
+
+void NormalizeRotation(Matrix3& R)
+{
+  //TODO: fix this so it works with very non-orthogonal matrices
+  QuaternionRotation q;
+  q.setMatrix(R);
+  q.getMatrix(R);
+}
