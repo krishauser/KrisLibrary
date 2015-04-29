@@ -1,5 +1,5 @@
 #include "fileutils.h"
-#ifdef WIN32
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <strsafe.h>
@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
-#endif
+#endif //_WIN32
 #include <errors.h>
 
 namespace FileUtils {
@@ -40,7 +40,7 @@ void SafeFileName(char* str)
 
 bool Exists(const char* fn)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	HANDLE f = CreateFile((LPCTSTR)fn,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_ALWAYS,0,0);
 	if(f == INVALID_HANDLE_VALUE) return false;
 	CloseHandle(f);
@@ -55,7 +55,7 @@ bool Exists(const char* fn)
 
 bool Delete(const char* fn)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	return DeleteFile((LPCTSTR)fn) != FALSE;
 #else
 	return (unlink(fn)==0);
@@ -64,7 +64,7 @@ bool Delete(const char* fn)
 
 bool Rename(const char* from,const char* to)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	return MoveFile(from,to) != FALSE;
 #else
 	return (rename(from,to)==0);
@@ -81,7 +81,7 @@ bool Rename(const char* from,const char* to)
 
 bool Copy(const char* from,const char* to,bool override)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	return CopyFile(from,to,(override?FALSE:TRUE)) != FALSE;
 #else
 	size_t len = strlen(from) + strlen(to) + 5;
@@ -95,7 +95,7 @@ bool Copy(const char* from,const char* to,bool override)
 
 bool TempName(char* out,const char* directory,const char* prefix)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	if(directory == NULL) directory = ".";
 	UINT res = GetTempFileName(directory,prefix,0,out);
 	return (res!=0);
@@ -109,7 +109,7 @@ bool TempName(char* out,const char* directory,const char* prefix)
 
 bool IsDirectory(const char* path)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	bool res = ((GetFileAttributes(path) & FILE_ATTRIBUTE_DIRECTORY) != 0);
 	return res;
 #else
@@ -120,9 +120,9 @@ bool IsDirectory(const char* path)
 #endif
 }
 
-bool CreateDirectory(const char* path)
+bool MakeDirectory(const char* path)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	HANDLE f = CreateFile(path,FILE_LIST_DIRECTORY,FILE_SHARE_READ,NULL,CREATE_NEW,FILE_ATTRIBUTE_DIRECTORY,NULL);
 	if(f == INVALID_HANDLE_VALUE) return false;
 	CloseHandle(f);
@@ -134,7 +134,7 @@ bool CreateDirectory(const char* path)
 
 bool ListDirectory(const char* path,std::vector<std::string>& files)
 {
-#ifdef WIN32
+#ifdef _WIN32
   files.resize(0);
   WIN32_FIND_DATA ffd;
   TCHAR szDir[MAX_PATH];

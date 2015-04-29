@@ -165,6 +165,7 @@ bool GridHash::IndexQuery(const Index& imin,const Index& imax,QueryCallback f) c
 	if(!f(i->second)) return false;
       }
     }
+	return true;
   }
   else {
     Index i=imin;

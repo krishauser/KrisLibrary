@@ -258,7 +258,7 @@ bool SafeInputFloat(std::istream& in, double& f)
     c=in.peek();
     neg=true;
   }
-#if WIN32
+#if _WIN32
   if(isdigit(c) || c=='.') { in>>f; }
 #else
   if(std::isdigit(c) || c=='.') { in>>f; }

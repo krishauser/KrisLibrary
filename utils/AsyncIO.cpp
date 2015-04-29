@@ -3,7 +3,7 @@
 #include "ioutils.h"
 #include "stringutils.h"
 #include <iostream>
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 using namespace std;

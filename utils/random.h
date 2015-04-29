@@ -95,7 +95,7 @@ struct RNG32
 #endif // 0
 
 ///uses the ANSI C rand48 functions
-#ifndef WIN32
+#ifndef _WIN32
 struct RNG48
 {
   static inline void seed(unsigned long n) { srand48(n); }

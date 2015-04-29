@@ -1,7 +1,7 @@
 #include "Timer.h"
 #include <stdlib.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define GETCURRENTTIME(x) x=timeGetTime()
 #else
 #ifdef  _POSIX_MONOTONIC_CLOCK
@@ -9,7 +9,7 @@
 #else
 #define GETCURRENTTIME(x) gettimeofday(&x,NULL)
 #endif //_POSIX_MONOTONIC_CLOCK
-#endif //WIN32
+#endif //_WIN32
 
 // Sadly, timersub isn't defined in Solaris. :(
 // So we use this instead. (added by Ryan)
@@ -37,7 +37,7 @@ long long Timer::ElapsedTicks()
 
 long long Timer::LastElapsedTicks() const
 {
-#ifdef WIN32
+#ifdef _WIN32
   return current-start;
 #else
 #ifdef  _POSIX_MONOTONIC_CLOCK
@@ -49,7 +49,7 @@ long long Timer::LastElapsedTicks() const
   long long ticks = delta.tv_sec*1000 + delta.tv_usec/1000;
   return ticks;
 #endif //_POSIX_MONOTONIC_CLOCK
-#endif //WIN32
+#endif //_WIN32
 }
     
 double Timer::ElapsedTime()
@@ -60,7 +60,7 @@ double Timer::ElapsedTime()
 
 double Timer::LastElapsedTime() const
 {
-#ifdef WIN32
+#ifdef _WIN32
   return double(current-start)/1000.0;
 #else
 #ifdef  _POSIX_MONOTONIC_CLOCK
@@ -74,7 +74,7 @@ double Timer::LastElapsedTime() const
   secs += double(delta.tv_usec)/1000000.0;
   return secs;
 #endif //_POSIX_MONOTONIC_CLOCK
-#endif //WIN32
+#endif //_WIN32
 }
 
 /*

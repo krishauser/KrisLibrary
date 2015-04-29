@@ -1,7 +1,7 @@
 #ifndef UTILS_SOCKET_UTILS_H
 #define UTILS_SOCKET_UTILS_H
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/socket.h>
 typedef int SOCKET;
 const static int INVALID_SOCKET = -1;

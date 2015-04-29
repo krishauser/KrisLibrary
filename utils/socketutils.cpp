@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 //BSD socket stuff
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -13,7 +13,7 @@
 #endif
 
 
-#ifdef WIN32
+#ifdef _WIN32
 typedef int socklen_t;
 
 struct WSASocketGlobal
@@ -79,7 +79,7 @@ bool EnsureSocketStarted()
 
 bool EnsureSocketStarted() { return true; }
 
-#endif //WIN32
+#endif //_WIN32
 
 ///Caller must ensure that protocol and host are large enough to handle the 
 ///items.  Simple way of doing this is to allocate to size strlen(addr)
@@ -291,18 +291,18 @@ SOCKET Accept(SOCKET sockfd,double timeout)
 
 void SetNonblock(SOCKET sockfd)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	u_long iMode=1;
 	ioctlsocket(sockfd,FIONBIO,&iMode);
 #else
     fcntl(sockfd,F_SETFL,FNDELAY);
-#endif //WIN32
+#endif //_WIN32
 }
 
 
 void CloseSocket(SOCKET sockfd)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	shutdown(sockfd,SD_BOTH);
 	closesocket(sockfd);
 #else
@@ -322,7 +322,7 @@ bool ReadAvailable(SOCKET socketfd)
   // add our descriptors to the set
   FD_SET(socketfd, &fds);
 
-#ifdef WIN32
+#ifdef _WIN32
   int n = 0; //this parameter is ignored
 #else
   int n = socketfd + 1;
@@ -357,7 +357,7 @@ bool WriteAvailable(SOCKET socketfd)
   // add our descriptors to the set
   FD_SET(socketfd, &fds);
 
-#ifdef WIN32
+#ifdef _WIN32
   int n = 0; //this parameter is ignored
 #else
   int n = socketfd + 1;
@@ -392,7 +392,7 @@ bool HasException(SOCKET socketfd)
   // add our descriptors to the set
   FD_SET(socketfd, &fds);
 
-#ifdef WIN32
+#ifdef _WIN32
   int n = 0; //this parameter is ignored
 #else
   int n = socketfd + 1;
