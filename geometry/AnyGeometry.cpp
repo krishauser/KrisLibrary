@@ -350,11 +350,7 @@ AABB3D AnyGeometry3D::GetAABB() const
     AsTriangleMesh().GetAABB(bb.bmin,bb.bmax);
     return bb;
   case PointCloud:
-    {
-      const Meshing::PointCloud3D& pc=AsPointCloud();
-      for(size_t i=0;i<pc.points.size();i++)
-	bb.expand(pc.points[i]);
-    }
+    AsPointCloud().GetAABB(bb.bmin,bb.bmax);
     return bb;
   case ImplicitSurface:
     AsImplicitSurface().bb;
