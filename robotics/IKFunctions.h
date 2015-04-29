@@ -98,10 +98,17 @@ bool SolveIK(RobotIKFunction& f,
 bool SolveIK(RobotKinematics3D&,const std::vector<IKGoal>& problem,
 	     Real tolerance,int& iters,int verbose=1);
 
-/// Same as above, constructing the ik function from a single IK goal
+/// Same as above, constructing the ik function from an IK problem and a list of
+/// active dofs
+bool SolveIK(RobotKinematics3D&,const std::vector<IKGoal>& problem,
+	     const std::vector<int>& activeDofs,
+	     Real tolerance,int& iters,int verbose=1);
+
+/// Same as above, constructing the ik function from a single IK goal and only
+/// using the required number of degrees of freedom to solve for the given
+/// goal.
 bool SolvePassiveChainIK(RobotKinematics3D&,const IKGoal& goal,
 			 Real tolerance,int& iters,int verbose=0);
-
 
 /// For the goal link's transformation T, computes the error of the IK goal g
 void EvalIKError(const IKGoal& g,const RigidTransform& T,Real* poserr,Real* orierr);
