@@ -40,7 +40,7 @@ public:
   void Set(const Index& i,void* data);
   ///Important: this method just removes the item from the hash, but does not delete it
   void* Erase(const Index& i); 
-  void* Get(const Index& i);
+  void* Get(const Index& i) const;
   bool Contains(const Index& i);
   void Clear();
   void Enumerate(std::vector<Value>& items) const;

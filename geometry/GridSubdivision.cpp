@@ -51,9 +51,9 @@ void* GridHash::Erase(const Index& i)
   return NULL;;
 }
 
-void* GridHash::Get(const Index& i)
+void* GridHash::Get(const Index& i) const
 {
-  HashTable::iterator bucket = buckets.find(i);
+  HashTable::const_iterator bucket = buckets.find(i);
   if(bucket != buckets.end()) {
     return bucket->second;
   }
@@ -257,6 +257,7 @@ void GridHash::BallItems(const Vector& c,Real r,vector<void*>& objs) const
   Index imin,imax;
   Vector u;
   PointToIndex(c,imin,u);
+  imax = imin;
   for(int k=0;k<c.n;k++) {
     int ik=imin[k];
     Real r_over_h = r/h(k);
@@ -459,14 +460,11 @@ bool GridSubdivision::BallQuery(const Vector& c,Real r,QueryCallback f) const
 {
   //TODO: crop out boxes not intersected by sphere?
   Index imin,imax;
-  Vector u;
-  PointToIndex(c,imin,u);
-  for(int k=0;k<c.n;k++) {
-    int ik=imin[k];
-    Real r_over_h = r/h(k);
-    imin[k] = ik - (int)Floor(u(k)-r_over_h);
-    imax[k] = ik + (int)Floor(u(k)+r_over_h);
-  }
+  Vector bmin=c,bmax=c;
+  for(int k=0;k<c.n;k++) bmin[k] -= r;
+  for(int k=0;k<c.n;k++) bmax[k] += r;
+  PointToIndex(bmin,imin);
+  PointToIndex(bmax,imax);
   return IndexQuery(imin,imax,f);
 }
 
@@ -523,13 +521,10 @@ void GridSubdivision::BallItems(const Vector& c,Real r,ObjectSet& objs) const
 {
   //TODO: crop out boxes not intersected by sphere?
   Index imin,imax;
-  Vector u;
-  PointToIndex(c,imin,u);
-  for(int k=0;k<c.n;k++) {
-    int ik=imin[k];
-    Real r_over_h = r/h(k);
-    imin[k] = ik - (int)Floor(u(k)-r_over_h);
-    imax[k] = ik + (int)Floor(u(k)+r_over_h);
-  }
+  Vector bmin=c,bmax=c;
+  for(int k=0;k<c.n;k++) bmin[k] -= r;
+  for(int k=0;k<c.n;k++) bmax[k] += r;
+  PointToIndex(bmin,imin);
+  PointToIndex(bmax,imax);
   IndexItems(imin,imax,objs);
 }
