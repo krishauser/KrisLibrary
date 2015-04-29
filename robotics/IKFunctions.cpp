@@ -739,8 +739,11 @@ void RobotIKFunction::SetState(const Vector& x) const
   if(activeDofs.IsOffset())
     robot.UpdateFrames();
   else {
+    robot.UpdateFrames();
+    /*
     for(size_t i=0;i<activeDofs.mapping.size();i++)
       robot.UpdateSelectedFrames(activeDofs.mapping[i],activeDofs.mapping[i]);
+    */
   }
 }
 
@@ -807,6 +810,7 @@ bool RobotIKSolver::Solve(Real tolerance,int& iters)
 {
   RobotToState();
   solver.tolf = tolerance;
+  solver.tolx = tolerance*0.01;
   bool res=solver.GlobalSolve(iters);
   StateToRobot();
 
@@ -821,8 +825,8 @@ void RobotIKSolver::PrintStats()
   printf("%d evals (%fs), %d jacobian evals(%fs)\n",robotIK.numEvals,robotIK.evalTime,robotIK.numJacobians,robotIK.jacobianTime);
   printf("%fs in setstate\n",robotIK.setStateTime);
   */
-  cout<<"No stats..."<<endl;
-  Abort();
+  cout<<"TODO: record IK solver stats..."<<endl;
+  //Abort();
 }
 
 
