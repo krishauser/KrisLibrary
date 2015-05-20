@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "NeighborGraph.h"
 #include "GridSubdivision.h"
 #include "KDTree.h"

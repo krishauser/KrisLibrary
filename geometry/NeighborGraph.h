@@ -1,7 +1,7 @@
 #ifndef NEIGHBOR_GRAPH_H
 #define NEIGHBOR_GRAPH_H
 
-#include <Graph/UndirectedGraph.h>
+#include <graph/UndirectedGraph.h>
 #include <meshing/PointCloud.h>
 
 namespace Geometry {
