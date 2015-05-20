@@ -638,6 +638,55 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt) const
   return Inf;
 }
 
+Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp) const
+{
+  Vector3 cplocal;
+  Vector3 ptlocal;
+  GetTransform().mulInverse(pt,ptlocal);
+  switch(type) {
+  case Primitive:
+    {
+      vector<double> params = AsPrimitive().ClosestPointParameters(pt);
+      cplocal = AsPrimitive().ParametersToPoint(params);
+      Real d = cplocal.distance(ptlocal);
+      if(d <= margin) { cp == pt; return 0; }
+      //TODO shift toward cplocal by margin
+      cp = GetTransform()*cplocal;
+      return d;
+    }
+  case ImplicitSurface:
+    fprintf(stderr,"TODO: closest point from implicit surface to point\n");
+    return Inf;
+  case TriangleMesh:
+    {
+      ClosestPoint(TriangleMeshCollisionData(),pt,cp);
+      return Min(pt.distance(cp)-margin,0.0);
+    }
+  case PointCloud:
+    {
+      const CollisionPointCloud& pc = PointCloudCollisionData();
+      int id;
+      if(!pc.octree->NearestNeighbor(ptlocal,cp,id)) return Inf;
+      return Min(cp.distance(ptlocal)-margin,0.0);
+    }
+  case Group:
+    {
+      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      Vector3 temp;
+      Real dmin = Inf;
+      for(size_t i=0;i<items.size();i++) {
+	Real d = items[i].Distance(pt,temp);
+	if(d < dmin) {
+	  dmin = d;
+	  cp = temp;
+	}
+      }
+      return Min(Sqrt(dmin)-margin,0.0);
+    }
+  }
+  return Inf;
+}
+
 
 
 bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real margin,
