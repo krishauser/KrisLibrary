@@ -991,12 +991,12 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
 	if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
 	  elements2.push_back(i);
 	  if(elements2.size() >= maxContacts) {
-	    printf("Collision in time %g\n",timer.ElapsedTime());
+	    //printf("Collision in time %g\n",timer.ElapsedTime());
 	    return true;
 	  }
 	}
       }
-      printf("No collision in time %g\n",timer.ElapsedTime());
+      // printf("No collision in time %g\n",timer.ElapsedTime());
       return false;
 
       /*
