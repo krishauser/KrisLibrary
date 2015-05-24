@@ -320,12 +320,13 @@ void IKGoal::GetError(const RigidTransform& Trel,Real poserr[3],Real orierr[3]) 
     orierr[2]=em.z;
   }
   else if(rotConstraint==IKGoal::RotAxis) {
+    Real neg = Max(-localAxis.dot(endRotation),0.0);
     Vector3 x,y;
     endRotation.getOrthogonalBasis(x,y);
     Vector3 curAxis;
     Trel.R.mul(localAxis,curAxis);
-    orierr[0] = dot(curAxis,x);
-    orierr[1] = dot(curAxis,y);
+    orierr[0] = dot(curAxis,x)+neg;
+    orierr[1] = dot(curAxis,y)+neg;
   }
   else if(rotConstraint==IKGoal::RotNone) { }
   else {
