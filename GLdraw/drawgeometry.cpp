@@ -101,14 +101,12 @@ namespace GLDraw {
       }
       break;
       */
-      /*
     case GeometricPrimitive3D::AABB:
       {
 	const AABB3D* aabb=AnyCast<AABB3D>(&geom.data);
 	drawBoundingBox(aabb->bmin,aabb->bmax);
       }
       break;
-      */
     case GeometricPrimitive3D::Box:
       {
 	const Box3D* box=AnyCast<Box3D>(&geom.data);
