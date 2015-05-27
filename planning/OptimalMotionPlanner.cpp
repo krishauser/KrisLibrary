@@ -1,5 +1,6 @@
 #include "OptimalMotionPlanner.h"
 #include "PointLocation.h"
+#include "GeneralizedAStar.h"
 #include <math/random.h>
 #include <graph/Path.h>
 #include <Timer.h>
@@ -11,6 +12,10 @@
 //Prunes new configurations whose straight line distance to start and goal
 //is greater than the current goal cost
 #define ELLIPSOID_PRUNING 1
+
+//TEST: An incremental version of FMT*
+#define TEST_FMT 0
+
 
 class EdgeDistance
 {
@@ -49,6 +54,19 @@ bool connectedToStartFilter(int n)
 PRMStarPlanner::PRMStarPlanner(CSpace* space)
   :RoadmapPlanner(space),lazy(false),rrg(false),bidirectional(true),connectByRadius(false),connectRadiusConstant(1),connectionThreshold(Inf),lazyCheckThreshold(Inf),suboptimalityFactor(0),spp(roadmap),sppGoal(roadmap),sppLB(LBroadmap),sppLBGoal(LBroadmap)
 {}
+
+void PRMStarPlanner::Cleanup()
+{
+  RoadmapPlanner::Cleanup();
+  spp.p.clear();
+  spp.d.clear();
+  sppGoal.p.clear();
+  sppGoal.d.clear();
+  sppLB.p.clear();
+  sppLB.d.clear();
+  sppLBGoal.p.clear();
+  sppLBGoal.d.clear();
+}
 
 void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
 {
@@ -99,6 +117,7 @@ void PRMStarPlanner::PlanMore()
       return;
     }
     tCheck += timer.ElapsedTime();
+    m=AddMilestone(x);  
   }
   else {
     //RRT/RRG expansion strategy
@@ -319,7 +338,7 @@ void PRMStarPlanner::PlanMore()
 	}
       }
       else if(lazy) {
-#if PRECHECK_OPTIMAL_EDGES
+#if PRECHECK_OPTIMAL_EDGES && ! TEST_FMT
 	//if this edge will become part of an optimal lazy path -- check it now
 	//rather than waiting for the lazy update
 	if((sppLB.d[n] + d + sppLBGoal.d[m])*fudgeFactor < goalDist || (sppLB.d[m] + d + sppLBGoal.d[n])*fudgeFactor < goalDist) {
@@ -623,11 +642,76 @@ struct LessEdgePriority
   }
 };
 
+class FMTAStar : public AI::GeneralizedAStar<int,double>
+{
+public:
+  PRMStarPlanner* planner;
+  FMTAStar(PRMStarPlanner* _planner):planner(_planner)
+  {
+    visited.resize(planner->roadmap.nodes.size(),NULL);
+  }
+  virtual bool IsGoal(const int& s) { return s == planner->goal; }
+  virtual void Successors(const int& s,vector<int>& successors,vector<double>& cost) {
+    successors.resize(0);
+    cost.resize(0);
+    Graph::UndirectedEdgeIterator<SmartPointer<EdgePlanner> > e;
+    vector<pair<int,int> > todelete;
+    for(planner->LBroadmap.Begin(s,e);!e.end();e++) {
+      int t = e.target();
+      double c = planner->space->Distance((*e)->Start(),(*e)->Goal());
+      if(planner->roadmap.HasEdge(s,t)) {
+	successors.push_back(t);
+	cost.push_back(c);
+      }
+      else {
+	Node* nt = VisitedStateNode(t);
+	if(nt && nt->g <= VisitedStateNode(s)->g+c) 
+	  //don't check edges along suboptimal paths
+	  continue;
+	if((*e)->IsVisible()) {
+	  planner->roadmap.AddEdge(s,t,(*e));
+	  successors.push_back(t);
+	  cost.push_back(c);
+	}
+	else {
+	  todelete.push_back(pair<int,int>(s,t));
+	}
+      }
+    }
+    for(size_t i=0;i<todelete.size();i++)
+      planner->LBroadmap.DeleteEdge(todelete[i].first,todelete[i].second);
+  }
+  virtual double Heuristic(const int& s) { return planner->sppLBGoal.d[s]; }
+  virtual void ClearVisited() { fill(visited.begin(),visited.end(),(Node*)NULL); }
+  virtual void Visit(const int& s,Node* n) { visited[s] = n; }
+  virtual Node* VisitedStateNode(const int& s) { return visited[s]; }
+  vector<Node*> visited;
+};
 
 bool PRMStarPlanner::CheckPath(int a,int b)
 {
   EdgeDistance distanceWeightFunc;
   Assert(lazy);
+
+  if(TEST_FMT) {
+    Timer timer;
+    Assert(PRECHECK_OPTIMAL_EDGES);
+    FMTAStar astar(this);
+    astar.SetStart(start);
+    bool res = astar.Search();
+    tLazyCheck += timer.ElapsedTime();
+
+    //update shortest paths
+    timer.Reset();
+    spp.FindPath_Undirected(goal,distanceWeightFunc);
+    sppLB.FindPath_Undirected(goal,distanceWeightFunc);
+    sppGoal.FindPath_Undirected(start,distanceWeightFunc);
+    sppLBGoal.FindPath_Undirected(start,distanceWeightFunc);
+    tShortestPaths += timer.ElapsedTime();
+
+    return res;
+  }
+
 #if PRECHECK_OPTIMAL_EDGES
   bool useSppGoal = true;
 #else
