@@ -696,7 +696,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
       std::vector<std::string> elements;
       if(type == Array) {
 	res->type = Array;
-	int islice1,islice2;
+	int islice1=-1,islice2=1;
 	std::vector<int> ielements;
 	//TODO parse into integers
 	if(ielements.empty()) {

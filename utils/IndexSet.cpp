@@ -1,4 +1,5 @@
 #include "IndexSet.h"
+#include <utils.h>
 using namespace std;
 
 IndexSet::IndexSet(int _imax)
@@ -57,6 +58,6 @@ int IndexSet::MaxValue() const
   Assert(!indices.empty());
   int imax=indices[0];
   for(size_t i=1;i<indices.size();i++)
-    imax = std::max(imax,indices[i]);
+    imax = Max((int)imax,indices[i]);
   return imax;
 }
