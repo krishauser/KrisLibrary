@@ -61,8 +61,8 @@ void EvalIKGoalDeriv(const IKGoal& g,const RigidTransform& T,const Vector3& dw,c
     GetCanonicalBasis(g.endRotation,x,y);
     Vector3 curAxis;
     T.R.mul(g.localAxis,curAxis);
-    derr(m) = dot(cross(dw,curAxis),x);
-    derr(m+1) = dot(cross(dw,curAxis),y);
+    derr(m) = dot(cross(dw,curAxis),x) - dot(cross(dw,curAxis),g.endRotation);
+    derr(m+1) = dot(cross(dw,curAxis),y) - dot(cross(dw,curAxis),g.endRotation);
   }
   else if(g.rotConstraint==IKGoal::RotNone) { }
   else {
@@ -736,7 +736,15 @@ void RobotIKFunction::SetState(const Vector& x) const
 {
   Assert(x.n == (int)activeDofs.Size());
   activeDofs.Map(x,robot.q);
-  robot.UpdateFrames();
+  if(activeDofs.IsOffset())
+    robot.UpdateFrames();
+  else {
+    robot.UpdateFrames();
+    /*
+    for(size_t i=0;i<activeDofs.mapping.size();i++)
+      robot.UpdateSelectedFrames(activeDofs.mapping[i],activeDofs.mapping[i]);
+    */
+  }
 }
 
 void RobotIKFunction::PreEval(const Vector& x)
@@ -802,6 +810,7 @@ bool RobotIKSolver::Solve(Real tolerance,int& iters)
 {
   RobotToState();
   solver.tolf = tolerance;
+  solver.tolx = tolerance*0.01;
   bool res=solver.GlobalSolve(iters);
   StateToRobot();
 
@@ -816,8 +825,8 @@ void RobotIKSolver::PrintStats()
   printf("%d evals (%fs), %d jacobian evals(%fs)\n",robotIK.numEvals,robotIK.evalTime,robotIK.numJacobians,robotIK.jacobianTime);
   printf("%fs in setstate\n",robotIK.setStateTime);
   */
-  cout<<"No stats..."<<endl;
-  Abort();
+  cout<<"TODO: record IK solver stats..."<<endl;
+  //Abort();
 }
 
 
@@ -913,6 +922,16 @@ bool SolveIK(RobotKinematics3D& robot,const vector<IKGoal>& problem,
   RobotIKFunction function(robot);
   function.UseIK(problem);
   GetDefaultIKDofs(robot,problem,function.activeDofs);
+  return SolveIK(function,tolerance,iters,verbose);
+}
+
+bool SolveIK(RobotKinematics3D& robot,const vector<IKGoal>& problem,
+	     const vector<int>& activeDofs,
+	     Real tolerance,int& iters,int verbose)
+{
+  RobotIKFunction function(robot);
+  function.UseIK(problem);
+  function.activeDofs.mapping = activeDofs;
   return SolveIK(function,tolerance,iters,verbose);
 }
 

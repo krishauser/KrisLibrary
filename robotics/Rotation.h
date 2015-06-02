@@ -156,6 +156,21 @@ void CenteredDifferenceAngularVelocity(const Matrix3& R_1,const Matrix3& R0,cons
  */
 void CenteredDifferenceAngularAccel(const Matrix3& R_1,const Matrix3& R0,const Matrix3& R1,Real h,Vector3& a);
 
+/** @brief Computes the "amount" of rotation about the axis a that thegiven
+ * rotation matrix R performs.  Specifically, finds the angle theta such that
+ * e^[theta*a] minimizes the angular distance to R.
+ *
+ * E.g., if R=e^[u*a], it will return u.  However, if the axis of R is not aligned
+ * along a, this function will return something sensible.
+ */
+Real AxisRotationMagnitude(const Matrix3& R,const Vector3& a);
+
+/** @brief For a not-quite rotation matrix R, replaces it with the closest
+ * rotation matrix. I.e., find an orthogonal matrix that minimizes the distance to
+ * R.
+ */
+void NormalizeRotation(Matrix3& R);
+
 
 /*@}*/
 

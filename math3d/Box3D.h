@@ -21,6 +21,7 @@ struct Sphere3D;
 struct Box3D : public ScaledLocalCoordinates3D
 {
   Vector3 center() const;
+  void setCenter(const Vector3& c);
   void set(const AABB3D& bb);
   void setTransformed(const AABB3D& box,const RigidTransform& T);
   void setTransformed(const Box3D& box,const RigidTransform& T);
@@ -29,6 +30,7 @@ struct Box3D : public ScaledLocalCoordinates3D
   Real distance(const Point3D& pt,Point3D& closestPt) const;
   Real distanceSquared(const Point3D& pt,Point3D& closestPt) const;
   void getAABB(AABB3D& bb) const;
+  bool intersects(const AABB3D& b) const;
   bool intersects(const Box3D& b) const;
   bool intersectsApprox(const Box3D& b) const;  ///<faster, approximate version
   bool intersects(const Segment3D& s) const;

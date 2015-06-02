@@ -32,6 +32,8 @@ struct Line3D
   bool rayIntersects(const AABB3D&) const;
   ///given bounds [tmin,tmax] of the line, returns the clipping min/max
   bool intersects(const AABB3D&, Real& tmin, Real& tmax) const;
+  Real distance(const AABB3D& bb) const;
+  Real distance(const AABB3D& bb, Real& tclosest, Vector3& bbclosest) const;
   bool Read(File& f);
   bool Write(File& f) const;
 

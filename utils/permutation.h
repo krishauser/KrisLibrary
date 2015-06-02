@@ -20,7 +20,8 @@ inline void IdentityPermutation(int v[],int n)
   for(int i=0;i<n;i++) v[i]=i;
 }
 
-inline void RandomlyPermute(int v[],int n)
+template <class T>
+inline void RandomlyPermute(T v[],int n)
 {
   for(int i=0;i<n;i++) {
     int k=i+rand()%(n-i);
@@ -40,7 +41,8 @@ inline void IdentityPermutation(std::vector<int>& v)
   for(int i=0;i<n;i++) v[i]=i;
 }
 
-inline void RandomlyPermute(std::vector<int>& v)
+template <class T>
+inline void RandomlyPermute(std::vector<T>& v)
 {
   int n=(int)v.size();
   for(int i=0;i<n;i++) {

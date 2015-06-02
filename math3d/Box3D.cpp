@@ -4,6 +4,7 @@
 #include "Triangle3D.h"
 #include "Sphere3D.h"
 #include "Line3D.h"
+#include <geometry/PQP/src/OBB_Disjoint.h>
 using namespace std;
 
 namespace Math3D {
@@ -11,6 +12,11 @@ namespace Math3D {
 Vector3 Box3D::center() const
 {
   return origin + 0.5*(xbasis*dims.x+ybasis*dims.y+zbasis*dims.z);
+}
+
+void Box3D::setCenter(const Vector3& c)
+{
+  origin = c - 0.5*(xbasis*dims.x+ybasis*dims.y+zbasis*dims.z);
 }
 
 void Box3D::set(const AABB3D& bb)
@@ -75,12 +81,33 @@ Real Box3D::distanceSquared(const Point3D& pt,Point3D& out) const
   return norm2;
 }
 
+bool Box3D::intersects(const AABB3D& b) const
+{
+  Box3D bb;
+  bb.set(b);
+  return intersects(bb);
+}
+
 bool Box3D::intersects(const Box3D& b) const
 {
-  cout<<"Box3D::intersects: Not quite done... check split planes a's faces, b's faces, and a's edges x b's edges"<<endl;
-  cout<<"  use intersectsApprox for now"<<endl;
-  abort();
-  return false;
+  Vector3 c = center();
+  Vector3 bc = b.center();
+  Vector3 bclocal;
+  toLocalReorient(bc-c,bclocal);
+  Vector3 bxlocal,bylocal,bzlocal;
+  toLocalReorient(b.xbasis,bxlocal);
+  toLocalReorient(b.ybasis,bylocal);
+  toLocalReorient(b.zbasis,bzlocal);
+  Vector3 halfdims = dims*0.5;
+  Vector3 bhalfdims = b.dims*0.5;
+  PQP_REAL B[3][3],T[3],AD[3],BD[3];
+  bxlocal.get(B[0]);
+  bylocal.get(B[1]);
+  bzlocal.get(B[2]);
+  bclocal.get(T);
+  halfdims.get(AD);
+  bhalfdims.get(BD);
+  return obb_disjoint(B,T,AD,BD) == 0;
 }
 
 bool Box3D::intersectsApprox(const Box3D& b) const

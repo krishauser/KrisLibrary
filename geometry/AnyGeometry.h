@@ -109,6 +109,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///geometry as usual
   void SetTransform(const RigidTransform& T);
   Real Distance(const Vector3& pt) const;
+  Real Distance(const Vector3& pt,Vector3& cp) const;
   bool Collides(const AnyCollisionGeometry3D& geom) const;
   bool Collides(const AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) const;
   Real Distance(const AnyCollisionGeometry3D& geom) const;

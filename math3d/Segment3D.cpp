@@ -99,6 +99,60 @@ bool Segment3D::intersects(const AABB3D& bb, Real& u1, Real& u2) const
   return ClipLine(a, b-a, bb, u1,u2);
 }
 
+Real Segment3D::distance(const AABB3D& bb) const
+{
+  Real tclosest;
+  Vector3 bbclosest;
+  return distance(bb,tclosest,bbclosest);
+}
+
+Real Segment3D::distance(const AABB3D& bb, Real& tclosest, Point3D& bbclosest) const
+{
+  Real u1,u2;
+  if(intersects(bb,u1,u2)) {
+    tclosest = u1;
+    eval(u1,bbclosest);
+    return 0;
+  }
+  //cases: start-face, end-face, middle-edge, middle-point
+  Vector3 ca,cb;
+  Real da2 = bb.distanceSquared(a,ca);
+  Real db2 = bb.distanceSquared(b,cb);
+  //if these points are on the same face then the middle is not closest
+  bool matchx,matchy,matchz;
+  matchx = (ca.x==cb.x);
+  matchy = (ca.y==cb.y);
+  matchz = (ca.z==cb.z);
+  int nmatch = 0;
+  if(matchx) nmatch++;
+  if(matchy) nmatch++;
+  if(matchz) nmatch++;
+  if(nmatch <= 1) {
+    //the closest must be middle-edge or middle point
+    Line3D l;
+    l.source = a;
+    l.direction = b;
+    Real tl;
+    Vector3 cl;
+    Real dl = l.distance(bb,tl,cl);
+    if(tl >= 0 && tl <= 1 && dl*dl < Min(da2,db2)) {
+      tclosest = tl;
+      bbclosest = cb;
+      return dl;
+    }
+  }
+  if(da2 < db2) {
+    tclosest = 0;
+    bbclosest = ca;
+    return Sqrt(da2);
+  }
+  else {
+    tclosest = 1;
+    bbclosest = cb;
+    return Sqrt(db2);
+  }
+}
+
 
 namespace Math3D 
 {

@@ -350,11 +350,7 @@ AABB3D AnyGeometry3D::GetAABB() const
     AsTriangleMesh().GetAABB(bb.bmin,bb.bmax);
     return bb;
   case PointCloud:
-    {
-      const Meshing::PointCloud3D& pc=AsPointCloud();
-      for(size_t i=0;i<pc.points.size();i++)
-	bb.expand(pc.points[i]);
-    }
+    AsPointCloud().GetAABB(bb.bmin,bb.bmax);
     return bb;
   case ImplicitSurface:
     AsImplicitSurface().bb;
@@ -619,10 +615,16 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt) const
   case PointCloud:
     {
       const CollisionPointCloud& pc = PointCloudCollisionData();
+      Vector3 cp;
+      int id;
+      if(!pc.octree->NearestNeighbor(ptlocal,cp,id)) return Inf;
+      return Min(cp.distance(ptlocal)-margin,0.0);
+      /*
       Real dmin = Inf;
       for(size_t i=0;i<pc.points.size();i++)
 	dmin = Min(dmin,ptlocal.distanceSquared(pc.points[i]));
       return Min(Sqrt(dmin)-margin,0.0);
+      */
     }
   case Group:
     {
@@ -630,6 +632,55 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt) const
       Real dmin = Inf;
       for(size_t i=0;i<items.size();i++)
 	dmin = Min(dmin,items[i].Distance(pt));
+      return Min(Sqrt(dmin)-margin,0.0);
+    }
+  }
+  return Inf;
+}
+
+Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp) const
+{
+  Vector3 cplocal;
+  Vector3 ptlocal;
+  GetTransform().mulInverse(pt,ptlocal);
+  switch(type) {
+  case Primitive:
+    {
+      vector<double> params = AsPrimitive().ClosestPointParameters(pt);
+      cplocal = AsPrimitive().ParametersToPoint(params);
+      Real d = cplocal.distance(ptlocal);
+      if(d <= margin) { cp == pt; return 0; }
+      //TODO shift toward cplocal by margin
+      cp = GetTransform()*cplocal;
+      return d;
+    }
+  case ImplicitSurface:
+    fprintf(stderr,"TODO: closest point from implicit surface to point\n");
+    return Inf;
+  case TriangleMesh:
+    {
+      ClosestPoint(TriangleMeshCollisionData(),pt,cp);
+      return Min(pt.distance(cp)-margin,0.0);
+    }
+  case PointCloud:
+    {
+      const CollisionPointCloud& pc = PointCloudCollisionData();
+      int id;
+      if(!pc.octree->NearestNeighbor(ptlocal,cp,id)) return Inf;
+      return Min(cp.distance(ptlocal)-margin,0.0);
+    }
+  case Group:
+    {
+      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      Vector3 temp;
+      Real dmin = Inf;
+      for(size_t i=0;i<items.size();i++) {
+	Real d = items[i].Distance(pt,temp);
+	if(d < dmin) {
+	  dmin = d;
+	  cp = temp;
+	}
+      }
       return Min(Sqrt(dmin)-margin,0.0);
     }
   }
@@ -924,6 +975,32 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
       AABB3D baabb_a;
       bbb_a.getAABB(baabb_a);
       baabb_a.setIntersection(a.bblocal);
+
+      //octree-vs b's bounding box method (not terribly smart, could be
+      //improved by descending bounding box hierarchies)
+      Timer timer;
+      vector<Vector3> apoints;
+      vector<int> aids;
+      a.octree->BoxQuery(bbb_a,apoints,aids);
+      RigidTransform Tident; Tident.setIdentity();
+      //test all points, linearly
+      for(size_t i=0;i<apoints.size();i++) {
+	Vector3 p_w = a.currentTransform*apoints[i];
+	Tident.t = p_w;
+	vector<int> temp;
+	if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
+	  elements2.push_back(i);
+	  if(elements2.size() >= maxContacts) {
+	    //printf("Collision in time %g\n",timer.ElapsedTime());
+	    return true;
+	  }
+	}
+      }
+      // printf("No collision in time %g\n",timer.ElapsedTime());
+      return false;
+
+      /*
+      //grid method
       GridSubdivision::Index imin,imax;
       a.grid.PointToIndex(Vector(3,baabb_a.bmin),imin);
       a.grid.PointToIndex(Vector(3,baabb_a.bmax),imax);
@@ -960,6 +1037,7 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
 	else printf("Collision in time %g\n",timer.ElapsedTime());
 	return !collisionFree;
       }
+      */
     }
     return false;
   case AnyCollisionGeometry3D::Group:
@@ -1112,68 +1190,15 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D& r,Real* distance,int* element)
   case PointCloud:
     {
       const CollisionPointCloud& pc = PointCloudCollisionData();
-      Line3D rlocal;
-      pc.currentTransform.mulInverse(r.source,rlocal.source);
-      pc.currentTransform.R.mulTranspose(r.direction,rlocal.direction);
-      Real tmin=0,tmax=Inf;
-      if(!rlocal.intersects(pc.bblocal,tmin,tmax)) return false;
-      Real closest = Inf;
-      int closestpt = -1;
-      Sphere3D s;
-      s.radius = margin;
-      if(margin < 1e-3) {
-	//rasterization method
-	Segment3D slocal;
-	rlocal.eval(tmin,slocal.a);
-	rlocal.eval(tmax,slocal.b);
-	//normalize to grid resolution
-	slocal.a.x /= pc.grid.h[0];
-	slocal.a.y /= pc.grid.h[1];
-	slocal.a.z /= pc.grid.h[2];
-	slocal.b.x /= pc.grid.h[0];
-	slocal.b.y /= pc.grid.h[1];
-	slocal.b.z /= pc.grid.h[2];
-	vector<IntTriple> cells;
-	Meshing::GetSegmentCells(slocal,cells);
-	GridSubdivision::Index ind;
-	ind.resize(3);
-	for(size_t i=0;i<cells.size();i++) {
-	  ind[0] = cells[i].a;
-	  ind[1] = cells[i].b;
-	  ind[2] = cells[i].c;
-	  //const list<void*>* objs = pc.grid.GetObjectSet(ind);
-	  //if(!objs) continue;
-	  GridSubdivision::HashTable::const_iterator objs = pc.grid.buckets.find(ind);
-	  if(objs != pc.grid.buckets.end()) {
-	    for(list<void*>::const_iterator k=objs->second.begin();k!=objs->second.end();k++) {
-	      Vector3* p = reinterpret_cast<Vector3*>(*k);
-	      s.center = *p;
-	      Real tmin,tmax;
-	      if(s.intersects(rlocal,&tmin,&tmax)) {
-		if(tmax >= 0 && tmin < closest) {
-		  closest = Max(tmin,0.0);
-		  closestpt = (p - &pc.points[0]);
-		}
-	      }
-	    }
-	  }
-	}
+      Vector3 pt;
+      int res = ::RayCast(pc,margin,r,pt);
+      if(res < 0) return false;
+      if(distance) {
+	Vector3 temp;
+	*distance = r.closestPoint(pt,temp);
       }
-      else {
-	for(size_t i=0;i<pc.points.size();i++) {
-	  s.center = pc.points[i];
-	  Real tmin,tmax;
-	  if(s.intersects(rlocal,&tmin,&tmax)) {
-	    if(tmax >= 0 && tmin < closest) {
-	      closest = Max(tmin,0.0);
-	      closestpt = i;
-	    }
-	  }
-	}
-      }
-      if(distance) *distance = closest;
-      if(element) *element = closestpt;
-      return closestpt >= 0;
+      if(element) *element = res;
+      return true;
     }
   case Group:
     {

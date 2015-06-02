@@ -31,6 +31,18 @@ bool Ray3D::intersects(const Ray3D& r, Real* t, Real* u, Real epsilon) const
   return false;
 }
 
+bool Ray3D::intersects(const AABB3D& bb, Real& tmin, Real& tmax) const
+{
+  if(Line3D::intersects(bb,tmin,tmax)) {
+    if(tmin < 0) {
+      if(tmax < 0) return false;
+      tmin = 0;
+    }
+    return true;
+  }
+  return false;
+}
+
 void Ray3D::closestPoint(const Line3D& l,Real& t,Real& u) const
 {
   Line3D::closestPoint(l,t,u);
@@ -52,4 +64,21 @@ void Ray3D::closestPoint(const Ray3D& r,Real& t,Real& u) const
     t=r.closestPointParameter(r.source);
   }
   if(t < 0) t=0;
+}
+
+Real Ray3D::distance(const AABB3D& bb) const
+{
+  Real tclosest;
+  Vector3 bbclosest;
+  return distance(bb,tclosest,bbclosest);
+}
+
+Real Ray3D::distance(const AABB3D& bb, Real& tclosest, Vector3& bbclosest) const
+{
+  Real d = Line3D::distance(bb,tclosest,bbclosest);
+  if(tclosest >= 0) return d;
+  else {
+    tclosest = 0;
+    return bb.distance(source,bbclosest);
+  }
 }

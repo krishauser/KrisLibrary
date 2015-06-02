@@ -436,12 +436,14 @@ void MomentRotation::setMatrix(const Matrix3& r)
   if(s >= One) {
     if(s > One+Epsilon) {
       cerr<<"MomentRotation::setMatrix(): Warning- trace of matrix is greater than 3"<<endl;
+      cerr<<"  Matrix:"<<endl<<r<<endl;
     }
     theta = Zero;
   }
   else if(s <= -One) {
     if(s < -One-Epsilon) {
       cerr<<"MomentRotation::setMatrix(): Warning- trace of matrix is less than -1"<<endl;
+      cerr<<"  Matrix:"<<endl<<r<<endl;
     }
     theta = Pi;
   }

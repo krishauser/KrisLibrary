@@ -22,6 +22,8 @@ struct Segment3D
   void eval(Real t, Point3D& out) const;
   bool intersects(const AABB3D&) const;
   bool intersects(const AABB3D&, Real& tmin, Real& tmax) const;
+  Real distance(const AABB3D& bb) const;
+  Real distance(const AABB3D& bb, Real& tclosest, Point3D& bbclosest) const;
   bool Read(File& f);
   bool Write(File& f) const;
   
