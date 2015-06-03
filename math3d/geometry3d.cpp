@@ -299,6 +299,8 @@ const char* GeometricPrimitive3D::TypeName(Type type)
     return "box";
   case Cylinder:
     return "cylinder";
+  case Empty:
+    return "empty";
   default:
     return "error";
   }
