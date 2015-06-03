@@ -80,8 +80,8 @@ public:
     map.set("volume",Pow(2.0*radius,center.n));
     Vector vmin=center-Vector(center.n,radius);
     Vector vmax=center+Vector(center.n,radius);
-    map.setArray("minimum",vmin);
-    map.setArray("maximum",vmax);
+    map.setArray("minimum",vector<double>(vmin));
+    map.setArray("maximum",vector<double>(vmax));
   }
 
   Config center;
