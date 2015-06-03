@@ -120,6 +120,10 @@ class OctreePointSet : public Octree
   ///Collapses all non-leaf nodes if the collapsed number of points per cell
   ///is less than or equal to maxSize
   void Collapse(int maxSize=0);
+  ///Fits AABBs to point sets.  May speed up query times.  IMPORTANT: can no
+  ///longer use Lookup, Child, or Add after this is called because the octree
+  ///subdivision property will no longer hold.
+  void FitToPoints();
 
  protected:
   Real _NearestNeighbor(const OctreeNode& n,const Vector3& c,Vector3& closest,int& id,Real minDist) const;
@@ -132,6 +136,7 @@ class OctreePointSet : public Octree
   int maxPointsPerCell;
   vector<vector<Vector3> > pointLists;
   vector<vector<int> > idLists;
+  bool fit;
 };
 
 /** @brief Stores a function f(x) on an octree grid.  Allows for O(d) setting,

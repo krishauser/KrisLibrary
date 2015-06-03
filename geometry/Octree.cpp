@@ -289,6 +289,8 @@ int Octree::AddNode(int parent)
   if(freeNodes.empty()) {
     index=(int)nodes.size();
     nodes.resize(nodes.size()+1);
+    //TODO: allow deletions / additions while keeping topological sorted order
+    Assert(index > parent);
   }
   else {
     index=freeNodes.front();
@@ -313,11 +315,12 @@ void Octree::DeleteNode(int id)
 
 
 OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell)
-  :Octree(bbox),maxPointsPerCell(_maxPointsPerCell)
+  :Octree(bbox),maxPointsPerCell(_maxPointsPerCell),fit(false)
 {}
 
 void OctreePointSet::Add(const Vector3& pt,int id)
 {
+  if(fit) FatalError("OctreePointSet: Cannot call Add() after FitToPoints()");
   OctreeNode* node = Lookup(pt);
   if(node == NULL) FatalError("OctreePointSet: adding point outside range");
   int nindex = Index(*node);
@@ -574,6 +577,27 @@ int OctreePointSet::_KNearestNeighbors(const OctreeNode& n,const Vector3& c,vect
     }
   }
     return kmin;
+}
+
+void OctreePointSet::FitToPoints()
+{
+  fit = true;
+  //assume topological sort, go backwards
+  for(size_t i=0;i<nodes.size();i++) {
+    int index=(int)nodes.size()-1-(int)i;
+    OctreeNode& n = nodes[index];
+    if(IsLeaf(n)) {
+      n.bb.minimize();
+      for(size_t j=0;j<pointLists[index].size();j++) 
+	n.bb.expand(pointLists[index][j]);
+    }
+    else{
+      //form bb from child bb's
+      n.bb.minimize();
+      for(int c=0;c<8;c++) 
+	n.bb.setUnion(nodes[n.childIndices[c]].bb);
+    }
+  }
 }
 
 void OctreePointSet::Collapse(int maxSize)
