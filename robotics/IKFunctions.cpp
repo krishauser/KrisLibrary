@@ -740,10 +740,9 @@ void RobotIKFunction::SetState(const Vector& x) const
     robot.UpdateFrames();
   else {
     robot.UpdateFrames();
-    /*
-    for(size_t i=0;i<activeDofs.mapping.size();i++)
-      robot.UpdateSelectedFrames(activeDofs.mapping[i],activeDofs.mapping[i]);
-    */
+    //TODO: figure out all the intermediate frames that might be affected
+    //for(size_t i=0;i<activeDofs.mapping.size();i++) 
+    //robot.UpdateSelectedFrames(activeDofs.mapping[i],activeDofs.mapping[i]);
   }
 }
 
