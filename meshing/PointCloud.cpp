@@ -204,7 +204,7 @@ public:
 	  }
 	}
 	else {
-	  printf("PCD parser: Read property \"%s\" = \"%s\"\n",word.c_str(),pc.settings[word].c_str());
+	  //printf("PCD parser: Read property \"%s\" = \"%s\"\n",word.c_str(),pc.settings[word].c_str());
 	}
       }
     }
@@ -290,7 +290,7 @@ bool PointCloud3D::LoadPCL(istream& in)
 	}
       }
       if(docast) {
-	fprintf(stderr,"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast\n");
+	//fprintf(stderr,"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast\n");
 	for(size_t i=0;i<properties.size();i++) {
 	  Vector& v = properties[i];
 	  float f = v[k];
@@ -306,7 +306,7 @@ bool PointCloud3D::LoadPCL(istream& in)
   for(size_t i=0;i<properties.size();i++) {
     points[i].set(properties[i][elemIndex[0]],properties[i][elemIndex[1]],properties[i][elemIndex[2]]);
   }
-  printf("PCD parser: %d points read\n",points.size());
+  //printf("PCD parser: %d points read\n",points.size());
 
   if(properties.size()==3 && elemIndex[0]==0 && elemIndex[1]==1 && elemIndex[2]==2) {
     //x,y,z are the only properties, go ahead and take them out

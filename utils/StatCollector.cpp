@@ -299,7 +299,7 @@ void StatDatabase::Print(ostream& out) const
 bool StatDatabase::Save(ostream& out) const
 {
   SaveRecurse(out,"StatDatabase",root,0);
-  return out;
+  return (bool)out;
 }
 
 bool StatDatabase::Load(istream& in)
@@ -323,7 +323,7 @@ void StatCollector::Print(ostream& out) const
 bool StatCollector::Save(ostream& out) const
 {
   out<<n<<" "<<xmin<<" "<<xmax<<" "<<sum<<" "<<sumsquared;
-  return out;
+  return (bool)out;
 }
 
 bool StatCollector::Load(istream& in)
@@ -334,5 +334,5 @@ bool StatCollector::Load(istream& in)
   SafeInputFloat(in,xmax);
   SafeInputFloat(in,sum);
   SafeInputFloat(in,sumsquared);
-  return in;
+  return (bool)in;
 }

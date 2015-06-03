@@ -30,7 +30,7 @@ void SBLPlanner::Init(const Config& qStart,const Config& qGoal)
   //cout<<"SBL: Distance "<<space->Distance(qStart,qGoal)<<endl;
   //cout<<"SBL: Distance "<<space->Distance(*tStart,*tGoal)<<endl;
   if(CheckPath(tStart->root,tGoal->root)) {
-    cout<<"SBLPlanner::Init(): Start and goal connected!"<<endl;
+    //cout<<"SBLPlanner::Init(): Start and goal connected!"<<endl;
   }
 }
 
@@ -105,7 +105,7 @@ void SBLPlannerWithGrid::Init(const Config& qStart,const Config& qGoal)
     g->A.subdiv.h.n = qStart.n;
   }
   if(CheckPath(s->root,g->root)) {
-    cout<<"SBLPlanner::Init(): Start and goal connected!"<<endl;
+    //cout<<"SBLPlanner::Init(): Start and goal connected!"<<endl;
   }
 }
 

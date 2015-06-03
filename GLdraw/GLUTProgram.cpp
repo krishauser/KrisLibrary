@@ -36,11 +36,21 @@ void GLUTProgramBase::MotionFunc(int x,int y) { current_program->Handle_Drag(x,y
 void GLUTProgramBase::PassiveMotionFunc(int x,int y) { current_program->Handle_Motion(x,y); }
 void GLUTProgramBase::IdleFunc() { current_program->Handle_Idle(); }
 
+int g_freeglutExitCode = 0;
+void freeglutExitFunc(int val)
+{
+	g_freeglutExitCode = val;
+}
+
 int GLUTProgramBase::Run(const char *window_title,unsigned int mode)
 {
 	current_program=this;
 	int argc=1;char *argv[1];argv[0]="Program";
+#if FREEGLUT
+	__glutInitWithExit(&argc,(char**)argv,freeglutExitFunc);
+#else
 	glutInit(&argc,(char**)argv);
+#endif //FREEGLUT
 	if(mode == 0) mode=GLUT_DOUBLE|GLUT_RGBA|GLUT_DEPTH;
 	glutInitDisplayMode(mode);
 	glutInitWindowSize(width,height);
@@ -61,7 +71,7 @@ int GLUTProgramBase::Run(const char *window_title,unsigned int mode)
 	if(!Initialize()) return -1;
 
 	glutMainLoop();
-	return 0;
+	return g_freeglutExitCode;
 }
 
 bool GLUTProgramBase::Initialize()

@@ -52,7 +52,7 @@ int RowEchelonDecompose(MatrixTemplate<T>& A,MatrixTemplate<T>& B,Real zeroTol)
       for(i=icur;i<m;i++) A(i,jcur)=Zero;
     }
   }
-  return max(m-icur,n-jcur);
+  return Max(m-icur,n-jcur);
 }
 
 template <class T>

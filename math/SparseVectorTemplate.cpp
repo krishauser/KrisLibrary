@@ -139,12 +139,30 @@ void SparseVectorTemplate<T>::swap(MyT& v)
   std::swap(this->n,v.n);
 }
 
-/*
 template <class T>
-void SparseVectorTemplate<T>::add(const MyT& a, const MyT& b);
+void SparseVectorTemplate<T>::add(const MyT& a, const MyT& b)
+{
+	Assert(a.n== b.n);
+	*this = a;
+	for(MyT::const_iterator i=b.entries.begin();i!=b.entries.end();i++) {
+		if(entries.count(i->first) == 0)
+			entries[i->first] = i->second;
+		else
+			entries[i->first] += i->second;
+	}
+}
 template <class T>
-void SparseVectorTemplate<T>::sub(const MyT&, const MyT&);
-*/
+void SparseVectorTemplate<T>::sub(const MyT& a, const MyT& b)
+{
+	Assert(a.n== b.n);
+	*this = a;
+	for(MyT::const_iterator i=b.entries.begin();i!=b.entries.end();i++) {
+		if(entries.count(i->first) == 0)
+			entries[i->first] = -i->second;
+		else
+			entries[i->first] -= i->second;
+	}
+}
 
 template <class T>
 void SparseVectorTemplate<T>::mul(const MyT& a, T s)
@@ -584,10 +602,45 @@ T SparseVectorCompressed<T>::dot(const MyT& b) const
 }
 
 template<class T>
+T SparseVectorCompressed<T>::norm() const { return Sqrt(normSquared()); } 
+
+
+template<class T>
 T SparseVectorCompressed<T>::normSquared() const
 {
   return array_dot(vals,vals,num_entries);
 }
+
+template<class T>
+T SparseVectorCompressed<T>::distance(const MyT& rhs) const { return Sqrt(distanceSquared(rhs)); }
+
+template<class T>
+T SparseVectorCompressed<T>::distanceSquared(const MyT& rhs) const
+{
+  Assert(isValid() && rhs.isValid());
+  Assert(n == rhs.n);
+  int ak=0,bk=0;
+  int ai,bi;
+  T res = 0;
+  while(ak<num_entries || bk<rhs.num_entries) {
+    ai = (ak<num_entries? indices[ak] : n);
+    bi = (bk<rhs.num_entries? rhs.indices[bk] : n);
+    if(ai < bi) {
+	  res += Sqr(vals[ak]);
+      ak++;
+    }
+    else if(bi < ai) {
+      res += Sqr(rhs.vals[bk]);
+      bk++;
+    }
+    else {
+	  res += Sqr(vals[ak]-rhs.vals[bk]);
+      ak++; bk++;
+    }
+  }
+  return res;
+}
+
 
 template<class T>
 bool SparseVectorCompressed<T>::isValid() const

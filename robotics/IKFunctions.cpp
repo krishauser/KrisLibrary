@@ -61,8 +61,8 @@ void EvalIKGoalDeriv(const IKGoal& g,const RigidTransform& T,const Vector3& dw,c
     GetCanonicalBasis(g.endRotation,x,y);
     Vector3 curAxis;
     T.R.mul(g.localAxis,curAxis);
-    derr(m) = dot(cross(dw,curAxis),x);
-    derr(m+1) = dot(cross(dw,curAxis),y);
+    derr(m) = dot(cross(dw,curAxis),x) - dot(cross(dw,curAxis),g.endRotation);
+    derr(m+1) = dot(cross(dw,curAxis),y) - dot(cross(dw,curAxis),g.endRotation);
   }
   else if(g.rotConstraint==IKGoal::RotNone) { }
   else {
