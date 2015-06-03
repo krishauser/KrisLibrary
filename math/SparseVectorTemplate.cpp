@@ -145,10 +145,10 @@ void SparseVectorTemplate<T>::add(const MyT& a, const MyT& b)
 	Assert(a.n== b.n);
 	*this = a;
 	for(MyT::const_iterator i=b.entries.begin();i!=b.entries.end();i++) {
-		if(entries.count(i->first) == 0)
-			entries[i->first] = i->second;
+		if(this->entries.count(i->first) == 0)
+			this->entries[i->first] = i->second;
 		else
-			entries[i->first] += i->second;
+			this->entries[i->first] += i->second;
 	}
 }
 template <class T>
@@ -157,10 +157,10 @@ void SparseVectorTemplate<T>::sub(const MyT& a, const MyT& b)
 	Assert(a.n== b.n);
 	*this = a;
 	for(MyT::const_iterator i=b.entries.begin();i!=b.entries.end();i++) {
-		if(entries.count(i->first) == 0)
-			entries[i->first] = -i->second;
+		if(this->entries.count(i->first) == 0)
+			this->entries[i->first] = -i->second;
 		else
-			entries[i->first] -= i->second;
+			this->entries[i->first] -= i->second;
 	}
 }
 

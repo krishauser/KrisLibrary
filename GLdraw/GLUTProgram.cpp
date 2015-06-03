@@ -46,7 +46,7 @@ int GLUTProgramBase::Run(const char *window_title,unsigned int mode)
 {
 	current_program=this;
 	int argc=1;char *argv[1];argv[0]="Program";
-#if FREEGLUT
+#if FREEGLUT && defined(_WIN32) && !defined(GLUT_DISABLE_ATEXIT_HACK)
 	__glutInitWithExit(&argc,(char**)argv,freeglutExitFunc);
 #else
 	glutInit(&argc,(char**)argv);
