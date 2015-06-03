@@ -1311,6 +1311,8 @@ bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g)
     return Collide(m,*AnyCast<Box3D>(&g.data));
   case GeometricPrimitive3D::Sphere:
     return Collide(m,*AnyCast<Sphere3D>(&g.data));
+  case GeometricPrimitive3D::Empty:
+    return false;
   default:
     fprintf(stderr,"Collide: Collider for type %s not known\n",g.TypeName());
     return false;
@@ -1436,6 +1438,8 @@ void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector
   case GeometricPrimitive3D::Sphere:
     CollideAll(m,*AnyCast<Sphere3D>(&g.data),tris,max);
     break;
+  case GeometricPrimitive3D::Empty:
+    return;
   default:
     fprintf(stderr,"CollideAll: Collider for type %s not known\n",g.TypeName());
   }
@@ -1488,6 +1492,8 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
       return CollideAll(m,s,tris,max);
     }
     break;
+  case GeometricPrimitive3D::Empty:
+    return;
   default:
     fprintf(stderr,"NearbyTriangles: Collider for type %s not known\n",g.TypeName());
   }
