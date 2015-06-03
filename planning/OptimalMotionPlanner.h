@@ -10,6 +10,8 @@ class PRMStarPlanner : public RoadmapPlanner
   PRMStarPlanner(CSpace* space);
   ///Initialize with a start and goal configuration
   void Init(const Config& start,const Config& goal);
+  ///Erases all internal data structures
+  virtual void Cleanup();
   ///Perform one planning step
   void PlanMore();
   ///Helper: perform K-nearest neighbor query
