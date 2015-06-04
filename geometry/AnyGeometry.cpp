@@ -10,6 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#include "PQP/include/PQP.h"
+
+
 using namespace Geometry;
 
 AnyGeometry3D::AnyGeometry3D()
@@ -942,6 +946,289 @@ bool withinDistance_PC_AnyGeom(void* obj)
   return true;
 }
 
+
+inline void Copy(const PQP_REAL p[3],Vector3& x)
+{
+  x.set(p[0],p[1],p[2]);
+}
+
+inline void Copy(const Vector3& x,PQP_REAL p[3])
+{
+  p[0] = x.x;
+  p[1] = x.y;
+  p[2] = x.z;
+}
+
+
+inline void BVToBox(const BV& b,Box3D& box)
+{
+  Copy(b.d,box.dims);
+  Copy(b.To,box.origin);
+  //box.xbasis.set(b.R[0][0],b.R[0][1],b.R[0][2]);
+  //box.ybasis.set(b.R[1][0],b.R[1][1],b.R[1][2]);
+  //box.zbasis.set(b.R[2][0],b.R[2][1],b.R[2][2]);
+  box.xbasis.set(b.R[0][0],b.R[1][0],b.R[2][0]);
+  box.ybasis.set(b.R[0][1],b.R[1][1],b.R[2][1]);
+  box.zbasis.set(b.R[0][2],b.R[1][2],b.R[2][2]);
+
+  //move the box to have origin at the corner
+  box.origin -= box.dims.x*box.xbasis;
+  box.origin -= box.dims.y*box.ybasis;
+  box.origin -= box.dims.z*box.zbasis;
+  box.dims *= 2;
+}
+
+
+inline bool Collide(const Triangle3D& tri,const Sphere3D& s)
+{
+  Vector3 pt = tri.closestPoint(s.center);
+  return s.contains(pt);
+}
+
+inline Real Volume(const AABB3D& bb)
+{
+  Vector3 d = bb.bmax-bb.bmin;
+  return d.x*d.y*d.z;
+}
+
+inline Real Volume(const OctreeNode& n)
+{
+  return Volume(n.bb);
+}
+
+
+inline Real Volume(const BV& b)
+{
+  return 8.0*b.d[0]*b.d[1]*b.d[2];
+}
+
+class PointMeshCollider
+{
+public:
+  const CollisionPointCloud& pc;
+  const CollisionMesh& mesh;
+  RigidTransform Tba,Twa,Tab;
+  Real margin;
+  size_t maxContacts;
+  vector<int> pcpoints,meshtris;
+  PointMeshCollider(const CollisionPointCloud& a,const CollisionMesh& b,Real _margin)
+    :pc(a),mesh(b),margin(_margin),maxContacts(1)
+  {
+    Twa.setInverse(a.currentTransform);
+    Tba.mul(Twa,b.currentTransform);
+    Tab.setInverse(Tba);
+  }
+  bool Recurse(size_t _maxContacts=1)
+  {
+    maxContacts=_maxContacts;
+    _Recurse(0,0);
+    return !pcpoints.empty();
+  }
+  bool Prune(const OctreeNode& pcnode,const BV& meshnode) {
+    Box3D meshbox,meshbox_pc;
+    BVToBox(meshnode,meshbox);
+    meshbox_pc.setTransformed(meshbox,Tba);
+    if(margin==0)
+      return !meshbox_pc.intersects(pcnode.bb);
+    else {
+      AABB3D expanded_bb = pcnode.bb;
+      expanded_bb.bmin -= Vector3(margin);
+      expanded_bb.bmax += Vector3(margin);
+      return !meshbox_pc.intersects(expanded_bb);
+    }
+  }
+  bool _Recurse(int pcOctreeNode,int meshBVHNode) {
+    const OctreeNode& pcnode = pc.octree->Node(pcOctreeNode);
+    const BV& meshnode = mesh.pqpModel->b[meshBVHNode];
+    //returns true to keep recursing
+    if(Prune(pcnode,meshnode))
+      return true;
+    if(pc.octree->IsLeaf(pcnode)) {
+      if(meshnode.Leaf()) {
+	int t = -meshnode.first_child-1;
+	Triangle3D tri;
+	Copy(mesh.pqpModel->tris[t].p1,tri.a);
+	Copy(mesh.pqpModel->tris[t].p2,tri.b);
+	Copy(mesh.pqpModel->tris[t].p3,tri.c);
+	tri.a = Tba * tri.a;
+	tri.b = Tba * tri.b;
+	tri.c = Tba * tri.c;
+	//collide the triangle and points
+	const vector<Vector3>& pts = pc.octree->Points(pcOctreeNode);
+	const vector<int>& pcids = pc.octree->PointIDs(pcOctreeNode);
+	Sphere3D temp;
+	temp.radius = margin;
+	for(size_t i=0;i<pts.size();i++) {
+	  temp.center = pts[i];
+	  if(Collide(tri,temp)) {
+	    pcpoints.push_back(pcids[i]);
+	    meshtris.push_back(mesh.pqpModel->tris[t].id);
+	    if(pcpoints.size() >= maxContacts) return false;
+	  }
+	}
+	//continue
+	return true;
+      }
+      else {
+	//split mesh BVH
+	return _RecurseSplitMesh(pcOctreeNode,meshBVHNode);
+      }
+    }
+    else {
+      if(meshnode.Leaf()) {
+	//split octree node
+	return _RecurseSplitOctree(pcOctreeNode,meshBVHNode);
+      }
+      else {
+	//determine which BVH to split
+	Real vpc = Volume(pcnode);
+	Real vmesh = Volume(meshnode);
+	if(vpc < vmesh)
+	  return _RecurseSplitMesh(pcOctreeNode,meshBVHNode);
+	else
+	  return _RecurseSplitOctree(pcOctreeNode,meshBVHNode);
+      }
+    }
+  }
+  bool _RecurseSplitMesh(int pcOctreeNode,int meshBVHNode) {
+    int c1=mesh.pqpModel->b[meshBVHNode].first_child;
+    int c2=c1+1;
+    if(!_Recurse(pcOctreeNode,c1)) return false;
+    if(!_Recurse(pcOctreeNode,c2)) return false;
+    return true;
+  }
+  bool _RecurseSplitOctree(int pcOctreeNode,int meshBVHNode) {
+    const OctreeNode& pcnode = pc.octree->Node(pcOctreeNode);
+    for(int i=0;i<8;i++)
+      if(!_Recurse(pcnode.childIndices[i],meshBVHNode)) return false;
+    return true;
+  }
+};
+
+class PointPointCollider
+{
+public:
+  const CollisionPointCloud& a;
+  const CollisionPointCloud& b;
+  RigidTransform Tba,Twa,Tab;
+  Real margin;
+  size_t maxContacts;
+  vector<int> acollisions,bcollisions;
+  PointPointCollider(const CollisionPointCloud& _a,const CollisionPointCloud& _b,Real _margin)
+    :a(_a),b(_b),margin(_margin),maxContacts(1)
+  {
+    Twa.setInverse(a.currentTransform);
+    Tba.mul(Twa,b.currentTransform);
+    Tab.setInverse(Tba);
+  }
+  bool Recurse(size_t _maxContacts=1)
+  {
+    maxContacts=_maxContacts;
+    _Recurse(0,0);
+    return !acollisions.empty();
+  }
+  bool Prune(const OctreeNode& anode,const OctreeNode& bnode) {
+    Box3D meshbox_pc;
+    meshbox_pc.setTransformed(bnode.bb,Tba);
+    if(margin==0)
+      return !meshbox_pc.intersects(anode.bb);
+    else {
+      AABB3D expanded_bb = anode.bb;
+      expanded_bb.bmin -= Vector3(margin);
+      expanded_bb.bmax += Vector3(margin);
+      return !meshbox_pc.intersects(expanded_bb);
+    }
+  }
+  bool _Recurse(int aindex,int bindex) {
+    const OctreeNode& anode = a.octree->Node(aindex);
+    const OctreeNode& bnode = b.octree->Node(bindex);
+    //returns true to keep recursing
+    if(Prune(anode,bnode))
+      return true;
+    if(a.octree->IsLeaf(anode)) {
+      if(b.octree->IsLeaf(bnode)) {
+	//collide the triangle and points
+	const vector<Vector3>& apts = a.octree->Points(aindex);
+	const vector<int>& aids = a.octree->PointIDs(aindex);
+	const vector<Vector3>& bpts = b.octree->Points(bindex);
+	const vector<int>& bids = b.octree->PointIDs(bindex);
+	for(size_t i=0;i<apts.size();i++) {
+	  for(size_t j=0;j<bpts.size();j++) {
+	    if(apts[i].distanceSquared(bpts[j]) <= Sqr(margin)) {
+	      acollisions.push_back(aids[i]);
+	      acollisions.push_back(bids[i]);
+	      if(acollisions.size() >= maxContacts) return false;
+	    }
+	  }
+	}
+	//continue
+	return true;
+      }
+      else {
+	//split b
+	return _RecurseSplitB(aindex,bindex);
+      }
+    }
+    else {
+      if(b.octree->IsLeaf(bnode)) {
+	//split a
+	return _RecurseSplitA(aindex,bindex);
+      }
+      else {
+	//determine which BVH to split
+	Real va = Volume(anode);
+	Real vb = Volume(bnode);
+	if(va < vb)
+	  return _RecurseSplitB(aindex,bindex);
+	else
+	  return _RecurseSplitA(aindex,bindex);
+      }
+    }
+  }
+  bool _RecurseSplitA(int aindex,int bindex) {
+    const OctreeNode& anode = a.octree->Node(aindex);
+    for(int i=0;i<8;i++)
+      if(!_Recurse(anode.childIndices[i],bindex)) return false;
+    return true;
+  }
+  bool _RecurseSplitB(int aindex,int bindex) {
+    const OctreeNode& bnode = b.octree->Node(bindex);
+    for(int i=0;i<8;i++)
+      if(!_Recurse(aindex,bnode.childIndices[i])) return false;
+    return true;
+  }
+};
+
+
+bool Collides(const CollisionPointCloud& a,Real margin,const CollisionMesh& b,
+	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
+{
+  Timer timer;
+  PointMeshCollider collider(a,b,margin);
+  bool res=collider.Recurse(maxContacts);
+  if(res) {
+    elements1=collider.pcpoints;
+    elements2=collider.meshtris;
+    return true;
+  }
+  return false;
+}
+
+bool Collides(const CollisionPointCloud& a,Real margin,const CollisionPointCloud& b,
+	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
+{
+  Timer timer;
+  PointPointCollider collider(a,b,margin);
+  bool res=collider.Recurse(maxContacts);
+  if(res) {
+    elements1=collider.acollisions;
+    elements2=collider.bcollisions;
+    return true;
+  }
+  return false;
+}
+
+
 bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
@@ -956,10 +1243,19 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
       }
       return false;
     }
-  case AnyCollisionGeometry3D::ImplicitSurface:
   case AnyCollisionGeometry3D::TriangleMesh:
+    {
+      bool res=::Collides(a,margin,b.TriangleMeshCollisionData(),elements1,elements2,maxContacts);
+      return res;
+    }
   case AnyCollisionGeometry3D::PointCloud:
     {
+      bool res=::Collides(a,margin,b.PointCloudCollisionData(),elements1,elements2,maxContacts);
+      return res;
+    }
+  case AnyCollisionGeometry3D::ImplicitSurface:
+    {
+      Timer timer;
       Box3D abb;
       GetBB(a,abb);
       Box3D bbb = b.GetBB();
@@ -967,7 +1263,10 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
       bbbexpanded.dims += Vector3(margin*2.0);
       bbbexpanded.origin -= margin*(bbb.xbasis+bbb.ybasis+bbb.zbasis);
       //quick reject test
-      if(!abb.intersectsApprox(bbbexpanded)) return false;
+      if(!abb.intersectsApprox(bbbexpanded)) {
+	printf("0 contacts (quick reject) time %g\n",timer.ElapsedTime());
+	return false;
+      }
       RigidTransform Tw_a;
       Tw_a.setInverse(a.currentTransform);
       Box3D bbb_a;
@@ -978,7 +1277,6 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
 
       //octree-vs b's bounding box method (not terribly smart, could be
       //improved by descending bounding box hierarchies)
-      Timer timer;
       vector<Vector3> apoints;
       vector<int> aids;
       a.octree->BoxQuery(bbb_a,apoints,aids);
@@ -991,13 +1289,16 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
 	if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
 	  elements2.push_back(i);
 	  if(elements2.size() >= maxContacts) {
+	    printf("%d contacts time %g\n",maxContacts,timer.ElapsedTime());
+
 	    //printf("Collision in time %g\n",timer.ElapsedTime());
 	    return true;
 	  }
 	}
       }
+      printf("%d contacts time %g\n",maxContacts,timer.ElapsedTime());	    
       // printf("No collision in time %g\n",timer.ElapsedTime());
-      return false;
+      return !elements2.empty();
 
       /*
       //grid method

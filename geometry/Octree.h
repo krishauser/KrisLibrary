@@ -105,6 +105,10 @@ class OctreePointSet : public Octree
  public:
   OctreePointSet(const AABB3D& bbox,int maxPointsPerCell=1);
   virtual ~OctreePointSet() {}
+  const vector<Vector3>& Points(int node) const { return pointLists[node]; }
+  const vector<Vector3>& Points(const OctreeNode& node) const { return pointLists[Index(node)]; }
+  const vector<int>& PointIDs(int node) const { return idLists[node]; }
+  const vector<int>& PointIDs(const OctreeNode& node) const { return idLists[Index(node)]; }
   void Add(const Vector3& pt,int id=-1);
   void BoxQuery(const Vector3& bmin,const Vector3& bmax,vector<Vector3>& points,vector<int>& ids) const;
   void BoxQuery(const Box3D& b,vector<Vector3>& points,vector<int>& ids) const;
