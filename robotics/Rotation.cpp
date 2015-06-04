@@ -533,7 +533,8 @@ void CenteredDifferenceAngularAccel(const Matrix3& R_1,const Matrix3& R0,const M
 Real AxisRotationMagnitude(const Matrix3& R,const Vector3& a)
 {
   Real cterm = R.trace() + a.dot(R*a);
-  Real sterm = a.x*(R(1,2)-R(2,1)) + a.y*(R(2,0)-R(0,2)) + a.z*(R(0,1)-R(1,0));
+  //TODO: it looks like I had a sign error in my math?  Double check tihs.
+  Real sterm = -(a.x*(R(1,2)-R(2,1)) + a.y*(R(2,0)-R(0,2)) + a.z*(R(0,1)-R(1,0)));
   return Atan2(sterm,cterm);
 }
 
