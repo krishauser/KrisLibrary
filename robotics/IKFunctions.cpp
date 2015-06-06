@@ -787,6 +787,16 @@ void RobotIKSolver::UseJointLimits(Real revJointThreshold)
   }
 }
 
+void RobotIKSolver::UseJointLimits(const Vector& qmin,const Vector& qmax) 
+{
+  int n=(int)function.activeDofs.Size();
+  solver.bmin.resize(n);
+  solver.bmax.resize(n);
+  function.activeDofs.InvMap(qmin,solver.bmin);
+  function.activeDofs.InvMap(qmax,solver.bmax);
+}
+
+
 void RobotIKSolver::ClearJointLimits()
 {
   solver.bmin.clear();
