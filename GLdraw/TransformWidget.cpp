@@ -180,6 +180,8 @@ TransformWidget::TransformWidget()
   T.setIdentity();
   enableRotation=enableTranslation=true;
   enableOriginTranslation=enableOuterRingRotation=true;
+  for(int i=0;i<3;i++) 
+    enableRotationAxes[i]=enableTranslationAxes[i]=true;
   originColor.set(1,1,1);
   xAxisColor.set(1,0,0);
   yAxisColor.set(0,1,0);
@@ -225,6 +227,7 @@ bool TransformWidget::Hover(int x,int y,Camera::Viewport& viewport,double& dista
   //check translation axes
   for(int i=0;i<3;i++) {
     if(!enableTranslation) break;
+    if(!enableTranslationAxes[i]) continue;
     Line3D axisLine;
     axisLine.source = T.t;
     axisLine.direction = Vector3(T.R.col(i));
@@ -247,6 +250,7 @@ bool TransformWidget::Hover(int x,int y,Camera::Viewport& viewport,double& dista
     Circle3D c;
     c.center = T.t;
     for(int i=0;i<3;i++) {
+      if(!enableRotationAxes[i]) continue;
       c.axis = Vector3(T.R.col(i));
       c.radius = ringOuterRadius*globalScale;
       Real t;

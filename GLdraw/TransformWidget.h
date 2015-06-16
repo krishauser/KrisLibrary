@@ -20,6 +20,7 @@ class TransformWidget : public Widget
   RigidTransform T;
   bool enableRotation,enableTranslation;
   bool enableOriginTranslation,enableOuterRingRotation;
+  bool enableRotationAxes[3],enableTranslationAxes[3];
   GLColor originColor,xAxisColor,yAxisColor,zAxisColor;
   double hoverScale;
   double originRadius;
