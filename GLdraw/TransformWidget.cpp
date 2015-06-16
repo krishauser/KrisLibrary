@@ -385,32 +385,39 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
 
   //draw axes
   if(enableTranslation) {
-    Vector3 axis = T.R.col1();
-    scale = (hasHighlight && hoverItem == 1 ? hoverScale : 1.0)*globalScale;
-    glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,xAxisColor.rgba); 
-    drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
-    glPushMatrix();
-    glTranslate(axis*axisLength*globalScale);
-    drawCone(axis*arrowHeight*scale,arrowRadius*scale);
-    glPopMatrix();
+    Vector3 axis;
+    if(enableTranslationAxes[0]) {
+      axis = T.R.col1();
+      scale = (hasHighlight && hoverItem == 1 ? hoverScale : 1.0)*globalScale;
+      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,xAxisColor.rgba); 
+      drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
+      glPushMatrix();
+      glTranslate(axis*axisLength*globalScale);
+      drawCone(axis*arrowHeight*scale,arrowRadius*scale);
+      glPopMatrix();
+    }
 
-    axis = T.R.col2();    
-    scale = (hasHighlight && hoverItem == 2 ? hoverScale : 1.0)*globalScale;
-    glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,yAxisColor.rgba); 
-    drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
-    glPushMatrix();
-    glTranslate(axis*axisLength*globalScale);
-    drawCone(axis*arrowHeight*scale,arrowRadius*scale);
-    glPopMatrix();
+    if(enableTranslationAxes[1]) {
+      axis = T.R.col2();    
+      scale = (hasHighlight && hoverItem == 2 ? hoverScale : 1.0)*globalScale;
+      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,yAxisColor.rgba); 
+      drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
+      glPushMatrix();
+      glTranslate(axis*axisLength*globalScale);
+      drawCone(axis*arrowHeight*scale,arrowRadius*scale);
+      glPopMatrix();
+    }
 
-    axis = T.R.col3();
-    scale = (hasHighlight && hoverItem == 3 ? hoverScale : 1.0)*globalScale;
-    glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,zAxisColor.rgba); 
-    drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
-    glPushMatrix();
-    glTranslate(axis*axisLength*globalScale);
-    drawCone(axis*arrowHeight*scale,arrowRadius*scale);
-    glPopMatrix();
+    if(enableTranslationAxes[2]) {
+      axis = T.R.col3();
+      scale = (hasHighlight && hoverItem == 3 ? hoverScale : 1.0)*globalScale;
+      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,zAxisColor.rgba); 
+      drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
+      glPushMatrix();
+      glTranslate(axis*axisLength*globalScale);
+      drawCone(axis*arrowHeight*scale,arrowRadius*scale);
+      glPopMatrix();
+    }
   }
 
   //TODO: indicate original matrix rotation
@@ -419,26 +426,34 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
   if(enableRotation) {
     glDisable(GL_CULL_FACE);
     Vector3 x,y;
-    Vector3 axis = Vector3(T.R.col1()); 
-    GetCanonicalBasis(axis,x,y);
-    Real r1 = (hasHighlight && hoverItem == 4 ? ringInnerRadius - (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringInnerRadius)*globalScale;
-    Real r2 = (hasHighlight && hoverItem == 4 ? ringOuterRadius + (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringOuterRadius)*globalScale;
-    glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,xAxisColor.rgba); 
-    drawArc(r1,r2,axis,x,0,360);
+    Vector3 axis;
+    Real r1,r2;
+    if (enableRotationAxes[0]) {
+      axis = Vector3(T.R.col1()); 
+      GetCanonicalBasis(axis,x,y);
+      r1 = (hasHighlight && hoverItem == 4 ? ringInnerRadius - (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringInnerRadius)*globalScale;
+      r2 = (hasHighlight && hoverItem == 4 ? ringOuterRadius + (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringOuterRadius)*globalScale;
+      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,xAxisColor.rgba); 
+      drawArc(r1,r2,axis,x,0,360);
+    }
     
-    axis = Vector3(T.R.col2()); 
-    GetCanonicalBasis(axis,x,y);
-    r1 = (hasHighlight && hoverItem == 5 ? ringInnerRadius - (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringInnerRadius)*globalScale;
-    r2 = (hasHighlight && hoverItem == 5 ? ringOuterRadius + (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringOuterRadius)*globalScale;
-    glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,yAxisColor.rgba); 
-    drawArc(r1,r2,axis,x,0,360);
+    if (enableRotationAxes[1]) {
+      axis = Vector3(T.R.col2()); 
+      GetCanonicalBasis(axis,x,y);
+      r1 = (hasHighlight && hoverItem == 5 ? ringInnerRadius - (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringInnerRadius)*globalScale;
+      r2 = (hasHighlight && hoverItem == 5 ? ringOuterRadius + (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringOuterRadius)*globalScale;
+      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,yAxisColor.rgba); 
+      drawArc(r1,r2,axis,x,0,360);
+    }
 
-    axis = Vector3(T.R.col3()); 
-    GetCanonicalBasis(axis,x,y);
-    r1 = (hasHighlight && hoverItem == 6 ? ringInnerRadius - (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringInnerRadius)*globalScale;
-    r2 = (hasHighlight && hoverItem == 6 ? ringOuterRadius + (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringOuterRadius)*globalScale;
-    glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,zAxisColor.rgba); 
-    drawArc(r1,r2,axis,x,0,360);
+    if (enableRotationAxes[2]) {
+      axis = Vector3(T.R.col3()); 
+      GetCanonicalBasis(axis,x,y);
+      r1 = (hasHighlight && hoverItem == 6 ? ringInnerRadius - (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringInnerRadius)*globalScale;
+      r2 = (hasHighlight && hoverItem == 6 ? ringOuterRadius + (ringOuterRadius - ringInnerRadius)*0.5*hoverScale : ringOuterRadius)*globalScale;
+      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,zAxisColor.rgba); 
+      drawArc(r1,r2,axis,x,0,360);
+    }
 
     if(enableOuterRingRotation && hoverItem == 7) {
       axis = clickAxis;
