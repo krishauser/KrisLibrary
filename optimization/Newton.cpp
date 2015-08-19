@@ -79,6 +79,7 @@ bool NewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
   //Vector xinit;
   //xinit.copy(x);
   Real initDist = MaxDistance(x);
+  if(verbose) cout<<"initial distance "<<initDist<<". ";
   ConvergenceResult res;
   if(sparse)
     res=Solve_Sparse(iters);
@@ -89,7 +90,7 @@ bool NewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
 
   switch(res) {
   case ConvergenceX:
-    if(verbose) cout<<"Reached convergence on x... ";
+    if(verbose) cout<<"Reached convergence on x in "<<iters<<" iters... ";
     if(endDist <= tolf) {
       if(verbose) cout<<"satisfies constraint."<<endl;
       return true;
@@ -101,7 +102,7 @@ bool NewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
     break;
 
   case LocalMinimum:
-    if(verbose) cout<<"Reached local minimum... ";
+    if(verbose) cout<<"Reached local minimum in "<<iters<<" iters... ";
     if(endDist <= tolf) {
       if(verbose) cout<<"satisfies constraint."<<endl;
       return true;
@@ -112,7 +113,7 @@ bool NewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
     }
 
   case ConvergenceF:
-    if(verbose) cout<<"Reached convergence on f, new distance "<<endDist<<endl;
+    if(verbose) cout<<"Reached convergence on f in "<<iters<<" iters, new distance "<<endDist<<endl;
     Assert(endDist <= tolf);
     return true;
 
@@ -251,6 +252,7 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
 	OutputASCIIShade(cout,p); cout<<endl;
         return ConvergenceX;
 	*/
+	if(verbose >= 1) cout<<"  Check is returned but test "<<test<<" is not < tolmin"<<endl;
 	return ConvergenceX;
       }
     }
@@ -260,6 +262,7 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       if (temp > test) test=temp; 
     }
     if (test < tolx) {
+      if(verbose >= 1) cout<<"  Convergence on X, difference "<<test<<endl;
       return ConvergenceX;
     }
   } 
