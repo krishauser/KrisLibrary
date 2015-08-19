@@ -98,9 +98,9 @@ const TreeNode<T,E>& TreeNode<T,E>::operator =(const MyType& t)
 	clearChildren();
 	MyType* tc = t.childFirst;
 	while(tc) {
-		MyType* c=addChild(*tc);
+		MyType* c=addChild();
 		*c = *tc;
-		tc = tc.nextSibling;
+		tc = tc->nextSibling;
 	}
 	return *this;
 }
