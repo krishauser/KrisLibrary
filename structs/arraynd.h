@@ -392,7 +392,7 @@ typename ArrayND<T>::iterator& ArrayND<T>::iterator::operator -=(int skip)
     skip=0;
     while(index[i] < 0) {
       skip++;
-      index[i]+=obj.dims[i];
+      index[i]+=obj->dims[i];
     }
   }
   return *this;
@@ -449,7 +449,7 @@ ArrayNDRef<T>::ArrayNDRef(ArrayND<T>* _obj,int _offset,int _curDim)
 template <class T>
 const ArrayNDRef<T>& ArrayNDRef<T>::operator = (T val)
 {
-  assert(curDim+1 == (int)obj.dims.size());
+  assert(curDim+1 == (int)obj->dims.size());
   obj->values[offset] = val;
   return *this;
 }
@@ -457,7 +457,7 @@ const ArrayNDRef<T>& ArrayNDRef<T>::operator = (T val)
 template <class T>
 const ArrayNDRef<T>& ArrayNDRef<T>::operator = (const ArrayND<T>& val)
 {
-  assert(curDim+val.dims.size() == (int)obj.dims.size());
+  assert(curDim+val.dims.size() == (int)obj->dims.size());
   fprintf(stderr,"TODO: copy slices\n");
   abort();
   return *this;
