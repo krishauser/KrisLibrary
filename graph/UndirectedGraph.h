@@ -2,6 +2,7 @@
 #define GRAPH_UNDIRECTED_GRAPH_H
 
 #include "Graph.h"
+#include "Callback.h"
 
 namespace Graph {
 
@@ -90,8 +91,14 @@ public:
 
   inline size_t Degree(int n) const { return P::edges[n].size()+P::co_edges[n].size(); }
 
+  ///Returns true if the two nodes are connected by a path. O(n log n) time
+  ///in the worst case. For better running time for connected components,
+  ///especially for many queries, use ConnectedComponents in
+  ///ConnectedComponents.h
   bool IsConnected(int n1,int n2);
+  ///Returns the topological sort of the graph, O(n) time.
   std::list<int> TopologicalSort();
+  ///Returns true if there is any cycle, O(n) time.
   bool HasCycle();
   bool IsValid() const;
 
@@ -104,9 +111,8 @@ template <class Node,class Edge>
 bool UndirectedGraph<Node,Edge>::IsConnected(const int n1,const int n2)
 {
   Order(n1,n2);
-  FindCallback<int> findNode;
-  findNode.node = n2;
-  return _SimpleDFS(n1,n2);
+  FindCallback<int> findNode(n2);
+  return _SimpleDFS(n1,findNode);
 }
 
 template <class Node,class Edge>
