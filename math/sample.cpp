@@ -214,10 +214,8 @@ void SampleHyperSphere(Real r,std::vector<Real>& v)
 void SampleHyperBall(Real r,std::vector<Real>& v)
 {
   Assert(!v.empty());
-  SampleHyperSphere(r,v);
-  Real dist = Pow(Rand(),1.0/v.size());
-  for(size_t i=0;i<v.size();i++) 
-    v[i] *= dist;
+  Real dist = Pow(Rand(),1.0/v.size())*r;
+  SampleHyperSphere(dist,v);
 }
 
 
