@@ -236,21 +236,21 @@ size_t AnyKeyable::hash() const
   if(value.empty()) return 0;
   const std::type_info* type = &value.type();
   if(type == &typeid(bool)) 
-    return std::tr1::hash<bool>()(*AnyCast<bool>(&value));
+    return HASH_NAMESPACE::hash<bool>()(*AnyCast<bool>(&value));
   if(type == &typeid(char)) 
-    return std::tr1::hash<char>()(*AnyCast<char>(&value));
+    return HASH_NAMESPACE::hash<char>()(*AnyCast<char>(&value));
   if(type == &typeid(unsigned char)) 
-    return std::tr1::hash<unsigned char>()(*AnyCast<unsigned char>(&value));
+    return HASH_NAMESPACE::hash<unsigned char>()(*AnyCast<unsigned char>(&value));
   else if(type == &typeid(int)) 
-    return std::tr1::hash<int>()(*AnyCast<int>(&value));
+    return HASH_NAMESPACE::hash<int>()(*AnyCast<int>(&value));
   else if(type == &typeid(unsigned int)) 
-    return std::tr1::hash<unsigned int>()(*AnyCast<unsigned int>(&value));
+    return HASH_NAMESPACE::hash<unsigned int>()(*AnyCast<unsigned int>(&value));
   else if(type == &typeid(float)) 
-    return std::tr1::hash<float>()(*AnyCast<float>(&value));
+    return HASH_NAMESPACE::hash<float>()(*AnyCast<float>(&value));
   else if(type == &typeid(double)) 
-    return std::tr1::hash<double>()(*AnyCast<double>(&value));
+    return HASH_NAMESPACE::hash<double>()(*AnyCast<double>(&value));
   else if(type == &typeid(std::string)) 
-    return std::tr1::hash<std::string>()(*AnyCast<std::string>(&value));
+    return HASH_NAMESPACE::hash<std::string>()(*AnyCast<std::string>(&value));
   else
     FatalError("Hash keying of objects of type %s not supported",type->name());
   return 0;

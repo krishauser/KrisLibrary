@@ -6,12 +6,7 @@
 #include <errors.h>
 #include <vector>
 #include <map>
-#ifdef _MSC_VER
-//MSVC doesn't put TR1 files in the tr1/ folder
-#include <unordered_map>
-#else
-#include <tr1/unordered_map>
-#endif //_MSC_VER
+#include "stl_tr1.h"
 
 /** @brief Any primitive value (bool, char, unsigned char, int,
  * unsigned int, float, double, string) that we know how to make into a
@@ -36,11 +31,7 @@ struct AnyKeyable
   AnyValue value;
 };
 
-namespace std {
-#ifndef _MSC_VER
-//MSVC doesn't put tr1 stuff in the tr1 namespace
-namespace tr1 {
-#endif //_MSC_VER
+BEGIN_TR1_NAMESPACE
 
 template <>
 struct hash<AnyKeyable> : public unary_function<AnyKeyable,size_t>
@@ -48,11 +39,7 @@ struct hash<AnyKeyable> : public unary_function<AnyKeyable,size_t>
   size_t operator()(const AnyKeyable& key) const { return key.hash(); }
 };
 
-#ifndef _MSC_VER
-//MSVC doesn't put tr1 stuff in the tr1 namespace
-} //namespace tr1 
-#endif //_MSC_VER
-}//namespace std
+END_TR1_NAMESPACE
 
 
 
@@ -86,7 +73,7 @@ class AnyCollection
   template <class T,class T2>
   AnyCollection(const std::map<T,T2>& map);
   template <class T,class T2>
-  AnyCollection(const std::tr1::unordered_map<T,T2>& map);
+  AnyCollection(const UNORDERED_MAP_TEMPLATE<T,T2>& map);
 
   ///returns the number of sub-elements in the collection, or 1 if it is a
   ///primitive data type
@@ -169,7 +156,7 @@ class AnyCollection
   AnyCollection& operator = (const std::map<T,T2>& map);
   ///set to a map
   template <class T,class T2>
-  AnyCollection& operator = (const std::tr1::unordered_map<T,T2>& map);
+  AnyCollection& operator = (const UNORDERED_MAP_TEMPLATE<T,T2>& map);
 
   ///Looks up a reference string, which can be several nested references
   ///deep.  A reference string takes the form S = epsilon|XS' where X is
@@ -239,7 +226,7 @@ class AnyCollection
   enum Type { None, Value, Array, Map };
   typedef AnyValue ValueType;
   typedef std::vector<SmartPointer<AnyCollection> > ArrayType;
-  typedef std::tr1::unordered_map<AnyKeyable,SmartPointer<AnyCollection> > MapType;
+  typedef UNORDERED_MAP_TEMPLATE<AnyKeyable,SmartPointer<AnyCollection> > MapType;
 
   Type type;
   ValueType value;
@@ -276,7 +263,7 @@ AnyCollection::AnyCollection(const std::map<T,T2>& map)
 }
 
 template <class T,class T2>
-AnyCollection::AnyCollection(const std::tr1::unordered_map<T,T2>& map)
+AnyCollection::AnyCollection(const UNORDERED_MAP_TEMPLATE<T,T2>& map)
   :type(None)
 {
   operator = (map);
@@ -354,10 +341,10 @@ AnyCollection& AnyCollection::operator = (const std::map<T,T2>& _map)
 }
 
 template <class T,class T2>
-AnyCollection& AnyCollection::operator = (const std::tr1::unordered_map<T,T2>& _map)
+AnyCollection& AnyCollection::operator = (const UNORDERED_MAP_TEMPLATE<T,T2>& _map)
 {
   type = Map;
-  for(typename std::tr1::unordered_map<T,T2>::const_iterator i=_map.begin();i!=_map.end();i++)
+  for(typename UNORDERED_MAP_TEMPLATE<T,T2>::const_iterator i=_map.begin();i!=_map.end();i++)
     map[i->first] = new AnyCollection(i->second);
   return *this;
 }

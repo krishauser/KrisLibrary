@@ -4,12 +4,7 @@
 #include <math/vector.h>
 #include <utils/IntTuple.h>
 #include <list>
-#ifdef _MSC_VER
-//MSVC doesn't put TR1 files in the tr1/ folder
-#include <unordered_map>
-#else
-#include <tr1/unordered_map>
-#endif //_MSC_VER
+#include <utils/stl_tr1.h>
 
 namespace Geometry {
 
@@ -76,7 +71,7 @@ public:
   void SegmentItems(const Vector& a,const Vector& b,std::vector<Value>& items) const;
 
   Vector h;
-  typedef std::tr1::unordered_map<Index,Value,IndexHash> HashTable;
+  typedef UNORDERED_MAP_TEMPLATE<Index,Value,IndexHash> HashTable;
   HashTable buckets;
 };
 
@@ -135,7 +130,7 @@ public:
   void SegmentItems(const Vector& a,const Vector& b,ObjectSet& objs) const;
 
   Vector h;
-  typedef std::tr1::unordered_map<Index,ObjectSet,IndexHash> HashTable;
+  typedef UNORDERED_MAP_TEMPLATE<Index,ObjectSet,IndexHash> HashTable;
   HashTable buckets;
 };
 
