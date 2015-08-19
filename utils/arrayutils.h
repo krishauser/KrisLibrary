@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <functional>
-#if defined (__GNUC__) && (__GNUC__ > 2)
+#if (defined (__GNUC__) && (__GNUC__ > 2)) && not defined(__APPLE__)
 #include <ext/algorithm>
 namespace std {
   using __gnu_cxx::copy_n;
@@ -34,7 +34,12 @@ inline void copy(const T& a, T* out, int n)
 template <typename T>
 inline void copy(const T* a, T* out, int n)
 {
+#if defined(__APPLE__)
+  for(int i=0;i<n;i++)
+    out[i] = a[i];
+#else
   std::copy_n(a,n,out);
+#endif //defined(__APPLE__)
 }
 
 template <typename T,typename ftype>
