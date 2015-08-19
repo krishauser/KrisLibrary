@@ -10,6 +10,13 @@
 #include <sstream>
 #include <errors.h>
 
+//forward declarations for Clang on OSX
+class AnyValue;
+template<typename ValueType>
+ValueType*  AnyCast(AnyValue * operand);
+template<typename ValueType>
+const ValueType*  AnyCast(const AnyValue * operand);
+
 /**@brief A polymorphic container class that can contain data of any type.
  *
  * To retrieve the contained data, use AnyCast.
