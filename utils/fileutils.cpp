@@ -12,6 +12,9 @@
 #include <string.h>
 #include <dirent.h>
 #endif //_WIN32
+#ifdef __APPLE__
+#include <unistd.h>
+#endif //__APPLE__
 #include <errors.h>
 
 namespace FileUtils {
