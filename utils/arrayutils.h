@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <functional>
-#if (defined (__GNUC__) && (__GNUC__ > 2)) && not defined(__APPLE__)
+#if ((defined (__GNUC__) && (__GNUC__ > 2)) && !defined(__APPLE__))
 #include <ext/algorithm>
 namespace std {
   using __gnu_cxx::copy_n;
