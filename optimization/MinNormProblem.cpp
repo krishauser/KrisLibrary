@@ -287,6 +287,8 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
     }
     return res;
   }
+  cout<<"Not sure how we got here..."<<endl;
+  return LinearProgram::Error;
 }
   
 
