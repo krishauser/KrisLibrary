@@ -71,7 +71,7 @@ bool LP_InteriorPointSolver::FindFeasiblePoint()
 	lp.verbose = verbose;
 	
 	if (verbose>=2) cout << " - solve feasibility problem LP" << endl;
-	bool res = lp.Solve();
+	bool res = (lp.Solve()!=Infeasible);
 	
 	if (!res) {
 		if (verbose>=1) {
