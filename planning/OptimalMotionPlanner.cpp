@@ -53,7 +53,9 @@ bool connectedToStartFilter(int n)
 
 PRMStarPlanner::PRMStarPlanner(CSpace* space)
   :RoadmapPlanner(space),lazy(false),rrg(false),bidirectional(true),connectByRadius(false),connectRadiusConstant(1),connectionThreshold(Inf),lazyCheckThreshold(Inf),suboptimalityFactor(0),spp(roadmap),sppGoal(roadmap),sppLB(LBroadmap),sppLBGoal(LBroadmap)
-{}
+{
+  start = goal = -1;
+}
 
 void PRMStarPlanner::Cleanup()
 {
@@ -92,6 +94,10 @@ void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
 }
 void PRMStarPlanner::PlanMore()
 {
+  if(start < 0 || goal < 0) {
+    fprintf(stderr,"PRMStarPlanner::PlanMore(): Init() must be called before planning\n");
+    return;
+  }
   numPlanSteps ++;
   Real optCounter = Real(numPlanSteps)+1.0;
   Vector x;

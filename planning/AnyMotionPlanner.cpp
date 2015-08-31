@@ -423,6 +423,10 @@ class SBLInterface  : public MotionPlannerInterface
   }
   virtual void GetMilestone(int i,Config& q) { if(i==0) q=*sbl->tStart->root; else q=*sbl->tGoal->root; }
   virtual int PlanMore() { 
+    if(qStart.n == 0 || qGoal.n == 0) {
+      fprintf(stderr,"AnyMotionPlanner::PlanMore(): point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+      return -1;
+    }
     if(!sbl->IsDone()) sbl->Extend();
     return -1;
   }
@@ -475,6 +479,10 @@ class SBLPRTInterface  : public MotionPlannerInterface
   }
   virtual bool ConnectHint(int i,int j) { sblprt.AddRoadmapEdge(i,j); return false; }
   virtual int PlanMore() { 
+    if(sblprt.roadmap.nodes.empty()) {
+      fprintf(stderr,"SBLPRTInterface::PlanMore(): no seed configurations set yet\n");
+      return -1;
+    }
     sblprt.Expand();
     return -1;
   }
@@ -555,6 +563,10 @@ class PRMStarInterface  : public MotionPlannerInterface
   }
   virtual void GetMilestone(int i,Config& q) { q=planner.roadmap.nodes[i]; }
   virtual int PlanMore() { 
+    if(planner.start < 0 || planner.goal < 0) {
+      fprintf(stderr,"AnyMotionPlanner::PlanMore(): point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+      return -1;
+    }
     planner.PlanMore();
     return -1;
   }
@@ -620,6 +632,10 @@ class FMMInterface  : public MotionPlannerInterface
     return;
   }
   virtual int PlanMore() { 
+    if(qStart.n == 0 || qGoal.n == 0) {
+      fprintf(stderr,"AnyMotionPlanner::PlanMore(): point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+      return -1;
+    }
     iterationCount++;
     if(anytime) {
       int d=qStart.n;
