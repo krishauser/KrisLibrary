@@ -254,7 +254,7 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
     }
   }
   virtual bool ConnectHint(int i,int j) {
-    bool res=prm.TestAndConnectEdge(i,j);
+    bool res=(prm.TestAndConnectEdge(i,j) != NULL);
     if(res) {
       if(!storeEdges) //delete the edge
 	prm.GetEdge(i,j) = NULL;

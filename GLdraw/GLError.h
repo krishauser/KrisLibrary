@@ -10,7 +10,7 @@ const char* GLErrorString(GLenum err);
 //pauses if pause=true.  Returns false if no error occurred.
 bool CheckGLErrors(const char* name="GL error",bool pause=true);
 
-#define GL_ERROR_QUIT 1
+#define GL_ERROR_QUIT 0
 #define DEBUG_GL_ERRORS() { \
   GLenum err; \
   while((err=glGetError()) != GL_NO_ERROR) { \

@@ -283,7 +283,7 @@ bool PointCloud3D::LoadPCL(istream& in)
       bool docast = false;
       for(size_t i=0;i<properties.size();i++) {
 	Vector& v = properties[i];
-	float f = v[k];
+	float f = float(v[k]);
 	if(f < 1.0 && f > 0.0) {
 	  docast=true;
 	  break;
@@ -293,7 +293,7 @@ bool PointCloud3D::LoadPCL(istream& in)
 	//fprintf(stderr,"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast\n");
 	for(size_t i=0;i<properties.size();i++) {
 	  Vector& v = properties[i];
-	  float f = v[k];
+	  float f = float(v[k]);
 	  int rgb = *((int*)&f);
 	  v[k] = (Real)rgb;
 	}
