@@ -46,12 +46,14 @@ public:
   virtual void InitMeshCollision(CollisionGeometry& mesh);
 
   virtual bool SelfCollision(Real distance=0);
-  /// Query collision between specified bodies
+  /// Query self-collision between links indexed by bodies. Faster than direct enumeration.
   virtual bool SelfCollision(const std::vector<int>& bodies, Real distance=0);
-  /// Query collision between bodies in set1 and set 2
+  /// Query self-collision between links in set1 and set 2.  set1 and set2 are required to be disjoint.  Faster than direct enumeration.
   virtual bool SelfCollision(const std::vector<int>& set1,const std::vector<int>& set2,Real distance=0);
-  /// Query collision between bodies i,j
+  /// Query self-collision between geometries i,j.  Faster than direct enumeration.
   virtual bool SelfCollision(int i, int j, Real distance=0); 
+  /// Compute all self collisions (faster than 
+  virtual void SelfCollisions(std::vector<std::pair<int,int> >& pairs,Real distance=0);
 
   virtual bool MeshCollision(CollisionGeometry& mesh);
   virtual bool MeshCollision(int i,Real distance=0);

@@ -184,20 +184,98 @@ bool RobotWithGeometry::SelfCollision(int i, int j, Real d)
 
 bool RobotWithGeometry::SelfCollision(const vector<int>& bodies,Real distance)
 {
-  for(size_t i=0;i<bodies.size();i++) {
-    for(size_t j=i+1;j<bodies.size();j++) {
-      if(SelfCollision(bodies[i],bodies[j],distance)) return true;
+  //get world space bounding boxes for quick reject test
+  vector<int> validbodies;
+  validbodies.reserve(bodies.size());
+  for(size_t i=0;i<bodies.size();i++) 
+    if(!geometry[bodies[i]].Empty()) validbodies.push_back(bodies[i]);
+  vector<AABB3D> bbs(validbodies.size());
+  for(size_t i=0;i<validbodies.size();i++) 
+    bbs[i] = geometry[validbodies[i]].GetAABB();
+  if(distance != 0) {
+    //adjust bounding  boxes
+    Vector3 d(distance*0.5);
+    for(size_t i=0;i<bbs.size();i++) {
+      bbs[i].bmin -= d;
+      bbs[i].bmax += d;
+    }
+  }
+  //if |validbodies| > 300, you may want to use the functions in geometry/RangeQuery.h
+  //now check collisions, ensuring BBs overlap
+  for(size_t i=0;i<validbodies.size();i++) {
+    for(size_t j=i+1;j<validbodies.size();j++) {
+      CollisionQuery* query=selfCollisions(validbodies[i],validbodies[j]);
+      if(query == NULL) continue;
+      if(!bbs[i].intersects(bbs[j])) return false;
+      if(UnderCollisionMargin(query,distance)) return true;
     }
   }
   return false;
-
 }
 
 bool RobotWithGeometry::SelfCollision(const vector<int>& set1,const vector<int>& set2,Real distance)
 {
-  for(size_t i=0;i<set1.size();i++) {
-    for(size_t j=0;j<set2.size();j++) {
-      if(SelfCollision(set1[i],set2[j],distance)) return true;
+  //get world space bounding boxes for quick reject test
+  vector<int> valid1,valid2;
+  valid1.reserve(set1.size());
+  valid2.reserve(set2.size());
+  for(size_t i=0;i<set1.size();i++) 
+    if(!geometry[set1[i]].Empty()) valid1.push_back(set1[i]);
+  for(size_t i=0;i<set2.size();i++) 
+    if(!geometry[set2[i]].Empty()) valid2.push_back(set2[i]);
+  if(valid1.empty() || valid2.empty()) return false;
+  vector<AABB3D> bbs1(valid1.size()),bbs2(valid2.size());
+  for(size_t i=0;i<valid1.size();i++) 
+    bbs1[i] = geometry[valid1[i]].GetAABB();
+  for(size_t i=0;i<valid2.size();i++) 
+    bbs2[i] = geometry[valid2[i]].GetAABB();
+  if(distance != 0) {
+    //adjust bounding  boxes
+    Vector3 d(distance*0.5);
+    for(size_t i=0;i<bbs1.size();i++) {
+      bbs1[i].bmin -= d;
+      bbs1[i].bmax += d;
+    }
+    for(size_t i=0;i<bbs2.size();i++) {
+      bbs2[i].bmin -= d;
+      bbs2[i].bmax += d;
+    }
+  }
+  if(valid1.size() >= 3 && valid2.size() >= 3) {
+    //O(m+n) additional fast reject tests: set 1 vs bb of set 2, and vice versa
+    AABB3D bb1,bb2;
+    bb1 = bbs1[0];
+    for(size_t i=1;i<bbs1.size();i++)
+      bb1.setUnion(bbs1[i]);
+    for(size_t i=0;i<valid2.size();i++)
+      if(!bb1.intersects(bbs2[i])) { //quick reject
+	bbs2[i] = bbs2.back();
+	valid2[i] = valid2.back();
+	bbs2.resize(bbs2.size()-1);
+	valid2.resize(valid2.size()-1);
+	i--;
+      }
+    bb2 = bbs1[0];
+    for(size_t i=1;i<bbs2.size();i++)
+      bb2.setUnion(bbs2[i]);
+    for(size_t i=0;i<valid1.size();i++)
+      if(!bb2.intersects(bbs1[i])) { //quick reject
+	bbs1[i] = bbs1.back();
+	valid1[i] = valid1.back();
+	bbs1.resize(bbs1.size()-1);
+	valid1.resize(valid1.size()-1);
+	i--;
+      }
+  }
+  //quick reject of all 
+  //if |valid1| or |valid2| > 300, you may want to use the functions in geometry/RangeQuery.h
+  //now check collisions, ensuring BBs overlap
+  for(size_t i=0;i<valid1.size();i++) {
+    for(size_t j=0;j<valid2.size();j++) {
+      CollisionQuery* query=selfCollisions(valid2[i],valid2[j]);
+      if(query == NULL) continue;
+      if(!bbs1[i].intersects(bbs2[j])) return false;
+      if(UnderCollisionMargin(query,distance)) return true;
     }
   }
   return false;
@@ -205,13 +283,66 @@ bool RobotWithGeometry::SelfCollision(const vector<int>& set1,const vector<int>&
 
 bool RobotWithGeometry::SelfCollision(Real distance)
 {
-  for(size_t i=0;i<links.size();i++) {
-    for(size_t j=i+1;j<links.size();j++) {
-      if(SelfCollision(i,j,distance)) return true;
+  //get world space bounding boxes for quick reject test
+  vector<int> validbodies;
+  validbodies.reserve(links.size());
+  for(size_t i=0;i<links.size();i++) 
+    if(!geometry[i].Empty()) validbodies.push_back(i);
+  vector<AABB3D> bbs(validbodies.size());
+  for(size_t i=0;i<validbodies.size();i++) 
+    bbs[i] = geometry[validbodies[i]].GetAABB();
+  if(distance != 0) {
+    //adjust bounding  boxes
+    Vector3 d(distance*0.5);
+    for(size_t i=0;i<bbs.size();i++) {
+      bbs[i].bmin -= d;
+      bbs[i].bmax += d;
+    }
+  }
+  //if |validbodies| > 300, you may want to use the functions in geometry/RangeQuery.h
+  //now check collisions, ensuring BBs overlap
+  for(size_t i=0;i<validbodies.size();i++) {
+    for(size_t j=i+1;j<validbodies.size();j++) {
+      CollisionQuery* query=selfCollisions(validbodies[i],validbodies[j]);
+      if(query == NULL) continue;
+      if(!bbs[i].intersects(bbs[j])) return false;
+      if(UnderCollisionMargin(query,distance)) return true;
     }
   }
   return false;
 }
+
+void RobotWithGeometry::SelfCollisions(vector<pair<int,int> >& pairs,Real distance)
+{
+  //get world space bounding boxes for quick reject test
+  vector<int> validbodies;
+  validbodies.reserve(links.size());
+  for(size_t i=0;i<links.size();i++) 
+    if(!geometry[i].Empty()) validbodies.push_back(i);
+  vector<AABB3D> bbs(validbodies.size());
+  for(size_t i=0;i<validbodies.size();i++) 
+    bbs[i] = geometry[validbodies[i]].GetAABB();
+  if(distance != 0) {
+    //adjust bounding  boxes
+    Vector3 d(distance*0.5);
+    for(size_t i=0;i<bbs.size();i++) {
+      bbs[i].bmin -= d;
+      bbs[i].bmax += d;
+    }
+  }
+  //if |validbodies| > 300, you may want to use the functions in geometry/RangeQuery.h
+  //now check collisions, ensuring BBs overlap
+  for(size_t i=0;i<validbodies.size();i++) {
+    for(size_t j=i+1;j<validbodies.size();j++) {
+      CollisionQuery* query=selfCollisions(validbodies[i],validbodies[j]);
+      if(query == NULL) continue;
+      if(!bbs[i].intersects(bbs[j])) continue;
+      if(UnderCollisionMargin(query,distance)) pairs.push_back(pair<int,int>(validbodies[i],validbodies[j]));
+    }
+  }
+
+}
+
 
 bool RobotWithGeometry::MeshCollision(CollisionGeometry& mesh)
 {
