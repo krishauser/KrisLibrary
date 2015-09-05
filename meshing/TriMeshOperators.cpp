@@ -1,4 +1,7 @@
 #include "TriMeshOperators.h"
+#include <math/SVDecomposition.h>
+#include <math/matrix.h>
+#include <utils/combination.h>
 #include <set>
 
 namespace Meshing {
@@ -132,5 +135,129 @@ Real VertexAbsMeanCurvature(const TriMeshWithTopology& mesh,int v)
   return 3.0*sum*0.25/IncidentTriangleArea(mesh,v);
 }
 
+//solves the problem 
+//[a1 a2 a3][x] = [amount]
+//[b1 b2 b3][y]   [amount]
+//[c1 b2 b3][z]   [amount]
+//in exact (or failing that for numerical reasons, least squares) form
+Vector3 Mat3Solve(const Vector3& a,const Vector3& b,const Vector3& c,Real amount)
+{
+  Matrix3 C,Cinv;
+  C.setRow1(a);
+  C.setRow2(b);
+  C.setRow3(c);
+  if(!Cinv.setInverse(C)) {
+    //numerical error? colinear
+    RobustSVD<Real> svd;
+    Matrix Cm(3,3);
+    for(int p=0;p<3;p++)
+      for(int q=0;q<3;q++)
+	Cm(p,q) = C(p,q);
+    if(!svd.set(Cm)) {
+      //yikes, what's going on here?
+      return amount*(a+b+c)/3.0;
+    }
+    else {
+      Matrix Cminv;
+      svd.getInverse(Cminv);
+      for(int p=0;p<3;p++)
+	for(int q=0;q<3;q++)
+	  Cinv(p,q) = Cminv(p,q);
+    }
+  }
+  return Cinv*Vector3(amount,amount,amount);
+}
+
+int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
+{
+  if(mesh.incidentTris.empty()) 
+    mesh.CalcIncidentTris();
+  vector<Vector3> n(mesh.tris.size());
+  for(size_t i=0;i<mesh.tris.size();i++) 
+    n[i] = mesh.TriangleNormal(i);
+  vector<Vector3> ni;  //temporary
+  for(size_t i=0;i<mesh.verts.size();i++) {
+    //set up a min norm program
+    //min ||x|| s.t.
+    //ni^T x + amount <= 0 for all triangles i in incident(v)
+    //(let this be Ax <= b)
+    //In other words, with lagrange multipliers m
+    //  x + A^T m = 0
+    //  Ax <= b
+    //  m^T(Ax-b)=0
+    //  m >= 0
+    //For the active multipliers with rows C of A selected
+    //  x + C^T m = 0
+    //  C x = b
+    //so b = -CC^T m => m=-(CC^T)^-1*b
+    //=> x = C^T (CC^T)^-1*b
+    ni.resize(0);
+    for(size_t j=0;j<mesh.incidentTris[i].size();j++) {
+      bool duplicate = false;
+      for(size_t k=0;k<ni.size();k++) {
+	if(ni[k].isEqual(n[mesh.incidentTris[i][j]],Epsilon)) {
+	  duplicate = true;
+	  break;
+	}
+      }
+      if(!duplicate)
+	ni.push_back(n[mesh.incidentTris[i][j]]);
+    }
+    //cout<<"ApproximateShrink "<<i<<" "<<ni.size()<<endl;
+    if(ni.empty()) continue;
+    else if(ni.size() == 1) {
+      //shift inward
+      mesh.verts[i] -= amount*ni[0];
+      cout<<"  "<<ni[0]<<endl;
+    }
+    else if(ni.size() == 2) {
+      //shift inward, solve analytically
+      Matrix2 CtC;
+      CtC(0,0) = ni[0].dot(ni[0]);
+      CtC(0,1) = CtC(1,0) = ni[0].dot(ni[1]);
+      CtC(1,1) = ni[1].dot(ni[1]);
+      Matrix2 CtCinv;
+      if(!CtCinv.setInverse(CtC)) {
+	//numerical error? colinear
+	mesh.verts[i] -= amount*ni[0];
+      }
+      else {
+	Vector2 coeffs = CtCinv*Vector2(amount,amount);
+	mesh.verts[i] -= coeffs[0]*ni[0] + coeffs[1]*ni[1];
+	//cout<<"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<endl;
+	//cout<<"  coeffs "<<coeffs[0]<<endl;
+      }
+    }
+    else if(ni.size()==3) {
+      mesh.verts[i] -= Mat3Solve(ni[0],ni[1],ni[2],amount);
+      //cout<<"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<endl;
+    }
+    else {
+      //simple method: loop through all triples and pick the deepest
+      Vector3 deepest;
+      Real maxdepth = 0;
+      vector<int> triple(3);
+      FirstCombination(triple,ni.size());
+      do {
+	Vector3 v = Mat3Solve(ni[triple[0]],ni[triple[1]],ni[triple[2]],amount);
+	Real md = amount;
+	for(size_t j=0;j<ni.size();j++) 
+	  md=Min(md,ni[j].dot(v));
+	if(md > maxdepth) {
+	  maxdepth = md;
+	  deepest = v;
+	}
+      }
+      while(!NextCombination(triple,ni.size()));
+      //cout<<"  Deepest is "<<deepest<<" with depth "<<maxdepth<<endl;
+      mesh.verts[i] -= deepest;
+    }
+  }
+  //check for flips
+  int numFlipped = 0;
+  for(size_t i=0;i<mesh.tris.size();i++)
+    if(mesh.TriangleNormal(i).dot(n[i]) < 0) numFlipped++;
+  return numFlipped;
+}
 
 } //namespace Meshing

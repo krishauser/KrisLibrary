@@ -127,6 +127,16 @@ Real VertexGaussianCurvature(const TriMeshWithTopology& mesh,int v);
 ///assuming the mesh approximates an underlying smooth surface
 Real VertexAbsMeanCurvature(const TriMeshWithTopology& mesh,int v);
 
+
+///Shifts the mesh's vertices by an amount that causes each adjacent triangle
+///to be shifted along its normal by the given amount.  This is a local, approximate
+///erosion operator that is much quicker to compute, but the approximation degrades
+///with larger amounts of erosion.
+///
+///Returns 0 if there were no local interpenetrations caused by the shrinking,
+///otherwise it returns the number of detected local interpenetrations.
+int ApproximateShrink(TriMeshWithTopology& mesh,Real amount);
+
   /*@}*/
 
 } //namespace Meshing
