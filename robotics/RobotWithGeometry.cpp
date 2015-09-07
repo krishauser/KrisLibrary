@@ -306,7 +306,7 @@ bool RobotWithGeometry::SelfCollision(Real distance)
     for(size_t j=i+1;j<validbodies.size();j++) {
       CollisionQuery* query=selfCollisions(validbodies[i],validbodies[j]);
       if(query == NULL) continue;
-      if(!bbs[i].intersects(bbs[j])) continue
+      if(!bbs[i].intersects(bbs[j])) continue;
       if(UnderCollisionMargin(query,distance)) return true;
     }
   }
