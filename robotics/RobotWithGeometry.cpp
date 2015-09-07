@@ -206,7 +206,7 @@ bool RobotWithGeometry::SelfCollision(const vector<int>& bodies,Real distance)
     for(size_t j=i+1;j<validbodies.size();j++) {
       CollisionQuery* query=selfCollisions(validbodies[i],validbodies[j]);
       if(query == NULL) continue;
-      if(!bbs[i].intersects(bbs[j])) return false;
+      if(!bbs[i].intersects(bbs[j])) continue;
       if(UnderCollisionMargin(query,distance)) return true;
     }
   }
@@ -274,7 +274,7 @@ bool RobotWithGeometry::SelfCollision(const vector<int>& set1,const vector<int>&
     for(size_t j=0;j<valid2.size();j++) {
       CollisionQuery* query=selfCollisions(valid2[i],valid2[j]);
       if(query == NULL) continue;
-      if(!bbs1[i].intersects(bbs2[j])) return false;
+      if(!bbs1[i].intersects(bbs2[j])) continue;
       if(UnderCollisionMargin(query,distance)) return true;
     }
   }
@@ -289,8 +289,9 @@ bool RobotWithGeometry::SelfCollision(Real distance)
   for(size_t i=0;i<links.size();i++) 
     if(!geometry[i].Empty()) validbodies.push_back(i);
   vector<AABB3D> bbs(validbodies.size());
-  for(size_t i=0;i<validbodies.size();i++) 
+  for(size_t i=0;i<validbodies.size();i++) {
     bbs[i] = geometry[validbodies[i]].GetAABB();
+  }
   if(distance != 0) {
     //adjust bounding  boxes
     Vector3 d(distance*0.5);
@@ -305,7 +306,7 @@ bool RobotWithGeometry::SelfCollision(Real distance)
     for(size_t j=i+1;j<validbodies.size();j++) {
       CollisionQuery* query=selfCollisions(validbodies[i],validbodies[j]);
       if(query == NULL) continue;
-      if(!bbs[i].intersects(bbs[j])) return false;
+      if(!bbs[i].intersects(bbs[j])) continue
       if(UnderCollisionMargin(query,distance)) return true;
     }
   }
