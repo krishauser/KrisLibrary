@@ -311,7 +311,7 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
 bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate);
+	const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 	// If the import failed, report it
 	if (!scene || scene->mNumMeshes == 0) {
 		std::cout << "AssimpImporter:"<<importer.GetErrorString() << std::endl;
