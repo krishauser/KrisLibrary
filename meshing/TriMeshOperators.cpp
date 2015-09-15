@@ -208,7 +208,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
     else if(ni.size() == 1) {
       //shift inward
       mesh.verts[i] -= amount*ni[0];
-      cout<<"  "<<ni[0]<<endl;
+      //cout<<"  "<<ni[0]<<endl;
     }
     else if(ni.size() == 2) {
       //shift inward, solve analytically
