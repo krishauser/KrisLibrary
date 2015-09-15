@@ -2,6 +2,7 @@
 #include <math/SVDecomposition.h>
 #include <math/matrix.h>
 #include <utils/combination.h>
+#include <utils/stl_tr1.h>
 #include <set>
 
 namespace Meshing {
@@ -168,14 +169,100 @@ Vector3 Mat3Solve(const Vector3& a,const Vector3& b,const Vector3& c,Real amount
   return Cinv*Vector3(amount,amount,amount);
 }
 
+class VectorHash
+{
+public:
+  std::size_t operator()(std::vector<uint32_t> const& vec) const {
+    std::size_t seed = 0;
+    for(std::vector<uint32_t>::const_iterator i=vec.begin();i!=vec.end();i++) {
+      seed ^= *i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+  }
+};
+
+struct Vector3Hash
+{
+  Vector3Hash(Real _scale=10000):scale(_scale) {}
+  size_t operator () (const Vector3& x) const {
+    Vector3 xscale = x*scale;
+    vector<uint32_t> ints(3);
+    ints[0] = int(xscale.x);
+    ints[1] = int(xscale.y);
+    ints[2] = int(xscale.z);
+    return VectorHash()(ints);
+  }
+  Real scale;
+};
+
+void MergeVertices(TriMeshWithTopology& mesh,Real tolerance=0)
+{
+  mesh.ClearTopology();
+  vector<Vector3> newpts;
+  vector<int> newmap(mesh.verts.size(),-1);
+  if(tolerance==0) {
+    UNORDERED_MAP_TEMPLATE<Vector3,vector<int>,Vector3Hash> pts;
+    for(size_t i=0;i<mesh.verts.size();i++)
+      pts[mesh.verts[i]].push_back(i);
+    for(UNORDERED_MAP_TEMPLATE<Vector3,vector<int>,Vector3Hash>::iterator i=pts.begin();i!=pts.end();i++) {
+      for(size_t j=0;j<i->second.size();j++)
+	newmap[i->second[j]] = (int)newpts.size();
+      newpts.push_back(i->first);
+    }
+  }
+  else {
+    UNORDERED_MAP_TEMPLATE<vector<uint32_t>,vector<int>,VectorHash> pts;
+    vector<uint32_t> index(3);
+    for(size_t i=0;i<mesh.verts.size();i++) {
+      index[0] = (int)(mesh.verts[i].x/tolerance);
+      index[1] = (int)(mesh.verts[i].y/tolerance);
+      index[2] = (int)(mesh.verts[i].z/tolerance);
+      pts[index].push_back(i);
+    }
+    for(UNORDERED_MAP_TEMPLATE<vector<uint32_t>,vector<int>,VectorHash>::iterator i=pts.begin();i!=pts.end();i++) {
+      for(size_t j=0;j<i->second.size();j++)
+	newmap[i->second[j]] = (int)newpts.size();
+      Vector3 pt = mesh.verts[i->second[0]];
+      for(size_t j=1;j<i->second.size();j++)
+	pt += mesh.verts[i->second[j]];
+      pt *= 1.0/Real(i->second.size());
+      newpts.push_back(pt);
+    }
+  }
+  vector<IntTriple> newtris;
+  newtris.reserve(mesh.tris.size());
+  for(size_t i=0;i<mesh.tris.size();i++) {
+    IntTriple newtri;
+    newtri.a = newmap[mesh.tris[i].a];
+    newtri.b = newmap[mesh.tris[i].b];
+    newtri.c = newmap[mesh.tris[i].c];
+    Assert(newtri.a >= 0 && newtri.a < (int)newpts.size());
+    Assert(newtri.b >= 0 && newtri.b < (int)newpts.size());
+    Assert(newtri.c >= 0 && newtri.c < (int)newpts.size());
+    if(newtri.a == newtri.b || newtri.b == newtri.c || newtri.c == newtri.a) {
+      //degenerate
+    }
+    else {
+      newtris.push_back(newtri);
+    }
+  }
+  printf("Vertex merging reduced %d verts and %d tris to %d verts and %d tris\n",mesh.verts.size(),mesh.tris.size(),newpts.size(),newtris.size());
+  swap(mesh.verts,newpts);
+  swap(mesh.tris,newtris);
+  Assert(mesh.IsValid());
+}
+
+
 int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 {
+  MergeVertices(mesh,1e-6);
   if(mesh.incidentTris.empty()) 
     mesh.CalcIncidentTris();
   vector<Vector3> n(mesh.tris.size());
   for(size_t i=0;i<mesh.tris.size();i++) 
     n[i] = mesh.TriangleNormal(i);
   vector<Vector3> ni;  //temporary
+  Real threshold = 3.0*amount;
   for(size_t i=0;i<mesh.verts.size();i++) {
     //set up a min norm program
     //min ||x|| s.t.
@@ -223,13 +310,25 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
       }
       else {
 	Vector2 coeffs = CtCinv*Vector2(amount,amount);
-	mesh.verts[i] -= coeffs[0]*ni[0] + coeffs[1]*ni[1];
+	Vector3 d = coeffs[0]*ni[0] + coeffs[1]*ni[1];;
+	if(d.normSquared() < threshold*threshold)
+	  mesh.verts[i] -= d;
+	else {
+	  Vector3 navg = (ni[0]+ni[1])/2.0;
+	  mesh.verts[i] -= navg*threshold;
+	}
 	//cout<<"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<endl;
 	//cout<<"  coeffs "<<coeffs[0]<<endl;
       }
     }
     else if(ni.size()==3) {
-      mesh.verts[i] -= Mat3Solve(ni[0],ni[1],ni[2],amount);
+      Vector3 d = Mat3Solve(ni[0],ni[1],ni[2],amount);
+      if(d.normSquared() < threshold*threshold)
+	mesh.verts[i] -= d;
+      else {
+	Vector3 navg = (ni[0]+ni[1]+ni[2])/3.0;
+	mesh.verts[i] -= navg*threshold;
+      }
       //cout<<"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<endl;
     }
     else {
@@ -250,7 +349,15 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
       }
       while(!NextCombination(triple,ni.size()));
       //cout<<"  Deepest is "<<deepest<<" with depth "<<maxdepth<<endl;
-      mesh.verts[i] -= deepest;
+      if(deepest.normSquared() > threshold*threshold) {
+	Vector3 navg = ni[0];
+	for(size_t j=1;j<ni.size();j++)
+	  navg += ni[j];
+	mesh.verts[i] -= navg/ni.size()*threshold;
+      }
+      else {
+	mesh.verts[i] -= deepest;
+      }
     }
   }
   //check for flips
