@@ -315,7 +315,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	  mesh.verts[i] -= d;
 	else {
 	  Vector3 navg = (ni[0]+ni[1])/2.0;
-	  mesh.verts[i] -= navg*threshold;
+	  mesh.verts[i] -= navg*amount;
 	}
 	//cout<<"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<endl;
 	//cout<<"  coeffs "<<coeffs[0]<<endl;
@@ -327,7 +327,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	mesh.verts[i] -= d;
       else {
 	Vector3 navg = (ni[0]+ni[1]+ni[2])/3.0;
-	mesh.verts[i] -= navg*threshold;
+	mesh.verts[i] -= navg*amount;
       }
       //cout<<"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<endl;
     }
@@ -353,7 +353,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	Vector3 navg = ni[0];
 	for(size_t j=1;j<ni.size();j++)
 	  navg += ni[j];
-	mesh.verts[i] -= navg/ni.size()*threshold;
+	mesh.verts[i] -= navg/ni.size()*amount;
       }
       else {
 	mesh.verts[i] -= deepest;
