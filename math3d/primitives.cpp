@@ -299,7 +299,7 @@ bool Matrix3::setInverse(const Matrix3& a)
     rowswap(_a,i1,j);
     rowswap(_b,i1,j);
     if (FuzzyZero(_a(j,j))){
-      fprintf(stderr, "Taking inverse of singular Matrix3\n");
+      //fprintf(stderr, "Taking inverse of singular Matrix3\n");
       return false;
     }
     register Real div = Inv(_a(j,j));
