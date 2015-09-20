@@ -420,7 +420,44 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyGeometry3D& geom)
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom)
   :AnyGeometry3D(geom),margin(geom.margin)
 {
-  InitCollisions();
+  if(!geom.collisionData.empty()) {
+    switch(type) {
+    case Primitive:
+      {
+	RigidTransform T = geom.PrimitiveCollisionData();
+	collisionData = T;
+      }
+      break;
+    case ImplicitSurface:
+      {
+	RigidTransform T = geom.ImplicitSurfaceCollisionData();
+	collisionData = T;
+      }
+      break;
+    case TriangleMesh:
+      {
+	const CollisionMesh& cmesh = geom.TriangleMeshCollisionData();
+	collisionData = CollisionMesh(cmesh);
+      }
+      break;
+    case PointCloud:
+      {
+	const CollisionPointCloud& cmesh = geom.PointCloudCollisionData();    
+	collisionData = CollisionPointCloud(cmesh);
+      }
+      break;
+    case Group:
+      {
+	collisionData = vector<AnyCollisionGeometry3D>();
+	vector<AnyCollisionGeometry3D>& colitems = GroupCollisionData();
+	const vector<AnyCollisionGeometry3D>& geomitems = geom.GroupCollisionData();
+	colitems.resize(geomitems.size());
+	for(size_t i=0;i<geomitems.size();i++)
+	  colitems[i] = AnyCollisionGeometry3D(geomitems[i]);
+      }
+      break;
+    }
+  }
 }
 
   const RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() const { return *AnyCast<RigidTransform>(&collisionData); }

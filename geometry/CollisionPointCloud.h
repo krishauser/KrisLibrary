@@ -19,6 +19,7 @@ class CollisionPointCloud : public Meshing::PointCloud3D
  public:
   CollisionPointCloud();
   CollisionPointCloud(const Meshing::PointCloud3D& pc);
+  CollisionPointCloud(const CollisionPointCloud& pc);
   ///Needs to be called if this point cloud was loaded or set up any other
   ///way than the constructor
   void InitCollisions();
