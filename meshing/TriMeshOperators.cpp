@@ -3,6 +3,7 @@
 #include <math/matrix.h>
 #include <utils/combination.h>
 #include <utils/stl_tr1.h>
+#include <stdint.h>
 #include <set>
 
 namespace Meshing {
