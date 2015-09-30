@@ -32,9 +32,9 @@ bool StraightLineEpsilonPlanner::IsVisible()
     depth++;
     segs *= 2;
     dist *= Half;
-    Real du = One / (Real)segs;
-    Real u = du;
-    for(int k=1;k<segs;k+=2,u+=du+du) {
+    Real du2 = 2.0 / (Real)segs;
+    Real u = du2*Half;
+    for(int k=1;k<segs;k+=2,u+=du2) {
       space->Interpolate(a,b,u,m);
       if(!space->IsFeasible(m)) {
 	foundInfeasible = true;
@@ -74,15 +74,16 @@ Real StraightLineEpsilonPlanner::Priority() const { return dist; }
 
 bool StraightLineEpsilonPlanner::Plan() 
 {
+  if(foundInfeasible || dist <= epsilon) return false;
   depth++;
   segs *= 2;
   dist *= Half;
-  Real du = One / (Real)segs;
-  Real u = du;
-  for(int k=1;k<segs;k+=2,u+=du+du) {
+  Real du2 = 2.0 / (Real)segs;
+  Real u = du2*Half;
+  for(int k=1;k<segs;k+=2,u+=du2) {
     space->Interpolate(a,b,u,m);
     if(!space->IsFeasible(m)) {
-      dist = Inf;
+      dist = 0;
       foundInfeasible=true;
       return false;
     }
