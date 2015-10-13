@@ -41,7 +41,9 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       in >> str;
     else {
       while(in && delims.find(in.peek()) == std::string::npos && !isspace(in.peek())) {
-	str += in.get();
+	int c=in.get();
+	if(c == EOF) break;
+	str += char(c);
       }
     }
     if(str.empty()) {
@@ -62,7 +64,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       value = val;
       return true;
     }
-    std::string lstr=Strip(str);
+    std::string lstr=str;
     Lowercase(lstr);
     if(lstr=="null") {
       value = AnyValue();
