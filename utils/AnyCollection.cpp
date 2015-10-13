@@ -64,7 +64,11 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
     }
     std::string lstr=str;
     Lowercase(lstr);
-    if(lstr=="true") {
+    if(lstr=="null") {
+      value = AnyValue();
+      return true;
+    }
+    else if(lstr=="true") {
       value = true;
       return true;
     }
