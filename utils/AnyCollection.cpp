@@ -62,7 +62,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       value = val;
       return true;
     }
-    std::string lstr=str;
+    std::string lstr=Strip(str);
     Lowercase(lstr);
     if(lstr=="null") {
       value = AnyValue();
