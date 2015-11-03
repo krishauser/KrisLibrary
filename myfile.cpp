@@ -203,14 +203,21 @@ bool File::OpenData(int openmode)
 	return true;
 }
 
-void* File::GetDataBuffer() const
+void* File::FileObjectPointer()
 {
-	assert(srctype == MODE_MYDATA || srctype == MODE_EXTDATA);
-	return datafile;
+  if(srctype == MODE_MYDATA || srctype == MODE_EXTDATA)
+    return datafile;
+  else if(srctype == MODE_TCPSOCKET || mode == MODE_UDPSOCKET) {
+    if(socket == INVALID_SOCKET) return NULL;
+    return &socket;
+  }
+  if(file == INVALID_FILE_POINTER) return NULL;
+  return &file;
 }
 
 void File::ResizeDataBuffer(int size)
 {
+  assert(srctype == MODE_MYDATA);
 	unsigned char* olddata=datafile;
 	datafile=(unsigned char*)malloc(size);
 	memcpy(datafile,olddata,datasize);
