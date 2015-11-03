@@ -494,6 +494,12 @@ bool SocketClientTransport::Start()
     else
       opened=true;
   }
+  void* ptr = socket.FileObjectPointer();
+  if(ptr == NULL) {
+    fprintf(stderr,"SocketClientTransport: uh... File returns NULL socket?\n");
+    return false;
+  }
+  SetNodelay(*((SOCKET*)ptr));
   //ThreadSleep(1);
   return true;
 }
@@ -568,6 +574,7 @@ const char* SocketServerTransport::DoRead()
     SOCKET clientsock = Accept(serversocket,5.0);
     if(clientsock != INVALID_SOCKET) {
       printf("Accepted new client on %s\n",addr.c_str());
+      SetNodelay(clientsock);
       clientsockets.push_back(new File);
       clientsockets.back()->OpenTCPSocket(clientsock);
     }
@@ -616,6 +623,7 @@ bool SocketServerTransport::DoWrite(const char* str,int length)
     SOCKET clientsock = Accept(serversocket,5.0);
     if(clientsock != INVALID_SOCKET) {
       printf("Accepted new client on %s\n",addr.c_str());
+      SetNodelay(clientsock);
       clientsockets.push_back(new File);
       clientsockets.back()->OpenTCPSocket(clientsock);
     }

@@ -178,8 +178,8 @@ SOCKET Connect(const char* addr)
   serv_addr.sin_port = htons(port);
 
   if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-    fprintf(stderr,"Connect: Connect to server %s:%d failed\n",host,port);
-    perror("  Connect error");
+    fprintf(stderr,"socketutils.cpp Connect: Connect to server %s:%d failed\n",host,port);
+    perror("  Reason");
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET;
@@ -214,7 +214,7 @@ SOCKET Bind(const char* addr,bool block)
 	  
   SOCKET sockfd = socket(AF_INET, sockettype, 0);
   if (sockfd == INVALID_SOCKET) {
-    fprintf(stderr,"File::Open: Error creating socket\n");
+    fprintf(stderr,"socketutils.cpp Bind: Error creating socket\n");
     delete [] host;
     return INVALID_SOCKET;
   }
@@ -224,7 +224,7 @@ SOCKET Bind(const char* addr,bool block)
 
   server = gethostbyname(host);
   if (server == NULL) {
-    fprintf(stderr,"File::Open: Error, no such host %s:%d\n",host,port);
+    fprintf(stderr,"socketutils.cpp Bind: Error, no such host %s:%d\n",host,port);
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET;
@@ -237,8 +237,8 @@ SOCKET Bind(const char* addr,bool block)
   serv_addr.sin_port = htons(port);
 
   if (bind(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-    fprintf(stderr,"File::Open: Bind server to %s:%d failed\n",host,port);
-    perror("");
+    fprintf(stderr,"socketutils.cpp Bind: Bind server to %s:%d failed\n",host,port);
+    perror("  Reason");
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET ;
@@ -289,14 +289,26 @@ SOCKET Accept(SOCKET sockfd,double timeout)
 }
 
 
-void SetNonblock(SOCKET sockfd)
+void SetNonblock(SOCKET sockfd,bool enabled)
 {
 #ifdef _WIN32
 	u_long iMode=1;
+	if(!enabled) iMode = 0;
 	ioctlsocket(sockfd,FIONBIO,&iMode);
 #else
-    fcntl(sockfd,F_SETFL,FNDELAY);
+	if(enabled)
+	  fcntl(sockfd,F_SETFL,FNDELAY);
+	else
+	  fcntl(sockfd,F_SETFL,0);
 #endif //_WIN32
+}
+
+
+void SetNodelay(SOCKET sockfd,bool enabled)
+{
+  int arg = 1;
+  if(!enabled) arg = 1;
+  setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &arg, sizeof(arg));
 }
 
 
