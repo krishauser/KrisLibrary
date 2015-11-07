@@ -96,6 +96,9 @@ public:
 	///In an internally managed memory buffer created via OpenData(),
 	///resizes the buffer to the given size.
 	void ResizeDataBuffer(int size);
+	///Provides low level access to the memory buffer, or NULL if it's
+	///not a data buffer
+	unsigned char* GetDataBuffer() const; 
 	///Provides low level access to the file object.  If it's a file,
 	///returns a pointer to the FILE_POINTER object. If it's a data buffer,
 	///returns the data buffer pointe.r  If it's a socket, returns a

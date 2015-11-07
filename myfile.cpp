@@ -225,6 +225,13 @@ void File::ResizeDataBuffer(int size)
 	datasize = size;
 }
 
+unsigned char* File::GetDataBuffer() const
+{
+  if(srctype == MODE_MYDATA || srctype == MODE_EXTDATA)
+    return datafile;
+  return NULL;
+}
+
 
 bool File::OpenTCPSocket(SOCKET sockfd)
 {
