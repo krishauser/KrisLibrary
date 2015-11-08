@@ -767,6 +767,7 @@ void RobotIKFunction::PreEval(const Vector& x)
 RobotIKSolver::RobotIKSolver(RobotIKFunction& f)
   :solver(&f),function(f),robot(f.robot)
 {
+  solver.svd.preMultiply = false;
 }
 
 void RobotIKSolver::UseJointLimits(Real revJointThreshold) 
