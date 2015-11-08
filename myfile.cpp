@@ -1,5 +1,6 @@
 #include "myfile.h"
 #include "utils.h"
+#include "errors.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
@@ -200,6 +201,7 @@ bool File::OpenData(int openmode)
 
 	ResizeDataBuffer(64);
 	mode = openmode;
+	Assert(IsOpen());
 	return true;
 }
 
@@ -220,6 +222,7 @@ void File::ResizeDataBuffer(int size)
   assert(srctype == MODE_MYDATA);
 	unsigned char* olddata=datafile;
 	datafile=(unsigned char*)malloc(size);
+	if(!datafile) FatalError("Memory allocation error, size %d\n",size);
 	memcpy(datafile,olddata,datasize);
 	free(olddata);
 	datasize = size;
@@ -617,6 +620,8 @@ bool File::IsOpen() const
     if(socket == INVALID_SOCKET) return false;
     return true;
   }
+  if(srctype == MODE_MYDATA || srctype == MODE_EXTDATA)
+    return (datafile != NULL);
   if(file == INVALID_FILE_POINTER) return false;
   return true;
 }
