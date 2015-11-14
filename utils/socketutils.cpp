@@ -270,7 +270,7 @@ SOCKET Accept(SOCKET sockfd,double timeout)
   timeval tv;
   double secs = floor(timeout);
   tv.tv_sec = (int)secs;
-  tv.tv_usec = (timeout-secs)*1000000;
+  tv.tv_usec = (int)((timeout-secs)*1000000);
 
   int result = select(sockfd + 1, &rfds, (fd_set *) 0, (fd_set *) 0, &tv);
   if(result > 0) {
@@ -309,7 +309,11 @@ void SetNodelay(SOCKET sockfd,bool enabled)
 {
   int arg = 1;
   if(!enabled) arg = 1;
+#ifdef _WIN32
+  setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (const char*)&arg, sizeof(arg));
+#else
   setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &arg, sizeof(arg));
+#endif
 }
 
 
