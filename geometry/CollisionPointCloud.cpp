@@ -61,8 +61,8 @@ void CollisionPointCloud::InitCollisions()
   printf("  %d nonempty grid buckets, max size %d, avg %g\n",grid.buckets.size(),nmax,Real(points.size())/grid.buckets.size());
   timer.Reset();
 
-  //initialize the octree, 10 points per cell
-  octree = new OctreePointSet(bblocal,10);
+  //initialize the octree, 10 points per cell, res is minimum cell size
+  octree = new OctreePointSet(bblocal,10,res);
   for(size_t i=0;i<points.size();i++)
     octree->Add(points[i],(int)i);
   printf("  octree initialized in time %gs, %d nodes\n",timer.ElapsedTime(),octree->Size());
