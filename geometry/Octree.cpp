@@ -314,8 +314,8 @@ void Octree::DeleteNode(int id)
 }
 
 
-OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell)
-  :Octree(bbox),maxPointsPerCell(_maxPointsPerCell),fit(false)
+OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell,Real _minCellSize)
+  :Octree(bbox),maxPointsPerCell(_maxPointsPerCell),minCellSize(_minCellSize),fit(false)
 {}
 
 void OctreePointSet::Add(const Vector3& pt,int id)
@@ -332,12 +332,14 @@ void OctreePointSet::Add(const Vector3& pt,int id)
   pointLists[nindex].push_back(pt);
   idLists[nindex].push_back(id);
   if((int)pointLists[nindex].size() > maxPointsPerCell) {
-    //split, if points are not all equal
+    //split, if bounding box containing points is greater than the maximum cell size
     AABB3D bbox(pt,pt);
-    for(size_t i=0;i+1<pointLists[nindex].size();i++)
+    for(size_t i=0;i+1<pointLists[nindex].size();i++) {
       bbox.expand(pointLists[nindex][i]);
-    if(bbox.bmin != bbox.bmax) {
-      Split(nindex);
+      if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
+	Split(nindex);
+	break;
+      }
     }
   }
 }

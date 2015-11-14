@@ -103,7 +103,7 @@ class Octree
 class OctreePointSet : public Octree
 {
  public:
-  OctreePointSet(const AABB3D& bbox,int maxPointsPerCell=1);
+  OctreePointSet(const AABB3D& bbox,int maxPointsPerCell=1,Real minCellSize=0);
   virtual ~OctreePointSet() {}
   const vector<Vector3>& Points(int node) const { return pointLists[node]; }
   const vector<Vector3>& Points(const OctreeNode& node) const { return pointLists[Index(node)]; }
@@ -138,6 +138,7 @@ class OctreePointSet : public Octree
   virtual void Join(int nodeindex);
 
   int maxPointsPerCell;
+  Real minCellSize;
   vector<vector<Vector3> > pointLists;
   vector<vector<int> > idLists;
   bool fit;
