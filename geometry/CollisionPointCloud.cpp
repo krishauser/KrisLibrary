@@ -47,13 +47,17 @@ void CollisionPointCloud::InitCollisions()
     res = h;
   }
   grid.h.set(res);
+  int validptcount = 0;
   for(size_t i=0;i<points.size();i++) {
-    Vector p(3,points[i]);
-    GridSubdivision::Index ind;
-    grid.PointToIndex(p,ind);
-    grid.Insert(ind,&points[i]);
+    if(IsFinite(points[i].x)) {
+      Vector p(3,points[i]);
+      GridSubdivision::Index ind;
+      grid.PointToIndex(p,ind);
+      grid.Insert(ind,&points[i]);
+      validptcount++;
+    }
   }
-  printf("CollisionPointCloud::InitCollisions: %d points, res %g, time %gs\n",points.size(),res,timer.ElapsedTime());
+  printf("CollisionPointCloud::InitCollisions: %d valid points, res %g, time %gs\n",validptcount,res,timer.ElapsedTime());
   //print stats
   int nmax = 0;
   for(GridSubdivision::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
@@ -63,9 +67,11 @@ void CollisionPointCloud::InitCollisions()
 
   //initialize the octree, 10 points per cell, res is minimum cell size
   octree = new OctreePointSet(bblocal,10,res);
-  for(size_t i=0;i<points.size();i++)
-    octree->Add(points[i],(int)i);
-  printf("  octree initialized in time %gs, %d nodes\n",timer.ElapsedTime(),octree->Size());
+  for(size_t i=0;i<points.size();i++) {
+    if(IsFinite(points[i].x))
+      octree->Add(points[i],(int)i);
+  }
+  printf("  octree initialized in time %gs, %d nodes, depth %d\n",timer.ElapsedTime(),octree->Size(),octree->MaxDepth());
   //TEST: should we fit to points
   octree->FitToPoints();
   printf("  octree fit to points in time %gs\n",timer.ElapsedTime());

@@ -40,6 +40,8 @@ class Octree
   int Index(const OctreeNode& n) const { return &n - &nodes[0]; }
   ///Returns the node for a given index
   const OctreeNode& Node(int index) const { return nodes[index]; }
+  ///Returns the maximum depth of the tree
+  int MaxDepth() const;
   ///splits the Octree uniformly to the given depth d
   void SplitToDepth(int d);
   ///Splits the given node to the given depth d.  Note: n is invalidated
@@ -105,10 +107,10 @@ class OctreePointSet : public Octree
  public:
   OctreePointSet(const AABB3D& bbox,int maxPointsPerCell=1,Real minCellSize=0);
   virtual ~OctreePointSet() {}
-  const vector<Vector3>& Points(int node) const { return pointLists[node]; }
-  const vector<Vector3>& Points(const OctreeNode& node) const { return pointLists[Index(node)]; }
-  const vector<int>& PointIDs(int node) const { return idLists[node]; }
-  const vector<int>& PointIDs(const OctreeNode& node) const { return idLists[Index(node)]; }
+  void GetPoints(int node,vector<Vector3>& pts) const;
+  void GetPoints(const OctreeNode& node,vector<Vector3>& pts) const { GetPoints(Index(node),pts); }
+  void GetPointIDs(int node,vector<int>& ids) const;
+  void GetPointIDs(const OctreeNode& node,vector<int>& ids) const { GetPointIDs(Index(node),ids); }
   void Add(const Vector3& pt,int id=-1);
   void BoxQuery(const Vector3& bmin,const Vector3& bmax,vector<Vector3>& points,vector<int>& ids) const;
   void BoxQuery(const Box3D& b,vector<Vector3>& points,vector<int>& ids) const;
@@ -139,8 +141,9 @@ class OctreePointSet : public Octree
 
   int maxPointsPerCell;
   Real minCellSize;
-  vector<vector<Vector3> > pointLists;
-  vector<vector<int> > idLists;
+  vector<vector<int> > indexLists;
+  vector<Vector3> points;
+  vector<int> ids;
   bool fit;
 };
 
