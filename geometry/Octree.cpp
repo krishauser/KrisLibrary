@@ -3,7 +3,7 @@
 #include <math3d/Box3D.h>
 #include <errors.h>
 #include <algorithm> //for sort
-#include <timer.h>
+#include <Timer.h>
 using namespace Geometry;
 using namespace Math3D;
 
