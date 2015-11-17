@@ -1091,8 +1091,10 @@ public:
 	tri.b = Tba * tri.b;
 	tri.c = Tba * tri.c;
 	//collide the triangle and points
-	const vector<Vector3>& pts = pc.octree->Points(pcOctreeNode);
-	const vector<int>& pcids = pc.octree->PointIDs(pcOctreeNode);
+	vector<Vector3> pts;
+	vector<int> pcids;
+	pc.octree->GetPoints(pcOctreeNode,pts);
+	pc.octree->GetPointIDs(pcOctreeNode,pcids);
 	Sphere3D temp;
 	temp.radius = margin;
 	for(size_t i=0;i<pts.size();i++) {
@@ -1185,10 +1187,12 @@ public:
     if(a.octree->IsLeaf(anode)) {
       if(b.octree->IsLeaf(bnode)) {
 	//collide the triangle and points
-	const vector<Vector3>& apts = a.octree->Points(aindex);
-	const vector<int>& aids = a.octree->PointIDs(aindex);
-	const vector<Vector3>& bpts = b.octree->Points(bindex);
-	const vector<int>& bids = b.octree->PointIDs(bindex);
+	vector<Vector3> apts,bpts;
+	vector<int> aids,bids;
+	a.octree->GetPoints(aindex,apts);
+	b.octree->GetPoints(bindex,bpts);
+	a.octree->GetPointIDs(aindex,aids);
+	b.octree->GetPointIDs(bindex,bids);
 	for(size_t i=0;i<apts.size();i++) {
 	  for(size_t j=0;j<bpts.size();j++) {
 	    if(apts[i].distanceSquared(bpts[j]) <= Sqr(margin)) {
