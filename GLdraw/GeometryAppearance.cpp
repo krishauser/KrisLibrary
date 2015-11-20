@@ -1,4 +1,5 @@
 #include "GeometryAppearance.h"
+#include <geometry/AnyGeometry.h>
 #include "drawMesh.h"
 #include "drawgeometry.h"
 #include "drawextra.h"

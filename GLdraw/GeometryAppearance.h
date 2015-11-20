@@ -2,12 +2,18 @@
 #define GLDRAW_GEOMETRY_APPEARANCE_H
 
 #include <utils/SmartPointer.h>
-#include <geometry/AnyGeometry.h>
 #include <math3d/primitives.h>
+#include <meshing/TriMesh.h>
 #include "GLColor.h"
 #include "GLTexture1D.h"
 #include "GLTexture2D.h"
 #include "GLDisplayList.h"
+
+namespace Geometry {
+  //forward declaration
+  class AnyGeometry3D;
+  class AnyCollisionGeometry3D;
+}// namespace Geometry
 
 namespace GLDraw {
 
