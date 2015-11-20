@@ -1,6 +1,7 @@
 #include "RobotWithGeometry.h"
 #include <meshing/IO.h>
 #include <errors.h>
+#include <Timer.h>
 #include <GLdraw/GL.h>
 #include <GLdraw/drawextra.h>
 #include <GLdraw/drawMesh.h>
@@ -78,7 +79,11 @@ bool RobotWithGeometry::SaveGeometry(int i,const char* file)
 
 void RobotWithGeometry::InitCollisions()
 {
-  for(size_t i=0;i<geometry.size();i++) geometry[i].InitCollisions();
+  Timer timer;
+  for(size_t i=0;i<geometry.size();i++) geometry[i].InitCollisionData();
+  double t = timer.ElapsedTime();
+  if(t > 0.2) 
+    printf("Initialized robot collision data structures in time %gs\n",t);
 }
 
 void RobotWithGeometry::CleanupCollisions()

@@ -88,8 +88,17 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   AnyCollisionGeometry3D(const AnyGeometry3D& geom);
   AnyCollisionGeometry3D(const vector<AnyGeometry3D>& group);
   AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom);
-  ///May be called after Load()
-  void InitCollisions();
+  ///If the collision detection data structure isn't initialized yet,
+  ///this initializes it.  Constructors DO NOT call this, meaning that
+  ///upon construction the XCollisionData functions must not be called.
+  void InitCollisionData();
+  ///Call this any time the underlying geometry changes to reinitialize the
+  ///collision detection data structure.
+  void ReinitCollisionData();
+  ///Returns true if the collision data is initialized
+  bool CollisionDataInitialized() const { return !collisionData.empty(); }
+  ///Clears the current collision data
+  void ClearCollisionData() { collisionData = AnyValue(); }
   const RigidTransform& PrimitiveCollisionData() const;
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
@@ -100,24 +109,32 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   CollisionPointCloud& PointCloudCollisionData();
   RigidTransform& ImplicitSurfaceCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
-  AABB3D GetAABB() const;
+  ///Returns the axis-aligned bounding box in the world coordinate frame
+  ///of the transformed geometry.  Note: if collision data is not yet
+  ///initialized, this performs the potentially slower AnyGeometry3D::GetAABB
+  ///call.
+  AABB3D GetAABB() const; 
+  ///Returns an oriented bounding box in the world coordinate frame
+  ///containing the transformed geometry.  Note: if collision data is not yet
+  ///initialized, this performs the potentially slower AnyGeometry3D::GetAABB
+  ///call.
   Box3D GetBB() const;
   ///Gets the active transform
   RigidTransform GetTransform() const;
-  ///Sets the *active* transform without modifying the underlying geometry.  To modify
-  ///the geometry, call Transform().  InitCollisions() should be called after modifying
-  ///geometry as usual
+  ///Sets the *active* transform without modifying the underlying geometry. 
+  ///To modify the geometry, call Transform().  Note: if you do actually 
+  ///modify the geometry using Transform(), ReinitCollisions() should be
+  ///called.
   void SetTransform(const RigidTransform& T);
-  Real Distance(const Vector3& pt) const;
-  Real Distance(const Vector3& pt,Vector3& cp) const;
-  bool Collides(const AnyCollisionGeometry3D& geom) const;
-  bool Collides(const AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) const;
-  Real Distance(const AnyCollisionGeometry3D& geom) const;
-  Real Distance(const AnyCollisionGeometry3D& geom,int& elem1,int& elem2) const;
-  bool WithinDistance(const AnyCollisionGeometry3D& geom,Real d) const;
-  bool WithinDistance(const AnyCollisionGeometry3D& geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) const;
-  bool RayCast(const Ray3D& r,Real* distance=NULL,int* element=NULL) const;
-  GeometricPrimitive3D GetElement(int id) const;
+  Real Distance(const Vector3& pt);
+  Real Distance(const Vector3& pt,Vector3& cp);
+  bool Collides(AnyCollisionGeometry3D& geom);
+  bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
+  Real Distance(AnyCollisionGeometry3D& geom);
+  Real Distance(AnyCollisionGeometry3D& geom,int& elem1,int& elem2);
+  bool WithinDistance(AnyCollisionGeometry3D& geom,Real d);
+  bool WithinDistance(AnyCollisionGeometry3D& geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
+  bool RayCast(const Ray3D& r,Real* distance=NULL,int* element=NULL);
 
   /** The collision data structure, according to the type.
    * - Primitive: RigidTransform
@@ -138,7 +155,7 @@ class AnyCollisionQuery
 {
  public:
   AnyCollisionQuery();
-  AnyCollisionQuery(const AnyCollisionGeometry3D& a,const AnyCollisionGeometry3D& b);
+  AnyCollisionQuery(AnyCollisionGeometry3D& a,AnyCollisionGeometry3D& b);
   AnyCollisionQuery(const AnyCollisionQuery& q);
 
   ///Returns true if colliding
@@ -161,7 +178,7 @@ class AnyCollisionQuery
   //in local frames.
   void InteractingPoints(std::vector<Vector3>& p1,std::vector<Vector3>& p2) const;
 
-  const AnyCollisionGeometry3D *a, *b;
+  AnyCollisionGeometry3D *a, *b;
 
   CollisionMeshQueryEnhanced qmesh;
   std::vector<int> elements1,elements2; 

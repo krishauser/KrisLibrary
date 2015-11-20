@@ -382,39 +382,33 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D()
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const GeometricPrimitive3D& primitive)
   :AnyGeometry3D(primitive),margin(0)
 {
-  InitCollisions();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::TriMesh& mesh)
   :AnyGeometry3D(mesh),margin(0)
 {
-  InitCollisions();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc)
   :AnyGeometry3D(pc),margin(0)
 {
-  InitCollisions();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid)
   :AnyGeometry3D(grid),margin(0)
 {
-  InitCollisions();
 }
 
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const vector<AnyGeometry3D>& items)
   :AnyGeometry3D(items),margin(0)
 {
-  InitCollisions();
 }
 
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyGeometry3D& geom)
   :AnyGeometry3D(geom),margin(0)
 {
-  InitCollisions();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom)
@@ -471,13 +465,19 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geo
   RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return *AnyCast<RigidTransform>(&collisionData); }
   vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
 
-void AnyCollisionGeometry3D::InitCollisions()
+void AnyCollisionGeometry3D::InitCollisionData()
 {
+  if(collisionData.empty())
+    ReinitCollisionData();
+}
+
+void AnyCollisionGeometry3D::ReinitCollisionData()
+{
+  RigidTransform T = GetTransform();
   switch(type) {
   case Primitive:
   case ImplicitSurface:
     {
-      RigidTransform T; T.setIdentity();
       collisionData = T;
     }
     break;
@@ -498,6 +498,7 @@ void AnyCollisionGeometry3D::InitCollisions()
     }
     break;
   }
+  SetTransform(T);
 }
 
 AABB3D AnyCollisionGeometry3D::GetAABB() const
@@ -616,7 +617,7 @@ RigidTransform AnyCollisionGeometry3D::GetTransform() const
 
 void AnyCollisionGeometry3D::SetTransform(const RigidTransform& T)
 {
-  if(collisionData.empty()) InitCollisions();
+  InitCollisionData();
   switch(type) {
   case Primitive:
   case ImplicitSurface:
@@ -638,8 +639,9 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform& T)
   }
 }
 
-Real AnyCollisionGeometry3D::Distance(const Vector3& pt) const
+Real AnyCollisionGeometry3D::Distance(const Vector3& pt)
 {
+  InitCollisionData();
   Vector3 ptlocal;
   GetTransform().mulInverse(pt,ptlocal);
   switch(type) {
@@ -669,7 +671,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt) const
     }
   case Group:
     {
-      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
       Real dmin = Inf;
       for(size_t i=0;i<items.size();i++)
 	dmin = Min(dmin,items[i].Distance(pt));
@@ -679,8 +681,9 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt) const
   return Inf;
 }
 
-Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp) const
+Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp)
 {
+  InitCollisionData();
   Vector3 cplocal;
   Vector3 ptlocal;
   GetTransform().mulInverse(pt,ptlocal);
@@ -712,7 +715,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp) const
     }
   case Group:
     {
-      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
       Vector3 temp;
       Real dmin = Inf;
       for(size_t i=0;i<items.size();i++) {
@@ -812,7 +815,7 @@ bool Collides(const CollisionMesh& a,const CollisionMesh& b,Real margin,
 }
 
 
-bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin,const AnyCollisionGeometry3D& b,
+bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin,AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
   if(a.type == GeometricPrimitive3D::Empty) return false;
@@ -850,7 +853,7 @@ bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin
     return false;
   case AnyCollisionGeometry3D::Group:
     {
-      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
       elements1.resize(0);
       elements2.resize(0);
       for(size_t i=0;i<bitems.size();i++) {
@@ -872,7 +875,7 @@ bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin
 }
 
 
-bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,Real margin,const AnyCollisionGeometry3D& b,
+bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,Real margin,AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
   switch(b.type) {
@@ -895,7 +898,7 @@ bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,Real margin,
     break;
   case AnyCollisionGeometry3D::Group:
     {
-      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
       elements1.resize(0);
       elements2.resize(0);
       for(size_t i=0;i<bitems.size();i++) {
@@ -916,7 +919,7 @@ bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,Real margin,
   return false;
 }
 
-bool Collides(const CollisionMesh& a,Real margin,const AnyCollisionGeometry3D& b,
+bool Collides(const CollisionMesh& a,Real margin,AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
   switch(b.type) {
@@ -939,7 +942,7 @@ bool Collides(const CollisionMesh& a,Real margin,const AnyCollisionGeometry3D& b
     break;
   case AnyCollisionGeometry3D::Group:
     {
-      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
       elements1.resize(0);
       elements2.resize(0);
       for(size_t i=0;i<bitems.size();i++) {
@@ -963,7 +966,7 @@ bool Collides(const CollisionMesh& a,Real margin,const AnyCollisionGeometry3D& b
 
 static Real gWithinDistanceMargin = 0;
 static const CollisionPointCloud* gWithinDistancePC = NULL;
-static const AnyCollisionGeometry3D* gWithinDistanceGeom = NULL;
+static AnyCollisionGeometry3D* gWithinDistanceGeom = NULL;
 static vector<int>* gWithinDistanceElements1 = NULL;
 static vector<int>* gWithinDistanceElements2 = NULL;
 static size_t gWithinDistanceMaxContacts = 0;
@@ -1270,7 +1273,7 @@ bool Collides(const CollisionPointCloud& a,Real margin,const CollisionPointCloud
 }
 
 
-bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometry3D& b,
+bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
   switch(b.type) {
@@ -1384,7 +1387,7 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
     return false;
   case AnyCollisionGeometry3D::Group:
     {
-      const vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
       elements1.resize(0);
       elements2.resize(0);
       for(size_t i=0;i<bitems.size();i++) {
@@ -1405,7 +1408,7 @@ bool Collides(const CollisionPointCloud& a,Real margin,const AnyCollisionGeometr
   return false;
 }
 
-bool Collides(const vector<AnyCollisionGeometry3D>& group,Real margin,const AnyCollisionGeometry3D& b,
+bool Collides(vector<AnyCollisionGeometry3D>& group,Real margin,AnyCollisionGeometry3D& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
   for(size_t i=0;i<group.size();i++) {
@@ -1422,15 +1425,19 @@ bool Collides(const vector<AnyCollisionGeometry3D>& group,Real margin,const AnyC
 }
 
 
-bool AnyCollisionGeometry3D::Collides(const AnyCollisionGeometry3D& geom) const
+bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D& geom)
 {
+  InitCollisionData();
+  geom.InitCollisionData();
   vector<int> elem1,elem2;
   return Collides(geom,elem1,elem2,1);
 }
 
-bool AnyCollisionGeometry3D::Collides(const AnyCollisionGeometry3D& geom,
-				      vector<int>& elements1,vector<int>& elements2,size_t maxContacts) const
+bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D& geom,
+				      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
+  InitCollisionData();
+  geom.InitCollisionData();
   //prioritize point cloud testing
   if(geom.type == PointCloud && type != PointCloud)
     return geom.Collides(*this,elements2,elements1,maxContacts);
@@ -1452,27 +1459,35 @@ bool AnyCollisionGeometry3D::Collides(const AnyCollisionGeometry3D& geom,
   return false;
 }
 
-Real AnyCollisionGeometry3D::Distance(const AnyCollisionGeometry3D& geom) const
+Real AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D& geom)
 {
+  InitCollisionData();
+  geom.InitCollisionData();
   int elem1,elem2;
   return Distance(geom,elem1,elem2);
 }
 
-Real AnyCollisionGeometry3D::Distance(const AnyCollisionGeometry3D& geom,int& elem1,int& elem2) const
+Real AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D& geom,int& elem1,int& elem2)
 {
+  InitCollisionData();
+  geom.InitCollisionData();
   FatalError("Distance not implemented yet\n");
   return Inf;
 }
 
-bool AnyCollisionGeometry3D::WithinDistance(const AnyCollisionGeometry3D& geom,Real tol) const
+bool AnyCollisionGeometry3D::WithinDistance(AnyCollisionGeometry3D& geom,Real tol)
 {
+  InitCollisionData();
+  geom.InitCollisionData();
   vector<int> elem1,elem2;
   return WithinDistance(geom,tol,elem1,elem2,1);
 }
 
-bool AnyCollisionGeometry3D::WithinDistance(const AnyCollisionGeometry3D& geom,Real tol,
-					    vector<int>& elements1,vector<int>& elements2,size_t maxContacts) const
+bool AnyCollisionGeometry3D::WithinDistance(AnyCollisionGeometry3D& geom,Real tol,
+					    vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
+  InitCollisionData();
+  geom.InitCollisionData();
   switch(type) {
   case Primitive:
     return ::Collides(AsPrimitive(),GetTransform(),margin+tol,geom,elements1,elements2,maxContacts);
@@ -1490,8 +1505,9 @@ bool AnyCollisionGeometry3D::WithinDistance(const AnyCollisionGeometry3D& geom,R
   return false;
 }
 
-bool AnyCollisionGeometry3D::RayCast(const Ray3D& r,Real* distance,int* element) const
+bool AnyCollisionGeometry3D::RayCast(const Ray3D& r,Real* distance,int* element)
 {
+  InitCollisionData();
   switch(type) {
   case Primitive:
     {
@@ -1544,7 +1560,7 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D& r,Real* distance,int* element)
     }
   case Group:
     {
-      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
       Real closest = Inf;
       for(size_t i=0;i<items.size();i++) {
 	Real d;
@@ -1567,7 +1583,7 @@ AnyCollisionQuery::AnyCollisionQuery()
   :a(NULL),b(NULL)
 {}
 
-AnyCollisionQuery::AnyCollisionQuery(const AnyCollisionGeometry3D& _a,const AnyCollisionGeometry3D& _b)
+AnyCollisionQuery::AnyCollisionQuery(AnyCollisionGeometry3D& _a,AnyCollisionGeometry3D& _b)
   :a(&_a),b(&_b)
 {
   if(a->type == AnyGeometry3D::TriangleMesh && b->type == AnyGeometry3D::TriangleMesh) {
