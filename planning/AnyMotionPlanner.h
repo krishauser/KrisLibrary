@@ -9,7 +9,6 @@ class TiXmlElement;
 class HaltingCondition;
 class MotionPlanningProblem;
 class MotionPlannerInterface;
-class PointToSetMotionPlanner;
 class MotionPlannerFactory;
 class PropertyMap;
 
@@ -223,7 +222,7 @@ class MotionPlannerFactory
   ///Make a point-to-point motion planner (start is milestone 0 and goal is milestone 1)
   virtual MotionPlannerInterface* Create(CSpace* space,const Config& a,const Config& b);
   ///Make a point-to-set motion planner
-  virtual PointToSetMotionPlanner* Create(CSpace* space,const Config& a,CSpace* goalSet);
+  virtual MotionPlannerInterface* Create(CSpace* space,const Config& a,CSpace* goalSet);
   ///Helper: make a motion planner without shortcut / restart modifiers
   virtual MotionPlannerInterface* CreateRaw(CSpace* space);
   ///Helper: apply shortcut / restart modifiers to a given planner interface

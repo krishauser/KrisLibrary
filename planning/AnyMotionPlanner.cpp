@@ -1044,9 +1044,9 @@ MotionPlannerInterface* MotionPlannerFactory::Create(CSpace* space,const Config&
   return Create(MotionPlanningProblem(space,a,b));
 }
 
-PointToSetMotionPlanner* MotionPlannerFactory::Create(CSpace* space,const Config& a,CSpace* goalSpace)
+MotionPlannerInterface* MotionPlannerFactory::Create(CSpace* space,const Config& a,CSpace* goalSpace)
 {
-  return dynamic_cast<PointToSetMotionPlanner*>(Create(MotionPlanningProblem(space,a,goalSpace)));
+  return Create(MotionPlanningProblem(space,a,goalSpace));
 }
 
 bool MotionPlannerFactory::Load(TiXmlElement* e)
