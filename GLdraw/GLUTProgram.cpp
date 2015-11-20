@@ -9,6 +9,11 @@
 #include <GL/glut.h>
 #endif // Apple
 
+#if FREEGLUT
+#include <GL/freeglut_ext.h>
+#endif //FREEGLUT
+
+
 #include <assert.h>
 #include <stdio.h>
 
@@ -51,7 +56,15 @@ int GLUTProgramBase::Run(const char *window_title,unsigned int mode)
 #else
 	glutInit(&argc,(char**)argv);
 #endif //FREEGLUT
-	if(mode == 0) mode=GLUT_DOUBLE|GLUT_RGBA|GLUT_DEPTH;
+	if(mode == 0) {
+	  mode=GLUT_DOUBLE|GLUT_RGBA|GLUT_DEPTH;
+#if (defined GL_MULTISAMPLE || defined GL_MULTISAMPLE_ARB)
+ 	  mode|=GLUT_MULTISAMPLE;
+#if FREEGLUT
+	  glutSetOption(GLUT_MULTISAMPLE, 4);
+#endif // FREEGLUT
+#endif //GL_MULTISAMPLE_ARB
+	}
 	glutInitDisplayMode(mode);
 	glutInitWindowSize(width,height);
 	main_window = glutCreateWindow(window_title);
@@ -78,6 +91,11 @@ bool GLUTProgramBase::Initialize()
 {
 	glEnable (GL_DEPTH_TEST);
 	glEnable (GL_CULL_FACE);
+#ifdef GL_MULTISAMPLE
+	glEnable(GL_MULTISAMPLE);
+#elif defined GL_MULTISAMPLE_ARB
+	glEnable(GL_MULTISAMPLE_ARB);
+#endif //GL_MULTISAMPLE
 
 	return true;
 }
