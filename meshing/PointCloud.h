@@ -16,11 +16,23 @@ using namespace std;
 /** @brief A 3D point cloud class.
  *
  * Points may have optional associated floating point properties
- * like color, normal, etc.  These are named in propertyNames and given
- * as a vector for each point.
+ * like ID, color, normal, etc.  These are named in propertyNames and
+ * each property is an entry of a property vector attached to each point.
  *
  * The point cloud itself may also have associated settings, as given by
  * the settings map.
+ *
+ * Standard properties (adopted from PCL) include:
+ * - rgb: integer representation of the 8-bit RGB value of a color. 0x00ff0000
+ *   is red, 0x0000ff00 is green, 0x000000ff is blue.
+ * - rgba: integer representation of the 8-bit ARGB value of a color with
+ *   alpha channel.  0xff000000 is the opacity.
+ * - opacity: a floating point value indicating the opacity of a point, in
+ *   the range [0,1].
+ * - c: A byte-based opacity format used in PCL where opacity is in the range
+ *   [0,255].
+ * When drawn via the GeometryAppearance class, these properties will be
+ * properly interpreted to color the point cloud display.
  */
 class PointCloud3D
 {
