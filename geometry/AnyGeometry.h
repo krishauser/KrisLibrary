@@ -109,10 +109,12 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   CollisionPointCloud& PointCloudCollisionData();
   RigidTransform& ImplicitSurfaceCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
-  ///Returns the axis-aligned bounding box in the world coordinate frame
-  ///of the transformed geometry.  Note: if collision data is not yet
-  ///initialized, this performs the potentially slower AnyGeometry3D::GetAABB
-  ///call.
+  ///Returns an axis-aligned bounding box in the world coordinate frame
+  ///containing the transformed geometry.  Note: if collision data is
+  ///initialized, this returns a bound around the transformed bounding
+  ///volume of the collision data, which is not necessarily tight. 
+  ///Note: if collision data is not yet initialized, this performs
+  ///the potentially slower AnyGeometry3D::GetAABB call.
   AABB3D GetAABB() const; 
   ///Returns an oriented bounding box in the world coordinate frame
   ///containing the transformed geometry.  Note: if collision data is not yet
@@ -137,15 +139,18 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   bool RayCast(const Ray3D& r,Real* distance=NULL,int* element=NULL);
 
   /** The collision data structure, according to the type.
-   * - Primitive: RigidTransform
+   * - Primitive: null
    * - TriangleMesh: CollisionMesh
    * - PointCloud: CollisionPointCloud
-   * - VolumeGrid: RigidTransform
+   * - VolumeGrid: null
    * - Group: vector<AnyCollisionGeometry3D>
    */
   AnyValue collisionData;
   ///Amount by which the underlying geometry is "fattened"
   Real margin;
+  ///The current transform, used if the collision data is not initialized yet
+  ///or the data type is Primitive / VolumeGrid.
+  RigidTransform currentTransform;
 };
 
 /** @brief A class that stores information regarding a collision query.

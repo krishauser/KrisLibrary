@@ -377,56 +377,55 @@ AABB3D AnyGeometry3D::GetAABB() const
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D()
   :margin(0)
-{}
+{
+  currentTransform.setIdentity();
+}
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const GeometricPrimitive3D& primitive)
   :AnyGeometry3D(primitive),margin(0)
 {
+  currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::TriMesh& mesh)
   :AnyGeometry3D(mesh),margin(0)
 {
+  currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc)
   :AnyGeometry3D(pc),margin(0)
 {
+  currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid)
   :AnyGeometry3D(grid),margin(0)
 {
+  currentTransform.setIdentity();
 }
 
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const vector<AnyGeometry3D>& items)
   :AnyGeometry3D(items),margin(0)
 {
+  currentTransform.setIdentity();
 }
 
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyGeometry3D& geom)
   :AnyGeometry3D(geom),margin(0)
 {
+  currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom)
-  :AnyGeometry3D(geom),margin(geom.margin)
+  :AnyGeometry3D(geom),margin(geom.margin),currentTransform(geom.currentTransform)
 {
   if(!geom.collisionData.empty()) {
     switch(type) {
     case Primitive:
-      {
-	RigidTransform T = geom.PrimitiveCollisionData();
-	collisionData = T;
-      }
-      break;
     case ImplicitSurface:
-      {
-	RigidTransform T = geom.ImplicitSurfaceCollisionData();
-	collisionData = T;
-      }
       break;
     case TriangleMesh:
       {
@@ -454,15 +453,15 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geo
   }
 }
 
-  const RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() const { return *AnyCast<RigidTransform>(&collisionData); }
+  const RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() const { return currentTransform; }
   const CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() const { return *AnyCast<CollisionMesh>(&collisionData); }
   const CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() const { return *AnyCast<CollisionPointCloud>(&collisionData); }
-  const RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() const { return *AnyCast<RigidTransform>(&collisionData); }
+  const RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() const { return currentTransform; }
   const vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() const { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
-  RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() { return *AnyCast<RigidTransform>(&collisionData); }
+  RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() { return currentTransform; }
   CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() { return *AnyCast<CollisionMesh>(&collisionData); }
   CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() { return *AnyCast<CollisionPointCloud>(&collisionData); }
-  RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return *AnyCast<RigidTransform>(&collisionData); }
+  RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return currentTransform; }
   vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
 
 void AnyCollisionGeometry3D::InitCollisionData()
@@ -477,9 +476,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   switch(type) {
   case Primitive:
   case ImplicitSurface:
-    {
-      collisionData = T;
-    }
+    collisionData = int(0);
     break;
   case TriangleMesh:
     collisionData = CollisionMesh(AsTriangleMesh());
@@ -503,7 +500,12 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
 
 AABB3D AnyCollisionGeometry3D::GetAABB() const
 {
-  if(collisionData.empty()) return AnyGeometry3D::GetAABB();
+  if(collisionData.empty()) {
+    Box3D b = GetBB();
+    AABB3D bb;
+    b.getAABB(bb);
+    return bb;
+  }
   switch(type) {
   case Primitive:
     {
@@ -551,21 +553,13 @@ Box3D AnyCollisionGeometry3D::GetBB() const
 {
   Box3D b;
   if(collisionData.empty()) {
-    if(type == Primitive) {
-      b = AsPrimitive().GetBB();
-    }
-    else {
-      AABB3D aabb = AnyGeometry3D::GetAABB();
-      b.set(aabb);
-    }
+    AABB3D bblocal = AnyGeometry3D::GetAABB();
+    b.setTransformed(bblocal,currentTransform);
   }
   else {
     switch(type) {
     case Primitive:
-      {
-	Box3D blocal = AsPrimitive().GetBB();
-	b.setTransformed(blocal,PrimitiveCollisionData());
-      }
+      b.setTransformed(AsPrimitive().GetBB(),PrimitiveCollisionData());
       break;
     case TriangleMesh:
       ::GetBB(TriangleMeshCollisionData(),b);
@@ -594,48 +588,31 @@ Box3D AnyCollisionGeometry3D::GetBB() const
 
 RigidTransform AnyCollisionGeometry3D::GetTransform() const
 {
-  if(collisionData.empty()) {
-    RigidTransform T;
-    T.setIdentity();
-    return T;
-  }
-  switch(type) {
-  case Primitive:
-  case ImplicitSurface:
-    return *AnyCast<RigidTransform>(&collisionData);
-  case TriangleMesh:
-    return TriangleMeshCollisionData().currentTransform;
-  case PointCloud:
-    return PointCloudCollisionData().currentTransform;
-  case Group:
-    return GroupCollisionData()[0].GetTransform();
-  }
-  AssertNotReached();
-  RigidTransform T;
-  return T;
+  return currentTransform;
 }
 
 void AnyCollisionGeometry3D::SetTransform(const RigidTransform& T)
 {
-  InitCollisionData();
-  switch(type) {
-  case Primitive:
-  case ImplicitSurface:
-    *AnyCast<RigidTransform>(&collisionData) = T;
-    break;
-  case TriangleMesh:
-    TriangleMeshCollisionData().UpdateTransform(T);
-    break;
-  case PointCloud:
-    PointCloudCollisionData().currentTransform = T;
-    break;
-  case Group:
-    {
-      vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
-      for(size_t i=0;i<items.size();i++)
-	items[i].SetTransform(T);
+  currentTransform = T;
+  if(!collisionData.empty()) {
+    switch(type) {
+    case Primitive:
+    case ImplicitSurface:
+      break;
+    case TriangleMesh:
+      TriangleMeshCollisionData().UpdateTransform(T);
+      break;
+    case PointCloud:
+      PointCloudCollisionData().currentTransform = T;
+      break;
+    case Group:
+      {
+	vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+	for(size_t i=0;i<items.size();i++)
+	  items[i].SetTransform(T);
+      }
+      break;
     }
-    break;
   }
 }
 
