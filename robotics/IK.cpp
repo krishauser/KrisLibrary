@@ -40,7 +40,7 @@ void IKGoal::SetFixedRotation(const Matrix3& R)
   rotConstraint = RotFixed;
   MomentRotation mR;
   if(!mR.setMatrix(R)) {
-    fprintf(stderr,"IKGoal::SetFixedRotation: matrix does not appear to be a rotation?\n",R);
+    fprintf(stderr,"IKGoal::SetFixedRotation: matrix does not appear to be a rotation?\n");
     endRotation.setZero();
   }
   else
@@ -211,7 +211,7 @@ void IKGoal::Transform(const RigidTransform& T)
     R = T.R*R;
     Assert(IsFinite(R));
     if(!m.setMatrix(R)) {
-      fprintf(stderr,"IKGoal::Transform: matrix does not appear to be a rotation?\n",R);
+      fprintf(stderr,"IKGoal::Transform: matrix does not appear to be a rotation?\n");
       endRotation.setZero();
     }
     else
@@ -328,7 +328,7 @@ void IKGoal::GetError(const RigidTransform& Trel,Real poserr[3],Real orierr[3]) 
       orierr[2]=em.z;
     }
     else {
-      fprintf(stderr,"IKGoal::GetError: matrix does not appear to be a rotation?\n",R);
+      fprintf(stderr,"IKGoal::GetError: matrix does not appear to be a rotation?\n");
       orierr[0]=orierr[1]=orierr[2] = Inf;
     }
   }
