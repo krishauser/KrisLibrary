@@ -19,8 +19,10 @@ class CollisionPointCloud : public Meshing::PointCloud3D
  public:
   CollisionPointCloud();
   CollisionPointCloud(const Meshing::PointCloud3D& pc);
-  ///Needs to be called if this point cloud was loaded or set up any other
-  ///way than the constructor
+  CollisionPointCloud(const CollisionPointCloud& pc);
+  ///Sets up the collision detection data structures.  This is automatically
+  ///called during initialization, and needs to be called any time the point
+  ///cloud changes
   void InitCollisions();
 
   ///The local bounding box of the point cloud

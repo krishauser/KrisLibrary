@@ -1,5 +1,6 @@
 #include "IO.h"
 #include <utils/stringutils.h>
+#include <GLdraw/GeometryAppearance.h>
 #include <sstream>
 #include <fstream>
 #include <string.h>
@@ -18,6 +19,7 @@
 using namespace Assimp;
 #endif //HAVE_ASSIMP
 
+using namespace GLDraw;
 
 namespace Meshing {
 
@@ -85,6 +87,42 @@ bool Import(const char* fn,TriMesh& tri)
   }
 }
 
+///Import will try to determine the file type via the file extension
+bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
+{
+  const char* ext=FileExtension(fn);
+  if(0==strcmp(ext,"tri")) {
+    return LoadMultipleTriMeshes(fn,tri);
+  }
+  else {
+#if HAVE_ASSIMP
+    if(!LoadAssimp(fn,tri,app)) {
+      fprintf(stderr,"Import(TriMesh): file %s could not be loaded\n",fn);
+      return false;
+    }
+    else {
+      return true;
+    }
+#else
+    if(0==strcmp(ext,"wrl")) {
+      ifstream in(fn,ios::in);
+      if(!in) return false;
+      return LoadVRML(in,tri);
+    }
+    else if(0==strcmp(ext,"off")) {
+      ifstream in(fn,ios::in);
+      if(!in) return false;
+      return LoadOFF(in,tri);
+    }
+    else {
+      fprintf(stderr,"Import(TriMesh): file extension %s not recognized\n",ext);
+      return false;
+    }
+#endif
+  }
+}
+
+
 bool Export(const char* fn,const TriMesh& tri)
 {
   const char* ext=FileExtension(fn);
@@ -121,6 +159,12 @@ bool Export(const char* fn,const TriMesh& tri)
 #endif
   }
 }
+
+bool Export(const char* fn,const TriMesh& tri,const GeometryAppearance& app)
+{
+  return Export(fn,tri);
+}
+
 
 ///Loads from VRML file format
 bool LoadVRML(std::istream& in,TriMesh& tri)
@@ -236,6 +280,21 @@ bool LoadAssimp(const char* fn, TriMesh& mesh)
 	vector<TriMesh> models;
 	if(!LoadAssimp(fn,models)) return false;
 	mesh.Merge(models);
+	cout<<"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris"<<endl;
+	return true;
+}
+
+
+bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
+{
+	vector<TriMesh> models;
+	vector<GeometryAppearance> apps;
+	if(!LoadAssimp(fn,models,apps)) return false;
+	mesh.Merge(models);
+	if(!apps.empty())
+	  //TODO: merge multiple appearances
+	  app = apps[0];
+	cout<<"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris"<<endl;
 	return true;
 }
 
@@ -259,7 +318,36 @@ void Cast(const aiMatrix4x4& a,Matrix4& out)
   out(3,3) = a.d4;
 }
 
-bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,const Matrix4& Tparent,vector<TriMesh>& models)
+void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,GeometryAppearance& app)
+{
+  if(mesh->mColors[0]) {
+    //per-vertex coloring
+    app.vertexColors.resize(mesh->mNumVertices);
+    for(unsigned int i=0;i<mesh->mNumVertices;i++)
+      app.vertexColors[i].set(mesh->mColors[0][i].r,
+			      mesh->mColors[0][i].g,
+			      mesh->mColors[0][i].b,
+			      mesh->mColors[0][i].a);
+  }
+  if(mesh->mTextureCoords[0]) {
+    //texture coordinates
+    app.texcoords.resize(mesh->mNumVertices);
+    for(unsigned int i=0;i<mesh->mNumVertices;i++)
+      app.texcoords[i].set(mesh->mTextureCoords[0][i].x,
+			    mesh->mTextureCoords[0][i].y);
+  }
+  aiColor4D col;
+  if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_DIFFUSE,&col) == aiReturn_SUCCESS) {
+    app.faceColor.set(col.r,col.g,col.b,col.a);
+  }
+  aiString str;
+  if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
+    string filename = str.C_Str();
+    cout<<"Texturing not done yet, Mesh has texture from file "<<filename<<endl;
+  }
+}
+
+bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,const Matrix4& Tparent,vector<TriMesh>& models,vector<GeometryAppearance>& apps)
 {
   //cout<<node->mName.C_Str()<<" transform: "<<endl;
   Matrix4 T;
@@ -277,6 +365,8 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
       if (scene->mMeshes[m]->HasFaces()) {
 	int nfaces = scene->mMeshes[m]->mNumFaces;
 	int nverts = scene->mMeshes[m]->mNumVertices;
+	apps.resize(apps.size()+1);
+	AssimpMaterialToAppearance(scene->mMaterials[scene->mMeshes[m]->mMaterialIndex],scene->mMeshes[m],apps.back());
 	models.resize(models.size()+1);
 	models.back().tris.resize(nfaces);
 	models.back().verts.resize(nverts);
@@ -304,11 +394,17 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
     }
   }
   for(unsigned int i=0;i<node->mNumChildren;i++)
-    if(!WalkAssimpNodes(fn,scene,node->mChildren[i],T,models)) return false;
+    if(!WalkAssimpNodes(fn,scene,node->mChildren[i],T,models,apps)) return false;
   return true;
 }
 
 bool LoadAssimp(const char* fn, vector<TriMesh>& models)
+{
+  vector<GeometryAppearance> apps;
+  return LoadAssimp(fn,models,apps);
+}
+
+bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearance>& apps)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
@@ -328,8 +424,7 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 	Tyz(2,1) = 1;
 	Tyz(3,3) = 1;
 	*/
-	//if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tyz,models)) {
-	if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tident,models)) {
+	if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tident,models,apps)) {
 	  cout << "AssimpImporter:"<<"Error Processing " << fn << "!" << endl;
 	  return false;
 	}

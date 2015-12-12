@@ -3,6 +3,7 @@
 
 /** @ingroup Utils
  * @brief A base class for an object-oriented signal handler.
+ * Properly restores old signal handlers once the class is destroyed.
  *
  * Override the OnRaise() member in your subclass.
  *

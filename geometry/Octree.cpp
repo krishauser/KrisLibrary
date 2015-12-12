@@ -3,6 +3,7 @@
 #include <math3d/Box3D.h>
 #include <errors.h>
 #include <algorithm> //for sort
+#include <Timer.h>
 using namespace Geometry;
 using namespace Math3D;
 
@@ -10,6 +11,15 @@ Octree::Octree(const AABB3D& bb)
 {
   AddNode(-1);
   nodes[0].bb = bb;
+}
+
+int Octree::MaxDepth() const
+{
+  vector<int> d(nodes.size(),0);
+  for(size_t i=0;i<nodes.size();i++)
+    if(nodes[i].parentIndex >= 0)
+      d[i] = d[nodes[i].parentIndex]+1;
+  return *std::max_element(d.begin(),d.end());
 }
 
 void Octree::SplitToDepth(int d)
@@ -314,30 +324,55 @@ void Octree::DeleteNode(int id)
 }
 
 
-OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell)
-  :Octree(bbox),maxPointsPerCell(_maxPointsPerCell),fit(false)
+OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell,Real _minCellSize)
+  :Octree(bbox),maxPointsPerCell(_maxPointsPerCell),minCellSize(_minCellSize),fit(false)
 {}
+
+void OctreePointSet::GetPoints(int node,vector<Vector3>& pts) const
+{
+  pts.resize(indexLists[node].size());
+  for(size_t i=0;i<indexLists[node].size();i++)
+    pts[i] = points[indexLists[node][i]];
+}
+
+void OctreePointSet::GetPointIDs(int node,vector<int>& ids) const
+{
+  ids.resize(indexLists[node].size());
+  for(size_t i=0;i<indexLists[node].size();i++)
+    ids[i] = this->ids[indexLists[node][i]];
+}
+
 
 void OctreePointSet::Add(const Vector3& pt,int id)
 {
   if(fit) FatalError("OctreePointSet: Cannot call Add() after FitToPoints()");
+  //Timer timer;
+  int pindex=(int)points.size();
+  points.push_back(pt);
+  ids.push_back(id);
   OctreeNode* node = Lookup(pt);
   if(node == NULL) FatalError("OctreePointSet: adding point outside range");
   int nindex = Index(*node);
+  //printf("Lookup time %g\n",timer.ElapsedTime());
+  //timer.Reset();
   Assert(nindex >= 0 && nindex<(int)nodes.size());
-  if(nindex >= (int)pointLists.size()) {
-    pointLists.resize(nindex+1);
-    idLists.resize(nindex+1);
+  if(nindex >= (int)indexLists.size()) {
+    indexLists.push_back(vector<int>());
+    indexLists[nindex].reserve(maxPointsPerCell);
   }
-  pointLists[nindex].push_back(pt);
-  idLists[nindex].push_back(id);
-  if((int)pointLists[nindex].size() > maxPointsPerCell) {
-    //split, if points are not all equal
+  indexLists[nindex].push_back(pindex);
+  //timer.Reset();
+  if((int)indexLists[nindex].size() > maxPointsPerCell) {
+    //split, if bounding box containing points is greater than the maximum cell size
     AABB3D bbox(pt,pt);
-    for(size_t i=0;i+1<pointLists[nindex].size();i++)
-      bbox.expand(pointLists[nindex][i]);
-    if(bbox.bmin != bbox.bmax) {
-      Split(nindex);
+    for(size_t i=0;i+1<indexLists[nindex].size();i++) {
+      bbox.expand(points[indexLists[nindex][i]]);
+      if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
+	Split(nindex);
+	//printf("Split time %g\n",timer.ElapsedTime());
+	//getchar();
+	break;
+      }
     }
   }
 }
@@ -346,9 +381,8 @@ void OctreePointSet::Add(const Vector3& pt,int id)
 int OctreePointSet::AddNode(int parent)
 {
   int res=Octree::AddNode(parent);
-  if(res >= (int)pointLists.size()) {
-    pointLists.resize(res+1);
-    idLists.resize(res+1);
+  if(res >= (int)indexLists.size()) {
+    indexLists.resize(res+1);
   }
   return res;
 }
@@ -356,32 +390,23 @@ int OctreePointSet::AddNode(int parent)
 void OctreePointSet::DeleteNode(int id)
 {
   Octree::DeleteNode(id);
-  pointLists[id].resize(0);
-  idLists[id].resize(0);
+  indexLists[id].resize(0);
 }
 
 void OctreePointSet::Split(int nindex)
 {
   Assert(nindex >= 0 && nindex < (int)nodes.size());
   Octree::Split(nindex);
-  //distribute points among children
   OctreeNode& node = nodes[nindex];
-  for(size_t i=0;i<pointLists[nindex].size();i++) {
-    OctreeNode* c=Lookup(node,pointLists[nindex][i]);
-    if(c == NULL) {
-      cout<<"Point: "<<pointLists[nindex][i]<<endl;
-      cout<<"Node's bb: "<<node.bb.bmin<<" -> "<<node.bb.bmax<<endl;
-      cout<<"Children bb: "<<endl;
-      for(int j=0;j<8;j++)
-	cout<<"    "<<nodes[node.childIndices[j]].bb.bmin<<" -> "<<nodes[node.childIndices[j]].bb.bmax<<endl;
-    }
-    Assert(c != NULL);
-    int cindex = Index(*c);
-    pointLists[cindex].push_back(pointLists[nindex][i]);
-    idLists[cindex].push_back(idLists[nindex][i]);
+  for(int i=0;i<8;i++)
+    indexLists[node.childIndices[i]].reserve(maxPointsPerCell);
+  //distribute points among children
+  for(size_t i=0;i<indexLists[nindex].size();i++) {
+    const Vector3& pt = points[indexLists[nindex][i]];
+    int cindex = node.childIndices[Child(node,pt)];
+    indexLists[cindex].push_back(indexLists[nindex][i]);
   }
-  pointLists[nindex].clear();
-  idLists[nindex].clear();
+  indexLists[nindex].clear();
 }
 
 void OctreePointSet::Join(int nindex)
@@ -389,8 +414,7 @@ void OctreePointSet::Join(int nindex)
   if(IsLeaf(nodes[nindex])) return;
   for(int c=0;c<8;c++) {
     int cindex = nodes[nindex].childIndices[c];
-    pointLists[nindex].insert(pointLists[nindex].end(),pointLists[cindex].begin(),pointLists[cindex].end());
-    idLists[nindex].insert(idLists[nindex].end(),idLists[cindex].begin(),idLists[cindex].end());
+    indexLists[nindex].insert(indexLists[nindex].end(),indexLists[cindex].begin(),indexLists[cindex].end());
   }
   Octree::Join(nindex);
 }
@@ -404,12 +428,11 @@ void OctreePointSet::BoxQuery(const Vector3& bmin,const Vector3& bmax,vector<Vec
   BoxLookup(bmin,bmax,boxnodes);
   AABB3D bb(bmin,bmax);
   for(size_t i=0;i<boxnodes.size();i++) {
-    const vector<Vector3>& pts = pointLists[boxnodes[i]];
-    const vector<int>& bids = idLists[boxnodes[i]];
-    for(size_t k=0;k<pts.size();k++)
-      if(bb.contains(pts[k])) {
-	points.push_back(pts[k]);
-	ids.push_back(bids[k]);
+    const vector<int>& pindices = indexLists[boxnodes[i]];
+    for(size_t k=0;k<pindices.size();k++)
+      if(bb.contains(points[pindices[k]])) {
+	points.push_back(points[pindices[k]]);
+	ids.push_back(this->ids[pindices[k]]);
       }
   }
 }
@@ -421,12 +444,11 @@ void OctreePointSet::BoxQuery(const Box3D& b,vector<Vector3>& points,vector<int>
   vector<int> boxnodes;
   BoxLookup(b,boxnodes);
   for(size_t i=0;i<boxnodes.size();i++) {
-    const vector<Vector3>& pts = pointLists[boxnodes[i]];
-    const vector<int>& bids = idLists[boxnodes[i]];
-    for(size_t k=0;k<pts.size();k++)
-      if(b.contains(pts[k])) {
-	points.push_back(pts[k]);
-	ids.push_back(bids[k]);
+    const vector<int>& pindices = indexLists[boxnodes[i]];
+    for(size_t k=0;k<pindices.size();k++)
+      if(b.contains(this->points[pindices[k]])) {
+	points.push_back(this->points[pindices[k]]);
+	ids.push_back(this->ids[pindices[k]]);
       }
   }
 }
@@ -441,12 +463,11 @@ void OctreePointSet::BallQuery(const Vector3& c,Real r,vector<Vector3>& points,v
   s.center = c;
   s.radius = r;
   for(size_t i=0;i<ballnodes.size();i++) {
-    const vector<Vector3>& pts = pointLists[ballnodes[i]];
-    const vector<int>& bids = idLists[ballnodes[i]];
-    for(size_t k=0;k<pts.size();k++)
-      if(s.contains(pts[k])) {
-	points.push_back(pts[k]);
-	ids.push_back(bids[k]);
+    const vector<int>& pindices = indexLists[ballnodes[i]];
+    for(size_t k=0;k<pindices.size();k++)
+      if(s.contains(this->points[pindices[k]])) {
+	points.push_back(this->points[pindices[k]]);
+	ids.push_back(this->ids[pindices[k]]);
       }
   }
 }
@@ -460,13 +481,13 @@ void OctreePointSet::RayQuery(const Ray3D& r,Real radius,vector<Vector3>& points
   Vector3 temp;
   Real r2 = radius*radius;
   for(size_t i=0;i<raynodes.size();i++) {
-    const vector<Vector3>& pts = pointLists[raynodes[i]];
-    const vector<int>& bids = idLists[raynodes[i]];
-    for(size_t k=0;k<pts.size();k++) {
-      r.closestPoint(pts[k],temp);
-      if(pts[k].distanceSquared(temp) <= r2) {
-	points.push_back(pts[k]);
-	ids.push_back(bids[k]);
+    const vector<int>& pindices = indexLists[raynodes[i]];
+    for(size_t k=0;k<pindices.size();k++) {
+      const Vector3& pt=this->points[pindices[k]];
+      Real t=r.closestPoint(pt,temp);
+      if(pt.distanceSquared(temp) <= r2) {
+	points.push_back(pt);
+	ids.push_back(this->ids[pindices[k]]);
       }
     }
   }
@@ -479,16 +500,16 @@ int OctreePointSet::RayCast(const Ray3D& r,Real radius) const
   Vector3 temp;
   Real r2 = radius*radius;
   for(size_t i=0;i<raynodes.size();i++) {
-    const vector<Vector3>& pts = pointLists[raynodes[i]];
-    const vector<int>& bids = idLists[raynodes[i]];
+    const vector<int>& pindices = indexLists[raynodes[i]];
     Real closest = Inf;
     int result = -1;
-    for(size_t k=0;k<pts.size();k++) {
-      Real t = r.closestPoint(pts[k],temp);
-      if(pts[k].distanceSquared(temp) <= r2) {
+    for(size_t k=0;k<pindices.size();k++) {
+      const Vector3& pt=this->points[pindices[k]];
+      Real t=r.closestPoint(pt,temp);
+      if(pt.distanceSquared(temp) <= r2) {
 	if(t < closest) {
 	  closest = t;
-	  result = bids[k];
+	  result = ids[k];
 	}
       }
     }
@@ -513,11 +534,12 @@ Real OctreePointSet::_NearestNeighbor(const OctreeNode& n,const Vector3& c,Vecto
   }
   if(IsLeaf(n)) {
     int index = Index(n);
-    for(size_t i=0;i<pointLists[index].size();i++) {
-      Real d2 = c.distanceSquared(pointLists[index][i]);
+    for(size_t i=0;i<indexLists[index].size();i++) {
+      const Vector3& pt=points[indexLists[index][i]];
+      Real d2 = c.distanceSquared(pt);
       if(d2 < minDist2) {
-	closest = pointLists[index][i];
-	id = idLists[index][i];
+	closest = pt;
+	id = ids[indexLists[index][i]];
 	minDist2 = d2;
       }
     }
@@ -553,11 +575,12 @@ int OctreePointSet::_KNearestNeighbors(const OctreeNode& n,const Vector3& c,vect
   }
   if(IsLeaf(n)) {
     int index = Index(n);
-    for(size_t i=0;i<pointLists[index].size();i++) {
-      Real d2 = c.distanceSquared(pointLists[index][i]);
+    for(size_t i=0;i<indexLists[index].size();i++) {
+      const Vector3& pt = this->points[indexLists[index][i]];
+      Real d2 = c.distanceSquared(pt);
       if(d2 < minDist2) {
-	closest[kmin] = pointLists[index][i];
-	ids[kmin] = idLists[index][i];
+	closest[kmin] = pt;
+	ids[kmin] = this->ids[indexLists[index][i]];
 	distances[kmin] = d2;
 	//find the next farthest point
 	for(size_t k=0;k<distances.size();k++) {
@@ -588,8 +611,8 @@ void OctreePointSet::FitToPoints()
     OctreeNode& n = nodes[index];
     if(IsLeaf(n)) {
       n.bb.minimize();
-      for(size_t j=0;j<pointLists[index].size();j++) 
-	n.bb.expand(pointLists[index][j]);
+      for(size_t j=0;j<indexLists[index].size();j++) 
+	n.bb.expand(points[indexLists[index][j]]);
     }
     else{
       //form bb from child bb's
@@ -613,8 +636,8 @@ void OctreePointSet::Collapse(int maxSize)
 	  allempty = false;
 	  break;
 	}
-	sumsizes += pointLists[n.childIndices[c]].size();
-	if(sumsizes > maxSize) {
+	sumsizes += indexLists[n.childIndices[c]].size();
+	if((int)sumsizes > maxSize) {
 	  allempty = false;
 	  break;
 	}

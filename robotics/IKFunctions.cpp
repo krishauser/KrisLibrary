@@ -61,8 +61,8 @@ void EvalIKGoalDeriv(const IKGoal& g,const RigidTransform& T,const Vector3& dw,c
     GetCanonicalBasis(g.endRotation,x,y);
     Vector3 curAxis;
     T.R.mul(g.localAxis,curAxis);
-    derr(m) = dot(cross(dw,curAxis),x) - dot(cross(dw,curAxis),g.endRotation);
-    derr(m+1) = dot(cross(dw,curAxis),y) - dot(cross(dw,curAxis),g.endRotation);
+    derr(m) = Sign(dot(curAxis,x))*dot(cross(dw,curAxis),x) - dot(cross(dw,curAxis),g.endRotation);
+    derr(m+1) = Sign(dot(curAxis,y))*dot(cross(dw,curAxis),y) - dot(cross(dw,curAxis),g.endRotation);
   }
   else if(g.rotConstraint==IKGoal::RotNone) { }
   else {
@@ -235,8 +235,9 @@ void IKGoalFunction::Eval(const Vector& x, Vector& r)
     GetCanonicalBasis(d,x,y);
     Vector3 curAxis;
     robot.links[goal.link].T_World.R.mul(goal.localAxis,curAxis);
-    r(m) = rotationScale*dot(curAxis,x);
-    r(m+1) = rotationScale*dot(curAxis,y);
+    Real neg = 1.0-curAxis.dot(d);
+    r(m) = rotationScale*(Abs(dot(curAxis,x))+neg);
+    r(m+1) = rotationScale*(Abs(dot(curAxis,y))+neg);
   }
   else if(goal.rotConstraint==IKGoal::RotNone) { }
   else {
@@ -286,10 +287,11 @@ Real IKGoalFunction::Eval_i(const Vector& x, int i)
       GetCanonicalBasis(d,x,y);
       Vector3 curAxis;
       robot.links[goal.link].T_World.R.mul(goal.localAxis,curAxis);
+      Real neg = 1.0-curAxis.dot(d);
       if(i==0)
-	 return rotationScale*dot(curAxis,x);
+	return rotationScale*(Abs(dot(curAxis,x))+neg);
       else
-	 return rotationScale*dot(curAxis,y);
+	return rotationScale*(Abs(dot(curAxis,y))+neg);
     }
     else {
       printf("IK(): Invalid number of rotation terms\n");
@@ -384,8 +386,9 @@ void IKGoalFunction::Jacobian(const Vector& x, Matrix& J)
       robot.GetOrientationJacobian(goal.link,baseLink,dr);
       Vector3 curAxis;
       robot.links[goal.link].T_World.R.mul(goal.localAxis,curAxis);
-      J(m,k) = rotationScale*dot(cross(dr,curAxis),x);
-      J(m+1,k) = rotationScale*dot(cross(dr,curAxis),y);
+      Vector3 axisRateOfChange = cross(dr,curAxis);
+      J(m,k) = rotationScale*(Sign(dot(curAxis,x))*dot(axisRateOfChange,x)-dot(axisRateOfChange,d));
+      J(m+1,k) = rotationScale*(Sign(dot(curAxis,y))*dot(axisRateOfChange,y)-dot(axisRateOfChange,d));
     }
     else if(goal.rotConstraint==IKGoal::RotNone) {
     }
@@ -446,10 +449,11 @@ void IKGoalFunction::Jacobian_i(const Vector& x,int i,Vector& Ji)
 	robot.GetOrientationJacobian(goal.link,baseLink,dv);
 	Vector3 curAxis;
 	robot.links[goal.link].T_World.R.mul(goal.localAxis,curAxis);
+	Vector3 axisRateOfChange = cross(dv,curAxis);
 	if(m==0)
-	  Ji(k)=rotationScale*dot(cross(dv,curAxis),x);
+	  Ji(k)=rotationScale*(dot(axisRateOfChange,x)-dot(axisRateOfChange,d));
 	else
-	  Ji(k)=rotationScale*dot(cross(dv,curAxis),y);
+	  Ji(k)=rotationScale*(dot(axisRateOfChange,y)-dot(axisRateOfChange,d));
       }
       else {
 	printf("GetIKJacobian(): Invalid number of rotation terms\n");
@@ -763,6 +767,7 @@ void RobotIKFunction::PreEval(const Vector& x)
 RobotIKSolver::RobotIKSolver(RobotIKFunction& f)
   :solver(&f),function(f),robot(f.robot)
 {
+  solver.svd.preMultiply = false;
 }
 
 void RobotIKSolver::UseJointLimits(Real revJointThreshold) 

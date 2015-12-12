@@ -37,10 +37,13 @@ SOCKET Accept(SOCKET sockfd);
 SOCKET Accept(SOCKET sockfd,double timeout);
 
 ///Sets a socket to nonblocking mode
-void SetNonblock(SOCKET sockfd);
+void SetNonblock(SOCKET sockfd,bool enabled=true);
 
 ///Cross platform socket close
 void CloseSocket(SOCKET sockfd);
+
+///Sets a socket to TCP_NODELAY mode (disables Nagle's algorithm)
+void SetNodelay(SOCKET sockfd,bool enabled=true);
 
 ///Returns true if data exists to read from
 bool ReadAvailable(SOCKET socketfd);

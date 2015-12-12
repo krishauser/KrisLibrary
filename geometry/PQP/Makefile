@@ -1,6 +1,6 @@
 CC = g++
 
-CFLAGS		= -O2 -fPIC -I.
+CFLAGS		= -g -O2 -fPIC -I.
 
 .SUFFIXES: .C .cpp
 

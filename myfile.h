@@ -55,29 +55,60 @@ class File
 public:
 	File();
 	~File();
+	///Opens a named file on the hard drive with the given open mode
 	bool Open(const char*, int openmode = FILEREAD | FILEWRITE);
+	///Connects this File object to a previously opened file object
 	bool Open(FILE_POINTER, int openmode = FILEREAD | FILEWRITE);
+	///Connects this File object to a memory buffer
 	bool OpenData(void* buf, int size, int openmode = FILEREAD | FILEWRITE);
+	///Creates a new memory buffer to be written to / read from via this
+	///File object.
 	bool OpenData(int openmode = FILEREAD | FILEWRITE);
+	///Connects this File object to a socket, using TCP transmission
 	bool OpenTCPSocket(SOCKET sockfd);
+	///Connects this File object to a socket, using UDP transmission
 	bool OpenUDPSocket(SOCKET sockfd);
+	///Closes this File object
 	void Close();
 
-	bool Seek(int, int from = FILESEEKCURRENT);
+	///Seeks the current read/write position by the given amount, from the 
+	///given pointer (may be any of the FILESEEK___ constants).  Returns
+	///false if the file object does not support seeking, or the amount
+	///is invalid (before or after the file contents)
+	bool Seek(int amount, int from = FILESEEKCURRENT);
+	///Returns the position of the read/write position, or -1 if the file
+	///object is a stream (does not support positioning).
 	int Position() const;
+	///Returns the total length of the data, or -1 if this file object is
+	///a stream.
 	int Length() const;
 
 	bool ReadData(void*, int size);
 	bool WriteData(const void*, int size);
 
+	///Reads a null-terminated string of at most bufsize characters.
 	bool ReadString(char*, int bufsize);
+	///Writes a null-terminated string.
 	bool WriteString(const char*);
 
-	void* GetDataBuffer() const;
-	void ResizeDataBuffer(int size);
-
+	///Returns true if the file object is open
 	bool IsOpen() const;
+	///In an internally managed memory buffer created via OpenData(),
+	///resizes the buffer to the given size.
+	void ResizeDataBuffer(int size);
+	///Provides low level access to the memory buffer, or NULL if it's
+	///not a data buffer
+	unsigned char* GetDataBuffer() const; 
+	///Provides low level access to the file object.  If it's a file,
+	///returns a pointer to the FILE_POINTER object. If it's a data buffer,
+	///returns the data buffer pointe.r  If it's a socket, returns a
+	///pointer to the SOCKET object.  If the object is not open, returns
+	///NULL.
+	void* FileObjectPointer(); 
+	///Returns true if you can read up to numbytes bytes on the file object
 	bool ReadAvailable(int numbytes=1) const;
+	///Returns true if you can write up to numbytes bytes on the file
+	///object
 	bool WriteAvailable(int numbytes=1) const;
 
 private:

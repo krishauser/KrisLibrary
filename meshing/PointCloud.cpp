@@ -2,6 +2,7 @@
 #include <math3d/AABB3D.h>
 #include <utils/SimpleParser.h>
 #include <utils/stringutils.h>
+#include <utils/ioutils.h>
 #include <errors.h>
 #include <sstream>
 #include <fstream>
@@ -183,7 +184,7 @@ public:
 	    Vector v(elements.size());
 	    for(size_t k=0;k<elements.size();k++) {
 	      stringstream ss(elements[k]);
-	      ss>>v[k];
+	      SafeInputFloat(ss,v[k]);
 	    }
 	    pc.properties.push_back(v);
 	  }

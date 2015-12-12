@@ -1,8 +1,6 @@
 #include "CollisionMesh.h"
 #include "PenetrationDepth.h"
-#include <math3d/random.h>
 #include <math3d/clip.h>
-#include <math/random.h>
 using namespace Meshing;
 using namespace std;
 
@@ -471,7 +469,6 @@ void CollisionMeshQuery::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) 
       if(d < closestDist) { p1=v; p2=t2.c; closestDist=d; }
     }
     
-    //SampleSphere(1,d1);
     d1 = p2-p1;
     d1.inplaceNormalize();
     cout<<"Returning closest points "<<p1<<", "<<p2<<", dir "<<d1<<endl;
@@ -1052,7 +1049,9 @@ struct ClosestPointCallback
     pworld = p;
     Assert(m.num_bvs != 0);
     //compute distance of random triangle -- perhaps faster pruning
-    int t = RandInt(m.num_tris);
+    //int t = RandInt(m.num_tris);
+    //compute distance of arbitrary triangle -- perhaps faster pruning
+    int t = 0;
     Copy(m.tris[t].p1,tri.a);
     Copy(m.tris[t].p2,tri.b);
     Copy(m.tris[t].p3,tri.c);

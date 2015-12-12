@@ -40,8 +40,8 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
     if(delims.empty())
       in >> str;
     else {
-      while(in && delims.find(in.peek()) == std::string::npos && !isspace(in.peek())) {
-	str += in.get();
+      while(in && delims.find(in.peek()) == std::string::npos && !isspace(in.peek()) && in.peek() != EOF) {
+	str += char(in.get());
       }
     }
     if(str.empty()) {
@@ -64,7 +64,11 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
     }
     std::string lstr=str;
     Lowercase(lstr);
-    if(lstr=="true") {
+    if(lstr=="null") {
+      value = AnyValue();
+      return true;
+    }
+    else if(lstr=="true") {
       value = true;
       return true;
     }
@@ -1387,26 +1391,26 @@ bool AnyCollection::read(std::istream& in)
     SmartPointer<AnyCollection> value;
     value = new AnyCollection();
     if(!value->read(in)) {
-      fprintf(stderr,"AnyCollection(): read failed on array item %d\n",(int)array.size());
+      fprintf(stderr,"AnyCollection::read(): failed on array item %d\n",(int)array.size());
       return false;
     }
     array.push_back(value);
     EatWhitespace(in);
     while(in.peek() != ']') {
       if(in.get() != ',') {
-	std::cerr<<"List not separated by commas"<<std::endl;
+	std::cerr<<"AnyCollection::read(): List not separated by commas"<<std::endl;
 	return false;
       }
       value = new AnyCollection();
       if(!value->read(in)) {
-	fprintf(stderr,"AnyCollection(): read failed on array item %d\n",(int)array.size());
+	fprintf(stderr,"AnyCollection::read(): failed on array item %d\n",(int)array.size());
 	return false;
       }
       array.push_back(value);
       EatWhitespace(in);
     }
     if(!in) {
-      fprintf(stderr,"AnyCollection(): file ended before end-of-list item %d\n",(int)array.size());
+      fprintf(stderr,"AnyCollection::read(): file ended before end-of-list item %d\n",(int)array.size());
       return false;
     }
     in.get();
@@ -1426,12 +1430,12 @@ bool AnyCollection::read(std::istream& in)
     SmartPointer<AnyCollection> value;
     while(true) {
       if(!ReadValue(key.value,in,":")) {
-	fprintf(stderr,"AnyCollection(): read failed on map item %d\n",(int)map.size());
+	fprintf(stderr,"AnyCollection::read(): failed on map item %d\n",(int)map.size());
 	return false;
       }
       EatWhitespace(in);
       if(in.peek() != ':') {
-	std::cerr<<"Map missing a colon-separator between key-value pair ";
+	std::cerr<<"AnyCollection::read(): Map missing a colon-separator between key-value pair ";
 	WriteValue(key.value,std::cerr);
 	std::cerr<<std::endl;
 	return false;
@@ -1439,7 +1443,7 @@ bool AnyCollection::read(std::istream& in)
       in.get();
       value = new AnyCollection();
       if(!value->read(in)) {
-	std::cerr<<"AnyCollection(): couldn't read map value for key ";
+	std::cerr<<"AnyCollection::read(): couldn't read map value for key ";
 	WriteValue(key.value,std::cerr);
 	std::cerr<<std::endl;
 	return false;
@@ -1449,7 +1453,7 @@ bool AnyCollection::read(std::istream& in)
       char c = in.get();
       if(c == '}') return true;
       if(c != ',') {
-	std::cerr<<"Map entries not separated by commas"<<std::endl;
+	std::cerr<<"AnyCollection::read(): Map entries not separated by commas"<<std::endl;
 	return false;
       }
     }
@@ -1458,11 +1462,14 @@ bool AnyCollection::read(std::istream& in)
     //could be part of a list or map
     type = Value;
     if(!ReadValue(value,in,",]}")) {
-      std::cerr<<"AnyCollection: Unable to read primitive value"<<std::endl;
+      std::cerr<<"AnyCollection::read() Unable to read primitive value"<<std::endl;
       return false;
     }
+    if(value.empty()) //read a null
+      type = None;
     return true;
   }
+  std::cerr<<"AnyCollection::read() failed for some reason..."<<std::endl;
   return false;
 }
 
