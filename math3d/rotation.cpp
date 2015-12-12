@@ -22,27 +22,27 @@ EulerAngleRotation::EulerAngleRotation(Real a, Real b, Real c)
 {}
 
 
-void EulerAngleRotation::setMatrix(int u,int v,int w,const Matrix3& m)
+bool EulerAngleRotation::setMatrix(int u,int v,int w,const Matrix3& m)
 {
   if(u==0&&v==1&&w==2) {
-    setMatrixXYZ(m);
+    return setMatrixXYZ(m);
   }
   else if(u==2&&v==1&&w==0) {
-    setMatrixZYX(m);
+    return setMatrixZYX(m);
   }
   else if(u==2&&v==0&&w==1) {
-    setMatrixZXY(m);
+    return setMatrixZXY(m);
   }
   else if(u==1&&v==0&&w==2) {
-    setMatrixYXZ(m);
+    return setMatrixYXZ(m);
   }
   else {
     cerr<<"Not done with general euler angle rotation setMatrix"<<endl;
-    abort();
+    return false;
   }
 }
 
-void EulerAngleRotation::setMatrixXYZ(const Matrix3& m)
+bool EulerAngleRotation::setMatrixXYZ(const Matrix3& m)
 {
   Real a,b,c;
   b=Asin(m(0,2));  //m(0,2)=sb
@@ -50,6 +50,10 @@ void EulerAngleRotation::setMatrixXYZ(const Matrix3& m)
   if (Abs(cb) > Epsilon) {
     Real ca, cc;
     ca = m(2,2)/cb;   //m(2,2)=ca*cb
+    if(!(Abs(ca) <= 1+Epsilon)) {
+      fprintf(stderr,"EulerAngleRotation::setMatrixXYZ: Matrix element m22/cos(m02) greater than 1\n");
+      return false;
+    }
     ca = Clamp(ca,-One,One);
     if (Sign(m(1,2)) == Sign(cb)) //m(1,2)=-sa*cb
       a = TwoPi - Acos(ca);
@@ -67,7 +71,11 @@ void EulerAngleRotation::setMatrixXYZ(const Matrix3& m)
     // b is close to 90 degrees, i.e. cb=0
     // this reduces the degrees of freedom, so we can set c=0
     c = 0;
-    a = Acos(m(1,1)); //m(1,1)=ca
+    if(!(Abs(m(1,1)) <= 1+Epsilon)) {
+      fprintf(stderr,"EulerAngleRotation::setMatrixXYZ: Matrix element greater than 1\n");
+      return false;
+    }
+    a = Acos(Clamp(m(1,1),-One,One)); //m(1,1)=ca
     if(Sign(Sin(a)) != Sign(m(2,1)))  //m(2,1)=sa
       a = TwoPi - a;
   }
@@ -75,9 +83,10 @@ void EulerAngleRotation::setMatrixXYZ(const Matrix3& m)
   x=(Real)a;
   y=(Real)b;
   z=(Real)c;
+  return true;
 }
 
-void EulerAngleRotation::setMatrixZYX(const Matrix3& m)
+bool EulerAngleRotation::setMatrixZYX(const Matrix3& m)
 {
   Real a,b,c;
   b=-Asin(m(2,0));  //m(2,0)=-sb
@@ -111,9 +120,11 @@ void EulerAngleRotation::setMatrixZYX(const Matrix3& m)
   x=(Real)a;
   y=(Real)b;
   z=(Real)c;
+  //TODO: domain error checking
+  return true;
 }
 
-void EulerAngleRotation::setMatrixZXY(const Matrix3& m)
+bool EulerAngleRotation::setMatrixZXY(const Matrix3& m)
 {
   Real a,b,c;
   b=Asin(m(2,1));  //m(2,1)=sb
@@ -147,9 +158,11 @@ void EulerAngleRotation::setMatrixZXY(const Matrix3& m)
   x=(Real)a;
   y=(Real)b;
   z=(Real)c;
+  //TODO: domain error checking
+  return true;
 }
 
-void EulerAngleRotation::setMatrixYXZ(const Matrix3& m)
+bool EulerAngleRotation::setMatrixYXZ(const Matrix3& m)
 {
   Real a,b,c;
   b=-Asin(m(1,2));  //m(1,2)=-sb
@@ -183,6 +196,8 @@ void EulerAngleRotation::setMatrixYXZ(const Matrix3& m)
   x=(Real)a;
   y=(Real)b;
   z=(Real)c;
+  //TODO: domain error checking
+  return true;
 }
 
 void EulerAngleRotation::getMatrix(int u,int v,int w,Matrix3& m) const
@@ -340,11 +355,12 @@ void AngleAxisRotation::transformPoint(const Vector3& in,Vector3& out) const
   out.madd(in,cm);
 }
 
-void AngleAxisRotation::setMatrix(const Matrix3& r)
+bool AngleAxisRotation::setMatrix(const Matrix3& r)
 {
   MomentRotation m;
-  m.setMatrix(r);
+  if(!m.setMatrix(r)) return false;
   setMoment(m);
+  return true;
 }
 
 void AngleAxisRotation::getMatrix(Matrix3& m) const
@@ -423,7 +439,7 @@ void MomentRotation::transformPoint(const Vector3& in,Vector3& out) const
   a.transformPoint(in,out);
 }
 
-void MomentRotation::setMatrix(const Matrix3& r)
+bool MomentRotation::setMatrix(const Matrix3& r)
 {
   //calculate theta
   Real theta;
@@ -431,7 +447,7 @@ void MomentRotation::setMatrix(const Matrix3& r)
   if(!IsFinite(s)) {
     cerr<<"MomentRotation::setMatrix(): Warning- trace of matrix is not finite!"<<endl;
     cerr<<r<<endl;
-    Abort();
+    return false;
   }
   if(s >= One) {
     if(s > One+Epsilon) {
@@ -489,12 +505,15 @@ void MomentRotation::setMatrix(const Matrix3& r)
     }
     Matrix3 test;
     getMatrix(test);
-    Assert(test.isEqual(r,5e-3));
+    if(!test.isEqual(r,5e-3)) {
+      fprintf(stderr,"MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
+      return false;
+    }
 
     Assert(IsFinite(x));
     Assert(IsFinite(y));
     Assert(IsFinite(z));
-    return;
+    return true;
   }
 
   //Matrix3 r_cross;
@@ -512,6 +531,7 @@ void MomentRotation::setMatrix(const Matrix3& r)
   Assert(IsFinite(x));
   Assert(IsFinite(y));
   Assert(IsFinite(z));
+  return true;
 }
 
 void MomentRotation::getMatrix(Matrix3& m) const
@@ -562,7 +582,7 @@ void QuaternionRotation::setMoment(const MomentRotation& m)
   setAngleAxis(AngleAxisRotation(m));
 }
 
-void QuaternionRotation::setMatrix(const Matrix3& m)
+bool QuaternionRotation::setMatrix(const Matrix3& m)
 {
   Real tr, s;
   tr = m.trace() + One;
@@ -603,9 +623,8 @@ void QuaternionRotation::setMatrix(const Matrix3& m)
       cerr<<"QuaternionRotation::setMatrix(): s is zero, what do we do?"<<endl;
       cerr<<"May be a non-rotation matrix"<<endl;
       cerr<<m<<endl;
-      cerr<<"Press enter to continue"<<endl;
-      getchar();
       for(int i=0;i<4;i++) q[i]=0;
+      return false;
     }
     else {
       s = Half / s;
@@ -625,11 +644,12 @@ void QuaternionRotation::setMatrix(const Matrix3& m)
   Matrix3 temp;
   getMatrix(temp);
   if(!temp.isEqual(m,1e-2)) {
-    cout<<"Very different matrix in QuaternionRotation::setMatrix()!"<<endl;
-    cout<<m<<" vs "<<endl;
-    cout<<temp<<endl;
-    getchar();
+    cerr<<"Very different matrix in QuaternionRotation::setMatrix()!"<<endl;
+    cerr<<m<<" vs "<<endl;
+    cerr<<temp<<endl;
+    return false;
   }
+  return true;
 }
 
 void QuaternionRotation::getAngleAxis(AngleAxisRotation& r) const

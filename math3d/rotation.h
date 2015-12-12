@@ -43,13 +43,13 @@ public:
 
   ///set/get MatrixUVW defines the resulting matrix as RU(a)RV(b)RW(c)
   ///where u,v,w are the axis names
-  void setMatrix(int u,int v,int w,const Matrix3&);
-  void setMatrixXYZ(const Matrix3&);
-  void setMatrixXZY(const Matrix3&);
-  void setMatrixYZX(const Matrix3&);
-  void setMatrixYXZ(const Matrix3&);
-  void setMatrixZXY(const Matrix3&);
-  void setMatrixZYX(const Matrix3&);
+  bool setMatrix(int u,int v,int w,const Matrix3&);
+  bool setMatrixXYZ(const Matrix3&);
+  bool setMatrixXZY(const Matrix3&);
+  bool setMatrixYZX(const Matrix3&);
+  bool setMatrixYXZ(const Matrix3&);
+  bool setMatrixZXY(const Matrix3&);
+  bool setMatrixZYX(const Matrix3&);
 
   void getMatrix(int u,int v,int w,Matrix3&) const;
   void getMatrixXYZ(Matrix3&) const;
@@ -79,7 +79,7 @@ public:
   void setIdentity();
   void transformPoint(const Vector3& in,Vector3& out) const;
 
-  void setMatrix(const Matrix3&);
+  bool setMatrix(const Matrix3&);
   void getMatrix(Matrix3&) const;
 
   void setMoment(const MomentRotation&);
@@ -114,7 +114,7 @@ public:
   inline void setIdentity() { Vector3::setZero(); }
   void transformPoint(const Vector3& in,Vector3& out) const;
 
-  void setMatrix(const Matrix3&);
+  bool setMatrix(const Matrix3&);
   void getMatrix(Matrix3&) const;
 
   void setAngleAxis(const AngleAxisRotation&);
@@ -146,7 +146,7 @@ public:
   inline void setIdentity() { Quaternion::set(One); }
   void setAngleAxis(const AngleAxisRotation&);
   void setMoment(const MomentRotation&);
-  void setMatrix(const Matrix3&);
+  bool setMatrix(const Matrix3&);
 
   void getAngleAxis(AngleAxisRotation&) const;
   void getMoment(MomentRotation&) const;
