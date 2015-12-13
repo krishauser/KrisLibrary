@@ -151,7 +151,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       //convert real to hex to GLcolor
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
-	int col = (int)rgb[i];
+	unsigned int col = (unsigned int)rgb[i];
 	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
 			    ((col&0xff00)>>8) / 255.0,
 			    (col&0xff) / 255.0);
@@ -162,7 +162,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       //following PCD, this is actuall A-RGB
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
-	int col = (int)rgb[i];
+	unsigned int col = (unsigned int)rgb[i];
 	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
 			    ((col&0xff00)>>8) / 255.0,
 			    (col&0xff) / 255.0,
@@ -234,8 +234,8 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       //convert real to hex to GLcolor
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
-	int col = (int)rgb[i];
-	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
+	unsigned int col = (int)rgb[i];
+ 	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
 			    ((col&0xff00)>>8) / 255.0,
 			    (col&0xff) / 255.0);
       }
