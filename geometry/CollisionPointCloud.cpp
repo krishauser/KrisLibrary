@@ -24,9 +24,13 @@ CollisionPointCloud::CollisionPointCloud(const CollisionPointCloud& _pc)
 
 void CollisionPointCloud::InitCollisions()
 {
+  bblocal.minimize();
+  grid.buckets.clear();
+  octree = NULL;
+  if(points.empty()) 
+    return;
   Assert(points.size() > 0);
   Timer timer;
-  bblocal.minimize();
   for(size_t i=0;i<points.size();i++)
     bblocal.expand(points[i]);
   //set up the grid
