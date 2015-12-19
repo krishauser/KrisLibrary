@@ -1,6 +1,8 @@
 #ifndef GL_TEXTURE_OBJECT
 #define GL_TEXTURE_OBJECT
 
+#include <utils/SmartPointer.h>
+
 namespace GLDraw {
 
 /** @ingroup GLDraw
@@ -12,19 +14,18 @@ class GLTextureObject
 {
 public:
 	GLTextureObject();
-	GLTextureObject(GLTextureObject&);
+	GLTextureObject(const GLTextureObject&);
 	~GLTextureObject();
 
+	operator bool() const { return !isNull(); }
 	void generate();
 	void cleanup();
 	void bind(unsigned int target) const;
 	void unbind(unsigned int target) const;
 	bool isNull() const;
 
-	void stealObject(GLTextureObject&);
-
 private:
-	unsigned int glName;
+	SmartPointer<unsigned int> glName;
 };
 
 } //namespace GLDraw

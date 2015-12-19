@@ -5,15 +5,17 @@
 #include <math3d/primitives.h>
 #include <meshing/TriMesh.h>
 #include "GLColor.h"
-#include "GLTexture1D.h"
-#include "GLTexture2D.h"
+#include "GLTextureObject.h"
 #include "GLDisplayList.h"
+#include <image/image.h>
 
 namespace Geometry {
   //forward declaration
   class AnyGeometry3D;
   class AnyCollisionGeometry3D;
 }// namespace Geometry
+//forward declaration
+class Image;
 
 namespace GLDraw {
 
@@ -45,10 +47,6 @@ class GeometryAppearance
 
   ///Geometry pointer
   const Geometry::AnyGeometry3D* geom;
-  ///Mesh computed for implicit surfaces
-  Meshing::TriMesh mesh;
-  ///The display lists
-  GLDisplayList vertexDisplayList,faceDisplayList;
   ///For group geometries
   std::vector<GeometryAppearance> subAppearances;
 
@@ -61,14 +59,21 @@ class GeometryAppearance
   ///Optional: per-element colors
   std::vector<GLColor> vertexColors,faceColors;
   ///Optional: set to non-null if you want to texture the object
-  SmartPointer<GLTexture1D> tex1D;
-  SmartPointer<GLTexture2D> tex2D;
+  SmartPointer<Image> tex1D,tex2D;
+  ///If true, the texture will wrap.  Default false
+  bool texWrap; 
   ///Optional: per-element texture mapping coordinates (up to 2D)
   std::vector<Math3D::Vector2> texcoords;
   ///Optional: linear texture generation coefficients for S and T coordinates
   ///S = c[0]^T p (p in homogeneous coordinates)
   ///T = c[1]^T p
   std::vector<Math3D::Vector4> texgen;
+
+  ///Temporary: Mesh computed for implicit surfaces
+  SmartPointer<Meshing::TriMesh> implicitSurfaceMesh;
+  ///Temporary: The display lists and texture lists for vertices and faces
+  GLDisplayList vertexDisplayList,faceDisplayList;
+  GLTextureObject textureObject;
 };
 
 } //namespace GLDraw

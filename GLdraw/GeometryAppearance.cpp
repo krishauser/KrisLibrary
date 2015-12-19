@@ -1,4 +1,6 @@
 #include "GeometryAppearance.h"
+#include "GLTexture1D.h"
+#include "GLTexture2D.h"
 #include <geometry/AnyGeometry.h>
 #include "drawMesh.h"
 #include "drawgeometry.h"
@@ -11,6 +13,85 @@
 using namespace Geometry;
 
 namespace GLDraw {
+
+  void TransferTexture1D(GLTextureObject& obj,const Image& img)
+  {
+    GLTexture1D tex;
+    tex.texObj = obj;
+    int n=img.w*img.h;
+    switch(img.format) {
+    case Image::R8G8B8:
+      {
+	unsigned char* buf = new unsigned char[img.num_bytes];
+	for(int i=0;i<n;i++) {
+	  buf[i*3] = img.data[i*3+2];
+	  buf[i*3+1] = img.data[i*3+1];
+	  buf[i*3+2] = img.data[i*3];
+	}
+	tex.setRGB(buf,n);
+	delete [] buf;
+      }
+      break;
+    case Image::A8R8G8B8:
+      {
+	unsigned char* buf = new unsigned char[img.num_bytes];
+	for(int i=0;i<n;i++) {
+	  buf[i*3] = img.data[i*3+3];
+	  buf[i*3+1] = img.data[i*3+2];
+	  buf[i*3+2] = img.data[i*3+1];
+	  buf[i*3+3] = img.data[i*3+0];
+	}
+	tex.setRGBA(buf,n);
+	delete [] buf;
+      }
+      break;
+    case Image::A8:
+      tex.setLuminance(img.data,n);
+      break;
+    default:
+      fprintf(stderr,"Texture image doesn't match a supported GL format\n");
+      break;
+    }
+  }
+
+
+  void TransferTexture2D(GLTextureObject& obj,const Image& img)
+  {
+    GLTexture2D tex;
+    tex.texObj = obj;
+    switch(img.format) {
+    case Image::R8G8B8:
+      {
+	unsigned char* buf = new unsigned char[img.num_bytes];
+	for(int i=0;i<img.w*img.h;i++) {
+	  buf[i*3] = img.data[i*3+2];
+	  buf[i*3+1] = img.data[i*3+1];
+	  buf[i*3+2] = img.data[i*3];
+	}
+	tex.setRGB(buf,img.w,img.h);
+      }
+      break;
+    case Image::A8R8G8B8:
+      {
+	unsigned char* buf = new unsigned char[img.num_bytes];
+	for(int i=0;i<img.w*img.h;i++) {
+	  buf[i*3] = img.data[i*3+3];
+	  buf[i*3+1] = img.data[i*3+2];
+	  buf[i*3+2] = img.data[i*3+1];
+	  buf[i*3+3] = img.data[i*3+0];
+	}
+	tex.setRGBA(buf,img.w,img.h);
+      }
+      break;
+    case Image::A8:
+      tex.setLuminance(img.data,img.w,img.h);
+      break;
+    default:
+      fprintf(stderr,"Texture image doesn't match a supported GL format\n");
+      break;
+    }
+  }
+
 
 void draw(const Geometry::AnyGeometry3D& geom)
 {
@@ -29,9 +110,9 @@ void drawPoints(const Geometry::AnyGeometry3D& geom)
 {
   const vector<Vector3>* verts = NULL;
   if(geom.type == AnyGeometry3D::TriangleMesh) 
-    verts = &AnyCast<Meshing::TriMesh>(&geom.data)->verts;
+    verts = &geom.AsTriangleMesh().verts;
   else if(geom.type == AnyGeometry3D::PointCloud) 
-    verts = &AnyCast<Meshing::PointCloud3D>(&geom.data)->points;
+    verts = &geom.AsPointCloud().points;
   else if(geom.type == AnyGeometry3D::Group) {
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
     for(size_t i=0;i<subgeoms.size();i++)
@@ -127,13 +208,14 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
 GeometryAppearance::GeometryAppearance()
   :geom(NULL),drawVertices(false),drawEdges(false),drawFaces(false),vertexSize(1.0),edgeSize(1.0),
    lightFaces(true),
-   vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5)
+   vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),texWrap(false)
 {}
 
 void GeometryAppearance::Refresh()
 {
   vertexDisplayList.erase();
   faceDisplayList.erase();
+  textureObject.cleanup();
 }
 
 void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
@@ -141,7 +223,8 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
   geom = &_geom;
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
     const Meshing::VolumeGrid* g = AnyCast<Meshing::VolumeGrid>(&geom->data);
-    MarchingCubes(g->value,0,g->bb,mesh);
+    if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
+    MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
     drawFaces = true;
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
@@ -224,7 +307,8 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   geom = &_geom;
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
     const Meshing::VolumeGrid* g = AnyCast<Meshing::VolumeGrid>(&geom->data);
-    MarchingCubes(g->value,0,g->bb,mesh);
+    if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
+    MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
     drawFaces = true;
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
@@ -264,7 +348,7 @@ void GeometryAppearance::DrawGL()
   if(drawVertices) {   
     const vector<Vector3>* verts = NULL;
     if(geom->type == AnyGeometry3D::ImplicitSurface) 
-      verts = &mesh.verts;
+      verts = &implicitSurfaceMesh->verts;
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
       verts = &AnyCast<Meshing::TriMesh>(&geom->data)->verts;
     else if(geom->type == AnyGeometry3D::PointCloud) 
@@ -272,6 +356,7 @@ void GeometryAppearance::DrawGL()
     if(verts) {
       //compile the vertex display list
       if(!vertexDisplayList) {
+	//printf("Compiling vertex display list %d...\n",verts->size());
 	vertexDisplayList.beginCompile();
 	if(!vertexColors.empty() && vertexColors.size() != verts->size())
 	  fprintf(stderr,"GeometryAppearance: warning, vertexColors wrong size\n");
@@ -317,15 +402,33 @@ void GeometryAppearance::DrawGL()
     }
     //set up the texture coordinates
     if(tex1D || tex2D) {
+      if(!textureObject) {
+	textureObject.generate();
+	if(tex2D)
+	  TransferTexture2D(textureObject,*tex2D);
+	else
+	  TransferTexture1D(textureObject,*tex1D);
+      }
       glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
-
       if(tex1D) {
 	glEnable(GL_TEXTURE_1D);
-	tex1D->setCurrentGL();
+	textureObject.bind(GL_TEXTURE_1D);
+	if(texWrap)
+	  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	else
+	  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP);
       }
       else if(tex2D) {
 	glEnable(GL_TEXTURE_2D);
-	tex2D->setCurrentGL();
+	textureObject.bind(GL_TEXTURE_2D);
+	if(texWrap) {
+	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+	}
+	else {
+	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
+	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
+	}
       }
     }
 
@@ -350,9 +453,11 @@ void GeometryAppearance::DrawGL()
   
       const Meshing::TriMesh* trimesh = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface) 
-	trimesh = &mesh;
+	trimesh = implicitSurfaceMesh;
       if(geom->type == AnyGeometry3D::TriangleMesh) 
-	trimesh = AnyCast<Meshing::TriMesh>(&geom->data);
+	trimesh = &geom->AsTriangleMesh();
+
+      //printf("Compiling face display list %d...\n",trimesh->tris.size());
 
       //draw the mesh
       if(trimesh) {
