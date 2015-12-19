@@ -4,6 +4,7 @@
 #include <robotics/RobotDynamics3D.h>
 #include <structs/array2d.h>
 #include <geometry/AnyGeometry.h>
+#include <utils/SmartPointer.h>
 
 /** @ingroup Robot
  * @brief The base class for a robot definition. 
@@ -28,6 +29,7 @@ public:
   void Initialize(int numLinks);
   bool LoadGeometry(int i,const char* file);
   bool SaveGeometry(int i,const char* file);
+  bool IsGeometryEmpty(int i);
   void InitCollisions();
   void CleanupCollisions();
   void InitAllSelfCollisions();
@@ -61,7 +63,7 @@ public:
   virtual void DrawGL();
   virtual void DrawLinkGL(int i);
 
-  std::vector<CollisionGeometry> geometry;
+  std::vector<SmartPointer<CollisionGeometry> > geometry;
   ///matrix(i,j) of collisions between bodies, i < j (upper triangular)
   Array2D<CollisionQuery*> selfCollisions;
   std::vector<CollisionQuery*> envCollisions;

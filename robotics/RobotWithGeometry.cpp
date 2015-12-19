@@ -67,20 +67,29 @@ void RobotWithGeometry::Merge(const std::vector<RobotWithGeometry*>& robots)
 
 bool RobotWithGeometry::LoadGeometry(int i,const char* file)
 {
-  if(!geometry[i].Load(file)) return false;
+  geometry[i] = new CollisionGeometry;
+  if(!geometry[i]->Load(file)) return false;
   return true;
 }
 
 bool RobotWithGeometry::SaveGeometry(int i,const char* file)
 {
-  if(!geometry[i].Save(file)) return false;
+  if(!geometry[i]) return false;
+  if(!geometry[i]->Save(file)) return false;
   return true;
+}
+
+bool RobotWithGeometry::IsGeometryEmpty(int i)
+{
+  return !geometry[i] || geometry[i]->Empty();
 }
 
 void RobotWithGeometry::InitCollisions()
 {
   Timer timer;
-  for(size_t i=0;i<geometry.size();i++) geometry[i].InitCollisionData();
+  for(size_t i=0;i<geometry.size();i++) {
+    if(!IsGeometryEmpty(i)) geometry[i]->InitCollisionData();
+  }
   double t = timer.ElapsedTime();
   if(t > 0.2) 
     printf("Initialized robot collision data structures in time %gs\n",t);
@@ -106,8 +115,8 @@ void RobotWithGeometry::InitSelfCollisionPair(int i,int j)
   Assert(i<j);
   Assert(!selfCollisions(i,j));
   Assert(j < (int)geometry.size());
-  if(!geometry[i].Empty() && !geometry[j].Empty()) 
-    selfCollisions(i,j) = new CollisionQuery(geometry[i],geometry[j]);
+  if(!IsGeometryEmpty(i) && !IsGeometryEmpty(j)) 
+    selfCollisions(i,j) = new CollisionQuery(*geometry[i],*geometry[j]);
 }
 
 
@@ -147,20 +156,20 @@ void RobotWithGeometry::UpdateGeometry()
 
 void RobotWithGeometry::UpdateGeometry(int i)
 {
-  geometry[i].SetTransform(links[i].T_World);
+  if(geometry[i]) geometry[i]->SetTransform(links[i].T_World);
 }
 
 void RobotWithGeometry::InitMeshCollision(CollisionGeometry& mesh)
 {
   for(size_t i=0;i<links.size();i++) {
-    if(geometry[i].Empty()) continue;
+    if(IsGeometryEmpty(i)) continue;
     if(envCollisions[i] == NULL) {
-      envCollisions[i] = new CollisionQuery(geometry[i],mesh);
+      envCollisions[i] = new CollisionQuery(*geometry[i],mesh);
     }
     else {
       if(envCollisions[i]->b != &mesh) {
 	delete envCollisions[i];
-	envCollisions[i] = new CollisionQuery(geometry[i],mesh);
+	envCollisions[i] = new CollisionQuery(*geometry[i],mesh);
       }
     }
   }
@@ -193,10 +202,10 @@ bool RobotWithGeometry::SelfCollision(const vector<int>& bodies,Real distance)
   vector<int> validbodies;
   validbodies.reserve(bodies.size());
   for(size_t i=0;i<bodies.size();i++) 
-    if(!geometry[bodies[i]].Empty()) validbodies.push_back(bodies[i]);
+    if(!IsGeometryEmpty(i)) validbodies.push_back(bodies[i]);
   vector<AABB3D> bbs(validbodies.size());
   for(size_t i=0;i<validbodies.size();i++) 
-    bbs[i] = geometry[validbodies[i]].GetAABB();
+    bbs[i] = geometry[validbodies[i]]->GetAABB();
   if(distance != 0) {
     //adjust bounding  boxes
     Vector3 d(distance*0.5);
@@ -225,15 +234,15 @@ bool RobotWithGeometry::SelfCollision(const vector<int>& set1,const vector<int>&
   valid1.reserve(set1.size());
   valid2.reserve(set2.size());
   for(size_t i=0;i<set1.size();i++) 
-    if(!geometry[set1[i]].Empty()) valid1.push_back(set1[i]);
+    if(!IsGeometryEmpty(set1[i])) valid1.push_back(set1[i]);
   for(size_t i=0;i<set2.size();i++) 
-    if(!geometry[set2[i]].Empty()) valid2.push_back(set2[i]);
+    if(!IsGeometryEmpty(set2[i])) valid2.push_back(set2[i]);
   if(valid1.empty() || valid2.empty()) return false;
   vector<AABB3D> bbs1(valid1.size()),bbs2(valid2.size());
   for(size_t i=0;i<valid1.size();i++) 
-    bbs1[i] = geometry[valid1[i]].GetAABB();
+    bbs1[i] = geometry[valid1[i]]->GetAABB();
   for(size_t i=0;i<valid2.size();i++) 
-    bbs2[i] = geometry[valid2[i]].GetAABB();
+    bbs2[i] = geometry[valid2[i]]->GetAABB();
   if(distance != 0) {
     //adjust bounding  boxes
     Vector3 d(distance*0.5);
@@ -292,10 +301,10 @@ bool RobotWithGeometry::SelfCollision(Real distance)
   vector<int> validbodies;
   validbodies.reserve(links.size());
   for(size_t i=0;i<links.size();i++) 
-    if(!geometry[i].Empty()) validbodies.push_back(i);
+    if(!IsGeometryEmpty(i)) validbodies.push_back(i);
   vector<AABB3D> bbs(validbodies.size());
   for(size_t i=0;i<validbodies.size();i++) {
-    bbs[i] = geometry[validbodies[i]].GetAABB();
+    bbs[i] = geometry[validbodies[i]]->GetAABB();
   }
   if(distance != 0) {
     //adjust bounding  boxes
@@ -324,10 +333,10 @@ void RobotWithGeometry::SelfCollisions(vector<pair<int,int> >& pairs,Real distan
   vector<int> validbodies;
   validbodies.reserve(links.size());
   for(size_t i=0;i<links.size();i++) 
-    if(!geometry[i].Empty()) validbodies.push_back(i);
+    if(!IsGeometryEmpty(i)) validbodies.push_back(i);
   vector<AABB3D> bbs(validbodies.size());
   for(size_t i=0;i<validbodies.size();i++) 
-    bbs[i] = geometry[validbodies[i]].GetAABB();
+    bbs[i] = geometry[validbodies[i]]->GetAABB();
   if(distance != 0) {
     //adjust bounding  boxes
     Vector3 d(distance*0.5);
@@ -380,7 +389,7 @@ void RobotWithGeometry::DrawGL()
 
 void RobotWithGeometry::DrawLinkGL(int i)
 {
-  draw(geometry[i]);
+  if(geometry[i]) draw(*geometry[i]);
 }
 
 
