@@ -1,6 +1,7 @@
 #include "IO.h"
 #include <utils/stringutils.h>
 #include <GLdraw/GeometryAppearance.h>
+#include <image/import.h>
 #include <sstream>
 #include <fstream>
 #include <string.h>
@@ -321,6 +322,7 @@ void Cast(const aiMatrix4x4& a,Matrix4& out)
 void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,GeometryAppearance& app)
 {
   if(mesh->mColors[0]) {
+    printf("AssimpMaterialToAppearance: we have vertex colors?\n");
     //per-vertex coloring
     app.vertexColors.resize(mesh->mNumVertices);
     for(unsigned int i=0;i<mesh->mNumVertices;i++)
@@ -343,7 +345,13 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
   aiString str;
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
     string filename = str.C_Str();
-    cout<<"Texturing not done yet, Mesh has texture from file "<<filename<<endl;
+    SmartPointer<Image> img = new Image;
+    if(ImportImage(filename.c_str(),*img)) {
+      app.tex2D = img;
+    }
+    else {
+      printf("AssimpMaterialToAppearance: couldn't load image %s\n",filename.c_str());
+    }
   }
 }
 
