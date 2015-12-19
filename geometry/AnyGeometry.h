@@ -10,6 +10,7 @@ class TiXmlElement;
 namespace Meshing { class VolumeGrid; class PointCloud3D; }
 namespace Geometry { class CollisionPointCloud; }
 namespace Math3D { class GeometricPrimitive3D; }
+namespace GLDraw { class GeometryAppearance; }
 
 namespace Geometry {
 
@@ -21,6 +22,12 @@ namespace Geometry {
  *
  * To get the data, first check the "type" member.  Then call the appropriate
  * AsX method to retrieve the data in the underlying format.
+ *
+ * Some types may also store auxiliary appearance data.  Right now the only
+ * thing that's supported is the GLDraw::GeometryAppearance data for
+ * TriangleMesh data.  This may also be NULL, for geometries that don't store
+ * appearance information.  You can get these using the XAppearanceData
+ * functions.
  */
 class AnyGeometry3D
 {
@@ -54,6 +61,8 @@ class AnyGeometry3D
   Meshing::PointCloud3D& AsPointCloud();
   Meshing::VolumeGrid& AsImplicitSurface();
   vector<AnyGeometry3D>& AsGroup();
+  GLDraw::GeometryAppearance* TriangleMeshAppearanceData();
+  const GLDraw::GeometryAppearance* TriangleMeshAppearanceData() const;
   static bool CanLoadExt(const char* ext);
   static bool CanSaveExt(const char* ext);
   bool Load(const char* fn);
@@ -72,6 +81,8 @@ class AnyGeometry3D
   Type type;
   ///The data, according to the type
   AnyValue data;
+  ///Optional appearance data, according to the type
+  AnyValue appearanceData;
 };
 
 

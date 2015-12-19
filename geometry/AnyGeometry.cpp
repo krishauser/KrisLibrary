@@ -2,6 +2,7 @@
 #include <math3d/geometry3d.h>
 #include <meshing/VolumeGrid.h>
 #include <meshing/Voxelize.h>
+#include <GLDraw/GeometryAppearance.h>
 #include "CollisionPointCloud.h"
 #include <utils/stringutils.h>
 #include <meshing/IO.h>
@@ -54,6 +55,10 @@ Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() { return *AnyCast<Meshing::Tri
 Meshing::PointCloud3D& AnyGeometry3D::AsPointCloud() { return *AnyCast<Meshing::PointCloud3D>(&data); }
 Meshing::VolumeGrid& AnyGeometry3D::AsImplicitSurface() { return *AnyCast<Meshing::VolumeGrid>(&data); }
 vector<AnyGeometry3D>& AnyGeometry3D::AsGroup() { return *AnyCast<vector<AnyGeometry3D> >(&data); }
+
+//appearance casts
+GLDraw::GeometryAppearance* AnyGeometry3D::TriangleMeshAppearanceData() { return AnyCast<GLDraw::GeometryAppearance>(&appearanceData); }
+const GLDraw::GeometryAppearance* AnyGeometry3D::TriangleMeshAppearanceData() const { return AnyCast<GLDraw::GeometryAppearance>(&appearanceData); }
 
 const char* AnyGeometry3D::TypeName(Type type)
 {
@@ -161,12 +166,12 @@ size_t AnyGeometry3D::NumElements() const
 
 bool AnyGeometry3D::CanLoadExt(const char* ext)
 {
-  return Meshing::CanLoadTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol");
+  return Meshing::CanLoadTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol") || 0==strcmp(ext,"geom");
 }
 
 bool AnyGeometry3D::CanSaveExt(const char* ext)
 {
-  return Meshing::CanSaveTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol");
+  return Meshing::CanSaveTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol") || 0==strcmp(ext,"geom");
 }
 
 bool AnyGeometry3D::Load(const char* fn)
@@ -175,7 +180,13 @@ bool AnyGeometry3D::Load(const char* fn)
   if(Meshing::CanLoadTriMeshExt(ext)) {
     type = TriangleMesh;
     data = Meshing::TriMesh();
-    return Meshing::Import(fn,this->AsTriangleMesh());
+    GLDraw::GeometryAppearance blank,temp;
+    if(!Meshing::Import(fn,this->AsTriangleMesh(),temp)) return false;
+    if(temp.faceColor != blank.faceColor ||
+       !temp.vertexColors.empty() ||
+       !temp.faceColors.empty()) //loaded appearance data
+      appearanceData = temp;
+    return true;
   }
   else if(0==strcmp(ext,"pcd")) {
     type = PointCloud;
@@ -192,9 +203,22 @@ bool AnyGeometry3D::Load(const char* fn)
     in.close();
     return true;
   }
+  else if(0==strcmp(ext,"geom")) {
+    ifstream in(fn,ios::in);
+    if(!in) {
+      fprintf(stderr,"AnyGeometry3D::Load: File %s could not be opened\n",fn);
+      return false;
+    }
+    if(!Load(in)) return false;
+    in.close();
+    return true;
+  }
   else {
     ifstream in(fn,ios::in);
-    if(!in) return false;
+    if(!in) {
+      fprintf(stderr,"AnyGeometry3D::Load: File %s could not be opened\n",fn);
+      return false;
+    }
     if(!Load(in)) return false;
     in.close();
     return true;
@@ -275,6 +299,9 @@ bool AnyGeometry3D::Load(istream& in)
   else if(typestr == "Group") {
     fprintf(stderr,"AnyGeometry::Load(): TODO: groups\n");
     return false;
+  }
+  else {
+    fprintf(stderr,"AnyGeometry::Load(): Unknown type %s\n",typestr.c_str());
   }
   if(!in) return false;
   return true;
