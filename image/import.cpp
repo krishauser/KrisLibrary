@@ -5,18 +5,22 @@
 
 const char* ImageImportTypes()
 {
-	return "*.bit;*.bmp;*.tga;";
+	return ".bit;.ppm;.bmp;.tga;";
 }
+
+#ifndef _WIN32
+bool ImportImageGDIPlus(const char* fn, Image& img) { return false; }
+#endif //_WIN32
 
 bool ImportImage(const char* fn, Image& img)
 {
 	const char* ext = FileExtension(fn);
 	if(!ext) {
-		FatalError("Couldnt detect an extension on image import file %s", fn);
+	  fprintf(stderr,"Couldnt detect an extension on image import file %s\n", fn);
 		return false;
 	}
 	if(strlen(ext) > 8) {
-		FatalError("Unknown extension \"%s\" on image import file %s", ext, fn);
+	  fprintf(stderr,"Unknown extension \"%s\" on image import file %s\n", ext, fn);
 		return false;
 	}
 	char extbuf[8];
@@ -25,6 +29,9 @@ bool ImportImage(const char* fn, Image& img)
 	if(0 == strcmp(extbuf, "bit")) {
 		return img.Read(fn);
 	}
+	else if(0 == strcmp(extbuf, "ppm")) {
+		return ImportImagePPM(fn, img);
+	}
 	else if(0 == strcmp(extbuf, "bmp")) {
 		return ImportImageBMP(fn, img);
 	}
@@ -32,7 +39,11 @@ bool ImportImage(const char* fn, Image& img)
 		return ImportImageTGA(fn, img);
 	}
 	else {
+#ifdef _WIN32
 		return ImportImageGDIPlus(fn, img);
+#else
+		fprintf(stderr,"Unknown file extension \"%s\" on image import file %s\n",extbuf,fn);
+#endif //_WIN32
 	}
 	/*
 	{

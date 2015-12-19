@@ -135,6 +135,7 @@ const Image& Image::operator = (const Image& other)
 {
 	unload();
 	initialize(other.w, other.h, other.format);
+	assert(num_bytes >= other.num_bytes);
 	memcpy(data, other.data, other.num_bytes);
 	return *this;
 }

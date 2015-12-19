@@ -1,4 +1,5 @@
 #include "ppm.h"
+#include "image.h"
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
@@ -225,5 +226,18 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
 bool ReadPPM_Grayscale(unsigned char** image,int* m,int* n,const char* file)
 {
   fprintf(stderr,"ReadPPM_Grayscale: Not done yet\n");
+  return false;
+}
+
+
+bool ImportImagePPM(const char* fn, Image& img)
+{
+  int w,h;
+  if(ReadPPM_RGB(&img.data,&w,&h,fn)) {
+    img.w = w;
+    img.h = h;
+    img.format = Image::R8G8B8;
+    return true;
+  }
   return false;
 }
