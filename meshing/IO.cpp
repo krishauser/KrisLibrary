@@ -322,7 +322,6 @@ void Cast(const aiMatrix4x4& a,Matrix4& out)
 void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,GeometryAppearance& app)
 {
   if(mesh->mColors[0]) {
-    printf("AssimpMaterialToAppearance: we have vertex colors?\n");
     //per-vertex coloring
     app.vertexColors.resize(mesh->mNumVertices);
     for(unsigned int i=0;i<mesh->mNumVertices;i++)
