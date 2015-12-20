@@ -1,4 +1,5 @@
 #include "IO.h"
+#include <utils/AnyValue.h>
 #include <utils/stringutils.h>
 #include <GLdraw/GeometryAppearance.h>
 #include <image/import.h>
@@ -23,6 +24,9 @@ using namespace Assimp;
 using namespace GLDraw;
 
 namespace Meshing {
+
+static string gTexturePath;
+bool LoadOBJ(FILE* f,TriMesh& tri,GeometryAppearance& app);
 
 ///Returns true if the extension is a file type that we can load from
 bool CanLoadTriMeshExt(const char* ext)
@@ -96,7 +100,17 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
     return LoadMultipleTriMeshes(fn,tri);
   }
   else {
+    if(0==strcmp(ext,"obj")) {
+      FILE* f = fopen(fn,"r");
+      if(f && LoadOBJ(f,tri,app)) return true;
+    }
 #if HAVE_ASSIMP
+    //setup texture path to same directory as fn
+    char* buf = new char[strlen(fn)+1];
+    GetFilePath(fn,buf);
+    gTexturePath = buf;
+    delete [] buf;
+    //do the loading
     if(!LoadAssimp(fn,tri,app)) {
       fprintf(stderr,"Import(TriMesh): file %s could not be loaded\n",fn);
       return false;
@@ -182,7 +196,7 @@ bool SaveVRML(std::ostream& out,const TriMesh& tri)
 }
 
 ///Loads from the GeomView Object File Format (OFF)
-bool LoadOFF(std::istream& in,TriMesh& tri)
+bool LoadOFF(std::istream& in,TriMesh& tri,GeometryAppearance& app)
 {
   string tag;
   in>>tag;
@@ -271,6 +285,140 @@ bool SaveOFF(std::ostream& out,const TriMesh& tri)
   return true;
 }
 
+//scans until endc is read
+bool fscanto(FILE* f, char endc)
+{
+  //read until end of line
+  int c;
+  while(true) {
+    c = fgetc(f);
+    if(c == EOF) return false;
+    if(c == endc) return true;
+  }
+  return false;
+}
+
+//scans until end of line is read
+bool fgetline(FILE* f, char* buf,int bufsize)
+{
+  //read until end of line
+  int c;
+  int i=0;
+  while(true) {
+    c = fgetc(f);
+    if(c == EOF) {
+      buf[i] = 0;
+      return false;
+    }
+    if(c == '\n') {
+      buf[i] = 0;
+      return true;
+    }
+    buf[i] = c;
+    i++;
+  }
+  return false;
+}
+
+
+///Loads from the Wavefront OBJ format, with per-vertex colors?
+bool LoadOBJ(FILE* f,TriMesh& tri,GeometryAppearance& app)
+{
+  tri.verts.resize(0);
+  tri.tris.resize(0);
+  app.vertexColors.resize(0);
+  char buf[1025];
+  buf[1024]=0;
+  string line,item,vmf;
+  vector<char*> elements;
+  vector<int> face;
+  int lineno = 0;
+  Vector3 pt;
+  GLColor col;
+  col.rgba[3] = 1;
+  int c;
+  while((c=fgetc(f)) != EOF) {
+    lineno++;
+    if(c == '\n') continue;
+    else if(c == '#') fscanto(f,'\n');
+    else if(c == 'v') {
+      c = fgetc(f);
+      if(c == 'n')  fscanto(f,'\n');
+      else if(isspace(c)) { ///just vertex
+	int n=fscanf(f," %lf %lf %lf",&pt.x,&pt.y,&pt.z);
+	if(n != 3) {
+	  fprintf(stderr,"LoadOBJ: erroneous v line on line %d\n",lineno);
+	  return false;
+	}
+	tri.verts.push_back(pt);
+	fgetline(f,buf,1024);
+	n=sscanf(buf,"%f %f %f %f",&col.rgba[0],&col.rgba[1],&col.rgba[2],&col.rgba[3]);
+	if(n == 3) col.rgba[3]=1;
+	if(n >= 3) {
+	  app.vertexColors.push_back(col);
+	  if(app.vertexColors.size() != tri.verts.size()) {
+	    fprintf(stderr,"LoadOBJ: number of vertex colors not equal to number of vertices\n");
+	    return false;
+	  }
+	}
+      }
+    }
+    else if(c=='f') {
+      if(tri.tris.size()==0) tri.tris.reserve(tri.verts.size()/3);
+      face.resize(0);
+      elements.resize(0);
+      fgetline(f,buf,1024);
+      bool readingspace = true;
+      for(int i=0;i<1024;i++) {
+	if(!buf[i]) break;
+	if(readingspace) {
+	  if(isspace(buf[i])) buf[i]=0;
+	  else {
+	    readingspace = false;
+	    elements.push_back(&buf[i]);
+	  }
+	}
+	else {
+	  if(isspace(buf[i])) {
+	    buf[i]=0;
+	    readingspace = true;
+	  }
+	}
+      }
+      //elements can be of form %d, %d/%d, or %d/%d/%d. 
+      //We only care about the first
+      face.resize(elements.size());
+      int f;
+      for(size_t i=0;i<elements.size();i++) {
+	char* c = elements[i];
+	while(*c) { if(*c=='/') { *c=0; break; }c++; }
+	int n=sscanf(elements[i],"%d",&f);
+	if(n != 1) {
+	  fprintf(stderr,"LoadOBJ: invalid vertex on f line %d, element %d\n",lineno,i);
+	  return false;
+	}
+	f-=1;   //1 based
+	if(f < 0 || f >= (int)tri.verts.size()) {
+	  fprintf(stderr,"LoadOBJ: vertex %d on f line %d is out of bounds 0,...,%d\n",f,lineno,tri.verts.size());
+	  return false;
+	}
+	face[i] = f;
+      }
+      if(face.size() < 3) {
+	fprintf(stderr,"LoadOBJ: invalid f line %d\n",lineno);
+	return false;
+      }
+      for(size_t i=2;i<face.size();i++) 
+	tri.tris.push_back(IntTriple(face[0],face[i-1],face[i]));
+    }
+    else {
+      fprintf(stderr,"LoadOBJ: unsupported start character \"%c\" on line %d\n",c,lineno);
+      return false;
+    }
+  }
+  return true;
+}
+
 
 
 #if HAVE_ASSIMP
@@ -343,7 +491,7 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
   }
   aiString str;
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
-    string filename = str.C_Str();
+    string filename = gTexturePath+str.C_Str();
     SmartPointer<Image> img = new Image;
     if(ImportImage(filename.c_str(),*img)) {
       app.tex2D = img;
