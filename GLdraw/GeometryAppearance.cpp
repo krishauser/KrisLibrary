@@ -121,7 +121,9 @@ void drawPoints(const Geometry::AnyGeometry3D& geom)
   if(verts) {
     glBegin(GL_POINTS);
     for(size_t i=0;i<verts->size();i++) {
-      glVertex3v((*verts)[i]);
+      const Vector3& v=(*verts)[i];
+      //glVertex3v();
+      glVertex3f(v.x,v.y,v.z);
     }
     glEnd();
   }
@@ -360,12 +362,23 @@ void GeometryAppearance::DrawGL()
 	vertexDisplayList.beginCompile();
 	if(!vertexColors.empty() && vertexColors.size() != verts->size())
 	  fprintf(stderr,"GeometryAppearance: warning, vertexColors wrong size\n");
-	glBegin(GL_POINTS);
-	for(size_t i=0;i<verts->size();i++) {
-	  if(vertexColors.size()==verts->size()) vertexColors[i].setCurrentGL();
-	  glVertex3v((*verts)[i]);
+	if(vertexColors.size()==verts->size()) {
+	  glBegin(GL_POINTS);
+	  for(size_t i=0;i<verts->size();i++) {
+	    const Vector3& v=(*verts)[i];
+	    vertexColors[i].setCurrentGL();
+	    glVertex3f(v.x,v.y,v.z);
+	  }
+	  glEnd();
 	}
-	glEnd();
+	else {
+	  glBegin(GL_POINTS);
+	  for(size_t i=0;i<verts->size();i++) {
+	    const Vector3& v=(*verts)[i];
+	    glVertex3f(v.x,v.y,v.z);
+	  }
+	  glEnd();
+	}
 	vertexDisplayList.endCompile();
       }
       //do the drawing
@@ -404,31 +417,39 @@ void GeometryAppearance::DrawGL()
     if(tex1D || tex2D) {
       if(!textureObject) {
 	textureObject.generate();
-	if(tex2D)
+	if(tex2D) {
 	  TransferTexture2D(textureObject,*tex2D);
-	else
+	  textureObject.bind(GL_TEXTURE_2D);
+	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	  if(texWrap) {
+	    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+	  }
+	  else {
+	    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
+	    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
+	  }
+	}
+	else {
 	  TransferTexture1D(textureObject,*tex1D);
+	  textureObject.bind(GL_TEXTURE_1D);
+	  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	  if(texWrap)
+	    glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+	  else
+	    glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP);
+	}
       }
       glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
       if(tex1D) {
 	glEnable(GL_TEXTURE_1D);
 	textureObject.bind(GL_TEXTURE_1D);
-	if(texWrap)
-	  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-	else
-	  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP);
       }
       else if(tex2D) {
 	glEnable(GL_TEXTURE_2D);
 	textureObject.bind(GL_TEXTURE_2D);
-	if(texWrap) {
-	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-	}
-	else {
-	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
-	  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
-	}
       }
     }
 
@@ -464,21 +485,47 @@ void GeometryAppearance::DrawGL()
 	if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
 	  fprintf(stderr,"GeometryAppearance: warning, texcoords wrong size\n");
 	if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
-	  DrawGLTris(*trimesh);
+	  if(vertexColors.size() != trimesh->verts.size()) 
+	    DrawGLTris(*trimesh);
+	  else {
+	    //vertex colors given!
+	    glDisable(GL_LIGHTING);
+	    glBegin(GL_TRIANGLES);
+	    for(size_t i=0;i<trimesh->tris.size();i++) {
+	      const IntTriple&t=trimesh->tris[i];
+	      const Vector3& a=trimesh->verts[t.a];
+	      const Vector3& b=trimesh->verts[t.b];
+	      const Vector3& c=trimesh->verts[t.c];
+	      Vector3 n = trimesh->TriangleNormal(i);
+	      glNormal3f(n.x,n.y,n.z);
+	      vertexColors[t.a].setCurrentGL();
+	      glVertex3f(a.x,a.y,a.z);
+	      vertexColors[t.b].setCurrentGL();
+	      glVertex3f(b.x,b.y,b.z);
+	      vertexColors[t.c].setCurrentGL();
+	      glVertex3f(c.x,c.y,c.z);
+	    }
+	    glEnd();
+	    glEnable(GL_LIGHTING);
+	  }
 	}
 	else {
 	  glBegin(GL_TRIANGLES);
 	  for(size_t i=0;i<trimesh->tris.size();i++) {
 	    const IntTriple&t=trimesh->tris[i];
+	    const Vector3& a=trimesh->verts[t.a];
+	    const Vector3& b=trimesh->verts[t.b];
+	    const Vector3& c=trimesh->verts[t.c];
+	    Vector3 n = trimesh->TriangleNormal(i);
 	    if(faceColors.size()==trimesh->tris.size())
 	      faceColors[i].setCurrentGL();
-	    glNormal3v(trimesh->TriangleNormal(i));
-	    glTexCoord2v(texcoords[t.a]);
-	    glVertex3v(trimesh->verts[t.a]);
-	    glTexCoord2v(texcoords[t.b]);
-	    glVertex3v(trimesh->verts[t.b]);
-	    glTexCoord2v(texcoords[t.c]);
-	    glVertex3v(trimesh->verts[t.c]);
+	    glNormal3f(n.x,n.y,n.z);
+	    glTexCoord2f(texcoords[t.a].x,texcoords[t.a].y);
+	    glVertex3f(a.x,a.y,a.z);
+	    glTexCoord2f(texcoords[t.b].x,texcoords[t.b].y);
+	    glVertex3f(b.x,b.y,b.z);
+	    glTexCoord2f(texcoords[t.c].x,texcoords[t.c].y);
+	    glVertex3f(c.x,c.y,c.z);
 	  }
 	  glEnd();
 	}
