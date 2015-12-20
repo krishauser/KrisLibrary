@@ -56,6 +56,7 @@ std::string LStrip(const std::string& str)
 {
   const char* chars=" \f\n\r\t\v";
   std::string::size_type index=str.find_first_not_of(chars);
+  if(index==std::string::npos) return str;
   return str.substr(index);
 }
 
@@ -63,6 +64,7 @@ std::string RStrip(const std::string& str)
 {
   const char* chars=" \f\n\r\t\v";
   std::string::size_type index=str.find_last_not_of(chars);
+  if(index==std::string::npos) return str;
   return str.substr(0,index+1);
 }
 

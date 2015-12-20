@@ -26,6 +26,7 @@ class SimpleFile
   bool Save(const char* fn);
   bool Save(ostream& out);
   operator bool () const { return loaded; }
+  void AllowItem(const std::string& str,bool caseSensitive=false);
 
   //accessors
   inline bool empty() { return entries.empty(); }
@@ -43,6 +44,7 @@ class SimpleFile
 
   bool loaded;
   std::map<std::string,std::vector<PrimitiveValue> > entries;
+  std::map<std::string,bool> validItems;
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include "SimpleFile.h"
+#include "stringutils.h"
 #include <sstream>
 #include <fstream>
 using namespace std;
@@ -18,6 +19,17 @@ SimpleFile::SimpleFile()
   loaded = false;
 }
 
+void SimpleFile::AllowItem(const std::string& str,bool caseSensitive)
+{
+  if(!caseSensitive) {
+    string s = str;
+    Lowercase(s);
+    validItems[s] = caseSensitive;
+  }
+  else
+    validItems[str] = caseSensitive;
+}
+
 bool SimpleFile::Load(const char* fn)
 {
   ifstream in(fn);
@@ -32,12 +44,14 @@ bool SimpleFile::Load(const char* fn)
 bool SimpleFile::Load(istream& in)
 {
   string name;
-  int line=1;
+  string line;
+  char buf[1025];
+  int lineno=1;
   while(in >> name) {
     //read the rest of the line
-    string line;
-    char buf[1025];
+    lineno++;
     buf[1024]=0;
+    line.clear();
     bool foundEndline=false,comment=false;
     while(!foundEndline) {
       for(int i=0;i<1024;i++) {
@@ -55,7 +69,23 @@ bool SimpleFile::Load(istream& in)
       }
       line += buf;
     }
-    if(name[0]=='#') continue;  //ignore comment
+    if(name[0]=='#') continue;  //ignore comment up to end of line
+    if(!validItems.empty()) {
+      if(validItems.count(name) == 0) {
+	string temp=name;
+	Lowercase(temp);
+	if(validItems.count(temp) != 0) {
+	  if(validItems[temp] == true) { //case sensitive
+	    fprintf(stderr,"SimpleFile::Load: unsupported item %s on line %d (case sensitive)\n",name.c_str(),lineno);
+	    return false;
+	  }
+	}
+	else {
+	  fprintf(stderr,"SimpleFile::Load: unsupported item %s on line %d\n",name.c_str(),lineno);
+	  return false;
+	}
+      }
+    }
 
     stringstream ss;
     ss.str(line);
@@ -69,7 +99,7 @@ bool SimpleFile::Load(istream& in)
   }
   loaded=true;
   if(in.bad()) {
-    fprintf(stderr,"SimpleFile::Load() Bad value on line %d\n",line);
+    fprintf(stderr,"SimpleFile::Load() Bad value on line %d\n",lineno);
     loaded=false;
   }
   return !in.bad();
@@ -120,6 +150,7 @@ bool SimpleFile::CheckType(const string& name,int type,const char* errorString)
   for(size_t i=0;i<items.size();i++) {
     if(!items[i].CanCast(type)) {
       fprintf(stderr,"SimpleFile(%s): Wrong entry type in %s.  Need %d, have %d.\n",title,name.c_str(),type,items[i].type);
+      cerr<<"   Item "<<i<<": "<<items[i]<<endl;
       return false;
     }
   }
