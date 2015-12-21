@@ -9,6 +9,7 @@
 #include <meshing/VolumeGrid.h>
 #include <meshing/MarchingCubes.h>
 #include <meshing/Expand.h>
+#include "Timer.h"
 
 using namespace Geometry;
 
@@ -485,8 +486,84 @@ void GeometryAppearance::DrawGL()
 	if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
 	  fprintf(stderr,"GeometryAppearance: warning, texcoords wrong size\n");
 	if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
-	  if(vertexColors.size() != trimesh->verts.size()) 
+	  if(vertexColors.size() != trimesh->verts.size()) {
 	    DrawGLTris(*trimesh);
+	    /*
+	    //testing vertex arrays -- not perceptibly faster.
+	    vector<float> vbuf(trimesh->verts.size()*3);
+	    vector<float> nbuf(trimesh->verts.size()*3,0.0);
+	    vector<unsigned int> ibuf(trimesh->tris.size()*3);
+	    for(size_t i=0;i<trimesh->tris.size();i++) {
+	      Math3D::Vector3 normal = trimesh->TriangleNormal(i);
+	      ibuf[i*3] = trimesh->tris[i].a;
+	      ibuf[i*3+1] = trimesh->tris[i].b;
+	      ibuf[i*3+2] = trimesh->tris[i].c;
+	      int aofs = trimesh->tris[i].a*3;
+	      int bofs = trimesh->tris[i].b*3;
+	      int cofs = trimesh->tris[i].c*3;
+	      nbuf[aofs] += normal.x;
+	      nbuf[aofs+1] += normal.y;
+	      nbuf[aofs+2] += normal.z;
+	      nbuf[bofs] += normal.x;
+	      nbuf[bofs+1] += normal.y;
+	      nbuf[bofs+2] += normal.z;
+	      nbuf[cofs] += normal.x;
+	      nbuf[cofs+1] += normal.y;
+	      nbuf[cofs+2] += normal.z;
+	    }
+	    for(size_t i=0;i<trimesh->verts.size();i++) {
+	      vbuf[i*3] = trimesh->verts[i].x;
+	      vbuf[i*3+1] = trimesh->verts[i].y;
+	      vbuf[i*3+2] = trimesh->verts[i].z;
+	      float scale = float(1.0/Vector3(nbuf[i*3],nbuf[i*3+1],nbuf[i*3+2]).norm());
+	      if(IsFinite(scale)) {
+		nbuf[i*3] *= scale;
+		nbuf[i*3+1] *= scale;
+		nbuf[i*3+2] *= scale;
+	      }
+	    }
+	    */
+	    /*
+	    vector<float> vbuf(trimesh->tris.size()*9);
+	    vector<float> nbuf(trimesh->tris.size()*9);
+	    for(size_t i=0;i<trimesh->tris.size();i++) {
+	      Math3D::Vector3 normal = trimesh->TriangleNormal(i);
+	      const Math3D::Vector3& a=trimesh->verts[trimesh->tris[i].a];
+	      const Math3D::Vector3& b=trimesh->verts[trimesh->tris[i].b];
+	      const Math3D::Vector3& c=trimesh->verts[trimesh->tris[i].c];
+	      nbuf[i*9] = normal.x;
+	      nbuf[i*9+1] = normal.y;
+	      nbuf[i*9+2] = normal.z;
+	      nbuf[i*9+3] = normal.x;
+	      nbuf[i*9+4] = normal.y;
+	      nbuf[i*9+5] = normal.z;
+	      nbuf[i*9+6] = normal.x;
+	      nbuf[i*9+7] = normal.y;
+	      nbuf[i*9+8] = normal.z;
+	      vbuf[i*9+0] = a.x;
+	      vbuf[i*9+1] = a.y;
+	      vbuf[i*9+2] = a.z;
+	      vbuf[i*9+3] = b.x;
+	      vbuf[i*9+4] = b.y;
+	      vbuf[i*9+5] = b.z;
+	      vbuf[i*9+6] = c.x;
+	      vbuf[i*9+7] = c.y;
+	      vbuf[i*9+8] = c.z;
+	    }
+	    */
+	    /*
+	    glVertexPointer(3,GL_FLOAT,0,&vbuf[0]);
+	    glNormalPointer(GL_FLOAT,0,&nbuf[0]);
+	    glEnableClientState(GL_VERTEX_ARRAY);
+	    glEnableClientState(GL_NORMAL_ARRAY);
+	    //glDrawArrays(GL_TRIANGLES,0,trimesh->tris.size()*3);
+	    glDrawElements(GL_TRIANGLES,trimesh->tris.size()*3,GL_UNSIGNED_INT,&ibuf[0]);
+	    glDisableClientState(GL_VERTEX_ARRAY);
+	    glDisableClientState(GL_NORMAL_ARRAY);
+	    glVertexPointer(3,GL_FLOAT,0,0);
+	    glNormalPointer(GL_FLOAT,0,0);
+	    */
+	  }
 	  else {
 	    //vertex colors given!
 	    glDisable(GL_LIGHTING);
@@ -535,6 +612,7 @@ void GeometryAppearance::DrawGL()
       }
       faceDisplayList.endCompile();
     }
+    //Timer timer;
     faceDisplayList.call();
 
     //cleanup, reset GL state
