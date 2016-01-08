@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <stdlib.h>
-#include "errors.h"
+#include "KrisLibrary/errors.h"
 
 /** @ingroup Utils
  * @brief A unique pointer class that duplicates on non-const access.

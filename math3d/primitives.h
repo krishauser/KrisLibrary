@@ -1,10 +1,10 @@
 #ifndef MATH3D_PRIMITIVES_H
 #define MATH3D_PRIMITIVES_H
 
-#include <math/math.h>
+#include <KrisLibrary/math/math.h>
 #include <iostream>
-#include <myfile.h>
-#include <utils.h>
+#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/utils.h>
 
 /** @defgroup Math3D
  * @brief Definitions of 3D math classes and functions 

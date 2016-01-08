@@ -1,7 +1,7 @@
 #ifndef SPLINE_TIME_SEGMENTATION_H
 #define SPLINE_TIME_SEGMENTATION_H
 
-#include <math/math.h>
+#include <KrisLibrary/math/math.h>
 #include <vector>
 #include <algorithm>
 

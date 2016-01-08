@@ -1,7 +1,7 @@
 #ifndef MATH_RANDOM_H
 #define MATH_RANDOM_H
 
-#include <utils/random.h>
+#include <KrisLibrary/utils/random.h>
 #include "math.h"
 
 /** @file math/random.h

@@ -1,9 +1,9 @@
 #ifndef ROBOTICS_WRENCH_H
 #define ROBOTICS_WRENCH_H
 
-#include <math/vector.h>
-#include <math/matrix.h>
-#include <math3d/primitives.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/matrix.h>
+#include <KrisLibrary/math3d/primitives.h>
 using namespace Math;
 using namespace Math3D;
 

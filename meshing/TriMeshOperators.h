@@ -2,8 +2,8 @@
 #define MESHING_TRI_MESH_OPERATORS_H
 
 #include "TriMeshTopology.h"
-#include <utils/IntPair.h>
-#include <errors.h>
+#include <KrisLibrary/utils/IntPair.h>
+#include <KrisLibrary/errors.h>
 #include <list>
 
 /** @file meshing/TriMeshOperators.h

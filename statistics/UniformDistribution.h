@@ -2,7 +2,7 @@
 #define UNIFORM_PROBABILITY_DISTRIBUTION_H
 
 #include "ProbabilityDistribution.h"
-#include <math/random.h>
+#include <KrisLibrary/math/random.h>
 
 namespace Statistics {
 

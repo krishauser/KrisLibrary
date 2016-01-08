@@ -3,7 +3,7 @@
 
 #include "MotionPlanner.h"
 #include "ExplicitCSpace.h"
-#include <utils/Subset.h>
+#include <KrisLibrary/utils/Subset.h>
 
 /** @brief A subset of a configuration space equipped with a projection
  * mechanism.

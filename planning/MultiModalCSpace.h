@@ -2,8 +2,8 @@
 #define ROBOTICS_MULTI_MODAL_CSPACE_H
 
 #include "CSpace.h"
-#include <graph/UndirectedGraph.h>
-#include <errors.h>
+#include <KrisLibrary/graph/UndirectedGraph.h>
+#include <KrisLibrary/errors.h>
 #include <vector>
 
 /** @ingroup MotionPlanning

@@ -1,9 +1,9 @@
 #ifndef ARRAY_ND
 #define ARRAY_ND
 
-#include <structs/array2d.h>
-#include <structs/array3d.h>
-#include <utils/IntTuple.h>
+#include "array2d.h"
+#include "array3d.h"
+#include <KrisLibrary/utils/IntTuple.h>
 #include <vector>
 #include <assert.h>
 

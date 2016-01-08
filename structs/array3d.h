@@ -1,11 +1,11 @@
 #ifndef ARRAY3D_H
 #define ARRAY3D_H
 
-#include "myfile.h"
-#include "utils.h"
-#include <utils/IntTriple.h>
-#include <utils/indexing.h>
-#include <errors.h>
+#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/utils.h>
+#include <KrisLibrary/utils/IntTriple.h>
+#include <KrisLibrary/utils/indexing.h>
+#include <KrisLibrary/errors.h>
 
 /** @brief A three-dimensional m x n x parray.
  *

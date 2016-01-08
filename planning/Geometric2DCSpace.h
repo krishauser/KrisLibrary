@@ -3,7 +3,7 @@
 
 #include "CSpace.h"
 #include "ExplicitCSpace.h"
-#include <math3d/geometry2d.h>
+#include <KrisLibrary/math3d/geometry2d.h>
 #include <vector>
 using namespace Math3D;
 using namespace std;

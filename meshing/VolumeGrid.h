@@ -1,10 +1,10 @@
 #ifndef VOLUME_GRID_H
 #define VOLUME_GRID_H
 
-#include <structs/array3d.h>
-#include <math3d/AABB3D.h>
-#include <math3d/primitives.h>
-#include <utils/indexing.h>
+#include <KrisLibrary/structs/array3d.h>
+#include <KrisLibrary/math3d/AABB3D.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/utils/indexing.h>
 #include <iostream>
 
 namespace Meshing {

@@ -1,8 +1,8 @@
 #ifndef PENETRATION_DEPTH_H
 #define PENETRATION_DEPTH_H
 
-#include <meshing/TriMeshTopology.h>
-#include <errors.h>
+#include <KrisLibrary/meshing/TriMeshTopology.h>
+#include <KrisLibrary/errors.h>
 
 namespace Geometry {
 

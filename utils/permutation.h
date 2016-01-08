@@ -2,7 +2,7 @@
 #define UTILS_PERMUTATION_H
 
 #include <vector>
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 /** @file utils/permutation.h
  * @ingroup Utils

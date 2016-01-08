@@ -2,7 +2,7 @@
 #define ROBOTICS_EDGE_PLANNER_H
 
 #include "CSpace.h"
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 #include <list>
 #include <queue>
 

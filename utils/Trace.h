@@ -5,8 +5,8 @@
 #include <list>
 #include <string>
 #include <iostream>
-#include <myfile.h>
-#include "Timer.h"
+#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/Timer.h>
 #include "StatCollector.h"
 
 struct TraceFunctionCall;

@@ -1,8 +1,8 @@
 #ifndef SPLINE_BSPLINE_H
 #define SPLINE_BSPLINE_H
 
-#include <math/sparsevector.h>
-#include <math/sparsematrix.h>
+#include <KrisLibrary/math/sparsevector.h>
+#include <KrisLibrary/math/sparsematrix.h>
 #include <vector>
 
 namespace Spline {

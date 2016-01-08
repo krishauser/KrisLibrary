@@ -2,7 +2,7 @@
 #define UTILS_EQUIVALENCE_MAP_H
 
 #include "unionfind.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 #include <map>
 
 /** @ingroup Utils

@@ -1,7 +1,7 @@
 #ifndef GEOMETRY_FITTING_H
 #define GEOMETRY_FITTING_H
 
-#include <math3d/primitives.h>
+#include <KrisLibrary/math3d/primitives.h>
 #include <vector>
 
 namespace Math3D

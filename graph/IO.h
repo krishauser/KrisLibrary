@@ -7,7 +7,7 @@
 #include <sstream>
 #include <map>
 #include <stdlib.h>
-#include <utils/stringutils.h>
+#include <KrisLibrary/utils/stringutils.h>
 
 namespace Graph {
 

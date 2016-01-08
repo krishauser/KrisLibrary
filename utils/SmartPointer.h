@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <stdlib.h>
-#include "errors.h"
+#include <KrisLibrary/errors.h>
 
 /** @ingroup Utils
  * @brief A smart pointer class.  Performs automatic reference

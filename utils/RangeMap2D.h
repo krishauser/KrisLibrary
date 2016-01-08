@@ -2,7 +2,7 @@
 #define RANGE_MAP_2D_H
 
 #include "IntTuple.h"
-#include <structs/array2d.h>
+#include <KrisLibrary/structs/array2d.h>
 #include <map>
 using namespace std;
 

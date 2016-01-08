@@ -1,9 +1,9 @@
 #ifndef OPTIMIZATION_NEWTON_H
 #define OPTIMIZATION_NEWTON_H
 
-#include <math/function.h>
-#include <math/root.h>
-#include <math/SVDecomposition.h>
+#include <KrisLibrary/math/function.h>
+#include <KrisLibrary/math/root.h>
+#include <KrisLibrary/math/SVDecomposition.h>
 #include <vector>
 
 namespace Math {

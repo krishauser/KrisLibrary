@@ -1,10 +1,10 @@
 #ifndef GEOMETRY_GRID_SUBDIVISION_H
 #define GEOMETRY_GRID_SUBDIVISION_H
 
-#include <math/vector.h>
-#include <utils/IntTuple.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/utils/IntTuple.h>
 #include <list>
-#include <utils/stl_tr1.h>
+#include <KrisLibrary/utils/stl_tr1.h>
 
 namespace Geometry {
 

@@ -2,7 +2,7 @@
 #define MESHING_MARCHING_CUBES_H
 
 #include "TriMesh.h"
-#include <structs/array3d.h>
+#include <KrisLibrary/structs/array3d.h>
 
 /** @file meshing/MarchingCubes.h
  * @ingroup Meshing

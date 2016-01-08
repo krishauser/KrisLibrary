@@ -9,7 +9,7 @@
 
 #include <float.h>
 #include <limits>
-#include <utils.h>  //for Max/Min definition
+#include <KrisLibrary/utils.h>  //for Max/Min definition
 #include "infnan.h"
 
 /**

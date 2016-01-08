@@ -3,8 +3,8 @@
 
 #include "TriMesh.h"
 #include "TriMeshTopology.h"
-#include <math3d/Segment3D.h>
-#include <structs/array3d.h>
+#include <KrisLibrary/math3d/Segment3D.h>
+#include <KrisLibrary/structs/array3d.h>
 
 /** @file meshing/Rasterize.h
  * @ingroup Meshing

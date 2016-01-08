@@ -2,7 +2,7 @@
 #define UTILS_COMBINATION_H
 
 #include <vector>
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 /** @file utils/combination.h
  * @ingroup Utils

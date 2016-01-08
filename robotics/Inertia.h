@@ -1,8 +1,8 @@
 #ifndef ROBOTICS_INERTIA_H
 #define ROBOTICS_INERTIA_H
 
-#include <math3d/primitives.h>
-#include <math3d/geometry3d.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math3d/geometry3d.h>
 
 using namespace Math;
 using namespace Math3D;

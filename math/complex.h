@@ -3,8 +3,8 @@
 
 #include "math.h"
 #include <iostream>
-#include <myfile.h>
-#include <errors.h>
+#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/errors.h>
 
 namespace Math {
 

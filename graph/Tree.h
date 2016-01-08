@@ -2,7 +2,7 @@
 #define GRAPH_TREE_H
 
 #include "Callback.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 #include <queue>
 #include <set>
 

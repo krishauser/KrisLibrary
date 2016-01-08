@@ -2,7 +2,7 @@
 #define INDEX_SET_H
 
 #include <vector>
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 /**@brief A generic set of indices, either listed explicitly or in a range. 
  * If imax < imin, this indicates that the indices should be used instead.

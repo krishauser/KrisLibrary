@@ -2,7 +2,7 @@
 #define MATH_AABB_H
 
 #include "vector.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 /** @file math/AABB.h
  * @ingroup Math

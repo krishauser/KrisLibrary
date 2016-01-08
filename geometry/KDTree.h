@@ -1,7 +1,7 @@
 #ifndef GEOMETRY_KDTREE_H
 #define GEOMETRY_KDTREE_H
 
-#include <math/vector.h>
+#include <KrisLibrary/math/vector.h>
 #include <vector>
 using namespace Math;
 

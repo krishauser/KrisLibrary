@@ -1,9 +1,9 @@
 #ifndef COLLISION_POINT_CLOUD_H
 #define COLLISION_POINT_CLOUD_H
 
-#include <meshing/PointCloud.h>
-#include <math3d/geometry3d.h>
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/meshing/PointCloud.h>
+#include <KrisLibrary/math3d/geometry3d.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 #include <limits.h>
 #include "GridSubdivision.h"
 #include "Octree.h"

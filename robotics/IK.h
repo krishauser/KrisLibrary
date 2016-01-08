@@ -1,7 +1,7 @@
 #ifndef ROBOTICS_IK_H
 #define ROBOTICS_IK_H
 
-#include <math3d/primitives.h>
+#include <KrisLibrary/math3d/primitives.h>
 #include <vector>
 using namespace Math3D;
 

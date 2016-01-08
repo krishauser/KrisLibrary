@@ -2,8 +2,8 @@
 #define SPLINE_SPLINE_H
 
 #include "basis.h"
-#include <myfile.h>
-#include <math3d/primitives.h>  //only used for TCB
+#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/math3d/primitives.h>  //only used for TCB
 #include <assert.h>
 #include <vector>
 using namespace Math3D;

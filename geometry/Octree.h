@@ -1,9 +1,9 @@
 #ifndef GEOMETRY_OCTREE_H
 #define GEOMETRY_OCTREE_H
 
-#include <math3d/AABB3D.h>
-#include <math3d/Box3D.h>
-#include <math3d/Ray3D.h>
+#include <KrisLibrary/math3d/AABB3D.h>
+#include <KrisLibrary/math3d/Box3D.h>
+#include <KrisLibrary/math3d/Ray3D.h>
 #include <vector>
 #include <list>
 

@@ -2,7 +2,7 @@
 #define MATH_VECTOR_FUNCTION_H
 
 #include "function.h"
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 #include <vector>
 #include <assert.h>
 

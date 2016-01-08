@@ -4,7 +4,7 @@
 #include <map>
 #include <list>
 #include <vector>
-#include <math/math.h>
+#include <KrisLibrary/math/math.h>
 
 namespace Geometry { 
 

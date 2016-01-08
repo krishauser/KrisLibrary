@@ -1,8 +1,8 @@
 #ifndef MATH3D_AABB_TEMPLATE_H
 #define MATH3D_AABB_TEMPLATE_H
 
-#include <math/math.h>
-#include <myfile.h>
+#include <KrisLibrary/math/math.h>
+#include <KrisLibrary/myfile.h>
 
 namespace Math3D {
 

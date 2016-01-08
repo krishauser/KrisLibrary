@@ -1,10 +1,10 @@
 #ifndef ROBOT_WITH_GEOMETRY_H
 #define ROBOT_WITH_GEOMETRY_H
 
-#include <robotics/RobotDynamics3D.h>
-#include <structs/array2d.h>
-#include <geometry/AnyGeometry.h>
-#include <utils/SmartPointer.h>
+#include "RobotDynamics3D.h"
+#include <KrisLibrary/structs/array2d.h>
+#include <KrisLibrary/geometry/AnyGeometry.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 
 /** @ingroup Robot
  * @brief The base class for a robot definition. 

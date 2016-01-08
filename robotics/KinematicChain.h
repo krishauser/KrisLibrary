@@ -3,8 +3,8 @@
 
 #include "Frame.h"
 #include "Chain.h"
-#include <math/vector.h>
-#include <math/matrix.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/matrix.h>
 #include <string>
 
 class KinematicLink2D

@@ -2,9 +2,9 @@
 #define GL_GLUI_NAVIGATION_PROGRAM_H
 
 
-#include <math3d/geometry3d.h>
-#include <camera/viewport.h>
-#include <Timer.h>
+#include <KrisLibrary/math3d/geometry3d.h>
+#include <KrisLibrary/camera/viewport.h>
+#include <KrisLibrary/Timer.h>
 #include "GLUIProgram.h"
 
 /** @ingroup GLDraw

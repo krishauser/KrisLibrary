@@ -1,7 +1,7 @@
 #ifndef GLDRAW_DRAW_MESH_H
 #define GLDRAW_DRAW_MESH_H
 
-#include <meshing/TriMesh.h>
+#include <KrisLibrary/meshing/TriMesh.h>
 #include "GL.h"
 #include "drawextra.h"
 

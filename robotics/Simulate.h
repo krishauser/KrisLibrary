@@ -4,7 +4,7 @@
 #include "RobotDynamics3D.h"
 #include "DynamicChain3D.h"
 #include "DynamicChain.h"
-#include <math/diffeq.h>
+#include <KrisLibrary/math/diffeq.h>
 
 template <class Robot,class NVector>
 class SimFunction : public DiffEq2Function

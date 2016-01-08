@@ -2,7 +2,7 @@
 #define STATISTICS_HISTOGRAM3D_H
 
 #include "statistics.h"
-#include <structs/array3d.h>
+#include <KrisLibrary/structs/array3d.h>
 
 namespace Statistics {
 

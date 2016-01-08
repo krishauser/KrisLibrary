@@ -2,7 +2,7 @@
 #define RANGE_SET_2D_H
 
 #include "IntTuple.h"
-#include <structs/array2d.h>
+#include <KrisLibrary/structs/array2d.h>
 #include <set>
 using namespace std;
 

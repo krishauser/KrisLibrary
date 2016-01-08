@@ -1,7 +1,7 @@
 #ifndef OPTIMIZATION_LEAST_SQUARES_H
 #define OPTIMIZATION_LEAST_SQUARES_H
 
-#include <math/matrix.h>
+#include <KrisLibrary/math/matrix.h>
 
 namespace Optimization
 {

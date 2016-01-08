@@ -2,7 +2,7 @@
 #define MATH3D_INTERPOLATE_H
 
 #include "primitives.h"
-#include <math/interpolate.h>
+#include <KrisLibrary/math/interpolate.h>
 
 namespace Math3D {
 

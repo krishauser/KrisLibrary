@@ -2,7 +2,7 @@
 #define GL_DRAWEXTRA_H
 
 #include "GL.h"
-#include <math3d/primitives.h>
+#include <KrisLibrary/math3d/primitives.h>
 
 ///if 1, never uses the glXd functions and converts them all to floats
 #define GLDRAW_USE_FLOATS_ONLY 1

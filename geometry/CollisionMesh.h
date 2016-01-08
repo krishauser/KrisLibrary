@@ -1,8 +1,8 @@
 #ifndef GEOMETRY_COLLISION_MESH_H
 #define GEOMETRY_COLLISION_MESH_H
 
-#include <meshing/TriMeshTopology.h>
-#include <math3d/geometry3d.h>
+#include <KrisLibrary/meshing/TriMeshTopology.h>
+#include <KrisLibrary/math3d/geometry3d.h>
 #include <limits.h>
 
 class PQP_Model;

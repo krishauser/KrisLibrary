@@ -3,7 +3,7 @@
 
 #include "statistics.h"
 #include <vector>
-#include <structs/array2d.h>
+#include <KrisLibrary/structs/array2d.h>
 
 namespace Statistics {
 

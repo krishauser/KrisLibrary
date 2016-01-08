@@ -1,10 +1,10 @@
 #ifndef MESHING_TRIMESH_H
 #define MESHING_TRIMESH_H
 
-#include <math3d/primitives.h>
-#include <math3d/Triangle3D.h>
-#include <math3d/Ray3D.h>
-#include <utils/IntTriple.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math3d/Triangle3D.h>
+#include <KrisLibrary/math3d/Ray3D.h>
+#include <KrisLibrary/utils/IntTriple.h>
 #include <vector>
 #include <iostream>
 

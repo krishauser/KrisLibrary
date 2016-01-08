@@ -2,7 +2,7 @@
 #define MATH_MATRIX_TEMPLATE_H
 
 #include "VectorTemplate.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 namespace Math {
 

@@ -3,7 +3,7 @@
 
 #include "RobotLink3D.h"
 #include "Chain.h"
-#include <math/matrix.h>
+#include <KrisLibrary/math/matrix.h>
 
 /** @file RobotKinematics3D.h @ingroup Kinematics 
  * Defines a Config and a RobotKinematics3D.

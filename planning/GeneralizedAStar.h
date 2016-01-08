@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <map>
-#include <utils/stl_tr1.h>
-#include <structs/IndexedPriorityQueue.h>
+#include <KrisLibrary/utils/stl_tr1.h>
+#include <KrisLibrary/structs/IndexedPriorityQueue.h>
 
 namespace AI {
 

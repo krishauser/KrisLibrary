@@ -1,8 +1,8 @@
 #ifndef ROBOTICS_FRAME_H
 #define ROBOTICS_FRAME_H
 
-#include <math3d/primitives.h>
-#include <math3d/rotation.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math3d/rotation.h>
 using namespace Math3D;
 
 typedef RigidTransform2D Frame2D;

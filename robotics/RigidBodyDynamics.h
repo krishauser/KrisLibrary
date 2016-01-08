@@ -1,7 +1,7 @@
 #ifndef RIGID_BODY_DYNAMICS_H
 #define RIGID_BODY_DYNAMICS_H
 
-#include <math3d/primitives.h>
+#include <KrisLibrary/math3d/primitives.h>
 using namespace Math3D;
 
 /** @ingroup Robotics

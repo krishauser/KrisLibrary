@@ -1,7 +1,7 @@
 #ifndef GL_DISPLAY_LIST_H
 #define GL_DISPLAY_LIST_H
 
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 
 namespace GLDraw {
 

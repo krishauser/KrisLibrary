@@ -1,11 +1,11 @@
 #ifndef ARRAY2D_H
 #define ARRAY2D_H
 
-#include <myfile.h>
+#include <KrisLibrary/myfile.h>
 #include <iostream>
-#include <errors.h>
-#include <utils/IntPair.h>
-#include <utils/indexing.h>
+#include <KrisLibrary/errors.h>
+#include <KrisLibrary/utils/IntPair.h>
+#include <KrisLibrary/utils/indexing.h>
 
 /** @brief A two-dimensional m x n array.
  *

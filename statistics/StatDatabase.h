@@ -1,7 +1,7 @@
 #ifndef STATISTICS_DATABASE_H
 #define STATISTICS_DATABASE_H
 
-#include <utils/NamedTree.h>
+#include <KrisLibrary/utils/NamedTree.h>
 #include "DistributionCollector.h"
 
 namespace Statistics {

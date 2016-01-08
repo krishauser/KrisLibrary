@@ -3,7 +3,7 @@
 
 #include "LinearProgram.h"
 #include "GLPKInterface.h"
-#include <math/function.h>
+#include <KrisLibrary/math/function.h>
 
 namespace Optimization {
   using namespace Math;

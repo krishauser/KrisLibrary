@@ -3,7 +3,7 @@
 
 #include "RobotDynamics3D.h"
 #include "Contact.h"
-#include <optimization/MinNormProblem.h>
+#include <KrisLibrary/optimization/MinNormProblem.h>
 
 /** @brief A class that solves minimum norm of torque saturation
  *        (e.g. smallest L-inf norm (default), L-2 norm, etc)

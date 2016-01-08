@@ -1,7 +1,7 @@
 #ifndef MATH3D_ROTATION_H
 #define MATH3D_ROTATION_H
 
-#include <math/complex.h>
+#include <KrisLibrary/math/complex.h>
 #include "primitives.h"
 
 /** @file math3d/rotation.h

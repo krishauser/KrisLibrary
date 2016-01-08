@@ -1,7 +1,7 @@
 #ifndef SPLINE_BASIS_H
 #define SPLINE_BASIS_H
 
-#include <math/math.h>
+#include <KrisLibrary/math/math.h>
 using namespace Math;
 
 /*

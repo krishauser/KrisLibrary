@@ -2,7 +2,7 @@
 #define PIECEWISE_POLYNOMIAL_H
 
 #include "Polynomial.h"
-#include <myfile.h>
+#include <KrisLibrary/myfile.h>
 
 namespace Spline {
 

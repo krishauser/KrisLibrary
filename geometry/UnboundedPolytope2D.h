@@ -1,7 +1,7 @@
 #ifndef GEOMETRY_UNBOUNDED_POLYTOPE_H
 #define GEOMETRY_UNBOUNDED_POLYTOPE_H
 
-#include <math3d/geometry2d.h>
+#include <KrisLibrary/math3d/geometry2d.h>
 #include "rayprimitives.h"
 #include <vector>
 

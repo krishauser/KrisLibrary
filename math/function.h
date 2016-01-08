@@ -4,7 +4,7 @@
 #include "math.h"
 #include "vector.h"
 #include "matrix.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 #include <string>
 
 /** @ingroup Math

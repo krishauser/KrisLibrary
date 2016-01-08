@@ -2,7 +2,7 @@
 #define BASIC_MYHASHTABLE_H
 
 #include <debug.h>
-#include <utils.h>
+#include <KrisLibrary/utils.h>
 #include <stdlib.h>
 #include <memory.h>
 

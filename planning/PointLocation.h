@@ -2,8 +2,8 @@
 #define POINT_LOCATION_H
 
 #include "CSpace.h"
-#include <geometry/KDTree.h>
-#include <geometry/Grid.h>
+#include <KrisLibrary/geometry/KDTree.h>
+#include <KrisLibrary/geometry/Grid.h>
 
 /** @brief A uniform abstract interface to point location data structures.
  */

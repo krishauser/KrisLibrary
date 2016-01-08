@@ -3,7 +3,7 @@
 
 #include "MotionPlanner.h"
 #include "ExplicitCSpace.h"
-#include <utils/Subset.h>
+#include <KrisLibrary/utils/Subset.h>
 
 /** @brief A planner that minimizes the the number of violated constraints
  * using a RRT-like strategy.

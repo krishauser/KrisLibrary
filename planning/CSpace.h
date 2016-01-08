@@ -1,9 +1,9 @@
 #ifndef ROBOTICS_CSPACE_H
 #define ROBOTICS_CSPACE_H
 
-#include <math/vector.h>
-#include <math/metric.h>
-#include <utils/PropertyMap.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/metric.h>
+#include <KrisLibrary/utils/PropertyMap.h>
 using namespace Math;
 typedef Vector Config;
 

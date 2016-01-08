@@ -1,8 +1,8 @@
 #ifndef NEIGHBOR_GRAPH_H
 #define NEIGHBOR_GRAPH_H
 
-#include <graph/UndirectedGraph.h>
-#include <meshing/PointCloud.h>
+#include <KrisLibrary/graph/UndirectedGraph.h>
+#include <KrisLibrary/meshing/PointCloud.h>
 
 namespace Geometry {
   using namespace std;

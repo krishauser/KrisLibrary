@@ -2,9 +2,9 @@
 #define GRAPH_SHORTEST_PATHS_H
 
 #include "Graph.h"
-#include <math/math.h>
-#include <structs/FixedSizeHeap.h>
-#include <structs/Heap.h>
+#include <KrisLibrary/math/math.h>
+#include <KrisLibrary/structs/FixedSizeHeap.h>
+#include <KrisLibrary/structs/Heap.h>
 #include <set>
 
 namespace Graph {

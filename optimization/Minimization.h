@@ -1,9 +1,9 @@
 #ifndef OPTIMIZATION_MINIMIZATION_H
 #define OPTIMIZATION_MINIMIZATION_H
 
-#include <math/matrix.h>
-#include <math/function.h>
-#include <math/root.h>
+#include <KrisLibrary/math/matrix.h>
+#include <KrisLibrary/math/function.h>
+#include <KrisLibrary/math/root.h>
 //#include "Manifold.h"
 #include "Newton.h"
 

@@ -3,7 +3,7 @@
 
 #include "CSpace.h"
 #include "EdgePlanner.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 #include <queue>
 typedef Vector State;
 typedef Vector ControlInput;

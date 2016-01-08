@@ -1,9 +1,9 @@
 #ifndef ROBOTICS_ROTATION_H
 #define ROBOTICS_ROTATION_H
 
-#include <math/matrix.h>
-#include <math3d/primitives.h>
-#include <math3d/rotation.h>
+#include <KrisLibrary/math/matrix.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math3d/rotation.h>
 
 using namespace Math3D;
 

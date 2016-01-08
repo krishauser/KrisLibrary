@@ -2,8 +2,8 @@
 #define GAUSSIAN_DISTRIBUTION_H
 
 #include "ProbabilityDistribution.h"
-#include <math/gaussian.h>
-#include <math/random.h>
+#include <KrisLibrary/math/gaussian.h>
+#include <KrisLibrary/math/random.h>
 
 namespace Statistics {
 

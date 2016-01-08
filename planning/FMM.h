@@ -1,8 +1,8 @@
 #ifndef PLANNING_FMM_H
 #define PLANNING_FMM_H
 
-#include <structs/arraynd.h>
-#include <math/vector.h>
+#include <KrisLibrary/structs/arraynd.h>
+#include <KrisLibrary/math/vector.h>
 using namespace Math;
 
 /** @brief Performs an N-dimensional Fast Marching Method search on a variable-

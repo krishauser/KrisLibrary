@@ -4,7 +4,7 @@
 #include "math.h"
 #include "infnan.h"
 #include <assert.h>
-#include <myfile.h>
+#include <KrisLibrary/myfile.h>
 #include <iostream>
 #include <vector>
 

@@ -1,8 +1,8 @@
 #ifndef STAT_STATISTICS_H
 #define STAT_STATISTICS_H
 
-#include <math/vector.h>
-#include <math/matrix.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/matrix.h>
 #include <vector>
 #include <numeric>
 

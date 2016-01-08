@@ -1,7 +1,7 @@
 #ifndef OPTIMIZATION_LCP_H
 #define OPTIMIZATION_LCP_H
 
-#include <math/matrix.h>
+#include <KrisLibrary/math/matrix.h>
 #include <vector>
 #include <string>
 

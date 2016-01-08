@@ -50,7 +50,7 @@
 */
 
 #include "stdio.h"
-#include <math/VectorTemplate.h>
+#include <KrisLibrary/math/VectorTemplate.h>
 using namespace Math;
 
 /*

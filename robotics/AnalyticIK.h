@@ -3,7 +3,7 @@
 
 #include "RobotKinematics3D.h"
 #include "IK.h"
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 #include <vector>
 #include <map>
 

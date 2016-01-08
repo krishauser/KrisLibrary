@@ -2,7 +2,7 @@
 #define GRAPH_OPERATIONS_H
 
 #include "Graph.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 #include <vector>
 #include <set>
 #include <map>

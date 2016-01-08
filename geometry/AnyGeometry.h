@@ -1,7 +1,7 @@
 #ifndef ANY_GEOMETRY_H
 #define ANY_GEOMETRY_H
 
-#include <utils/AnyValue.h>
+#include <KrisLibrary/utils/AnyValue.h>
 #include "CollisionMesh.h"
 
 class TiXmlElement;

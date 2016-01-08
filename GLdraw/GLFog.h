@@ -2,7 +2,7 @@
 #define GL_FOG_H
 
 #include "GLColor.h"
-#include <math/math.h>
+#include <KrisLibrary/math/math.h>
 
 namespace GLDraw {
 

@@ -1,7 +1,7 @@
 #ifndef GL_TEXTURE_OBJECT
 #define GL_TEXTURE_OBJECT
 
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 
 namespace GLDraw {
 

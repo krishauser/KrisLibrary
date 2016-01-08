@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <math3d/primitives.h>
+#include <KrisLibrary/math3d/primitives.h>
 
 namespace Camera {
 

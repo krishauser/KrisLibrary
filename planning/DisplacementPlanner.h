@@ -3,8 +3,8 @@
 
 #include "MotionPlanner.h"
 #include "ExplicitCSpace.h"
-#include <utils/Subset.h>
-#include <structs/IndexedPriorityQueue.h>
+#include <KrisLibrary/utils/Subset.h>
+#include <KrisLibrary/structs/IndexedPriorityQueue.h>
 
 /** @brief A class that needs to be subclassed in order to implement a
  * minimum constraint displacement problem.

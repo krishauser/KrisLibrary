@@ -2,7 +2,7 @@
 #define OPTIMAL_MOTION_PLANNER_H
 
 #include "MotionPlanner.h"
-#include <graph/ShortestPaths.h>
+#include <KrisLibrary/graph/ShortestPaths.h>
 
 class PRMStarPlanner : public RoadmapPlanner
 {

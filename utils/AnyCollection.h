@@ -3,7 +3,7 @@
 
 #include "AnyValue.h"
 #include "SmartPointer.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 #include <vector>
 #include <map>
 #include "stl_tr1.h"

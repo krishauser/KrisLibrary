@@ -1,9 +1,9 @@
 #ifndef STATISTICS_GMM_H
 #define STATISTICS_GMM_H
 
-#include <math/gaussian.h>
-#include <math/vector.h>
-#include <math/matrix.h>
+#include <KrisLibrary/math/gaussian.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/matrix.h>
 #include <vector>
 
 namespace Statistics {

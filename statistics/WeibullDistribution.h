@@ -1,4 +1,4 @@
-#include <math/specialfunctions.h>
+#include <KrisLibrary/math/specialfunctions.h>
 
 struct WeibullDistribution : public UnivariateProbabilityDistribution
 {

@@ -11,7 +11,7 @@
 // (invisible)
 #define EXCLUSION 1
 
-#include <math3d/geometry3d.h>
+#include <KrisLibrary/math3d/geometry3d.h>
 #include <vector>
 using namespace Math3D;
 

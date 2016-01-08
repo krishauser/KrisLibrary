@@ -1,7 +1,7 @@
 #ifndef UTILS_BITS_H
 #define UTILS_BITS_H
 
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 /// Gets the index'th bit in x (starting from least significant)
 inline bool GetBit(unsigned int x,int index)

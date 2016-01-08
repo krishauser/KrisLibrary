@@ -3,7 +3,7 @@
 
 #include "function.h"
 #include "matrix.h"
-#include <utils/DirtyData.h>
+#include <KrisLibrary/utils/DirtyData.h>
 #include <vector>
 
 namespace Math {

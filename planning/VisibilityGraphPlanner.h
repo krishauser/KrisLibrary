@@ -3,7 +3,7 @@
 
 #include "Geometric2DCSpace.h"
 #include "Path.h"
-#include <graph/UndirectedGraph.h>
+#include <KrisLibrary/graph/UndirectedGraph.h>
 
 struct VisibilityGraphPlanner
 {

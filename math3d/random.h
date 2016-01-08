@@ -1,9 +1,9 @@
 #ifndef MATH3D_RANDOM_H
 #define MATH3D_RANDOM_H
 
-#include <math/random.h>
-#include <math/sample.h>
-#include <math/complex.h>
+#include <KrisLibrary/math/random.h>
+#include <KrisLibrary/math/sample.h>
+#include <KrisLibrary/math/complex.h>
 #include "primitives.h"
 
 /** @file math3d/random.h

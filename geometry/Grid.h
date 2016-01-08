@@ -1,8 +1,8 @@
 #ifndef GEOMETRY_GRID_H
 #define GEOMETRY_GRID_H
 
-#include <utils/IntTuple.h>
-#include <math/vector.h>
+#include <KrisLibrary/utils/IntTuple.h>
+#include <KrisLibrary/math/vector.h>
 
 namespace Geometry {
 

@@ -2,7 +2,7 @@
 #define ROBOTICS_DYNAMIC_CHAIN3D_H
 
 #include "KinematicChain3D.h"
-#include <structs/array2d.h>
+#include <KrisLibrary/structs/array2d.h>
 
 class DynamicLink3D : public KinematicLink3D
 {

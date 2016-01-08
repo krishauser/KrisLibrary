@@ -2,7 +2,7 @@
 #define MATH_SPARSE_VECTOR_TEMPLATE_H
 
 #include "VectorTemplate.h"
-#include <structs/SparseArray.h>
+#include <KrisLibrary/structs/SparseArray.h>
 
 namespace Math {
 

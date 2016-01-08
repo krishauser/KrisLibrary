@@ -3,8 +3,8 @@
 
 #include "SBLTree.h"
 #include "Path.h"
-#include <graph/UndirectedGraph.h>
-#include <graph/ConnectedComponents.h>
+#include <KrisLibrary/graph/UndirectedGraph.h>
+#include <KrisLibrary/graph/ConnectedComponents.h>
 
 /** @ingroup MotionPlanning
  * @brief The SBL motion planner.

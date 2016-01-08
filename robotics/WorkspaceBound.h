@@ -1,10 +1,10 @@
 #ifndef ROBOTICS_WORKSPACE_BOUND_H
 #define ROBOTICS_WORKSPACE_BOUND_H
 
-#include <math3d/Line3D.h>
-#include <math3d/Circle3D.h>
-#include <math3d/Sphere3D.h>
-#include <math/angle.h>
+#include <KrisLibrary/math3d/Line3D.h>
+#include <KrisLibrary/math3d/Circle3D.h>
+#include <KrisLibrary/math3d/Sphere3D.h>
+#include <KrisLibrary/math/angle.h>
 #include <vector>
 using namespace Math3D;
 using namespace std;

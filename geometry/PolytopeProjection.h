@@ -1,10 +1,10 @@
 #ifndef POLYTOPE_PROJECTION_H
 #define POLYTOPE_PROJECTION_H
 
-#include <math3d/primitives.h>
-#include <geometry/UnboundedPolytope2D.h>
-#include <optimization/LinearProgram.h>
-#include <optimization/LPRobust.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/geometry/UnboundedPolytope2D.h>
+#include <KrisLibrary/optimization/LinearProgram.h>
+#include <KrisLibrary/optimization/LPRobust.h>
 #include <list>
 
 namespace Geometry {

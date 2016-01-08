@@ -2,7 +2,7 @@
 #define GRAPH_CONNECTED_COMPONENTS_H
 
 #include "UndirectedGraph.h"
-#include <utils/unionfind.h>
+#include <KrisLibrary/utils/unionfind.h>
 
 namespace Graph {
 

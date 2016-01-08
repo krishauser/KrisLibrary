@@ -2,7 +2,7 @@
 #define ROBOT_DYNAMICS_3D_H
 
 #include "RobotKinematics3D.h"
-#include <structs/array2d.h>
+#include <KrisLibrary/structs/array2d.h>
 
 /** @ingroup Kinematics
  * @brief Class defining kinematic and dynamic state of a robot, with

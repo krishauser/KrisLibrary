@@ -1,7 +1,7 @@
 #ifndef CAMERA_TRANSFORM_H
 #define CAMERA_TRANSFORM_H
 
-#include <math3d/primitives.h>
+#include <KrisLibrary/math3d/primitives.h>
 using namespace Math3D;
 
 //#warning "transform.h has been superceded by camera.h"

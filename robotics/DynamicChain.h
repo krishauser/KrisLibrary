@@ -2,7 +2,7 @@
 #define ROBOTICS_DYNAMIC_CHAIN_H
 
 #include "KinematicChain.h"
-#include <structs/array2d.h>
+#include <KrisLibrary/structs/array2d.h>
 
 class DynamicLink2D : public KinematicLink2D
 {

@@ -1,8 +1,8 @@
 #ifndef MATH3D_AABB3D_H
 #define MATH3D_AABB3D_H
 
-#include <math/math.h>
-#include <myfile.h>
+#include <KrisLibrary/math/math.h>
+#include <KrisLibrary/myfile.h>
 #include "Point.h"
 
 namespace Math3D {

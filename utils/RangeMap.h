@@ -3,7 +3,7 @@
 
 #include <map>
 #include <vector>
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 using namespace std;
 
 /** @ingroup Utils

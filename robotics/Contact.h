@@ -1,11 +1,11 @@
 #ifndef CONTACT_H
 #define CONTACT_H
 
-#include <math3d/primitives.h>
-#include <math/matrix.h>
-#include <math/sparsematrix.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math/matrix.h>
+#include <KrisLibrary/math/sparsematrix.h>
 #include <vector>
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 using namespace Math3D;
 
 /** @ingroup Robotics

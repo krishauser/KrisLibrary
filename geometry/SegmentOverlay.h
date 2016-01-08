@@ -1,8 +1,8 @@
 #ifndef GEOMETRY_SEGMENT_OVERLAY_H
 #define GEOMETRY_SEGMENT_OVERLAY_H
 
-#include "math3d/Segment2D.h"
-#include "structs/RedBlack.h"
+#include <KrisLibrary/math3d/Segment2D.h>
+#include <KrisLibrary/structs/RedBlack.h>
 #include <vector>
 
 namespace Geometry {

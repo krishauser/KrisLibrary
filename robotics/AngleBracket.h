@@ -1,8 +1,8 @@
 #ifndef ANGLE_BRACKET_H
 #define ANGLE_BRACKET_H
 
-#include <math3d/primitives.h>
-#include <math/angle.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math/angle.h>
 using namespace Math3D;
 using namespace std;
 

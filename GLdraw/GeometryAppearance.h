@@ -1,13 +1,13 @@
 #ifndef GLDRAW_GEOMETRY_APPEARANCE_H
 #define GLDRAW_GEOMETRY_APPEARANCE_H
 
-#include <utils/SmartPointer.h>
-#include <math3d/primitives.h>
-#include <meshing/TriMesh.h>
+#include <KrisLibrary/utils/SmartPointer.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/meshing/TriMesh.h>
 #include "GLColor.h"
 #include "GLTextureObject.h"
 #include "GLDisplayList.h"
-#include <image/image.h>
+#include <KrisLibrary/image/image.h>
 
 namespace Geometry {
   //forward declaration

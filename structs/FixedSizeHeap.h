@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <iostream>
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 /** @brief A heap of fixed maximum size N.  Each element is indexed by 
  * an integer 0...N-1.  The priority key of each element is of type ptype.

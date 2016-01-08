@@ -2,10 +2,10 @@
 #define GRID_2D_CSPACE_H
 
 #include "CSpace.h"
-#include <math3d/Circle2D.h>
-#include <math3d/Triangle2D.h>
-#include <math3d/AABB2D.h>
-#include <structs/array2d.h>
+#include <KrisLibrary/math3d/Circle2D.h>
+#include <KrisLibrary/math3d/Triangle2D.h>
+#include <KrisLibrary/math3d/AABB2D.h>
+#include <KrisLibrary/structs/array2d.h>
 using namespace Math3D;
 
 class Grid2DCSpace : public CSpace

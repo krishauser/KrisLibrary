@@ -1,14 +1,14 @@
 #ifndef UTILS_ASYNC_IO
 #define UTILS_ASYNC_IO
 
-#include <myfile.h>
+#include <KrisLibrary/myfile.h>
 #include <string>
 #include <vector>
 #include <list>
-#include <Timer.h>
-#include <errors.h>
+#include <KrisLibrary/Timer.h>
+#include <KrisLibrary/errors.h>
 #include <string.h>
-#include <math/math.h>
+#include <KrisLibrary/math/math.h>
 #include "SmartPointer.h"
 #include "threadutils.h"
 

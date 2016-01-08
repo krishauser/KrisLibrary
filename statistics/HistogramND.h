@@ -2,7 +2,7 @@
 #define STATISTICS_HISTOGRAMND_H
 
 #include "statistics.h"
-#include <utils/stl_tr1.h>
+#include <KrisLibrary/utils/stl_tr1.h>
 
 namespace Statistics {
 

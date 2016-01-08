@@ -3,7 +3,7 @@
 
 #include "ProbabilityDistribution.h"
 #include <map>
-#include <math/cast.h>
+#include <KrisLibrary/math/cast.h>
 
 namespace Statistics {
 

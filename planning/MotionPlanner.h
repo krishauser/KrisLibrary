@@ -1,10 +1,10 @@
 #ifndef ROBOTICS_MOTION_PLANNER_H
 #define ROBOTICS_MOTION_PLANNER_H
 
-#include <graph/Tree.h>
-#include <graph/UndirectedGraph.h>
-#include <graph/ConnectedComponents.h>
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/graph/Tree.h>
+#include <KrisLibrary/graph/UndirectedGraph.h>
+#include <KrisLibrary/graph/ConnectedComponents.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 #include <vector>
 #include <list>
 #include "CSpace.h"

@@ -1,8 +1,8 @@
 #ifndef SPLINE_PATH_H
 #define SPLINE_PATH_H
 
-#include <math3d/primitives.h>
-#include <math3d/rotation.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math3d/rotation.h>
 #include "spline.h"
 
 /*************************************************************

@@ -2,7 +2,7 @@
 #define GL_LIGHT_H
 
 #include "GLColor.h"
-#include <math3d/primitives.h>
+#include <KrisLibrary/math3d/primitives.h>
 
 namespace GLDraw {
 

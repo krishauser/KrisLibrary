@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <assert.h>
-#include <utils/cmp_func.h>
+#include <KrisLibrary/utils/cmp_func.h>
 
 namespace RedBlack {
 

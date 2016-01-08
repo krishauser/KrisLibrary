@@ -3,7 +3,7 @@
 
 #include "GL.h"
 #include "GLColor.h"
-#include <camera/viewport.h>
+#include <KrisLibrary/camera/viewport.h>
 #include <vector>
 
 namespace GLDraw {

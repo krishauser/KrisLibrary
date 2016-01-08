@@ -2,7 +2,7 @@
 #define STATISTICS_ONLINE_LASSO_H
 
 #include "statistics.h"
-#include <math/LDL.h>
+#include <KrisLibrary/math/LDL.h>
 
 namespace Statistics {
 

@@ -1,8 +1,8 @@
 #ifndef GL_VIEW_H
 #define GL_VIEW_H
 
-#include <math3d/primitives.h>
-#include <camera/viewport.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/camera/viewport.h>
 
 namespace GLDraw {
 

@@ -1,9 +1,9 @@
 #ifndef PROBABILITY_DISTRIBUTION_H
 #define PROBABILITY_DISTRIBUTION_H
 
-#include <math/math.h>
-#include <math/vector.h>
-#include <math/matrix.h>
+#include <KrisLibrary/math/math.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/matrix.h>
 #include <errors.h>
 #include <vector>
 

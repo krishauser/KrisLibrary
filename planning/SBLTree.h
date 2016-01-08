@@ -1,10 +1,10 @@
 #ifndef ROBOTICS_SBL_TREE_H
 #define ROBOTICS_SBL_TREE_H
 
-#include <graph/Tree.h>
-#include <geometry/GridSubdivision.h>
-#include <utils/ArrayMapping.h>
-#include <utils/SmartPointer.h>
+#include <KrisLibrary/graph/Tree.h>
+#include <KrisLibrary/geometry/GridSubdivision.h>
+#include <KrisLibrary/utils/ArrayMapping.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 #include <list>
 #include "CSpace.h"
 #include "EdgePlanner.h"

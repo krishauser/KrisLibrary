@@ -1,7 +1,7 @@
 #ifndef STAT_KMEANS_H
 #define STAT_KMEANS_H
 
-#include <math/vector.h>
+#include <KrisLibrary/math/vector.h>
 #include <vector>
 
 namespace Statistics {

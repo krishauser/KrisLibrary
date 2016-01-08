@@ -1,7 +1,7 @@
 #ifndef OPTIMIZATION_QUADRATIC_PROGRAM_H
 #define OPTIMIZATION_QUADRATIC_PROGRAM_H
 
-#include <math/matrix.h>
+#include <KrisLibrary/math/matrix.h>
 #include "LinearProgram.h"
 
 namespace Optimization {

@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 
 //forward declarations for Clang on OSX
 class AnyValue;

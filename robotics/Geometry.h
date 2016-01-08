@@ -1,9 +1,9 @@
 #ifndef ROBOTICS_GEOMETRY_H
 #define ROBOTICS_GEOMETRY_H
 
-#include <math3d/rotation.h>
-#include <math3d/Sphere3D.h>
-#include <math3d/Circle3D.h>
+#include <KrisLibrary/math3d/rotation.h>
+#include <KrisLibrary/math3d/Sphere3D.h>
+#include <KrisLibrary/math3d/Circle3D.h>
 using namespace Math3D;
 
 /** @file Geometry.h @ingroup Kinematics

@@ -2,9 +2,9 @@
 #define ROBOTICS_STABILITY_H
 
 #include "Contact.h"
-#include <geometry/UnboundedPolytope2D.h>
-#include <optimization/LinearProgram.h>
-#include <optimization/LPRobust.h>
+#include <KrisLibrary/geometry/UnboundedPolytope2D.h>
+#include <KrisLibrary/optimization/LinearProgram.h>
+#include <KrisLibrary/optimization/LPRobust.h>
 
 /// Tests whether the contacts admit force closure
 bool TestForceClosure(const std::vector<ContactPoint>& contacts,int numFCEdges);

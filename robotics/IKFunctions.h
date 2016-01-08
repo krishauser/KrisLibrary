@@ -3,10 +3,10 @@
 
 #include "RobotKinematics3D.h"
 #include "IK.h"
-#include <math/vectorfunction.h>
-#include <optimization/Newton.h>
-#include <utils/ArrayMapping.h>
-#include <utils/DirtyData.h>
+#include <KrisLibrary/math/vectorfunction.h>
+#include <KrisLibrary/optimization/Newton.h>
+#include <KrisLibrary/utils/ArrayMapping.h>
+#include <KrisLibrary/utils/DirtyData.h>
 
 /** @file IKFunctions.h
  * @ingroup Kinematics

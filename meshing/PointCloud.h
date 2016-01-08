@@ -1,8 +1,8 @@
 #ifndef MESHING_POINT_CLOUD_H
 #define MESHING_POINT_CLOUD_H
 
-#include <math3d/primitives.h>
-#include <math/vector.h>
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math/vector.h>
 #include <vector>
 #include <map>
 #include <iostream>

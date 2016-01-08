@@ -3,7 +3,7 @@
 
 #include "KinodynamicCSpace.h"
 #include "KinodynamicPath.h"
-#include <graph/Tree.h>
+#include <KrisLibrary/graph/Tree.h>
 #include <queue>
 typedef Vector State;
 typedef Vector ControlInput;

@@ -4,7 +4,7 @@
 #include "Callback.h"
 #include "Node.h"
 #include "Edge.h"
-#include <errors.h>
+#include <KrisLibrary/errors.h>
 #include <vector>
 #include <queue>
 #include <iostream>

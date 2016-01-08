@@ -1,7 +1,7 @@
 #ifndef OPTIMIZATION_NONLINEAR_PROGRAM_H
 #define OPTIMIZATION_NONLINEAR_PROGRAM_H
 
-#include <math/function.h>
+#include <KrisLibrary/math/function.h>
 
 namespace Optimization {
 using namespace Math;

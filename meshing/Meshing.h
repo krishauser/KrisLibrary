@@ -2,7 +2,7 @@
 #define MESHING_UTILS_H
 
 #include "TriMeshTopology.h"
-#include <math3d/Triangle2D.h>
+#include <KrisLibrary/math3d/Triangle2D.h>
 
 namespace Meshing
 {

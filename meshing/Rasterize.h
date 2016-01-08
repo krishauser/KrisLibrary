@@ -1,11 +1,11 @@
 #ifndef MESHING_RASTERIZE_H
 #define MESHING_RASTERIZE_H
 
-#include <structs/array2d.h>
-#include <math3d/Triangle2D.h>
-#include <math3d/AABB2D.h>
-#include <math3d/Polygon2D.h>
-#include <utils/IntPair.h>
+#include <KrisLibrary/structs/array2d.h>
+#include <KrisLibrary/math3d/Triangle2D.h>
+#include <KrisLibrary/math3d/AABB2D.h>
+#include <KrisLibrary/math3d/Polygon2D.h>
+#include <KrisLibrary/utils/IntPair.h>
 #include <vector>
 
 /** @file meshing/Rasterize.h

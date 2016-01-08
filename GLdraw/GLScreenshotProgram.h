@@ -2,8 +2,8 @@
 #define GL_SCREENSHOT_PROGRAM_H
 
 #include "GLScreenshot.h"
-#include <utils/stringutils.h>
-#include <Timer.h>
+#include <KrisLibrary/utils/stringutils.h>
+#include <KrisLibrary/Timer.h>
 #include <string>
 
 namespace GLDraw {

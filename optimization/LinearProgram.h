@@ -1,9 +1,9 @@
 #ifndef OPTIMIZATION_LINEAR_PROGRAM_H
 #define OPTIMIZATION_LINEAR_PROGRAM_H
 
-#include <math/matrix.h>
-#include <math/sparsematrix.h>
-#include <math/sparsevector.h>
+#include <KrisLibrary/math/matrix.h>
+#include <KrisLibrary/math/sparsematrix.h>
+#include <KrisLibrary/math/sparsevector.h>
 #include <vector>
 
 namespace Optimization {

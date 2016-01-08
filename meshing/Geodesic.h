@@ -2,7 +2,7 @@
 #define MESHING_GEODESIC_H
 
 #include "TriMeshTopology.h"
-#include <structs/FixedSizeHeap.h>
+#include <KrisLibrary/structs/FixedSizeHeap.h>
 
 namespace Meshing {
 
