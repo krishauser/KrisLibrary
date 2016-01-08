@@ -2,7 +2,7 @@
 #include <math3d/geometry3d.h>
 #include <meshing/VolumeGrid.h>
 #include <meshing/Voxelize.h>
-#include <GLDraw/GeometryAppearance.h>
+#include <GLdraw/GeometryAppearance.h>
 #include "CollisionPointCloud.h"
 #include <utils/stringutils.h>
 #include <meshing/IO.h>
