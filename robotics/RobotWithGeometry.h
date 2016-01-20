@@ -23,6 +23,8 @@ public:
   typedef Geometry::AnyCollisionQuery CollisionQuery;
   
   RobotWithGeometry();
+  RobotWithGeometry(const RobotDynamics3D& rhs);
+  RobotWithGeometry(const RobotWithGeometry& rhs);
   virtual ~RobotWithGeometry();
 
   /// These should be used by the initialization routines
@@ -40,6 +42,11 @@ public:
 
   ///Creates this into a mega-robot from several other robots
   void Merge(const std::vector<RobotWithGeometry*>& robots);
+
+  ///Copy, keeping shared references to geometries
+  const RobotWithGeometry& operator = (const RobotWithGeometry& rhs);
+  ///Copy, creating empty geometries
+  const RobotWithGeometry& operator = (const RobotDynamics3D& rhs);
 
   /// Call this before querying self collisions
   virtual void UpdateGeometry();
