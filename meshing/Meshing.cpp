@@ -3,6 +3,7 @@
 #include <math3d/Plane3D.h>
 #include <math3d/Plane2D.h>
 #include <utils/shift.h>
+#include <iostream>
 #include <errors.h>
 #include <queue>
 

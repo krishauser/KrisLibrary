@@ -2,9 +2,9 @@
 #define MATH_COMPLEX_H
 
 #include "math.h"
-#include <iostream>
-#include <KrisLibrary/myfile.h>
+#include <iosfwd>
 #include <KrisLibrary/errors.h>
+class File;
 
 namespace Math {
 

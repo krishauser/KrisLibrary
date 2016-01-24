@@ -1,4 +1,5 @@
 #include "TriMesh.h"
+#include <iostream>
 #include <utils/stringutils.h>
 #include <math3d/geometry3d.h>
 #include <math3d/misc.h>

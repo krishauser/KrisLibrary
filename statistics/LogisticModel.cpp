@@ -9,6 +9,7 @@
 #include <math/random.h>
 #include <Timer.h>
 #include <utils/StatCollector.h>
+#include <iostream>
 using namespace Statistics;
 using namespace std;
 

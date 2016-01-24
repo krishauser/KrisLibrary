@@ -4,6 +4,7 @@
 #include "Frame.h"
 #include "Rotation.h"
 #include "Chain.h"
+#include <string>
 
 class KinematicLink3D
 {

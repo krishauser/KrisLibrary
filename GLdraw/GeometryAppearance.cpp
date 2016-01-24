@@ -484,7 +484,7 @@ void GeometryAppearance::DrawGL()
       //draw the mesh
       if(trimesh) {
 	if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
-	  fprintf(stderr,"GeometryAppearance: warning, texcoords wrong size\n");
+	  fprintf(stderr,"GeometryAppearance: warning, texcoords wrong size: %d vs %d\n",texcoords.size(),trimesh->verts.size());
 	if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
 	  if(vertexColors.size() != trimesh->verts.size()) {
 	    DrawGLTris(*trimesh);

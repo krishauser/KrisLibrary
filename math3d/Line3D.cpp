@@ -3,6 +3,7 @@
 #include "clip.h"
 #include "misc.h"
 #include "errors.h"
+#include <iostream>
 using namespace Math3D;
 using namespace std;
 

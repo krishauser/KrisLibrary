@@ -22,8 +22,8 @@ struct LeastSquares
   bool SatisfiesInequalities(const Vector& x) const;
   bool SatisfiesEqualities(const Vector& x,Real tol=Epsilon) const;
   Real Objective(const Vector& x) const;
-  void Print(std::ostream& out=std::cout) const;
-  void PrintStats(const Vector& x,std::ostream& out=std::cout) const;
+  void Print(std::ostream& out) const;
+  void PrintStats(const Vector& x,std::ostream& out) const;
 
   Matrix A; Vector b;
   Matrix Aeq; Vector beq;

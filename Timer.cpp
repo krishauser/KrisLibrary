@@ -2,6 +2,25 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
+#include <windows.h>
+typedef DWORD TimerCounterType;
+#else
+#include <sys/time.h>
+#ifdef  _POSIX_MONOTONIC_CLOCK
+typedef timespec TimerCounterType;
+#else
+typedef timeval TimerCounterType;
+#endif //_POSIX_MONOTONIC_CLOCK
+#endif //_WIN32
+
+struct TimerImpl
+{
+  TimerCounterType start;
+  TimerCounterType current;
+};
+
+
+#ifdef _WIN32
 #define GETCURRENTTIME(x) x=timeGetTime()
 #else
 #ifdef  _POSIX_MONOTONIC_CLOCK
@@ -19,33 +38,39 @@
 #endif
 
 Timer::Timer()
+  :impl(new TimerImpl)
 {
   Reset();
 }
 
+Timer::~Timer()
+{
+  delete impl;
+}
+
 void Timer::Reset()
 {
-  GETCURRENTTIME(start);
-  current=start;
+  GETCURRENTTIME(impl->start);
+  impl->current=impl->start;
 }
 
 long long Timer::ElapsedTicks()
 {
-  GETCURRENTTIME(current);
+  GETCURRENTTIME(impl->current);
   return LastElapsedTicks();
 }
 
 long long Timer::LastElapsedTicks() const
 {
 #ifdef _WIN32
-  return current-start;
+  return impl->current-impl->start;
 #else
 #ifdef  _POSIX_MONOTONIC_CLOCK
-  long long ticks = (current.tv_sec-start.tv_sec)*1000 + (current.tv_nsec-start.tv_nsec)/1000000;
+  long long ticks = (impl->current.tv_sec-impl->start.tv_sec)*1000 + (impl->current.tv_nsec-impl->start.tv_nsec)/1000000;
   return ticks;
 #else
   timeval delta;
-  timersub(&current,&start,&delta);
+  timersub(&impl->current,&impl->start,&delta);
   long long ticks = delta.tv_sec*1000 + delta.tv_usec/1000;
   return ticks;
 #endif //_POSIX_MONOTONIC_CLOCK
@@ -54,22 +79,22 @@ long long Timer::LastElapsedTicks() const
     
 double Timer::ElapsedTime()
 {
-  GETCURRENTTIME(current);
+  GETCURRENTTIME(impl->current);
   return LastElapsedTime();
 }
 
 double Timer::LastElapsedTime() const
 {
 #ifdef _WIN32
-  return double(current-start)/1000.0;
+  return double(impl->current-impl->start)/1000.0;
 #else
 #ifdef  _POSIX_MONOTONIC_CLOCK
-  double secs=double(current.tv_sec-start.tv_sec);
-  secs += double(current.tv_nsec-start.tv_nsec)/1000000000.0;
+  double secs=double(impl->current.tv_sec-impl->start.tv_sec);
+  secs += double(impl->current.tv_nsec-impl->start.tv_nsec)/1000000000.0;
   return secs;
 #else
   timeval delta;
-  timersub(&current,&start,&delta);
+  timersub(&impl->current,&impl->start,&delta);
   double secs=double(delta.tv_sec);
   secs += double(delta.tv_usec)/1000000.0;
   return secs;

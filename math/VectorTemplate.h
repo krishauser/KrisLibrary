@@ -4,9 +4,9 @@
 #include "math.h"
 #include "infnan.h"
 #include <assert.h>
-#include <KrisLibrary/myfile.h>
-#include <iostream>
+#include <iosfwd>
 #include <vector>
+class File;
 
 namespace Math {
 

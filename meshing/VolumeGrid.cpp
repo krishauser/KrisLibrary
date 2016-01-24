@@ -1,4 +1,5 @@
 #include "VolumeGrid.h"
+#include <iostream>
 using namespace std;
 
 namespace Meshing {

@@ -16,6 +16,7 @@
 #include <utils/fileutils.h>
 #include <string.h>
 #include <fstream>
+#include <iostream>
 using namespace std;
 
 #ifndef _WIN32

@@ -1,5 +1,6 @@
 #include "rotation.h"
 #include <math/misc.h>
+#include <iostream>
 using namespace std;
 
 namespace Math3D {
@@ -37,7 +38,7 @@ bool EulerAngleRotation::setMatrix(int u,int v,int w,const Matrix3& m)
     return setMatrixYXZ(m);
   }
   else {
-    cerr<<"Not done with general euler angle rotation setMatrix"<<endl;
+    fprintf(stderr,"Not done with general euler angle rotation setMatrix\n");
     return false;
   }
 }
@@ -207,19 +208,19 @@ void EulerAngleRotation::getMatrix(int u,int v,int w,Matrix3& m) const
   case 0:  Ru.setRotateX(x);  break;
   case 1:  Ru.setRotateY(x);  break;
   case 2:  Ru.setRotateZ(x);  break;
-  default: cerr<<"Invalid axis "<<u<<endl; break;
+  default: fprintf(stderr,"EulerAngleRotation::getMatrix(): Invalid axis %d\n",u); break;
   }
   switch(v) {
   case 0:  Rv.setRotateX(y);  break;
   case 1:  Rv.setRotateY(y);  break;
   case 2:  Rv.setRotateZ(y);  break;
-  default: cerr<<"Invalid axis "<<v<<endl; break;
+  default: fprintf(stderr,"EulerAngleRotation::getMatrix(): Invalid axis %d\n",v); break;
   }
   switch(w) {
   case 0:  Rw.setRotateX(z);  break;
   case 1:  Rw.setRotateY(z);  break;
   case 2:  Rw.setRotateZ(z);  break;
-  default: cerr<<"Invalid axis "<<w<<endl; break;
+  default: fprintf(stderr,"EulerAngleRotation::getMatrix(): Invalid axis %d\n",w); break;
   }
   m = Ru*Rv*Rw;
 }

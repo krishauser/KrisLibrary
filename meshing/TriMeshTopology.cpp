@@ -3,6 +3,7 @@
 #include <queue>
 #include <algorithm>
 #include <errors.h>
+#include <iostream>
 using namespace Meshing;
 
 void TriMeshWithTopology::ClearTopology()

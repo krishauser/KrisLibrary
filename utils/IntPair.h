@@ -1,7 +1,7 @@
 #ifndef INT_PAIR_H
 #define INT_PAIR_H
 
-#include <iostream>
+#include <iosfwd>
 
 /** @ingroup Utils
  * @brief A lightweight integer 2-tuple class
@@ -42,16 +42,7 @@ struct IntPair
   };
 };
 
-inline std::ostream& operator << (std::ostream& out,const IntPair& t)
-{
-  out<<t.a<<" "<<t.b;
-  return out;
-}
-
-inline std::istream& operator >> (std::istream& in,IntPair& t)
-{
-  in >> t.a >> t.b ;
-  return in;
-}
+std::ostream& operator << (std::ostream& out,const IntPair& t);
+std::istream& operator >> (std::istream& in,IntPair& t);
 
 #endif

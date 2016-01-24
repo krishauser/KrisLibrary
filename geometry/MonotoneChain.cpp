@@ -1,4 +1,5 @@
 #include "MonotoneChain.h"
+#include <iostream>
 using namespace Geometry;
 using namespace std;
 

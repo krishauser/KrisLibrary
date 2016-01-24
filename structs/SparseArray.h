@@ -3,6 +3,7 @@
 
 #include <map>
 #include <assert.h>
+#include <KrisLibrary/myfile.h>
 
 /** @brief A sparse 1D array class.
  *

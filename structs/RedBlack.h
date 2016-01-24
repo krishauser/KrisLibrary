@@ -827,7 +827,7 @@ bool Tree<T,Cmp>::checkValid() const
 {
 	if (root->up!=NULL)
 	{
-		fprintf(stderr, "Root up pointer not NULL");
+	  std::cerr<< "Root up pointer not NULL" <<std::endl;
 		root->dumptree(std::cerr,0);
 		return false;
 	}

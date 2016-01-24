@@ -1,4 +1,5 @@
 #include "PointCloud.h"
+#include <iostream>
 #include <math3d/AABB3D.h>
 #include <utils/SimpleParser.h>
 #include <utils/stringutils.h>

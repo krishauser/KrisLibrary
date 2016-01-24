@@ -2,10 +2,10 @@
 #define SPLINE_SPLINE_H
 
 #include "basis.h"
-#include <KrisLibrary/myfile.h>
 #include <KrisLibrary/math3d/primitives.h>  //only used for TCB
 #include <assert.h>
 #include <vector>
+class File;
 using namespace Math3D;
 
 const Real Third = Real(1.0/3.0);

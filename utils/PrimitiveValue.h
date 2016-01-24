@@ -2,7 +2,7 @@
 #define PRIMITIVE_VALUE_H
 
 #include <string>
-#include <iostream>
+#include <iosfwd>
 using namespace std;
 
 /** @brief A basic primitive value type, including integers, floats, and

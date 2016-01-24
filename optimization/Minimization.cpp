@@ -7,6 +7,7 @@
 #include <math/QuasiNewton.h>
 #include <math/indexing.h>
 #include <math/sparsefunction.h>
+#include <iostream>
 #include "LPRobust.h"
 //#include "LSQRInterface.h"
 using namespace std;

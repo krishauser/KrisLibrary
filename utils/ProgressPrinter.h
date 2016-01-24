@@ -1,7 +1,7 @@
 #ifndef UTILS_PROGRESS_PRINTER_H
 #define UTILS_PROGRESS_PRINTER_H
 
-#include <iostream>
+#include <iosfwd>
 
 /** @ingroup Utils
  * @brief Prints the progress of an iterative, long computation.

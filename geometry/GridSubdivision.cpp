@@ -1,5 +1,6 @@
 #include "GridSubdivision.h"
 #include "Grid.h"
+#include <stdio.h>
 #include <utils/indexing.h>
 using namespace Geometry;
 using namespace std;

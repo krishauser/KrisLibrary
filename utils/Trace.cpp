@@ -1,4 +1,5 @@
 #include "Trace.h"
+#include <KrisLibrary/myfile.h>
 #include <iostream>
 #include <utils.h>
 #include <stdarg.h>

@@ -2,9 +2,9 @@
 #define MATH3D_PRIMITIVES_H
 
 #include <KrisLibrary/math/math.h>
-#include <iostream>
-#include <KrisLibrary/myfile.h>
 #include <KrisLibrary/utils.h>
+#include <iosfwd>
+class File;
 
 /** @defgroup Math3D
  * @brief Definitions of 3D math classes and functions 

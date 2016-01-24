@@ -1,4 +1,5 @@
 #include "RobotLink3D.h"
+#include <iostream>
 using namespace std;
 
 void RobotLink3D::SetRotationJoint(const Vector3& _w)

@@ -7,6 +7,7 @@
 #include <math/sparsefunction.h>
 #include "MinNormProblem.h"
 #include "LSQRInterface.h"
+#include <iostream>
 using namespace std;
 using namespace Optimization;
 

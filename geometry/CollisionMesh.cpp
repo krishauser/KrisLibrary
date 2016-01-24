@@ -1,6 +1,7 @@
 #include "CollisionMesh.h"
 #include "PenetrationDepth.h"
 #include <math3d/clip.h>
+#include <iostream>
 using namespace Meshing;
 using namespace std;
 

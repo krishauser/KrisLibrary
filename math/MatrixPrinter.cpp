@@ -2,6 +2,7 @@
 #include "complex.h"
 #include "ASCIIShade.h"
 #include <utils/stringutils.h>
+#include <iostream>
 using namespace std;
 
 namespace Math {

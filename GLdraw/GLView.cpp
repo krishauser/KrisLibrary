@@ -1,6 +1,7 @@
 #include "GLView.h"
 #include "GL.h"
 #include "drawextra.h"
+#include <stdio.h>
 using namespace std;
 using namespace GLDraw;
 
@@ -40,10 +41,10 @@ void GLView::getCurrentGL()
 void GLView::updateInverses()
 {
   if(!modelviewInverse.setInverse(modelview)) {
-    cerr<<"GLView: Modelview matrix is singular!"<<endl;
+    fprintf(stderr,"GLView: Modelview matrix is singular!\n");
   }
   if(!projectionInverse.setInverse(projection)) {
-    cerr<<"GLView: Projection matrix is singular!"<<endl;
+    fprintf(stderr,"GLView: Projection matrix is singular!\n");
   }
 }
 
@@ -156,7 +157,7 @@ bool GLView::getViewport(Camera::Viewport& v) const
 	else error=true;
 	
 	if(error) {
-	  cerr<<"GLView: There was an error in the projection matrix"<<endl;
+	  fprintf(stderr,"GLView: There was an error in the projection matrix\n");
 	  return false;
 	}
 	return true;

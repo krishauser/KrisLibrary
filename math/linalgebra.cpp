@@ -8,6 +8,7 @@
 #include "QRDecomposition.h"
 #include "backsubstitute.h"
 #include "random.h"
+#include <iostream>
 #include <errors.h>
 #include <utils.h>
 using namespace std;

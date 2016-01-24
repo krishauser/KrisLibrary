@@ -5,6 +5,7 @@
 #include <math/misc.h>
 #include <math/Interval.h>
 #include "interpolate.h"
+#include <iostream>
 using namespace Math3D;
 using namespace std;
 

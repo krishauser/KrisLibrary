@@ -1,6 +1,7 @@
 #include "Polyhedron3D.h"
 #include "geometry3d.h"
 #include <math/Interval.h>
+#include <iostream>
 #include "clip.h"
 using namespace Math3D;
 using namespace std;

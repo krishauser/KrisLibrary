@@ -1,4 +1,5 @@
 #include "LSQRInterface.h"
+#include <iostream>
 #include "lsqr.h"
 using namespace Optimization;
 using namespace std;

@@ -3,6 +3,7 @@
 #include <math/indexing.h>
 #include <math/linalgebra.h>
 #include <fstream>
+#include <iostream>
 using namespace Math;
 using namespace std;
 

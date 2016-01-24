@@ -1,4 +1,5 @@
 #include "PiecewisePolynomial.h"
+#include <KrisLibrary/myfile.h>
 #include <math.h>
 #include <algorithm>
 

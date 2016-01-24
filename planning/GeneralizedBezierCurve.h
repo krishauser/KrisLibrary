@@ -3,7 +3,7 @@
 
 #include "CSpace.h"
 #include "GeodesicSpace.h"
-#include <iostream>
+#include <iosfwd>
 #include <vector>
 
 /** @ingroup MotionPlanning

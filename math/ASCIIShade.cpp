@@ -1,4 +1,5 @@
 #include "ASCIIShade.h"
+#include <iostream>
 using namespace std;
 
 namespace Math {

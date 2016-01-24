@@ -1,4 +1,5 @@
 #include "GeneralizedBezierCurve.h"
+#include <iostream>
 #include <math/interpolate.h>
 using namespace std;
 

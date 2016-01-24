@@ -1,5 +1,6 @@
 #include "spline.h"
-#include <math/complex.h>
+#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/math/complex.h>
 #include <assert.h>
 
 _DEFINE_READ_WRITE_FILE_BASIC(KeyHermite<Real>);

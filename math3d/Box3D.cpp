@@ -4,6 +4,7 @@
 #include "Triangle3D.h"
 #include "Sphere3D.h"
 #include "Line3D.h"
+#include <iostream>
 #include <geometry/PQP/src/OBB_Disjoint.h>
 using namespace std;
 

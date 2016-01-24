@@ -42,7 +42,7 @@ Real MaxJointDistance(const RobotKinematics3D& robot,int link1,int link2)
 {
   int p = robot.LCA(link1,link2);
   if(p < 0) {
-    cout<<"Error: joints don't have a common parent?"<<endl;
+    fprintf(stderr,"MaxJointDistance Error: joints don't have a common parent?\n");
     Abort();
     return Inf;
   }

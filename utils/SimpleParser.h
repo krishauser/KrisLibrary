@@ -1,7 +1,8 @@
 #ifndef UTILS_SIMPLE_PARSER_H
 #define UTILS_SIMPLE_PARSER_H
 
-#include <iostream>
+#include <iosfwd>
+#include <ctype.h>
 #include <assert.h>
 using namespace std;
 

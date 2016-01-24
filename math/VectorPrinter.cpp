@@ -1,6 +1,7 @@
 #include "VectorPrinter.h"
 #include "complex.h"
 #include <utils/stringutils.h>
+#include <iostream>
 #include "ASCIIShade.h"
 using namespace std;
 

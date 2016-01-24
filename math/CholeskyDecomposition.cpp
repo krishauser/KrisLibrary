@@ -1,6 +1,7 @@
 #include "CholeskyDecomposition.h"
 #include "backsubstitute.h"
 #include "complex.h"
+#include <iostream>
 #include <errors.h>
 
 namespace Math {

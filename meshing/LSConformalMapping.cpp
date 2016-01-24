@@ -1,6 +1,7 @@
 #include "LSConformalMapping.h"
 #include <optimization/LSQRInterface.h>
 #include <math/MatrixPrinter.h>
+#include <iostream>
 using namespace Meshing;
 
 LSConformalMapping::LSConformalMapping(TriMeshWithTopology& _mesh,TriMeshChart& _chart)

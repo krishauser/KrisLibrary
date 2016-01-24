@@ -14,7 +14,7 @@ Real ScalarFieldFunction::DirectionalDeriv(const Vector& x,const Vector& h)
 
 Real ScalarFieldFunction::DirectionalDeriv2(const Vector& x,const Vector& h)
 {
-  cerr<<"ScalarFieldFunction::DirectionalDeriv2: Warning, possibly inefficient evaluation"<<endl;
+  fprintf(stderr,"ScalarFieldFunction::DirectionalDeriv2: Warning, possibly inefficient evaluation\n");
   Matrix H(x.n,x.n);
   Hessian(x,H);
   //calc h^t H h
@@ -67,7 +67,7 @@ std::string VectorFieldFunction::VariableLabel(int i) const
 
 Real VectorFieldFunction::Eval_i(const Vector& x,int i)
 {
-  cout<<"Warning: really inefficient Eval_i"<<endl;
+  fprintf(stderr,"Warning: really inefficient call VectorFieldFunction::Eval_i\n");
   Vector v(NumDimensions());
   Eval(x,v);
   return v(i);

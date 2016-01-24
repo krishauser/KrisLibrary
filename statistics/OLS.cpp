@@ -1,6 +1,7 @@
 #include "OLS.h"
 #include <math/linalgebra.h>
 #include <math/LDL.h>
+#include <iostream>
 using namespace std;
 
 namespace Statistics {

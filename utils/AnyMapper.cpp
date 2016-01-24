@@ -1,4 +1,5 @@
 #include "AnyMapper.h"
+#include <iostream>
 using namespace std;
 
 bool Match(const AnyCollection& item,const AnyCollection& schema)

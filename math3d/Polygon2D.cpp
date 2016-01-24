@@ -5,6 +5,7 @@
 #include "misc.h"
 #include "clip.h"
 #include "interpolate.h"
+#include <iostream>
 #include <errors.h>
 using namespace Math3D;
 using namespace std;

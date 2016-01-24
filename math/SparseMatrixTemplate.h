@@ -5,7 +5,6 @@
 #include "VectorTemplate.h"
 #include "SparseVectorTemplate.h"
 #include <vector>
-#include <iostream>
 
 /** @file math/SparseMatrixTemplate.h
  * @brief Several sparse matrix classes.

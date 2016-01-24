@@ -4,8 +4,10 @@
 #include "interpolate.h"
 #include "misc.h"
 #include "basis.h"
-#include <meshing/TriMesh.h>
-#include <math/misc.h>
+#include <iostream>
+#include <KrisLibrary/meshing/TriMesh.h>
+#include <KrisLibrary/math/misc.h>
+#include <KrisLibrary/myfile.h>
 #include <string>
 using namespace std;
 

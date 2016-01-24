@@ -1,5 +1,6 @@
 #include "ioutils.h"
 #include "stringutils.h"
+#include <iostream>
 #include <math/infnan.h>
 #include <fstream>
 #include <limits>

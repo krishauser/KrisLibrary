@@ -1,4 +1,5 @@
 #include "LinearProgram.h"
+#include <iostream>
 #include <math/SVDecomposition.h>
 #include <errors.h>
 

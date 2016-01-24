@@ -1,5 +1,6 @@
 #include "StatCollector.h"
 #include <limits>
+#include <iostream>
 #include <string.h>
 #include "ioutils.h"
 #include "errors.h"

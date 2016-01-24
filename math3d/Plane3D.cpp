@@ -1,6 +1,8 @@
 #include "Plane3D.h"
 #include "geometry3d.h"
 #include "LinearlyDependent.h"
+#include <KrisLibrary/myfile.h>
+#include <iostream>
 #include <errors.h>
 using namespace Math3D;
 using namespace std;

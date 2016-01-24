@@ -1,7 +1,6 @@
 #ifndef UTILS_SMART_POINTER_H
 #define UTILS_SMART_POINTER_H
 
-#include <iostream>
 #include <stdlib.h>
 #include <KrisLibrary/errors.h>
 

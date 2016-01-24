@@ -3,6 +3,7 @@
 #include <math/LDL.h>
 #include <math/MatrixEquationPrinter.h>
 #include <math/SelfTest.h>
+#include <iostream>
 #include <errors.h>
 using namespace Optimization;
 using namespace std; 
