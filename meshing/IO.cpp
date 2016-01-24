@@ -3,6 +3,7 @@
 #include <utils/stringutils.h>
 #include <GLdraw/GeometryAppearance.h>
 #include <image/import.h>
+#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string.h>
@@ -21,6 +22,8 @@
 using namespace Assimp;
 #endif //HAVE_ASSIMP
 
+using namespace std;
+using namespace Math3D;
 using namespace GLDraw;
 
 namespace Meshing {
@@ -440,9 +443,59 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
 	vector<GeometryAppearance> apps;
 	if(!LoadAssimp(fn,models,apps)) return false;
 	mesh.Merge(models);
-	if(!apps.empty())
-	  //TODO: merge multiple appearances
+	if(!apps.empty()) {
+	  //need to merge appearance information
 	  app = apps[0];
+	  size_t numVerts = models[0].verts.size();
+	  size_t numTris = models[0].tris.size();
+	  for(size_t i=1;i<apps.size();i++) {
+	    if(app.texcoords.empty() != apps[i].texcoords.empty()) {
+	      if(app.texcoords.empty()) {
+		app.texcoords.resize(numVerts,Vector2(0.0));
+	      }
+	      else {
+		apps[i].texcoords.resize(models[i].verts.size(),Vector2(0.0));
+	      }
+	    }
+	    if(!app.texcoords.empty())
+	      app.texcoords.insert(app.texcoords.end(),apps[i].texcoords.begin(),apps[i].texcoords.end());
+	    if(app.tex2D != apps[i].tex2D) {
+	      fprintf(stderr,"LoadAssimp: Warning, merging textured / non textured surfaces\n");
+	      if(app.tex2D == NULL)
+		app.tex2D = apps[i].tex2D;
+	    }
+	    if(app.tex1D != apps[i].tex1D) {
+	      fprintf(stderr,"LoadAssimp: Warning, merging textured / non textured surfaces\n");
+	      if(app.tex1D == NULL)
+		app.tex1D = apps[i].tex1D;
+	    }
+	    if(app.vertexColors.empty() != apps[i].vertexColors.empty()) {
+	      if(app.vertexColors.empty()) 
+		app.vertexColors.resize(numVerts,app.vertexColor);
+	      else
+		apps[i].vertexColors.resize(models[i].verts.size(),apps[i].vertexColor);
+	    }
+	    if(!app.vertexColors.empty())
+	      app.vertexColors.insert(app.vertexColors.end(),apps[i].vertexColors.begin(),apps[i].vertexColors.end());
+	    if(app.faceColors.empty() != apps[i].faceColors.empty()) {
+	      if(app.faceColors.empty()) 
+		app.faceColors.resize(numTris,app.faceColor);
+	      else
+		apps[i].faceColors.resize(models[i].tris.size(),apps[i].faceColor);
+	    }
+	    if(!app.faceColors.empty())
+	      app.faceColors.insert(app.faceColors.end(),apps[i].faceColors.begin(),apps[i].faceColors.end());
+	    else {
+	      if(app.faceColor != apps[i].faceColor) {
+		//need to construct per-face colors
+		app.faceColors.resize(numTris,app.faceColor);
+		app.faceColors.resize(numTris+models[i].tris.size(),apps[i].faceColor);
+	      }
+	    }
+	    numVerts += models[i].verts.size();
+	    numTris += models[i].tris.size();
+	  }
+	}
 	cout<<"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris"<<endl;
 	return true;
 }
