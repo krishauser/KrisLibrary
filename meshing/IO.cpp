@@ -544,7 +544,8 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
   }
   aiString str;
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
-    string filename = gTexturePath+str.C_Str();
+    //string filename = gTexturePath+str.C_str();
+    string filename = gTexturePath+string(str.data);
     SmartPointer<Image> img = new Image;
     if(ImportImage(filename.c_str(),*img)) {
       app.tex2D = img;
