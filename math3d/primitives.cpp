@@ -150,10 +150,10 @@ bool Matrix2::operator != (const Matrix2& a) const
 	for(int i=0; i<2; i++)
 	{
 		for(int j=0; j<2; j++)
-			if(data[i][j] == a.data[i][j])
-				return false;
+			if(data[i][j] != a.data[i][j])
+				return true;
 	}
-	return true;
+	return false;
 }
 
 bool Matrix2::Read(File& f)
@@ -214,10 +214,10 @@ bool Matrix3::operator != (const Matrix3& a) const
 	for(int i=0; i<3; i++)
 	{
 		for(int j=0; j<3; j++)
-			if(data[i][j] == a.data[i][j])
-				return false;
+			if(data[i][j] != a.data[i][j])
+				return true;
 	}
-	return true;
+	return false;
 }
 
 void Matrix3::mul(const Matrix3& a, const Matrix3& b)
@@ -427,10 +427,10 @@ bool Matrix4::operator != (const Matrix4& a) const
 	for(int i=0; i<4; i++)
 	{
 		for(int j=0; j<4; j++)
-			if(data[i][j] == a.data[i][j])
-				return false;
+			if(data[i][j] != a.data[i][j])
+				return true;
 	}
-	return true;
+	return false;
 }
 
 void Matrix4::mul(const Matrix4& a, const Matrix4& b)
