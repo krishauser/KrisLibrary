@@ -33,6 +33,12 @@ void drawFacesWorld(const Geometry::AnyCollisionGeometry3D& geom);
 ///draw the expansion of the collision geometry, in its local coordinates
 void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Math::Real p=-1);
 
+/** @brief A class for coloring, texturing, and drawing meshes in OpenGL.
+ *
+ * GL display lists are created on first DrawGL call.  If the appearance
+ * changes geometry or vertex/face colors, Refresh() must be called to
+ * rebuild the display lists.
+ */
 class GeometryAppearance
 {
  public:
@@ -44,6 +50,13 @@ class GeometryAppearance
   void Refresh();
   ///Draws the geometry using OpenGL
   void DrawGL();
+  ///Sets flat colors, including sub-appearances, and deletes any per-vertex
+  ///or per-face colors.  Refresh() does not need to be called.
+  void SetColor(float r,float g, float b, float a);
+  void SetColor(const GLColor& color);
+  ///Modulates the current color, including sub-appearances, and per-vertex
+  ///or per-face colors.  Refresh() does not need to be called.
+  void ModulateColor(const GLColor& color,float fraction);
 
   ///Geometry pointer
   const Geometry::AnyGeometry3D* geom;

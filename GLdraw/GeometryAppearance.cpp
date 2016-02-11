@@ -639,4 +639,42 @@ void GeometryAppearance::DrawGL()
   }
 }
 
+
+void GeometryAppearance::SetColor(float r,float g, float b, float a)
+{
+  vertexColor.set(r,g,b,a);
+  edgeColor.set(r,g,b,a);
+  faceColor.set(r,g,b,a);
+  if(!vertexColors.empty() || !faceColors.empty()) {
+    vertexColors.clear();
+    faceColors.clear();
+    Refresh();
+  }
+  for(size_t i=0;i<subAppearances.size();i++)
+    subAppearances[i].SetColor(r,g,b,a);
+}
+
+void GeometryAppearance::SetColor(const GLColor& color)
+{
+  SetColor(color.rgba[0],color.rgba[1],color.rgba[2],color.rgba[3]);
+}
+
+void GeometryAppearance::ModulateColor(const GLColor& color,float fraction)
+{
+  faceColor.blend(GLColor(faceColor),color,fraction);
+  vertexColor.blend(GLColor(vertexColor),color,fraction);
+  edgeColor.blend(GLColor(edgeColor),color,fraction);
+
+  if(!vertexColors.empty() || !faceColors.empty()) {
+    for(size_t i=0;i<vertexColors.size();i++)
+      vertexColors[i].blend(GLColor(vertexColors[i]),color,fraction);
+    for(size_t i=0;i<faceColors.size();i++)
+      faceColors[i].blend(GLColor(faceColors[i]),color,fraction);
+    Refresh();
+  }
+  for(size_t i=0;i<subAppearances.size();i++)
+    subAppearances[i].ModulateColor(color,fraction);
+}
+
+
 } //namespace GLDraw
