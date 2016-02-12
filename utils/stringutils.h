@@ -95,8 +95,9 @@ std::string JoinPath(const std::vector<std::string>& path);
 std::string JoinPath(const std::string& path1,const std::string& path2);
 
 #ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
+#ifndef WCHAR
+typedef wchar_t WCHAR;    // wc,   16-bit UNICODE character
+#endif //WCHAR
 void ToWideChar(const char* str, WCHAR* buf, int maxBuf);
 #endif //WIN32
 
