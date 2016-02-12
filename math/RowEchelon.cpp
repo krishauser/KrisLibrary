@@ -3,6 +3,7 @@
 #include "MatrixPrinter.h"
 #include "complex.h"
 #include <limits.h>
+#include <iostream>
 using namespace std;
 
 namespace Math {

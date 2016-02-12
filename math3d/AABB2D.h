@@ -3,7 +3,7 @@
 
 #include "Point.h"
 #include <KrisLibrary/math/math.h>
-#include <KrisLibrary/myfile.h>
+class File;
 
 namespace Math3D {
 

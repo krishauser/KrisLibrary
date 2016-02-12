@@ -5,6 +5,7 @@
 #include <math/SVDecomposition.h>
 #include <math/sample.h>
 #include <math/indexing.h>
+#include <iostream>
 #include <fstream>
 using namespace std;
 

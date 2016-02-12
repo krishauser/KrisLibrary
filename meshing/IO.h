@@ -1,7 +1,7 @@
 #ifndef MESHING_IO_H
 #define MESHING_IO_H
 
-#include <iostream>
+#include <iosfwd>
 #include "TriMesh.h"
 
 namespace GLDraw {

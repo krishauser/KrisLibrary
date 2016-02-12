@@ -1,22 +1,13 @@
 #ifndef MY_TIMER_H
 #define MY_TIMER_H
 
-#ifdef _WIN32
-#include <windows.h>
-typedef DWORD TimerCounterType;
-#else
-#include <sys/time.h>
-#ifdef  _POSIX_MONOTONIC_CLOCK
-typedef timespec TimerCounterType;
-#else
-typedef timeval TimerCounterType;
-#endif //_POSIX_MONOTONIC_CLOCK
-#endif //_WIN32
+struct TimerImpl;
 
 class Timer
 {
  public:
   Timer();
+  ~Timer();
   void Reset();
 
   // Returns elapsed time in milliseconds,seconds respectively
@@ -28,8 +19,7 @@ class Timer
   double LastElapsedTime() const;
 
  private:
-  TimerCounterType start;
-  TimerCounterType current;
+  TimerImpl* impl;
 };
 
 #endif

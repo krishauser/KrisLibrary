@@ -2,6 +2,7 @@
 #include <math/fastarray.h>
 #include <errors.h>
 #include <algorithm>
+#include <iostream>
 using namespace std;
 
 namespace Spline {

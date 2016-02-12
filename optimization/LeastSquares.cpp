@@ -3,6 +3,7 @@
 #include <math/MatrixEquationPrinter.h>
 #include <math/linalgebra.h>
 #include <errors.h>
+#include <iostream>
 using namespace Optimization;
 using namespace std;
 

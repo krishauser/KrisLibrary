@@ -1,4 +1,5 @@
 #include "DynamicChain.h"
+#include <iostream>
 #include <math/CholeskyDecomposition.h>
 
 void DynamicChain2D::Initialize(int numBodies)

@@ -1590,16 +1590,32 @@ AnyCollisionQuery::AnyCollisionQuery()
 AnyCollisionQuery::AnyCollisionQuery(AnyCollisionGeometry3D& _a,AnyCollisionGeometry3D& _b)
   :a(&_a),b(&_b)
 {
-  if(a->type == AnyGeometry3D::TriangleMesh && b->type == AnyGeometry3D::TriangleMesh) {
-    qmesh = CollisionMeshQueryEnhanced(a->TriangleMeshCollisionData(),b->TriangleMeshCollisionData());
-    qmesh.margin1 = a->margin;
-    qmesh.margin2 = b->margin;
-  }
 }
 
 AnyCollisionQuery::AnyCollisionQuery(const AnyCollisionQuery& q)
   :a(q.a),b(q.b),qmesh(q.qmesh)
 {}
+
+
+bool UpdateQMesh(AnyCollisionQuery* q) 
+{
+  if(q->a->type == AnyGeometry3D::TriangleMesh && q->b->type == AnyGeometry3D::TriangleMesh) {
+    if(!q->qmesh.m1) {
+      q->a->InitCollisionData();
+      q->b->InitCollisionData();
+      q->qmesh = CollisionMeshQueryEnhanced(q->a->TriangleMeshCollisionData(),q->b->TriangleMeshCollisionData());
+      Assert(q->qmesh.m1);
+      Assert(q->qmesh.m2);
+    }
+    else {
+      Assert(q->qmesh.m2);
+    }
+    q->qmesh.margin1 = q->a->margin;
+    q->qmesh.margin2 = q->b->margin;
+    return true;
+  }
+  return false;
+}
 
 bool AnyCollisionQuery::Collide()
 {
@@ -1607,9 +1623,7 @@ bool AnyCollisionQuery::Collide()
   elements2.resize(0);
   points1.resize(0);
   points2.resize(0);
-  if(qmesh.m1) {
-    qmesh.margin1 = a->margin;
-    qmesh.margin2 = b->margin;
+  if(UpdateQMesh(this)) {
     if(qmesh.Collide()) {
       qmesh.CollisionPairs(elements1,elements2);
       return true;
@@ -1625,9 +1639,7 @@ bool AnyCollisionQuery::CollideAll()
   elements2.resize(0);
   points1.resize(0);
   points2.resize(0);
-  if(qmesh.m1) {
-    qmesh.margin1 = a->margin;
-    qmesh.margin2 = b->margin;
+  if(UpdateQMesh(this)) {
     if(qmesh.CollideAll()) {
       qmesh.CollisionPairs(elements1,elements2);
       return true;
@@ -1643,9 +1655,7 @@ bool AnyCollisionQuery::WithinDistance(Real d)
   elements2.resize(0);
   points1.resize(0);
   points2.resize(0);
-  if(qmesh.m1) {
-    qmesh.margin1 = a->margin;
-    qmesh.margin2 = b->margin;
+  if(UpdateQMesh(this)) {
     if(qmesh.WithinDistance(d)) {
       elements1.resize(1);
       elements2.resize(1);
@@ -1666,9 +1676,7 @@ bool AnyCollisionQuery::WithinDistanceAll(Real d)
   elements2.resize(0);
   points1.resize(0);
   points2.resize(0);
-  if(qmesh.m1) {
-    qmesh.margin1 = a->margin;
-    qmesh.margin2 = b->margin;
+  if(UpdateQMesh(this)) {
     if(qmesh.WithinDistanceAll(d)) {
       qmesh.TolerancePairs(elements1,elements2);
       qmesh.TolerancePoints(points1,points2);
@@ -1680,9 +1688,7 @@ bool AnyCollisionQuery::WithinDistanceAll(Real d)
 
 Real AnyCollisionQuery::PenetrationDepth()
 {
-  if(qmesh.m1) {
-    qmesh.margin1 = a->margin;
-    qmesh.margin2 = b->margin;
+  if(UpdateQMesh(this)) {
     return qmesh.PenetrationDepth();
   }
   return -a->Distance(*b);
@@ -1694,9 +1700,7 @@ Real AnyCollisionQuery::Distance(Real absErr,Real relErr,Real bound)
   elements2.resize(1);
   points1.resize(0);
   points2.resize(0);
-  if(qmesh.m1) {
-    qmesh.margin1 = a->margin;
-    qmesh.margin2 = b->margin;
+  if(UpdateQMesh(this)) {
     points1.resize(1);
     points2.resize(1);
     Real res = qmesh.Distance(absErr,relErr,bound);

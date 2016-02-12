@@ -14,6 +14,16 @@ using namespace std;
 RobotWithGeometry::RobotWithGeometry()
 {}
 
+RobotWithGeometry::RobotWithGeometry(const RobotDynamics3D& rhs)
+{
+  operator = (rhs);
+}
+
+RobotWithGeometry::RobotWithGeometry(const RobotWithGeometry& rhs)
+{
+  operator = (rhs);
+}
+
 RobotWithGeometry::~RobotWithGeometry()
 {
   CleanupCollisions();
@@ -55,8 +65,10 @@ void RobotWithGeometry::Merge(const std::vector<RobotWithGeometry*>& robots)
   for(size_t i=0;i<robots.size();i++) {
     for(size_t j=0;j<robots[i]->geometry.size();j++)
       geometry[j+offset[i]] = robots[i]->geometry[j];
-    for(size_t j=0;j<robots[i]->envCollisions.size();j++)
-      envCollisions[j+offset[i]] = robots[i]->envCollisions[j];
+    for(size_t j=0;j<robots[i]->envCollisions.size();j++) {
+      if(robots[i]->envCollisions[j])
+	envCollisions[j+offset[i]] = new CollisionQuery(*geometry[j+offset[i]],*robots[i]->envCollisions[j]->b);
+    }
     //delete self collisions that are not allowed
     for(int j=0;j<robots[i]->selfCollisions.m;j++)
       for(int k=0;k<robots[i]->selfCollisions.n;k++)
@@ -64,6 +76,41 @@ void RobotWithGeometry::Merge(const std::vector<RobotWithGeometry*>& robots)
 	  selfCollisions(j+offset[i],k+offset[i]) = NULL;
   }
 }
+
+const RobotWithGeometry& RobotWithGeometry::operator = (const RobotWithGeometry& rhs)
+{
+  RobotDynamics3D::operator = (rhs);
+  CleanupCollisions();
+  CleanupSelfCollisions();
+  int n = (int)links.size();
+  geometry.resize(n);
+  selfCollisions.resize(n,n,NULL);
+  envCollisions.resize(n,NULL);
+  geometry = rhs.geometry;
+  for(int j=0;j<n;j++) {
+    if(rhs.envCollisions[j])
+      envCollisions[j] = new CollisionQuery(*geometry[j],*rhs.envCollisions[j]->b);
+  }
+  for(int j=0;j<selfCollisions.m;j++)
+    for(int k=0;k<selfCollisions.n;k++)
+      if(rhs.selfCollisions(j,k))
+	InitSelfCollisionPair(j,k);
+  return *this;
+}
+
+
+const RobotWithGeometry& RobotWithGeometry::operator = (const RobotDynamics3D& rhs)
+{
+  RobotDynamics3D::operator = (rhs);
+  CleanupCollisions();
+  CleanupSelfCollisions();
+  int n = (int)links.size();
+  geometry.resize(n);
+  selfCollisions.resize(n,n,NULL);
+  envCollisions.resize(n,NULL);
+  return *this;
+}
+
 
 bool RobotWithGeometry::LoadGeometry(int i,const char* file)
 {
@@ -88,7 +135,8 @@ void RobotWithGeometry::InitCollisions()
 {
   Timer timer;
   for(size_t i=0;i<geometry.size();i++) {
-    if(!IsGeometryEmpty(i)) geometry[i]->InitCollisionData();
+    if(!IsGeometryEmpty(i)) 
+      geometry[i]->InitCollisionData();
   }
   double t = timer.ElapsedTime();
   if(t > 0.2) 
@@ -362,7 +410,7 @@ void RobotWithGeometry::SelfCollisions(vector<pair<int,int> >& pairs,Real distan
 bool RobotWithGeometry::MeshCollision(CollisionGeometry& mesh)
 {
   if(!envCollisions[0] || envCollisions[0]->b != &mesh) {
-    cerr<<"Warning, MeshCollision() called with a different mesh"<<endl;
+    fprintf(stderr,"Warning, MeshCollision() called with a different mesh\n");
     InitMeshCollision(mesh);
   }
   for(size_t i=0;i<links.size();i++)

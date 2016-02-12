@@ -2,6 +2,7 @@
 #include "LinearAlgebra.h"
 #include <math/matrix.h>
 #include <math/SVDecomposition.h>
+#include <iostream>
 #include <errors.h>
 using namespace std;
 using namespace Math;

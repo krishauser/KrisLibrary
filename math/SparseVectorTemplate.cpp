@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "errors.h"
 #include "complex.h"
+#include <iostream>
 using namespace std;
 
 namespace Math {

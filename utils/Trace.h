@@ -5,9 +5,9 @@
 #include <list>
 #include <string>
 #include <iostream>
-#include <KrisLibrary/myfile.h>
 #include <KrisLibrary/Timer.h>
 #include "StatCollector.h"
+class File;
 
 struct TraceFunctionCall;
 

@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <iostream>
+#include <iosfwd>
 #include "PrimitiveValue.h"
 
 /** @brief A simple file format that has named items and whitespace-delimited

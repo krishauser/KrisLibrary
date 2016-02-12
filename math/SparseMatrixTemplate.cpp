@@ -1,5 +1,6 @@
 #include "SparseMatrixTemplate.h"
 #include "complex.h"
+#include <iostream>
 using namespace std;
 
 namespace Math {

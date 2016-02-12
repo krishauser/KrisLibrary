@@ -2,7 +2,6 @@
 #include <math/CholeskyDecomposition.h>
 #include <Timer.h>
 
-
 void DynamicLink3D::GetWorldInertia(Matrix3& inertiaWorld) const
 {
 	//inertiaWorld = R*I*Rt

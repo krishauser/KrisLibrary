@@ -6,6 +6,7 @@
 #include <math3d/random.h>
 #include <math3d/Segment2D.h>
 #include <geometry/MonotoneChain.h>
+#include <iostream>
 #include <errors.h>
 using Geometry::XMonotoneChain;
 

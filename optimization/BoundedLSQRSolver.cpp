@@ -2,6 +2,7 @@
 #include <math/AABB.h>
 #include <math/linalgebra.h>
 #include <limits.h>
+#include <iostream>
 using namespace Optimization;
 using namespace std;
 

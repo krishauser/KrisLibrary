@@ -1,5 +1,6 @@
 #include "BlockPrinter.h"
 #include "utils/stringutils.h"
+#include <iostream>
 #include <errors.h>
 using namespace std;
 

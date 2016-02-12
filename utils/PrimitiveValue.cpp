@@ -1,4 +1,5 @@
 #include "PrimitiveValue.h"
+#include <iostream>
 #include <utils/ioutils.h>
 #include <utils/stringutils.h>
 #include <fstream>

@@ -4,6 +4,7 @@
 #include "ASCIIShade.h"
 #include <algorithm>
 #include <errors.h>
+#include <iostream>
 #include <vector>
 
 namespace Math {

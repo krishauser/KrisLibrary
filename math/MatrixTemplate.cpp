@@ -1,6 +1,8 @@
 #include "MatrixTemplate.h"
 #include "fastarray.h"
 #include "complex.h"
+#include <KrisLibrary/myfile.h>
+#include <iostream>
 #include <errors.h>
 using namespace std;
 

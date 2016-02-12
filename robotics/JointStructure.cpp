@@ -2,6 +2,7 @@
 #include "WorkspaceBound.h"
 #include <math3d/Circle3D.h>
 #include <math3d/Sphere3D.h>
+#include <iostream>
 #include <errors.h>
 
 /*

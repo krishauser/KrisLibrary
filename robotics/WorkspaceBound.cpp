@@ -5,6 +5,7 @@
 #include <math/AngleSet.h>
 #include <math3d/rotation.h>
 #include <math3d/basis.h>
+#include <iostream>
 
 #define wsEpsilon 0.001
 

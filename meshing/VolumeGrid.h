@@ -5,7 +5,7 @@
 #include <KrisLibrary/math3d/AABB3D.h>
 #include <KrisLibrary/math3d/primitives.h>
 #include <KrisLibrary/utils/indexing.h>
-#include <iostream>
+#include <iosfwd>
 
 namespace Meshing {
 
@@ -139,6 +139,7 @@ void VolumeGridIterator<T>::operator ++()
       cellCorner.x+=cellSize.x;
     }
   }
+  /*
   if(index != it.getElement()) {
     std::cerr<<"VolumeGridIterator: Internal error!"<<std::endl;
     std::cerr<<"Index "<<index<<", iterator element "<<it.getElement()<<std::endl;
@@ -158,6 +159,7 @@ void VolumeGridIterator<T>::operator ++()
     std::cerr<<"  size "<<it.range.isize<<" "<<it.range.jsize<<" "<<it.range.ksize<<std::endl;
     std::cerr<<"  stride "<<it.range.istride<<" "<<it.range.jstride<<" "<<it.range.kstride<<std::endl;
   }
+  */
   Assert(index == it.getElement());
 }
 

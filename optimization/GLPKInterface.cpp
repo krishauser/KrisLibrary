@@ -4,6 +4,7 @@
 #include <utils.h>
 #include <utils/SignalHandler.h>
 #include <signal.h>
+#include <iostream>
 #include <stdexcept>
 extern "C"
 {

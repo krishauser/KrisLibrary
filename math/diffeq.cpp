@@ -101,7 +101,7 @@ Real RKF(RealFunction2* f, Real a, Real b, Real alpha, Real tol, Real hmax, Real
 			h = b - t;
 		else if (h < hmin) {
 			FLAG = 0;
-			cerr<<"RKF: minimum h exceeded"<<endl;
+			fprintf(stderr,"RKF: minimum h exceeded\n");
 			return w;
 		}
 	}

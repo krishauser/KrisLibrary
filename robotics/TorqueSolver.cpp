@@ -1,5 +1,6 @@
 #include "TorqueSolver.h"
 #include "NewtonEuler.h"
+#include <iostream>
 #include <fstream>
 using namespace Optimization;
 using namespace std;

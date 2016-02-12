@@ -3,6 +3,7 @@
 #include "vectorfunction.h"
 #include "root.h"
 #include <errors.h>
+#include <iostream>
 
 using namespace Math;
 using namespace std;

@@ -42,7 +42,8 @@ bool ImportImage(const char* fn, Image& img)
 #ifdef _WIN32
 		return ImportImageGDIPlus(fn, img);
 #else
-		fprintf(stderr,"Unknown file extension \"%s\" on image import file %s\n",extbuf,fn);
+		fprintf(stderr,"ImportImage: Unknown file extension \"%s\" on image import file %s\n",extbuf,fn);
+		return false;
 #endif //_WIN32
 	}
 	/*

@@ -2,6 +2,7 @@
 #include "backsubstitute.h"
 #include "DiagonalMatrix.h"
 #include <errors.h>
+#include <iostream>
 using namespace std;
 
 namespace Math {

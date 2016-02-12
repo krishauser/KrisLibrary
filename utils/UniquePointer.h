@@ -1,9 +1,8 @@
 #ifndef UTILS_UNIQUE_POINTER_H
 #define UTILS_UNIQUE_POINTER_H
 
-#include <iostream>
 #include <stdlib.h>
-#include "KrisLibrary/errors.h"
+#include <KrisLibrary/errors.h>
 
 /** @ingroup Utils
  * @brief A unique pointer class that duplicates on non-const access.

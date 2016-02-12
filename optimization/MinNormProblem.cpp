@@ -3,6 +3,7 @@
 #include "BoundedLSQRSolver.h"
 #include "LSQRInterface.h"
 #include <math/linalgebra.h>
+#include <iostream>
 #include <errors.h>
 using namespace Optimization;
 using namespace std;

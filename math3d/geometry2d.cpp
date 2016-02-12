@@ -1,8 +1,9 @@
 #include "geometry2d.h"
 #include "clip.h"
 #include "misc.h"
-#include <math/misc.h>
-#include <math/Interval.h>
+#include <KrisLibrary/math/misc.h>
+#include <KrisLibrary/math/Interval.h>
+#include <KrisLibrary/myfile.h>
 #include "LinearlyDependent.h"
 #include "interpolate.h"
 using namespace std;

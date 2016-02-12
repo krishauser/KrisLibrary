@@ -1,7 +1,7 @@
 #ifndef IMAGE_IMAGE_H
 #define IMAGE_IMAGE_H
 
-#include <KrisLibrary/myfile.h>
+class File;
 
 class Image
 {

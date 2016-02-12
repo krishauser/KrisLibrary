@@ -1,4 +1,6 @@
 #include "AABB3D.h"
+#include <KrisLibrary/myfile.h>
+#include <iostream>
 using namespace Math3D;
 using namespace std;
 

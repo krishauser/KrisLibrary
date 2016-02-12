@@ -2,6 +2,7 @@
 #include "geometry3d.h"
 #include "clip.h"
 #include "interpolate.h"
+#include <iostream>
 #include <math/Interval.h>
 using namespace Math3D;
 

@@ -7,6 +7,7 @@
 #include <math/misc.h>
 #include <math3d/misc.h>
 #include <math3d/basis.h>
+#include <iostream>
 #include <set>
 using namespace std;
 

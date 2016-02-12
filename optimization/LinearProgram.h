@@ -4,6 +4,7 @@
 #include <KrisLibrary/math/matrix.h>
 #include <KrisLibrary/math/sparsematrix.h>
 #include <KrisLibrary/math/sparsevector.h>
+#include <iosfwd>
 #include <vector>
 
 namespace Optimization {
@@ -67,7 +68,7 @@ struct LinearConstraints
   bool SatisfiesBounds(const Vector& x) const;
   bool IsFeasible(const Vector& x,Real equalityTol=Epsilon) const;
   void ProjectDirection(Vector& v) const;
-  void Print(std::ostream& out=std::cout) const;
+  void Print(std::ostream& out) const;
   void GetSimpleForm(Matrix& Aeq,Vector& beq,Matrix& Aineq,Vector& bineq) const;
   void SetSimpleForm(const Matrix& Aeq,const Vector& beq,const Matrix& Aineq,const Vector& bineq);
   void SetRef(const LinearConstraints&);
@@ -114,7 +115,7 @@ HasUpperBound(b); }
   bool SatisfiesBounds(const Vector& x) const;
   bool IsFeasible(const Vector& x,Real equalityTol=Epsilon) const;
   void ProjectDirection(Vector& v) const;
-  void Print(std::ostream& out=std::cout) const;
+  void Print(std::ostream& out) const;
   void GetSimpleForm(SparseMatrix& Aeq,Vector& beq,SparseMatrix& Aineq,Vector& bineq) const;
   void SetSimpleForm(const SparseMatrix& Aeq,const Vector& beq,const SparseMatrix& Aineq,const Vector& bineq);
   void Copy(const LinearConstraints_Sparse&);
@@ -144,7 +145,7 @@ struct LinearProgram : public LinearConstraints
   void AddVariables(int num);
   bool IsValid() const;
   Real Objective(const Vector& x) const;
-  void Print(std::ostream& out=std::cout) const;
+  void Print(std::ostream& out) const;
   const LinearProgram& operator = (const LinearProgram&);
 
   bool minimize;
@@ -165,7 +166,7 @@ struct LinearProgram : public LinearConstraints
   void AddVariables(int num);
   bool IsValid() const;
   Real Objective(const Vector& x) const;
-  void Print(std::ostream& out=std::cout) const;
+  void Print(std::ostream& out) const;
   const LinearProgram_Sparse& operator = (const LinearProgram_Sparse&);
 
   bool minimize;

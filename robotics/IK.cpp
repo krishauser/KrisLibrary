@@ -6,6 +6,7 @@
 #include <math3d/Plane3D.h>
 #include <math3d/Line3D.h>
 #include <math3d/misc.h>
+#include <iostream>
 using namespace std;
 
 IKGoal::IKGoal()

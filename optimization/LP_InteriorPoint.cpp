@@ -3,6 +3,7 @@
 #include <math/Conditioner.h>
 #include <math/SVDecomposition.h>
 #include <errors.h>
+#include <iostream>
 using namespace Optimization;
 using namespace std;
 using namespace Math;

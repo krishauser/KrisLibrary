@@ -1,7 +1,7 @@
 #ifndef INT_TRIPLE_H
 #define INT_TRIPLE_H
 
-#include <iostream>
+#include <iosfwd>
 
 /** @ingroup Utils
  * @brief A lightweight integer 3-tuple class 
@@ -49,16 +49,7 @@ struct IntTriple
   };
 };
 
-inline std::ostream& operator << (std::ostream& out,const IntTriple& t)
-{
-  out<<t.a<<" "<<t.b<<" "<<t.c;
-  return out;
-}
-
-inline std::istream& operator >> (std::istream& in,IntTriple& t)
-{
-  in >> t.a >> t.b >> t.c;
-  return in;
-}
+std::ostream& operator << (std::ostream& out,const IntTriple& t);
+std::istream& operator >> (std::istream& in,IntTriple& t);
 
 #endif

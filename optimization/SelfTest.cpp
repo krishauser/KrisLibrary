@@ -5,6 +5,7 @@
 #include "QuadraticProgram.h"
 //#include "QPActiveSetSolver.h"
 #include "LSQRInterface.h"
+#include <iostream>
 #include <math/vectorfunction.h>
 #include <math/linalgebra.h>
 #include <math/random.h>

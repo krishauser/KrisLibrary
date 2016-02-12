@@ -34,7 +34,7 @@ void QuadraticProgram::Print(ostream& out) const
   cout<<MatrixPrinter(Pobj)<<endl;
   cout<<"and b="<<VectorPrinter(qobj)<<endl;
   cout<<"s.t."<<endl;
-  LinearConstraints::Print();
+  LinearConstraints::Print(out);
 }
 
 void QuadraticProgram::Resize(int m,int n)

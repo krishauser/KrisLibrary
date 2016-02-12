@@ -6,7 +6,7 @@
 #include <KrisLibrary/math3d/Ray3D.h>
 #include <KrisLibrary/utils/IntTriple.h>
 #include <vector>
-#include <iostream>
+#include <iosfwd>
 
 /** @defgroup Meshing
  * @brief Classes defining operations on basic triangle meshes

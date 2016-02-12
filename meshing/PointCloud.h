@@ -5,7 +5,7 @@
 #include <KrisLibrary/math/vector.h>
 #include <vector>
 #include <map>
-#include <iostream>
+#include <iosfwd>
 #include <string>
 
 namespace Meshing {

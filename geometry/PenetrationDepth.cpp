@@ -3,6 +3,7 @@
 #include <math3d/interpolate.h>
 #include <map>
 #include <utils.h>
+#include <iostream>
 using namespace std;
 using namespace Geometry;
 

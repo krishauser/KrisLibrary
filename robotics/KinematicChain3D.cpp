@@ -1,4 +1,5 @@
 #include "KinematicChain3D.h"
+#include <iostream>
 using namespace std;
 
 void KinematicLink3D::SetRotationJoint(const Vector3& _w)

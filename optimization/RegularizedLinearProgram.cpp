@@ -1,6 +1,7 @@
 #include "RegularizedLinearProgram.h"
 #include "LPRobust.h"
 #include <math/linalgebra.h>
+#include <iostream>
 #include <errors.h>
 using namespace Optimization;
 using namespace std;

@@ -1,4 +1,5 @@
 #include "MatrixEquationPrinter.h"
+#include <iostream>
 #include "ASCIIShade.h"
 #include <string.h>
 #include <assert.h>

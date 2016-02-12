@@ -2,6 +2,7 @@
 #include "metric.h"
 #include "indexing.h"
 #include <errors.h>
+#include <iostream>
 using namespace Math;
 using namespace std;
 

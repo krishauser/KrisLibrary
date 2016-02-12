@@ -16,7 +16,7 @@
 #include "Polyhedron3D.h"
 #include <KrisLibrary/utils/AnyValue.h>
 #include <vector>
-#include <iostream>
+#include <iosfwd>
 
 //TriMesh declaration
 namespace Meshing {

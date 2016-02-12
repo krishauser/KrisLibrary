@@ -3,6 +3,7 @@
 #include "Polygon2D.h"
 #include <math/matrix.h>
 #include <math/linalgebra.h>
+#include <iostream>
 #include <errors.h>
 using namespace std;
 
