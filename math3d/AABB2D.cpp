@@ -1,5 +1,6 @@
 #include "AABB2D.h"
 #include <KrisLibrary/myfile.h>
+#include <algorithm>
 using namespace Math3D;
 
 AABB2D::AABB2D()

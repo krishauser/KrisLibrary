@@ -3,12 +3,6 @@
 #include <string>
 #include <stdio.h>
 
-#if defined (__APPLE__) || defined (MACOSX)
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
-#endif
-
 using namespace std;
 
 namespace Camera {

@@ -4,6 +4,7 @@
 #include <iosfwd>
 #include <ctype.h>
 #include <assert.h>
+#include <string>
 using namespace std;
 
 /** @ingroup Utils
