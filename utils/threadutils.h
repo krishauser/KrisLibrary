@@ -67,7 +67,7 @@ struct Condition
 #endif //USE_PTHREADS
 
 #ifdef WIN32
-inline void ThreadSleep(double duration) { Sleep(int(duration*1000)); }
+void ThreadSleep(double duration);
 #else
 #include <unistd.h>
 inline void ThreadSleep(double duration) { usleep(int(duration*1000000)); }

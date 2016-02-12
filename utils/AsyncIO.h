@@ -16,10 +16,11 @@
  *
  * Stores the last message and the newest queueMax messages from some other process / subclass.
  * 
- * Usage is to call NewMessages() or NewestMessage() to get the latest message. This will also
+ * Usage is to call Newest() or New() to get the latest message(s). These will 
  * flush the queue.
  * 
- * To do a non-blocking check for new messages without flushing the queue, call NewMessageCount().
+ * To do a non-blocking check for new messages without flushing the queue,
+ * call UnreadCount().  To peek to the latest, call PeekLast()
  */
 class AsyncReaderQueue
 {
@@ -36,10 +37,10 @@ class AsyncReaderQueue
   ///Do some work to read messages from sender -- must be done by subclass
   virtual void Work() {}
   int MessageCount() { return (int)msgCount; }
-  int NewMessageCount();
-  std::string LastMessage();
-  std::vector<std::string> NewMessages();
-  std::string NewestMessage() { if(NewMessageCount()>0) return NewMessages().back(); return LastMessage(); }
+  int UnreadCount();
+  std::string PeekNewest();
+  std::string Newest() { msgQueue.clear(); return PeekNewest(); }
+  std::vector<std::string> New();
 
   Mutex mutex;
   size_t queueMax;
@@ -75,9 +76,9 @@ class AsyncWriterQueue
   virtual void Reset();
   ///Do some work to write messages to receiver -- must be done by subclass
   virtual void Work() {}
-  void SendMessage(const std::string& msg);
-  int SentMessageCount() { return msgCount+msgQueue.size(); }
-  int DeliveredMessageCount() { return (int)msgCount; }
+  void Send(const std::string& msg);
+  int SentCount() { return msgCount+msgQueue.size(); }
+  int DeliveredCount() { return (int)msgCount; }
 
   Mutex mutex;
   size_t queueMax;
@@ -106,16 +107,15 @@ class AsyncPipeQueue
 
   ///Receive functions
   int MessageCount() { return reader.MessageCount(); }
-  int NewMessageCount() { return reader.NewMessageCount(); }
-  std::string LastMessage() { return reader.LastMessage(); }
-  std::vector<std::string> NewMessages() { return reader.NewMessages(); }
-  std::string NewestMessage() { return reader.NewestMessage(); }
+  int UnreadCount() { return reader.UnreadCount(); }
+  std::string PeekNewest() { return reader.PeekNewest(); }
+  std::vector<std::string> New() { return reader.New(); }
+  std::string Newest() { return reader.Newest(); }
 
   ///Send functions
-  void SendMessage(const std::string& msg) { writer.SendMessage(msg); }
-  int SentMessageCount() { return writer.SentMessageCount(); }
-  int DeliveredMessageCount() { return writer.DeliveredMessageCount(); }
-
+  void Send(const std::string& msg) { writer.Send(msg); }
+  int SentCount() { return writer.SentCount(); }
+  int DeliveredCount() { return writer.DeliveredCount(); }
 
   AsyncReaderQueue reader;
   AsyncWriterQueue writer;

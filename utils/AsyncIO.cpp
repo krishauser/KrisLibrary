@@ -35,19 +35,19 @@ void AsyncReaderQueue::Reset()
   msgQueue.clear(); 
 }
 
-int AsyncReaderQueue::NewMessageCount()
+int AsyncReaderQueue::UnreadCount()
 {
   ScopedLock lock(mutex);
   return (int)msgQueue.size();
 }
 
-string AsyncReaderQueue::LastMessage()
+string AsyncReaderQueue::PeekNewest()
 {
   ScopedLock lock(mutex);
   return msgLast;
 }
 
-vector<string> AsyncReaderQueue::NewMessages()
+vector<string> AsyncReaderQueue::New()
 {
   ScopedLock lock(mutex);
   if(msgQueue.empty()) { msgLast=""; return vector<string>(); }
@@ -75,7 +75,7 @@ string AsyncWriterQueue::OnWrite_NoLock()
   string res = msgQueue.front();
   if(msgQueue.size() >= queueMax) {
     printf("AsyncWriterQueue: Message queue overflowing!\n");
-    printf("   solution: slow down rate of sending via SendMessage\n");
+    printf("   solution: slow down rate of sending via Send\n");
   }
   while(msgQueue.size()>=queueMax) {
     msgQueue.pop_front();
@@ -92,7 +92,7 @@ void AsyncWriterQueue::Reset()
   msgCount = 0;
 }
 
-void AsyncWriterQueue::SendMessage(const string& msg)
+void AsyncWriterQueue::Send(const string& msg)
 {
   ScopedLock lock(mutex);
   //prevent message queue from growing too big

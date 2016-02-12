@@ -1,22 +1,6 @@
 #ifndef BASIC_FILE_H
 #define BASIC_FILE_H
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-typedef HANDLE FILE_POINTER;
-#define INVALID_FILE_POINTER INVALID_HANDLE_VALUE
-typedef UINT_PTR SOCKET;
-
-#else
-
-#include <stdlib.h>
-#include <stdio.h>
-typedef FILE *FILE_POINTER;
-#define INVALID_FILE_POINTER NULL
-typedef int SOCKET;
-#endif // _WIN32
-
 ///Flags sent to Open: read or write mode (may be bitwise or-ed together)
 #define FILEREAD 0x1
 #define FILEWRITE 0x2
@@ -27,6 +11,18 @@ typedef int SOCKET;
 #define FILESEEKSTART 0
 #define FILESEEKCURRENT 1
 #define FILESEEKEND 2
+
+#ifdef _WIN32
+typedef void *FILE_POINTER;
+typedef unsigned int SOCKET;
+#else
+typedef void *FILE_POINTER;
+typedef int SOCKET;
+#endif // _WIN32
+
+
+//opaque pointer
+struct FileImpl;
 
 /** @ingroup Standard
  * @brief A cross-platform class for reading/writing binary data.
@@ -115,11 +111,7 @@ private:
 	int mode;		//file read/write mode
 	int srctype;	//data source mode (file,data,etc)
 	
-	FILE_POINTER file;
-	unsigned char* datafile;
-	int datapos;
-	int datasize;
-	SOCKET socket; 
+	FileImpl* impl;
 };
 
 /** \file myfile.h

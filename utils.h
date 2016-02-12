@@ -95,11 +95,9 @@ inline void toggle(bool& bit)
 #define SafeArrayDelete(x) { if (x) delete [] x; x=NULL; }
 #define SafeDeleteProc(x,proc) { if (x) proc(x); x=NULL; }
 
-#ifndef _WIN32
-#ifndef ARRAYSIZE
-#define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
-#endif //ARRAYSIZE
-#endif //_WIN32
+#ifndef ArraySize
+#define ArraySize(x) (sizeof(x)/sizeof(x[0]))
+#endif //ArraySize
 
 /*@}*/
 

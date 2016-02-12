@@ -10,9 +10,32 @@
 
 #include <utils/socketutils.h>
 #include <utils/threadutils.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+typedef HANDLE FILE_POINTER;
+#define INVALID_FILE_POINTER INVALID_HANDLE_VALUE
+typedef UINT_PTR SOCKET;
+
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
-#endif
+typedef FILE *FILE_POINTER;
+#define INVALID_FILE_POINTER NULL
+typedef int SOCKET;
+
+#endif // _WIN32
+
+struct FileImpl
+{
+	FILE_POINTER file;
+	unsigned char* datafile;
+	int datapos;
+	int datasize;
+	SOCKET socket; 
+};
 
 //platform-specific defines
 
@@ -145,30 +168,29 @@ enum { MODE_NONE,
 
 File::File()
 :mode(0),srctype(MODE_NONE),
- file(INVALID_FILE_POINTER),
- datafile(NULL),datapos(0),datasize(0),
- socket(0)
+ impl(new FileImpl)
 {
 }
 
 File::~File()
 {
 	Close();
+	delete impl;
 }
 
 void File::Close()
 {
-        if(srctype == MODE_MYFILE && file != INVALID_FILE_POINTER) FileClose(file);
-	if(srctype == MODE_MYDATA && datafile != NULL) free(datafile);
-	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && file > 0) SocketClose(socket);
+        if(srctype == MODE_MYFILE && impl->file != INVALID_FILE_POINTER) FileClose(impl->file);
+	if(srctype == MODE_MYDATA && impl->datafile != NULL) free(impl->datafile);
+	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && impl->file > 0) SocketClose(impl->socket);
 
 	srctype = MODE_NONE;
 	mode = 0;
-	file = INVALID_FILE_POINTER;
-	datafile = NULL;
-	datapos = 0;
-	datasize = 0;
-	socket = 0;
+	impl->file = INVALID_FILE_POINTER;
+	impl->datafile = NULL;
+	impl->datapos = 0;
+	impl->datasize = 0;
+	impl->socket = 0;
 }
 
 bool File::OpenData(void* data, int size, int openmode)
@@ -184,9 +206,9 @@ bool File::OpenData(void* data, int size, int openmode)
 	if(openmode == 0)
 		return false;
 
-	datafile = (unsigned char*)data;
-	datapos = 0;
-	datasize = size;
+	impl->datafile = (unsigned char*)data;
+	impl->datapos = 0;
+	impl->datasize = size;
 	mode = openmode;
 	return true;
 }
@@ -208,30 +230,30 @@ bool File::OpenData(int openmode)
 void* File::FileObjectPointer()
 {
   if(srctype == MODE_MYDATA || srctype == MODE_EXTDATA)
-    return datafile;
+    return impl->datafile;
   else if(srctype == MODE_TCPSOCKET || mode == MODE_UDPSOCKET) {
-    if(socket == INVALID_SOCKET) return NULL;
-    return &socket;
+    if(impl->socket == INVALID_SOCKET) return NULL;
+    return &impl->socket;
   }
-  if(file == INVALID_FILE_POINTER) return NULL;
-  return &file;
+  if(impl->file == INVALID_FILE_POINTER) return NULL;
+  return &impl->file;
 }
 
 void File::ResizeDataBuffer(int size)
 {
   assert(srctype == MODE_MYDATA);
-	unsigned char* olddata=datafile;
-	datafile=(unsigned char*)malloc(size);
-	if(!datafile) FatalError("Memory allocation error, size %d\n",size);
-	memcpy(datafile,olddata,datasize);
+	unsigned char* olddata=impl->datafile;
+	impl->datafile=(unsigned char*)malloc(size);
+	if(!impl->datafile) FatalError("Memory allocation error, size %d\n",size);
+	memcpy(impl->datafile,olddata,impl->datasize);
 	free(olddata);
-	datasize = size;
+	impl->datasize = size;
 }
 
 unsigned char* File::GetDataBuffer() const
 {
   if(srctype == MODE_MYDATA || srctype == MODE_EXTDATA)
-    return datafile;
+    return impl->datafile;
   return NULL;
 }
 
@@ -244,7 +266,7 @@ bool File::OpenTCPSocket(SOCKET sockfd)
     return false;
   }
 
-  socket = sockfd;
+  impl->socket = sockfd;
   srctype = MODE_TCPSOCKET;
   //can read and write to sockets
   mode = FILEREAD | FILEWRITE;
@@ -259,7 +281,7 @@ bool File::OpenUDPSocket(SOCKET sockfd)
     return false;
   }
 
-  socket = sockfd;
+  impl->socket = sockfd;
   srctype = MODE_UDPSOCKET;
   //can read and write to sockets
   mode = FILEREAD | FILEWRITE;
@@ -294,7 +316,7 @@ bool File::Open(const char* fn, int openmode)
 	      SocketClose(sockfd);
 	      return false;
 	    }
-	    socket = clientsocket;
+	    impl->socket = clientsocket;
 	    srctype = socketsrctype;
 	    //can read and write to sockets
 	    mode = FILEREAD | FILEWRITE;
@@ -314,7 +336,7 @@ bool File::Open(const char* fn, int openmode)
 	      SocketClose(sockfd);
 	      return false;
 	    }
-	    socket = sockfd;
+	    impl->socket = sockfd;
 	    srctype = socketsrctype;
 	    //can read and write to sockets
 	    mode = FILEREAD | FILEWRITE;
@@ -323,9 +345,9 @@ bool File::Open(const char* fn, int openmode)
 	  }
 	}
 
-	file=FileOpen(fn,openmode);
+	impl->file=FileOpen(fn,openmode);
 
-	if(file == INVALID_FILE_POINTER)
+	if(impl->file == INVALID_FILE_POINTER)
 		return false;
 	srctype = MODE_MYFILE;
 	mode = openmode;
@@ -341,7 +363,7 @@ bool File::Open(FILE_POINTER f, int openmode)
 	if(openmode == 0)
 		return false;
 
-	file = f;
+	impl->file = f;
 	mode = openmode;
 	return true;
 }
@@ -352,13 +374,13 @@ int File::Position() const
 	{
 	case MODE_MYFILE:
 	case MODE_EXTFILE:
-	        return FilePosition(file);
+	        return FilePosition(impl->file);
 	case MODE_MYDATA:
 	case MODE_EXTDATA:
-		return datapos;
+		return impl->datapos;
 	case MODE_TCPSOCKET:
 	case MODE_UDPSOCKET:
-	  if(socket == INVALID_SOCKET) return -1;
+	  if(impl->socket == INVALID_SOCKET) return -1;
 	  return 0;
 	}
 	return -1;
@@ -370,7 +392,7 @@ bool File::Seek(int p, int from)
 	{
 	case MODE_MYFILE:
 	case MODE_EXTFILE:
-	       return FileSeek(file,p,from);
+	       return FileSeek(impl->file,p,from);
 		break;
 	case MODE_MYDATA:
 	case MODE_EXTDATA:
@@ -378,21 +400,21 @@ bool File::Seek(int p, int from)
 		{
 		//case SEEK_CUR:
 		case FILESEEKCURRENT:
-			if(datapos + p >= datasize || datapos + p < 0)
+			if(impl->datapos + p >= impl->datasize || impl->datapos + p < 0)
 				return false;
-			datapos += p;
+			impl->datapos += p;
 			break;
 		//case SEEK_SET:
 		case FILESEEKSTART:
-			if(p >= datasize || p < 0)
+			if(p >= impl->datasize || p < 0)
 				return false;
-			datapos = p;
+			impl->datapos = p;
 			break;
 		//case SEEK_END:
 		case FILESEEKEND:
-			if(datasize + p < 0 || p > 0)
+			if(impl->datasize + p < 0 || p > 0)
 				return false;
-			datapos = datasize + p;
+			impl->datapos = impl->datasize + p;
 			break;
 		}
 	case MODE_TCPSOCKET:
@@ -408,10 +430,10 @@ int File::Length() const
 	{
 	case MODE_MYFILE:
 	case MODE_EXTFILE:
-	        return FileLength(file);
+	        return FileLength(impl->file);
 	case MODE_MYDATA:
 	case MODE_EXTDATA:
-		return datasize;
+		return impl->datasize;
 	}
 	return -1;
 }
@@ -426,13 +448,13 @@ bool File::ReadData(void* d, int size)
 		{
 		case MODE_MYFILE:
 		case MODE_EXTFILE:
-			return FileRead(file,d,size);
+			return FileRead(impl->file,d,size);
 		case MODE_MYDATA:
 		case MODE_EXTDATA:
-			if(datapos + size > datasize)
+			if(impl->datapos + size > impl->datasize)
 				return false;
-			memcpy(d, datafile+datapos, size);
-			datapos += size;
+			memcpy(d, impl->datafile+impl->datapos, size);
+			impl->datapos += size;
 			return true;
 		case MODE_TCPSOCKET:
 		case MODE_UDPSOCKET:
@@ -440,7 +462,7 @@ bool File::ReadData(void* d, int size)
 		    char* buffer = (char*)d;
 		    int totalread = 0;
 		    while(totalread < size) {
-		      int n=SocketRead(socket,buffer+totalread,size-totalread);
+		      int n=SocketRead(impl->socket,buffer+totalread,size-totalread);
 		      if(n == 0) {
 			printf("File(socket): socketRead returned 0, connection shutdown\n");
 			return false;
@@ -472,20 +494,20 @@ bool File::WriteData(const void* d, int size)
 		{
 		case MODE_MYFILE:
 		case MODE_EXTFILE:
-			return FileWrite(file,d,size);
+			return FileWrite(impl->file,d,size);
 		case MODE_MYDATA:		//resize if buffer's not big enough
-			if(datapos + size > datasize) {
-				int a=datapos+size,b=datasize*2;
+			if(impl->datapos + size > impl->datasize) {
+				int a=impl->datapos+size,b=impl->datasize*2;
 				ResizeDataBuffer(Max(a,b));
 			}
-			memcpy(datafile+datapos, d, size);
-			datapos += size;
+			memcpy(impl->datafile+impl->datapos, d, size);
+			impl->datapos += size;
 			return true;
 		case MODE_EXTDATA:
-			if(datapos + size > datasize)
+			if(impl->datapos + size > impl->datasize)
 				return false;
-			memcpy(datafile+datapos, d, size);
-			datapos += size;
+			memcpy(impl->datafile+impl->datapos, d, size);
+			impl->datapos += size;
 			return true;
 		case MODE_TCPSOCKET:
 		case MODE_UDPSOCKET:
@@ -493,7 +515,7 @@ bool File::WriteData(const void* d, int size)
 		    const char* msg = (const char*)d;
 		    int totalsent = 0;
 		    while(totalsent < size) {
-		      int n = SocketWrite(socket,msg+totalsent,size-totalsent);
+		      int n = SocketWrite(impl->socket,msg+totalsent,size-totalsent);
 		      if(n < 0) {
 			perror("File(socket) SocketWrite");
 			return false;
@@ -532,7 +554,7 @@ bool File::ReadString(char* str, int bufsize)
 		case MODE_EXTFILE:
 			for(i=0; i<bufsize; i++)
 			{
-				c = ReadChar(file);
+				c = ReadChar(impl->file);
 				if(c==EOF) {
 				  if(i != 0) fprintf(stderr,"File::ReadString hit end of file without finding null character\n");
 				  return false;
@@ -547,12 +569,12 @@ bool File::ReadString(char* str, int bufsize)
 		case MODE_EXTDATA:
 			for(i=0; i<bufsize; i++)
 			{
-			  if(datapos >= datasize) {
+			  if(impl->datapos >= impl->datasize) {
 			    fprintf(stderr,"File::ReadString ran past end of internal buffer without finding null character\n");
 			    return false;
 			  }
-			  str[i]=datafile[datapos];
-			  datapos++;
+			  str[i]=impl->datafile[impl->datapos];
+			  impl->datapos++;
 			  if(str[i]==0)
 			    return true;
 			}
@@ -617,12 +639,12 @@ bool File::WriteString(const char* str)
 bool File::IsOpen() const
 {
   if(srctype == MODE_TCPSOCKET || mode == MODE_UDPSOCKET) {
-    if(socket == INVALID_SOCKET) return false;
+    if(impl->socket == INVALID_SOCKET) return false;
     return true;
   }
   if(srctype == MODE_MYDATA || srctype == MODE_EXTDATA)
-    return (datafile != NULL);
-  if(file == INVALID_FILE_POINTER) return false;
+    return (impl->datafile != NULL);
+  if(impl->file == INVALID_FILE_POINTER) return false;
   return true;
 }
 
@@ -638,7 +660,7 @@ bool File::ReadAvailable(int numbytes) const
     return Position()+numbytes <= Length();
   case MODE_TCPSOCKET:
   case MODE_UDPSOCKET:
-    return ::ReadAvailable(socket);
+    return ::ReadAvailable(impl->socket);
   default:
     return false;
   }
@@ -657,7 +679,7 @@ bool File::WriteAvailable(int numbytes) const
     return Position()+numbytes <= Length();
   case MODE_TCPSOCKET:
   case MODE_UDPSOCKET:
-    return ::WriteAvailable(socket);
+    return ::WriteAvailable(impl->socket);
   default:
     return false;
   }

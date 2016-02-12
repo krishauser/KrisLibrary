@@ -1,4 +1,5 @@
 #include <KrisLibrary/myfile.h>
+#include <KrisLibrary/utils.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -10,6 +11,7 @@ using namespace std;
 
 #include "image.h"
 #include <math.h>
+
 
 static int IMAGEHEADER = 0xd0d0beef;
 
@@ -71,12 +73,12 @@ static unsigned int pfsizes [] =
 
 bool Image::isValidFormat(PixelFormat f)
 {
-	return (f < ARRAYSIZE(pfsizes) && f >= 0);
+	return (f < ArraySize(pfsizes) && f >= 0);
 }
 
 unsigned int Image::pixelFormatSize(PixelFormat f)
 {
-	if(f >= ARRAYSIZE(pfsizes)) return false;
+	if(f >= ArraySize(pfsizes)) return false;
 	return pfsizes[f];
 }
 
