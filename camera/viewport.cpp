@@ -165,7 +165,7 @@ bool Viewport::project(const Vector3& pt,float& mx,float& my,float& mz) const
   }
   mx = x + w/2 + mx*w;
   my = y + h/2 + my*w;
-  return clicked(mx,my) && (mz >= n && mz <= f);
+  return clicked((int)mx,(int)my) && (mz >= n && mz <= f);
 }
 
 
