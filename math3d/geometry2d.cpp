@@ -873,17 +873,17 @@ bool GeometricPrimitive2D::Collides(const GeometricPrimitive2D& geom) const
 {
   switch(type) {
   case Point:
-    return geom.Collides(*AnyCast<Vector2>(&data));
+    return geom.Collides(*AnyCast_Raw<Vector2>(&data));
   case Segment:
-    return geom.Collides(*AnyCast<Segment2D>(&data));
+    return geom.Collides(*AnyCast_Raw<Segment2D>(&data));
   case Circle:
-    return geom.Collides(*AnyCast<Circle2D>(&data));
+    return geom.Collides(*AnyCast_Raw<Circle2D>(&data));
   case AABB:
-    return geom.Collides(*AnyCast<AABB2D>(&data));
+    return geom.Collides(*AnyCast_Raw<AABB2D>(&data));
   case Box:
-    return geom.Collides(*AnyCast<Box2D>(&data));
+    return geom.Collides(*AnyCast_Raw<Box2D>(&data));
   case Triangle:
-    return geom.Collides(*AnyCast<Triangle2D>(&data));
+    return geom.Collides(*AnyCast_Raw<Triangle2D>(&data));
   default:
     return false;
   }
@@ -893,17 +893,17 @@ bool GeometricPrimitive2D::Collides(const Vector2& point) const
 {
   switch(type) {
   case Point:
-    return *AnyCast<Vector2>(&data) == point;
+    return *AnyCast_Raw<Vector2>(&data) == point;
   case Segment:
-    return AnyCast<Segment2D>(&data)->distance(point) == 0;
+    return AnyCast_Raw<Segment2D>(&data)->distance(point) == 0;
   case Circle:
-    return AnyCast<Circle2D>(&data)->contains(point);
+    return AnyCast_Raw<Circle2D>(&data)->contains(point);
   case AABB:
-    return AnyCast<AABB2D>(&data)->contains(point);
+    return AnyCast_Raw<AABB2D>(&data)->contains(point);
   case Box:
-    return AnyCast<Box2D>(&data)->contains(point);
+    return AnyCast_Raw<Box2D>(&data)->contains(point);
   case Triangle:
-    return AnyCast<Triangle2D>(&data)->contains(point);
+    return AnyCast_Raw<Triangle2D>(&data)->contains(point);
   default:
     return false;
   }
@@ -913,17 +913,17 @@ bool GeometricPrimitive2D::Collides(const Segment2D& seg) const
 {
   switch(type) {
   case Point:
-    return seg.distance(*AnyCast<Vector2>(&data)) == 0;
+    return seg.distance(*AnyCast_Raw<Vector2>(&data)) == 0;
   case Segment:
-    return AnyCast<Segment2D>(&data)->intersects(seg);
+    return AnyCast_Raw<Segment2D>(&data)->intersects(seg);
   case Circle:
-    return AnyCast<Circle2D>(&data)->intersects(seg);
+    return AnyCast_Raw<Circle2D>(&data)->intersects(seg);
   case AABB:
-    return seg.intersects(*AnyCast<AABB2D>(&data));
+    return seg.intersects(*AnyCast_Raw<AABB2D>(&data));
   case Box:
-    return AnyCast<Box2D>(&data)->intersects(seg);
+    return AnyCast_Raw<Box2D>(&data)->intersects(seg);
   case Triangle:
-    return AnyCast<Triangle2D>(&data)->intersects(seg);
+    return AnyCast_Raw<Triangle2D>(&data)->intersects(seg);
   default:
     return false;
   }
@@ -940,17 +940,17 @@ bool GeometricPrimitive2D::Collides(const Box2D& box) const
 {
   switch(type) {
   case Point:
-    return box.contains(*AnyCast<Vector2>(&data));
+    return box.contains(*AnyCast_Raw<Vector2>(&data));
   case Segment:
-    return box.intersects(*AnyCast<Segment2D>(&data));
+    return box.intersects(*AnyCast_Raw<Segment2D>(&data));
   case Circle:
-    return box.intersects(*AnyCast<Circle2D>(&data));
+    return box.intersects(*AnyCast_Raw<Circle2D>(&data));
   case AABB:
-    return box.intersects(*AnyCast<AABB2D>(&data));
+    return box.intersects(*AnyCast_Raw<AABB2D>(&data));
   case Box:
-    return box.intersects(*AnyCast<Box2D>(&data));
+    return box.intersects(*AnyCast_Raw<Box2D>(&data));
   case Triangle:
-    return box.intersects(*AnyCast<Triangle2D>(&data));
+    return box.intersects(*AnyCast_Raw<Triangle2D>(&data));
   default:
     return false;
   }
@@ -965,24 +965,24 @@ bool GeometricPrimitive2D::Collides(const Triangle2D& triangle) const
 {
   switch(type) {
   case Point:
-    return triangle.contains(*AnyCast<Vector2>(&data));
+    return triangle.contains(*AnyCast_Raw<Vector2>(&data));
   case Segment:
-    return triangle.intersects(*AnyCast<Segment2D>(&data));
+    return triangle.intersects(*AnyCast_Raw<Segment2D>(&data));
   case Circle:
     {
-      const Circle2D* c=AnyCast<Circle2D>(&data);
+      const Circle2D* c=AnyCast_Raw<Circle2D>(&data);
       return c->contains(triangle.closestPoint(c->center));
     }
   case AABB:
     {
       Box2D box;
-      box.set(*AnyCast<AABB2D>(&data));
+      box.set(*AnyCast_Raw<AABB2D>(&data));
       return box.intersects(triangle);
     }
   case Box:
-    return AnyCast<Box2D>(&data)->intersects(triangle);
+    return AnyCast_Raw<Box2D>(&data)->intersects(triangle);
   case Triangle:
-    return triangle.intersects(*AnyCast<Triangle2D>(&data));
+    return triangle.intersects(*AnyCast_Raw<Triangle2D>(&data));
   default:
     return false;
   }
@@ -1003,17 +1003,17 @@ Real GeometricPrimitive2D::Distance(const GeometricPrimitive2D& geom) const
 {
   switch(type) {
   case Point:
-    return geom.Distance(*AnyCast<Vector2>(&data));
+    return geom.Distance(*AnyCast_Raw<Vector2>(&data));
   case Segment:
-    return geom.Distance(*AnyCast<Segment2D>(&data));
+    return geom.Distance(*AnyCast_Raw<Segment2D>(&data));
   case Circle:
-    return geom.Distance(*AnyCast<Circle2D>(&data));
+    return geom.Distance(*AnyCast_Raw<Circle2D>(&data));
   case AABB:
-    return geom.Distance(*AnyCast<AABB2D>(&data));
+    return geom.Distance(*AnyCast_Raw<AABB2D>(&data));
   case Box:
-    return geom.Distance(*AnyCast<Box2D>(&data));
+    return geom.Distance(*AnyCast_Raw<Box2D>(&data));
   case Triangle:
-    return geom.Distance(*AnyCast<Triangle2D>(&data));
+    return geom.Distance(*AnyCast_Raw<Triangle2D>(&data));
   default:
     return Inf;
   }
@@ -1023,17 +1023,17 @@ Real GeometricPrimitive2D::Distance(const Vector2& x) const
 {
   switch(type) {
   case Point:
-    return x.distance(*AnyCast<Vector2>(&data));
+    return x.distance(*AnyCast_Raw<Vector2>(&data));
   case Segment:
-    return AnyCast<Segment2D>(&data)->distance(x);
+    return AnyCast_Raw<Segment2D>(&data)->distance(x);
   case Circle:
-    return AnyCast<Circle2D>(&data)->distance(x);
+    return AnyCast_Raw<Circle2D>(&data)->distance(x);
   case AABB:
-    return AnyCast<AABB2D>(&data)->distance(x);
+    return AnyCast_Raw<AABB2D>(&data)->distance(x);
   case Box:
-    return AnyCast<Box2D>(&data)->distance(x);
+    return AnyCast_Raw<Box2D>(&data)->distance(x);
   case Triangle:
-    return AnyCast<Triangle2D>(&data)->closestPoint(x).distance(x);
+    return AnyCast_Raw<Triangle2D>(&data)->closestPoint(x).distance(x);
   default:
     return Inf;
   }
@@ -1049,15 +1049,15 @@ Real GeometricPrimitive2D::Distance(const Segment2D& s) const
 {
   switch(type) {
   case Point:
-    return s.distance(*AnyCast<Vector2>(&data));
+    return s.distance(*AnyCast_Raw<Vector2>(&data));
   case Segment:
     {
-      const Segment2D* seg=AnyCast<Segment2D>(&data);
+      const Segment2D* seg=AnyCast_Raw<Segment2D>(&data);
       if(seg->intersects(s)) return 0.0;
       return Min(Min(seg->distance(s.a),seg->distance(s.b)),Min(s.distance(seg->a),s.distance(seg->b)));
     }
   case Circle:
-    return Max(0.0,s.distance(AnyCast<Circle2D>(&data)->center)-AnyCast<Circle2D>(&data)->radius);
+    return Max(0.0,s.distance(AnyCast_Raw<Circle2D>(&data)->center)-AnyCast_Raw<Circle2D>(&data)->radius);
   case AABB:
     FatalError("AABB-Segment distance not implemented");
     return Inf;
@@ -1076,12 +1076,12 @@ Real GeometricPrimitive2D::Distance(const AABB2D& b) const
 {
   switch(type) {
   case Point:
-    return b.distance(*AnyCast<Vector2>(&data));
+    return b.distance(*AnyCast_Raw<Vector2>(&data));
   case Segment:
     FatalError("Segment-AABB distance not implemented");
     return Inf;
   case Circle:
-    return Max(0.0,b.distance(AnyCast<Circle2D>(&data)->center)-AnyCast<Circle2D>(&data)->radius);
+    return Max(0.0,b.distance(AnyCast_Raw<Circle2D>(&data)->center)-AnyCast_Raw<Circle2D>(&data)->radius);
   case AABB:
     FatalError("AABB-AABB distance not implemented");
     return Inf;
@@ -1100,12 +1100,12 @@ Real GeometricPrimitive2D::Distance(const Box2D& b) const
 {
   switch(type) {
   case Point:
-    return b.distance(*AnyCast<Vector2>(&data));
+    return b.distance(*AnyCast_Raw<Vector2>(&data));
   case Segment:
     FatalError("Segment-Box distance not implemented");
     return Inf;
   case Circle:
-    return Max(0.0,b.distance(AnyCast<Circle2D>(&data)->center)-AnyCast<Circle2D>(&data)->radius);
+    return Max(0.0,b.distance(AnyCast_Raw<Circle2D>(&data)->center)-AnyCast_Raw<Circle2D>(&data)->radius);
   case AABB:
     FatalError("AABB-Box distance not implemented");
     return Inf;
@@ -1124,12 +1124,12 @@ Real GeometricPrimitive2D::Distance(const Triangle2D& t) const
 {
   switch(type) {
   case Point:
-    return t.closestPoint(*AnyCast<Vector2>(&data)).distance(*AnyCast<Vector2>(&data));
+    return t.closestPoint(*AnyCast_Raw<Vector2>(&data)).distance(*AnyCast_Raw<Vector2>(&data));
   case Segment:
     FatalError("Segment-Triangle distance not implemented");
     return Inf;
   case Circle:
-    return Max(0.0,t.closestPoint(AnyCast<Circle2D>(&data)->center).distance(AnyCast<Circle2D>(&data)->center)-AnyCast<Circle2D>(&data)->radius);
+    return Max(0.0,t.closestPoint(AnyCast_Raw<Circle2D>(&data)->center).distance(AnyCast_Raw<Circle2D>(&data)->center)-AnyCast_Raw<Circle2D>(&data)->radius);
   case AABB:
     FatalError("AABB-Triangle distance not implemented");
     return Inf;
@@ -1151,30 +1151,30 @@ void GeometricPrimitive2D::Transform(const RigidTransform2D& T)
 {
   switch(type) {
   case Point:
-    data = T*(*AnyCast<Vector2>(&data));
+    data = T*(*AnyCast_Raw<Vector2>(&data));
     break;
   case Segment:
     {
-      Segment2D* seg = AnyCast<Segment2D>(&data);
+      Segment2D* seg = AnyCast_Raw<Segment2D>(&data);
       seg->a = T*seg->a;
       seg->b = T*seg->b;
     }
     break;
   case Circle:
-    AnyCast<Circle2D>(&data)->center = T*AnyCast<Circle2D>(&data)->center;
+    AnyCast_Raw<Circle2D>(&data)->center = T*AnyCast_Raw<Circle2D>(&data)->center;
     break;
   case AABB:
     {
       Box2D box;
-      box.setTransformed(*AnyCast<AABB2D>(&data),T);
+      box.setTransformed(*AnyCast_Raw<AABB2D>(&data),T);
       Set(box);
     }
     break;
   case Box:
-    AnyCast<Box2D>(&data)->setTransformed(*AnyCast<Box2D>(&data),T);
+    AnyCast_Raw<Box2D>(&data)->setTransformed(*AnyCast_Raw<Box2D>(&data),T);
     break;
   case Triangle:
-    AnyCast<Triangle2D>(&data)->setTransformed(*AnyCast<Triangle2D>(&data),T);
+    AnyCast_Raw<Triangle2D>(&data)->setTransformed(*AnyCast_Raw<Triangle2D>(&data),T);
     break;
   default:
     return;
@@ -1186,16 +1186,16 @@ void GeometricPrimitive2D::ToPolygon(vector<Vector2> & poly,int divs) const
   switch(type) {
   case Point:
     poly.resize(1);
-    poly[0] = *AnyCast<Vector2>(&data);
+    poly[0] = *AnyCast_Raw<Vector2>(&data);
     return;
   case Segment:
     poly.resize(2);
-    poly[0] = AnyCast<Segment2D>(&data)->a;
-    poly[1] = AnyCast<Segment2D>(&data)->b;
+    poly[0] = AnyCast_Raw<Segment2D>(&data)->a;
+    poly[1] = AnyCast_Raw<Segment2D>(&data)->b;
     return;
   case Circle:
     {
-      const Circle2D* c=AnyCast<Circle2D>(&data);
+      const Circle2D* c=AnyCast_Raw<Circle2D>(&data);
       poly.resize(divs);
       for(int k=0;k<divs;k++) {
 	Real u = Real(k)/Real(divs);
@@ -1206,7 +1206,7 @@ void GeometricPrimitive2D::ToPolygon(vector<Vector2> & poly,int divs) const
     }
   case AABB:
     {
-      const AABB2D* aabb=AnyCast<AABB2D>(&data);
+      const AABB2D* aabb=AnyCast_Raw<AABB2D>(&data);
       poly.resize(4);
       poly[0].set(aabb->bmin.x,aabb->bmin.y);
       poly[1].set(aabb->bmax.x,aabb->bmin.y);
@@ -1216,7 +1216,7 @@ void GeometricPrimitive2D::ToPolygon(vector<Vector2> & poly,int divs) const
     return;
   case Box:
     {
-      const Box2D* box = AnyCast<Box2D>(&data);
+      const Box2D* box = AnyCast_Raw<Box2D>(&data);
       poly.resize(4);
       poly[0].set(box->origin);
       poly[1].set(box->origin+box->dims.x*box->xbasis);
@@ -1226,7 +1226,7 @@ void GeometricPrimitive2D::ToPolygon(vector<Vector2> & poly,int divs) const
     return;
   case Triangle:
     {
-      const Triangle2D* tri=AnyCast<Triangle2D>(&data);
+      const Triangle2D* tri=AnyCast_Raw<Triangle2D>(&data);
       poly.resize(3);
       poly[0].set(tri->a);
       poly[1].set(tri->b);
@@ -1244,21 +1244,21 @@ AABB2D GeometricPrimitive2D::GetAABB() const
   AABB2D bb;
   switch(type) {
   case Point:
-    bb.bmin = bb.bmin = *AnyCast<Vector2>(&data);
+    bb.bmin = bb.bmin = *AnyCast_Raw<Vector2>(&data);
     break;
   case Segment:
-    AnyCast<Segment2D>(&data)->getAABB(bb);
+    AnyCast_Raw<Segment2D>(&data)->getAABB(bb);
     break;
   case Circle:
-    AnyCast<Circle2D>(&data)->getAABB(bb);
+    AnyCast_Raw<Circle2D>(&data)->getAABB(bb);
     break;
   case AABB:
-    return *AnyCast<AABB2D>(&data);
+    return *AnyCast_Raw<AABB2D>(&data);
   case Box:
-    AnyCast<Box2D>(&data)->getAABB(bb);
+    AnyCast_Raw<Box2D>(&data)->getAABB(bb);
     break;
   case Triangle:
-    AnyCast<Triangle2D>(&data)->getAABB(bb);
+    AnyCast_Raw<Triangle2D>(&data)->getAABB(bb);
     break;
   default:
     break;
