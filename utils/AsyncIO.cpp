@@ -9,7 +9,7 @@
 using namespace std;
 
 AsyncReaderQueue::AsyncReaderQueue(size_t _queueMax)
-  :queueMax(_queueMax),msgCount(0)
+  :queueMax(_queueMax),msgCount(0),numDroppedMsgs(0)
 {}
 
 void AsyncReaderQueue::OnRead(const string& msg)
@@ -20,8 +20,13 @@ void AsyncReaderQueue::OnRead(const string& msg)
 
 void AsyncReaderQueue::OnRead_NoLock(const string& msg)
 {
-  while(msgQueue.size()>=queueMax)
+  while(msgQueue.size()>=queueMax) {
     msgQueue.pop_front();
+    numDroppedMsgs++;
+    if(numDroppedMsgs % 1000 == 1) {
+      fprintf(stderr,"AsyncReaderQueue: Warning, dropped %d messages, ask your sender to reduce the send rate\n",numDroppedMsgs);
+    }
+  }
   msgQueue.push_back(msg);
   msgLast = msg;
   msgCount += 1;
@@ -59,7 +64,7 @@ vector<string> AsyncReaderQueue::NewMessages()
 }
 
 AsyncWriterQueue::AsyncWriterQueue(size_t _queueMax)
-  :queueMax(_queueMax),msgCount(0)
+  :queueMax(_queueMax),msgCount(0),numDroppedMsgs(0)
 {}
 
 
@@ -79,6 +84,10 @@ string AsyncWriterQueue::OnWrite_NoLock()
   }
   while(msgQueue.size()>=queueMax) {
     msgQueue.pop_front();
+    numDroppedMsgs++;
+    if(numDroppedMsgs % 1000 == 1) {
+      fprintf(stderr,"AsyncWriterQueue: Warning, dropped %d messages, slow down the rate of sending via SendMessage\n",numDroppedMsgs);
+    }
   }
   msgQueue.pop_front();
   msgCount += 1;
