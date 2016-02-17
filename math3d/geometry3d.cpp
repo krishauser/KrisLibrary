@@ -362,29 +362,29 @@ AABB3D GeometricPrimitive3D::GetAABB() const
     return bb;
   case Point:
     {
-      const Vector3* p = AnyCast<Vector3>(&data);
+      const Vector3* p = AnyCast_Raw<Vector3>(&data);
       return AABB3D(*p,*p);
     }
   case Segment:
-    AnyCast<Segment3D>(&data)->getAABB(bb);
+    AnyCast_Raw<Segment3D>(&data)->getAABB(bb);
     return bb;
   case Triangle:
-    AnyCast<Triangle3D>(&data)->getAABB(bb);
+    AnyCast_Raw<Triangle3D>(&data)->getAABB(bb);
     return bb;
   case Polygon:
-    AnyCast<Polygon3D>(&data)->getAABB(bb);
+    AnyCast_Raw<Polygon3D>(&data)->getAABB(bb);
     return bb;
   case Sphere:
-    AnyCast<Sphere3D>(&data)->getAABB(bb);
+    AnyCast_Raw<Sphere3D>(&data)->getAABB(bb);
     return bb;
   case AABB:
-    bb = *AnyCast<AABB3D>(&data);
+    bb = *AnyCast_Raw<AABB3D>(&data);
     return bb;
   case Box:
-    AnyCast<Box3D>(&data)->getAABB(bb);
+    AnyCast_Raw<Box3D>(&data)->getAABB(bb);
     return bb;
   case Cylinder:
-    AnyCast<Cylinder3D>(&data)->getAABB(bb);
+    AnyCast_Raw<Cylinder3D>(&data)->getAABB(bb);
     return bb;
   default:
     FatalError("Invalid primitive type");
@@ -404,14 +404,14 @@ Box3D GeometricPrimitive3D::GetBB() const
   switch(type) {
   case Point:
     {
-      const Vector3* p = AnyCast<Vector3>(&data);
+      const Vector3* p = AnyCast_Raw<Vector3>(&data);
       bb.origin = *p;
       bb.dims.setZero();
       return bb;
     }
   case Segment:
     {
-      const Segment3D* s=AnyCast<Segment3D>(&data);
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
       bb.origin = s->a;
       bb.xbasis = s->b-s->a;
       bb.dims.set(bb.xbasis.norm(),0,0);
@@ -421,7 +421,7 @@ Box3D GeometricPrimitive3D::GetBB() const
     return bb;
   case Triangle:
     {
-      const Triangle3D* t=AnyCast<Triangle3D>(&data);
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
       bb.zbasis = t->normal();
       bb.dims.z = 0;
       //find longest edge
@@ -448,7 +448,7 @@ Box3D GeometricPrimitive3D::GetBB() const
     {
       Polygon2D p;
       Matrix4 T;
-      AnyCast<Polygon3D>(&data)->getPlanarPolygon(p,T);
+      AnyCast_Raw<Polygon3D>(&data)->getPlanarPolygon(p,T);
       T.get(bb.xbasis,bb.ybasis,bb.zbasis,bb.origin);
       AABB2D bb2;
       p.getAABB(bb2);
@@ -460,14 +460,14 @@ Box3D GeometricPrimitive3D::GetBB() const
     return bb;
   case Sphere:
     {
-      const Sphere3D* s=AnyCast<Sphere3D>(&data);
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
       bb.origin = s->center - Vector3(s->radius,s->radius,s->radius);
       bb.dims = 2.0*Vector3(s->radius,s->radius,s->radius);
     }
     return bb;
   case AABB:
     {
-      const AABB3D* b = AnyCast<AABB3D>(&data);
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
       bb.xbasis.set(1,0,0);
       bb.ybasis.set(0,1,0);
       bb.zbasis.set(0,0,1);
@@ -476,11 +476,11 @@ Box3D GeometricPrimitive3D::GetBB() const
     }
     return bb;
   case Box:
-    bb = *AnyCast<Box3D>(&data);
+    bb = *AnyCast_Raw<Box3D>(&data);
     return bb;
   case Cylinder:
     {
-      const Cylinder3D* c=AnyCast<Cylinder3D>(&data);
+      const Cylinder3D* c=AnyCast_Raw<Cylinder3D>(&data);
       bb.xbasis = c->axis;
       bb.dims.x = c->height;
       bb.dims.y = bb.dims.z = c->radius*2.0;
@@ -507,32 +507,32 @@ void GeometricPrimitive3D::Transform(const RigidTransform& T)
     break;
   case Point:
     {
-      Vector3* p = AnyCast<Vector3>(&data);
+      Vector3* p = AnyCast_Raw<Vector3>(&data);
       *p = T*(*p);
     }
     break;
   case Segment:
     {
-      Segment3D* s=AnyCast<Segment3D>(&data);
+      Segment3D* s=AnyCast_Raw<Segment3D>(&data);
       s->a = T*s->a;
       s->b = T*s->b;
     }
     break;
   case Triangle:
     {
-      Triangle3D* t=AnyCast<Triangle3D>(&data);
+      Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
       t->setTransformed(*t,T);
     }
     break;
   case Polygon:
     {
-      Polygon3D* p=AnyCast<Polygon3D>(&data);
+      Polygon3D* p=AnyCast_Raw<Polygon3D>(&data);
       p->setTransformed(*p,T);
     }
     break;
   case Sphere:
     {
-      Sphere3D* s=AnyCast<Sphere3D>(&data);
+      Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
       s->center = T*s->center;
     }
     break;
@@ -546,13 +546,13 @@ void GeometricPrimitive3D::Transform(const RigidTransform& T)
     break;
   case Box:
     {
-      Box3D* b = AnyCast<Box3D>(&data);
+      Box3D* b = AnyCast_Raw<Box3D>(&data);
       b->setTransformed(*b,T);
     }
     break;
   case Cylinder:
     {
-      Cylinder3D* c=AnyCast<Cylinder3D>(&data);
+      Cylinder3D* c=AnyCast_Raw<Cylinder3D>(&data);
       c->setTransformed(*c,T);
     }
     break;
@@ -578,14 +578,14 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
     break;
   case Point:
     {
-      Vector3* p = AnyCast<Vector3>(&data);
+      Vector3* p = AnyCast_Raw<Vector3>(&data);
       Vector3 temp=*p;
       T.mulPoint(temp,*p);
     }
     break;
   case Segment:
     {
-      Segment3D* s=AnyCast<Segment3D>(&data);
+      Segment3D* s=AnyCast_Raw<Segment3D>(&data);
       Vector3 temp=s->a;
       T.mulPoint(temp,s->a);
       temp=s->b;
@@ -594,13 +594,13 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
     break;
   case Triangle:
     {
-      Triangle3D* t=AnyCast<Triangle3D>(&data);
+      Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
       t->setTransformed(*t,T);
     }
     break;
   case Polygon:
     {
-      Polygon3D* p=AnyCast<Polygon3D>(&data);
+      Polygon3D* p=AnyCast_Raw<Polygon3D>(&data);
       p->setTransformed(*p,T);
     }
     break;
@@ -615,7 +615,7 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
 	FatalError("Can't yet convert spheres to ellipsoids\n");
       }
 
-      Sphere3D* s=AnyCast<Sphere3D>(&data);
+      Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
       Vector3 ctemp=s->center;
       T.mulPoint(ctemp,s->center);
       s->radius *= Sqrt(temp(0,0));
@@ -645,7 +645,7 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
       if(scale) {
 	FatalError("Can't yet scale / transform Box's\n");
       }
-      Box3D* b = AnyCast<Box3D>(&data);
+      Box3D* b = AnyCast_Raw<Box3D>(&data);
       b->setTransformed(*b,T);
     }
     break;
@@ -658,7 +658,7 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
       if(scale) {
 	FatalError("Can't yet scale / transform Cylinders\n");
       }
-      Cylinder3D* c=AnyCast<Cylinder3D>(&data);
+      Cylinder3D* c=AnyCast_Raw<Cylinder3D>(&data);
       c->setTransformed(*c,T);
     }
     break;
@@ -677,13 +677,13 @@ vector<double> GeometricPrimitive3D::ClosestPointParameters(const Vector3& pt) c
   case Segment:
     {
       res.resize(1);
-      const Segment3D* s=AnyCast<Segment3D>(&data);
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
       res[0] = s->closestPointParameter(pt);
     }
     return res;
   case Triangle:
     {
-      const Triangle3D* t=AnyCast<Triangle3D>(&data);
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
       Vector2 pc = t->closestPointCoords(pt);
       res.resize(2);
       res[0] = pc.x;
@@ -694,7 +694,7 @@ vector<double> GeometricPrimitive3D::ClosestPointParameters(const Vector3& pt) c
     return res;
   case Sphere:
     {
-      const Sphere3D* s=AnyCast<Sphere3D>(&data);
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
       Vector3 cp;
       s->closestPoint(pt,cp);
       res.resize(3);
@@ -703,7 +703,7 @@ vector<double> GeometricPrimitive3D::ClosestPointParameters(const Vector3& pt) c
     return res;
   case AABB:
     {
-      const AABB3D* b = AnyCast<AABB3D>(&data);
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
       Vector3 cp;
       b->distanceSquared(pt,cp);
       res.resize(3);
@@ -712,7 +712,7 @@ vector<double> GeometricPrimitive3D::ClosestPointParameters(const Vector3& pt) c
     return res;
   case Box:
     {
-      const Box3D* b = AnyCast<Box3D>(&data);
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
       Vector3 cp;
       b->distanceSquared(pt,cp);
       res.resize(3);
@@ -721,7 +721,7 @@ vector<double> GeometricPrimitive3D::ClosestPointParameters(const Vector3& pt) c
     return res;
   case Cylinder:
     {
-      const Cylinder3D* c=AnyCast<Cylinder3D>(&data);
+      const Cylinder3D* c=AnyCast_Raw<Cylinder3D>(&data);
       Vector3 cp;
       c->closestPoint(pt,cp);
       res.resize(3);
@@ -738,16 +738,16 @@ Vector3 GeometricPrimitive3D::ParametersToPoint(const vector<double>& params) co
 {
   switch(type) {
   case Point:
-    return *AnyCast<Vector3>(&data);
+    return *AnyCast_Raw<Vector3>(&data);
   case Segment:
     {
       Assert(params.size()==1);
-      const Segment3D* s=AnyCast<Segment3D>(&data);
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
       return s->a + params[0]*(s->b-s->a);
     }
   case Triangle:
     {
-      const Triangle3D* t=AnyCast<Triangle3D>(&data);
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
       return t->planeCoordsToPoint(Vector2(params[0],params[1]));
     }
   case Sphere:
@@ -772,8 +772,8 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
 {
   switch(type) {
   case Point:
-    if(ray.distance(*AnyCast<Vector3>(&data)) < Epsilon) {
-      pt = *AnyCast<Vector3>(&data);
+    if(ray.distance(*AnyCast_Raw<Vector3>(&data)) < Epsilon) {
+      pt = *AnyCast_Raw<Vector3>(&data);
       return true;
     }
     return false;
@@ -782,7 +782,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     return false;
   case Sphere:
     {
-      const Sphere3D* s=AnyCast<Sphere3D>(&data);
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
       Real t,u;
       if(s->intersects(ray,&t,&u)) {
 	if(u >= 0) {
@@ -795,7 +795,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     }
   case Ellipsoid:
     {
-      const Ellipsoid3D* s=AnyCast<Ellipsoid3D>(&data);
+      const Ellipsoid3D* s=AnyCast_Raw<Ellipsoid3D>(&data);
       Real t,u;
       if(s->intersects(ray,&t,&u)) {
 	if(u >= 0) {
@@ -808,7 +808,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     }
   case Cylinder:
     {
-      const Cylinder3D* s=AnyCast<Cylinder3D>(&data);
+      const Cylinder3D* s=AnyCast_Raw<Cylinder3D>(&data);
       Real t,u;
       if(s->intersects(ray,&t,&u)) {
 	if(u >= 0) {
@@ -823,7 +823,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     {
       Real tmin=0,tmax=Inf;
       Line3D l=ray;
-      if(l.intersects(*AnyCast<AABB3D>(&data),tmin,tmax)) {
+      if(l.intersects(*AnyCast_Raw<AABB3D>(&data),tmin,tmax)) {
 	ray.eval(tmin,pt);
 	return true;
       }
@@ -831,7 +831,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     }
   case Box:
     {
-      const Box3D* b=AnyCast<Box3D>(&data);
+      const Box3D* b=AnyCast_Raw<Box3D>(&data);
       RigidTransform T_world_box;
       b->getTransformInv(T_world_box);
       Ray3D rlocal; rlocal.setTransformed(ray,T_world_box);
@@ -847,7 +847,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
   case Triangle:
     {
       Real t,u,v;
-      if(AnyCast<Triangle3D>(&data)->rayIntersects(ray,&t,&u,&v)) {
+      if(AnyCast_Raw<Triangle3D>(&data)->rayIntersects(ray,&t,&u,&v)) {
 	ray.eval(t,pt);
 	return true;
       }
@@ -875,23 +875,23 @@ bool GeometricPrimitive3D::Collides(const GeometricPrimitive3D& geom) const
 {
   switch(type) {
   case Point:
-    return geom.Collides(*AnyCast<Vector3>(&data));
+    return geom.Collides(*AnyCast_Raw<Vector3>(&data));
   case Segment:
-    return geom.Collides(*AnyCast<Segment3D>(&data));
+    return geom.Collides(*AnyCast_Raw<Segment3D>(&data));
   case Sphere:
-    return geom.Collides(*AnyCast<Sphere3D>(&data));
+    return geom.Collides(*AnyCast_Raw<Sphere3D>(&data));
   case Ellipsoid:
-    return geom.Collides(*AnyCast<Ellipsoid3D>(&data));
+    return geom.Collides(*AnyCast_Raw<Ellipsoid3D>(&data));
   case Cylinder:
-    return geom.Collides(*AnyCast<Cylinder3D>(&data));
+    return geom.Collides(*AnyCast_Raw<Cylinder3D>(&data));
   case AABB:
-    return geom.Collides(*AnyCast<AABB3D>(&data));
+    return geom.Collides(*AnyCast_Raw<AABB3D>(&data));
   case Box:
-    return geom.Collides(*AnyCast<Box3D>(&data));
+    return geom.Collides(*AnyCast_Raw<Box3D>(&data));
   case Triangle:
-    return geom.Collides(*AnyCast<Triangle3D>(&data));
+    return geom.Collides(*AnyCast_Raw<Triangle3D>(&data));
   case Polygon:
-    return geom.Collides(*AnyCast<Polygon3D>(&data));
+    return geom.Collides(*AnyCast_Raw<Polygon3D>(&data));
   default:
     return false;
   }
@@ -901,21 +901,21 @@ bool GeometricPrimitive3D::Collides(const Vector3& point) const
 {
   switch(type) {
   case Point:
-    return *AnyCast<Vector3>(&data) == point;
+    return *AnyCast_Raw<Vector3>(&data) == point;
   case Segment:
-    return AnyCast<Segment3D>(&data)->distance(point) == 0;
+    return AnyCast_Raw<Segment3D>(&data)->distance(point) == 0;
   case Sphere:
-    return AnyCast<Sphere3D>(&data)->contains(point);
+    return AnyCast_Raw<Sphere3D>(&data)->contains(point);
   case Ellipsoid:
-    return AnyCast<Ellipsoid3D>(&data)->contains(point);
+    return AnyCast_Raw<Ellipsoid3D>(&data)->contains(point);
   case Cylinder:
-    return AnyCast<Cylinder3D>(&data)->contains(point);
+    return AnyCast_Raw<Cylinder3D>(&data)->contains(point);
   case AABB:
-    return AnyCast<AABB3D>(&data)->contains(point);
+    return AnyCast_Raw<AABB3D>(&data)->contains(point);
   case Box:
-    return AnyCast<Box3D>(&data)->contains(point);
+    return AnyCast_Raw<Box3D>(&data)->contains(point);
   case Triangle:
-    return AnyCast<Triangle3D>(&data)->contains(point);
+    return AnyCast_Raw<Triangle3D>(&data)->contains(point);
   default:
     return false;
   }
@@ -925,21 +925,21 @@ bool GeometricPrimitive3D::Collides(const Segment3D& seg) const
 {
   switch(type) {
   case Point:
-    return seg.distance(*AnyCast<Vector3>(&data)) == 0;
+    return seg.distance(*AnyCast_Raw<Vector3>(&data)) == 0;
   case Segment:
-    return AnyCast<Segment3D>(&data)->distance(seg) == 0;
+    return AnyCast_Raw<Segment3D>(&data)->distance(seg) == 0;
   case Sphere:
-    return AnyCast<Sphere3D>(&data)->intersects(seg);
+    return AnyCast_Raw<Sphere3D>(&data)->intersects(seg);
   case Ellipsoid:
-    return AnyCast<Ellipsoid3D>(&data)->intersects(seg);
+    return AnyCast_Raw<Ellipsoid3D>(&data)->intersects(seg);
   case Cylinder:
-    return AnyCast<Cylinder3D>(&data)->intersects(seg);
+    return AnyCast_Raw<Cylinder3D>(&data)->intersects(seg);
   case AABB:
-    return seg.intersects(*AnyCast<AABB3D>(&data));
+    return seg.intersects(*AnyCast_Raw<AABB3D>(&data));
   case Box:
-    return AnyCast<Box3D>(&data)->intersects(seg);
+    return AnyCast_Raw<Box3D>(&data)->intersects(seg);
   case Triangle:
-    return AnyCast<Triangle3D>(&data)->intersects(seg);
+    return AnyCast_Raw<Triangle3D>(&data)->intersects(seg);
   default:
     return false;
   }
@@ -949,20 +949,20 @@ bool GeometricPrimitive3D::Collides(const AABB3D& aabb) const
 {
   switch(type) {
   case Point:
-    return aabb.contains(*AnyCast<Vector3>(&data));
+    return aabb.contains(*AnyCast_Raw<Vector3>(&data));
   case Segment:
-    return AnyCast<Segment3D>(&data)->intersects(aabb);
+    return AnyCast_Raw<Segment3D>(&data)->intersects(aabb);
   case Sphere:
-    return AnyCast<Sphere3D>(&data)->intersects(aabb);
+    return AnyCast_Raw<Sphere3D>(&data)->intersects(aabb);
   case AABB:
-    return aabb.intersects(*AnyCast<AABB3D>(&data));
+    return aabb.intersects(*AnyCast_Raw<AABB3D>(&data));
   case Box: {
     Box3D bb;
     bb.set(aabb);
-    return AnyCast<Box3D>(&data)->intersects(bb);
+    return AnyCast_Raw<Box3D>(&data)->intersects(bb);
   }
   case Triangle:
-    return AnyCast<Triangle3D>(&data)->intersects(aabb);
+    return AnyCast_Raw<Triangle3D>(&data)->intersects(aabb);
   default:
     return false;
   }
@@ -987,29 +987,29 @@ bool GeometricPrimitive3D::Collides(const Triangle3D& triangle) const
 {
   switch(type) {
   case Point:
-    return triangle.contains(*AnyCast<Vector3>(&data));
+    return triangle.contains(*AnyCast_Raw<Vector3>(&data));
   case Segment:
-    return triangle.intersects(*AnyCast<Segment3D>(&data));
+    return triangle.intersects(*AnyCast_Raw<Segment3D>(&data));
   case Sphere:
     {
-      const Sphere3D* c=AnyCast<Sphere3D>(&data);
+      const Sphere3D* c=AnyCast_Raw<Sphere3D>(&data);
       return c->contains(triangle.closestPoint(c->center));
     }
   case AABB:
-    return triangle.intersects(*AnyCast<AABB3D>(&data));
+    return triangle.intersects(*AnyCast_Raw<AABB3D>(&data));
   case Box:
     {
       RigidTransform Tb;
-      AnyCast<Box3D>(&data)->getTransformInv(Tb);
+      AnyCast_Raw<Box3D>(&data)->getTransformInv(Tb);
       Triangle3D loc;
       loc.a = Tb*triangle.a;
       loc.b = Tb*triangle.b;
       loc.c = Tb*triangle.c;
-      AABB3D bb; bb.bmin.setZero(); bb.bmax=AnyCast<Box3D>(&data)->dims;
+      AABB3D bb; bb.bmin.setZero(); bb.bmax=AnyCast_Raw<Box3D>(&data)->dims;
       return loc.intersects(bb);
     }
   case Triangle:
-    return triangle.intersects(*AnyCast<Triangle3D>(&data));
+    return triangle.intersects(*AnyCast_Raw<Triangle3D>(&data));
   default:
     return false;
   }
@@ -1024,12 +1024,12 @@ bool GeometricPrimitive3D::Collides(const Ellipsoid3D& e) const
 {
   switch(type) {
   case Point:
-    return e.contains(*AnyCast<Vector3>(&data));
+    return e.contains(*AnyCast_Raw<Vector3>(&data));
   case Segment:
-    return e.intersects(*AnyCast<Segment3D>(&data));
+    return e.intersects(*AnyCast_Raw<Segment3D>(&data));
   case Triangle:
     {
-      const Triangle3D* t=AnyCast<Triangle3D>(&data);
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
       Triangle3D tloc;
       e.toLocalNormalized(t->a,tloc.a);
       e.toLocalNormalized(t->b,tloc.b);
@@ -1048,16 +1048,16 @@ bool GeometricPrimitive3D::Collides(const Cylinder3D& c) const
 {
   switch(type) {
   case Point:
-    return c.contains(*AnyCast<Vector3>(&data));
+    return c.contains(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
     {
-      const Sphere3D* s=AnyCast<Sphere3D>(&data);
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
       Vector3 temp;
       c.closestPoint(s->center,temp);
       return s->center.distance(temp) <= s->radius;
     }
   case Segment:
-    return c.intersects(*AnyCast<Segment3D>(&data));
+    return c.intersects(*AnyCast_Raw<Segment3D>(&data));
   default:
     return false;
   }
@@ -1079,23 +1079,23 @@ Real GeometricPrimitive3D::Distance(const GeometricPrimitive3D& geom) const
 {
   switch(type) {
   case Point:
-    return geom.Distance(*AnyCast<Vector3>(&data));
+    return geom.Distance(*AnyCast_Raw<Vector3>(&data));
   case Segment:
-    return geom.Distance(*AnyCast<Segment3D>(&data));
+    return geom.Distance(*AnyCast_Raw<Segment3D>(&data));
   case Sphere:
-    return geom.Distance(*AnyCast<Sphere3D>(&data));
+    return geom.Distance(*AnyCast_Raw<Sphere3D>(&data));
   case Ellipsoid:
-    return geom.Distance(*AnyCast<Ellipsoid3D>(&data));
+    return geom.Distance(*AnyCast_Raw<Ellipsoid3D>(&data));
   case Cylinder:
-    return geom.Distance(*AnyCast<Cylinder3D>(&data));
+    return geom.Distance(*AnyCast_Raw<Cylinder3D>(&data));
   case AABB:
-    return geom.Distance(*AnyCast<AABB3D>(&data));
+    return geom.Distance(*AnyCast_Raw<AABB3D>(&data));
   case Box:
-    return geom.Distance(*AnyCast<Box3D>(&data));
+    return geom.Distance(*AnyCast_Raw<Box3D>(&data));
   case Triangle:
-    return geom.Distance(*AnyCast<Triangle3D>(&data));
+    return geom.Distance(*AnyCast_Raw<Triangle3D>(&data));
   case Polygon:
-    return geom.Distance(*AnyCast<Polygon3D>(&data));
+    return geom.Distance(*AnyCast_Raw<Polygon3D>(&data));
   default:
     return Inf;
   }
@@ -1105,19 +1105,19 @@ Real GeometricPrimitive3D::Distance(const Vector3& x) const
 {
   switch(type) {
   case Point:
-    return x.distance(*AnyCast<Vector3>(&data));
+    return x.distance(*AnyCast_Raw<Vector3>(&data));
   case Segment:
-    return AnyCast<Segment3D>(&data)->distance(x);
+    return AnyCast_Raw<Segment3D>(&data)->distance(x);
   case Sphere:
-    return AnyCast<Sphere3D>(&data)->distance(x);
+    return AnyCast_Raw<Sphere3D>(&data)->distance(x);
   case Cylinder:
-    return AnyCast<Cylinder3D>(&data)->distance(x);
+    return AnyCast_Raw<Cylinder3D>(&data)->distance(x);
   case AABB:
-    return AnyCast<AABB3D>(&data)->distance(x);
+    return AnyCast_Raw<AABB3D>(&data)->distance(x);
   case Box:
-    return AnyCast<Box3D>(&data)->distance(x);
+    return AnyCast_Raw<Box3D>(&data)->distance(x);
   case Triangle:
-    return AnyCast<Triangle3D>(&data)->closestPoint(x).distance(x);
+    return AnyCast_Raw<Triangle3D>(&data)->closestPoint(x).distance(x);
   default:
     return Inf;
   }
@@ -1133,14 +1133,14 @@ Real GeometricPrimitive3D::Distance(const Segment3D& s) const
 {
   switch(type) {
   case Point:
-    return s.distance(*AnyCast<Vector3>(&data));
+    return s.distance(*AnyCast_Raw<Vector3>(&data));
   case Segment:
     {
-      const Segment3D* seg=AnyCast<Segment3D>(&data);
+      const Segment3D* seg=AnyCast_Raw<Segment3D>(&data);
       return seg->distance(s);
     }
   case Sphere:
-    return Max(0.0,s.distance(AnyCast<Sphere3D>(&data)->center)-AnyCast<Sphere3D>(&data)->radius);
+    return Max(0.0,s.distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   default:
     return Inf;
   }
@@ -1150,11 +1150,11 @@ Real GeometricPrimitive3D::Distance(const AABB3D& b) const
 {
   switch(type) {
   case Point:
-    return b.distance(*AnyCast<Vector3>(&data));
+    return b.distance(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
-    return Max(0.0,b.distance(AnyCast<Sphere3D>(&data)->center)-AnyCast<Sphere3D>(&data)->radius);
+    return Max(0.0,b.distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   case AABB:
-    return b.distance(*AnyCast<AABB3D>(&data));
+    return b.distance(*AnyCast_Raw<AABB3D>(&data));
   default:
     return false;
   }
@@ -1164,9 +1164,9 @@ Real GeometricPrimitive3D::Distance(const Box3D& b) const
 {
   switch(type) {
   case Point:
-    return b.distance(*AnyCast<Vector3>(&data));
+    return b.distance(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
-    return Max(0.0,b.distance(AnyCast<Sphere3D>(&data)->center)-AnyCast<Sphere3D>(&data)->radius);
+    return Max(0.0,b.distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   default:
     return false;
   }
@@ -1176,9 +1176,9 @@ Real GeometricPrimitive3D::Distance(const Triangle3D& t) const
 {
   switch(type) {
   case Point:
-    return t.closestPoint(*AnyCast<Vector3>(&data)).distance(*AnyCast<Vector3>(&data));
+    return t.closestPoint(*AnyCast_Raw<Vector3>(&data)).distance(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
-    return Max(0.0,t.closestPoint(AnyCast<Sphere3D>(&data)->center).distance(AnyCast<Sphere3D>(&data)->center)-AnyCast<Sphere3D>(&data)->radius);
+    return Max(0.0,t.closestPoint(AnyCast_Raw<Sphere3D>(&data)->center).distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   default:
     return false;
   }
@@ -1198,7 +1198,7 @@ Real GeometricPrimitive3D::Distance(const Cylinder3D& c) const
 {
   switch(type) {
   case Point:
-    return c.distance(*AnyCast<Vector3>(&data));
+    return c.distance(*AnyCast_Raw<Vector3>(&data));
   default:
     return Inf;
   }
@@ -1213,49 +1213,49 @@ std::ostream& operator <<(std::ostream& out,const GeometricPrimitive3D& g)
   switch(g.type) {
   case GeometricPrimitive3D::Point:
     {
-      const Vector3* p = AnyCast<Vector3>(&g.data);
+      const Vector3* p = AnyCast_Raw<Vector3>(&g.data);
       out<<"Point "<<*p;
     }
     return out;
   case GeometricPrimitive3D::Segment:
     {
-      const Segment3D* s=AnyCast<Segment3D>(&g.data);
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&g.data);
       out<<"Segment "<<*s;
     }
     return out;
   case GeometricPrimitive3D::Triangle:
     {
-      const Triangle3D* t=AnyCast<Triangle3D>(&g.data);
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&g.data);
       out<<"Triangle "<<*t;
     }
     return out;
   case GeometricPrimitive3D::Sphere:
     {
-      const Sphere3D* s=AnyCast<Sphere3D>(&g.data);
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&g.data);
       out<<"Sphere "<<s->center<<"  "<<s->radius;
     }
     return out;
   case GeometricPrimitive3D::AABB:
     {
-      const AABB3D* b=AnyCast<AABB3D>(&g.data);
+      const AABB3D* b=AnyCast_Raw<AABB3D>(&g.data);
       out<<"AABB "<<*b;
     }
     return out;
   case GeometricPrimitive3D::Box:
     {
-      const Box3D* b=AnyCast<Box3D>(&g.data);
+      const Box3D* b=AnyCast_Raw<Box3D>(&g.data);
       out<<"Box "<<*b;
     }
     return out;
   case GeometricPrimitive3D::Cylinder:
     {
-      const Cylinder3D* b=AnyCast<Cylinder3D>(&g.data);
+      const Cylinder3D* b=AnyCast_Raw<Cylinder3D>(&g.data);
       out<<"Cylinder "<<b->center<<"  "<<b->axis<<"  "<<b->radius<<"  "<<b->height;
     }
     return out;
   case GeometricPrimitive3D::Polygon:
     {
-      const Polygon3D* b=AnyCast<Polygon3D>(&g.data);
+      const Polygon3D* b=AnyCast_Raw<Polygon3D>(&g.data);
       out<<"Polygon "<<*b;
     }
     return out;
