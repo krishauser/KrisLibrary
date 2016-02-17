@@ -89,6 +89,8 @@ class AnyValue
    };
 
    template<typename ValueType> friend ValueType * AnyCast(AnyValue *);
+   template<typename ValueType> friend ValueType * AnyCast_Quick(AnyValue *);
+   template<typename ValueType> friend ValueType * AnyCast_Raw(AnyValue *);
 
    placeholder * content;
 };
@@ -97,7 +99,7 @@ class AnyValue
 template<typename ValueType>
 ValueType * AnyCast(AnyValue * operand)
 {
-  return operand && &operand->type() == &typeid(ValueType)
+  return operand && operand->type() == typeid(ValueType)
     ? &static_cast<AnyValue::holder<ValueType> *>(operand->content)->held
     : 0;
 }
@@ -107,6 +109,53 @@ template<typename ValueType>
 const ValueType * AnyCast(const AnyValue * operand)
 {
   return AnyCast<ValueType>(const_cast<AnyValue *>(operand));
+}
+
+/// Retreive the data within the operand, or NULL if the operand is NULL.
+/// This differs from AnyCast in that it does not check for the correct type,
+/// which slightly improves performance, at the cost of requiring the caller
+/// to first verify type  The caller must be very sure that the item's type
+/// is correct!
+template<typename ValueType>
+ValueType * AnyCast_Raw(AnyValue * operand)
+{
+  return operand 
+    ? &static_cast<AnyValue::holder<ValueType> *>(operand->content)->held
+    : 0;
+}
+
+/// Retreive the data within the operand, or NULL if the operand is NULL.
+/// This differs from AnyCast in that it does not check for the correct type,
+/// which slightly improves performance, at the cost of requiring the caller
+/// to first verify type  The caller must be very sure that the item's type
+/// is correct!
+template<typename ValueType>
+const ValueType * AnyCast_Raw(const AnyValue * operand)
+{
+  return AnyCast_Raw<ValueType>(const_cast<AnyValue *>(operand));
+}
+
+
+/// Retreive the data within the operand, or NULL if not of the correct type.
+/// This differs from AnyCast in that it checks for the correct
+/// typeid by reference rather than by value, which does not work across DLL
+/// boundaries but is faster.
+template<typename ValueType>
+ValueType * AnyCast_Quick(AnyValue * operand)
+{
+  return operand && (&operand->type() == &typeid(ValueType))
+    ? &static_cast<AnyValue::holder<ValueType> *>(operand->content)->held
+    : 0;
+}
+
+/// Retreive the data within the operand, or NULL if not of the correct type.
+/// This differs from AnyCast in that it checks for the correct
+/// typeid by reference rather than by value, which does not work across DLL
+/// boundaries but is faster.
+template<typename ValueType>
+const ValueType * AnyCast_Quick(const AnyValue * operand)
+{
+  return AnyCast_Quick<ValueType>(const_cast<AnyValue *>(operand));
 }
 
 /// Coerces the data within the given value to the desired value T.  Returns
