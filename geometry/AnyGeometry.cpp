@@ -45,16 +45,16 @@ AnyGeometry3D::AnyGeometry3D(const AnyGeometry3D& geom)
   :type(geom.type),data(geom.data)
 {}
 
-const GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() const { return *AnyCast<GeometricPrimitive3D>(&data); }
-const Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() const { return *AnyCast<Meshing::TriMesh>(&data); }
-const Meshing::PointCloud3D& AnyGeometry3D::AsPointCloud() const { return *AnyCast<Meshing::PointCloud3D>(&data); }
-const Meshing::VolumeGrid& AnyGeometry3D::AsImplicitSurface() const { return *AnyCast<Meshing::VolumeGrid>(&data); }
-const vector<AnyGeometry3D>& AnyGeometry3D::AsGroup() const { return *AnyCast<vector<AnyGeometry3D> >(&data); }
-GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() { return *AnyCast<GeometricPrimitive3D>(&data); }
-Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() { return *AnyCast<Meshing::TriMesh>(&data); }
-Meshing::PointCloud3D& AnyGeometry3D::AsPointCloud() { return *AnyCast<Meshing::PointCloud3D>(&data); }
-Meshing::VolumeGrid& AnyGeometry3D::AsImplicitSurface() { return *AnyCast<Meshing::VolumeGrid>(&data); }
-vector<AnyGeometry3D>& AnyGeometry3D::AsGroup() { return *AnyCast<vector<AnyGeometry3D> >(&data); }
+const GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() const { return *AnyCast_Raw<GeometricPrimitive3D>(&data); }
+const Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() const { return *AnyCast_Raw<Meshing::TriMesh>(&data); }
+const Meshing::PointCloud3D& AnyGeometry3D::AsPointCloud() const { return *AnyCast_Raw<Meshing::PointCloud3D>(&data); }
+const Meshing::VolumeGrid& AnyGeometry3D::AsImplicitSurface() const { return *AnyCast_Raw<Meshing::VolumeGrid>(&data); }
+const vector<AnyGeometry3D>& AnyGeometry3D::AsGroup() const { return *AnyCast_Raw<vector<AnyGeometry3D> >(&data); }
+GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() { return *AnyCast_Raw<GeometricPrimitive3D>(&data); }
+Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() { return *AnyCast_Raw<Meshing::TriMesh>(&data); }
+Meshing::PointCloud3D& AnyGeometry3D::AsPointCloud() { return *AnyCast_Raw<Meshing::PointCloud3D>(&data); }
+Meshing::VolumeGrid& AnyGeometry3D::AsImplicitSurface() { return *AnyCast_Raw<Meshing::VolumeGrid>(&data); }
+vector<AnyGeometry3D>& AnyGeometry3D::AsGroup() { return *AnyCast_Raw<vector<AnyGeometry3D> >(&data); }
 
 //appearance casts
 GLDraw::GeometryAppearance* AnyGeometry3D::TriangleMeshAppearanceData() { return AnyCast<GLDraw::GeometryAppearance>(&appearanceData); }
@@ -481,15 +481,15 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geo
 }
 
   const RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() const { return currentTransform; }
-  const CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() const { return *AnyCast<CollisionMesh>(&collisionData); }
-  const CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() const { return *AnyCast<CollisionPointCloud>(&collisionData); }
+  const CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() const { return *AnyCast_Raw<CollisionMesh>(&collisionData); }
+  const CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() const { return *AnyCast_Raw<CollisionPointCloud>(&collisionData); }
   const RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() const { return currentTransform; }
-  const vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() const { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
+  const vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() const { return *AnyCast_Raw<vector<AnyCollisionGeometry3D> >(&collisionData); }
   RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() { return currentTransform; }
-  CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() { return *AnyCast<CollisionMesh>(&collisionData); }
-  CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() { return *AnyCast<CollisionPointCloud>(&collisionData); }
+  CollisionMesh& AnyCollisionGeometry3D::TriangleMeshCollisionData() { return *AnyCast_Raw<CollisionMesh>(&collisionData); }
+  CollisionPointCloud& AnyCollisionGeometry3D::PointCloudCollisionData() { return *AnyCast_Raw<CollisionPointCloud>(&collisionData); }
   RigidTransform& AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return currentTransform; }
-  vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() { return *AnyCast<vector<AnyCollisionGeometry3D> >(&collisionData); }
+  vector<AnyCollisionGeometry3D>& AnyCollisionGeometry3D::GroupCollisionData() { return *AnyCast_Raw<vector<AnyCollisionGeometry3D> >(&collisionData); }
 
 void AnyCollisionGeometry3D::InitCollisionData()
 {
@@ -744,7 +744,7 @@ bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real
     FatalError("Can't collide an implicit surface and a non-sphere primitive yet\n");
   }
   if(a.type == GeometricPrimitive3D::Point) {
-    const Vector3& pt = *AnyCast<Vector3>(&a.data);
+    const Vector3& pt = *AnyCast_Raw<Vector3>(&a.data);
     bool res = (grid.TrilinearInterpolate(pt) + a.Distance(grid.bb) <= margin);
     if(res) {
       gridelements.resize(1);
@@ -754,7 +754,7 @@ bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real
     }
     return res;
   }
-  const Sphere3D* s=AnyCast<Sphere3D>(&a.data);
+  const Sphere3D* s=AnyCast_Raw<Sphere3D>(&a.data);
   bool res = (grid.TrilinearInterpolate(s->center) + a.Distance(grid.bb) <= margin+s->radius);  
   if(res) {
     gridelements.resize(1);
