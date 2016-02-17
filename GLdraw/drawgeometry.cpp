@@ -14,13 +14,13 @@ namespace GLDraw {
     case GeometricPrimitive2D::Point:
       {
 	glBegin(GL_POINTS);
-	glVertex2v(*AnyCast<Vector2>(&geom.data));
+	glVertex2v(*AnyCast_Raw<Vector2>(&geom.data));
 	glEnd();
       }
       break;
     case GeometricPrimitive2D::Segment:
       {
-	const Segment2D* seg=AnyCast<Segment2D>(&geom.data);
+	const Segment2D* seg=AnyCast_Raw<Segment2D>(&geom.data);
 	glBegin(GL_LINES);
 	glVertex2v(seg->a);
 	glVertex2v(seg->b);
@@ -29,13 +29,13 @@ namespace GLDraw {
       break;
     case GeometricPrimitive2D::Circle:
       {
-	const Circle2D* circle = AnyCast<Circle2D>(&geom.data);
+	const Circle2D* circle = AnyCast_Raw<Circle2D>(&geom.data);
 	drawCircle2D(circle->center,circle->radius);
       }
       break;
     case GeometricPrimitive2D::AABB:
       {
-	const AABB2D* aabb=AnyCast<AABB2D>(&geom.data);
+	const AABB2D* aabb=AnyCast_Raw<AABB2D>(&geom.data);
 	glBegin(GL_QUADS);
 	glVertex2f(aabb->bmin.x,aabb->bmin.y);
 	glVertex2f(aabb->bmax.x,aabb->bmin.y);
@@ -46,7 +46,7 @@ namespace GLDraw {
       break;
     case GeometricPrimitive2D::Box:
       {
-	const Box2D* box=AnyCast<Box2D>(&geom.data);
+	const Box2D* box=AnyCast_Raw<Box2D>(&geom.data);
 	glBegin(GL_QUADS);
 	glVertex2v(box->origin);
 	glVertex2v(box->origin+box->dims.x*box->xbasis);
@@ -57,7 +57,7 @@ namespace GLDraw {
       }
     case GeometricPrimitive2D::Triangle:
       {
-	const Triangle2D* tri=AnyCast<Triangle2D>(&geom.data);
+	const Triangle2D* tri=AnyCast_Raw<Triangle2D>(&geom.data);
 	glBegin(GL_TRIANGLES);
 	glVertex2v(tri->a);
 	glVertex2v(tri->b);
@@ -77,13 +77,13 @@ namespace GLDraw {
     case GeometricPrimitive3D::Point:
       {
 	glBegin(GL_POINTS);
-	glVertex3v(*AnyCast<Vector3>(&geom.data));
+	glVertex3v(*AnyCast_Raw<Vector3>(&geom.data));
 	glEnd();
       }
       break;
     case GeometricPrimitive3D::Segment:
       {
-	const Segment3D* seg=AnyCast<Segment3D>(&geom.data);
+	const Segment3D* seg=AnyCast_Raw<Segment3D>(&geom.data);
 	glBegin(GL_LINES);
 	glVertex3v(seg->a);
 	glVertex3v(seg->b);
@@ -93,7 +93,7 @@ namespace GLDraw {
       /*
     case GeometricPrimitive3D::Circle:
       {
-	const Circle3D* circle = AnyCast<Circle3D>(&geom.data);
+	const Circle3D* circle = AnyCast_Raw<Circle3D>(&geom.data);
 	glPushMatrix();
 	glTranslate(circle->center);
 	drawCircle(circle->axis,circle->radius);
@@ -103,13 +103,13 @@ namespace GLDraw {
       */
     case GeometricPrimitive3D::AABB:
       {
-	const AABB3D* aabb=AnyCast<AABB3D>(&geom.data);
+	const AABB3D* aabb=AnyCast_Raw<AABB3D>(&geom.data);
 	drawBoundingBox(aabb->bmin,aabb->bmax);
       }
       break;
     case GeometricPrimitive3D::Box:
       {
-	const Box3D* box=AnyCast<Box3D>(&geom.data);
+	const Box3D* box=AnyCast_Raw<Box3D>(&geom.data);
 	Matrix4 m;
 	box->getBasis(m);
 	glPushMatrix();
@@ -120,13 +120,13 @@ namespace GLDraw {
       }
     case GeometricPrimitive3D::Triangle:
       {
-	const Triangle3D* tri=AnyCast<Triangle3D>(&geom.data);
+	const Triangle3D* tri=AnyCast_Raw<Triangle3D>(&geom.data);
 	drawTriangle(tri->a,tri->b,tri->c);
 	break;
       }
     case GeometricPrimitive3D::Polygon:
       {
-	const Polygon3D* p=AnyCast<Polygon3D>(&geom.data);
+	const Polygon3D* p=AnyCast_Raw<Polygon3D>(&geom.data);
 	Plane3D plane;
 	p->getPlane(0,plane);
 	glNormal3v(plane.normal);
@@ -141,7 +141,7 @@ namespace GLDraw {
       }
     case GeometricPrimitive3D::Sphere:
       {
-	const Sphere3D* s=AnyCast<Sphere3D>(&geom.data);
+	const Sphere3D* s=AnyCast_Raw<Sphere3D>(&geom.data);
 	glPushMatrix();
 	glTranslate(s->center);
 	drawSphere(s->radius,32,32);
@@ -150,7 +150,7 @@ namespace GLDraw {
       }
     case GeometricPrimitive3D::Cylinder:
       {
-	const Cylinder3D* s=AnyCast<Cylinder3D>(&geom.data);
+	const Cylinder3D* s=AnyCast_Raw<Cylinder3D>(&geom.data);
 	glPushMatrix();
 	glTranslate(s->center);
 	drawCylinder(s->axis*s->height,s->radius,32);
