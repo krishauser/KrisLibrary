@@ -62,6 +62,12 @@ END_TR1_NAMESPACE
  * false if v is not of the right type.
  *
  * AnyCollections are written to / read from JSON format.
+ *
+ * Notes on cross-DLL passing of AnyCollections: as of now, this is not 
+ * functional because C++ RTTI is done via comparison of typeinfo *pointers*,
+ * which are different between the DLL and main program.  Look into the
+ * #defines at the top of AnyCollection.cpp if you want to be able to pass
+ * these objects between DLLs.
  */
 class AnyCollection
 {
