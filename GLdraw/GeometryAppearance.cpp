@@ -134,14 +134,14 @@ void drawFaces(const Geometry::AnyGeometry3D& geom)
 {
   const Meshing::TriMesh* trimesh = NULL;
   if(geom.type == AnyGeometry3D::TriangleMesh) 
-    trimesh = AnyCast<Meshing::TriMesh>(&geom.data);
+    trimesh = &geom.AsTriangleMesh();
   else if(geom.type == AnyGeometry3D::Group) {
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
     for(size_t i=0;i<subgeoms.size();i++)
       drawFaces(subgeoms[i]);
   }
   else if(geom.type == AnyGeometry3D::Primitive) 
-    draw(*AnyCast<GeometricPrimitive3D>(&geom.data));  
+    draw(geom.AsPrimitive());  
 
   //draw the mesh
   if(trimesh) {
@@ -225,7 +225,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 {
   geom = &_geom;
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
-    const Meshing::VolumeGrid* g = AnyCast<Meshing::VolumeGrid>(&geom->data);
+    const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
     MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
     drawFaces = true;
@@ -233,7 +233,8 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
   else if(geom->type == AnyGeometry3D::PointCloud) {
     drawVertices = true;
     vector<Real> rgb;
-    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("rgb",rgb)) {
+    const Meshing::PointCloud3D& pc = geom->AsPointCloud();
+    if(pc.GetProperty("rgb",rgb)) {
       //convert real to hex to GLcolor
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
@@ -243,7 +244,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 			    (col&0xff) / 255.0);
       }
     }
-    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("rgba",rgb)) {
+    if(pc.GetProperty("rgba",rgb)) {
       //convert real to hex to GLcolor
       //following PCD, this is actuall A-RGB
       vertexColors.resize(rgb.size());
@@ -255,7 +256,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 			    ((col&0xff000000)>>24) / 255.0);
       }
     }
-    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("opacity",rgb)) {
+    if(pc.GetProperty("opacity",rgb)) {
       if(!vertexColors.empty()) {
 	//already assigned color, just get opacity
 	for(size_t i=0;i<rgb.size();i++) {
@@ -270,7 +271,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 	}
       }
     }
-    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("c",rgb)) {
+    if(pc.GetProperty("c",rgb)) {
       //this is a weird opacity in UINT byte format
       if(!vertexColors.empty()) {
 	//already assigned color, just get opacity
@@ -309,7 +310,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 {
   geom = &_geom;
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
-    const Meshing::VolumeGrid* g = AnyCast<Meshing::VolumeGrid>(&geom->data);
+    const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
     MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
     drawFaces = true;
@@ -317,7 +318,8 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   else if(geom->type == AnyGeometry3D::PointCloud) {
     drawVertices = true;
     vector<Real> rgb;
-    if(AnyCast<Meshing::PointCloud3D>(&geom->data)->GetProperty("rgb",rgb)) {
+    const Meshing::PointCloud3D& pc = geom->AsPointCloud();
+    if(pc.GetProperty("rgb",rgb)) {
       //convert real to hex to GLcolor
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
@@ -341,7 +343,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       subAppearances[i].faceColor = faceColor;
     }
   }
-  else
+  else 
     drawFaces = true;
   Refresh();
 }
@@ -353,9 +355,9 @@ void GeometryAppearance::DrawGL()
     if(geom->type == AnyGeometry3D::ImplicitSurface) 
       verts = &implicitSurfaceMesh->verts;
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
-      verts = &AnyCast<Meshing::TriMesh>(&geom->data)->verts;
+      verts = &geom->AsTriangleMesh().verts;
     else if(geom->type == AnyGeometry3D::PointCloud) 
-      verts = &AnyCast<Meshing::PointCloud3D>(&geom->data)->points;
+      verts = &geom->AsPointCloud().points;
     if(verts) {
       //compile the vertex display list
       if(!vertexDisplayList) {
@@ -608,7 +610,7 @@ void GeometryAppearance::DrawGL()
 	}
       }
       else if(geom->type == AnyGeometry3D::Primitive) {
-	draw(*AnyCast<GeometricPrimitive3D>(&geom->data));
+	draw(geom->AsPrimitive());
       }
       faceDisplayList.endCompile();
     }

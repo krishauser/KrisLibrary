@@ -1294,23 +1294,23 @@ bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g)
   case GeometricPrimitive3D::Point:
     {
       Sphere3D s;
-      s.center = *AnyCast<Vector3>(&g.data);
+      s.center = *AnyCast_Raw<Vector3>(&g.data);
       s.radius = 0;
       return Collide(m,s);
     }
   case GeometricPrimitive3D::Segment:
     {
       Vector3 pt;
-      return Collide(m,*AnyCast<Segment3D>(&g.data),pt) >= 0;
+      return Collide(m,*AnyCast_Raw<Segment3D>(&g.data),pt) >= 0;
     }
   case GeometricPrimitive3D::Triangle:
-    return Collide(m,*AnyCast<Triangle3D>(&g.data));
+    return Collide(m,*AnyCast_Raw<Triangle3D>(&g.data));
   case GeometricPrimitive3D::AABB:
-    return Collide(m,*AnyCast<AABB3D>(&g.data));
+    return Collide(m,*AnyCast_Raw<AABB3D>(&g.data));
   case GeometricPrimitive3D::Box:
-    return Collide(m,*AnyCast<Box3D>(&g.data));
+    return Collide(m,*AnyCast_Raw<Box3D>(&g.data));
   case GeometricPrimitive3D::Sphere:
-    return Collide(m,*AnyCast<Sphere3D>(&g.data));
+    return Collide(m,*AnyCast_Raw<Sphere3D>(&g.data));
   case GeometricPrimitive3D::Empty:
     return false;
   default:
@@ -1325,7 +1325,7 @@ bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
   case GeometricPrimitive3D::Point:
     {
       Sphere3D s;
-      s.center = *AnyCast<Vector3>(&a.data);
+      s.center = *AnyCast_Raw<Vector3>(&a.data);
       s.radius = d;
       return Collide(c,s);
     }
@@ -1341,7 +1341,7 @@ bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
     }
   case GeometricPrimitive3D::Sphere:
     {
-      Sphere3D s = *AnyCast<Sphere3D>(&a.data);
+      Sphere3D s = *AnyCast_Raw<Sphere3D>(&a.data);
       s.radius += d;
       return Collide(c,s);
     }
@@ -1418,25 +1418,25 @@ void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector
   case GeometricPrimitive3D::Point:
     {
       Sphere3D s;
-      s.center = *AnyCast<Vector3>(&g.data);
+      s.center = *AnyCast_Raw<Vector3>(&g.data);
       s.radius = 0;
       CollideAll(m,s,tris,max);
     }
     break;
   case GeometricPrimitive3D::Segment:
-    CollideAll(m,*AnyCast<Segment3D>(&g.data),tris,max);
+    CollideAll(m,*AnyCast_Raw<Segment3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::Triangle:
-    CollideAll(m,*AnyCast<Triangle3D>(&g.data),tris,max);
+    CollideAll(m,*AnyCast_Raw<Triangle3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::AABB:
-    CollideAll(m,*AnyCast<AABB3D>(&g.data),tris,max);
+    CollideAll(m,*AnyCast_Raw<AABB3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::Box:
-    CollideAll(m,*AnyCast<Box3D>(&g.data),tris,max);
+    CollideAll(m,*AnyCast_Raw<Box3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::Sphere:
-    CollideAll(m,*AnyCast<Sphere3D>(&g.data),tris,max);
+    CollideAll(m,*AnyCast_Raw<Sphere3D>(&g.data),tris,max);
     break;
   case GeometricPrimitive3D::Empty:
     return;
@@ -1470,7 +1470,7 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
   case GeometricPrimitive3D::Point:
     {
       Sphere3D s;
-      s.center = *AnyCast<Vector3>(&g.data);
+      s.center = *AnyCast_Raw<Vector3>(&g.data);
       s.radius = d;
       CollideAll(m,s,tris,max);
     }
@@ -1487,8 +1487,8 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
   case GeometricPrimitive3D::Sphere:
     {
       Sphere3D s;
-      s.center = AnyCast<Sphere3D>(&g.data)->center;
-      s.radius = AnyCast<Sphere3D>(&g.data)->radius+d;
+      s.center = AnyCast_Raw<Sphere3D>(&g.data)->center;
+      s.radius = AnyCast_Raw<Sphere3D>(&g.data)->radius+d;
       return CollideAll(m,s,tris,max);
     }
     break;

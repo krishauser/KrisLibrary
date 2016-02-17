@@ -47,6 +47,7 @@ class AsyncReaderQueue
   size_t msgCount;
   std::string msgLast;
   std::list<std::string> msgQueue;
+  size_t numDroppedMsgs;
 };
 
 /** @brief Asynchronous writer with queue.
@@ -84,6 +85,7 @@ class AsyncWriterQueue
   size_t queueMax;
   size_t msgCount;
   std::list<std::string> msgQueue;
+  size_t numDroppedMsgs;
 };
 
 /** @brief Asynchronous reader/writer with queues.

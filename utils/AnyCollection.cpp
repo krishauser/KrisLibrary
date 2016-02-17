@@ -6,6 +6,13 @@
 #include <errors.h>
 #include <sstream>
 
+//TODO: if you want to use AnyValues across DLL boundaries, replace this with
+//the commented-out definition on the following line. You will see a minor
+//performance hit.
+#define TYPEINFO_EQ(typeinfo1,typeinfo2) (&typeinfo1 == &typeinfo2)
+//#define TYPEINFO_EQ(typeinfo1,typeinfo2) (typeinfo1 == typeinfo2)
+#define TYPEINFO_IS_TYPE(typeinfo,class) TYPEINFO_EQ(typeinfo,typeid(class))
+
 bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
 {
   EatWhitespace(in);
@@ -93,41 +100,41 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
 
 void WriteValue(const AnyValue& value,std::ostream& out)
 {
-  const std::type_info* type = &value.type();
-  if(type == &typeid(bool)) {
-    if(*AnyCast<bool>(&value)==true)
+  const std::type_info& type = value.type();
+  if(TYPEINFO_IS_TYPE(type,bool)) {
+    if(*AnyCast_Raw<bool>(&value)==true)
       out<<"true";
     else
       out<<"false";
   }
-  else if(type == &typeid(char))
-    out<<*AnyCast<char>(&value);
-  else if(type == &typeid(unsigned char))
-    out<<*AnyCast<unsigned char>(&value);
-  else if(type == &typeid(int))
-    out<<*AnyCast<int>(&value);
-  else if(type == &typeid(unsigned int))
-    out<<*AnyCast<unsigned int>(&value);
-  else if(type == &typeid(float))
-    out<<*AnyCast<float>(&value);
-  else if(type == &typeid(double))
-    out<<*AnyCast<double>(&value);
-  else if(type == &typeid(std::string))
-    OutputQuotedString(out,*AnyCast<std::string>(&value));
-  else out<<"UNKNOWN_TYPE("<<type->name()<<")";
+  else if(TYPEINFO_IS_TYPE(type,char))
+    out<<*AnyCast_Raw<char>(&value);
+  else if(TYPEINFO_IS_TYPE(type,unsigned char))
+    out<<*AnyCast_Raw<unsigned char>(&value);
+  else if(TYPEINFO_IS_TYPE(type,int))
+    out<<*AnyCast_Raw<int>(&value);
+  else if(TYPEINFO_IS_TYPE(type,unsigned int))
+    out<<*AnyCast_Raw<unsigned int>(&value);
+  else if(TYPEINFO_IS_TYPE(type,float))
+    out<<*AnyCast_Raw<float>(&value);
+  else if(TYPEINFO_IS_TYPE(type,double))
+    out<<*AnyCast_Raw<double>(&value);
+  else if(TYPEINFO_IS_TYPE(type,std::string))
+    OutputQuotedString(out,*AnyCast_Raw<std::string>(&value));
+  else out<<"UNKNOWN_TYPE("<<type.name()<<")";
 }
 
 template <class T>
 bool BasicNumericalCoerceCast(const AnyValue& value,T& result)
 {
-  const std::type_info* type = &value.type();
-  if(type == &typeid(bool)) result=T(*AnyCast<bool>(&value)); 
-  else if(type == &typeid(char)) result=T(*AnyCast<char>(&value));
-  else if(type == &typeid(unsigned char)) result=T(*AnyCast<unsigned char>(&value));
-  else if(type == &typeid(int)) result=T(*AnyCast<int>(&value));
-  else if(type == &typeid(unsigned int)) result=T(*AnyCast<unsigned int>(&value));
-  else if(type == &typeid(float)) result=T(*AnyCast<float>(&value));
-  else if(type == &typeid(double)) result=T(*AnyCast<double>(&value));
+  const std::type_info& type = value.type();
+  if(TYPEINFO_IS_TYPE(type,bool)) result=T(*AnyCast_Raw<bool>(&value)); 
+  else if(TYPEINFO_IS_TYPE(type,char)) result=T(*AnyCast_Raw<char>(&value));
+  else if(TYPEINFO_IS_TYPE(type,unsigned char)) result=T(*AnyCast_Raw<unsigned char>(&value));
+  else if(TYPEINFO_IS_TYPE(type,int)) result=T(*AnyCast_Raw<int>(&value));
+  else if(TYPEINFO_IS_TYPE(type,unsigned int)) result=T(*AnyCast_Raw<unsigned int>(&value));
+  else if(TYPEINFO_IS_TYPE(type,float)) result=T(*AnyCast_Raw<float>(&value));
+  else if(TYPEINFO_IS_TYPE(type,double)) result=T(*AnyCast_Raw<double>(&value));
   else {
     return false;
   }
@@ -144,15 +151,15 @@ template <> bool CoerceCast<double>(const AnyValue& value,double& result) { retu
 
 template <> bool LexicalCast(const AnyValue& value,std::string& result)
 {
-  const std::type_info* type = &value.type();
-  if(type == &typeid(bool)) return LexicalCast(*AnyCast<bool>(&value),result); 
-  else if(type == &typeid(char)) return LexicalCast(*AnyCast<char>(&value),result);
-  else if(type == &typeid(unsigned char)) return LexicalCast(*AnyCast<unsigned char>(&value),result);
-  else if(type == &typeid(int)) return LexicalCast(*AnyCast<int>(&value),result);
-  else if(type == &typeid(unsigned int)) return LexicalCast(*AnyCast<unsigned int>(&value),result);
-  else if(type == &typeid(float)) return LexicalCast(*AnyCast<float>(&value),result);
-  else if(type == &typeid(double)) return LexicalCast(*AnyCast<double>(&value),result);
-  else if(type == &typeid(std::string)) { result=*AnyCast<std::string>(&value); return true; }
+  const std::type_info& type = value.type();
+  if(TYPEINFO_IS_TYPE(type,bool)) return LexicalCast(*AnyCast_Raw<bool>(&value),result); 
+  else if(TYPEINFO_IS_TYPE(type,char)) return LexicalCast(*AnyCast_Raw<char>(&value),result);
+  else if(TYPEINFO_IS_TYPE(type,unsigned char)) return LexicalCast(*AnyCast_Raw<unsigned char>(&value),result);
+  else if(TYPEINFO_IS_TYPE(type,int)) return LexicalCast(*AnyCast_Raw<int>(&value),result);
+  else if(TYPEINFO_IS_TYPE(type,unsigned int)) return LexicalCast(*AnyCast_Raw<unsigned int>(&value),result);
+  else if(TYPEINFO_IS_TYPE(type,float)) return LexicalCast(*AnyCast_Raw<float>(&value),result);
+  else if(TYPEINFO_IS_TYPE(type,double)) return LexicalCast(*AnyCast_Raw<double>(&value),result);
+  else if(TYPEINFO_IS_TYPE(type,std::string)) { result=*AnyCast_Raw<std::string>(&value); return true; }
   else {
     return false;
   }
@@ -210,53 +217,53 @@ AnyKeyable::AnyKeyable(const char* _value)
 
 bool AnyKeyable::operator == (const AnyKeyable& rhs) const
 {
-  const std::type_info* type = &value.type();
-  const std::type_info* rhstype = &rhs.value.type();
-  if(type != rhstype) return false;
+  const std::type_info& type = value.type();
+  const std::type_info& rhstype = rhs.value.type();
+  if(!TYPEINFO_EQ(type,rhstype)) return false;
   if(value.empty()) return true;  
-  if(type == &typeid(bool)) 
-    return *AnyCast<bool>(&value) == *AnyCast<bool>(&rhs.value);
-  if(type == &typeid(char)) 
-    return *AnyCast<char>(&value) == *AnyCast<char>(&rhs.value);
-  if(type == &typeid(unsigned char)) 
-    return *AnyCast<unsigned char>(&value) == *AnyCast<unsigned char>(&rhs.value);
-  else if(type == &typeid(int)) 
-    return *AnyCast<int>(&value) == *AnyCast<int>(&rhs.value);
-  else if(type == &typeid(unsigned int)) 
-    return *AnyCast<unsigned int>(&value) == *AnyCast<unsigned int>(&rhs.value);
-  else if(type == &typeid(float)) 
-    return *AnyCast<float>(&value) == *AnyCast<float>(&rhs.value);
-  else if(type == &typeid(double)) 
-    return *AnyCast<double>(&value) == *AnyCast<double>(&rhs.value);
-  else if(type == &typeid(std::string)) 
-    return *AnyCast<std::string>(&value) == *AnyCast<std::string>(&rhs.value);
+  if(TYPEINFO_IS_TYPE(type,bool)) 
+    return *AnyCast_Raw<bool>(&value) == *AnyCast_Raw<bool>(&rhs.value);
+  if(TYPEINFO_IS_TYPE(type,char)) 
+    return *AnyCast_Raw<char>(&value) == *AnyCast_Raw<char>(&rhs.value);
+  if(TYPEINFO_IS_TYPE(type,unsigned char)) 
+    return *AnyCast_Raw<unsigned char>(&value) == *AnyCast_Raw<unsigned char>(&rhs.value);
+  else if(TYPEINFO_IS_TYPE(type,int)) 
+    return *AnyCast_Raw<int>(&value) == *AnyCast_Raw<int>(&rhs.value);
+  else if(TYPEINFO_IS_TYPE(type,unsigned int)) 
+    return *AnyCast_Raw<unsigned int>(&value) == *AnyCast_Raw<unsigned int>(&rhs.value);
+  else if(TYPEINFO_IS_TYPE(type,float)) 
+    return *AnyCast_Raw<float>(&value) == *AnyCast_Raw<float>(&rhs.value);
+  else if(TYPEINFO_IS_TYPE(type,double)) 
+    return *AnyCast_Raw<double>(&value) == *AnyCast_Raw<double>(&rhs.value);
+  else if(TYPEINFO_IS_TYPE(type,std::string)) 
+    return *AnyCast_Raw<std::string>(&value) == *AnyCast_Raw<std::string>(&rhs.value);
   else
-    FatalError("Equality testing of objects of type %s not supported",type->name());
+    FatalError("Equality testing of objects of type %s not supported",type.name());
   return 0;
 }
 
 size_t AnyKeyable::hash() const
 {
   if(value.empty()) return 0;
-  const std::type_info* type = &value.type();
-  if(type == &typeid(bool)) 
-    return HASH_NAMESPACE::hash<bool>()(*AnyCast<bool>(&value));
-  if(type == &typeid(char)) 
-    return HASH_NAMESPACE::hash<char>()(*AnyCast<char>(&value));
-  if(type == &typeid(unsigned char)) 
-    return HASH_NAMESPACE::hash<unsigned char>()(*AnyCast<unsigned char>(&value));
-  else if(type == &typeid(int)) 
-    return HASH_NAMESPACE::hash<int>()(*AnyCast<int>(&value));
-  else if(type == &typeid(unsigned int)) 
-    return HASH_NAMESPACE::hash<unsigned int>()(*AnyCast<unsigned int>(&value));
-  else if(type == &typeid(float)) 
-    return HASH_NAMESPACE::hash<float>()(*AnyCast<float>(&value));
-  else if(type == &typeid(double)) 
-    return HASH_NAMESPACE::hash<double>()(*AnyCast<double>(&value));
-  else if(type == &typeid(std::string)) 
-    return HASH_NAMESPACE::hash<std::string>()(*AnyCast<std::string>(&value));
+  const std::type_info& type = value.type();
+  if(TYPEINFO_IS_TYPE(type,bool)) 
+    return HASH_NAMESPACE::hash<bool>()(*AnyCast_Raw<bool>(&value));
+  if(TYPEINFO_IS_TYPE(type,char)) 
+    return HASH_NAMESPACE::hash<char>()(*AnyCast_Raw<char>(&value));
+  if(TYPEINFO_IS_TYPE(type,unsigned char)) 
+    return HASH_NAMESPACE::hash<unsigned char>()(*AnyCast_Raw<unsigned char>(&value));
+  else if(TYPEINFO_IS_TYPE(type,int)) 
+    return HASH_NAMESPACE::hash<int>()(*AnyCast_Raw<int>(&value));
+  else if(TYPEINFO_IS_TYPE(type,unsigned int)) 
+    return HASH_NAMESPACE::hash<unsigned int>()(*AnyCast_Raw<unsigned int>(&value));
+  else if(TYPEINFO_IS_TYPE(type,float)) 
+    return HASH_NAMESPACE::hash<float>()(*AnyCast_Raw<float>(&value));
+  else if(TYPEINFO_IS_TYPE(type,double)) 
+    return HASH_NAMESPACE::hash<double>()(*AnyCast_Raw<double>(&value));
+  else if(TYPEINFO_IS_TYPE(type,std::string)) 
+    return HASH_NAMESPACE::hash<std::string>()(*AnyCast_Raw<std::string>(&value));
   else
-    FatalError("Hash keying of objects of type %s not supported",type->name());
+    FatalError("Hash keying of objects of type %s not supported",type.name());
   return 0;
 }
 
@@ -823,9 +830,9 @@ SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
 {
   if(type == Array) {
     if(key.value.hastype<int>())
-      return find(*AnyCast<int>(&key.value));
+      return find(*AnyCast_Raw<int>(&key.value));
     else if(key.value.hastype<unsigned int>())
-      return find(*AnyCast<unsigned int>(&key.value));
+      return find(*AnyCast_Raw<unsigned int>(&key.value));
     else 
       return NULL;
   }
@@ -887,9 +894,9 @@ SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
   if(type == None) {
     //if the key is an integer, try turning it into an array
     if(key.value.hastype<int>())
-      return insert(*AnyCast<int>(&key.value));
+      return insert(*AnyCast_Raw<int>(&key.value));
     else if(key.value.hastype<unsigned int>())
-      return insert((int)(*AnyCast<unsigned int>(&key.value)));
+      return insert((int)(*AnyCast_Raw<unsigned int>(&key.value)));
 
     //coerce to a map type
     type = Map;
@@ -909,9 +916,9 @@ SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
   if(type == Array) {
     int index;
     if(key.value.hastype<int>())
-      return insert(*AnyCast<int>(&key.value));
+      return insert(*AnyCast_Raw<int>(&key.value));
     else if(key.value.hastype<unsigned int>())
-      return insert((int)(*AnyCast<unsigned int>(&key.value)));
+      return insert((int)(*AnyCast_Raw<unsigned int>(&key.value)));
     else {
       FatalError("AnyCollection: can't lookup arrays with non-integer types");
       return NULL;
@@ -1010,9 +1017,9 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
   if(type == Array) {
     int index;
     if(key.value.hastype<int>())
-      index = *AnyCast<int>(&key.value);
+      index = *AnyCast_Raw<int>(&key.value);
     else if(key.value.hastype<unsigned int>())
-      index = (int)(*AnyCast<unsigned int>(&key.value));
+      index = (int)(*AnyCast_Raw<unsigned int>(&key.value));
     else {
       FatalError("AnyCollection: can't lookup arrays with non-integer types");
       return *this;
@@ -1043,9 +1050,9 @@ const AnyCollection& AnyCollection::operator[](AnyKeyable key) const
 {
   if(type == Array) {
     if(key.value.hastype<int>())
-      return *array[*AnyCast<int>(&key.value)];
+      return *array[*AnyCast_Raw<int>(&key.value)];
     else if(key.value.hastype<unsigned int>())
-      return *array[*AnyCast<unsigned int>(&key.value)];
+      return *array[*AnyCast_Raw<unsigned int>(&key.value)];
     else {
       return nullCollection;
       FatalError("AnyCollection: can't lookup arrays with non-integer types");

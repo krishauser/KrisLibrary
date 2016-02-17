@@ -339,34 +339,34 @@ void MakeTriMesh(const GeometricPrimitive3D& geom,TriMesh& mesh,int numDivs)
   switch(geom.type) {
   case GeometricPrimitive3D::Point:
     mesh.verts.resize(1);
-    mesh.verts[0] = *AnyCast<Point3D>(&geom.data);
+    mesh.verts[0] = *AnyCast_Raw<Point3D>(&geom.data);
     mesh.tris.resize(0);
     break;
   case GeometricPrimitive3D::Segment:
     //make a degenerate mesh
     mesh.verts.resize(2);
-    mesh.verts[0] = AnyCast<Segment3D>(&geom.data)->a;
-    mesh.verts[1] = AnyCast<Segment3D>(&geom.data)->b;
+    mesh.verts[0] = AnyCast_Raw<Segment3D>(&geom.data)->a;
+    mesh.verts[1] = AnyCast_Raw<Segment3D>(&geom.data)->b;
     mesh.tris.resize(1);
     mesh.tris[0].set(0,1,1);
     break;
   case GeometricPrimitive3D::Triangle:
-    MakeTriMesh(*AnyCast<Triangle3D>(&geom.data),mesh);
+    MakeTriMesh(*AnyCast_Raw<Triangle3D>(&geom.data),mesh);
     break;
   case GeometricPrimitive3D::Polygon:
-    MakeTriMesh(*AnyCast<Polygon3D>(&geom.data),mesh);
+    MakeTriMesh(*AnyCast_Raw<Polygon3D>(&geom.data),mesh);
     break;
   case GeometricPrimitive3D::Box:
-    MakeTriMesh(*AnyCast<Box3D>(&geom.data),mesh);
+    MakeTriMesh(*AnyCast_Raw<Box3D>(&geom.data),mesh);
     break;
   case GeometricPrimitive3D::Cylinder:
-    MakeTriMesh(*AnyCast<Cylinder3D>(&geom.data),numDivs,mesh);
+    MakeTriMesh(*AnyCast_Raw<Cylinder3D>(&geom.data),numDivs,mesh);
     break;
   case GeometricPrimitive3D::Sphere:
-    MakeTriMesh(*AnyCast<Sphere3D>(&geom.data),numDivs,numDivs,mesh);
+    MakeTriMesh(*AnyCast_Raw<Sphere3D>(&geom.data),numDivs,numDivs,mesh);
     break;
   case GeometricPrimitive3D::Ellipsoid:
-    MakeTriMesh(*AnyCast<Ellipsoid3D>(&geom.data),numDivs,numDivs,mesh);
+    MakeTriMesh(*AnyCast_Raw<Ellipsoid3D>(&geom.data),numDivs,numDivs,mesh);
     break;
   default:
     FatalError("Invalid primitive type for MakeTriMesh");
