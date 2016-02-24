@@ -1,6 +1,7 @@
 #include "PiecewisePolynomial.h"
 #include <KrisLibrary/myfile.h>
 #include <math.h>
+#include <stdio.h>
 #include <algorithm>
 
 namespace Spline {
