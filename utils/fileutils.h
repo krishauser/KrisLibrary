@@ -43,6 +43,10 @@ bool IsDirectory(const char* path);
 /// Creates the directory, if it doesn't exist.  Returns true if successful.
 bool MakeDirectory(const char* path);
 
+/// Creates all subdirectories leading up to the directory, if they don't
+///exist.  Returns true if successful.
+bool MakeDirectoryRecursive(const char* path);
+
 /// Returns a list of filenames in the given directory
 bool ListDirectory(const char* path,std::vector<std::string>& items);
 

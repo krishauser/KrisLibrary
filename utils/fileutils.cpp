@@ -3,6 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <strsafe.h>
+#include <shlobj.h>    // for SHCreateDirectoryEx
 #else
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -132,6 +133,33 @@ bool MakeDirectory(const char* path)
 	return true;
 #else
   return mkdir(path,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)==0;
+#endif
+}
+
+
+bool MakeDirectoryRecursive(const char* path)
+{
+#ifdef _WIN32
+  return SHCreateDirectoryEx( NULL, path, NULL ) == ERROR_SUCCESS;
+#else
+        size_t len = strlen(path);
+        char* tmp = new char[len+1];
+        char *p = NULL;
+ 
+        strcpy(tmp, path);
+        if(tmp[len - 1] == '/')
+                tmp[len - 1] = 0;
+	p = tmp;
+	if(*p == '/') p++;
+        for(; *p; p++)
+                if(*p == '/') {
+                        *p = 0;
+                        mkdir(tmp, S_IRWXU);
+                        *p = '/';
+                }
+        bool res=( mkdir(tmp, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0);
+	delete [] tmp;
+	return res;
 #endif
 }
 
