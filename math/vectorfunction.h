@@ -2,6 +2,8 @@
 #define MATH_VECTOR_FUNCTION_H
 
 #include "function.h"
+#include "vector.h"
+#include "matrix.h"
 #include <KrisLibrary/utils/SmartPointer.h>
 #include <vector>
 #include <assert.h>

@@ -7,6 +7,8 @@
 #include "LSQRInterface.h"
 #include <iostream>
 #include <math/vectorfunction.h>
+#include <math/MatrixPrinter.h>
+#include <math/VectorPrinter.h>
 #include <math/linalgebra.h>
 #include <math/random.h>
 using namespace std;

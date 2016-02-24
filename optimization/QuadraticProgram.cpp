@@ -4,6 +4,8 @@
 #include <math/DiagonalMatrix.h>
 #include <math/SVDecomposition.h>
 #include <math/Conditioner.h>
+#include <math/MatrixPrinter.h>
+#include <math/VectorPrinter.h>
 #include <errors.h>
 #include <iostream>
 using namespace Optimization;

@@ -2,6 +2,8 @@
 #include <math/linalgebra.h>
 #include <math/LDL.h>
 #include <math/MatrixEquationPrinter.h>
+#include <math/MatrixPrinter.h>
+#include <math/VectorPrinter.h>
 #include <math/SelfTest.h>
 #include <iostream>
 #include <errors.h>

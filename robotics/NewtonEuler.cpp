@@ -1,6 +1,8 @@
 #include "NewtonEuler.h"
 #include <math/random.h>
 #include <math/CholeskyDecomposition.h>
+#include <math/MatrixPrinter.h>
+#include <math/VectorPrinter.h>
 using namespace std;
 
 

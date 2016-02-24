@@ -2,10 +2,15 @@
 #define MATH_FUNCTION_H
 
 #include "math.h"
-#include "vector.h"
-#include "matrix.h"
 #include <KrisLibrary/errors.h>
 #include <string>
+namespace Math
+{
+  template <class T> class VectorTemplate;
+  template <class T> class MatrixTemplate;
+  typedef VectorTemplate<Real> Vector;
+  typedef MatrixTemplate<Real> Matrix;
+} //namespace Math
 
 /** @ingroup Math
  * @file math/function.h
@@ -158,45 +163,6 @@ public:
   virtual void PreEval(Real t,const Vector& y) {}
   virtual void Eval(Real t,const Vector& y,Vector& fy) =0;
 };
-
-//second order differential equation
-class DiffEq2Function : public DiffEqFunction
-{
-public:
-	//y=(x,dx),dy=(dx,ddx)
-	virtual void Eval(Real t, const Vector& y, Vector& fy)
-	{
-		YToX1X2(y,x,dx);
-		GetDDx(t,x,dx,ddx);
-		X1X2ToY(dx,ddx,fy);
-	}
-
-	virtual void GetDDx(Real t,const Vector& x,const Vector& dx,Vector& ddx) =0;
-
-	Vector x,dx,ddx;
-
-
-	static void X1X2ToY(const Vector& x1, const Vector& x2, Vector& y)
-	{
-		y.resize(x1.n+x2.n);
-		for(int i=0;i<x1.n;i++) {
-			y(i)=x1(i);
-			y(i+x1.n)=x2(i);
-		}
-	}
-	static void YToX1X2(const Vector& y, Vector& x1, Vector& x2)
-	{
-		x1.resize(y.n/2);
-		x2.resize(y.n/2);		
-		for(int i=0;i<x1.n;i++) {
-			x1(i)=y(i);
-			x2(i)=y(i+x1.n);
-		}
-	}
-};
-
-
-
 
 
 } //namespace Math

@@ -5,6 +5,8 @@
 #include <math/AABB.h>
 #include <math/indexing.h>
 #include <math/sparsefunction.h>
+#include <math/MatrixPrinter.h>
+#include <math/VectorPrinter.h>
 #include "MinNormProblem.h"
 #include "LSQRInterface.h"
 #include <iostream>
@@ -202,6 +204,7 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
   int maxIters = iters;
   for (iters=0;iters<maxIters;iters++) { 
     if(verbose >= 2) cout<<"Iteration "<<iters<<", x = "<<x<<endl;
+    if(verbose >= 2) cout<<"   errors"<<fx<<endl;
     func->Jacobian(x,fJx);
     fJx.mulTranspose(fx,g);
     xold.copy(x);
@@ -227,6 +230,17 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
     if(verbose >= 2) cout<<"  Descent direction "<<p<<endl;
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
+    if(verbose >= 2) {
+      if(g.dot(p) > 0) {
+	cout<<"  Error in slope and descent directions? Check jacobian"<<endl;
+	cout<<"  g: "<<g<<endl;
+	cout<<"  p: "<<p<<endl;
+	cout<<"  Error: "<<fx<<endl;
+	MatrixPrinter printer(fJx);
+	cout<<"  Jacobian: "<<endl;
+	printer.Print(cout,4);
+      }
+    }
     check = LineMinimization(g,p,&f); //lnsrch returns new x and f. It also calculates fx at the new x when it calls Merit()
     //printf("New value of f after lnsrch: %f\n",f);
     //printf("New value of fx after lnsrch: "); cout<<VectorPrinter(fx)<<endl;
@@ -936,7 +950,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
 	//return ConvergenceError;
       }
     }
-    if(g.dot(p) <= Zero) {
+    if(g.dot(p) > Zero) {
       if(verbose) {
 	cerr<<"Error, gradient and search direction are opposing..."<<endl;
 	cerr<<"g: "<<VectorPrinter(g)<<endl;

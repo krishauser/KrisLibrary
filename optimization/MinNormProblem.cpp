@@ -3,6 +3,8 @@
 #include "BoundedLSQRSolver.h"
 #include "LSQRInterface.h"
 #include <math/linalgebra.h>
+#include <math/MatrixPrinter.h>
+#include <math/VectorPrinter.h>
 #include <iostream>
 #include <errors.h>
 using namespace Optimization;

@@ -1,5 +1,25 @@
 #include "Simulate.h"
 
+
+void DiffEq2Function::X1X2ToY(const Vector& x1, const Vector& x2, Vector& y)
+{
+  y.resize(x1.n+x2.n);
+  for(int i=0;i<x1.n;i++) {
+    y(i)=x1(i);
+    y(i+x1.n)=x2(i);
+  }
+}
+void DiffEq2Function::YToX1X2(const Vector& y, Vector& x1, Vector& x2)
+{
+  x1.resize(y.n/2);
+  x2.resize(y.n/2);		
+  for(int i=0;i<x1.n;i++) {
+    x1(i)=y(i);
+    x2(i)=y(i+x1.n);
+  }
+}
+
+
 template <class Robot,class NVector>
 SimFunction<Robot,NVector>::SimFunction()
   :robot(NULL),gravity(Zero),viscousFriction(Zero)

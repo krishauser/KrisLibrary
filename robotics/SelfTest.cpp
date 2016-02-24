@@ -1,4 +1,5 @@
 #include <math/random.h>
+#include <math/VectorPrinter.h>
 #include <math3d/random.h>
 #include "Rotation.h"
 #include "NewtonEuler.h"

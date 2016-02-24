@@ -12,7 +12,7 @@ struct MatrixPrinter
   MatrixPrinter(const fMatrix& m,Mode mode=Normal);
   MatrixPrinter(const dMatrix& m,Mode mode=Normal);
   MatrixPrinter(const cMatrix& m,Mode mode=Normal);
-  void Print(std::ostream& out) const;
+  void Print(std::ostream& out,int indent=0) const;
 
   const fMatrix* fm;
   const dMatrix* dm;

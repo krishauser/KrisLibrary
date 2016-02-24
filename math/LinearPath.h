@@ -2,6 +2,7 @@
 #define MATH_LINEAR_PATH_H
 
 #include "function.h"
+#include "vector.h"
 #include "Interval.h"
 #include <vector>
 

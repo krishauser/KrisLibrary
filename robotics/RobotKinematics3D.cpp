@@ -217,6 +217,7 @@ void RobotKinematics3D::NormalizeAngles(Config& q) const
 {
   for(size_t i=0;i<links.size();i++) {
     if(links[i].type == RobotLink3D::Revolute) {
+      if( qMin(i) <= q(i) && q(i) <= qMax(i) ) continue;
       Real qi = AngleNormalize(q(i));
       if(qi > qMax(i)) {
 	if(qi - TwoPi >= qMin(i)) 
