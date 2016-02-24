@@ -13,10 +13,8 @@
 #define FILESEEKEND 2
 
 #ifdef _WIN32
-typedef void *FILE_POINTER;
 typedef unsigned int SOCKET;
 #else
-typedef void *FILE_POINTER;
 typedef int SOCKET;
 #endif // _WIN32
 
@@ -53,8 +51,8 @@ public:
 	~File();
 	///Opens a named file on the hard drive with the given open mode
 	bool Open(const char*, int openmode = FILEREAD | FILEWRITE);
-	///Connects this File object to a previously opened file object
-	bool Open(FILE_POINTER, int openmode = FILEREAD | FILEWRITE);
+	///Connects this File object to a previously opened FILE object
+	bool Open(void*, int openmode = FILEREAD | FILEWRITE);
 	///Connects this File object to a memory buffer
 	bool OpenData(void* buf, int size, int openmode = FILEREAD | FILEWRITE);
 	///Creates a new memory buffer to be written to / read from via this

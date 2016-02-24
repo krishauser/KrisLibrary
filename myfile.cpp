@@ -355,7 +355,7 @@ bool File::Open(const char* fn, int openmode)
 }
 
 
-bool File::Open(FILE_POINTER f, int openmode)
+bool File::Open(void* f, int openmode)
 {
 	Close();
 
@@ -363,7 +363,7 @@ bool File::Open(FILE_POINTER f, int openmode)
 	if(openmode == 0)
 		return false;
 
-	impl->file = f;
+	impl->file = (FILE*)f;
 	mode = openmode;
 	return true;
 }
