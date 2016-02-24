@@ -11,6 +11,8 @@
 #include "BlockPrinter.h"
 #include "BLASInterface.h"
 #include "LAPACKInterface.h"
+#include "MatrixPrinter.h"
+#include "VectorPrinter.h"
 #include "metric.h"
 #include <errors.h>
 #include <utils/fileutils.h>

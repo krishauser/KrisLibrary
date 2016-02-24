@@ -1,4 +1,5 @@
 #include "quadrature.h"
+#include "vector.h"
 
 namespace Math {
 namespace Quadrature {

@@ -2,6 +2,7 @@
 #include "realfunction.h"
 #include "vectorfunction.h"
 #include "root.h"
+#include "VectorPrinter.h"
 #include <errors.h>
 #include <iostream>
 

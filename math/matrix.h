@@ -2,7 +2,6 @@
 #define MATH_MATRIX_H
 
 #include "MatrixTemplate.h"
-#include "MatrixPrinter.h"
 #include "vector.h"
 
 namespace Math {

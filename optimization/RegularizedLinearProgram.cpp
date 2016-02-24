@@ -1,5 +1,6 @@
 #include "RegularizedLinearProgram.h"
 #include "LPRobust.h"
+#include <math/VectorPrinter.h>
 #include <math/linalgebra.h>
 #include <iostream>
 #include <errors.h>

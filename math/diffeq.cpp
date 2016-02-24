@@ -1,4 +1,5 @@
 #include "diffeq.h"
+#include "vector.h"
 using namespace std;
 
 namespace Math {

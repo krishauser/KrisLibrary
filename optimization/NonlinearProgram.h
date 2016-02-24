@@ -2,6 +2,8 @@
 #define OPTIMIZATION_NONLINEAR_PROGRAM_H
 
 #include <KrisLibrary/math/function.h>
+#include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/matrix.h>
 
 namespace Optimization {
 using namespace Math;

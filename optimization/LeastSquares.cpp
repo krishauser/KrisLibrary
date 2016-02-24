@@ -1,5 +1,7 @@
 #include "LeastSquares.h"
 #include "QuadraticProgram.h"
+#include <math/MatrixPrinter.h>
+#include <math/VectorPrinter.h>
 #include <math/MatrixEquationPrinter.h>
 #include <math/linalgebra.h>
 #include <errors.h>

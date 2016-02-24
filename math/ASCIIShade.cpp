@@ -67,12 +67,13 @@ void OutputASCIIShade(ostream& out,const dVector& x,double scale)
   out<<']';
 }
 
-void OutputASCIIShade(ostream& out,const fMatrix& A,float scale)
+void OutputASCIIShade(ostream& out,const fMatrix& A,float scale,int indent)
 {
   if(scale == 0) scale = A.maxAbsElement();
   out<<scale<<" x"<<endl;
   if(scale == 0) scale = 1;
   for(int i=0;i<A.m;i++) {
+    if(i && indent) out<<string(indent,' ');
     out<<'[';
     for(int j=0;j<A.n;j++) 
       out<<ASCIIShade(A(i,j)/scale);
@@ -83,12 +84,13 @@ void OutputASCIIShade(ostream& out,const fMatrix& A,float scale)
 }
 
 
-void OutputASCIIShade(ostream& out,const dMatrix& A,double scale)
+void OutputASCIIShade(ostream& out,const dMatrix& A,double scale,int indent)
 {
   if(scale == 0) scale = A.maxAbsElement();
   out<<scale<<" x"<<endl;
   if(scale == 0) scale = 1;
   for(int i=0;i<A.m;i++) {
+    if(i && indent) out<<string(indent,' ');
     out<<'[';
     for(int j=0;j<A.n;j++) 
       out<<ASCIIShade(A(i,j)/scale);

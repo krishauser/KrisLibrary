@@ -6,6 +6,29 @@
 #include "DynamicChain.h"
 #include <KrisLibrary/math/diffeq.h>
 
+//second order differential equation
+class DiffEq2Function : public DiffEqFunction
+{
+public:
+	//y=(x,dx),dy=(dx,ddx)
+	virtual void Eval(Real t, const Vector& y, Vector& fy)
+	{
+		YToX1X2(y,x,dx);
+		GetDDx(t,x,dx,ddx);
+		X1X2ToY(dx,ddx,fy);
+	}
+
+	virtual void GetDDx(Real t,const Vector& x,const Vector& dx,Vector& ddx) =0;
+
+	Vector x,dx,ddx;
+
+
+	static void X1X2ToY(const Vector& x1, const Vector& x2, Vector& y);
+	static void YToX1X2(const Vector& y, Vector& x1, Vector& x2);
+};
+
+///Deprecated: very basic numerical simulation of a robot under gravity and
+///external forcing
 template <class Robot,class NVector>
 class SimFunction : public DiffEq2Function
 {

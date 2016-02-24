@@ -1,5 +1,7 @@
 #include "function.h"
 #include "vectorfunction.h"
+#include "vector.h"
+#include "matrix.h"
 #include <errors.h>
 using namespace Math;
 using namespace std;
