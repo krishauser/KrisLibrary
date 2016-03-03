@@ -185,7 +185,7 @@ File::~File()
 
 void File::Close()
 {
-        if(srctype == MODE_MYFILE && impl->file != INVALID_FILE_POINTER) FileClose(impl->file);
+    if(srctype == MODE_MYFILE && impl->file != INVALID_FILE_POINTER) FileClose(impl->file);
 	if(srctype == MODE_MYDATA && impl->datafile != NULL) free(impl->datafile);
 	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && impl->file > 0) SocketClose(impl->socket);
 
@@ -643,7 +643,7 @@ bool File::WriteString(const char* str)
 
 bool File::IsOpen() const
 {
-  if(srctype == MODE_TCPSOCKET || mode == MODE_UDPSOCKET) {
+  if(srctype == MODE_TCPSOCKET || srctype == MODE_UDPSOCKET) {
     if(impl->socket == INVALID_SOCKET) return false;
     return true;
   }
