@@ -170,6 +170,11 @@ File::File()
 :mode(0),srctype(MODE_NONE),
  impl(new FileImpl)
 {
+    impl->file = INVALID_FILE_POINTER;
+    impl->datafile = NULL;
+    impl->datapos = 0;
+    impl->datasize = 0;
+    impl->socket = INVALID_SOCKET;
 }
 
 File::~File()
@@ -190,7 +195,7 @@ void File::Close()
 	impl->datafile = NULL;
 	impl->datapos = 0;
 	impl->datasize = 0;
-	impl->socket = 0;
+	impl->socket = INVALID_SOCKET;
 }
 
 bool File::OpenData(void* data, int size, int openmode)
