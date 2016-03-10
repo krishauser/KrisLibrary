@@ -532,6 +532,12 @@ bool MomentRotation::setMatrix(const Matrix3& r)
   Assert(IsFinite(x));
   Assert(IsFinite(y));
   Assert(IsFinite(z));
+  Matrix3 test;
+  getMatrix(test);
+  if (!test.isEqual(r, 5e-3)) {
+	  fprintf(stderr, "MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
+	  return false;
+  }
   return true;
 }
 
