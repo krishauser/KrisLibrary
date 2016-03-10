@@ -332,27 +332,27 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<" x y z";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" "<<propertyNames[i];
-  out<<endl;
+  out<<"\n";
   out<<"TYPE";
   if(addxyz)
     out<<" F F F";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" F";
-  out<<endl;
+  out<<"\n";
 
   if(!properties.empty())
-    out<<"POINTS "<<properties.size()<<endl;
+    out<<"POINTS "<<properties.size()<<"\n";
   else 
-    out<<"POINTS "<<points.size()<<endl;
+    out<<"POINTS "<<points.size()<<"\n";
 
   for(map<string,string>::const_iterator i=settings.begin();i!=settings.end();i++) {
     if(i->first == "VERSION") continue;
-    out<<i->first<<" "<<i->second<<endl;
+    out<<i->first<<" "<<i->second<<"\n";
   }
-  out<<"DATA ascii"<<endl;  
+  out<<"DATA ascii"<<"\n";  
   if(propertyNames.empty()) {
     for(size_t i=0;i<points.size();i++) 
-      out<<points[i]<<endl;
+      out<<points[i]<<"\n";
   }
   else {
     for(size_t i=0;i<properties.size();i++) {
@@ -360,7 +360,7 @@ bool PointCloud3D::SavePCL(ostream& out) const
 	out<<points[i]<<" ";
       for(int j=0;j<properties[i].n;j++)
 	out<<properties[i][j]<<" ";
-      out<<endl;
+      out<<"\n";
     }
   }
   return true;
