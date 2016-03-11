@@ -200,12 +200,10 @@ Real FitFrames(const std::vector<Vector3>& a,const std::vector<Vector3>& b,
   Vector3 ca(Zero),cb(Zero);
   for(size_t i=0;i<a.size();i++) ca += a[i];
   ca /= a.size();
-  Ta.t = -ca;
 
   for(size_t i=0;i<b.size();i++) cb += b[i];
   cb /= b.size();
-  Tb.t = -cb;
-
+  
   Matrix3 C;
   C.setZero();
   for(size_t k=0;k<a.size();k++) {
@@ -229,9 +227,27 @@ Real FitFrames(const std::vector<Vector3>& a,const std::vector<Vector3>& b,
   Tb.R.inplaceTranspose();
   Ta.R.inplaceTranspose();
 
+  if (Ta.R.determinant() < 0 || Tb.R.determinant() < 0) {
+	  //need to sort singular values and negate the column according to the smallest SV
+	  svd.sortSVs();
+	  //negate the last column of V
+	  Vector vi;
+	  svd.V.getColRef(2, vi);
+	  vi.inplaceNegative();
+	  Copy(svd.U, Ta.R);
+	  Copy(svd.V, Tb.R);
+	  Copy(svd.W, cov);
+	  Tb.R.inplaceTranspose();
+	  Ta.R.inplaceTranspose();
+	  //TODO: these may now both have a mirroring, but they may compose to rotations?
+  }
+
+  //need these to act as though they subtract off the centroids FIRST then apply rotation
+  Ta.t = -(Ta.R*ca);
+  Tb.t = -(Tb.R*cb);
   Real sum=0;
   for(size_t k=0;k<a.size();k++) 
-    sum += (Tb.R*b[k]).distanceSquared(Ta.R*a[k]);
+    sum += (Tb.R*(b[k]-cb)).distanceSquared(Ta.R*(a[k]-ca));
   return sum;
 }
 
