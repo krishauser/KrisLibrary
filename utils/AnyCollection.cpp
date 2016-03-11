@@ -1518,10 +1518,10 @@ void AnyCollection::write(std::ostream& out,int indent) const
     out<<"[";
     for(size_t i=0;i<array.size();i++) {
       if(i!=0) out<<", ";
-      if(!write_inline)	out<<std::endl<<std::string(indent+2,' ');
+      if(!write_inline)	out<<"\n"<<std::string(indent+2,' ');
       array[i]->write(out,indent+2);
     }
-    if(!write_inline)	out<<std::endl<<std::string(indent,' ');
+    if(!write_inline)	out<<"\n"<<std::string(indent,' ');
     out<<"]";
   }
   else {
@@ -1530,12 +1530,12 @@ void AnyCollection::write(std::ostream& out,int indent) const
     out<<"{";
     for(MapType::const_iterator i=map.begin();i!=map.end();i++) {
       if(i!=map.begin()) out<<", ";
-      if(!write_inline) out<<std::endl<<std::string(indent+2,' ');
+      if(!write_inline) out<<"\n"<<std::string(indent+2,' ');
       WriteValue(i->first.value,out);
       out<<": ";
       i->second->write(out,indent+2);
     }
-    if(!write_inline) out<<std::endl<<std::string(indent,' ');
+    if(!write_inline) out<<"\n"<<std::string(indent,' ');
     out<<"}";
   }
 }
