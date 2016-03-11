@@ -1070,7 +1070,7 @@ ostream& operator << (ostream& out, const MatrixTemplate<T>& mat)
   for(int i=0; i<mat.m; i++) {
     for(int j=0; j<mat.n; j++)
       out << mat(i,j) << " ";
-    out << endl;
+    out << "\n";
   }
   return out;
 }
