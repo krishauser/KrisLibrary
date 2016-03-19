@@ -40,7 +40,8 @@ class CartesianDriveSolver
   ///of each link, drives the robot by time step dt to reach those cartesian
   ///goals.  qnext is the resulting configuration, and the result is a value
   ///from 0 to 1 indicating how far along the nominal drive amount the
-  ///solver was able to achieve.
+  ///solver was able to achieve.  If the result is < 0, this indicates that
+  ///the solver failed to make further progress.
   ///
   ///For longer moves, you should pass qnext back to this function as qcur.
   ///

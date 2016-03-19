@@ -113,6 +113,12 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       m.getMatrix(increment);
       desiredTransforms[i].R = increment * driveTransforms[i].R;
     }
+    /*
+    cout<<"Desired transform for link "<<links[i]<<endl;
+    cout<<desiredTransforms[i]<<endl;
+    cout<<" current transform"<<endl;
+    cout<<originalTransforms[i]<<endl;
+    */
   }
 
   //set up IK parameters: active dofs, IKGoals
@@ -121,6 +127,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   if(ikGoals.empty()) {
     tempGoals.resize(links.size());
     for(size_t i=0;i<links.size();i++) {
+      tempGoals[i].link = links[i];
       if(IsFiniteV(driveVel[i])) {
 	tempGoals[i].localPosition = endEffectorOffsets[i];
 	tempGoals[i].SetFixedPosition(desiredTransforms[i].t);
@@ -132,10 +139,15 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	tempGoals[i].SetFixedRotation(desiredTransforms[i].R);
       else
 	tempGoals[i].SetFreeRotation();
+      /*
+      Real poserr[3]={0,0,0},orierr[3]={0,0,0};
+      tempGoals[i].GetError(originalTransforms[i],poserr,orierr);
+      printf("Error on link %d: %g %g %g, %g %g %g\n",links[i],poserr[0],poserr[1],poserr[2],orierr[0],orierr[1],orierr[2]);
+      */
     }
   }
   else {
-    FatalError("Can't set up custom IK goals yet");
+    FatalError("CartesianDriveSolver: Can't set up custom IK goals yet");
   }
   if(activeDofs.empty())
     GetDefaultIKDofs(*robot,tempGoals,tempActiveDofs);
@@ -185,10 +197,20 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   Vector x0(tempActiveDofs.mapping.size()),err0(function.NumDimensions());
   function.GetState(x0);
   function(x0,err0);
+  /*
+  cout<<"Active dofs: ";
+  for(size_t i=0;i<tempActiveDofs.mapping.size();i++) {
+    printf("%d ",tempActiveDofs.mapping[i]);
+  }
+  printf("\n");
+  cout<<"Active dof state "<<x0<<endl;
+  cout<<"IK goal residual "<<err0<<endl;
+  */
+
   Real quality0 = err0.normSquared();
 
   Real tolerance = ikSolveTolerance;
-  if(ikSolveTolerance == 0) tolerance = Min(1e-6,Min(positionTolerance,rotationTolerance)/Sqrt(3.0*links.size()));
+  if(ikSolveTolerance == 0) tolerance = Min(1e-6,Min(positionTolerance,rotationTolerance)/(Sqrt(3.0)*links.size()));
   int iters = ikSolveIters;
   int verbose = 0;
   RobotIKSolver solver(function);
@@ -200,7 +222,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     //check joint limits
     for(size_t i=0;i<tempActiveDofs.mapping.size();i++) {
       int k=tempActiveDofs.mapping[i];
-      if(robot->q[k] < tempqmin[k] || robot->q[k] > tempqmin[k]) {
+      if(robot->q[k] < tempqmin[k] || robot->q[k] > tempqmax[k]) {
         //the IK solver normalizer doesn't care about absolute
         //values for joints that wrap around 2pi
 	if(tempqmin[k] <= robot->q[k] + TwoPi && robot->q[k] + TwoPi <= tempqmax[k])
@@ -208,7 +230,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	else if(tempqmin[k] <= robot->q[k] - TwoPi && robot->q[k] - TwoPi <= tempqmax[k])
 	  robot->q[k] -= TwoPi;
 	else {
-	  printf("Warning, result from IK solve is out of bounds: index %d, %g <= %g <= %g\n",k,tempqmin[k],robot->q[k],tempqmax[k]);
+	  printf("CartesianDriveSolver: Warning, result from IK solve is out of bounds: index %d, %g <= %g <= %g\n",k,tempqmin[k],robot->q[k],tempqmax[k]);
 	  robot->q[k] = Clamp(robot->q[k],tempqmin[k],tempqmax[k]);
 	  robot->UpdateFrames();
 	}
@@ -221,21 +243,21 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   function(x0,err0);
   Real qualityAfter = err0.normSquared();
   if(qualityAfter > quality0) {
-    printf("Solve failed: original configuration was better\n");
+    printf("CartesianDriveSolver: Solve failed: original configuration was better: %g vs %g\n",quality0,qualityAfter);
     res = false;
   }
   else {
+    res = true;
     for(size_t i=0;i<links.size();i++) {
       //test constraints
       Vector3 perr(0.0),rerr(0.0);
       tempGoals[i].GetError(robot->links[links[i]].T_World,perr,rerr);
-      if(perr.norm() < positionTolerance && rerr.norm() < rotationTolerance) {
-        res = true;
-      }
-      else {
+      //cout<<"Position error link "<<links[i]<<": "<<perr<<", rotation error: "<<rerr<<endl;
+      if(perr.norm() > positionTolerance || rerr.norm() > rotationTolerance) {
         res = false;
-        printf("Position error: %g, rotation error: %g not under tolerances %g, %g\n",perr.norm(),rerr.norm(),positionTolerance,rotationTolerance);
-        printf("Solve tolerance %g, result %d\n",tolerance,(int)res);
+        printf("CartesianDriveSolver: Position error: %g, rotation error: %g not under tolerances %g, %g\n",perr.norm(),rerr.norm(),positionTolerance,rotationTolerance);
+        printf("  Solve tolerance %g, result %d\n",tolerance,(int)res);
+        break;
       }
     }
   }
@@ -253,7 +275,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       robot->UpdateSelectedFrames(links[0]);
     else
       robot->UpdateFrames();
-    vector<RigidTransform> achievedTransforms;
+    vector<RigidTransform> achievedTransforms(links.size());
     //figure out how much to drive along screw
     Real numerator = 0;  //< this will get sum of distance * screws
     Real denominator = 0;  //< this will get sum of |screw|^2 for all screws
@@ -315,13 +337,14 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     return distance / dt;
   }
   else {
+    //IK failed: don't drive the config or transforms forward
     driveSpeedAdjustment -= 0.1;
+    if(driveSpeedAdjustment <= Epsilon) {
+      //don't adjust drive transform
+      printf("  CartesianDriveSolver: IK solve failed completely.  Must restart.\n");
+      return -1;
+    }
     printf("  CartesianDriveSolver: Solve failed, next trying with amount %g\n",driveSpeedAdjustment);
-    return 0;
-  }
-  if(driveSpeedAdjustment <= Epsilon) {
-    //don't adjust drive transform
-    printf("  CartesianDriveSolver: IK solve failed completely.  Must restart.\n");
     return 0;
   }
 }
