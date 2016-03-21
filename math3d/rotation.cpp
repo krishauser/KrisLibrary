@@ -508,6 +508,9 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     getMatrix(test);
     if(!test.isEqual(r,5e-3)) {
       fprintf(stderr,"MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
+      fprintf(stderr,"  %g %g %g\n",r(0,0),r(0,1),r(0,2));
+      fprintf(stderr,"  %g %g %g\n",r(1,0),r(1,1),r(1,2));
+      fprintf(stderr,"  %g %g %g\n",r(2,0),r(2,1),r(2,2));
       return false;
     }
 
