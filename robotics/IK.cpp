@@ -93,9 +93,35 @@ void IKGoal::SetFromPoints(const vector<Vector3>& loc,const vector<Vector3>& wor
       SetFreeRotation();
     }
     else {
-      localPosition = -Tloc.t;
-      SetFixedPosition(-Twor.t);
-      SetFixedRotation(transpose(Twor.R)*Tloc.R);
+		//TLoc * lp = Twor * wp (verified)
+		//We want R, loc, and wor such that R*(lp-loc) = wp - wor for all pairs (lp,wp)
+		//Rloc*lp + tloc = Rwor*wp + twor
+		//Rwor^T*Rloc*lp + Rwor^T * tloc = wp + RWor^T*twor
+		//Rwor^T*Rloc*(lp - (-Rloc^T * tloc)) = wp + RWor^T*twor (confirmed)
+      localPosition = -(transpose(Tloc.R)*Tloc.t);
+	  Matrix3 R = transpose(Twor.R)*Tloc.R;
+      SetFixedPosition(-(transpose(Twor.R)*Twor.t));
+      SetFixedRotation(R);
+	  /*
+	  cout << "Fitting error " << res << endl;
+      cout<<"Local point rot to common coords: "<<Tloc.R<<endl;
+	  cout << "Local point translation to common coords: " << Tloc.t << endl;
+      cout<<"World point rot to common coords: "<<Twor.R<<endl;
+	  cout << "World point translation to common coords: " << Twor.t << endl;
+	  cout << endl;
+	  cout << "Points in common coordinates:" << endl;
+	  for (size_t i = 0; i<loc.size(); i++) 
+		  cout << Tloc*loc[i] << " vs " << Twor*wor[i] << " error "<< (Tloc*loc[i]).distance(Twor*wor[i]) << endl;
+	  cout << endl;
+	  cout << "Rotation: " << R << endl;
+	  cout << "local position: " << localPosition << endl;
+	  cout << "world position: " << endPosition << endl;
+	  cout << endl;
+	  cout << "Mapping: " << endl;
+      for(size_t i=0;i<loc.size();i++) {
+	cout<<loc[i]<<" -> "<< R*(loc[i]-localPosition) + endPosition <<" = "<<wor[i]<<endl;
+      }
+	  */
       if(Abs(cov.z) < tol) {
 	if(Abs(cov.y) < tol) {
 	  if(Abs(cov.x) < tol) {

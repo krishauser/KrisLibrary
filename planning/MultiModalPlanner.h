@@ -4,8 +4,8 @@
 #include "MultiModalCSpace.h"
 #include "AnyMotionPlanner.h"
 #include "SBL.h"
-#include <graph/ShortestPaths.h>
-#include <structs/IndexedPriorityQueue.h>
+#include <KrisLibrary/graph/ShortestPaths.h>
+#include <KrisLibrary/structs/IndexedPriorityQueue.h>
 #include <map>
 
 class MultiModalPRM

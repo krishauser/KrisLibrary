@@ -509,7 +509,6 @@ bool SocketClientTransport::Start()
     return false;
   }
   SetNodelay(*((SOCKET*)ptr));
-  //ThreadSleep(1);
   return true;
 }
 

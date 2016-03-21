@@ -261,8 +261,50 @@ void TriMesh::RemoveUnusedVerts()
   swap(verts,newVerts);
 }
 
+bool LoadTriMesh(FILE* f,TriMesh& tri)
+{
+  int numverts,numtris;
+  if(fscanf(f,"%d",&numverts) <= 0) return false;
+  if(numverts <= 0 || numverts>10000000) {
+    cerr << "LoadTriMesh: Invalid number of vertices: "<<numverts<<endl;
+    return false;
+  }
+      
+  tri.verts.resize(numverts);
+  for(int i=0;i<numverts;i++) {
+    if(fscanf(f,"%lg %lg %lg",&tri.verts[i].x,&tri.verts[i].y,&tri.verts[i].z)<=0) {
+      cerr << "LoadTriMesh: Invalid vertex: "<<i<<endl;
+      return false;
+    }
+  }
+      
+  if(fscanf(f,"%d",&numtris)<=0) {
+    cerr<<"LoadTriMesh: Couldn't read num triangles"<<endl;
+    return false;
+  }
+  if(numtris <= 0 || numtris>10000000) {
+    cerr<<"LoadTriMesh: Invalid number of triangles: "<<numtris<<endl;
+    return false;
+  }
+  tri.tris.resize(numtris);
+  for(int i=0;i<numtris;i++) {
+    if(fscanf(f,"%d %d %d",&tri.tris[i].a,&tri.tris[i].b,&tri.tris[i].c)<=0) {
+      cerr<<"ERROR: Couldn't read triangle # "<<i<<endl;
+      return false;
+    }
+  }
+  if(!tri.IsValid()) {
+    cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
+    cerr<<"Continuing may have unexpected results."<<endl;
+    cerr<<"Press enter to continue."<<endl;
+    getchar();
+  }
+  return true;
+}
+
 bool TriMesh::Load(const char* fn)
 {
+  /*
   ifstream in;
   in.open(fn);
   if(!in) {
@@ -274,6 +316,17 @@ bool TriMesh::Load(const char* fn)
     cout<<"Couldn't read tri file"<<fn<<endl;
     return false;
   }
+  */
+  FILE* f = fopen(fn,"r");
+  if(!f) {
+    cout<<"Couldn't open tri file "<<fn<<endl;
+    return false;
+  }
+  if(!LoadTriMesh(f,*this)) {
+    fclose(f);
+    return false;
+  }
+  fclose(f);
   return true;
 }
 
@@ -295,18 +348,31 @@ bool TriMesh::Save(const char* fn) const
 
 bool LoadMultipleTriMeshes(const char* fn,TriMesh& tri)
 {
+  /*
   ifstream in;
   in.open(fn);
   if(!in) {
     cout<<"Couldn't open tri file "<<fn<<endl;
     return false;
   }
+  */
+  FILE* f = fopen(fn, "r");
+  if (!f) {
+	  cout << "Couldn't open tri file " << fn << endl;
+	  return false;
+  }
   vector<TriMesh> models;
+  bool res;
   do {
     models.push_back(TriMesh());
-    in >> models[models.size()-1];
-  } while(in);
-  if(in.eof()) {
+	res = LoadTriMesh(f, models[models.size() - 1]);
+    //in >> models[models.size()-1];
+  //} while(in);
+  } while (res);
+  fclose(f);
+
+  //TODO: detect errors with FILE
+  if(true /* in.eof() */) {
     tri.Merge(models);
     return true;
   }
@@ -366,12 +432,12 @@ istream& operator >> (istream& in,TriMesh& tri)
 
 ostream& operator << (ostream& out,const TriMesh& tri)
 {
-  out << tri.verts.size() << endl;
+  out << tri.verts.size() << "\n";
   for(size_t i=0;i<tri.verts.size();i++)
-    out << tri.verts[i] << endl;
-  out << tri.tris.size() << endl;
+    out << tri.verts[i] << "\n";
+  out << tri.tris.size() << "\n";
   for(size_t i=0;i<tri.tris.size();i++)
-    out << tri.tris[i] << endl;
+    out << tri.tris[i] << "\n";
   return out;
 }
 

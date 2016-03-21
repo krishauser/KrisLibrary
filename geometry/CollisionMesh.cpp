@@ -329,6 +329,30 @@ void CollisionMeshQuery::TolerancePairs(vector<int>& t1,vector<int>& t2) const
   }
 }
 
+
+//returns true if the triangles a and b on m1 and m2, respectively, collide.  If so, p1 and p2 are set to the
+//respective local coordinates of a point on the most deeply colliding region
+bool OverlappingTriangleCollision(const CollisionMesh* m1,const CollisionMesh* m2,int a,int b,Vector3& p1,Vector3& p2)
+{
+  Triangle3D tri1,tri2,tri2loc;
+  m1->GetTriangle(a,tri1);
+  m2->GetTriangle(b,tri2);
+  const RigidTransform& T1=m1->currentTransform;
+  const RigidTransform& T2=m2->currentTransform;
+  RigidTransform T21;
+  T21.mulInverseA(T1,T2);
+  tri2loc.a = T21*tri2.a;
+  tri2loc.b = T21*tri2.b;
+  tri2loc.c = T21*tri2.c;
+  Segment3D s;
+  if(tri2loc.intersects(tri1,s)) { 
+    p1 = (s.a+s.b)*0.5;
+    T2.mulInverse(T1*p1,p2);
+    return true;
+  }
+  return false;
+}
+
 void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2) const
 {
   const PQP_ToleranceAllResult& allRes = pqpResults->toleranceAll;
@@ -349,14 +373,44 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
   }
   */
   for(map<int,PQP_ClosestPoints >::const_iterator i=allRes.triCp1.begin();i!=allRes.triCp1.end();i++) {
-    p1.push_back(i->second.p1);
-    p2.push_back(i->second.p2);
+    if(allRes.triDist1.find(i->first)->second == 0) {
+      //overlapping triangles
+      //NOTE: if any triangles are overlapping, PQP gives junk results for the pairs of points, not the intersecting points!
+      Vector3 pl1,pl2;
+      if(OverlappingTriangleCollision(m1,m2,i->first,allRes.triPartner1.find(i->first)->second,pl1,pl2)) {
+        p1.push_back(pl1);
+        p2.push_back(pl2);
+      }
+      else {
+        printf("Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
+        continue;
+      }
+    }
+    else {
+      p1.push_back(i->second.p1);
+      p2.push_back(i->second.p2);
+    }
   }
   for(map<int,int>::const_iterator i=allRes.triPartner2.begin();i!=allRes.triPartner2.end();i++) {
     if(allRes.triPartner1.find(i->second)->second != i->first) { //avoid double counting  
-      Assert(allRes.triCp2.find(i->first) != allRes.triCp2.end());
-      p1.push_back(allRes.triCp2.find(i->first)->second.p1);
-      p2.push_back(allRes.triCp2.find(i->first)->second.p2);
+      if(allRes.triDist2.find(i->first)->second == 0) {
+        //overlapping triangles
+        //NOTE: if any triangles are overlapping, PQP gives junk results for the pairs of points, not the intersecting points!
+        Vector3 pl1,pl2;
+        if(OverlappingTriangleCollision(m1,m2,allRes.triPartner2.find(i->first)->second,i->first,pl1,pl2)) {
+          p1.push_back(pl1);
+          p2.push_back(pl2);
+        }
+        else {
+          printf("Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
+          continue;
+        }
+      }
+      else {
+        Assert(allRes.triCp2.find(i->first) != allRes.triCp2.end());
+        p1.push_back(allRes.triCp2.find(i->first)->second.p1);
+        p2.push_back(allRes.triCp2.find(i->first)->second.p2);
+      }
     }
   }
 }

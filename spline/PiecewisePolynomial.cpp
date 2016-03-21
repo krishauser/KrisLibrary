@@ -228,6 +228,7 @@ void PiecewisePolynomial::TrimFront(double tstart)
     times = std::vector<double>(times.begin()+i,times.end());
     segments = std::vector<Poly>(segments.begin()+i,segments.end());
     timeShift = std::vector<double>(timeShift.begin()+i,timeShift.end());
+    times[0] = tstart;
   }
 }
 
