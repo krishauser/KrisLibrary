@@ -591,8 +591,8 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
 	if(!models.back().IsValid()) {
 	  cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
 	  cerr<<"Continuing may have unexpected results."<<endl;
-	  cerr<<"Press enter to continue."<<endl;
-	  getchar();
+	  //cerr<<"Press enter to continue."<<endl;
+	  //getchar();
 	}
 	
       } else {
