@@ -43,6 +43,7 @@ void IKGoal::SetFixedRotation(const Matrix3& R)
   if(!mR.setMatrix(R)) {
     fprintf(stderr,"IKGoal::SetFixedRotation: matrix does not appear to be a rotation?\n");
     endRotation.setZero();
+    rotConstraint = RotNone;
   }
   else
     endRotation = mR;
