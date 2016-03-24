@@ -5,6 +5,8 @@
 
 using namespace GLDraw;
 
+static int gNumDisplayLists = 0;
+
 GLDisplayList::GLDisplayList(int _count)
   :count(_count)
 {}
@@ -25,7 +27,9 @@ void GLDisplayList::beginCompile(int index)
   if(id == NULL) {
     id = new int;
     *id = glGenLists(count);
-    //printf("Beginning to compile, new list %d\n",*id);
+    gNumDisplayLists += count;
+    if(gNumDisplayLists > 3000)
+      printf("Warning, compiling new OpenGL display list id %d, total number %d\n",*id,gNumDisplayLists);
   }
   glNewList(*id+index,GL_COMPILE);
 }
@@ -56,6 +60,10 @@ void GLDisplayList::erase()
   if(id && id.getRefCount()==1) {
     //printf("Erasing OpenGL display list %d\n",*id);
     glDeleteLists(*id,count);
+    gNumDisplayLists -= count;
   }
+  //else if(id)
+    //printf("Not yet erasing OpenGL display list %d has ref count %d\n",*id,id.getRefCount());
+
   id=NULL;
 }
