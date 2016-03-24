@@ -295,9 +295,9 @@ bool LoadTriMesh(FILE* f,TriMesh& tri)
   }
   if(!tri.IsValid()) {
     cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
-    cerr<<"Continuing may have unexpected results."<<endl;
-    cerr<<"Press enter to continue."<<endl;
-    getchar();
+    //cerr<<"Continuing may have unexpected results."<<endl;
+    //cerr<<"Press enter to continue."<<endl;
+    //getchar();
   }
   return true;
 }
@@ -424,8 +424,8 @@ istream& operator >> (istream& in,TriMesh& tri)
   if(!tri.IsValid()) {
     cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
     cerr<<"Continuing may have unexpected results."<<endl;
-    cerr<<"Press enter to continue."<<endl;
-    getchar();
+    //cerr<<"Press enter to continue."<<endl;
+    //getchar();
   }
   return in;
 }
