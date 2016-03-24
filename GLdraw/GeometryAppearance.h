@@ -43,6 +43,8 @@ class GeometryAppearance
 {
  public:
   GeometryAppearance();
+  ///This copies over the "material" information but doesn't change the display lists (if possible)
+  void CopyMaterial(const GeometryAppearance& rhs);
   void Set(const Geometry::AnyGeometry3D& geom);
   void Set(const Geometry::AnyCollisionGeometry3D& geom);
   ///Call this if the underlying geometry, per-element colors, or texture

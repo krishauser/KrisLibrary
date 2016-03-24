@@ -214,6 +214,50 @@ GeometryAppearance::GeometryAppearance()
    vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),texWrap(false)
 {}
 
+void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
+{
+  if(subAppearances.size() == rhs.subAppearances.size()) {
+    for(size_t i=0;i<subAppearances.size();i++)
+      subAppearances[i].CopyMaterial(rhs.subAppearances[i]);
+  }
+  else if(rhs.subAppearances.empty()) {
+    for(size_t i=0;i<subAppearances.size();i++)
+      subAppearances[i].CopyMaterial(rhs);
+  }
+
+  drawVertices=rhs.drawVertices;
+  drawEdges=rhs.drawEdges;
+  drawFaces=rhs.drawFaces;
+  vertexSize=rhs.vertexSize;
+  edgeSize=rhs.edgeSize;
+  lightFaces=rhs.lightFaces;
+  vertexColor=rhs.vertexColor;
+  edgeColor=rhs.edgeColor;
+  faceColor=rhs.faceColor;
+  if(!rhs.vertexColors.empty() && !vertexColors.empty()) {
+    if(rhs.vertexColors.size() != vertexColors.size())
+      printf("GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-vertex colors?\n"); 
+    Refresh();
+  }
+  if(!rhs.faceColors.empty() && !faceColors.empty()) {
+    if(rhs.faceColors.size() != faceColors.size())
+      printf("GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-face colors?\n"); 
+    Refresh();
+  }
+  vertexColors=rhs.vertexColors;
+  faceColors=rhs.faceColors;
+  tex1D=rhs.tex1D;
+  tex2D=rhs.tex2D;
+  texWrap=rhs.texWrap;
+  if(!rhs.texcoords.empty() && !texcoords.empty()) {
+    if(rhs.texcoords.size() != texcoords.size())
+      printf("GeometryAppearance::CopyMaterial(): Warning, erroneous size of texture coordinates?\n"); 
+    Refresh();
+  }
+  texcoords=rhs.texcoords;
+  texgen=rhs.texgen;
+}
+
 void GeometryAppearance::Refresh()
 {
   vertexDisplayList.erase();
