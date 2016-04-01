@@ -3,6 +3,7 @@
 #include <utils/AnyCollection.h>
 #include <utils/stringutils.h>
 #include <utils/PropertyMap.h>
+#include "ExplicitCSpace.h"
 #include "OptimalMotionPlanner.h"
 #include "PointLocation.h"
 #include "SBL.h"
@@ -33,6 +34,8 @@ class PiggybackMotionPlanner : public MotionPlannerInterface
   virtual void ConnectHint(int m) { mp->ConnectHint(m); }
   virtual bool ConnectHint(int ma,int mb) { return mp->ConnectHint(ma,mb); }
   virtual bool IsConnected(int ma,int mb) const { return mp->IsConnected(ma,mb); }
+  virtual bool IsPointToPoint() const { return mp->IsPointToPoint(); }
+  virtual bool IsOptimizing() const { return mp->IsOptimizing(); }
   virtual bool IsLazy() const { return mp->IsLazy(); }
   virtual bool IsLazyConnected(int ma,int mb) const { return mp->IsLazyConnected(ma,mb); }
   virtual bool CheckPath(int ma,int mb) { return mp->CheckPath(ma,mb); }
@@ -45,7 +48,9 @@ class PiggybackMotionPlanner : public MotionPlannerInterface
 };
 
 /** @brief Tries to produce a path between a start node and a goal space.
- * Does so via goal sampling.
+ * Does so via goal sampling.  NOTE: only works on base motion planners that
+ * accept dynamic goal insertion, such as PRM or SBLPRT.  For other motion 
+ * planners, need to use the PointToSetMotionPlannerAdaptor
  */
 class PointToSetMotionPlanner : public PiggybackMotionPlanner
 {
@@ -56,6 +61,7 @@ class PointToSetMotionPlanner : public PiggybackMotionPlanner
   virtual bool IsSolved();
   virtual void GetSolution(MilestonePath& path);
   virtual bool SampleGoal(Config& q);
+  virtual bool IsPointToPoint() const { return false; }
   ///User can add goal nodes manually via this method
   virtual int AddMilestone(const Config& q);
 
@@ -69,6 +75,48 @@ class PointToSetMotionPlanner : public PiggybackMotionPlanner
   vector<int> goalNodes;
 };
 
+/** @brief Tries to produce a path between a start node and a goal space.
+ * Does so via goal sampling / reinitializing 
+ */
+class PointToSetMotionPlannerAdaptor : public MotionPlannerInterface
+{
+ public:
+  PointToSetMotionPlannerAdaptor(const MotionPlannerFactory& factory,CSpace* space,const Config& qstart,CSpace* goalSpace);
+  virtual int PlanMore();
+  virtual int NumIterations() const { return numIters; }
+  virtual int NumMilestones() const;
+  virtual int NumComponents() const;
+  virtual bool CanAddMilestone() const { return true; }
+  virtual int AddMilestone(const Config& q);
+  virtual void GetMilestone(int i,Config& q);
+  virtual bool IsConnected(int ma,int mb) const;
+  virtual bool IsPointToPoint() const { return false; }
+  virtual bool IsOptimizing() const { return true; }
+  virtual bool IsLazy() const;
+  virtual bool IsLazyConnected(int ma,int mb) const;
+  virtual bool CheckPath(int ma,int mb);
+  virtual void GetPath(int ma,int mb,MilestonePath& path);
+  virtual void GetRoadmap(RoadmapPlanner& roadmap);
+  virtual bool IsSolved();
+  virtual void GetSolution(MilestonePath& path);
+
+  MotionPlannerFactory factory;
+  CSpace* space;
+  Config qstart;
+  CSpace* goalSpace;
+
+  ///Setting: the planner samples a new goal configuration every n*|goalNodes| iterations
+  int sampleGoalPeriod;
+  ///Number of total iterations
+  int numIters;
+  ///Incremented each iteration, when it hits sampleGoalPeriod a goal should be sampled
+  int sampleGoalCounter;
+  ///These are plans from qstart to each goal node
+  vector<SmartPointer<MotionPlannerInterface> > goalPlanners;
+  ///The costs of the path to each planner's goal, or Inf if no solution has been found
+  vector<Real> goalCosts;
+};
+
 /** @brief A multiple-restart motion planner that turns a feasible motion planner into an anytime
  * optimal motion planner by keeping the best path found so far.
  */
@@ -76,6 +124,7 @@ class RestartMotionPlanner : public PiggybackMotionPlanner
 {
  public:
   RestartMotionPlanner(const MotionPlannerFactory& factory,const MotionPlanningProblem& problem,const HaltingCondition& iterTermCond);
+  virtual bool IsOptimizing() const { return true; }
   virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
   virtual int PlanMore();
   virtual int AddMilestone(const Config& q);
@@ -101,6 +150,7 @@ class RestartShortcutMotionPlanner : public RestartMotionPlanner
 {
  public:
   RestartShortcutMotionPlanner(const MotionPlannerFactory& factory,const MotionPlanningProblem& problem,const HaltingCondition& iterTermCond);
+  virtual bool IsOptimizing() const { return true; }
   virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
   virtual int PlanMore();
   virtual void GetRoadmap(RoadmapPlanner& roadmap) const;
@@ -116,6 +166,7 @@ class ShortcutMotionPlanner : public PiggybackMotionPlanner
 {
  public:
   ShortcutMotionPlanner(const SmartPointer<MotionPlannerInterface>& mp);
+  virtual bool IsOptimizing() const { return true; }
   virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
   virtual int PlanMore();
   virtual bool IsSolved() { return !bestPath.edges.empty(); }
@@ -125,6 +176,21 @@ class ShortcutMotionPlanner : public PiggybackMotionPlanner
   MilestonePath bestPath;
   int numIters;
 };
+
+
+
+void ReversePath(MilestonePath& path)
+{
+  for(size_t k=0;k<path.edges.size()/2;k++) {
+    SmartPointer<EdgePlanner> e1 = path.edges[k];
+    SmartPointer<EdgePlanner> e2 = path.edges[path.edges.size()-k];
+    path.edges[k] = e2->ReverseCopy();
+    path.edges[path.edges.size()-k] = e1->ReverseCopy();
+  }
+  if(path.edges.size()%2 == 1)
+    path.edges[path.edges.size()/2] = path.edges[path.edges.size()/2]->ReverseCopy();
+  if(!path.IsValid()) fprintf(stderr,"ReversePath : Path invalidated ?!?!\n");
+}
 
 
 HaltingCondition::HaltingCondition()
@@ -239,6 +305,8 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
     : prm(space),knn(10),connectionThreshold(Inf),numIters(0),ignoreConnectedComponents(false),storeEdges(true)
     {}
   virtual ~RoadmapPlannerInterface() {}
+  virtual bool IsOptimizing() const { return true; }
+  virtual bool IsPointToPoint() const { return false; }
   virtual bool CanAddMilestone() const { return true; }
   virtual int AddMilestone(const Config& q) { return prm.AddMilestone(q); }
   virtual void GetMilestone(int i,Config& q) { q=prm.roadmap.nodes[i]; }
@@ -374,19 +442,6 @@ class BiRRTInterface  : public MotionPlannerInterface
 
 
 
-void ReversePath(MilestonePath& path)
-{
-  for(size_t k=0;k<path.edges.size()/2;k++) {
-    SmartPointer<EdgePlanner> e1 = path.edges[k];
-    SmartPointer<EdgePlanner> e2 = path.edges[path.edges.size()-k];
-    path.edges[k] = e2->ReverseCopy();
-    path.edges[path.edges.size()-k] = e1->ReverseCopy();
-  }
-  if(path.edges.size()%2 == 1)
-    path.edges[path.edges.size()/2] = path.edges[path.edges.size()/2]->ReverseCopy();
-  if(!path.IsValid()) fprintf(stderr,"ReversePath : Path invalidated ?!?!\n");
-}
-
 class SBLInterface  : public MotionPlannerInterface
 {
  public:
@@ -424,7 +479,7 @@ class SBLInterface  : public MotionPlannerInterface
   virtual void GetMilestone(int i,Config& q) { if(i==0) q=*sbl->tStart->root; else q=*sbl->tGoal->root; }
   virtual int PlanMore() { 
     if(qStart.n == 0 || qGoal.n == 0) {
-      fprintf(stderr,"AnyMotionPlanner::PlanMore(): point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+      fprintf(stderr,"AnyMotionPlanner::PlanMore(): SBL is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
       return -1;
     }
     if(!sbl->IsDone()) sbl->Extend();
@@ -471,6 +526,7 @@ class SBLPRTInterface  : public MotionPlannerInterface
     {}
   virtual ~SBLPRTInterface() {}
   virtual bool CanAddMilestone() const { return true; }
+  virtual bool IsPointToPoint() const { return false; }
   virtual int AddMilestone(const Config& q) { return sblprt.AddSeed(q); }
   virtual void GetMilestone(int i,Config& q) { q=*sblprt.roadmap.nodes[i]->root; }
   virtual void ConnectHint(int i) {
@@ -546,6 +602,7 @@ class PRMStarInterface  : public MotionPlannerInterface
     //planner.connectRadiusConstant = 1;
   }
   virtual ~PRMStarInterface() {}
+  virtual bool IsOptimizing() const { return true; }
   virtual bool CanAddMilestone() const { if(qStart.n != 0 && qGoal.n != 0) return false; return true; }
   virtual int AddMilestone(const Config& q) {
     if(qStart.n == 0) {
@@ -564,7 +621,7 @@ class PRMStarInterface  : public MotionPlannerInterface
   virtual void GetMilestone(int i,Config& q) { q=planner.roadmap.nodes[i]; }
   virtual int PlanMore() { 
     if(planner.start < 0 || planner.goal < 0) {
-      fprintf(stderr,"AnyMotionPlanner::PlanMore(): point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+      fprintf(stderr,"AnyMotionPlanner::PlanMore(): PRM* is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
       return -1;
     }
     planner.PlanMore();
@@ -633,7 +690,7 @@ class FMMInterface  : public MotionPlannerInterface
   }
   virtual int PlanMore() { 
     if(qStart.n == 0 || qGoal.n == 0) {
-      fprintf(stderr,"AnyMotionPlanner::PlanMore(): point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+      fprintf(stderr,"AnyMotionPlanner::PlanMore(): FMM is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
       return -1;
     }
     iterationCount++;
@@ -778,6 +835,226 @@ int PointToSetMotionPlanner::AddMilestone(const Config& q)
   return n;
 }
 
+PointToSetMotionPlannerAdaptor::PointToSetMotionPlannerAdaptor(const MotionPlannerFactory& _factory,CSpace* _space,const Config& _qstart,CSpace* _goal)
+  :factory(_factory),space(_space),qstart(_qstart),goalSpace(_goal),sampleGoalPeriod(50),numIters(0),sampleGoalCounter(0)
+{
+}
+
+int PointToSetMotionPlannerAdaptor::PlanMore()
+{
+  //test to see if there's work to be done on existing paths
+  bool anyRemaining = false;
+  for(size_t i=0;i<goalPlanners.size();i++) {
+    if(goalPlanners[i]->IsOptimizing() || IsInf(goalCosts[i])) 
+      anyRemaining = true;
+  }
+  //if not, sample a new goal
+  sampleGoalCounter += 1;
+  numIters += 1;
+  if(!anyRemaining || sampleGoalCounter >= sampleGoalPeriod*(int)goalPlanners.size()) {
+    //printf("Sampling a goal configuration on iteration %d\n",numIters);
+    sampleGoalCounter = 0;
+    Config q;
+    goalSpace->Sample(q);
+    return AddMilestone(q);
+  }
+  for(size_t i=0;i<goalPlanners.size();i++) {
+    if(goalPlanners[i]->IsOptimizing() || IsInf(goalCosts[i])) {
+      int res = goalPlanners[i]->PlanMore();
+      if(goalPlanners[i]->IsConnected(0,1)) {
+        MilestonePath path;
+        goalPlanners[i]->GetSolution(path);
+        goalCosts[i] = path.Length();
+      }
+    }
+  }
+  return -1;
+}
+
+int PointToSetMotionPlannerAdaptor::NumMilestones() const
+{
+  int n = 1;
+  for(size_t i=0;i<goalPlanners.size();i++)
+    n += goalPlanners[i]->NumMilestones()-1;
+  return n;
+}
+
+int PointToSetMotionPlannerAdaptor::NumComponents() const
+{
+  int n=1;
+  for(size_t i=0;i<goalPlanners.size();i++)
+    n += goalPlanners[i]->NumComponents()-1;
+  return n; 
+}
+
+void PointToSetMotionPlannerAdaptor::GetMilestone(int i,Config& q)
+{
+  if(i==0) q=qstart;
+  if(i<=(int)goalPlanners.size())
+    goalPlanners[i-1]->GetMilestone(1,q);
+  else {
+    //seek for which goal planner contains i
+    for(size_t j=0;j<goalPlanners.size();j++) {
+      if(i < goalPlanners[j]->NumMilestones()-1) {
+        goalPlanners[j]->GetMilestone(i-1,q);
+        return;
+      }
+      i -= goalPlanners[j]->NumMilestones()-1;
+    }
+  }
+}
+
+bool PointToSetMotionPlannerAdaptor::IsConnected(int ma,int mb) const
+{
+  if(ma == mb) return true;
+  if(ma > mb) return IsConnected(mb,ma);
+  if(ma != 0) {
+    return IsConnected(0,ma) && IsConnected(0,mb);
+  }
+  if(mb<=(int)goalPlanners.size())
+    return goalPlanners[mb-1]->IsConnected(0,1);
+  else {
+    //seek for which goal planner contains mb
+    for(size_t j=0;j<goalPlanners.size();j++) {
+      if(mb < goalPlanners[j]->NumMilestones()-1) {
+        return goalPlanners[j]->IsConnected(0,mb-1);
+      }
+      mb -= goalPlanners[j]->NumMilestones()-1;
+    }
+  }
+  return false;
+}
+
+bool PointToSetMotionPlannerAdaptor::IsLazy() const
+{
+  if(goalPlanners.empty()) return false;
+  return goalPlanners[0]->IsLazy();
+}
+bool PointToSetMotionPlannerAdaptor::IsLazyConnected(int ma,int mb) const
+{
+  if(ma == mb) return true;
+  if(ma > mb) return IsLazyConnected(mb,ma);
+  if(ma != 0) {
+    return IsLazyConnected(0,ma) && IsLazyConnected(0,mb);
+  }
+  if(mb<=(int)goalPlanners.size())
+    return goalPlanners[mb-1]->IsLazyConnected(0,1);
+  else {
+    //seek for which goal planner contains mb
+    for(size_t j=0;j<goalPlanners.size();j++) {
+      if(mb < goalPlanners[j]->NumMilestones()-1) {
+        return goalPlanners[j]->IsLazyConnected(0,mb-1);
+      }
+      mb -= goalPlanners[j]->NumMilestones()-1;
+    }
+  }
+  return false;
+}
+
+bool PointToSetMotionPlannerAdaptor::CheckPath(int ma,int mb)
+{
+  if(ma == mb) return true;
+  if(ma > mb) return CheckPath(mb,ma);
+  if(ma != 0) {
+    return CheckPath(0,ma) && CheckPath(0,mb);
+  }
+  if(mb<=(int)goalPlanners.size())
+    return goalPlanners[mb-1]->CheckPath(0,1);
+  else {
+    //seek for which goal planner contains mb
+    for(size_t j=0;j<goalPlanners.size();j++) {
+      if(mb < goalPlanners[j]->NumMilestones()-1) {
+        return goalPlanners[j]->CheckPath(0,mb-1);
+      }
+      mb -= goalPlanners[j]->NumMilestones()-1;
+    }
+  }
+  return false;
+}
+
+void PointToSetMotionPlannerAdaptor::GetPath(int ma,int mb,MilestonePath& path)
+{
+  if(ma == mb) return;
+  if(ma > mb) {
+    GetPath(mb,ma,path);
+    ReversePath(path);
+    return;
+  }
+  if(ma != 0) {
+    MilestonePath pa,pb;
+    GetPath(0,ma,pa);
+    GetPath(0,mb,pb);
+    ReversePath(pa);
+    path = pa;
+    path.Concat(pb);
+    return;
+  }
+  if(mb<=(int)goalPlanners.size())
+    goalPlanners[mb-1]->GetPath(0,1,path);
+  else {
+    //seek for which goal planner contains mb
+    for(size_t j=0;j<goalPlanners.size();j++) {
+      if(mb < goalPlanners[j]->NumMilestones()-1) {
+        goalPlanners[j]->GetPath(0,mb-1,path);
+        return;
+      }
+      mb -= goalPlanners[j]->NumMilestones()-1;
+    }
+  }
+}
+
+void PointToSetMotionPlannerAdaptor::GetRoadmap(RoadmapPlanner& roadmap)
+{
+  FatalError("TODO: get roadmap for point-to-set adaptor");
+}
+
+bool PointToSetMotionPlannerAdaptor::IsSolved() 
+{
+  for(size_t i=0;i<goalCosts.size();i++)
+    if(!IsInf(goalCosts[i])) return true;
+  return false;
+}
+
+void PointToSetMotionPlannerAdaptor::GetSolution(MilestonePath& path)
+{
+  int best=-1;
+  Real bestCost = Inf;
+  for(size_t i=0;i<goalCosts.size();i++) {
+    if(goalCosts[i] < bestCost) {
+      bestCost = goalCosts[i];
+      best = (int)i;
+    }
+  }   
+  if(best < 0) return;
+  goalPlanners[best]->GetSolution(path);
+}
+ 
+int PointToSetMotionPlannerAdaptor::AddMilestone(const Config& q)
+{
+  if(goalSpace->IsFeasible(q)) {
+    goalPlanners.push_back(factory.Create(space,qstart,q));
+    goalCosts.push_back(Inf);
+    if(goalPlanners.back()->IsConnected(0,1)) { //straight line connection
+      MilestonePath path;
+      goalPlanners.back()->GetSolution(path);
+      goalCosts.back() = path.Length();
+    }
+    return (int)goalPlanners.size()-1;
+  }
+  else {
+    /*
+    ExplicitCSpace* espace = dynamic_cast<ExplicitCSpace*>(goalSpace);
+    if(espace) {
+      printf("Failures:\n");
+      espace->PrintInfeasibleNames(q);
+    }
+    */
+    return -1;
+  }
+}
+
+
+
 MotionPlannerFactory::MotionPlannerFactory()
   :type("any"),
    knn(10),
@@ -801,9 +1078,15 @@ MotionPlannerInterface* MotionPlannerFactory::Create(const MotionPlanningProblem
     if(type == "any") type = "sblprt";
     MotionPlannerInterface* mp = Create(problem.space);
     type = oldtype;
-
-    PointToSetMotionPlanner* psmp = new PointToSetMotionPlanner(mp,problem.qstart,problem.goalSet);
-    return psmp;
+    if(mp->IsPointToPoint()) {
+      printf("MotionPlannerFactory: warning, motion planner %s does not fully accept point-to-set problems, applying multi-query adaptor\n",type.c_str());
+      delete mp;
+      return new PointToSetMotionPlannerAdaptor(*this,problem.space,problem.qstart,problem.goalSet);
+    }
+    else {
+      PointToSetMotionPlanner* psmp = new PointToSetMotionPlanner(mp,problem.qstart,problem.goalSet);
+      return psmp;
+    }
   }
   else {
     MotionPlannerInterface* mp = CreateRaw(problem.space);

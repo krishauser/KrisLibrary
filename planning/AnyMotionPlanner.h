@@ -93,6 +93,11 @@ class MotionPlannerInterface
   virtual bool ConnectHint(int ma,int mb) { return false; }
   ///Returns true if the two milestones are connected with a feasible path
   virtual bool IsConnected(int ma,int mb) const=0;
+  ///Returns true if this planner is exclusively point-to-point, i.e., cannot accept
+  ///additional goal nodes via AddMilestone()
+  virtual bool IsPointToPoint() const { return true; }
+  ///Returns true if this planner can optimize the path after the first solution
+  virtual bool IsOptimizing() const { return false; }
   ///Returns true if this planner has lazy semantics
   virtual bool IsLazy() const { return false; }
   ///If lazy semantics are used, returns true if the two milestones are
