@@ -73,7 +73,10 @@ void DirectionCosines::getMoment(MomentRotation& mr) const
 {
   Matrix3 m;
   getMatrix(m);
-  mr.setMatrix(m);
+  if(!mr.setMatrix(m)) {
+    fprintf(stderr,"DirectionCosines::getMoment: failed, must not be a valid rotation?\n");
+    mr.setZero();
+  }
 }
 
 void DirectionCosines::getMomentJacobian(Matrix& J) const
@@ -455,7 +458,10 @@ Real MatrixAngleDerivative(const Matrix3& R,const Vector3& z)
 {
   AngleAxisRotation aa;
   Assert(IsFinite(R));
-  aa.setMatrix(R);
+  if(!aa.setMatrix(R)) {
+    fprintf(stderr,"MatrixAngleDerivative: matrix is not a valid rotation matrix\n");
+    return 0.0;
+  }
   if(FuzzyZero(aa.angle)) {
     //the small-angle formula gives dtheta ~= 1
     return One;
