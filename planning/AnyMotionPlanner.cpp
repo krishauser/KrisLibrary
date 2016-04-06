@@ -1595,6 +1595,10 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
 
     //do shortcutting on all candidate paths
     Real bestPathLength = bestPath.Length();
+    if(bestPathLength == 0) {
+      continue;
+    }
+
     vector<Real> samplingWeights(candidatePaths.size());
     for(size_t i=0;i<candidatePaths.size();i++) 
       samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
@@ -1629,6 +1633,10 @@ int RestartShortcutMotionPlanner::PlanMore()
     numShortcutIters ++;
     numIters ++;
     Real bestPathLength = bestPath.Length();
+    if(bestPathLength == 0) {
+      shortcutMode = false;
+      return -1;
+    }
     vector<Real> samplingWeights(candidatePaths.size());
     for(size_t i=0;i<candidatePaths.size();i++) 
       samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
