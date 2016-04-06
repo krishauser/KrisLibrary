@@ -223,7 +223,10 @@ void IKGoalFunction::Eval(const Vector& x, Vector& r)
   if(goal.rotConstraint==IKGoal::RotFixed) {
     MomentRotation em;
     Assert(IsFinite(eerot));
-    em.setMatrix(eerot);
+    if(!em.setMatrix(eerot)) {
+      fprintf(stderr,"IK: Warning, end effector did not have a valid rotation matrix?\n");
+      em.setZero();
+    }
     r(m)=rotationScale*em.x;
     r(m+1)=rotationScale*em.y;
     r(m+2)=rotationScale*em.z;
@@ -276,7 +279,10 @@ Real IKGoalFunction::Eval_i(const Vector& x, int i)
     if(goal.rotConstraint==IKGoal::RotFixed) {
       MomentRotation em;
       Assert(IsFinite(eerot));
-      em.setMatrix(eerot);
+      if(!em.setMatrix(eerot)) {
+        fprintf(stderr,"IK: Warning, end effector did not have a valid rotation matrix?\n");
+        em.setZero();
+      }
       return rotationScale*em[i];
       //return eerot[i];
     }
