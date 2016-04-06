@@ -2,6 +2,7 @@
 #define GRAPH_DIRECTED_GRAPH_H
 
 #include "Graph.h"
+#include "Callback.h"
 
 namespace Graph {
 
@@ -11,18 +12,19 @@ namespace Graph {
  * This has some nice examples of how to use callbacks to perform
  * graph computations.
  */
+template <class Node,class Edge>
 class DirectedGraph : public Graph<Node,Edge>
 {
 public:
-  typedef typename Graph<Node,Edge> P;
+  typedef Graph<Node,Edge> P;
   typedef EdgeIterator<Edge> ForwardIterator;
-  typedef ReverseEdgeIterator<Edge> ReverseIterator;
-  void DFS(Callback& f) { P::DFS<ForwardIterator>(f); }
-  void DFSReverse(Callback& f) { P::DFS<ReverseIterator>(f); }
-  void SimpleDFS(Callback& f) { P::SimpleDFS<ForwardIterator>(f); }
-  void SimpleBFS(Callback& f) { P::SimpleBFS<ForwardIterator>(f); }
-  void GuidedDFS(Callback& f) { P::GuidedDFS<ForwardIterator>(f); }
-  void GuidedBFS(Callback& f) { P::GuidedBFS<ForwardIterator>(f); }
+  typedef CoEdgeIterator<Edge> ReverseIterator;
+  void DFS(CallbackBase<Node>& f) { P::DFS(f,ForwardIterator()); }
+  void DFSReverse(CallbackBase<Node>& f) { P::DFS(f,ReverseIterator()); }
+  void SimpleDFS(CallbackBase<Node>& f) { P::SimpleDFS(f,ForwardIterator()); }
+  void SimpleBFS(CallbackBase<Node>& f) { P::SimpleBFS(f,ForwardIterator()); }
+  void GuidedDFS(CallbackBase<Node>& f) { P::GuidedDFS(f,ForwardIterator()); }
+  void GuidedBFS(CallbackBase<Node>& f) { P::GuidedBFS(f,ForwardIterator()); }
     
   bool HasDescendent(int n,int d);
   bool HasAncestor(int n,int a);
@@ -33,11 +35,11 @@ public:
 template <class Node,class Edge>
 bool DirectedGraph<Node,Edge>::HasDescendent(const int n,const int d)
 {
-  NewTraversal();
+  P::NewTraversal();
   FindCallback<int> findNode;
   findNode.node = d;
   ForwardIterator it;
-  return _SimpleDFS(n,findNode,it);
+  return P::_SimpleDFS(n,findNode,it);
 }
 
 template <class Node,class Edge>
