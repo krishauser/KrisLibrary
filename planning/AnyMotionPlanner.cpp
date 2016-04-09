@@ -1031,7 +1031,7 @@ void PointToSetMotionPlannerAdaptor::GetSolution(MilestonePath& path)
  
 int PointToSetMotionPlannerAdaptor::AddMilestone(const Config& q)
 {
-  if(goalSpace->IsFeasible(q)) {
+  if(goalSpace->IsFeasible(q) && space->IsFeasible(q)) {
     goalPlanners.push_back(factory.Create(space,qstart,q));
     goalCosts.push_back(Inf);
     if(goalPlanners.back()->IsConnected(0,1)) { //straight line connection
