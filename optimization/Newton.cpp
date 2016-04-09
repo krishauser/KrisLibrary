@@ -184,6 +184,54 @@ bool NewtonRoot::SolveUnderconstrainedLS(const SparseMatrix& A,const Vector& b,V
   return false;
 }
 
+/*
+min_x (x - d)^T W (x - d)
+  s.t. g(x) = 0
+
+Newton approach to solving g(x)=0 starts with point x[0]
+takes step:
+  x[n+1] = x[n] + alpha[n+1]*p[n]
+where the descent direction p[n] = -dg/dx(x[n])^+*g(x[n])
+is based on the Taylor expansion about x[n]:
+   g(x) ~= g(x[n]) + dg/dx(x[n])*(x-x[n])
+and using a line search to determine alpha[n+1].  Denote
+Jn = dg/dx(x[n]) and gn = g(x[n]).
+
+There are many directions that set the Taylor expansion
+to 0, and we can use the null space to bias toward the
+center d.  I.e., we may solve:
+
+  min_p (p+x[n]-d)^T W (p+x[n]-d)
+    s.t. Jn p = -gn
+
+Generically this is a problem 
+  min_x (x-y)^T W (x-y)
+    s.t. Ax = b
+
+With W symmetric we can compute a cholesky decomposition W = U^T U
+with U invertible
+  min_x (Ux-Uy)^T  (Ux-Uy)
+    s.t. Ax = b
+Let z = Ux - Uy, then x = U^-1 z + y
+We want to solve
+  min_z ||z||^2
+    s.t. AU^-1 z = b - Ay
+The solution is given by the pseudoinverse z = (AU^-1)^+ (b-Ay)
+and thus x = U^-1 (AU^-1)^+ (b-Ay) + y
+
+In the special case where W = I => U = I, and hence
+x = A^+ (b-Ay) + y = A^+ b + (1-A^+ A) y  (this latter part is the projection operator)
+
+Going back to newton solving, we have
+p = -Jn^+ gn + (1-Jn^+ Jn) (d-x[n])
+
+Another way to look at this is a weak least-squares problem:
+min ||g(x)||^2 + epsilon*(x - d)^T W (x - d)
+
+Problem is now to do the line search. alpha[n] is determined through
+the merit function ||g(x)||^2 in normal Newton solving.
+*/
+
 ConvergenceResult NewtonRoot::Solve(int& iters)
 {
   int m=func->NumDimensions();
@@ -428,6 +476,10 @@ bool NewtonRoot::LineMinimization(const Vector& g, const Vector& p, Real *f)
     }
     //  else slope = Abs(slope);
   }
+  Vector biasDir;
+  if(!bias.empty() && !sparse) {
+    svd.nullspaceComponent(bias-x,biasDir);
+  }
   Real test=Zero; //Compute lambdamin.
   for (int i=0;i<x.n;i++) {
     Real temp=Abs(p[i])/Max(Abs(xold[i]),One);
@@ -437,6 +489,7 @@ bool NewtonRoot::LineMinimization(const Vector& g, const Vector& p, Real *f)
   Real alam=1.0,alam2;
   for (;;) { //Start of iteration loop.
     x.copy(xold); x.madd(p,alam);
+    if(!biasDir.empty()) x.madd(biasDir,alam);
     if(bmin.n!=0) {
       AABBClamp(x,bmin,bmax);
     }

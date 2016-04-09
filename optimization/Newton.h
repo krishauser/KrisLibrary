@@ -17,6 +17,9 @@ using namespace Math;
 /** @ingroup Optimization
  * @brief A globally convergent Newton's method for multidimensional root
  * solving.  Solves for func(x)=0.
+ *
+ * Can use sparse methods for solving for a SparseVectorFieldFunction if
+ * sparse = true.  However, cannot use the bias-vector option.
  */
 class NewtonRoot
 {
@@ -38,7 +41,8 @@ public:
   Real stepMax;  ///< maximum distance to step
   Real lambda;   ///< damped-least-squares constant 
   Vector bmin,bmax; ///< optional bound constraints
-  bool sparse;   ///< set to true if should use a sparse least-squares solver
+  bool sparse;   ///< set to true if should use a sparse least-squares solver. 
+  Vector bias;   ///< set this to a bias vector to solve for min ||x-bias|| s.t. func(x)=0
   int verbose;
   int debug;
 
