@@ -808,6 +808,16 @@ void RobotIKSolver::UseJointLimits(const Vector& qmin,const Vector& qmax)
   function.activeDofs.InvMap(qmax,solver.bmax);
 }
 
+void RobotIKSolver::UseBiasConfiguration(const Vector& qdesired)
+{
+  if(qdesired.empty()) solver.bias.clear();
+  else {
+    int n=(int)function.activeDofs.Size();
+    solver.bias.resize(n);
+    function.activeDofs.InvMap(qdesired,solver.bias);
+  }
+}
+
 
 void RobotIKSolver::ClearJointLimits()
 {

@@ -55,6 +55,9 @@ struct RobotIKFunction : public CompositeVectorFieldFunction
  * Joint limits are optionally included if the UseJointLimits() functions
  * are called.  Typically, the first version is called.
  *
+ * A bias configuration can be explicitly set using the UseBiasConfiguration()
+ * function.  The solver will seek toward this configuration during the solve.
+ *
  * Optionally, a Real parameter may specify a threshold t such that
  * a revolute joint's limits are included only if the angular range is less
  * than t. Specifying a value less than 2pi is useful to avoid local minima
@@ -66,6 +69,7 @@ struct RobotIKSolver
   RobotIKSolver(RobotIKFunction& function);
   void UseJointLimits(Real revJointThreshold = Inf);
   void UseJointLimits(const Vector& qmin,const Vector& qmax);
+  void UseBiasConfiguration(const Vector& qdesired);
   void ClearJointLimits();
   void RobotToState();
   void StateToRobot();
