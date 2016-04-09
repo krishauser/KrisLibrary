@@ -10,6 +10,7 @@ GLFog::GLFog()
 
 void GLFog::setCurrent()
 {
+#ifndef NO_OPENGL
 	glFogfv(GL_FOG_COLOR, color.rgba);
 	switch(type) {
 	case None:
@@ -32,11 +33,14 @@ void GLFog::setCurrent()
 		glFogf(GL_FOG_DENSITY, density);
 		break;
 	}
+#endif //NO_OPENGL
 }
 
 void GLFog::unsetCurrent()
 {
+#ifndef NO_OPENGL
 	glDisable(GL_FOG);
+#endif //NO_OPENGL
 }
 
 void GLFog::setLinear(Real s, Real e)

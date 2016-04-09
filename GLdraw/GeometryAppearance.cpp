@@ -93,6 +93,7 @@ namespace GLDraw {
     }
   }
 
+#ifndef NO_OPENGL
 
 void draw(const Geometry::AnyGeometry3D& geom)
 {
@@ -206,6 +207,7 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
   }
 }	  
 
+#endif // NO_OPENGL
 
 
 GeometryAppearance::GeometryAppearance()
@@ -394,6 +396,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 
 void GeometryAppearance::DrawGL()
 {
+#ifndef NO_OPENGL
   if(drawVertices) {   
     const vector<Vector3>* verts = NULL;
     if(geom->type == AnyGeometry3D::ImplicitSurface) 
@@ -683,6 +686,7 @@ void GeometryAppearance::DrawGL()
   for(size_t i=0;i<subAppearances.size();i++) {
     subAppearances[i].DrawGL();
   }
+#endif //NO_OPENG
 }
 
 

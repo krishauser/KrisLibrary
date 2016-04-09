@@ -426,6 +426,7 @@ bool RobotWithGeometry::MeshCollision(int i,Real distance)
 
 void RobotWithGeometry::DrawGL()
 {
+#ifndef NO_OPENGL
   for(size_t i=0;i<links.size();i++) {
     Matrix4 mat = links[i].T_World;
     glPushMatrix();
@@ -433,11 +434,14 @@ void RobotWithGeometry::DrawGL()
     DrawLinkGL(i);
     glPopMatrix();
   }
+#endif //NO_OPENGL
 }
 
 void RobotWithGeometry::DrawLinkGL(int i)
 {
+#ifndef NO_OPENGL
   if(geometry[i]) draw(*geometry[i]);
+#endif //NO_OPENGL
 }
 
 

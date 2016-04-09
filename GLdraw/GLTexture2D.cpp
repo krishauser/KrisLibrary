@@ -3,6 +3,8 @@
 
 using namespace GLDraw;
 
+#ifndef NO_OPENGL
+
 GLTexture2D::GLTexture2D()
 {
 }
@@ -91,3 +93,47 @@ void GLTexture2D::setCurrentGL()
 {
   texObj.bind(GL_TEXTURE_2D);
 }
+
+#else
+
+GLTexture2D::GLTexture2D()
+{
+}
+
+void GLTexture2D::setLuminance(const unsigned char* data,int m,int n)
+{
+}
+
+void GLTexture2D::setRGB(const unsigned char* data,int m,int n)
+{
+}
+
+void GLTexture2D::setRGBA(const unsigned char* data,int m,int n)
+{
+}
+
+void GLTexture2D::setAlpha(const unsigned char* data,int m,int n)
+{
+}
+
+void GLTexture2D::setFilterNearest()
+{
+}
+void GLTexture2D::setFilterLinear()
+{
+}
+
+void GLTexture2D::setWrapClamp()
+{
+}
+
+void GLTexture2D::setWrapRepeat()
+{
+}
+
+void GLTexture2D::setCurrentGL()
+{
+}
+
+#endif //NO_OPENGL
+

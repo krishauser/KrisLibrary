@@ -111,7 +111,9 @@ void GLColor::getHSV(float& h, float& s, float& v) const
 
 void GLColor::setCurrentGL() const
 {
+#ifndef NO_OPENGL
 	glColor4fv(rgba);
+#endif //NO_OPENGL
 }
 
 

@@ -2,6 +2,8 @@
 
 using namespace GLDraw;
 
+#ifndef NO_OPENGL
+
 GLMaterial::GLMaterial()
 :specularExponent(0)
 {}
@@ -14,7 +16,6 @@ void GLMaterial::setCurrentGL(GLenum tgt) const
 	glMaterialf(tgt, GL_SHININESS, specularExponent);
 	glMaterialfv(tgt, GL_EMISSION, emission.rgba);
 }
-
 
 void GLMaterial::setCurrentGL_Front() const
 {
@@ -31,3 +32,5 @@ void GLMaterial::setCurrentGL_FrontAndBack() const
 {
 	setCurrentGL(GL_FRONT_AND_BACK);
 }
+
+#endif //NO_OPENGL

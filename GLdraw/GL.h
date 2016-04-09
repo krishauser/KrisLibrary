@@ -1,6 +1,8 @@
 #ifndef SCENELIB_GL_H
 #define SCENELIB_GL_H
 
+#ifndef NO_OPENGL
+
 #ifdef _WIN32
 //#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -12,7 +14,6 @@
 #include <GL/gl.h>
 #endif
 
-#include <assert.h>
 
 /*
 //fix this later
@@ -24,6 +25,11 @@
 #endif
 */
 
+#else
+
+#include <assert.h>
+
+#endif //NO_OPENGL
 
 /** @defgroup GLDraw
  * @brief OpenGL, GLUT, and GLUI drawing routines

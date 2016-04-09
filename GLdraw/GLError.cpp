@@ -3,6 +3,8 @@
 #include <stdio.h>
 using namespace std;
 
+#ifndef NO_OPENGL
+
 const char* GLErrorString(GLenum err)
 {
   switch(err) {
@@ -31,3 +33,4 @@ bool CheckGLErrors(const char* name,bool pause)
   return res;
 }
 
+#endif

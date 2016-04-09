@@ -375,6 +375,7 @@ bool Geometric2DCollection::Collides(const Geometric2DCollection& geom,int obsta
 
 void Geometric2DCollection::DrawOutlinesGL() const
 {
+#ifndef NO_OPENGL
   for(size_t i=0;i<aabbs.size();i++) {
     glBegin(GL_LINE_LOOP);
     glVertex2f(aabbs[i].bmin.x,aabbs[i].bmin.y);
@@ -401,10 +402,12 @@ void Geometric2DCollection::DrawOutlinesGL() const
   for(size_t i=0;i<circles.size();i++) {
     drawWireCircle2D(circles[i].center,circles[i].radius);
   }
+#endif //NO_OPENGL
 }
 
 void Geometric2DCollection::DrawGL() const
 {
+#ifndef NO_OPENGL
   glBegin(GL_QUADS);
   for(size_t i=0;i<aabbs.size();i++) {
     glVertex2f(aabbs[i].bmin.x,aabbs[i].bmin.y);
@@ -429,6 +432,7 @@ void Geometric2DCollection::DrawGL() const
   for(size_t i=0;i<circles.size();i++) {
     drawCircle2D(circles[i].center,circles[i].radius);
   }
+#endif //NO_OPENGL
 }
 
 void Geometric2DCollection::ToPolygons(vector<vector<Vector2> >& polys) const
@@ -539,6 +543,7 @@ bool Geometric2DCSpace::ObstacleOverlap(const Triangle2D& tri) const
 
 void Geometric2DCSpace::DrawGL() const
 {
+#ifndef NO_OPENGL
   //blank out background (light yellow)
   //glColor3f(1,1,0.5);
   //blank out background (white)
@@ -553,6 +558,7 @@ void Geometric2DCSpace::DrawGL() const
   //draw obstacles (dark grey)
   glColor3f(0.2,0.2,0.2);
   Geometric2DCollection::DrawGL();
+#endif //NO_OPENGL
 }
 
 void Geometric2DCSpace::Sample(Config& x)

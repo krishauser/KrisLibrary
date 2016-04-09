@@ -15,6 +15,7 @@ RigidRobot2DCSpace::RigidRobot2DCSpace()
 
 void RigidRobot2DCSpace::DrawWorkspaceGL() const
 {
+#ifndef NO_OPENGL
   //blank out background (light yellow)
   glColor3f(1,1,0.5);
   glBegin(GL_QUADS);
@@ -27,10 +28,12 @@ void RigidRobot2DCSpace::DrawWorkspaceGL() const
   //draw obstacles (dark grey)
   glColor3f(0.2,0.2,0.2);
   obstacles.DrawGL();
+#endif //NO_OPENGL
 }
 
 void RigidRobot2DCSpace::DrawRobotGL(const Config& x) const
 {
+#ifndef NO_OPENGL
   RigidTransform2D T;
   T.t.set(x(0),x(1));
   T.R.setRotate(x(2));
@@ -45,15 +48,17 @@ void RigidRobot2DCSpace::DrawRobotGL(const Config& x) const
   glColor3f(0,0,0);
   temp.DrawOutlinesGL();
   glPopAttrib();
-
+#endif //NO_OPENGL
 }
 
 void RigidRobot2DCSpace::DrawGL(const Config& x) const
 {
+#ifndef NO_OPENGL
   DrawWorkspaceGL();
 
   glColor3f(0.3,0.3,0.7);
   DrawRobotGL(x);
+#endif //NO_OPENGL
 }
 
 void RigidRobot2DCSpace::Sample(Config& x)

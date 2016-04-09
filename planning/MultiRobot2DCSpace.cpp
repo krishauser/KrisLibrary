@@ -16,6 +16,7 @@ MultiRobot2DCSpace::MultiRobot2DCSpace()
 
 void MultiRobot2DCSpace::DrawWorkspaceGL() const
 {
+#ifndef NO_OPENGL
   //blank out background (light yellow)
   glColor3f(1,1,0.5);
   glBegin(GL_QUADS);
@@ -28,10 +29,12 @@ void MultiRobot2DCSpace::DrawWorkspaceGL() const
   //draw obstacles (dark grey)
   glColor3f(0.2,0.2,0.2);
   obstacles.DrawGL();
+#endif //NO_OPENGL
 }
 
 void MultiRobot2DCSpace::DrawRobotGL(int index,const RigidTransform2D& T) const
 {
+#ifndef NO_OPENGL
   Assert(index >= 0 && index < (int) robots.size());
   Geometric2DCollection temp = robots[index];
   temp.Transform(T);
@@ -40,6 +43,7 @@ void MultiRobot2DCSpace::DrawRobotGL(int index,const RigidTransform2D& T) const
   Real u = Real(index) / Real(robots.size()-1);
   glColor3f(u*0.5,u*0.5,1.0-u*0.5);
   temp.DrawGL();
+#endif //NO_OPENGL
 }
 
 void MultiRobot2DCSpace::DrawRobotGL(int index,const Config& q) const

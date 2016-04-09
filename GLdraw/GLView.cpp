@@ -11,15 +11,18 @@ GLView::GLView()
 
 void GLView::setCurrentGL()
 {
+#ifndef NO_OPENGL
 	glViewport((GLint)x,(GLint)y,(GLsizei)w,(GLsizei)h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrix(projection);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrix(modelview);
+#endif //NO_OPENGL
 }
 
 void GLView::getCurrentGL()
 {
+#ifndef NO_OPENGL
 	int vp[4];
 #ifdef MATH_DOUBLE
 	GLdouble mv[16],pr[16];
@@ -36,6 +39,7 @@ void GLView::getCurrentGL()
 	projection=pr;
 	modelview=mv;
 	updateInverses();
+#endif //NO_OPENGL
 }
 
 void GLView::updateInverses()

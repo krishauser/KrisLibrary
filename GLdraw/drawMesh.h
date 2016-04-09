@@ -5,6 +5,7 @@
 #include "GL.h"
 #include "drawextra.h"
 
+#ifndef NO_OPENGL
 namespace GLDraw {
 
 inline void DrawGLTris(const Meshing::TriMesh& mesh)
@@ -40,5 +41,7 @@ inline void DrawGLVerts(const Meshing::TriMesh& mesh)
 }
 
 } //namespace GLDraw
+
+#endif //NO_OPENGL
 
 #endif

@@ -8,6 +8,7 @@ namespace GLDraw {
 
   void draw(const GeometricPrimitive2D& geom)
   {
+#ifndef NO_OPENGL
     switch(geom.type) {
     case GeometricPrimitive3D::Empty:
       break;
@@ -68,9 +69,11 @@ namespace GLDraw {
     default:
       return;
     }
+#endif //NO_OPENGL
   }
   void draw(const GeometricPrimitive3D& geom)
   {
+#ifndef NO_OPENGL
     switch(geom.type) {
     case GeometricPrimitive3D::Empty:
       break;
@@ -162,14 +165,17 @@ namespace GLDraw {
       fprintf(stderr,"draw: Unsupported geometry type\n");
       return;
     }
+#endif //NO_OPENGL
   }
 
   void draw(const ConvexPolygon2D& geom)
   {
+#ifndef NO_OPENGL
     glBegin(GL_TRIANGLE_FAN);
     for(size_t i=0;i<geom.vertices.size();i++)
       glVertex2v(geom.vertices[i]);
     glEnd();
+#endif //NO_OPENGL
   }
 
 }

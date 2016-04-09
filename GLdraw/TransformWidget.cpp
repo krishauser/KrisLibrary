@@ -361,6 +361,7 @@ void TransformWidget::EndDrag()
 
 void TransformWidget::DrawGL(Camera::Viewport& viewport)
 {
+#ifndef NO_OPENGL
   glEnable(GL_LIGHTING);
   Real scale=1.0;
   Real globalScale = 1.0;
@@ -468,4 +469,5 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
   }
 
   glPopMatrix();
+#endif //NO_OPENGL
 }

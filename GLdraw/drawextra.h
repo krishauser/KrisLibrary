@@ -7,6 +7,8 @@
 ///if 1, never uses the glXd functions and converts them all to floats
 #define GLDRAW_USE_FLOATS_ONLY 1
 
+#ifndef NO_OPENGL
+
 namespace GLDraw {
 
 using namespace Math3D;
@@ -100,5 +102,9 @@ inline void glMultMatrix(const GLdouble* m) { glMultMatrixd(m); }
 inline void glTranslate(const GLdouble* t) { glTranslated(t[0],t[1],t[2]); }
 
 } //namespace GLDraw
+
+#else
+
+#endif //NO_OPENGL
 
 #endif

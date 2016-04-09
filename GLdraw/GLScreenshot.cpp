@@ -68,6 +68,7 @@ bool GLSaveScreenshot(const char* filename)
 
 bool GLSaveScreenshotPPM(const char* filename)
 {
+#ifndef NO_OPENGL
   // These are important to get screen captures to work correctly
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -91,5 +92,8 @@ bool GLSaveScreenshotPPM(const char* filename)
   bool res = WritePPM_RGB_Binary(data,width,height,filename);
   delete [] data;
   return res;
+#else
+  return false;
+#endif //NO_OPENGL
 }
 

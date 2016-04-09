@@ -3,6 +3,8 @@
 
 #include "GL.h"
 
+#ifndef NO_OPENGL
+
 //Returns the string corresponding to the GL error code err
 const char* GLErrorString(GLenum err);
 
@@ -18,5 +20,7 @@ bool CheckGLErrors(const char* name="GL error",bool pause=true);
     if(GL_ERROR_QUIT) exit(1); \
   } \
 }
+
+#endif //NO_OPENGL
 
 #endif

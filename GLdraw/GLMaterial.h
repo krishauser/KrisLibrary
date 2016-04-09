@@ -11,6 +11,7 @@ namespace GLDraw {
  */
 struct GLMaterial
 {
+#ifndef NO_OPENGL
 	GLMaterial();
 	void setCurrentGL(GLenum tgt = GL_FRONT) const;
 	void setCurrentGL_Front() const;
@@ -19,6 +20,7 @@ struct GLMaterial
 
 	GLColor ambient, diffuse, specular, emission;
 	GLfloat specularExponent;
+#endif //NO_OPENGL
 };
 
 } //namespace GLDraw

@@ -13,6 +13,7 @@ TranslatingRobot2DCSpace::TranslatingRobot2DCSpace()
 
 void TranslatingRobot2DCSpace::DrawWorkspaceGL() const
 {
+#ifndef NO_OPENGL
   //blank out background (light yellow)
   glColor3f(1,1,0.5);
   glBegin(GL_QUADS);
@@ -25,6 +26,7 @@ void TranslatingRobot2DCSpace::DrawWorkspaceGL() const
   //draw obstacles (dark grey)
   glColor3f(0.2,0.2,0.2);
   obstacles.DrawGL();
+#endif //NO_OPENGL
 }
 
 void TranslatingRobot2DCSpace::DrawRobotGL(const Config& x) const
@@ -41,11 +43,13 @@ void TranslatingRobot2DCSpace::DrawRobotGL(const Config& x) const
 
 void TranslatingRobot2DCSpace::DrawGL(const Config& x) const
 {
+#ifndef NO_OPENGL
   DrawWorkspaceGL();
 
   //draw robot greyish blue
   glColor3f(0.3,0.3,0.7);
   DrawRobotGL(x);
+#endif //NO_OPENGL
 }
 
 void TranslatingRobot2DCSpace::Sample(Config& x)

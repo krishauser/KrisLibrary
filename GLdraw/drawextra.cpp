@@ -4,7 +4,7 @@
 #include <math3d/geometry3d.h>
 #include <math3d/basis.h>
 
-
+#ifndef NO_OPENGL
 
 namespace GLDraw {
 
@@ -820,3 +820,5 @@ void drawXYCheckerboard(int n, float spacing, float col1[4],float col2[4])
 
 
 } //namespace GLDraw
+
+#endif //NO_OPENGL

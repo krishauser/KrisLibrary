@@ -1,7 +1,10 @@
 #include "GLLight.h"
 #include "GL.h"
+#include <assert.h>
 
 using namespace GLDraw;
+
+#ifndef NO_OPENGL
 
 inline void glLightv(GLenum light, GLenum pname,const GLfloat* v)
 {
@@ -17,6 +20,8 @@ inline void glLightv(GLenum light, GLenum pname,const GLdouble* v)
   vf[3]=(GLfloat)v[3];
   glLightfv(light,pname,vf);
 }
+
+#endif //NO_OPENGL
 
 GLLight::GLLight()
 :position(Zero),att2(0),att1(0),att0(1),
@@ -72,6 +77,7 @@ void GLLight::setSpotLight(const Vector3& pos,const Vector3& dir,float exponent,
 
 void GLLight::setCurrentGL(const int id)
 {
+#ifndef NO_OPENGL
 	GLenum gl_light_id=GL_LIGHT0+id;
 	glLightv(gl_light_id,GL_DIFFUSE,diffuse.rgba);
 	glLightv(gl_light_id,GL_SPECULAR,specular.rgba);
@@ -83,4 +89,5 @@ void GLLight::setCurrentGL(const int id)
 	glLightf(gl_light_id,GL_SPOT_EXPONENT,spot_exponent);
 	glLightf(gl_light_id,GL_SPOT_CUTOFF,spot_cutoff);
 	glEnable(gl_light_id);
+#endif //NO_OPENGL
 }

@@ -85,6 +85,7 @@ void Grid2DCSpace::Rasterize(CSpace* space)
 
 void Grid2DCSpace::DrawGL()
 {
+#ifndef NO_OPENGL
   Real xscale = (domain.bmax.x-domain.bmin.x)/Real(occupied.m);
   Real yscale = (domain.bmax.y-domain.bmin.y)/Real(occupied.n);
   //blank out background (light yellow)
@@ -114,6 +115,7 @@ void Grid2DCSpace::DrawGL()
     x += xscale;
   }
   glEnd();
+#endif //NO_OPENGL
 }
 
 void Grid2DCSpace::Sample(Config& x)
