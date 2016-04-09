@@ -380,13 +380,20 @@ void SVDecomposition<T>::getDampedPseudoInverse(MatrixT& Ainv,T lambda) const
 template <class T>
 void SVDecomposition<T>::nullspaceComponent(const VectorT& x,VectorT& xNull) const
 {
+  //want xNull = (I - A+ A) x
+  //A+ = V W+ U^T
+  //xNull = x - V W+ U^T U W V^T x
+  //U^T U = [I 0]
+  //        [0 0]
+  //xNull = x - V [Wm+ Wm 0] V^T x
+  //              [0      0]
   /*
   VectorT Ui;
   for(int i=0;i<U.n;i++) {
-    if(W(i) < 1e-6) continue;
-    U.getCol(i,Ui);
+    if(W(i) < epsilon) continue;
+    U.getColRef(i,Ui);
     for(int j=i;j<U.n;j++) {
-      if(W(j) < 1e-6) continue;
+      if(W(j) < epsilon) continue;
       Real UUij = U.dotCol(j,Ui); 
       if(!FuzzyEquals(UUij,Delta(i,j))) {
 	cout<<i<<" "<<j<<endl;
@@ -395,24 +402,31 @@ void SVDecomposition<T>::nullspaceComponent(const VectorT& x,VectorT& xNull) con
       }
       Assert(FuzzyEquals(UUij,Delta(i,j)));
     }
-    }*/
+  }
+  */
 
   VectorT y;
   V.mulTranspose(x,y);
   for(int i=0;i<W.n;i++)
-    if(W(i) < epsilon) y(i)=Zero;
+    if(W(i) <= epsilon) y(i)=Zero;
   V.mul(y,xNull);
-  /*
-  //this must be equivalent to the psuedoinverse method
+  xNull -= x;
+  xNull.inplaceNegative();
+
+/*
+  //the result must be equivalent to the following psuedoinverse method
   VectorT xNull2;
   V.mulTranspose(x,y);
-  W.mulVectorT(y,y);
+  W.mulVector(y,y);
   VectorT z;
   U.mul(y,z);
   backSub(z,xNull2);
+  xNull2 -= x;
+  xNull2.inplaceNegative();
+
   xNull2-=xNull;
-  cout<<"Difference between 2 approaches: "; xNull2.print();
-  Assert(xNull2.maxAbsElement() < 1e-4);
+  cout<<"Difference between 2 approaches: "<<xNull2<<endl;;
+  Assert(xNull2.maxAbsElement() < 1e-5);
   */
 }
 
@@ -674,6 +688,15 @@ void RobustSVD<T>::dampedBackSub(const VectorT& b,T lambda, VectorT& x) const
 template <class T>
 void RobustSVD<T>::nullspaceComponent(const VectorT& x,VectorT& xNull) const
 {
+  //want xNull = (I - A+ A) x
+  //A+ = Post^-1 V W+ U^T Pre^-1
+  //xNull = x - Post^-1 V W+ U^T Pre^-1 Pre U W V^T Post x
+  //      = x - Post^-1 V W+ U^T U W V^T Post x
+  //U^T U = [I 0]
+  //        [0 0]
+  //xNull = x - Post^-1 V [Wm+ Wm 0] V^T Post x
+  //                      [0      0]
+
   VectorT temp;
   Post.mulVector(x,temp);
   svd.nullspaceComponent(temp,xNull);
