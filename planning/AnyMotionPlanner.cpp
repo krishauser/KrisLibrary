@@ -488,11 +488,16 @@ class SBLInterface  : public MotionPlannerInterface
   virtual int NumIterations() const { return sbl->numIters; }
   virtual int NumMilestones() const {
     Graph::CountCallback<SBLTree::Node*> cb1,cb2;
-    sbl->tStart->root->DFS(cb1);
-    sbl->tGoal->root->DFS(cb2);
+    if(sbl->tStart && sbl->tStart->root)
+      sbl->tStart->root->DFS(cb1);
+    if(sbl->tGoal && sbl->tGoal->root)
+      sbl->tGoal->root->DFS(cb2);
     return cb1.count+cb2.count;
   }
-  virtual int NumComponents() const { return 2; }
+  virtual int NumComponents() const {
+    if(!sbl->tStart) return NULL;
+    return 2;
+  }
   virtual bool IsConnected(int ma,int mb) const { return sbl->IsDone(); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { sbl->CreatePath(path); if(ma == 1) ReversePath(path); }
   virtual void GetRoadmap(RoadmapPlanner& roadmap) const {
