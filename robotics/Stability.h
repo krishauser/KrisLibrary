@@ -8,24 +8,29 @@
 
 /// Tests whether the contacts admit force closure
 bool TestForceClosure(const std::vector<ContactPoint>& contacts,int numFCEdges);
+bool TestForceClosure(const std::vector<CustomContactPoint>& contacts);
 
 /// Tests whether the contacts admit force closure
 bool TestForceClosure(const std::vector<ContactPoint2D>& contacts);
+bool TestForceClosure(const std::vector<CustomContactPoint2D>& contacts);
 
 /// Tests whether the given COM is stable for the given contacts.
 /// If f is non-empty, it returns the contact forces in f.
 bool TestCOMEquilibrium(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges,const Vector3& com,std::vector<Vector3>& f);
+bool TestCOMEquilibrium(const std::vector<CustomContactPoint>& contacts,const Vector3& fext,const Vector3& com,std::vector<Vector3>& f);
 
 /// Tests whether the given contacts admits any stable COM.
 bool TestAnyCOMEquilibrium(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges);
+bool TestAnyCOMEquilibrium(const std::vector<CustomContactPoint>& contacts,const Vector3& fext);
 
 /// Tests whether the given COM is stable for the given contacts.
 /// If f is non-empty, it returns the contact forces in f.
 bool TestCOMEquilibrium(const std::vector<ContactPoint2D>& contacts,const Vector2& fext,const Vector2& com,std::vector<Vector2>& f);
+bool TestCOMEquilibrium(const std::vector<CustomContactPoint2D>& contacts,const Vector2& fext,const Vector2& com,std::vector<Vector2>& f);
 
 /// Tests whether the given contacts admits any stable COM.
 bool TestAnyCOMEquilibrium(const std::vector<ContactPoint2D>& contacts,const Vector2& fext);
-
+bool TestAnyCOMEquilibrium(const std::vector<CustomContactPoint2D>& contacts,const Vector2& fext);
 
 /** @ingroup Robotics
  * @brief Testing COM equilibrium given some number of contacts.
@@ -46,9 +51,13 @@ class EquilibriumTester
  public:
   EquilibriumTester();
   void Setup(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges,const Vector3& com);
+  void Setup(const std::vector<CustomContactPoint>& contacts,const Vector3& fext,const Vector3& com);
   void SetupAnyCOM(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges);
+  void SetupAnyCOM(const std::vector<CustomContactPoint>& contacts,const Vector3& fext);
   bool TestCOM(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges,const Vector3& com);
+  bool TestCOM(const std::vector<CustomContactPoint>& contacts,const Vector3& fext,const Vector3& com);
   bool TestAnyCOM(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges);
+  bool TestAnyCOM(const std::vector<CustomContactPoint>& contacts,const Vector3& fext);
   void ChangeContacts(const std::vector<ContactPoint>& contacts);
   void ChangeContact(int i,ContactPoint& contact);
   void ChangeGravity(const Vector3& fext);
@@ -96,6 +105,7 @@ class SupportPolygon : public Geometry::UnboundedPolytope2D
 {
 public:
   bool Set(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges,int maxExpandDepth=6);
+  bool Set(const std::vector<CustomContactPoint>& contacts,const Vector3& fext,int maxExpandDepth=6);
   bool Empty() const;
   bool TestCOM(const Vector3& com) const;
   Real COMMargin(const Vector3& com) const;
@@ -112,6 +122,7 @@ class OrientedSupportPolygon
 {
 public:
   bool Set(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges);
+  bool Set(const std::vector<CustomContactPoint>& contacts,const Vector3& fext);
   bool TestCOM(const Vector3& com) const;
   Real COMMargin(const Vector3& com) const;
   //poly is a slice through the support polytope at the given height

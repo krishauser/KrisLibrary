@@ -156,4 +156,94 @@ void GetFrictionConePlanes(const std::vector<ContactPoint2D>& contacts,Matrix& A
 void GetFrictionConePlanes(const std::vector<ContactPoint2D>& contacts,SparseMatrix& A);
 
 
+
+
+
+/** @ingroup Robotics
+* @brief A contact point with custom force / wrench constraints.
+*
+* Custom constraints are in the form A*f <= b for forces
+* or A*w <= b for wrenches.
+*/
+class CustomContactPoint
+{
+public:
+  CustomContactPoint();
+  CustomContactPoint(const ContactPoint& cp,int numFCEdges=4);
+  ///Copies from a ContactPoint, and uses a polyhedral friction cone approximation
+  void set(const ContactPoint& cp,int numFCEdges=4);
+  ///Offsets the friction cone by the given offset
+  void setRobustnessFactor(Real offset);
+  ///Bounds the minimum / maximum normal force
+  void addNormalForceBounds(Real minimum,Real maximum);
+  ///Re-calculates the force matrix from the values of x, n, kFriction
+  void calculateForceMatrix(int numFCEdges=4);
+  ///Re-calculates the wrench matrix from the values of x, n, kFriction
+  ///OR the force matrix if it exists
+  void calculateWrenchMatrix(int numFCEdges=4);
+
+  Vector3 x;
+  Vector3 n;
+  Real kFriction;
+  Matrix forceMatrix;
+  Vector forceOffset;
+  Matrix wrenchMatrix;
+  Vector wrenchOffset;
+};
+
+/** @ingroup Robotics A contact point with custom force / wrench constraints.
+ *
+ * Custom constraints are in the form A*f <= b for forces
+ * or A*w <= b for wrenches.
+ */
+class CustomContactPoint2D
+{
+public:
+  CustomContactPoint2D();
+  CustomContactPoint2D(const ContactPoint2D& cp);
+  ///Copies from a ContactPoint
+  void set(const ContactPoint2D& cp);
+  ///Offsets the friction cone by the given offset
+  void setRobustnessFactor(Real offset);
+  ///Bounds the minimum / maximum normal force
+  void addNormalForceBounds(Real minimum,Real maximum);
+  ///Re-calculates the force matrix from the values of x, n, kFriction
+  void calculateForceMatrix();
+  ///Re-calculates the wrench matrix from the values of x, n, kFriction
+  ///OR the force matrix if it exists
+  void calculateWrenchMatrix();
+
+  Vector2 x;
+  Vector2 n;
+  Real kFriction;
+  Matrix forceMatrix;
+  Vector forceOffset;
+  Matrix wrenchMatrix;
+  Vector wrenchOffset;
+};
+
+/** @ingroup Robotics
+ * @brief Sets the matrix A and vector b such that A*f <= b defines the friction
+ * cone planes.
+ *
+ * f is a vector of size contacts.size()*3, such that
+ * f[i*3],f[i*3+1],f[i*3+2] is the force applied at contact[i].
+ *
+ * The friction cones are discretized with k edges.
+ */
+void GetFrictionConePlanes(const std::vector<CustomContactPoint>& contacts,Matrix& A,Vector& b);
+void GetFrictionConePlanes(const std::vector<CustomContactPoint>& contacts,SparseMatrix& A,Vector& b);
+
+/** @ingroup Robotics
+ * @brief Sets the matrix A and vector b such that A*f <= b defines the friction
+ * cone planes.
+ *
+ * f is a vector of size contacts.size()*2, such that
+ * f[i*2],f[i*2+1] is the force applied at contact[i].
+ */
+void GetFrictionConePlanes(const std::vector<CustomContactPoint2D>& contacts,Matrix& A,Vector& b);
+void GetFrictionConePlanes(const std::vector<CustomContactPoint2D>& contacts,SparseMatrix& A,Vector& b);
+
+
+
 #endif

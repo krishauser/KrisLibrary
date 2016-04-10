@@ -331,3 +331,278 @@ void GetFrictionConePlanes(const vector<ContactPoint2D>& c,SparseMatrix& A)
     A(i*2+1,i*2+1)=Aii(1,1);
   }
 }
+
+
+
+
+
+
+CustomContactPoint::CustomContactPoint()
+:x(0.0),n(0,0,1),kFriction(0.0)
+{}
+
+CustomContactPoint::CustomContactPoint(const ContactPoint& cp,int numFCEdges)
+{
+  set(cp,numFCEdges);
+}
+
+void CustomContactPoint::set(const ContactPoint& cp,int numFCEdges)
+{
+  x = cp.x;
+  n = cp.n;
+  kFriction = cp.kFriction;
+  calculateForceMatrix(numFCEdges);
+}
+void CustomContactPoint::setRobustnessFactor(Real offset)
+{
+  if(forceMatrix.isEmpty()) calculateForceMatrix();
+  for(int i=0;i<forceOffset.n;i++)
+    forceOffset[i] -= offset;
+}
+
+void CustomContactPoint::addNormalForceBounds(Real minimum,Real maximum)
+{
+  if(forceMatrix.isEmpty()) calculateForceMatrix();
+  int numNew = 0;
+  if(minimum > 0) numNew++;
+  if(!IsInf(maximum)) numNew++;
+  if(numNew == 0) return;
+  int start = forceMatrix.m;
+  Matrix newMat(forceMatrix.m+numNew,forceMatrix.n);
+  Vector newVec(forceOffset.n+numNew);
+  newMat.copySubMatrix(0,0,forceMatrix);
+  newVec.copySubVector(0,forceOffset);
+  if(minimum > 0) {
+    newMat(start,0) = -n.x;
+    newMat(start,1) = -n.y;
+    newMat(start,2) = -n.z;
+    newVec(start) = minimum;
+    start++;
+  }
+  if(!IsInf(maximum)) {
+    newMat(start,0) = n.x;
+    newMat(start,1) = n.y;
+    newMat(start,2) = n.z;
+    newVec(start) = maximum;
+    start++;
+  }
+}
+
+void CustomContactPoint::calculateForceMatrix(int numFCEdges)
+{
+  ContactPoint cp;
+  cp.x = x;
+  cp.n = n;
+  cp.kFriction = kFriction;
+  GetFrictionConePlanes(cp,numFCEdges,forceMatrix);
+  forceOffset.resize(forceMatrix.m);
+  forceOffset.set(0.0);
+}
+
+void CustomContactPoint::calculateWrenchMatrix(int numFCEdges)
+{
+  if(forceMatrix.isEmpty()) calculateForceMatrix(numFCEdges);
+  wrenchMatrix.resize(forceMatrix.m+6,6);
+  wrenchOffset.resize(forceOffset.n+6);
+  //w = (f,m)
+  //m = p x f
+  //A f <= b
+  //equivalent constraint C w <= d
+  //has the form
+  //C = [A    0]   d = [b] 
+  //    [[p] -I]       [0]
+  //    [-[p] I]       [0]
+  wrenchMatrix.setZero();
+  wrenchMatrix.copySubMatrix(0,0,forceMatrix);
+  wrenchOffset.copySubVector(0,forceOffset);
+  Matrix3 cp;
+  cp.setCrossProduct(x);
+  for(int i=0;i<3;i++) {
+    int row = forceMatrix.m+i;
+    wrenchOffset(row) = 0;
+    wrenchMatrix(row,0) = cp(row,0);
+    wrenchMatrix(row,1) = cp(row,1);
+    wrenchMatrix(row,2) = cp(row,2);
+    wrenchMatrix(row,3+i) = -1;
+    row += 3;
+    wrenchOffset(row) = 0;
+    wrenchMatrix(row,0) = -cp(row,0);
+    wrenchMatrix(row,1) = -cp(row,1);
+    wrenchMatrix(row,2) = -cp(row,2);
+    wrenchMatrix(row,3+i) = 1;
+  }
+}
+
+
+CustomContactPoint2D::CustomContactPoint2D()
+:x(0.0),n(0,1),kFriction(0.0)
+{}
+
+CustomContactPoint2D::CustomContactPoint2D(const ContactPoint2D& cp)
+{
+}
+
+void CustomContactPoint2D::set(const ContactPoint2D& cp)
+{
+  x = cp.x;
+  n = cp.n;
+  kFriction = cp.kFriction;
+}
+void CustomContactPoint2D::setRobustnessFactor(Real offset)
+{
+  if(forceMatrix.isEmpty()) calculateForceMatrix();
+  for(int i=0;i<forceOffset.n;i++)
+    forceOffset[i] -= offset;
+}
+
+void CustomContactPoint2D::addNormalForceBounds(Real minimum,Real maximum)
+{
+  if(forceMatrix.isEmpty()) calculateForceMatrix();
+  int numNew = 0;
+  if(minimum > 0) numNew++;
+  if(!IsInf(maximum)) numNew++;
+  if(numNew == 0) return;
+  int start = forceMatrix.m;
+  Matrix newMat(forceMatrix.m+numNew,forceMatrix.n);
+  Vector newVec(forceOffset.n+numNew);
+  newMat.copySubMatrix(0,0,forceMatrix);
+  newVec.copySubVector(0,forceOffset);
+  if(minimum > 0) {
+    newMat(start,0) = -n.x;
+    newMat(start,1) = -n.y;
+    newVec(start) = minimum;
+    start++;
+  }
+  if(!IsInf(maximum)) {
+    newMat(start,0) = n.x;
+    newMat(start,1) = n.y;
+    newVec(start) = maximum;
+    start++;
+  }
+}
+
+void CustomContactPoint2D::calculateForceMatrix()
+{
+  ContactPoint2D cp;
+  cp.x = x;
+  cp.n = n;
+  cp.kFriction = kFriction;
+  Matrix2 A;
+  GetFrictionConePlanes(cp,A);
+  forceMatrix.resize(2,2);
+  for(int i=0;i<2;i++)
+    for(int j=0;j<2;j++)
+      forceMatrix(i,j) = A(i,j);
+  forceOffset.resize(forceMatrix.m);
+  forceOffset.set(0.0);
+}
+
+void CustomContactPoint2D::calculateWrenchMatrix()
+{
+  if(forceMatrix.isEmpty()) calculateForceMatrix();
+  wrenchMatrix.resize(forceMatrix.m+2,3);
+  wrenchOffset.resize(forceOffset.n+2);
+  //w = (f,m)
+  //m = p x f
+  //A f <= b
+  //equivalent constraint C w <= d
+  //has the form
+  //C = [A    0]   d = [b] 
+  //    [[p] -1]       [0]
+  //    [-[p] 1]       [0]
+  wrenchMatrix.setZero();
+  wrenchMatrix.copySubMatrix(0,0,forceMatrix);
+  wrenchOffset.copySubVector(0,forceOffset);
+  int row = forceMatrix.m;
+  wrenchOffset(row) = 0;
+  wrenchMatrix(row,0) = -x.y;
+  wrenchMatrix(row,1) = x.y;
+  wrenchMatrix(row,2) = -1;
+  row += 1;
+  wrenchOffset(row) = 0;
+  wrenchMatrix(row,0) = x.y;
+  wrenchMatrix(row,1) = -x.y;
+  wrenchMatrix(row,2) = 1;
+}
+
+
+void GetFrictionConePlanes(const vector<CustomContactPoint>& c,Matrix& A,Vector& b)
+{
+  int nc=(int)c.size();
+  int numTotalConstraints = 0;
+  for(size_t i=0;i<c.size();i++)
+    numTotalConstraints += c[i].forceMatrix.m;
+  A.resize(numTotalConstraints,nc*3,Zero);
+  b.resize(numTotalConstraints);
+
+  int m=0;
+  for(size_t p=0;p<c.size();p++) {
+    for(int i=0;i<c[p].forceMatrix.m;i++,m++) {
+      A(m,p*3) = c[p].forceMatrix(i,0);
+      A(m,p*3+1) = c[p].forceMatrix(i,1);
+      A(m,p*3+2) = c[p].forceMatrix(i,2);
+      b(m) = c[p].forceOffset[i];
+    }
+  }
+}
+
+void GetFrictionConePlanes(const vector<CustomContactPoint>& c,SparseMatrix& A,Vector& b)
+{
+  int nc=(int)c.size();
+  int numTotalConstraints = 0;
+  for(size_t i=0;i<c.size();i++)
+    numTotalConstraints += c[i].forceMatrix.m;
+  A.resize(numTotalConstraints,nc*3);
+  b.resize(numTotalConstraints);
+  A.setZero();
+
+  int m=0;
+  for(size_t p=0;p<c.size();p++) {
+    for(int i=0;i<c[p].forceMatrix.m;i++,m++) {
+      A(m,p*3) = c[p].forceMatrix(i,0);
+      A(m,p*3+1) = c[p].forceMatrix(i,1);
+      A(m,p*3+2) = c[p].forceMatrix(i,2);
+      b(m) = c[p].forceOffset[i];
+    }
+  }
+}
+
+
+void GetFrictionConePlanes(const vector<CustomContactPoint2D>& c,Matrix& A,Vector& b)
+{
+  int nc=(int)c.size();
+  int numTotalConstraints = 0;
+  for(size_t i=0;i<c.size();i++)
+    numTotalConstraints += c[i].forceMatrix.m;
+  A.resize(numTotalConstraints,nc*2,Zero);
+  b.resize(numTotalConstraints);
+
+  int m=0;
+  for(size_t p=0;p<c.size();p++) {
+    for(int i=0;i<c[p].forceMatrix.m;i++,m++) {
+      A(m,p*2) = c[p].forceMatrix(i,0);
+      A(m,p*2+1) = c[p].forceMatrix(i,1);
+      b(m) = c[p].forceOffset[i];
+    }
+  }
+}
+
+void GetFrictionConePlanes(const vector<CustomContactPoint2D>& c,SparseMatrix& A,Vector& b)
+{
+  int nc=(int)c.size();
+  int numTotalConstraints = 0;
+  for(size_t i=0;i<c.size();i++)
+    numTotalConstraints += c[i].forceMatrix.m;
+  A.resize(numTotalConstraints,nc*2);
+  b.resize(numTotalConstraints);
+  A.setZero();
+
+  int m=0;
+  for(size_t p=0;p<c.size();p++) {
+    for(int i=0;i<c[p].forceMatrix.m;i++,m++) {
+      A(m,p*2) = c[p].forceMatrix(i,0);
+      A(m,p*2+1) = c[p].forceMatrix(i,1);
+      b(m) = c[p].forceOffset[i];
+    }
+  }
+}
