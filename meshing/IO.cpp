@@ -199,7 +199,7 @@ bool SaveVRML(std::ostream& out,const TriMesh& tri)
 }
 
 ///Loads from the GeomView Object File Format (OFF)
-bool LoadOFF(std::istream& in,TriMesh& tri,GeometryAppearance& app)
+bool LoadOFF(std::istream& in,TriMesh& tri)
 {
   string tag;
   in>>tag;
