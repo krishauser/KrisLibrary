@@ -496,10 +496,14 @@ class SBLInterface  : public MotionPlannerInterface
   virtual bool IsConnected(int ma,int mb) const { return sbl->IsDone(); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { sbl->CreatePath(path); if(ma == 1) ReversePath(path); }
   virtual void GetRoadmap(RoadmapPlanner& roadmap) const {
-    roadmap.AddMilestone(qStart);
-    roadmap.AddMilestone(qGoal);
-    GetRoadmapRecurse(sbl->tStart->root,roadmap,0);
-    GetRoadmapRecurse(sbl->tGoal->root,roadmap,1);
+    if(qStart.n != 0) 
+      roadmap.AddMilestone(qStart);
+    if(qGoal.n != 0) 
+      roadmap.AddMilestone(qGoal);
+    if(sbl->tStart && sbl->tStart->root)
+      GetRoadmapRecurse(sbl->tStart->root,roadmap,0);
+    if(sbl->tGoal && sbl->tGoal->root)
+      GetRoadmapRecurse(sbl->tGoal->root,roadmap,1);
   }
   void GetRoadmapRecurse(SBLTree::Node* n,RoadmapPlanner& roadmap,int nIndex=-1) const
   {
