@@ -57,8 +57,10 @@ struct IKGoal
   void RemoveRotationAxis(const Vector3& axis);
   /// Removes the rotation constraint about the axis through the point p.
   void RemoveRotationAxis(const Vector3& p,const Vector3& axis);
-  /// Inplace transformation
+  /// Inplace transformation of the goal position/orientation
   void Transform(const RigidTransform& T);
+    /// Inplace transformation of the local position/orientation
+  void TransformLocal(const RigidTransform& T);
 
   /// Returns the error in the current configuration given the current
   /// relative transform between link -> destlink

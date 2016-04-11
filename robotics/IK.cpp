@@ -99,7 +99,7 @@ void IKGoal::SetFromPoints(const vector<Vector3>& loc,const vector<Vector3>& wor
 		//Rwor^T*Rloc*lp + Rwor^T * tloc = wp + RWor^T*twor
 		//Rwor^T*Rloc*(lp - (-Rloc^T * tloc)) = wp + RWor^T*twor (confirmed)
       localPosition = -(transpose(Tloc.R)*Tloc.t);
-	  Matrix3 R = transpose(Twor.R)*Tloc.R;
+      Matrix3 R = transpose(Twor.R)*Tloc.R;
       SetFixedPosition(-(transpose(Twor.R)*Twor.t));
       SetFixedRotation(R);
 	  /*
@@ -247,6 +247,27 @@ void IKGoal::Transform(const RigidTransform& T)
   }
   else if(rotConstraint == IKGoal::RotAxis) {
     endRotation = T.R*endRotation;
+  }
+}
+
+void IKGoal::TransformLocal(const RigidTransform& T)
+{
+  localPosition = T*localPosition;
+  if(rotConstraint == IKGoal::RotFixed) {
+    MomentRotation m; m.set(endRotation);
+    Matrix3 R;
+    m.getMatrix(R);
+    R.mulTransposeA(T.R,R);
+    Assert(IsFinite(R));
+    if(!m.setMatrix(R)) {
+      fprintf(stderr,"IKGoal::TransformLocal: matrix does not appear to be a rotation?\n");
+      endRotation.setZero();
+    }
+    else
+      endRotation = m;
+  }
+  else if(rotConstraint == IKGoal::RotAxis) {
+    localAxis = T.R*localAxis;
   }
 }
 
