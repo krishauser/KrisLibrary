@@ -12,6 +12,260 @@ using namespace Optimization;
 //for small problems... maybe a compressed-row sparse matrix would be faster?
 #define USE_SPARSE_LP 0
 
+inline int NumForceVariables(const vector<ContactPoint>& cps)
+{
+  return cps.size()*3;
+}
+
+inline int NumConstraints(const vector<ContactPoint>& cps,int numFCEdges)
+{
+  return cps.size()*numFCEdges;
+}
+
+inline Vector3 Centroid(const vector<ContactPoint>& cps)
+{
+  Vector3 com(Zero);
+  for(size_t i=0;i<cps.size();i++) 
+    com += cps[i].x;
+  com /= cps.size();
+  return com;
+}
+
+inline void GetForceMinimizationDirection(const vector<ContactPoint>& cps,Vector& c)
+{
+  for(size_t j=0;j<cps.size();j++)
+    cps[j].n.get(c(j*3),c(j*3+1),c(j*3+2));
+}
+
+inline void SplitForceVector(const Vector& f,const vector<ContactPoint>& cps,vector<Vector3>& fcs)
+{
+  Assert(f.n == NumForceVariables(cps));
+  fcs.resize(cps.size());
+  for(size_t i=0;i<cps.size();i++)
+    fcs[i].set(f(i*3),f(i*3+1),f(i*3+2));
+}
+
+inline int NumForceVariables(const vector<ContactPoint2D>& cps)
+{
+  return cps.size()*2;
+}
+
+inline int NumConstraints(const vector<ContactPoint2D>& cps)
+{
+  return cps.size()*2;
+}
+
+inline Vector2 Centroid(const vector<ContactPoint2D>& cps)
+{
+  Vector2 com(Zero);
+  for(size_t i=0;i<cps.size();i++) 
+    com += cps[i].x;
+  com /= cps.size();
+  return com;
+}
+
+
+inline void GetForceMinimizationDirection(const vector<ContactPoint2D>& cps,Vector& c)
+{
+  for(size_t j=0;j<cps.size();j++)
+    cps[j].n.get(c(j*2),c(j*2+1));
+}
+
+inline void SplitForceVector(const Vector& f,const vector<ContactPoint2D>& cps,vector<Vector2>& fcs)
+{
+  Assert(f.n == NumForceVariables(cps));
+  fcs.resize(cps.size());
+  for(size_t i=0;i<cps.size();i++)
+    fcs[i].set(f(i*2),f(i*2+1));
+}
+
+inline int NumForceVariables(const vector<CustomContactPoint>& cps)
+{
+  int n = 0;
+  for(size_t i=0;i<cps.size();i++) 
+    n += cps[i].numForceVariables();
+  return n;
+}
+
+inline int NumConstraints(const vector<CustomContactPoint>& cps)
+{
+  int n = 0;
+  for(size_t i=0;i<cps.size();i++) 
+    n += cps[i].numConstraints();
+  return n;
+}
+
+inline Vector3 Centroid(const vector<CustomContactPoint>& cps)
+{
+  Vector3 com(Zero);
+  for(size_t i=0;i<cps.size();i++) 
+    com += cps[i].x;
+  com /= cps.size();
+  return com;
+}
+
+
+inline void GetForceMinimizationDirection(const vector<CustomContactPoint>& cps,Vector& c)
+{
+  int m=0;
+  for(size_t j=0;j<cps.size();j++) {
+    if(cps[j].numForceVariables() == 1)
+      c[m] = 1;
+    else {
+      cps[j].n.get(c(m),c(m+1),c(m+2));
+      for(int p=3;p<cps[j].numForceVariables();p++)
+        c[m+p] = 0.0;
+    }
+    m += cps[j].numForceVariables();
+  }
+}
+
+inline void SplitForceVector(const Vector& f,const vector<CustomContactPoint>& cps,vector<Vector3>& fcs)
+{
+  Assert(f.n == NumForceVariables(cps));
+  fcs.resize(cps.size());
+  int m=0;
+  for(size_t i=0;i<cps.size();i++) {
+    if(cps[i].numForceVariables() == 1)
+      fcs[i] = f(m)*cps[i].n;
+    else if(cps[i].numForceVariables() >= 3)
+      fcs[i].set(f(m),f(m+1),f(m+2));
+    m += cps[i].numForceVariables();
+  }
+}
+
+inline int NumForceVariables(const vector<CustomContactPoint2D>& cps)
+{
+  int n = 0;
+  for(size_t i=0;i<cps.size();i++) 
+    n += cps[i].numForceVariables();
+  return n;
+}
+
+inline int NumConstraints(const vector<CustomContactPoint2D>& cps)
+{
+  int n = 0;
+  for(size_t i=0;i<cps.size();i++) 
+    n += cps[i].numConstraints();
+  return n;
+}
+
+inline Vector2 Centroid(const vector<CustomContactPoint2D>& cps)
+{
+  Vector2 com(Zero);
+  for(size_t i=0;i<cps.size();i++) 
+    com += cps[i].x;
+  com /= cps.size();
+  return com;
+}
+
+
+inline void GetForceMinimizationDirection(const vector<CustomContactPoint2D>& cps,Vector& c)
+{
+  int m=0;
+  for(size_t j=0;j<cps.size();j++) {
+    if(cps[j].numForceVariables() == 1)
+      c[m] = 1;
+    else {
+      cps[j].n.get(c(m),c(m+1));
+      for(int p=2;p<cps[j].numForceVariables();p++)
+        c[m+p] = 0.0;
+    }
+    m += cps[j].numForceVariables();
+  }
+}
+
+inline void SplitForceVector(const Vector& f,const vector<CustomContactPoint2D>& cps,vector<Vector2>& fcs)
+{
+  Assert(f.n == NumForceVariables(cps));
+  fcs.resize(cps.size());
+  int m=0;
+  for(size_t i=0;i<cps.size();i++) {
+    if(cps[i].numForceVariables() == 1)
+      fcs[i] = f(m)*cps[i].n;
+    else if(cps[i].numForceVariables() >= 2)
+      fcs[i].set(f(m),f(m+1));
+    m += cps[i].numForceVariables();
+  }
+}
+
+inline int NumForceVariables(const CustomContactFormation& cps) { return cps.numForceVariables(); }
+
+inline int NumConstraints(const CustomContactFormation& cps) { return cps.numConstraints(); }
+
+inline Vector3 Centroid(const CustomContactFormation& cps) { return Centroid(cps.contacts); }
+
+inline void GetForceMinimizationDirection(const CustomContactFormation& cps,Vector& c) { GetForceMinimizationDirection(cps.contacts,c); }
+
+inline void SplitForceVector(const Vector& f,const CustomContactFormation& cps,vector<Vector3>& fcs) { SplitForceVector(f,cps.contacts,fcs); }
+
+
+void GetWrenchMatrix(const vector<ContactPoint2D>& cps,const Vector2& cm,Matrix& A)
+{
+  if(A.isEmpty())
+    A.resize(3,cps.size()*2);
+  else if(A.m < 3 || A.n < (int)cps.size()*2) 
+    FatalError("Invalid size of non-empty wrench matrix");
+  for(size_t j=0;j<cps.size();j++) {
+    A(0,j*2) = 1;
+    A(1,j*2+1) = 1;
+
+    Vector2 cpref = cps[j].x-cm;
+    A(2,j*2) = -cpref.y;
+    A(2,j*2+1) = cpref.x;
+  }
+}
+
+void GetWrenchMatrix(const vector<ContactPoint2D>& cps,const Vector2& cm,SparseMatrix& A)
+{
+  if(A.isEmpty())
+    A.resize(3,cps.size()*2);
+  else if(A.m < 3 || A.n < (int)cps.size()*2) 
+    FatalError("Invalid size of non-empty wrench matrix");
+  for(size_t j=0;j<cps.size();j++) {
+    A(0,j*2) = 1;
+    A(1,j*2+1) = 1;
+
+    Vector2 cpref = cps[j].x-cm;
+    A(2,j*2) = -cpref.y;
+    A(2,j*2+1) = cpref.x;
+  }
+}
+
+void GetWrenchMatrix(const vector<CustomContactPoint2D>& cps,const Vector2& cm,Matrix& A)
+{
+  if(A.isEmpty())
+    A.resize(3,cps.size()*2);
+  else if(A.m < 3 || A.n < (int)cps.size()*2) 
+    FatalError("Invalid size of non-empty wrench matrix");
+  A.resize(3,cps.size()*2);
+  for(size_t j=0;j<cps.size();j++) {
+    A(0,j*2) = 1;
+    A(1,j*2+1) = 1;
+
+    Vector2 cpref = cps[j].x-cm;
+    A(2,j*2) = -cpref.y;
+    A(2,j*2+1) = cpref.x;
+  }
+}
+
+void GetWrenchMatrix(const vector<CustomContactPoint2D>& cps,const Vector2& cm,SparseMatrix& A)
+{
+  if(A.isEmpty())
+    A.resize(3,cps.size()*2);
+  else if(A.m < 3 || A.n < (int)cps.size()*2) 
+    FatalError("Invalid size of non-empty wrench matrix");
+  A.resize(3,cps.size()*2);
+  for(size_t j=0;j<cps.size();j++) {
+    A(0,j*2) = 1;
+    A(1,j*2+1) = 1;
+
+    Vector2 cpref = cps[j].x-cm;
+    A(2,j*2) = -cpref.y;
+    A(2,j*2+1) = cpref.x;
+  }
+}
+
 bool TestForceClosure(const vector<ContactPoint> & cps,int numFCEdges)
 {
   vector<CustomContactPoint> custom(cps.size());
@@ -31,11 +285,7 @@ bool TestForceClosure(const vector<ContactPoint2D> & cps)
 
 bool TestForceClosure(const vector<CustomContactPoint> & cps)
 {
-  int n=0,m=0;
-  for(size_t i=0;i<cps.size();i++) {
-    n += 3;
-    m += cps[i].forceMatrix.m;
-  }
+  int n=NumForceVariables(cps),m=NumConstraints(cps);
 
   //min_{f} c1^T sum fi + c2^T sum (fi x pi) s.t.
   //Ai*fi <= bi
@@ -103,11 +353,7 @@ bool TestForceClosure(const vector<CustomContactPoint> & cps)
 
 bool TestForceClosure(const vector<CustomContactPoint2D> & cps)
 {
-  int n=0,m=0;
-  for(size_t i=0;i<cps.size();i++) {
-    n += 2;
-    m += cps[i].forceMatrix.m;
-  }
+  int n=NumForceVariables(cps),m=NumConstraints(cps);
 
   //min_{f} c1^T sum fi + c2*sum (fi x pi) s.t.
   //Ai*fi <= bi
@@ -371,24 +617,14 @@ bool TestCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Vecto
 {
   if(contacts.empty()) return false;
 
-  int numContacts = (int)contacts.size();
-  int m=3;
-  for(size_t i=0;i<contacts.size();i++)
-    m += contacts[i].forceMatrix.m;
-  int n=numContacts*2;
+  int n = NumForceVariables(contacts);
+  int m = 3+NumConstraints(contacts);
 
   Optimization::LinearProgram lp;
   lp.Resize(m,n);
 
-  int j;
-  for(j=0;j<numContacts;j++) {
-    lp.A(0,j*2) = 1;
-    lp.A(1,j*2+1) = 1;
-
-    Vector2 cpref = com-contacts[j].x;
-    lp.A(2,j*2) = -cpref.y;
-    lp.A(2,j*2+1) = cpref.x;
-  }
+  //make wrench matrix
+  GetWrenchMatrix(contacts,com,lp.A);
   //set the lower bounds for the friction cones
   lp.q.set(-Inf); 
   //set the bounds for the equalities
@@ -398,7 +634,7 @@ bool TestCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Vecto
 
   //FC bound on f's 
   Matrix temp;
-  temp.setRef(lp.A,3,0,1,1,lp.A.m-3,numContacts*2);
+  temp.setRef(lp.A,3,0,1,1,lp.A.m-3,n);
   Vector vtemp;
   vtemp.setRef(lp.p,3,1,lp.A.m-3);
   GetFrictionConePlanes(contacts,temp,vtemp);
@@ -406,8 +642,7 @@ bool TestCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Vecto
   //lp.Print(cout);
   //getchar();
 
-  for(int j=0;j<numContacts;j++)
-    contacts[j].n.get(lp.c(j*2),lp.c(j*2+1));
+  GetForceMinimizationDirection(contacts,lp.c);
   lp.minimize = true;
 
   Optimization::RobustLPSolver lps;
@@ -438,26 +673,15 @@ bool TestAnyCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Ve
   if(contacts.empty()) return false;
 
   Optimization::LinearProgram lp;
-  int numContacts = (int)contacts.size();
-  int m=3;
-  for(size_t i=0;i<contacts.size();i++)
-    m += contacts[i].forceMatrix.m;
-  int n=numContacts*2+2;
+  int m=3 + NumConstraints(contacts);
+  int n= NumForceVariables(contacts)+2;
+  int cmoffset = NumForceVariables(contacts);
   lp.Resize(m,n);
 
   Matrix& A=lp.A;
-  int j;
-  Matrix3 crossProd;
-  for(j=0;j<numContacts;j++) {
-    A(0,j*2) = 1;
-    A(1,j*2+1) = 1;
-
-    Vector2 cpref = contacts[j].x;
-    A(2,j*2) = -cpref.y;
-    A(2,j*2+1) = cpref.x;
-  }
-  A(2,numContacts*2) = -fext.y;
-  A(2,numContacts*2) = fext.x;
+  GetWrenchMatrix(contacts,Vector2(0.0),A);
+  A(2,cmoffset) = -fext.y;
+  A(2,cmoffset) = fext.x;
 
   //set the lower bounds for the friction cones
   lp.q.set(-Inf); lp.p.set(Zero); 
@@ -468,7 +692,7 @@ bool TestAnyCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Ve
 
   //FC bound on f's 
   Matrix temp;
-  temp.setRef(lp.A,3,0,1,1,lp.A.m-3,numContacts*2);
+  temp.setRef(lp.A,3,0,1,1,lp.A.m-3,cmoffset);
   Vector vtemp;
   vtemp.setRef(lp.p,3,1,lp.A.m-3);
   GetFrictionConePlanes(contacts,temp,vtemp);
@@ -477,8 +701,7 @@ bool TestAnyCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Ve
   //getchar();
 
   lp.c.setZero();
-  for(int j=0;j<numContacts;j++)
-    contacts[j].n.get(lp.c(j*2),lp.c(j*2+1));
+  GetForceMinimizationDirection(contacts,lp.c);
   lp.minimize = true;
 
   Optimization::RobustLPSolver lps;
@@ -515,6 +738,14 @@ bool EquilibriumTester::TestCOM(const std::vector<CustomContactPoint>& contacts,
   return TestCurrent();
 }
 
+bool EquilibriumTester::TestCOM(const CustomContactFormation& contacts,const Vector3& fext,const Vector3& com)
+{
+  if(contacts.contacts.empty()) return false;
+  Setup(contacts,fext,com);
+  testedCOM = com;
+  return TestCurrent();
+}
+
 /**
  * Sets up the LP
  *   sum fk = fext
@@ -528,25 +759,14 @@ void EquilibriumTester::Setup(const std::vector<ContactPoint>& contacts,const Ve
 
   testingAnyCOM = false;
   conditioningShift = com;
-  int numContacts = (int)contacts.size();
-  int m=6+numContacts*numFCEdges;
-  int n=numContacts*3;
+  int m=6+NumConstraints(contacts,numFCEdges);
+  int n=NumForceVariables(contacts);
 
   lp.Resize(m,n);
   lp.A.setZero();
 
-  int j;
-  Matrix3 crossProd;
-  for(j=0;j<numContacts;j++) {
-    lp.A(0,j*3) = 1;
-    lp.A(1,j*3+1) = 1;
-    lp.A(2,j*3+2) = 1;
+  GetWrenchMatrix(contacts,conditioningShift,lp.A);
 
-    crossProd.setCrossProduct(contacts[j].x-conditioningShift);
-    for(int p=0;p<3;p++)
-      for(int q=0;q<3;q++)
-	lp.A(3+p,j*3+q) = crossProd(p,q);
-  }
   //set the lower bounds for the friction cones
   //lp.q.set(Zero); lp.p.set(Inf); 
   lp.q.set(-Inf); lp.p.set(Zero); 
@@ -564,9 +784,7 @@ void EquilibriumTester::Setup(const std::vector<ContactPoint>& contacts,const Ve
   SparseMatrix temp;
   GetFrictionConePlanes(contacts,numFCEdges,temp);
   lp.A.copySubMatrix(6,0,temp);
-
-  for(int j=0;j<numContacts;j++)
-    contacts[j].n.get(lp.c(j*3),lp.c(j*3+1),lp.c(j*3+2));
+  GetForceMinimizationDirection(contacts,lp.c);
   lp.minimize = true;
 }
 
@@ -583,28 +801,14 @@ void EquilibriumTester::Setup(const std::vector<CustomContactPoint>& contacts,co
 
   testingAnyCOM = false;
   conditioningShift = com;
-  int numContacts = (int)contacts.size();
-  int totalFCEdges = 0;
-  for(size_t i=0;i<contacts.size();i++)
-    totalFCEdges += contacts[i].forceMatrix.m;
-  int m=6+totalFCEdges;
-  int n=numContacts*3;
+  int m=6+NumConstraints(contacts);
+  int n=NumForceVariables(contacts);
 
   lp.Resize(m,n);
   lp.A.setZero();
 
-  int j;
-  Matrix3 crossProd;
-  for(j=0;j<numContacts;j++) {
-    lp.A(0,j*3) = 1;
-    lp.A(1,j*3+1) = 1;
-    lp.A(2,j*3+2) = 1;
+  GetWrenchMatrix(contacts,conditioningShift,lp.A);
 
-    crossProd.setCrossProduct(contacts[j].x-conditioningShift);
-    for(int p=0;p<3;p++)
-      for(int q=0;q<3;q++)
-  lp.A(3+p,j*3+q) = crossProd(p,q);
-  }
   //set the lower bounds for the friction cones
   //lp.q.set(Zero); lp.p.set(Inf); 
   lp.q.set(-Inf); lp.p.set(Zero); 
@@ -625,8 +829,45 @@ void EquilibriumTester::Setup(const std::vector<CustomContactPoint>& contacts,co
   lp.A.copySubMatrix(6,0,temp);
   lp.p.copySubVector(6,btemp);
 
-  for(int j=0;j<numContacts;j++)
-    contacts[j].n.get(lp.c(j*3),lp.c(j*3+1),lp.c(j*3+2));
+  GetForceMinimizationDirection(contacts,lp.c);
+  lp.minimize = true;
+}
+
+void EquilibriumTester::Setup(const CustomContactFormation& contacts,const Vector3& fext,const Vector3& com)
+{
+  this->numFCEdges = -1;
+
+  testingAnyCOM = false;
+  conditioningShift = com;
+  int m=6+NumConstraints(contacts);
+  int n=NumForceVariables(contacts);
+
+  lp.Resize(m,n);
+  lp.A.setZero();
+
+  GetWrenchMatrix(contacts,conditioningShift,lp.A);
+
+  //set the lower bounds for the friction cones
+  //lp.q.set(Zero); lp.p.set(Inf); 
+  lp.q.set(-Inf); lp.p.set(Zero); 
+  //set the bounds for the equalities
+  Vector3 mext;
+  mext.setCross(com-conditioningShift,fext);
+  lp.q(0) = lp.p(0) = -fext.x;
+  lp.q(1) = lp.p(1) = -fext.y;
+  lp.q(2) = lp.p(2) = -fext.z;
+  lp.q(3) = lp.p(3) = -mext.x;
+  lp.q(4) = lp.p(4) = -mext.y;
+  lp.q(5) = lp.p(5) = -mext.z;
+
+  //FC bound on f's 
+  SparseMatrix temp;
+  Vector btemp;
+  GetFrictionConePlanes(contacts,temp,btemp);
+  lp.A.copySubMatrix(6,0,temp);
+  lp.p.copySubVector(6,btemp);
+
+  GetForceMinimizationDirection(contacts,lp.c);
   lp.minimize = true;
 }
 
@@ -646,6 +887,15 @@ bool EquilibriumTester::TestAnyCOM(const std::vector<CustomContactPoint>& contac
   return TestCurrent();
 }
 
+bool EquilibriumTester::TestAnyCOM(const CustomContactFormation& contacts,const Vector3& fext)
+{
+  this->numFCEdges = -1;
+  if(contacts.contacts.empty()) return false;
+  SetupAnyCOM(contacts,fext);
+  return TestCurrent();
+}
+
+
 /**
  * Sets up LP over fk,cm
  *   sum fk = fext
@@ -658,32 +908,19 @@ void EquilibriumTester::SetupAnyCOM(const std::vector<ContactPoint>& contacts,co
   this->numFCEdges = numFCEdges;
 
   testingAnyCOM = true;
-  int numContacts = (int)contacts.size();
-  int m=6+numContacts*numFCEdges;
-  int n=numContacts*3+3;
-  int j;
+  int m=6+NumConstraints(contacts,numFCEdges);
+  int n=NumForceVariables(contacts)+3;
+  int cmoffset = NumForceVariables(contacts);
   lp.Resize(m,n);
 
-  conditioningShift.setZero();
-  for(j=0;j<numContacts;j++)
-    conditioningShift += contacts[j].x;
-  conditioningShift /= numContacts;
+  conditioningShift = Centroid(contacts);
 
+  GetWrenchMatrix(contacts,conditioningShift,lp.A);
   Matrix3 crossProd;
-  for(j=0;j<numContacts;j++) {
-    lp.A(0,j*3) = 1;
-    lp.A(1,j*3+1) = 1;
-    lp.A(2,j*3+2) = 1;
-
-    crossProd.setCrossProduct(contacts[j].x-conditioningShift);
-    for(int p=0;p<3;p++)
-      for(int q=0;q<3;q++)
-	lp.A(3+p,j*3+q) = crossProd(p,q);
-  }
   crossProd.setCrossProduct(fext);
   for(int p=0;p<3;p++)
     for(int q=0;q<3;q++)
-      lp.A(3+p,numContacts*3+q) = crossProd(p,q);
+      lp.A(3+p,cmoffset+q) = crossProd(p,q);
 
   //set the lower bounds for the friction cones
   //lp.q.set(Zero); lp.p.set(Inf); 
@@ -705,8 +942,7 @@ void EquilibriumTester::SetupAnyCOM(const std::vector<ContactPoint>& contacts,co
   //getchar();
 
   lp.c.setZero();
-  for(int j=0;j<numContacts;j++)
-    contacts[j].n.get(lp.c(j*3),lp.c(j*3+1),lp.c(j*3+2));
+  GetForceMinimizationDirection(contacts,lp.c);
   lp.minimize = true;
 }
 
@@ -722,35 +958,19 @@ void EquilibriumTester::SetupAnyCOM(const std::vector<CustomContactPoint>& conta
   this->numFCEdges = -1;
 
   testingAnyCOM = true;
-  int numContacts = (int)contacts.size();
-  int totalFCEdges = 0;
-  for(size_t i=0;i<contacts.size();i++)
-    totalFCEdges += contacts[i].forceMatrix.m;
-  int m=6+totalFCEdges;
-  int n=numContacts*3+3;
-  int j;
+  int m=6+NumConstraints(contacts);
+  int n=NumForceVariables(contacts)+3;
+  int cmoffset = NumForceVariables(contacts);
   lp.Resize(m,n);
 
-  conditioningShift.setZero();
-  for(j=0;j<numContacts;j++)
-    conditioningShift += contacts[j].x;
-  conditioningShift /= numContacts;
+  conditioningShift = Centroid(contacts);
 
+  GetWrenchMatrix(contacts,conditioningShift,lp.A);
   Matrix3 crossProd;
-  for(j=0;j<numContacts;j++) {
-    lp.A(0,j*3) = 1;
-    lp.A(1,j*3+1) = 1;
-    lp.A(2,j*3+2) = 1;
-
-    crossProd.setCrossProduct(contacts[j].x-conditioningShift);
-    for(int p=0;p<3;p++)
-      for(int q=0;q<3;q++)
-  lp.A(3+p,j*3+q) = crossProd(p,q);
-  }
   crossProd.setCrossProduct(fext);
   for(int p=0;p<3;p++)
     for(int q=0;q<3;q++)
-      lp.A(3+p,numContacts*3+q) = crossProd(p,q);
+      lp.A(3+p,cmoffset+q) = crossProd(p,q);
 
   //set the lower bounds for the friction cones
   //lp.q.set(Zero); lp.p.set(Inf); 
@@ -774,8 +994,59 @@ void EquilibriumTester::SetupAnyCOM(const std::vector<CustomContactPoint>& conta
   //getchar();
 
   lp.c.setZero();
-  for(int j=0;j<numContacts;j++)
-    contacts[j].n.get(lp.c(j*3),lp.c(j*3+1),lp.c(j*3+2));
+  GetForceMinimizationDirection(contacts,lp.c);
+  lp.minimize = true;
+}
+
+/**
+ * Sets up LP over fk,cm
+ *   sum fk = fext
+ *   sum (pk-p) x fk + fext x cm = 0
+ *   fk in FCk
+ * (add p to cm to get a stable com)
+ */
+void EquilibriumTester::SetupAnyCOM(const CustomContactFormation& contacts,const Vector3& fext)
+{
+  this->numFCEdges = -1;
+
+  testingAnyCOM = true;
+  int m=6+NumConstraints(contacts);
+  int n=NumForceVariables(contacts)+3;
+  int cmoffset = NumForceVariables(contacts);
+  lp.Resize(m,n);
+
+  conditioningShift = Centroid(contacts);
+
+  GetWrenchMatrix(contacts,conditioningShift,lp.A);
+  Matrix3 crossProd;
+  crossProd.setCrossProduct(fext);
+  for(int p=0;p<3;p++)
+    for(int q=0;q<3;q++)
+      lp.A(3+p,cmoffset+q) = crossProd(p,q);
+
+  //set the lower bounds for the friction cones
+  //lp.q.set(Zero); lp.p.set(Inf); 
+  lp.q.set(-Inf); lp.p.set(Zero); 
+  //set the bounds for the equalities
+  lp.q(0) = lp.p(0) = -fext.x;
+  lp.q(1) = lp.p(1) = -fext.y;
+  lp.q(2) = lp.p(2) = -fext.z;
+  lp.q(3) = lp.p(3) = 0;
+  lp.q(4) = lp.p(4) = 0;
+  lp.q(5) = lp.p(5) = 0;
+
+  //FC bound on f's 
+  SparseMatrix temp;
+  Vector btemp;
+  GetFrictionConePlanes(contacts,temp,btemp);
+  lp.A.copySubMatrix(6,0,temp);
+  lp.p.copySubVector(6,btemp);
+
+  //lp.Print(cout);
+  //getchar();
+
+  lp.c.setZero();
+  GetForceMinimizationDirection(contacts,lp.c);
   lp.minimize = true;
 }
 
@@ -784,25 +1055,16 @@ void EquilibriumTester::ChangeContacts(const std::vector<ContactPoint>& contacts
   Assert(numFCEdges > 0);
   int oldNumContacts = NumContacts();
   Assert(oldNumContacts == (int)contacts.size());
-  int numContacts = oldNumContacts;
 
-  int j;
-  Matrix3 crossProd;
-  for(j=0;j<numContacts;j++) {
-    crossProd.setCrossProduct(contacts[j].x-conditioningShift);
-    for(int p=0;p<3;p++)
-      for(int q=0;q<3;q++)
-	lp.A(3+p,j*3+q) = crossProd(p,q);
-  }
+  GetWrenchMatrix(contacts,conditioningShift,lp.A);
+
   //FC bound on f's 
   SparseMatrix temp;
   GetFrictionConePlanes(contacts,numFCEdges,temp);
   lp.A.copySubMatrix(6,0,temp);
 
-  //change objective -- not strictly necessary
-  for(int j=0;j<numContacts;j++)
-    contacts[j].n.get(lp.c(j*3),lp.c(j*3+1),lp.c(j*3+2));
-}
+  GetForceMinimizationDirection(contacts,lp.c);
+} 
 
 void EquilibriumTester::ChangeContact(int i,ContactPoint& contact)
 {
@@ -827,6 +1089,7 @@ void EquilibriumTester::ChangeContact(int i,ContactPoint& contact)
 
 void EquilibriumTester::ChangeGravity(const Vector3& fext)
 {
+  Assert(numFCEdges > 0);
   if(testingAnyCOM) {
     int numContacts = NumContacts();
     Matrix3 crossProd;
@@ -852,6 +1115,7 @@ void EquilibriumTester::ChangeGravity(const Vector3& fext)
 
 void EquilibriumTester::ChangeCOM(const Vector3& com)
 {
+  Assert(numFCEdges > 0);
   if(testingAnyCOM) {
   }
   else {
@@ -902,6 +1166,7 @@ void EquilibriumTester::SetRobustnessFactor(int i,Real frobust)
 
 void EquilibriumTester::LimitContactForce(int i,Real maximum,const Vector3& dir)
 {
+  Assert(numFCEdges > 0);
   SparseVector v(lp.A.n);
   v(i*3)=dir.x;
   v(i*3+1)=dir.y;
@@ -911,6 +1176,7 @@ void EquilibriumTester::LimitContactForce(int i,Real maximum,const Vector3& dir)
 
 void EquilibriumTester::LimitContactForceSum(const std::vector<int>& indices,Real maximum,const Vector3& dir)
 {
+  Assert(numFCEdges > 0);
   SparseVector v(lp.A.n);
   for(size_t j=0;j<indices.size();j++) {
     int i=indices[j];
@@ -935,6 +1201,7 @@ void EquilibriumTester::GetForceVector(Vector& f) const
 
 void EquilibriumTester::GetForces(vector<Vector3>& f) const
 {
+  Assert(numFCEdges > 0);
   f.resize(NumContacts());
   Vector fv;
   GetForceVector(fv);
@@ -959,6 +1226,7 @@ void EquilibriumTester::Clear()
 
 int EquilibriumTester::NumContacts() const
 {
+  Assert(numFCEdges > 0);
   if(testingAnyCOM) return (lp.A.n - 3)/3;
   else return lp.A.n/3;
 }
@@ -1004,9 +1272,9 @@ bool SupportPolygon::Set(const std::vector<ContactPoint>& cp,const Vector3& _fex
 
   //setup LP 
   Optimization::LinearProgram lp;
-  int numContacts = (int)contacts.size();
-  int m=6+numContacts*numFCEdges;
-  int n=numContacts*3+2;
+  int m=6+NumConstraints(cp,_numFCEdges);
+  int n=NumForceVariables(cp)+2;
+  int numContacts = cp.size();
   lp.Resize(m,n);
 
   Matrix& A=lp.A;
@@ -1114,11 +1382,8 @@ bool SupportPolygon::Set(const std::vector<CustomContactPoint>& cp,const Vector3
   //setup LP 
   Optimization::LinearProgram lp;
   int numContacts = (int)contacts.size();
-  int totalFCEdges =0;
-  for(size_t i=0;i<contacts.size();i++)
-    totalFCEdges += cp[i].forceMatrix.m;
-  int m=6+totalFCEdges;
-  int n=numContacts*3+2;
+  int m=6+NumConstraints(cp);
+  int n=NumForceVariables(cp)+2;
   lp.Resize(m,n);
 
   Matrix& A=lp.A;
@@ -1161,9 +1426,9 @@ bool SupportPolygon::Set(const std::vector<CustomContactPoint>& cp,const Vector3
 
   //FC bound on f's 
   Matrix temp;
-  temp.setRef(A,6,2,1,1,totalFCEdges,numContacts*3);
+  temp.setRef(A,6,2,1,1,NumConstraints(cp),NumForceVariables(cp));
   Vector btemp;
-  btemp.setRef(lp.p,6,1,totalFCEdges);
+  btemp.setRef(lp.p,6,1,NumConstraints(cp));
   GetFrictionConePlanes(cp,temp,btemp);
 
   //lp.Print(cout);
@@ -1194,6 +1459,99 @@ bool SupportPolygon::Set(const std::vector<CustomContactPoint>& cp,const Vector3
 
   return true;
 }
+
+/* max_{x,y,f} ax+by s.t.
+ * sum fi + G = 0
+ * sum pi x fi + (x,y,z)x G = 0
+ * Ai*fi <= 0 for all i
+ *
+ * (x,y,z)xG = (y g, -x g, 0)
+ */
+bool SupportPolygon::Set(const CustomContactFormation& cp,const Vector3& _fext,int maxExpandDepth)
+{
+  fext=_fext;
+  numFCEdges=-1;
+  contacts.resize(cp.contacts.size());
+  for(size_t i=0;i<cp.contacts.size();i++) {
+    contacts[i].x = cp.contacts[i].x;
+    contacts[i].n = cp.contacts[i].n;
+    contacts[i].kFriction = cp.contacts[i].kFriction;
+  }
+ 
+  if(!(fext.x == Zero && fext.y == Zero && fext.z != Zero)) {
+    FatalError("SupportPolygon can only be solved for a z direction force");
+  }
+
+  //setup LP 
+  Optimization::LinearProgram_Sparse lp;
+  int numContacts = (int)cp.contacts.size();
+  int m=6+NumConstraints(cp);
+  int n=NumForceVariables(cp)+2;
+  lp.Resize(m,n);
+
+  SparseMatrix& A=lp.A;
+  int j;
+  //flip the normal order so that xc,yc go on top
+  A(0,0) = -fext.z;
+  A(1,1) = fext.z;
+  A(0,1) = A(0,1) = 0;
+  for(j=2;j<6;j++)
+    A(j,0) = A(j,1) = 0;
+  //note that the y moment is 1, x moment is 2
+  Vector3 moment;
+  for(j=0;j<numContacts;j++) {
+    //moment for x force
+    moment.setCross(contacts[j].x,Vector3(1,0,0));
+    A(0,j*3+2) = moment.y;
+    A(1,j*3+2) = moment.x;
+    A(5,j*3+2) = moment.z;
+    //moment for y force
+    moment.setCross(contacts[j].x,Vector3(0,1,0));
+    A(0,j*3+2+1) = moment.y;
+    A(1,j*3+2+1) = moment.x;
+    A(5,j*3+2+1) = moment.z;
+    //moment for z force
+    moment.setCross(contacts[j].x,Vector3(0,0,1));
+    A(0,j*3+2+2) = moment.y;
+    A(1,j*3+2+2) = moment.x;
+    A(5,j*3+2+2) = moment.z;
+
+    A(2,j*3+2) = 1;
+    A(3,j*3+2+1) = 1;
+    A(4,j*3+2+2) = 1;
+  }
+  //set the lower bounds for the friction cones
+  lp.q.set(Zero); lp.p.set(Inf); 
+  //set the bounds for the equalities
+  for(j=0;j<6;j++)
+    lp.q(j) = lp.p(j) = 0;
+  lp.q(4) = lp.p(4) = -fext.z;
+
+  //FC bound on f's 
+  SparseMatrix temp;
+  Vector btemp;
+  btemp.setRef(lp.p,6,1,NumConstraints(cp));
+  GetFrictionConePlanes(cp,temp,btemp);
+  A.copySubMatrix(6,2,temp);
+
+  lp.c.setZero();
+  lp.minimize = false;
+  Assert(!lp.HasLowerBound(lp.VariableType(0)));
+  Assert(!lp.HasLowerBound(lp.VariableType(1)));
+  Assert(!lp.HasUpperBound(lp.VariableType(0)));
+  Assert(!lp.HasUpperBound(lp.VariableType(1)));
+
+  //now expand the support polygon
+  //start with 2 points
+  PolytopeProjection2D expander(lp);
+  expander.maxDepth = maxExpandDepth;
+  expander.Expand();
+  expander.Create(*this);
+
+  return true;
+}
+
+
 
 
 bool SupportPolygon::TestCOM(const Vector3& com) const
@@ -1386,12 +1744,6 @@ bool SupportPolygon::SolveB()
 
 bool OrientedSupportPolygon::Set(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges)
 {
-  //shift to centroid
-  Vector3 conditioningShift(Zero);
-  for(size_t i=0;i<contacts.size();i++) 
-    conditioningShift += contacts[i].x;
-  conditioningShift /= contacts.size();
-
   /*TEST
   T.setIdentity();
   //T.t -= conditioningShift;
@@ -1404,7 +1756,7 @@ bool OrientedSupportPolygon::Set(const std::vector<ContactPoint>& contacts,const
   GetCanonicalBasis(z,x,y);
 
   T.R.set(x,y,z);
-  T.t = conditioningShift;
+  T.t = Centroid(contacts);
   T.inplaceInverse();  //(x,y,z),shift is the transformed -> orig transform
   Vector3 tfext(0,0,fext.norm());
   vector<ContactPoint> tcontacts(contacts.size());

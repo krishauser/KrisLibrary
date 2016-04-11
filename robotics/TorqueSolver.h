@@ -39,13 +39,14 @@
 class TorqueSolver
 {
  public:
-  TorqueSolver(RobotDynamics3D& robot, const ContactFormation& contacts);
+  TorqueSolver(RobotDynamics3D& robot, const ContactFormation& contacts,int nFrictionConeEdges=4);
+  TorqueSolver(RobotDynamics3D& robot, const CustomContactFormation& contacts);
   void SetGravity(const Vector3& gravity) { gravityVector=gravity; }
   void SetNorm(Real norm) { problem.norm = norm; }
   void SetDynamics(const Vector& ddq);
 
   ///If weighted is true, performs a conditioning step
-  void Init(int nFrictionConeEdges=4,bool weighted=true);
+  void Init(bool weighted=true);
   void Clear();
   ///Add extra limits on contact forces
   void LimitContactForce(int i,Real maximum,const Vector3& dir);
@@ -61,7 +62,7 @@ class TorqueSolver
 
   ///settings
   RobotDynamics3D& robot;
-  const ContactFormation& contacts;
+  CustomContactFormation contacts;
   Vector3 gravityVector;  ///< If nonzero, specifies the gravity direction
   Vector internalForces;  ///< If nonempty, specifies the internal generalized forces.  Typically nonempty when solving for dynamics, in this case set to B(q)q''+C(q,q')
 

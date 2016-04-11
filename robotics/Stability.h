@@ -52,12 +52,16 @@ class EquilibriumTester
   EquilibriumTester();
   void Setup(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges,const Vector3& com);
   void Setup(const std::vector<CustomContactPoint>& contacts,const Vector3& fext,const Vector3& com);
+  void Setup(const CustomContactFormation& contacts,const Vector3& fext,const Vector3& com);
   void SetupAnyCOM(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges);
   void SetupAnyCOM(const std::vector<CustomContactPoint>& contacts,const Vector3& fext);
+  void SetupAnyCOM(const CustomContactFormation& contacts,const Vector3& fext);
   bool TestCOM(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges,const Vector3& com);
   bool TestCOM(const std::vector<CustomContactPoint>& contacts,const Vector3& fext,const Vector3& com);
+  bool TestCOM(const CustomContactFormation& contacts,const Vector3& fext,const Vector3& com);
   bool TestAnyCOM(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges);
   bool TestAnyCOM(const std::vector<CustomContactPoint>& contacts,const Vector3& fext);
+  bool TestAnyCOM(const CustomContactFormation& contacts,const Vector3& fext);
   void ChangeContacts(const std::vector<ContactPoint>& contacts);
   void ChangeContact(int i,ContactPoint& contact);
   void ChangeGravity(const Vector3& fext);
@@ -106,6 +110,7 @@ class SupportPolygon : public Geometry::UnboundedPolytope2D
 public:
   bool Set(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges,int maxExpandDepth=6);
   bool Set(const std::vector<CustomContactPoint>& contacts,const Vector3& fext,int maxExpandDepth=6);
+  bool Set(const CustomContactFormation& contacts,const Vector3& fext,int maxExpandDepth=6);
   bool Empty() const;
   bool TestCOM(const Vector3& com) const;
   Real COMMargin(const Vector3& com) const;
@@ -123,6 +128,7 @@ class OrientedSupportPolygon
 public:
   bool Set(const std::vector<ContactPoint>& contacts,const Vector3& fext,int numFCEdges);
   bool Set(const std::vector<CustomContactPoint>& contacts,const Vector3& fext);
+  bool Set(const CustomContactFormation& contacts,const Vector3& fext);
   bool TestCOM(const Vector3& com) const;
   Real COMMargin(const Vector3& com) const;
   //poly is a slice through the support polytope at the given height
