@@ -230,10 +230,17 @@ Real FitFrames(const std::vector<Vector3>& a,const std::vector<Vector3>& b,
   if (Ta.R.determinant() < 0 || Tb.R.determinant() < 0) {
 	  //need to sort singular values and negate the column according to the smallest SV
 	  svd.sortSVs();
-	  //negate the last column of V
-	  Vector vi;
-	  svd.V.getColRef(2, vi);
-	  vi.inplaceNegative();
+	  //negate the last column of V and last column of U
+    if(Tb.R.determinant() < 0) {
+  	  Vector vi;
+  	  svd.V.getColRef(2, vi);
+  	  vi.inplaceNegative();
+    }
+    if(Ta.R.determinant() < 0) {
+      Vector ui;
+      svd.U.getColRef(2, ui);
+      ui.inplaceNegative(); 
+    }
 	  Copy(svd.U, Ta.R);
 	  Copy(svd.V, Tb.R);
 	  Copy(svd.W, cov);
