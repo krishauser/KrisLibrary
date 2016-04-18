@@ -5,6 +5,7 @@
 #include <utils/PropertyMap.h>
 #include "ExplicitCSpace.h"
 #include "OptimalMotionPlanner.h"
+#include "OMPLInterface.h"
 #include "PointLocation.h"
 #include "SBL.h"
 #include "FMMMotionPlanner.h"
@@ -495,7 +496,8 @@ class SBLInterface  : public MotionPlannerInterface
     return cb1.count+cb2.count;
   }
   virtual int NumComponents() const {
-    if(!sbl->tStart) return NULL;
+    if(!sbl->tStart) return 0;
+    if(!sbl->tGoal) return 1;
     return 2;
   }
   virtual bool IsConnected(int ma,int mb) const { return sbl->IsDone(); }
@@ -765,6 +767,118 @@ class FMMInterface  : public MotionPlannerInterface
   bool anytime;
   int iterationCount;
 };
+
+
+#if HAVE_OMPL
+
+map<string,ob::PlannerAllocator> omplAllocators;
+
+class OMPLPlannerInterface  : public MotionPlannerInterface
+{
+ public:
+  OMPLPlannerInterface(CSpace* _space,const char* plannerName)
+    : space(new CSpaceOMPLSpaceInformation(_space)),spacePtr(space)
+    {
+      if(omplAllocators.count(plannerName) == 0) {
+	fprintf(stderr,"OMPLPlannerInterface: no available OMPL planner of type %s\n",plannerName);
+	return;
+      }
+      planner = omplAllocators[plannerName](spacePtr);
+    }
+  virtual ~OMPLPlannerInterface()
+  { }
+  bool SetParameter(const string& name,string& val) {
+    if(!planner) return false;
+    if(!planner->params().hasParam(name)) return false;
+    planner->planner->params().setParam(name,val);
+    return true;
+  }
+  virtual bool CanAddMilestone() const { if(qStart.n != 0 && qGoal.n != 0) return false; return true; }
+  virtual int AddMilestone(const Config& q) {
+    if(!planner) return -1;
+    if(qStart.n == 0) {
+      qStart = q;
+      return 0;
+    }
+    else if(qGoal.n == 0) {
+      qGoal = q;
+      //initialize the planner
+      ob::State* sStart = space->ToOMPL(qStart);
+      ob::State* sGoal = space->ToOMPL(qGoal);
+      planner->getProblemDefinition()->addStartState(sStart);
+      planner->getProblemDefinition()->addGoalState(sGoal);
+      space->freeState(sStart);
+      space->freeState(sGoal);
+      planner->setup();
+      planner->checkValidity();
+      return 1;
+    }
+    AssertNotReached();
+    return -1;
+  }
+  virtual void GetMilestone(int i,Config& q) { 
+    if(i==0) q=qStart;
+    if(i==1) q=qGoal;
+    return;
+  }
+  virtual int PlanMore() { 
+    if(qStart.n == 0 || qGoal.n == 0) {
+      fprintf(stderr,"AnyMotionPlanner::PlanMore(): OMPL interfaces onlys upports a point-to-point planners, AddMilestone() must be called to set the start and goal configuration\n");
+      return -1;
+    }
+    if(!planner) return -1;
+    //pick some time
+    if(planner->solve(0.1)) return 1;
+    return -1;
+  }
+  virtual int NumIterations() const { return iterationCount; }
+  virtual int NumMilestones() const { return -1; }
+  virtual int NumComponents() const { return -1; }
+  virtual bool IsConnected(int ma,int mb) const { 
+    Assert(ma==0 && mb==1);
+    return ( planner->getProblemDefinition()->getGoal()->get()->getSolutionPath() != NULL); 
+  }
+  virtual void GetPath(int ma,int mb,MilestonePath& path) {
+    Assert(ma==0 && mb==1);
+    ob::PathPtr path = planner->getProblemDefinition()->getGoal()->get()->getSolutionPath();
+    if(path != NULL) {
+      og::PathGeometric* gpath = dynamic_cast<og::PathGeometric*>(path);
+      if(gpath != NULL) {
+	std::vector<base::State*>& states = gpath->getStates();
+	if(states.size() >= 1) {
+	  path.edges.resize(states.size()-1);
+	  for(size_t i=0;i+1<states.size();i++)
+	    path.edges[i] = space->LocalPlanner(space->FromOMPL(states[i]),space->FromOMPL(states[i+1]));
+	}
+      }
+    }
+  }
+  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
+    ob::PlannerData data;
+    planner->getPlannerData(data);
+    roadmap.nodes.resize(data.states.size());
+    for(size_t i=0;i<data.states.size();i++)
+      roadmap.nodes[i] = space->FromOMPL(data.states[i]);
+    for(size_t i=0;i<data.edges.size();i++)
+      for(size_t j=0;j<data.edges[i].size();j++)
+	roadmap.AddEdge(i,data.edges[i][j],space->space->LocalPlanner(roadmap.nodes[i],roadmap.nodes[data.edges[i][j]]));
+  }
+  virtual void GetStats(PropertyMap& stats) const {
+    MotionPlannerInterface::GetStats(stats);
+    ob::PlannerData data;
+    planner->getPlannerData(data);
+    for(map<string,string>::const_iterator i=data.properties.begin();i!=data.properties.end();i++)
+      stats[i->first] = i->second;
+  }
+
+  CSpaceOMPLSpaceInformation* space;
+  ob::SpaceInformationPtr spacePtr;
+  ob::PlannerPtr planner;
+  Config qStart,qGoal;
+  int iterationCount;
+};
+
+#endif // HAVE_OMPL
 
 
 PiggybackMotionPlanner::PiggybackMotionPlanner(const SmartPointer<MotionPlannerInterface>& _mp)

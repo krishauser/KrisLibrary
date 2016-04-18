@@ -16,6 +16,24 @@
 //TEST: An incremental version of FMT*
 #define TEST_FMT 0
 
+//TEST: discount edges that are already collision checked
+#define TEST_EDGE_DISCOUNTING 0
+//TEST: when this is lower, the planner tries to reuse checked edges
+#define EDGE_DISCOUNT_FACTOR 0.01
+
+//regular distance function used in shortest paths update
+#define DISTANCE_FUNC EdgeDistance()
+
+#if TEST_EDGE_DISCOUNTING
+  #if TEST_FMT
+  //undefined results when using discounting
+  #define LB_DISTANCE_FUNC EdgeDistance()
+  #else
+  #define LB_DISTANCE_FUNC DiscountedEdgeDistance(EDGE_DISCOUNT_FACTOR)
+  #endif //TEST_FMT 
+#else
+  #define LB_DISTANCE_FUNC EdgeDistance()
+#endif //TEST_EDGE_DISCOUNTING
 
 class EdgeDistance
 {
@@ -24,6 +42,27 @@ class EdgeDistance
   {
     assert(e->Space() != NULL);
     Real res = e->Space()->Distance(e->Start(),e->Goal());
+    if(res <= 0) {
+      printf("PRMStarPlanner: Warning, edge has nonpositive length %g\n",res);
+      return Epsilon;
+    }
+    return res;
+  }
+};
+
+class DiscountedEdgeDistance
+{
+ public:
+  Real factor;
+  DiscountedEdgeDistance(Real _factor):factor(_factor) {}
+  Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
+  {
+    assert(e->Space() != NULL);
+    Real res = e->Space()->Distance(e->Start(),e->Goal());
+    if(e->Done()) {
+      Assert(!e->Failed());
+      res *= factor;
+    }
     if(res <= 0) {
       printf("PRMStarPlanner: Warning, edge has nonpositive length %g\n",res);
       return Epsilon;
@@ -359,10 +398,9 @@ void PRMStarPlanner::PlanMore()
 	      if(!(*e)->IsVisible()) {
 		LBroadmap.DeleteEdge(p,m);
 		timer.Reset();
-		EdgeDistance distanceWeightFunc;
-		sppLB.DeleteUpdate_Undirected(p,m,distanceWeightFunc);
+		sppLB.DeleteUpdate_Undirected(p,m,LB_DISTANCE_FUNC);
 		if(useSppGoal)
-		  sppLBGoal.DeleteUpdate_Undirected(p,m,distanceWeightFunc);
+		  sppLBGoal.DeleteUpdate_Undirected(p,m,LB_DISTANCE_FUNC);
 		tShortestPaths += timer.ElapsedTime();
 	      }
 	    }
@@ -449,16 +487,15 @@ void PRMStarPlanner::ConnectEdge(int i,int j,const SmartPointer<EdgePlanner>& e)
 
   roadmap.AddEdge(i,j,e);
   Timer timer;
-  EdgeDistance distanceWeightFunc;
   if(useSpp) 
-    spp.DecreaseUpdate_Undirected(i,j,distanceWeightFunc);
+    spp.DecreaseUpdate_Undirected(i,j,DISTANCE_FUNC);
   if(useSppGoal) 
-    sppGoal.DecreaseUpdate_Undirected(i,j,distanceWeightFunc);
+    sppGoal.DecreaseUpdate_Undirected(i,j,DISTANCE_FUNC);
   if(useSppLB) {
     LBroadmap.AddEdge(i,j,e);
-    sppLB.DecreaseUpdate_Undirected(i,j,distanceWeightFunc);
+    sppLB.DecreaseUpdate_Undirected(i,j,LB_DISTANCE_FUNC);
     if(useSppGoal) {
-      sppLBGoal.DecreaseUpdate_Undirected(i,j,distanceWeightFunc);
+      sppLBGoal.DecreaseUpdate_Undirected(i,j,LB_DISTANCE_FUNC);
     }
   }
   tShortestPaths += timer.ElapsedTime();
@@ -474,10 +511,9 @@ void PRMStarPlanner::ConnectEdgeLazy(int i,int j,const SmartPointer<EdgePlanner>
   LBroadmap.AddEdge(i,j,e);
 
   Timer timer;
-  EdgeDistance distanceWeightFunc;
-  sppLB.DecreaseUpdate_Undirected(i,j,distanceWeightFunc);
+  sppLB.DecreaseUpdate_Undirected(i,j,LB_DISTANCE_FUNC);
   if(useSppGoal) 
-    sppLBGoal.DecreaseUpdate_Undirected(i,j,distanceWeightFunc);
+    sppLBGoal.DecreaseUpdate_Undirected(i,j,LB_DISTANCE_FUNC);
   tShortestPaths += timer.ElapsedTime();
 }
 
@@ -567,10 +603,9 @@ bool PRMStarPlanner::HasPath() const
 {
   bool useSpp = (rrg || lazy);
   if(!useSpp) {
-    EdgeDistance distanceWeightFunc;
     ShortestPathProblem spptemp(roadmap);
     spptemp.InitializeSource(start);
-    spptemp.FindPath_Undirected(goal,distanceWeightFunc);
+    spptemp.FindPath_Undirected(goal,DISTANCE_FUNC);
     if(IsInf(spptemp.d[goal])) return false;
     return true;
   }
@@ -582,14 +617,12 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
 {
   bool useSpp = (rrg || lazy);
   if(!useSpp) {
-    EdgeDistance distanceWeightFunc;
     spp.InitializeSource(a);
-    spp.FindPath_Undirected(b,distanceWeightFunc);
+    spp.FindPath_Undirected(b,DISTANCE_FUNC);
   }
   else {
     Assert(a==start);
-    //EdgeDistance distanceWeightFunc;
-    //Assert(spp.HasShortestPaths_Undirected(a,distanceWeightFunc));
+    //Assert(spp.HasShortestPaths_Undirected(a,DISTANCE_FUNC));
   }
   if(IsInf(spp.d[b])) return false;
   if(!Graph::GetAncestorPath(spp.p,b,a,nodes)) {
@@ -696,7 +729,6 @@ public:
 
 bool PRMStarPlanner::CheckPath(int a,int b)
 {
-  EdgeDistance distanceWeightFunc;
   Assert(lazy);
 
   if(TEST_FMT) {
@@ -709,10 +741,10 @@ bool PRMStarPlanner::CheckPath(int a,int b)
 
     //update shortest paths
     timer.Reset();
-    spp.FindPath_Undirected(goal,distanceWeightFunc);
-    sppLB.FindPath_Undirected(goal,distanceWeightFunc);
-    sppGoal.FindPath_Undirected(start,distanceWeightFunc);
-    sppLBGoal.FindPath_Undirected(start,distanceWeightFunc);
+    spp.FindPath_Undirected(goal,DISTANCE_FUNC);
+    sppLB.FindPath_Undirected(goal,LB_DISTANCE_FUNC);
+    sppGoal.FindPath_Undirected(start,DISTANCE_FUNC);
+    sppLBGoal.FindPath_Undirected(start,LB_DISTANCE_FUNC);
     tShortestPaths += timer.ElapsedTime();
 
     return res;
@@ -766,9 +798,9 @@ bool PRMStarPlanner::CheckPath(int a,int b)
 
 	//update shortest paths
 	timer.Reset();
-	sppLB.DeleteUpdate_Undirected(temp.s,temp.t,distanceWeightFunc);
+	sppLB.DeleteUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
 	if(useSppGoal)
-	  sppLBGoal.DeleteUpdate_Undirected(temp.s,temp.t,distanceWeightFunc);
+	  sppLBGoal.DeleteUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
 	tShortestPaths += timer.ElapsedTime();
 	//Assert(sppLB.HasShortestPaths_Undirected(0,distanceWeightFunc));
 	feas = false;
@@ -776,9 +808,16 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       else {
 	roadmap.AddEdge(temp.s,temp.t,temp.e);
 	timer.Reset();
-	spp.DecreaseUpdate_Undirected(temp.s,temp.t,distanceWeightFunc);
+	spp.DecreaseUpdate_Undirected(temp.s,temp.t,DISTANCE_FUNC);
 	if(useSppGoal)
-	  sppGoal.DecreaseUpdate_Undirected(temp.s,temp.t,distanceWeightFunc);
+	  sppGoal.DecreaseUpdate_Undirected(temp.s,temp.t,DISTANCE_FUNC);
+
+	if(TEST_EDGE_DISCOUNTING) {
+	  //if discounted, revise LB roadmap: the cost got smaller!
+	  sppLB.DecreaseUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
+	  if(useSppGoal)
+	    sppLBGoal.DecreaseUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
+	}
 	tShortestPaths += timer.ElapsedTime();
       }
     }
