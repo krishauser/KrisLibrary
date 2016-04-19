@@ -844,12 +844,12 @@ void SetupOMPLAllocators()
   omplParameterMaps["lazyprm"]["knn"] = "max_nearest_neighbors";
   omplParameterMaps["lazyprm*"]["connectionThreshold"] = "range";
   omplParameterMaps["stride"]["connectionThreshold"] = "range";
-  omplParameterMaps["rrt"]["connectionThreshold"] = "range";
-  omplParameterMaps["rrt*"]["connectionThreshold"] = "range";
-  omplParameterMaps["rrtconnect"]["connectionThreshold"] = "range";
-  omplParameterMaps["lbtrrt"]["connectionThreshold"] = "range";
+  omplParameterMaps["rrt"]["perturbationRadius"] = "range";
+  omplParameterMaps["rrt*"]["perturbationRadius"] = "range";
+  omplParameterMaps["rrtconnect"]["perturbationRadius"] = "range";
+  omplParameterMaps["lbtrrt"]["perturbationRadius"] = "range";
   omplParameterMaps["lbtrrt"]["suboptimalityFactor"] = "epsilon";
-  omplParameterMaps["sbl"]["connectionThreshold"] = "range";
+  omplParameterMaps["sbl"]["perturbationRadius"] = "range";
 }
 
 class OMPLPlannerInterface  : public MotionPlannerInterface
