@@ -81,6 +81,25 @@ int ReplaceAll(std::string& str,const char* strfind,const char* strreplace)
 	return n;
 }
 
+bool StartsWith(const char* str,const char* prefix)
+{
+  while(*str && *prefix) {
+    if(*str != *prefix) return false;
+    str++;
+    prefix++;
+  }
+  if(!*str && *prefix) return false; //end of string hit before end of prefix
+  return true;
+}
+
+bool EndsWith(const char* str,const char* suffix)
+{
+  int l = strlen(str);
+  int s = strlen(suffix);
+  if(s > l) return false;
+  return StartsWith(str+l-s,suffix);
+}
+
 bool IsValidCToken(const char* str)
 {
 	//RE is (_|[alpha])(_|[alnum])*

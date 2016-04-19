@@ -32,6 +32,11 @@ std::vector<std::string> Split(const std::string& str, const std::string& delim)
 ///Replace all instances of strfind with strreplace in str
 int ReplaceAll(std::string& str,const char* strfind,const char* strreplace);
 
+///Returns true if the beginning of the given string matches prefix
+bool StartsWith(const char* str,const char* prefix);
+///Returns true if the end of the given string matches prefix
+bool EndsWith(const char* str,const char* suffix);
+
 bool IsValidCToken(const char* str);
 bool IsValidInteger(const char* str);
 bool IsValidFloat(const char* str);
