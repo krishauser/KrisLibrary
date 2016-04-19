@@ -43,14 +43,34 @@ Config FromOMPL(const ob::SpaceInformation* si_,const ob::State* s)
   return Config(vq);
 }
 
+
+///helper: convert a Config to an OMPL state
+ob::State * ToOMPL(const ob::SpaceInformationPtr& si_,const Config& q)
+{
+  ob::State* omplstate = si_->allocState();
+  vector<Real> vq = q;
+  si_->getStateSpace()->copyFromReals(omplstate,vq);
+  return omplstate;
+}
+
+///helper: convert an OMPL state to a Config
+Config FromOMPL(const ob::SpaceInformationPtr& si_,const ob::State* s)
+{
+  vector<Real> vq;
+  si_->getStateSpace()->copyToReals(vq,s);
+  return Config(vq);
+}
+
+
 og::PathGeometric* ToOMPL(const ob::SpaceInformationPtr& si,const MilestonePath& path)
 {
   og::PathGeometric* res = new og::PathGeometric(si);
-  for(size_t i=0;i<path.NumMilestones();i++) {
+  for(int i=0;i<path.NumMilestones();i++) {
     ob::State* s=ToOMPL(si,path.GetMilestone(i));
     res->append(s);
     si->freeState(s);
   }
+  return res;
 }
 
 

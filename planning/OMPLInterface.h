@@ -18,14 +18,6 @@ class CSpaceOMPLStateSampler;
 class CSpaceOMPLValidityChecker;
 class KrisLibraryOMPLPlanner;
 
-///Helper: convert a Config to an OMPL state.  Return value is a OMPL
-///State allocated the SpaceInformationPtr's allocState() method.
-ob::State * ToOMPL(const ob::SpaceInformationPtr& si,const Config& q);
-
-///Helper: convert an OMPL state to a Config.
-Config FromOMPL(const ob::SpaceInformationPtr& si,const ob::State* s);
-
-
 /** @brief An adaptor that maps OMPL spaces to Klamp't spaces.
  * NOTE: must call SetSpaceBounds before using.
  */
