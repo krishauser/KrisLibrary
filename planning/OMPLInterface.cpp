@@ -58,11 +58,19 @@ og::PathGeometric* ToOMPL(const ob::SpaceInformationPtr& si,const MilestonePath&
 OMPLCSpace::OMPLCSpace( const ob::SpaceInformationPtr& si)
 {
   nD = si->getStateDimension();
-  qMin.resize(nD);
-  qMax.resize(nD);
-  qMin.set(0.0);
-  qMax.set(1.0);
-  resolution = 0.001;
+  ob::StateSpacePtr space = si->getStateSpace();
+  ob::RealVectorStateSpace* vs = dynamic_cast<ob::RealVectorStateSpace*>(&*space);
+  if(vs) {
+    qMin.copy(vs->getBounds().low);
+    qMax.copy(vs->getBounds().high);
+  }
+  else {
+    qMin.resize(nD);
+    qMax.resize(nD);
+    qMin.set(0.0);
+    qMax.set(1.0);
+  }
+  resolution = si->getStateValidityCheckingResolution();
   si_ = si;
 }
 
@@ -106,25 +114,6 @@ EdgePlanner* OMPLCSpace::LocalPlanner(const Config& x, const Config& y)
   return new StraightLineEpsilonPlanner(this, x, y, resolution);
 }
 
-
-CSpaceOMPLSpaceInformation::CSpaceOMPLSpaceInformation(CSpace* _space)
-  :ob::SpaceInformation(ob::StateSpacePtr(new CSpaceOMPLStateSpace(_space,this))),cspace(_space)
-{
-  setStateValidityChecker(ob::StateValidityCheckerPtr(new CSpaceOMPLValidityChecker(this)));
-  setMotionValidator(ob::MotionValidatorPtr(new CSpaceOMPLMotionValidator(this)));
-
-  setup();
-}
-
-ob::State * CSpaceOMPLSpaceInformation::ToOMPL(const Config& q) const
-{
-  return ::ToOMPL(this,q);
-}
-
-Config CSpaceOMPLSpaceInformation::FromOMPL(const ob::State * s) const
-{
-  return ::FromOMPL(this,s);
-}
 
 KrisLibraryOMPLPlanner::KrisLibraryOMPLPlanner(const ob::SpaceInformationPtr &si,const MotionPlannerFactory& _factory)
   :ob::Planner(si,_factory.type.c_str()),factory(_factory)
@@ -194,6 +183,27 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
     return ob::PlannerStatus(true,false);
   }
   return ob::PlannerStatus(false,false);
+}
+
+
+
+CSpaceOMPLSpaceInformation::CSpaceOMPLSpaceInformation(CSpace* _space)
+  :ob::SpaceInformation(ob::StateSpacePtr(new CSpaceOMPLStateSpace(_space,this))),cspace(_space)
+{
+  setStateValidityChecker(ob::StateValidityCheckerPtr(new CSpaceOMPLValidityChecker(this)));
+  setMotionValidator(ob::MotionValidatorPtr(new CSpaceOMPLMotionValidator(this)));
+
+  setup();
+}
+
+ob::State * CSpaceOMPLSpaceInformation::ToOMPL(const Config& q) const
+{
+  return ::ToOMPL(this,q);
+}
+
+Config CSpaceOMPLSpaceInformation::FromOMPL(const ob::State * s) const
+{
+  return ::FromOMPL(this,s);
 }
 
 

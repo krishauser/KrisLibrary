@@ -3,8 +3,8 @@
 
 #if HAVE_OMPL
 
-#include <planning/CSpace.h>
-#include <planning/AnyMotionPlanner.h>
+#include <KrisLibrary/planning/CSpace.h>
+#include <KrisLibrary/planning/AnyMotionPlanner.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/base/StateValidityChecker.h>
 #include <ompl/base/MotionValidator.h>
@@ -51,21 +51,6 @@ public:
   double resolution;
 };
 
-/** @brief Adapts a CSpace into a SpaceInformation that can be used with
- * OMPL.
- *
- * The StateSpace points to an instance of CSpaceOMPLStateSpace.
- */
-class CSpaceOMPLSpaceInformation : public ob::SpaceInformation
-{
- public:
-  CSpaceOMPLSpaceInformation(CSpace* space);
-  ob::State * ToOMPL(const Config& q) const;
-  Config FromOMPL(const ob::State *) const;
-
-  CSpace* cspace;
-};
-
 /* @brief Creates an OMPL planner from a KrisLibrary planner. 
  *
  * Constructor assumes the factory type is completely specified when setting
@@ -84,6 +69,22 @@ class KrisLibraryOMPLPlanner : public ob::Planner
   SmartPointer<OMPLCSpace> cspace;
   SmartPointer<MotionPlannerInterface> planner;
 };
+
+/** @brief Adapts a CSpace into a SpaceInformation that can be used with
+ * OMPL.
+ *
+ * The StateSpace points to an instance of CSpaceOMPLStateSpace.
+ */
+class CSpaceOMPLSpaceInformation : public ob::SpaceInformation
+{
+ public:
+  CSpaceOMPLSpaceInformation(CSpace* space);
+  ob::State * ToOMPL(const Config& q) const;
+  Config FromOMPL(const ob::State *) const;
+
+  CSpace* cspace;
+};
+
 
 /** @brief Adapts a CSpace into a StateSpace that can be used with
  * OMPL.
