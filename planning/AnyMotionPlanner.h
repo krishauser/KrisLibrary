@@ -197,15 +197,26 @@ class MotionPlanningProblem
  * - lazyrrg*: the Lazy-RRG* algorithm for optimal motion planning
  * - fmm: the fast marching method algorithm for resolution-complete optimal motion planning
  * - fmm*: an anytime fast marching method algorithm for optimal motion planning
+ * 
+ * If KrisLibrary is built with OMPL support, you can also use the type specifier
+ * "ompl:[X]" where [X] is one of:
+ * - prm, lazyprm, prm*, lazyprm*, spars
+ * - rrt, rrtconnect, birrt, lazyrrt, lbtrrt, rrt*, informedrrt*
+ * - est, fmt, sbl, stride
+ * The appropriate OMPL planner will be created for that given type, and MotionPlannerFactory
+ * parameters will be mapped as closely as possible to the OMPL parameters.
+ * (tested with OMPL 1.1.0)
  *
  * Multi-query planners include PRM and SBLPRT. 
  *
  * The only cost function currently supported for optimal motion planners
  * is the path length cost.
  *
- * Standard kinematic planners (prm,lazyprm,perturbation,est,rrt,sbl,
- * sblprt,fmm) can be adapted into to optimal planners by setting
- * the shortcut field to true and/or the restart field to true. 
+ * Standard kinematic planners (e.g., prm,lazyprm,perturbation,est,rrt,sbl,
+ * sblprt,fmm) can be adapted into to optimal planners either by a
+ * shortcutting technique -- where the path is repeatedy shortened -- or by
+ * a random-restart technique -- in which the planner will repeatedly
+ * try to find a better solution.  Specifically:
  * - With shortcut=true, the path produced by the planner is shrunk
  *   in a postprocessing stage by repeatedly shortcutting until the
  *   remaining time is up.
@@ -214,6 +225,8 @@ class MotionPlanningProblem
  *   To govern how long each of the rounds lasts, you must set the
  *   restartTermCond field to a JSON string defining the HaltingCondition
  *   for that round.
+ * - Good results are often obtained by setting both restart=true and
+*    shortcut=true. 
  */
 class MotionPlannerFactory
 {

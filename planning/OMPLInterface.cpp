@@ -106,11 +106,14 @@ EdgePlanner* OMPLCSpace::LocalPlanner(const Config& x, const Config& y)
   return new StraightLineEpsilonPlanner(this, x, y, resolution);
 }
 
+
 CSpaceOMPLSpaceInformation::CSpaceOMPLSpaceInformation(CSpace* _space)
   :ob::SpaceInformation(ob::StateSpacePtr(new CSpaceOMPLStateSpace(_space,this))),cspace(_space)
 {
   setStateValidityChecker(ob::StateValidityCheckerPtr(new CSpaceOMPLValidityChecker(this)));
   setMotionValidator(ob::MotionValidatorPtr(new CSpaceOMPLMotionValidator(this)));
+
+  setup();
 }
 
 ob::State * CSpaceOMPLSpaceInformation::ToOMPL(const Config& q) const
@@ -177,7 +180,7 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
       MilestonePath path;
       planner->GetSolution(path);
       ob::PathPtr pptr(ToOMPL(si_,path));
-      this->getProblemDefinition()->getGoal()->get()->addSolutionPath(pptr);
+      this->getProblemDefinition()->addSolutionPath(pptr);
       return ob::PlannerStatus(true,false);
     }
     planner->PlanMore();  
@@ -187,7 +190,7 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
     MilestonePath path;
     planner->GetSolution(path);
     ob::PathPtr pptr(ToOMPL(si_,path));
-    this->getProblemDefinition()->getGoal()->get()->addSolutionPath(pptr);
+    this->getProblemDefinition()->addSolutionPath(pptr);
     return ob::PlannerStatus(true,false);
   }
   return ob::PlannerStatus(false,false);
@@ -237,14 +240,14 @@ void CSpaceOMPLStateSpace::enforceBounds (ob::State *state) const
 {
   if(!minimum.empty()) {
     vector<Real> q;
-    si->copyToReals(q,state);
+    this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
       fprintf(stderr,"CSpaceOMPLStateSpace::enforceBounds: incorrect size of configuration?\n");
       return;
     }
     for(size_t i=0;i<q.size();i++)
       q[i] = Clamp(q[i],minimum[i],maximum[i]);
-    si->copyFromReals(state,q);
+    this->copyFromReals(state,q);
   }
 }
 
@@ -252,7 +255,7 @@ bool CSpaceOMPLStateSpace::satisfiesBounds (const ob::State *state) const
 {
   if(!minimum.empty()) {
     vector<Real> q;
-    si->copyToReals(q,state);
+    this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
       fprintf(stderr,"CSpaceOMPLStateSpace::satisfiesBounds: incorrect size of configuration?\n");
       return true;

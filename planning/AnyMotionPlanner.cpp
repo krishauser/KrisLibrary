@@ -16,6 +16,24 @@
 #endif
 
 
+void ToCollection(const MotionPlannerFactory& factory,AnyCollection& items)
+{
+  items["type"] = factory.type;
+  items["knn"] = factory.knn;
+  items["connectionThreshold"] = factory.connectionThreshold;
+  items["ignoreConnectedComponents"] = factory.ignoreConnectedComponents;
+  items["perturbationRadius"] = factory.perturbationRadius;
+  items["perturbationIters"] = factory.perturbationIters;
+  items["bidirectional"] = factory.bidirectional;
+  items["useGrid"] = factory.useGrid;
+  items["gridResolution"] = factory.gridResolution;
+  items["randomizeFrequency"] = factory.randomizeFrequency;
+  items["pointLocation"] = factory.pointLocation;
+  items["storeEdges"] = factory.storeEdges;
+  items["shortcut"] = factory.shortcut;
+  items["restart"] = factory.restart;
+  items["restartTermCond"] = factory.restartTermCond;
+}
 
 
 /** @brief Helper class for higher-order planners -- passes all calls to another motion planner.
@@ -770,15 +788,77 @@ class FMMInterface  : public MotionPlannerInterface
 
 
 #if HAVE_OMPL
+#include <ompl/geometric/PathGeometric.h>
+#include <ompl/geometric/planners/bitstar/BITstar.h>
+#include <ompl/geometric/planners/est/EST.h>
+#include <ompl/geometric/planners/prm/PRM.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/geometric/planners/prm/LazyPRM.h>
+#include <ompl/geometric/planners/prm/LazyPRMstar.h>
+#include <ompl/geometric/planners/pdst/PDST.h>
+#include <ompl/geometric/planners/rrt/RRT.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/LBTRRT.h>
+#include <ompl/geometric/planners/sbl/SBL.h>
+#include <ompl/geometric/planners/stride/STRIDE.h>
+namespace og = ompl::geometric;
 
 map<string,ob::PlannerAllocator> omplAllocators;
+map<string,map<string,string> > omplParameterMaps;
+bool omplAllocatorsSetup = false;
+
+ob::PlannerPtr BITstarAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::BITstar(si)); }
+ob::PlannerPtr ESTAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::EST(si)); }
+ob::PlannerPtr PRMAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::PRM(si)); }
+ob::PlannerPtr LazyPRMAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::LazyPRM(si)); }
+ob::PlannerPtr PRMstarAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::PRMstar(si)); }
+ob::PlannerPtr LazyPRMstarAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::LazyPRMstar(si)); }
+ob::PlannerPtr PDSTAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::PDST(si)); }
+ob::PlannerPtr RRTAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::RRT(si)); }
+ob::PlannerPtr RRTConnectAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::RRTConnect(si)); }
+ob::PlannerPtr RRTstarAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::RRTstar(si)); }
+ob::PlannerPtr LBTRRTAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::LBTRRT(si)); }
+ob::PlannerPtr SBLAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::SBL(si)); }
+ob::PlannerPtr STRIDEAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::STRIDE(si)); }
+
+void SetupOMPLAllocators()
+{
+  if(omplAllocatorsSetup) return;
+  omplAllocatorsSetup = true;
+  omplAllocators["bitstar"]  = BITstarAllocator;
+  omplAllocators["est"]  = ESTAllocator;
+  omplAllocators["prm"]  = PRMAllocator;
+  omplAllocators["lazyprm"]  = LazyPRMAllocator;
+  omplAllocators["prm*"]  = PRMstarAllocator;
+  omplAllocators["lazyprm*"]  = LazyPRMstarAllocator;
+  omplAllocators["pdst"]  = PDSTAllocator;
+  omplAllocators["rrt"]  = RRTAllocator;
+  omplAllocators["rrtconnect"]  = RRTConnectAllocator;
+  omplAllocators["rrt*"]  = RRTstarAllocator;
+  omplAllocators["lbtrrt"]  = LBTRRTAllocator;
+  omplAllocators["sbl"]  = SBLAllocator;
+  omplAllocators["stride"]  = STRIDEAllocator;
+  omplParameterMaps["prm"]["knn"] = "max_nearest_neighbors";
+  omplParameterMaps["lazyprm"]["connectionThreshold"] = "range";
+  omplParameterMaps["lazyprm"]["knn"] = "max_nearest_neighbors";
+  omplParameterMaps["lazyprm*"]["connectionThreshold"] = "range";
+  omplParameterMaps["stride"]["connectionThreshold"] = "range";
+  omplParameterMaps["rrt"]["connectionThreshold"] = "range";
+  omplParameterMaps["rrt*"]["connectionThreshold"] = "range";
+  omplParameterMaps["rrtconnect"]["connectionThreshold"] = "range";
+  omplParameterMaps["lbtrrt"]["connectionThreshold"] = "range";
+  omplParameterMaps["lbtrrt"]["suboptimalityFactor"] = "epsilon";
+  omplParameterMaps["sbl"]["connectionThreshold"] = "range";
+}
 
 class OMPLPlannerInterface  : public MotionPlannerInterface
 {
  public:
   OMPLPlannerInterface(CSpace* _space,const char* plannerName)
-    : space(new CSpaceOMPLSpaceInformation(_space)),spacePtr(space)
+    : type(plannerName),space(new CSpaceOMPLSpaceInformation(_space)),spacePtr(space)
     {
+      SetupOMPLAllocators();
       if(omplAllocators.count(plannerName) == 0) {
 	fprintf(stderr,"OMPLPlannerInterface: no available OMPL planner of type %s\n",plannerName);
 	return;
@@ -787,10 +867,29 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
     }
   virtual ~OMPLPlannerInterface()
   { }
+  void ReadParameters(const MotionPlannerFactory& factory) {
+    if(omplParameterMaps.count(type) > 0) {
+      AnyCollection items;
+      ToCollection(factory,items);
+      const map<string,string>& parammap = omplParameterMaps[type];
+      for(map<string,string>::const_iterator i=parammap.begin();i!=parammap.end();i++) {
+        string val;
+        bool converted = LexicalCast((const AnyValue&)items[i->first],val);
+        if(!converted) {
+          fprintf(stderr,"OMPLPlannerInterface::ReadParameters: Warning, item %s was not castable to string?\n",i->first.c_str());
+          continue;
+        }
+        if(!SetParameter(i->second,val)) {
+          fprintf(stderr,"OMPLPlannerInterface::ReadParameters: Warning, planner %s does not have parameter named %s\n",type.c_str(),i->second.c_str());
+          continue;
+        }
+      }
+    }
+  }
   bool SetParameter(const string& name,string& val) {
     if(!planner) return false;
     if(!planner->params().hasParam(name)) return false;
-    planner->planner->params().setParam(name,val);
+    planner->params().setParam(name,val);
     return true;
   }
   virtual bool CanAddMilestone() const { if(qStart.n != 0 && qGoal.n != 0) return false; return true; }
@@ -806,7 +905,7 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
       ob::State* sStart = space->ToOMPL(qStart);
       ob::State* sGoal = space->ToOMPL(qGoal);
       planner->getProblemDefinition()->addStartState(sStart);
-      planner->getProblemDefinition()->addGoalState(sGoal);
+      planner->getProblemDefinition()->setGoalState(sGoal);
       space->freeState(sStart);
       space->freeState(sGoal);
       planner->setup();
@@ -836,41 +935,45 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return -1; }
   virtual bool IsConnected(int ma,int mb) const { 
     Assert(ma==0 && mb==1);
-    return ( planner->getProblemDefinition()->getGoal()->get()->getSolutionPath() != NULL); 
+    return ( planner->getProblemDefinition()->getSolutionPath() != NULL); 
   }
-  virtual void GetPath(int ma,int mb,MilestonePath& path) {
+  virtual void GetPath(int ma,int mb,MilestonePath& mpath) {
     Assert(ma==0 && mb==1);
-    ob::PathPtr path = planner->getProblemDefinition()->getGoal()->get()->getSolutionPath();
+    ob::PathPtr path = planner->getProblemDefinition()->getSolutionPath();
     if(path != NULL) {
-      og::PathGeometric* gpath = dynamic_cast<og::PathGeometric*>(path);
+      og::PathGeometric* gpath = dynamic_cast<og::PathGeometric*>(&*path);
       if(gpath != NULL) {
-	std::vector<base::State*>& states = gpath->getStates();
+	std::vector<ob::State*>& states = gpath->getStates();
 	if(states.size() >= 1) {
-	  path.edges.resize(states.size()-1);
+	  mpath.edges.resize(states.size()-1);
 	  for(size_t i=0;i+1<states.size();i++)
-	    path.edges[i] = space->LocalPlanner(space->FromOMPL(states[i]),space->FromOMPL(states[i+1]));
+	    mpath.edges[i] = space->cspace->LocalPlanner(space->FromOMPL(states[i]),space->FromOMPL(states[i+1]));
 	}
       }
     }
   }
   virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
-    ob::PlannerData data;
+    ob::PlannerData data(spacePtr);
     planner->getPlannerData(data);
-    roadmap.nodes.resize(data.states.size());
-    for(size_t i=0;i<data.states.size();i++)
-      roadmap.nodes[i] = space->FromOMPL(data.states[i]);
-    for(size_t i=0;i<data.edges.size();i++)
-      for(size_t j=0;j<data.edges[i].size();j++)
-	roadmap.AddEdge(i,data.edges[i][j],space->space->LocalPlanner(roadmap.nodes[i],roadmap.nodes[data.edges[i][j]]));
+    roadmap.roadmap.nodes.resize(data.numVertices());
+    for(size_t i=0;i<data.numVertices();i++)
+      roadmap.roadmap.nodes[i] = space->FromOMPL(data.getVertex(i).getState());
+    for(size_t i=0;i<data.numVertices();i++) {
+      vector<unsigned int> edges;
+      data.getEdges(i,edges);
+      for(size_t j=0;j<edges.size();j++)
+      	roadmap.roadmap.AddEdge(i,edges[j],space->cspace->LocalPlanner(roadmap.roadmap.nodes[i],roadmap.roadmap.nodes[edges[i]]));
+    }
   }
   virtual void GetStats(PropertyMap& stats) const {
     MotionPlannerInterface::GetStats(stats);
-    ob::PlannerData data;
+    ob::PlannerData data(spacePtr);
     planner->getPlannerData(data);
     for(map<string,string>::const_iterator i=data.properties.begin();i!=data.properties.end();i++)
       stats[i->first] = i->second;
   }
 
+  string type;
   CSpaceOMPLSpaceInformation* space;
   ob::SpaceInformationPtr spacePtr;
   ob::PlannerPtr planner;
@@ -1213,6 +1316,7 @@ MotionPlannerInterface* MotionPlannerFactory::Create(const MotionPlanningProblem
   }
   else {
     MotionPlannerInterface* mp = CreateRaw(problem.space);
+    if(!mp) return NULL;
     if(!problem.qstart.empty()) {
       int qstart = mp->AddMilestone(problem.qstart);
       Assert(qstart == 0);
@@ -1303,6 +1407,19 @@ bool ReadPointLocation(const string& str,RoadmapPlanner& planner)
 MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
 {
   Lowercase(type);
+#if HAVE_OMPL
+  if(StartsWith(type.c_str(),"ompl")) {
+    string ompltype = type.substr(5,type.size()-5);
+    OMPLPlannerInterface* ompl = new OMPLPlannerInterface(space,ompltype.c_str());
+    if(!ompl->planner) {
+      delete ompl;
+      return NULL;
+    }
+    ompl->ReadParameters(*this);
+    return ompl;
+  }
+  else
+#endif //HAVE_OMPL
   if(type=="prm") {
     RoadmapPlannerInterface* prm = new RoadmapPlannerInterface(space);
     prm->knn=knn;
@@ -1522,21 +1639,7 @@ bool MotionPlannerFactory::LoadJSON(const string& str)
 string MotionPlannerFactory::SaveJSON() const
 {
   AnyCollection items;
-  items["type"] = type;
-  items["knn"] = knn;
-  items["connectionThreshold"] = connectionThreshold;
-  items["ignoreConnectedComponents"] = ignoreConnectedComponents;
-  items["perturbationRadius"] = perturbationRadius;
-  items["perturbationIters"] = perturbationIters;
-  items["bidirectional"] = bidirectional;
-  items["useGrid"] = useGrid;
-  items["gridResolution"] = gridResolution;
-  items["randomizeFrequency"] = randomizeFrequency;
-  items["pointLocation"] = pointLocation;
-  items["storeEdges"] = storeEdges;
-  items["shortcut"] = shortcut;
-  items["restart"] = restart;
-  items["restartTermCond"] = restartTermCond;
+  ToCollection(*this,items);
   stringstream ss;
   items.write_inline(ss);
   return ss.str();
