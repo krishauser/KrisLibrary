@@ -148,6 +148,10 @@ void KrisLibraryOMPLPlanner::clear()
 void KrisLibraryOMPLPlanner::setup()
 {
   ob::ProblemDefinitionPtr pdef = this->getProblemDefinition();
+  if(pdef == NULL) {
+    fprintf(stderr,"KrisLibraryOMPLPlanner::setup(): problem definition not set\n");
+    return;
+  }
   cspace = new OMPLCSpace(pdef->getSpaceInformation());
   MotionPlanningProblem problem;
   problem.space = cspace;
@@ -157,7 +161,7 @@ void KrisLibraryOMPLPlanner::setup()
   if(goalstate)
     problem.qgoal = cspace->FromOMPL(goalstate->getState());
   else {
-    FatalError("TODO: create a goalSet CSpace from an OMPL goal set");
+    FatalError("KrisLibraryOMPLPlanner: TODO: create a goalSet CSpace from an OMPL goal set");
   }
   //TODO: objective functions?
   planner = factory.Create(problem);

@@ -20,6 +20,7 @@ void ToCollection(const MotionPlannerFactory& factory,AnyCollection& items)
 {
   items["type"] = factory.type;
   items["knn"] = factory.knn;
+  items["suboptimalityFactor"] = factory.suboptimalityFactor;
   items["connectionThreshold"] = factory.connectionThreshold;
   items["ignoreConnectedComponents"] = factory.ignoreConnectedComponents;
   items["perturbationRadius"] = factory.perturbationRadius;
@@ -791,6 +792,7 @@ class FMMInterface  : public MotionPlannerInterface
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/planners/bitstar/BITstar.h>
 #include <ompl/geometric/planners/est/EST.h>
+#include <ompl/geometric/planners/fmt/FMT.h>
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/PRMstar.h>
 #include <ompl/geometric/planners/prm/LazyPRM.h>
@@ -810,6 +812,7 @@ bool omplAllocatorsSetup = false;
 
 ob::PlannerPtr BITstarAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::BITstar(si)); }
 ob::PlannerPtr ESTAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::EST(si)); }
+ob::PlannerPtr FMTAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::FMT(si)); }
 ob::PlannerPtr PRMAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::PRM(si)); }
 ob::PlannerPtr LazyPRMAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::LazyPRM(si)); }
 ob::PlannerPtr PRMstarAllocator(const ob::SpaceInformationPtr& si) { return ob::PlannerPtr(new og::PRMstar(si)); }
@@ -828,6 +831,7 @@ void SetupOMPLAllocators()
   omplAllocatorsSetup = true;
   omplAllocators["bitstar"]  = BITstarAllocator;
   omplAllocators["est"]  = ESTAllocator;
+  omplAllocators["fmt"]  = FMTAllocator;
   omplAllocators["prm"]  = PRMAllocator;
   omplAllocators["lazyprm"]  = LazyPRMAllocator;
   omplAllocators["prm*"]  = PRMstarAllocator;
@@ -863,6 +867,7 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
 	fprintf(stderr,"OMPLPlannerInterface: no available OMPL planner of type %s\n",plannerName);
 	return;
       }
+      problem = ob::ProblemDefinitionPtr(new ob::ProblemDefinition(spacePtr));
       planner = omplAllocators[plannerName](spacePtr);
     }
   virtual ~OMPLPlannerInterface()
@@ -904,10 +909,11 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
       //initialize the planner
       ob::State* sStart = space->ToOMPL(qStart);
       ob::State* sGoal = space->ToOMPL(qGoal);
-      planner->getProblemDefinition()->addStartState(sStart);
-      planner->getProblemDefinition()->setGoalState(sGoal);
+      problem->addStartState(sStart);
+      problem->setGoalState(sGoal);
       space->freeState(sStart);
       space->freeState(sGoal);
+      planner->setProblemDefinition(problem);
       planner->setup();
       planner->checkValidity();
       return 1;
@@ -931,8 +937,8 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
     return -1;
   }
   virtual int NumIterations() const { return iterationCount; }
-  virtual int NumMilestones() const { return -1; }
-  virtual int NumComponents() const { return -1; }
+  virtual int NumMilestones() const { return (qStart.empty()? 0:1) + (qGoal.empty()?0:1); }
+  virtual int NumComponents() const { return (qStart.empty()? 0:1) + (qGoal.empty()?0:1); }
   virtual bool IsConnected(int ma,int mb) const { 
     Assert(ma==0 && mb==1);
     return ( planner->getProblemDefinition()->getSolutionPath() != NULL); 
@@ -955,14 +961,23 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
   virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
     ob::PlannerData data(spacePtr);
     planner->getPlannerData(data);
-    roadmap.roadmap.nodes.resize(data.numVertices());
+    roadmap.roadmap.Resize(data.numVertices());
     for(size_t i=0;i<data.numVertices();i++)
       roadmap.roadmap.nodes[i] = space->FromOMPL(data.getVertex(i).getState());
     for(size_t i=0;i<data.numVertices();i++) {
       vector<unsigned int> edges;
       data.getEdges(i,edges);
-      for(size_t j=0;j<edges.size();j++)
-      	roadmap.roadmap.AddEdge(i,edges[j],space->cspace->LocalPlanner(roadmap.roadmap.nodes[i],roadmap.roadmap.nodes[edges[i]]));
+      for(size_t j=0;j<edges.size();j++) {
+        if(edges[j] <= i) continue;  //undirected graph
+        if(roadmap.roadmap.HasEdge(i,edges[j])) {
+          printf("Already have edge %d %d\n",i,edges[j]);
+          continue;
+        }
+        Assert(edges[j] < roadmap.roadmap.nodes.size());
+        Assert(!roadmap.roadmap.nodes[i].empty());
+        Assert(!roadmap.roadmap.nodes[edges[j]].empty());
+      	roadmap.roadmap.AddEdge(i,edges[j],space->cspace->LocalPlanner(roadmap.roadmap.nodes[i],roadmap.roadmap.nodes[edges[j]]));
+      }
     }
   }
   virtual void GetStats(PropertyMap& stats) const {
@@ -976,6 +991,7 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
   string type;
   CSpaceOMPLSpaceInformation* space;
   ob::SpaceInformationPtr spacePtr;
+  ob::ProblemDefinitionPtr problem;
   ob::PlannerPtr planner;
   Config qStart,qGoal;
   int iterationCount;
