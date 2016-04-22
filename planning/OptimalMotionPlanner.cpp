@@ -97,7 +97,7 @@ bool connectedToStartFilter(int n)
 }
 
 PRMStarPlanner::PRMStarPlanner(CSpace* space)
-  :RoadmapPlanner(space),lazy(false),rrg(false),bidirectional(true),connectByRadius(false),connectRadiusConstant(1),connectionThreshold(Inf),lazyCheckThreshold(Inf),suboptimalityFactor(0),spp(roadmap),sppGoal(roadmap),sppLB(LBroadmap),sppLBGoal(LBroadmap)
+  :RoadmapPlanner(space),lazy(false),rrg(false),bidirectional(true),connectByRadius(false),connectRadiusConstant(1),connectNeighborsConstant(1.1),connectionThreshold(Inf),lazyCheckThreshold(Inf),suboptimalityFactor(0),spp(roadmap),sppGoal(roadmap),sppLB(LBroadmap),sppLBGoal(LBroadmap)
 {
   start = goal = -1;
 }
@@ -270,9 +270,9 @@ void PRMStarPlanner::PlanMore()
     Neighbors(x,rad,neighbors);
   }
   else {
-    int kmax = int(((1.0+1.0/x.n)*E)*Log(Real(roadmap.nodes.size())));
+    int kmax = int(connectNeighborsConstant*((1.0+1.0/x.n)*E)*Log(Real(roadmap.nodes.size())));
     //do we want to halve this for the PRM connection strategy?
-    if(!rrg) kmax /= 2;
+    //if(!rrg) kmax /= 2;
     if(kmax <= 0) kmax = 1;
     if(kmax > (int)roadmap.nodes.size()-1)
       kmax = roadmap.nodes.size()-1;
