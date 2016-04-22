@@ -159,6 +159,7 @@ class RestartMotionPlanner : public PiggybackMotionPlanner
   HaltingCondition iterTermCond;
   MilestonePath bestPath;
   int numIters;
+  double elapsedTime;
 };
 
 
@@ -222,7 +223,7 @@ bool HaltingCondition::LoadJSON(const string& str)
   AnyCollection items;
   if(!items.read(str.c_str())) return false;
   items["foundSolution"].as(foundSolution);
-  items["maxIters"].as(maxIters);
+  if(!items["maxIters"].as(maxIters)) maxIters = INT_MAX;
   items["timeLimit"].as(timeLimit);
   items["costThreshold"].as(costThreshold);
   items["costImprovementPeriod"].as(costImprovementPeriod);
@@ -325,7 +326,7 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
     : prm(space),knn(10),connectionThreshold(Inf),numIters(0),ignoreConnectedComponents(false),storeEdges(true)
     {}
   virtual ~RoadmapPlannerInterface() {}
-  virtual bool IsOptimizing() const { return true; }
+  virtual bool IsOptimizing() const { return false; }
   virtual bool IsPointToPoint() const { return false; }
   virtual bool CanAddMilestone() const { return true; }
   virtual int AddMilestone(const Config& q) { return prm.AddMilestone(q); }
@@ -404,7 +405,10 @@ class RRTInterface  : public MotionPlannerInterface
   virtual int AddMilestone(const Config& q) {
     TreeRoadmapPlanner::Node* n=rrt.TestAndAddMilestone(q);
     if(n) return rrt.milestones.size()-1;
-    else return -1;
+    else {
+      fprintf(stderr,"RRTInterface::AddMilestone: Warning, milestone is infeasible?\n");
+      return -1;
+    }
   }
   virtual void GetMilestone(int i,Config& q) { q=rrt.milestones[i]->x; }
   virtual int PlanMore() { 
@@ -437,7 +441,10 @@ class BiRRTInterface  : public MotionPlannerInterface
   virtual int AddMilestone(const Config& q) {
     TreeRoadmapPlanner::Node* n=rrt.TestAndAddMilestone(q);
     if(n) return rrt.milestones.size()-1;
-    else return -1;
+    else {
+      fprintf(stderr,"BiRRTInterface::AddMilestone: Warning, milestone is infeasible?\n");
+      return -1;
+    }
   }
   virtual void GetMilestone(int i,Config& q) { q=rrt.milestones[i]->x; }
   virtual int PlanMore() { 
@@ -493,6 +500,7 @@ class SBLInterface  : public MotionPlannerInterface
       sbl->Init(qStart,qGoal);
       return 1;
     }
+    fprintf(stderr,"SBLInterface::AddMilestone: Warning, milestone is infeasible?\n");
     AssertNotReached();
     return -1;
   }
@@ -621,13 +629,16 @@ class PRMStarInterface  : public MotionPlannerInterface
       space->Sample(q);
       d = q.n;
     }
+    //even if connectByRadius = false, the diameter of the space needs to be taken into account for rrg-style expansion strategies
     Real v;
-    if(props.get("volume",v)) {
+    if(props.get("diameter",v))
+      planner.connectRadiusConstant = v;
+    else if(props.get("volume",v)) {
       planner.connectRadiusConstant = Pow(v,1.0/Real(d));
     }
     else
       planner.connectRadiusConstant = 1;
-
+    
     //TEMP: test keeping this at a constant regardless of space volume?
     //planner.connectRadiusConstant = 1;
   }
@@ -645,6 +656,7 @@ class PRMStarInterface  : public MotionPlannerInterface
       assert(planner.start == 0 && planner.goal == 1);
       return 1;
     }
+    fprintf(stderr,"PRMStarInterface::AddMilestone: Warning, milestone is infeasible?\n");
     AssertNotReached();
     return -1;
   }
@@ -1306,7 +1318,7 @@ MotionPlannerFactory::MotionPlannerFactory()
    perturbationRadius(0.1),perturbationIters(5),
    bidirectional(true),
    useGrid(true),gridResolution(0),randomizeFrequency(50),
-   storeEdges(false),shortcut(false),restart(false),
+   storeEdges(true),shortcut(false),restart(false),
    restartTermCond("{foundSolution:1,maxIters:1000}")
 {}
 
@@ -1665,7 +1677,7 @@ string MotionPlannerFactory::SaveJSON() const
 
 
 RestartMotionPlanner::RestartMotionPlanner(const MotionPlannerFactory& _factory,const MotionPlanningProblem& _problem,const HaltingCondition& _iterTermCond)
-  :PiggybackMotionPlanner(NULL),factory(_factory),problem(_problem),iterTermCond(_iterTermCond),numIters(0)
+  :PiggybackMotionPlanner(NULL),factory(_factory),problem(_problem),iterTermCond(_iterTermCond),numIters(0),elapsedTime(0)
 {
   mp = factory.Create(problem);
 }
@@ -1752,8 +1764,10 @@ std::string RestartMotionPlanner::Plan(MilestonePath& path,const HaltingConditio
 
 int RestartMotionPlanner::PlanMore()
 {
+  Timer timer;
   int res=mp->PlanMore();
   numIters++;
+  //printf("PlanMore %d %d\n",res,numIters);
   if(mp->IsSolved()) {
     //update best path
     MilestonePath path;
@@ -1762,16 +1776,23 @@ int RestartMotionPlanner::PlanMore()
       bestPath = path;
     }
     if(iterTermCond.foundSolution) {
+      elapsedTime += timer.ElapsedTime();
+      printf("Restarting due to found solution, %g time\n",elapsedTime);
       //create a new planner
       mp = NULL;
       mp = factory.Create(problem);
+      elapsedTime = 0;
       return res;
     }
   }
-  if(mp->NumIterations() > iterTermCond.maxIters) {
+  elapsedTime += timer.ElapsedTime();
+  //printf("Not solved, %d iters %g elapsed time\n",mp->NumIterations(),elapsedTime);
+  if(mp->NumIterations() > iterTermCond.maxIters || elapsedTime > iterTermCond.timeLimit) {
+    printf("Restarting at %d iters > %d or %g elapsed time > %g\n",mp->NumIterations(),iterTermCond.maxIters,elapsedTime,iterTermCond.timeLimit);
     //create a new planner
     mp = NULL;
     mp = factory.Create(problem);    
+    elapsedTime = 0;
   }
   return res;
 }
@@ -1870,6 +1891,7 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
 
 int RestartShortcutMotionPlanner::PlanMore()
 {
+  Timer timer;
   if(shortcutMode) {
     Assert(!candidatePaths.empty());
     numShortcutIters ++;
@@ -1889,13 +1911,15 @@ int RestartShortcutMotionPlanner::PlanMore()
       if(candidatePaths[index].Length() < bestPathLength) 
 	bestPath = candidatePaths[index];
     }
-    if(numShortcutIters /*+ mp->NumIterations()*/ >= iterTermCond.maxIters) {
+    elapsedTime += timer.ElapsedTime();
+    if(numShortcutIters /*+ mp->NumIterations()*/ >= iterTermCond.maxIters || elapsedTime >= iterTermCond.timeLimit) {
       //finished planning and shortcutting, create a new planner and switch
       //back to planning mode
       mp = NULL;
       mp = factory.Create(problem);    
       shortcutMode = false;
       numShortcutIters = 0;
+      elapsedTime = 0;
     }
     return -1;
   }
@@ -1913,8 +1937,10 @@ int RestartShortcutMotionPlanner::PlanMore()
       }
       shortcutMode = true;
     }
-    if(mp->NumIterations() >= iterTermCond.maxIters && !candidatePaths.empty()) {
+    elapsedTime += timer.ElapsedTime();
+    if((mp->NumIterations() >= iterTermCond.maxIters  || elapsedTime >= iterTermCond.timeLimit) && !candidatePaths.empty()) {
       shortcutMode = true;
+      elapsedTime = 0;
     }
     /*
     if(mp->NumIterations() >= iterTermCond.maxIters) {

@@ -140,7 +140,7 @@ public:
   CSpace* space;
   Real epsilon;
 
-private:
+protected:
   bool foundInfeasible;
   Real dist;
   int depth;

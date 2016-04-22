@@ -1,11 +1,13 @@
 #include "OMPLInterface.h"
-#include <planning/EdgePlanner.h>
+#include <KrisLibrary/planning/EdgePlanner.h>
+#include <KrisLibrary/utils/stringutils.h>
 #include <math/random.h>
 
 #if HAVE_OMPL
 
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/base/goals/GoalState.h>
+#include <ompl/base/OptimizationObjective.h>
 namespace og = ompl::geometric;
 
 ///helper: convert a Config to an OMPL state
@@ -91,8 +93,43 @@ OMPLCSpace::OMPLCSpace( const ob::SpaceInformationPtr& si)
     qMax.set(1.0);
   }
   resolution = si->getStateValidityCheckingResolution();
+  sampler_ = si->allocStateSampler();
   si_ = si;
+  stemp1 = si->allocState();
+  stemp2 = si->allocState();
+  stemp3 = si->allocState();
+
+  /* debugging...
+  for(int i=0;i<100000;i++) {
+    sampler_->sampleUniform(stemp1);
+    sampler_->sampleUniform(stemp2);
+    bool visible = si_->checkMotion(stemp1,stemp2);
+    Config a,b;
+    FromOMPL(stemp1,a);
+    FromOMPL(stemp2,b);
+    EdgePlanner* e= LocalPlanner(a,b);
+    assert(visible == e->IsVisible());
+    delete e;
+  }
+  */
 }
+
+OMPLCSpace::~OMPLCSpace()
+{
+  si_->freeState(stemp1);
+  si_->freeState(stemp2);
+  si_->freeState(stemp3);
+}
+
+
+void OMPLCSpace::Properties(PropertyMap& props) const
+{
+  props.set("intrinsicDimension",si_->getStateDimension());
+  props.setArray("minimum",vector<Real>(qMin));
+  props.setArray("maximum",vector<Real>(qMax));
+  props.set("diameter",si_->getStateSpace()->getMaximumExtent());
+}
+
 
 void OMPLCSpace::SetSpaceBounds(const Config& qmin, const Config& qmax) {
 	qMin = qmin;
@@ -104,34 +141,105 @@ void OMPLCSpace::SetSpaceBounds(const double& qmin, const double& qmax) {
 	qMax.set(qmax);
 }
 
-void OMPLCSpace::Sample(Config& x) {
-	x.resize(nD);
-	for(int i = 0; i < nD; i++)
-		x[i] = Rand(qMin[i], qMax[i]);
+void OMPLCSpace::Sample(Config& x)
+{
+  if(sampler_) {
+    sampler_->sampleUniform(stemp1);
+    FromOMPL(stemp1,x);
+  }
+  else {
+  	x.resize(nD);
+  	for(int i = 0; i < nD; i++)
+  		x[i] = Rand(qMin[i], qMax[i]);
+  }
 }
 
-ob::State * OMPLCSpace::ToOMPL(const Config& q) const
+void OMPLCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
 {
-  return ::ToOMPL(si_,q);
+  if(sampler_) {
+    ToOMPL(c,stemp1);
+    sampler_->sampleUniformNear(stemp2,stemp1,r);
+    FromOMPL(stemp2,x);
+  }
+  else {
+    CSpace::SampleNeighborhood(c,r,x);
+  }
 }
 
-Config OMPLCSpace::FromOMPL(const ob::State * s) const
+
+void OMPLCSpace::ToOMPL(const Config& q,ob::State * s)
 {
-  return ::FromOMPL(si_,s);
+  vtemp.resize(q.n);
+  for(int i=0;i<q.n;i++) vtemp[i] = q[i];
+  si_->getStateSpace()->copyFromReals(s,vtemp);  
+}
+
+
+ob::State * OMPLCSpace::ToOMPL(const Config& q)
+{
+  ob::State* res = si_->getStateSpace()->allocState();
+  ToOMPL(q,res);
+  return res;
+}
+
+Config OMPLCSpace::FromOMPL(const ob::State * s)
+{
+  Config res;
+  FromOMPL(s,res);
+  return res;
+}
+
+void OMPLCSpace::FromOMPL(const ob::State * s,Config& q)
+{
+  si_->getStateSpace()->copyToReals(vtemp,s);
+  q.resize(vtemp.size());
+  for(size_t i=0;i<vtemp.size();i++) q[i] = vtemp[i];
 }
 
 bool OMPLCSpace::IsFeasible(const Config& x) {
   //ob::RealVectorStateSpace* rspace = (si_->getStateSpace())->as<ob::RealVectorStateSpace>();
   //assert(rspace != NULL);
-  ob::State *omplstate = ToOMPL(x);
-  bool res = si_->getStateValidityChecker()->isValid(omplstate);
-  si_->freeState(omplstate);
-  return res;
+  ToOMPL(x,stemp1);
+  return si_->getStateValidityChecker()->isValid(stemp1);
 }
+
+double OMPLCSpace::Distance(const Config& a,const Config& b)
+{
+  ToOMPL(a,stemp1);
+  ToOMPL(b,stemp2);
+  return si_->getStateSpace()->distance(stemp1,stemp2);
+}
+
+void OMPLCSpace::Interpolate(const Config& a,const Config& b,Real u,Config& x)
+{
+  ToOMPL(a,stemp1);
+  ToOMPL(b,stemp2);
+  si_->getStateSpace()->interpolate(stemp1,stemp2,u,stemp3);
+  FromOMPL(stemp3,x);
+}
+
+class OMPLEdgePlanner : public StraightLineEpsilonPlanner
+{
+public:
+  OMPLEdgePlanner(OMPLCSpace* space,const Config& x,const Config& y,Real resolution)
+  :StraightLineEpsilonPlanner(space,x,y,resolution),omplspace(space)
+  {
+  }
+  virtual bool IsVisible() {
+    omplspace->ToOMPL(this->a,omplspace->stemp1);
+    omplspace->ToOMPL(this->b,omplspace->stemp2);
+    this->foundInfeasible = !omplspace->si_->checkMotion(omplspace->stemp1,omplspace->stemp2);
+    this->dist = 0;
+    return !this->foundInfeasible;
+  }
+  virtual EdgePlanner* Copy() const { return new OMPLEdgePlanner(omplspace,a,b,epsilon); }
+  virtual EdgePlanner* ReverseCopy() { return new OMPLEdgePlanner(omplspace,b,a,epsilon); }
+  OMPLCSpace* omplspace;
+};
 
 EdgePlanner* OMPLCSpace::LocalPlanner(const Config& x, const Config& y)
 {
-  return new StraightLineEpsilonPlanner(this, x, y, resolution);
+  return new OMPLEdgePlanner(this,x,y,resolution);
 }
 
 
@@ -165,17 +273,28 @@ void KrisLibraryOMPLPlanner::setup()
   }
   //TODO: objective functions?
   planner = factory.Create(problem);
-  ob::Planner::setup();
+  if(!planner) {
+    fprintf(stderr,"KrisLibraryOMPLPlanner::setup(): there was a problem creating the planner!\n");
+    return;
+  }
+  if(planner->IsOptimizing()) {
+    specs_.optimizingPaths = true;
+    specs_.approximateSolutions = true;
+    specs_.canReportIntermediateSolutions = true;
+  }
+  if(!ob::Planner::isSetup())
+    ob::Planner::setup();
 }
 
 void KrisLibraryOMPLPlanner::getPlannerData (ob::PlannerData &data) const
 {
   if(!planner) return;
-  RoadmapPlanner roadmap(const_cast<CSpace*>((const CSpace*)cspace));
+  OMPLCSpace* nc_cspace = const_cast<OMPLCSpace*>((const OMPLCSpace*)cspace);
+  RoadmapPlanner roadmap(nc_cspace);
   MotionPlannerInterface* iplanner = const_cast<MotionPlannerInterface*>((const MotionPlannerInterface*)planner);
   iplanner->GetRoadmap(roadmap);
   for(size_t i=0;i<roadmap.roadmap.nodes.size();i++) {
-    unsigned int id = data.addVertex(ob::PlannerDataVertex(cspace->ToOMPL(roadmap.roadmap.nodes[i]),(int)i));
+    unsigned int id = data.addVertex(ob::PlannerDataVertex(nc_cspace->ToOMPL(roadmap.roadmap.nodes[i]),(int)i));
     Assert(id == i);
   }
   for(size_t i=0;i<roadmap.roadmap.nodes.size();i++) {
@@ -187,16 +306,51 @@ void KrisLibraryOMPLPlanner::getPlannerData (ob::PlannerData &data) const
 
 ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCondition &ptc)
 {
+  if(!planner) {
+    //may have had a previous clear() call
+    //fprintf(stderr,"KrisLibraryOMPLPlanner::solve(): Warning, setup() not called yet\n");
+    setup();
+    if(!planner) 
+      return ob::PlannerStatus(ob::PlannerStatus::UNKNOWN);
+  }
+  ob::ProblemDefinitionPtr pdef = this->getProblemDefinition();
+  //how much to plan?
+  int increment = (StartsWith(factory.type.c_str(),"fmm") ? 1 : 50);
+  Real oldBest = Inf;
+  bool optimizing = planner->IsOptimizing();
+  double desiredCost = 0;
+  if(optimizing) {
+    if(pdef->getOptimizationObjective() != NULL)
+      desiredCost = pdef->getOptimizationObjective()->getCostThreshold().value();
+    else 
+      OMPL_INFORM("%s: No optimization objective specified. Defaulting to optimizing path length for the allowed planning time.", getName().c_str());
+  }
   while(!ptc()) {
     if(planner->IsSolved()) {
       //convert solution to OMPL solution
       MilestonePath path;
       planner->GetSolution(path);
-      ob::PathPtr pptr(ToOMPL(si_,path));
-      this->getProblemDefinition()->addSolutionPath(pptr);
-      return ob::PlannerStatus(true,false);
+      if(optimizing) {
+        //optimizing
+        Real cost = path.Length();
+        if(cost < oldBest) {
+          oldBest = cost;
+          if(cost < desiredCost) {
+            ob::PathPtr pptr(ToOMPL(si_,path));
+            this->getProblemDefinition()->addSolutionPath(pptr);
+            return ob::PlannerStatus(true,false);
+          }
+        }
+      }
+      else {
+        //non-optimizing
+        ob::PathPtr pptr(ToOMPL(si_,path));
+        this->getProblemDefinition()->addSolutionPath(pptr);
+        return ob::PlannerStatus(true,false);        
+      }
     }
-    planner->PlanMore();  
+
+    planner->PlanMore(increment); 
   }
   if(planner->IsSolved()) {
     //convert solution to OMPL solution

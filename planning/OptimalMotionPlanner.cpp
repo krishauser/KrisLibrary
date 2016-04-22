@@ -24,6 +24,12 @@
 //regular distance function used in shortest paths update
 #define DISTANCE_FUNC EdgeDistance()
 
+//if 1, the path checking is done adaptively so that edges are placed in a priority queue
+//and bisected until an infeasible solution is found.  If 0, the path checking is done by
+//walking along the path and calling IsVisible() along each unchecked edge
+#define ADAPTIVE_SUBDIVISION 1
+#define ADAPTIVE_SUBDIVISION_CHECK_COUNT 10
+
 #if TEST_EDGE_DISCOUNTING
   #if TEST_FMT
   //undefined results when using discounting
@@ -766,6 +772,8 @@ bool PRMStarPlanner::CheckPath(int a,int b)
     }
     Assert(npath[0] == a);
     Timer timer;
+    bool feas = true;
+#if ADAPTIVE_SUBDIVISION
     priority_queue<RoadmapEdgeInfo,vector<RoadmapEdgeInfo>,LessEdgePriority> q;
     for(size_t i=0;i+1<npath.size();i++) {
       if(roadmap.HasEdge(npath[i],npath[i+1])) continue;
@@ -779,18 +787,30 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       q.push(e);
     }
     //adaptive division of path
-    bool feas = true;
     while(!q.empty()) {
       RoadmapEdgeInfo temp=q.top(); q.pop();
-      if(!temp.e->Done()) 
+      int cnt = ADAPTIVE_SUBDIVISION_CHECK_COUNT;
+      if(!temp.e->Done() && cnt-- > 0) 
 	temp.e->Plan(); 
       if(!temp.e->Done()) {
 	q.push(temp);
 	continue;
       }
+      bool edgeInfeasible = temp.e->Failed();
+#else
+    //non-adaptive subdivision -- just march along path
+    for(size_t i=0;i+1<npath.size();i++) {
+      if(roadmap.HasEdge(npath[i],npath[i+1])) continue;
+      RoadmapEdgeInfo temp;
+      temp.s = npath[i];
+      temp.t = npath[i+1];
+      temp.e = *LBroadmap.FindEdge(npath[i],npath[i+1]);
+      bool edgeInfeasible = !temp.e->IsVisible();
+#endif //ADAPTIVE_SUBDIVISION
+
       //it's done planning
       numEdgeChecks++;
-      if(temp.e->Failed()) {
+      if(edgeInfeasible) {
 	tLazyCheck += timer.ElapsedTime();
 	//delete edge from lazy roadmap
 	//printf("Deleting edge %d %d...\n",npath[i],npath[i+1]);

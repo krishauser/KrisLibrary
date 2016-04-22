@@ -25,19 +25,31 @@ class OMPLCSpace : public CSpace
 {
 public:
   OMPLCSpace(const ob::SpaceInformationPtr& si);
-  virtual ~OMPLCSpace() {};
+  virtual ~OMPLCSpace();
   void SetSpaceBounds(const Config& qmin, const Config& qmax);
   ///helper: sets uniform bounds [qmin,qmax] on each dimension
   void SetSpaceBounds(const double& qmin, const double& qmax);
-  ///helper: convert a Config to an OMPL state
-  ob::State * ToOMPL(const Config& q) const;
+  ///helper: convert a Config to an OMPL state (value is a new State created by allocState())
+  ob::State * ToOMPL(const Config& q);
+  ///helper: converts a Config to a previously allocated OMPL state
+  void ToOMPL(const Config& q,ob::State * s);
   ///helper: convert an OMPL state to a Config
-  Config FromOMPL(const ob::State *) const;
+  Config FromOMPL(const ob::State *);
+  ///helper: convert an OMPL state to a Config
+  void FromOMPL(const ob::State *,Config& q);
   virtual void Sample(Config& x);
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual bool IsFeasible(const Config& x);
-  virtual EdgePlanner* LocalPlanner(const Config& x,const Config& y);
-  
+  virtual double Distance(const Config& a,const Config& b);
+  virtual void Interpolate(const Config& a,const Config& b,Real u,Config& x);
+  virtual void Midpoint(const Config& x,const Config& y,Config& out) { Interpolate(x,y,0.5,out); }
+  virtual EdgePlanner* LocalPlanner(const Config& x,const Config& y);  
+  virtual void Properties(PropertyMap&) const;
+
   ob::SpaceInformationPtr si_;
+  ob::StateSamplerPtr sampler_;
+  ob::State *stemp1, *stemp2, *stemp3;
+  vector<Real> vtemp;
   Config qMin, qMax;
   int nD;
   double resolution;
