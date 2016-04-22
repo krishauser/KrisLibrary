@@ -92,7 +92,8 @@ OMPLCSpace::OMPLCSpace( const ob::SpaceInformationPtr& si)
     qMin.set(0.0);
     qMax.set(1.0);
   }
-  resolution = si->getStateValidityCheckingResolution();
+  space->setup();
+  resolution = space->getLongestValidSegmentLength();
   sampler_ = si->allocStateSampler();
   si_ = si;
   stemp1 = si->allocState();
@@ -282,8 +283,9 @@ void KrisLibraryOMPLPlanner::setup()
     specs_.approximateSolutions = true;
     specs_.canReportIntermediateSolutions = true;
   }
-  if(!ob::Planner::isSetup())
+  if(!ob::Planner::isSetup()) 
     ob::Planner::setup();
+
 }
 
 void KrisLibraryOMPLPlanner::getPlannerData (ob::PlannerData &data) const
