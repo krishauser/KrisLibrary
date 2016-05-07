@@ -92,6 +92,7 @@ void ddfCenteredDifference(VectorFunction& f, Real x, Real h, Vector& ddf)
 
 void GradientForwardDifference(ScalarFieldFunction& f,Vector& x,Real h,Vector& g)
 {
+  if(g.empty()) g.resize(x.n);
   Assert(g.n == x.n);
   Real f0 = f(x),f1;
   for(int i=0;i<x.n;i++) {
@@ -108,6 +109,7 @@ void JacobianForwardDifference(VectorFieldFunction& f,Vector& x,Real h,Matrix& J
 {
   int nd = f.NumDimensions();
   Vector f0(nd),f1(nd);
+  if(J.isEmpty()) J.resize(f.NumDimensions(),x.n);
   Assert(J.m == f.NumDimensions() && J.n == x.n);
   f(x,f0);
   for(int i=0;i<x.n;i++) {
@@ -143,6 +145,7 @@ void HessianForwardDifference(ScalarFieldFunction& f,Vector& x,Real h,Matrix& H)
 
 void HessianForwardDifference_Grad(ScalarFieldFunction& f,Vector& x,Real h,Matrix& H)
 {
+  if(H.isEmpty()) H.resize(x.n,x.n);
   Assert(H.hasDims(x.n,x.n));
   Vector g0(x.n);
   vector<Vector> g(x.n);
@@ -167,6 +170,7 @@ void HessianForwardDifference_Grad(ScalarFieldFunction& f,Vector& x,Real h,Matri
 
 void GradientCenteredDifference(ScalarFieldFunction& f,Vector& x,Real h,Vector& g)
 {
+  if(g.empty()) g.resize(x.n);
   Assert(g.n == x.n);
   Real twoh = h+h;
   Real f0,f1;
@@ -195,6 +199,7 @@ void JacobianCenteredDifference(VectorFieldFunction& f,Vector& x,Real h,Matrix& 
 {
   int nd = f.NumDimensions();
   Vector f0(nd),f1(nd);
+  if(J.isEmpty()) J.resize(f.NumDimensions(),x.n);
   Assert(J.m == f.NumDimensions() && J.n == x.n);
   Real twoh = h+h;
   for(int i=0;i<x.n;i++) {
@@ -211,6 +216,7 @@ void JacobianCenteredDifference(VectorFieldFunction& f,Vector& x,Real h,Matrix& 
 
 void HessianCenteredDifference(ScalarFieldFunction& f,Vector& x,Real h,Matrix& H)
 {
+  if(H.isEmpty()) H.resize(x.n,x.n);
   Assert(H.hasDims(x.n,x.n));
   Real f0,f_1,f_2,f1,f2;
   Real scale=Sqr(Inv(h))*Sqr(Half);
@@ -248,6 +254,7 @@ void HessianCenteredDifference(ScalarFieldFunction& f,Vector& x,Real h,Matrix& H
 
 void HessianCenteredDifference_Grad(ScalarFieldFunction& f,Vector& x,Real h,Matrix& H)
 {
+  if(H.isEmpty()) H.resize(x.n,x.n);
   Assert(H.hasDims(x.n,x.n));
   vector<Vector> g0(x.n);
   vector<Vector> g1(x.n);
@@ -294,6 +301,7 @@ void JacobianForwardDifference(VectorFieldFunction& f,Vector& x,const Vector& h,
   Assert(h.n == x.n);
   int nd = f.NumDimensions();
   Vector f0(nd),f1(nd);
+  if(J.isEmpty()) J.resize(f.NumDimensions(),x.n);
   Assert(J.m == f.NumDimensions() && J.n == x.n);
   f(x,f0);
   for(int i=0;i<x.n;i++) {
@@ -310,6 +318,7 @@ void JacobianForwardDifference(VectorFieldFunction& f,Vector& x,const Vector& h,
 void HessianForwardDifference(ScalarFieldFunction& f,Vector& x,const Vector& h,Matrix& H)
 {
   Assert(h.n == x.n);
+  if(H.isEmpty()) H.resize(x.n,x.n);
   Assert(H.hasDims(x.n,x.n));
   Real f00,f01,f10,f11;
   f00 = f(x);
@@ -330,6 +339,7 @@ void HessianForwardDifference(ScalarFieldFunction& f,Vector& x,const Vector& h,M
 void HessianForwardDifference_Grad(ScalarFieldFunction& f,Vector& x,const Vector& h,Matrix& H)
 {
   Assert(h.n == x.n);
+  if(H.isEmpty()) H.resize(x.n,x.n);
   Assert(H.hasDims(x.n,x.n));
   Vector g0(x.n);
   vector<Vector> g(x.n);
@@ -354,6 +364,7 @@ void HessianForwardDifference_Grad(ScalarFieldFunction& f,Vector& x,const Vector
 void GradientCenteredDifference(ScalarFieldFunction& f,Vector& x,const Vector& h,Vector& g)
 {
   Assert(h.n == x.n);
+  if(g.empty()) g.resize(x.n);
   Assert(g.n == x.n);
   Real f0,f1;
   for(int i=0;i<x.n;i++) {
@@ -373,6 +384,7 @@ void JacobianCenteredDifference(VectorFieldFunction& f,Vector& x,const Vector& h
   Assert(h.n == x.n);
   int nd = f.NumDimensions();
   Vector f0(nd),f1(nd);
+  if(J.isEmpty()) J.resize(f.NumDimensions(),x.n);
   Assert(J.m == f.NumDimensions() && J.n == x.n);
   for(int i=0;i<x.n;i++) {
     Real xi=x(i);
@@ -391,6 +403,7 @@ void JacobianCenteredDifference(VectorFieldFunction& f,Vector& x,const Vector& h
 void HessianCenteredDifference(ScalarFieldFunction& f,Vector& x,const Vector& h,Matrix& H)
 {
   Assert(h.n == x.n);
+  if(H.isEmpty()) H.resize(x.n,x.n);
   Assert(H.hasDims(x.n,x.n));
   Real f0,f_1,f_2,f1,f2;
   f0 = f(x); 
@@ -424,6 +437,7 @@ void HessianCenteredDifference(ScalarFieldFunction& f,Vector& x,const Vector& h,
 void HessianCenteredDifference_Grad(ScalarFieldFunction& f,Vector& x,const Vector& h,Matrix& H)
 {
   Assert(h.n == x.n);
+  if(H.isEmpty()) H.resize(x.n,x.n);
   Assert(H.hasDims(x.n,x.n));
   vector<Vector> g0(x.n);
   vector<Vector> g1(x.n);
