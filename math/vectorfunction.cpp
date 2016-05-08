@@ -423,6 +423,18 @@ void ComponentVectorFieldFunction::DirectionalDeriv(const Vector& x,const Vector
 
 
 
+CompositeVectorFieldFunction::CompositeVectorFieldFunction()
+{}
+
+CompositeVectorFieldFunction::CompositeVectorFieldFunction(SmartPointer<VectorFieldFunction> f1,SmartPointer<VectorFieldFunction>& f2)
+{
+  functions.resize(2);
+  functions[0] = f1;
+  functions[1] = f2;
+}
+CompositeVectorFieldFunction::CompositeVectorFieldFunction(const std::vector<SmartPointer<VectorFieldFunction> >& fs)
+:functions(fs)
+{}
 
 std::string CompositeVectorFieldFunction::Label() const
 {
