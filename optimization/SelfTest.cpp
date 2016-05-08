@@ -97,16 +97,15 @@ namespace Optimization {
     A.setIdentity(); A *= -Two;
     b.setZero();
     c=10;
-    QuadraticScalarFieldFunction c1(A,b,c); 
-    ComponentVectorFieldFunction C;
-    C.functions.resize(1); C.functions[0] = &c1;
+    ComponentVectorFieldFunction* C = new ComponentVectorFieldFunction();
+    C->functions.push_back(new QuadraticScalarFieldFunction(A,b,c));
 
     Vector p(2);
     p(0) = -1; p(1) = 0;
     Real q=0;
-    LinearScalarFieldFunction f(p,q);
+    LinearScalarFieldFunction* f = new LinearScalarFieldFunction(p,q);
 
-    NonlinearProgram nlp(&f,&C);
+    NonlinearProgram nlp(f,C);
     nlp.minimize = true;
     nlp.inequalityLess = false;
     NewtonSolver newton(nlp);
@@ -130,18 +129,19 @@ namespace Optimization {
     A.setIdentity(); A *= Two;
     b.setZero();
     c=-1;
-    QuadraticScalarFieldFunction c1(A,b,c); 
+    QuadraticScalarFieldFunction* c1 = new QuadraticScalarFieldFunction(A,b,c); 
     Vector j(2);  j(0) = 0; j(1) = 1;
-    LinearScalarFieldFunction d1(j,-0.5);  //y greater than 0.5
-    ComponentVectorFieldFunction C,D;
-    C.functions.resize(1); C.functions[0] = &c1;
-    D.functions.resize(1); D.functions[0] = &d1;
+    LinearScalarFieldFunction* d1 = new LinearScalarFieldFunction(j,-0.5);  //y greater than 0.5
+    ComponentVectorFieldFunction* C = new ComponentVectorFieldFunction;
+    ComponentVectorFieldFunction* D = new ComponentVectorFieldFunction;
+    C->functions.resize(1); C->functions[0] = c1;
+    D->functions.resize(1); D->functions[0] = d1;
 
     Vector p(2);
     p(0) = -1; p(1) = 0;
-    LinearScalarFieldFunction f(p,0);
+    LinearScalarFieldFunction* f = new LinearScalarFieldFunction(p,0);
 
-    NonlinearProgram nlp(&f,&C,&D);
+    NonlinearProgram nlp(f,C,D);
     nlp.minimize = true;
     nlp.inequalityLess = false;
     NewtonSolver newton(nlp);
