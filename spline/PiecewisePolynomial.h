@@ -81,8 +81,10 @@ class PiecewisePolynomial
   /** Selects a range */
   PiecewisePolynomial Select(double a,double b) const;
 
-  /** Returns the maximum discontinuity of the i'th derivative */
-  double MaxDiscontinuity(int derivative=0) const;
+  /** Computes the maximum discontinuity of the i'th derivative.  Return value is
+   * the time and absolute magnitude of the maximum discontinuity.
+   */
+  std::pair<double,double> MaxDiscontinuity(int derivative=0) const;
 
   bool Read(File& f);
   bool Write(File& f) const;
@@ -107,6 +109,7 @@ class PiecewisePolynomialND
   typedef std::vector<double> Vector;
 
   PiecewisePolynomialND();
+  PiecewisePolynomialND(const std::vector<Poly>& elements,double a,double b);
   PiecewisePolynomialND(const std::vector<PiecewisePolynomial>& elements);
 
   Vector Evaluate(double t) const;
@@ -127,7 +130,7 @@ class PiecewisePolynomialND
   void TrimFront(double tstart);
   void TrimBack(double tend);
   PiecewisePolynomialND Select(double a,double b) const;
-  Vector MaxDiscontinuity(int derivative=0) const;
+  std::pair<Vector,Vector> MaxDiscontinuity(int derivative=0) const;
 
   bool Read(File& f);
   bool Write(File& f) const;

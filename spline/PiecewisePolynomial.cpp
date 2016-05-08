@@ -258,17 +258,21 @@ PiecewisePolynomial PiecewisePolynomial::Select(double a,double b) const
   return temp;
 }
 
-double PiecewisePolynomial::MaxDiscontinuity(int derivative) const
+std::pair<double,double> PiecewisePolynomial::MaxDiscontinuity(int derivative) const
 {
   assert(derivative >= 0);
+  double tmax=0;
   double dmax=0;
   for(size_t i=0;i+1<segments.size();i++) {
     double t=times[i+1];
     double f1 = segments[i].Derivative(t-timeShift[i],derivative);
     double f2 = segments[i+1].Derivative(t-timeShift[i+1],derivative);
-    dmax = std::max(dmax,fabs(f1-f2));
+    if(fabs(f1-f2) > dmax) {
+      dmax = fabs(f1-f2);
+      tmax = t;
+    }
   }
-  return dmax;
+  return std::pair<double,double>(tmax,dmax);
 }
 
 void PiecewisePolynomial::operator += (double val)
@@ -316,6 +320,14 @@ void PiecewisePolynomial::operator *= (const Polynomial<double>& b)
 
 
 PiecewisePolynomialND::PiecewisePolynomialND() {}
+
+PiecewisePolynomialND::PiecewisePolynomialND(const std::vector<Poly>& _elements,double a,double b)
+{
+  elements.resize(_elements.size());
+  for(size_t i=0;i<_elements.size();i++)
+    elements[i] = PiecewisePolynomial(_elements[i],a,b);
+}
+
 PiecewisePolynomialND::PiecewisePolynomialND(const std::vector<PiecewisePolynomial>& _elements)
   :elements(_elements)
 {}
@@ -448,12 +460,15 @@ PiecewisePolynomialND PiecewisePolynomialND::Select(double a,double b) const
   return res;
 }
 
-Vector PiecewisePolynomialND::MaxDiscontinuity(int derivative) const
+std::pair<Vector,Vector> PiecewisePolynomialND::MaxDiscontinuity(int derivative) const
 {
-  Vector res(elements.size());
-  for(size_t i=0;i<elements.size();i++)
-    res[i] = elements[i].MaxDiscontinuity(derivative);
-  return res;
+  Vector tres(elements.size()),res(elements.size());
+  for(size_t i=0;i<elements.size();i++) {
+    std::pair<double,double> d = elements[i].MaxDiscontinuity(derivative);
+    tres[i] = d.first;
+    res[i] = d.second;
+  }
+  return std::pair<Vector,Vector>(tres,res);
 }
 
 
