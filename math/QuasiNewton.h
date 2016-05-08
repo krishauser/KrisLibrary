@@ -18,6 +18,7 @@ namespace Math {
  */
 struct QNHessianUpdater
 {
+  QNHessianUpdater();
   ///set the initial hessian matrix
   void SetHessian(const Matrix& H) { ldl.set(H); }
   ///form the hessian matrix
@@ -27,12 +28,16 @@ struct QNHessianUpdater
   bool IsValidUpdate(const Vector& s,const Vector& q) { return (s.dot(q)>0); }
   bool UpdateBFGS(const Vector& s,const Vector& q);
   bool UpdateDFS(const Vector& s,const Vector& q);
+  bool IsPositiveDefinite(Real tol=0) const;
+  void MakePositiveDefinite(Real resetValue=1);
 
   LDLDecomposition<Real> ldl;
   int verbose;
+  Real tolerance;
 
   //temporary
   Vector temp,Hs,upd;
+  Matrix tempLDL;
 };
 
 

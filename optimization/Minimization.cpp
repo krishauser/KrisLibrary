@@ -174,21 +174,15 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
   Assert(H.m == x.n && H.n == x.n);
   grad.resize(x.n);
   Vector x0,grad0,s,q,upd;
-  Matrix tempLDL;
   QNHessianUpdater qn;
   qn.verbose = verbose;
   dx.resize(x.n);
   qn.SetHessian(H);
-  bool posDef = true;
-  for(int i=0;i<x.n;i++) {
-    if(qn.ldl.LDL(i,i) < 1e-5) {
-      posDef = false;
-    }
-  }
+  bool posDef = qn.IsPositiveDefinite(1e-5);
   if(!posDef) {
     if(verbose>=1) cout<<"MinimizationProblem::SolveQuasiNewton(): initial hessian is not positive definite with tolerance 1e-5"<<endl;
     H.setIdentity();
-    qn.ldl.set(H);
+    qn.SetHessian(H);
   }
   fx = (*f)(x);
   f->Gradient(x,grad);
@@ -221,33 +215,22 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
 
     s.sub(x,x0);
     q.sub(grad,grad0);
-    tempLDL=qn.ldl.LDL;
+
     if(updateType == BFGS) {
       bool res=qn.UpdateBFGS(s,q);
       if(!res) {
 	cerr<<"Unable to update the hessian approximation, ignoring update"<<endl;
-	qn.ldl.LDL=tempLDL;
-      }
+	    }
     }
     else if(updateType == DFS) {
       bool res=qn.UpdateDFS(s,q);
       if(!res) {
 	cerr<<"Unable to update the hessian approximation, ignoring update"<<endl;
-	qn.ldl.LDL=tempLDL;
-      }
+	    }
     }
     else {
       cout<<"Unknown type of quasi-Newton update"<<endl;
       Abort();
-    }
-
-    Vector d;
-    qn.ldl.LDL.getDiagRef(0,d);
-    if(d.minElement() <= 0) {
-      if(verbose>=1) cout<<"Unable to maintain positive definiteness of hessian!"<<endl;
-      for(int i=0;i<d.n;i++)
-	if(d(i) < 1e-4) d(i) = 1;
-      //return ConvergenceError;
     }
 
     if(verbose >= 3) {
