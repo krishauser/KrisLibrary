@@ -8,7 +8,7 @@
  * @ingroup Utils
  * @brief Various combination utilities.
  *
- * A permutation is defined by an array v (or a vector) of length k,
+ * A combination is defined by an array v (or a vector) of length k,
  * with entries from 0 to n.  Elements are sorted and unique.
  */
 
