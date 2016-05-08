@@ -4,6 +4,7 @@
 #include <KrisLibrary/math/function.h>
 #include <KrisLibrary/math/vector.h>
 #include <KrisLibrary/math/matrix.h>
+#include <KrisLibrary/utils/SmartPointer.h>
 
 namespace Optimization {
 using namespace Math;
@@ -15,29 +16,30 @@ using namespace Math;
  * min/max	f(x)      <br>
  *  s.t.	c(x)=0    <br>
  *              d(x)<?>0  <br>
- * where <?> can be either >= or <=
+ * where <?> can be either >= or <= depending on the
+ * value of inequalityLess.  By default, <= is used.
  */
 struct NonlinearProgram
 {
-  NonlinearProgram(ScalarFieldFunction* f,VectorFieldFunction* c=NULL,VectorFieldFunction* d=NULL);
-  void PreEval(const Vector& x) const;
-  bool SatisfiesEquality(const Vector& x,Real tol=Epsilon) const;
-  bool SatisfiesInequality(const Vector& x) const;
-  Real Lagrangian(const Vector& x,const Vector& lambda,const Vector& mu) const;
+  NonlinearProgram(const SmartPointer<ScalarFieldFunction>& f,const SmartPointer<VectorFieldFunction>& c=NULL,const SmartPointer<VectorFieldFunction>& d=NULL);
+  void PreEval(const Vector& x);
+  bool SatisfiesEquality(const Vector& x,Real tol=Epsilon);
+  bool SatisfiesInequality(const Vector& x);
+  Real Lagrangian(const Vector& x,const Vector& lambda,const Vector& mu);
 
   ///use these if it's faster to evaluate all constraints together
-  Real LagrangianEval(const Vector& x,const Vector& lambda,const Vector& mu) const;
-  void LagrangianGradient(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad) const;
-  void LagrangianHessian(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H) const;
+  Real LagrangianEval(const Vector& x,const Vector& lambda,const Vector& mu);
+  void LagrangianGradient(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad);
+  void LagrangianHessian(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H);
 
   ///use these if it's faster to evaluate constraints separately
-  Real LagrangianEval_Sparse(const Vector& x,const Vector& lambda,const Vector& mu) const;
-  void LagrangianGradient_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad) const;
-  void LagrangianHessian_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H) const;
+  Real LagrangianEval_Sparse(const Vector& x,const Vector& lambda,const Vector& mu);
+  void LagrangianGradient_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad);
+  void LagrangianHessian_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H);
 
-  ScalarFieldFunction* f;
-  VectorFieldFunction* c;
-  VectorFieldFunction* d;
+  SmartPointer<ScalarFieldFunction> f;
+  SmartPointer<VectorFieldFunction> c;
+  SmartPointer<VectorFieldFunction> d;
   bool minimize;        ///true if f is to be minimized, false if maximized
   bool inequalityLess;  ///inequality constraints are d<=0, else d>=0
 };
@@ -45,3 +47,4 @@ struct NonlinearProgram
 } //namespace Optimization
 
 #endif
+

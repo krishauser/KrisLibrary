@@ -3,12 +3,12 @@
 using namespace Optimization;
 
 
-NonlinearProgram::NonlinearProgram(ScalarFieldFunction* _f,VectorFieldFunction* _c,VectorFieldFunction* _d)
+NonlinearProgram::NonlinearProgram(const SmartPointer<ScalarFieldFunction>& _f,const SmartPointer<VectorFieldFunction>& _c,const SmartPointer<VectorFieldFunction>& _d)
   :f(_f),c(_c),d(_d),minimize(true),inequalityLess(true)
 {
 }
 
-void NonlinearProgram::PreEval(const Vector& x) const
+void NonlinearProgram::PreEval(const Vector& x) 
 {
   if(f) f->PreEval(x);
   if(c) c->PreEval(x);
@@ -16,7 +16,7 @@ void NonlinearProgram::PreEval(const Vector& x) const
 }
 
 
-bool NonlinearProgram::SatisfiesEquality(const Vector& x,Real tol) const
+bool NonlinearProgram::SatisfiesEquality(const Vector& x,Real tol) 
 {
   Vector temp(c->NumDimensions());
   c->Eval(x,temp);
@@ -24,7 +24,7 @@ bool NonlinearProgram::SatisfiesEquality(const Vector& x,Real tol) const
   return true;
 }
 
-bool NonlinearProgram::SatisfiesInequality(const Vector& x) const
+bool NonlinearProgram::SatisfiesInequality(const Vector& x) 
 {
   Vector temp(d->NumDimensions());
   d->Eval(x,temp);
@@ -37,13 +37,13 @@ bool NonlinearProgram::SatisfiesInequality(const Vector& x) const
   return true;
 }
 
-Real NonlinearProgram::Lagrangian(const Vector& x,const Vector& lambda,const Vector& mu) const
+Real NonlinearProgram::Lagrangian(const Vector& x,const Vector& lambda,const Vector& mu) 
 {
   PreEval(x);
   return LagrangianEval(x,lambda,mu);
 }
 
-Real NonlinearProgram::LagrangianEval(const Vector& x,const Vector& lambda,const Vector& mu) const
+Real NonlinearProgram::LagrangianEval(const Vector& x,const Vector& lambda,const Vector& mu) 
 {
   Real v;
   Vector tmp;
@@ -66,7 +66,7 @@ Real NonlinearProgram::LagrangianEval(const Vector& x,const Vector& lambda,const
   return v;
 }
 
-void NonlinearProgram::LagrangianGradient(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad) const
+void NonlinearProgram::LagrangianGradient(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad) 
 {
   grad.resize(x.n);
   if(f) {
@@ -93,14 +93,14 @@ void NonlinearProgram::LagrangianGradient(const Vector& x,const Vector& lambda,c
   }
 }
 
-void NonlinearProgram::LagrangianHessian(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H) const
+void NonlinearProgram::LagrangianHessian(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H) 
 {
   LagrangianHessian_Sparse(x,lambda,mu,H);
 }
 
 
 
-Real NonlinearProgram::LagrangianEval_Sparse(const Vector& x,const Vector& lambda,const Vector& mu) const
+Real NonlinearProgram::LagrangianEval_Sparse(const Vector& x,const Vector& lambda,const Vector& mu) 
 {
   Real v;
   if(f) {
@@ -126,7 +126,7 @@ Real NonlinearProgram::LagrangianEval_Sparse(const Vector& x,const Vector& lambd
   return v;
 }
 
-void NonlinearProgram::LagrangianGradient_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad) const
+void NonlinearProgram::LagrangianGradient_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad) 
 {
   grad.resize(x.n);
   if(f) {
@@ -153,7 +153,7 @@ void NonlinearProgram::LagrangianGradient_Sparse(const Vector& x,const Vector& l
   }
 }
 
-void NonlinearProgram::LagrangianHessian_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H) const
+void NonlinearProgram::LagrangianHessian_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H) 
 {
   H.resize(x.n,x.n);
   if(f) {
