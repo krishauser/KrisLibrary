@@ -18,9 +18,13 @@ namespace Math {
 /** @addtogroup Math */
 /*@{*/
 
+///@brief
 ///A function g(t) that returns f(x+tn) for a scalar field f(x)
 ///If ref is true, then x,n are set to refer to the x,n provided in
-///the constructor.
+///the constructor, rather than to copy.
+///
+///Note that this object is only valid for the duration that f
+///is valid.
 class ScalarFieldDirectionalFunction : public RealFunction
 {
 public:
@@ -42,6 +46,9 @@ private:
 ///A function g(t) that returns f(x+t*ei), where ei is the ith standard
 ///basis vector. 
 ///If ref is true, then x is set to refer to the x provided in the constructor.
+///
+///Note that this object is only valid for the duration that f
+///is valid.
 class ScalarFieldProjectionFunction : public RealFunction
 {
 public:
@@ -337,6 +344,9 @@ private:
 class CompositeVectorFieldFunction : public VectorFieldFunction
 {
 public:
+  CompositeVectorFieldFunction();
+  CompositeVectorFieldFunction(SmartPointer<VectorFieldFunction> f1,SmartPointer<VectorFieldFunction>& f2);
+  CompositeVectorFieldFunction(const std::vector<SmartPointer<VectorFieldFunction> >& fs);
   virtual std::string Label() const;
   virtual std::string Label(int i) const;
   virtual int NumDimensions() const;
