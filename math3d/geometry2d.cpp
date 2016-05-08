@@ -811,6 +811,8 @@ GeometricPrimitive2D::GeometricPrimitive2D(const Triangle2D& triangle)
 const char* GeometricPrimitive2D::TypeName(Type type) 
 {
   switch(type) {
+  case Empty:
+  	return "empty";
   case Point:
     return "point";
   case Segment:
