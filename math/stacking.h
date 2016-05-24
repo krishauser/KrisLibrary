@@ -25,6 +25,14 @@ void Stack(const std::vector<VectorTemplate<T> >& vs,VectorTemplate<T>& out)
   }
 }
 
+template <class T>
+void Stack(const VectorTemplate<T>& v1,const VectorTemplate<T>& v2,VectorTemplate<T>& out)
+{
+  out.resize(v1.n+v2.n);
+  out.copySubVector(0,v1);
+  out.copySubVector(v1.n,v2);
+}
+
 
 template <class T>
 void HStack(const std::vector<VectorTemplate<T> >& vs,MatrixTemplate<T>& out)
@@ -36,7 +44,6 @@ void HStack(const std::vector<VectorTemplate<T> >& vs,MatrixTemplate<T>& out)
     out.copyRow(i,vs[i]);
 }
 
-
 template <class T>
 void VStack(const std::vector<VectorTemplate<T> >& vs,MatrixTemplate<T>& out)
 {
@@ -45,6 +52,24 @@ void VStack(const std::vector<VectorTemplate<T> >& vs,MatrixTemplate<T>& out)
   out.resize(vs[0].n,vs.size());
   for(size_t i=0;i<vs.size();i++) 
     out.copyCol(i,vs[i]);
+}
+
+template <class T>
+void HStack(const MatrixTemplate<T>& v1,const MatrixTemplate<T>& v2,MatrixTemplate<T>& out)
+{
+  Assert(v1.n == v2.n);
+  out.resize(v1.m+v2.m,v1.n);
+  out.copySubMatrix(0,0,v1);
+  out.copySubMatrix(v1.m,0,v2);
+}
+
+template <class T>
+void VStack(const MatrixTemplate<T>& v1,const MatrixTemplate<T>& v2,MatrixTemplate<T>& out)
+{
+  Assert(v1.m == v2.m);
+  out.resize(v1.m,v1.n+v2.n);
+  out.copySubMatrix(0,0,v1);
+  out.copySubMatrix(0,v1.n,v2);
 }
 
 } //namespace Math
