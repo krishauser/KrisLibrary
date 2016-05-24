@@ -27,22 +27,24 @@ size_t IndexHash::operator () (const std::vector<int>& x) const
 
 
 GridHash::GridHash(int numDims,Real _h)
-  :h(numDims,_h)
+  :hinv(numDims,1.0/_h)
 {}
 
 GridHash::GridHash(const Vector& _h)
-  :h(_h)
-{}
+  :hinv(_h.n)
+{
+  for(int i=0;i<hinv.n;i++) hinv[i] = 1.0/_h[i];
+}
 
 void GridHash::Set(const Index& i,void* data)
 {
-  assert((int)i.size()==h.n);
+  assert((int)i.size()==hinv.n);
   buckets[i] = data;
 }
 
 void* GridHash::Erase(const Index& i)
 {
-  assert((int)i.size()==h.n);
+  assert((int)i.size()==hinv.n);
   HashTable::iterator bucket = buckets.find(i);
   if(bucket != buckets.end()) {
     void* v=bucket->second;
@@ -75,42 +77,42 @@ void GridHash::Enumerate(std::vector<Value>& items) const
 
 void GridHash::PointToIndex(const Vector& p,Index& i) const
 {
-  assert(p.n == h.n);
+  assert(p.n == hinv.n);
   i.resize(p.n);
   for(int k=0;k<p.n;k++) {
-    assert(h(k) > 0);
-    i[k] = (int)Floor(p(k)/h(k));
+    assert(hinv(k) > 0);
+    i[k] = (int)Floor(p(k)*hinv(k));
   }
 }
 
 void GridHash::PointToIndex(const Vector& p,Index& i,Vector& u) const
 {
-  assert(p.n == h.n);
+  assert(p.n == hinv.n);
   i.resize(p.n);
   u.resize(p.n);
   for(int k=0;k<p.n;k++) {
-    assert(h(k) > 0);
-    u(k) = p(k)-Floor(p(k)/h(k));
-    i[k] = (int)Floor(p(k)/h(k));
+    assert(hinv(k) > 0);
+    u(k) = p(k)-Floor(p(k)*hinv(k));
+    i[k] = (int)Floor(p(k)*hinv(k));
   }
 }
 
 void GridHash::IndexBucketBounds(const Index& i,Vector& bmin,Vector& bmax) const
 {
-  assert((int)i.size() == h.n);
-  bmin.resize(h.n);
-  bmax.resize(h.n);
-  for(int k=0;k<h.n;k++) {
-    bmin(k) = h(k)*(Real)i[k];
-    bmax(k) = bmin(k) + h(k);
+  assert((int)i.size() == hinv.n);
+  bmin.resize(hinv.n);
+  bmax.resize(hinv.n);
+  for(int k=0;k<hinv.n;k++) {
+    bmin(k) = hinv(k)*(Real)i[k];
+    bmax(k) = bmin(k) + 1.0/hinv(k);
   }
 }
 
 void GridHash::GetRange(Index& imin,Index& imax) const
 {
   if(buckets.empty()) {
-    imin.resize(h.n);
-    imax.resize(h.n);
+    imin.resize(hinv.n);
+    imax.resize(hinv.n);
     fill(imin.begin(),imin.end(),0);
     fill(imax.begin(),imax.end(),0);
     return;
@@ -118,7 +120,7 @@ void GridHash::GetRange(Index& imin,Index& imax) const
   imin=imax=buckets.begin()->first;
   for(HashTable::const_iterator i=buckets.begin();i!=buckets.end();i++) {
     const Index& idx=i->first;
-    assert((int)idx.size() == h.n);
+    assert((int)idx.size() == hinv.n);
     for(size_t k=0;k<idx.size();i++) {
       if(idx[k] < imin[k]) imin[k] = idx[k];
       else if(idx[k] > imax[k]) imax[k] = idx[k];
@@ -129,24 +131,24 @@ void GridHash::GetRange(Index& imin,Index& imax) const
 void GridHash::GetRange(Vector& bmin,Vector& bmax) const
 {
   if(buckets.empty()) {
-    bmin.resize(h.n,0);
-    bmax.resize(h.n,0);
+    bmin.resize(hinv.n,0);
+    bmax.resize(hinv.n,0);
     return;
   }
   Index imin,imax;
   GetRange(imin,imax);
-  bmin.resize(h.n);
-  bmax.resize(h.n);
-  for(int k=0;k<h.n;k++) {
-    bmin(k) = h(k)*(Real)imin[k];
-    bmax(k) = h(k)*(Real)(imax[k]+1);
+  bmin.resize(hinv.n);
+  bmax.resize(hinv.n);
+  for(int k=0;k<hinv.n;k++) {
+    bmin(k) = (Real)imin[k] / hinv(k);
+    bmax(k) = (Real)(imax[k]+1) / hinv(k);
   }
 }
 
 bool GridHash::IndexQuery(const Index& imin,const Index& imax,QueryCallback f) const
 {
-  assert(h.n == (int)imin.size());
-  assert(h.n == (int)imax.size());
+  assert(hinv.n == (int)imin.size());
+  assert(hinv.n == (int)imax.size());
   for(size_t k=0;k<imin.size();k++)
     assert(imin[k] <= imax[k]);
 
@@ -196,7 +198,7 @@ bool GridHash::BallQuery(const Vector& c,Real r,QueryCallback f) const
   PointToIndex(c,imin,u);
   for(int k=0;k<c.n;k++) {
     int ik=imin[k];
-    Real r_over_h = r/h(k);
+    Real r_over_h = r*hinv(k);
     imin[k] = ik - (int)Floor(u(k)-r_over_h);
     imax[k] = ik + (int)Floor(u(k)+r_over_h);
   }
@@ -210,8 +212,8 @@ bool GridHash::BallQuery(const Vector& c,Real r,QueryCallback f) const
 
 void GridHash::IndexItems(const Index& imin,const Index& imax,vector<void*>& objs) const
 {
-  assert(h.n == (int)imin.size());
-  assert(h.n == (int)imax.size());
+  assert(hinv.n == (int)imin.size());
+  assert(hinv.n == (int)imax.size());
   for(size_t k=0;k<imin.size();k++)
     assert(imin[k] <= imax[k]);
 
@@ -261,7 +263,7 @@ void GridHash::BallItems(const Vector& c,Real r,vector<void*>& objs) const
   imax = imin;
   for(int k=0;k<c.n;k++) {
     int ik=imin[k];
-    Real r_over_h = r/h(k);
+    Real r_over_h = r*hinv(k);
     imin[k] = ik - (int)Floor(u(k)-r_over_h);
     imax[k] = ik + (int)Floor(u(k)+r_over_h);
   }
@@ -271,12 +273,23 @@ void GridHash::BallItems(const Vector& c,Real r,vector<void*>& objs) const
 
 
 
-
-bool EraseObject(ObjectSet& b,void* data)
+bool EraseObject(list<void*>& b,void* data)
 {
-  for(ObjectSet::iterator i=b.begin();i!=b.end();i++) {
+  for(list<void*>::iterator i=b.begin();i!=b.end();i++) {
     if(*i == data) {
       b.erase(i);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool EraseObject(vector<void*>& b,void* data)
+{
+  for(size_t i=0;i<b.size();i++) {
+    if(b[i] == data) {
+      b[i] = b.back();
+      b.resize(b.size()-1);
       return true;
     }
   }
@@ -292,22 +305,24 @@ bool QueryObjects(const ObjectSet& b,QueryCallback f)
 }
 
 GridSubdivision::GridSubdivision(int numDims,Real _h)
-  :h(numDims,_h)
+  :hinv(numDims,1.0/_h)
 {}
 
 GridSubdivision::GridSubdivision(const Vector& _h)
-  :h(_h)
-{}
+  :hinv(_h.n)
+{
+   for(int i=0;i<hinv.n;i++) hinv[i] = 1.0/_h[i];
+}
 
 void GridSubdivision::Insert(const Index& i,void* data)
 {
-  assert((int)i.size()==h.n);
+  assert((int)i.size()==hinv.n);
   buckets[i].push_back(data);
 }
 
 bool GridSubdivision::Erase(const Index& i,void* data)
 {
-  assert((int)i.size()==h.n);
+  assert((int)i.size()==hinv.n);
   HashTable::iterator bucket = buckets.find(i);
   if(bucket != buckets.end()) {
     bool res=EraseObject(bucket->second,data);
@@ -343,42 +358,43 @@ void GridSubdivision::Clear()
 
 void GridSubdivision::PointToIndex(const Vector& p,Index& i) const
 {
-  assert(p.n == h.n);
+  assert(p.n == hinv.n);
   i.resize(p.n);
   for(int k=0;k<p.n;k++) {
-    assert(h(k) > 0);
-    i[k] = (int)Floor(p(k)/h(k));
+    assert(hinv(k) > 0);
+    i[k] = (int)Floor(p(k)*hinv(k));
   }
 }
 
 void GridSubdivision::PointToIndex(const Vector& p,Index& i,Vector& u) const
 {
-  assert(p.n == h.n);
+  assert(p.n == hinv.n);
   i.resize(p.n);
   u.resize(p.n);
   for(int k=0;k<p.n;k++) {
-    assert(h(k) > 0);
-    u(k) = p(k)-Floor(p(k)/h(k));
-    i[k] = (int)Floor(p(k)/h(k));
+    assert(hinv(k) > 0);
+    Real s = Floor(p(k)*hinv(k));
+    u(k) = p(k)-s;
+    i[k] = (int)s;
   }
 }
 
 void GridSubdivision::IndexBucketBounds(const Index& i,Vector& bmin,Vector& bmax) const
 {
-  assert((int)i.size() == h.n);
-  bmin.resize(h.n);
-  bmax.resize(h.n);
-  for(int k=0;k<h.n;k++) {
-    bmin(k) = h(k)*(Real)i[k];
-    bmax(k) = bmin(k) + h(k);
+  assert((int)i.size() == hinv.n);
+  bmin.resize(hinv.n);
+  bmax.resize(hinv.n);
+  for(int k=0;k<hinv.n;k++) {
+    bmin(k) = (Real)i[k]/hinv(k);
+    bmax(k) = bmin(k) + 1.0/hinv(k);
   }
 }
 
 void GridSubdivision::GetRange(Index& imin,Index& imax) const
 {
   if(buckets.empty()) {
-    imin.resize(h.n);
-    imax.resize(h.n);
+    imin.resize(hinv.n);
+    imax.resize(hinv.n);
     fill(imin.begin(),imin.end(),0);
     fill(imax.begin(),imax.end(),0);
     return;
@@ -386,7 +402,7 @@ void GridSubdivision::GetRange(Index& imin,Index& imax) const
   imin=imax=buckets.begin()->first;
   for(HashTable::const_iterator i=buckets.begin();i!=buckets.end();i++) {
     const Index& idx=i->first;
-    assert((int)idx.size() == h.n);
+    assert((int)idx.size() == hinv.n);
     for(size_t k=0;k<idx.size();k++) {
       if(idx[k] < imin[k]) imin[k] = idx[k];
       else if(idx[k] > imax[k]) imax[k] = idx[k];
@@ -397,24 +413,24 @@ void GridSubdivision::GetRange(Index& imin,Index& imax) const
 void GridSubdivision::GetRange(Vector& bmin,Vector& bmax) const
 {
   if(buckets.empty()) {
-    bmin.resize(h.n,0);
-    bmax.resize(h.n,0);
+    bmin.resize(hinv.n,0);
+    bmax.resize(hinv.n,0);
     return;
   }
   Index imin,imax;
   GetRange(imin,imax);
-  bmin.resize(h.n);
-  bmax.resize(h.n);
-  for(int k=0;k<h.n;k++) {
-    bmin(k) = h(k)*(Real)imin[k];
-    bmax(k) = h(k)*(Real)(imax[k]+1);
+  bmin.resize(hinv.n);
+  bmax.resize(hinv.n);
+  for(int k=0;k<hinv.n;k++) {
+    bmin(k) = (Real)imin[k]/hinv(k);
+    bmax(k) = (Real)(imax[k]+1)/hinv(k);
   }
 }
 
 bool GridSubdivision::IndexQuery(const Index& imin,const Index& imax,QueryCallback f) const
 {
-  assert(h.n == (int)imin.size());
-  assert(h.n == (int)imax.size());
+  assert(hinv.n == (int)imin.size());
+  assert(hinv.n == (int)imax.size());
   for(size_t k=0;k<imin.size();k++)
     assert(imin[k] <= imax[k]);
 
@@ -476,8 +492,8 @@ bool GridSubdivision::BallQuery(const Vector& c,Real r,QueryCallback f) const
 
 void GridSubdivision::IndexItems(const Index& imin,const Index& imax,ObjectSet& objs) const
 {
-  assert(h.n == (int)imin.size());
-  assert(h.n == (int)imax.size());
+  assert(hinv.n == (int)imin.size());
+  assert(hinv.n == (int)imax.size());
   for(size_t k=0;k<imin.size();k++)
     assert(imin[k] <= imax[k]);
 

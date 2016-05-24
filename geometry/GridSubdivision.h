@@ -70,7 +70,7 @@ public:
   //segment from a to b
   void SegmentItems(const Vector& a,const Vector& b,std::vector<Value>& items) const;
 
-  Vector h;
+  Vector hinv;
   typedef UNORDERED_MAP_TEMPLATE<Index,Value,IndexHash> HashTable;
   HashTable buckets;
 };
@@ -83,7 +83,7 @@ class GridSubdivision
 {
 public:
   typedef IntTuple Index;
-  typedef std::list<void*> ObjectSet;
+  typedef std::vector<void*> ObjectSet;
   //called once per object in the query range, return false to stop enumerating
   typedef bool (*QueryCallback)(void* obj);
 
@@ -129,7 +129,7 @@ public:
   //segment from a to b
   void SegmentItems(const Vector& a,const Vector& b,ObjectSet& objs) const;
 
-  Vector h;
+  Vector hinv;
   typedef UNORDERED_MAP_TEMPLATE<Index,ObjectSet,IndexHash> HashTable;
   HashTable buckets;
 };
