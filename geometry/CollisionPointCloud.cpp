@@ -50,7 +50,7 @@ void CollisionPointCloud::InitCollisions()
     }
     res = h;
   }
-  grid.h.set(res);
+  grid.hinv.set(1.0/res);
   int validptcount = 0;
   for(size_t i=0;i<points.size();i++) {
     if(IsFinite(points[i].x)) {
