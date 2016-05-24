@@ -6,12 +6,16 @@
 #include <KrisLibrary/geometry/Grid.h>
 
 /** @brief A uniform abstract interface to point location data structures.
+ * The point locator operators in-place on a vector of Vectors and does not
+ * allocate any extra memory unless this is desired.
  */
 class PointLocationBase
 {
  public:
   PointLocationBase(std::vector<Vector>& _points);
   virtual ~PointLocationBase() {}
+  ///Call this when the point list is completely changed
+  virtual void OnBuild() =0;
   ///Call this when something is appended to the point list
   virtual void OnAppend() =0;
   ///Call this when an index is deleted from the point list. Subclasses
@@ -48,6 +52,7 @@ class NaivePointLocation : public PointLocationBase
 {
  public:
   NaivePointLocation(std::vector<Vector>& points,CSpace* _space);
+  virtual void OnBuild() {}
   virtual void OnAppend() {}
   virtual bool OnDelete(int id) { return true; }
   virtual bool OnClear() { return true; }
@@ -69,6 +74,7 @@ class RandomPointLocation : public PointLocationBase
 {
  public:
   RandomPointLocation(std::vector<Vector>& points);
+  virtual void OnBuild() {}
   virtual void OnAppend() {}
   virtual bool OnDelete(int id) { return true; }
   virtual bool OnClear() { return true; }
@@ -86,6 +92,7 @@ class RandomBestPointLocation : public PointLocationBase
 {
  public:
   RandomBestPointLocation(std::vector<Vector>& points,CSpace* _space,int k=1);
+  virtual void OnBuild() {}
   virtual void OnAppend() {}
   virtual bool OnDelete(int id) { return true; }
   virtual bool OnClear() { return true; }
@@ -111,6 +118,8 @@ class KDTreePointLocation : public PointLocationBase
  public:
   KDTreePointLocation(std::vector<Vector>& points);
   KDTreePointLocation(std::vector<Vector>& points,Real norm,const Vector& weights);
+  virtual ~KDTreePointLocation();
+  virtual void OnBuild();
   virtual void OnAppend();
   virtual bool OnClear();
   virtual bool NN(const Vector& p,int& nn,Real& distance);
@@ -119,7 +128,7 @@ class KDTreePointLocation : public PointLocationBase
 
   Real norm;
   Vector weights;
-  Geometry::KDTree tree;
+  Geometry::KDTree* tree;
 };
 
 

@@ -61,13 +61,13 @@ bool IsVisibleAll(ObstacleDisplacementCSpace* cspace,const Config& a,const Confi
 bool IsVisible(ObstacleDisplacementCSpace* cspace,const Config& a,const Config& b,int obstacle,const Vector& displacement)
 {
   cspace->SetDisplacement(obstacle,displacement);
-  SmartPointer<EdgePlanner> e = cspace->LocalPlanner(a,b,obstacle);
+  SmartPointer<EdgePlanner> e = cspace->PathChecker(a,b,obstacle);
   return e->IsVisible();
 }
 
 bool IsVisible(ObstacleDisplacementCSpace* cspace,const Config& a,const Config& b,int obstacle)
 {
-  SmartPointer<EdgePlanner> e = cspace->LocalPlanner(a,b,obstacle);
+  SmartPointer<EdgePlanner> e = cspace->PathChecker(a,b,obstacle);
   return e->IsVisible();
 }
 
@@ -123,8 +123,8 @@ bool ObstacleDisplacementCSpace::IsFeasible(const Config& q,int obstacle)
 
 void ObstacleDisplacementCSpace::InitZeroDisplacements()
 {
-  obstacleDisplacements.resize(NumObstacles());
-  displacementSpaces.resize(NumObstacles());
+  obstacleDisplacements.resize(NumConstraints());
+  displacementSpaces.resize(NumConstraints());
   for(size_t i=0;i<obstacleDisplacements.size();i++) {
     displacementSpaces[i] = DisplacementSpace(i);
     if(displacementSpaces[i]) {
@@ -215,7 +215,7 @@ void DisplacementPlanner::Init(const Config& _start,const Config& _goal)
   numUpdateCoversIterations=0;
   
   //reset to only the zero displacement sample
-  displacementSamples.resize(space->NumObstacles());
+  displacementSamples.resize(space->NumConstraints());
   displacementSampleCosts.resize(displacementSamples.size());
   displacementSampleOrders.resize(displacementSamples.size());
   space->InitZeroDisplacements();
@@ -842,7 +842,7 @@ bool DisplacementPlanner::RefineGoalDisplacements(int numIters,Real perturbRadiu
 	Edge* e=roadmap.FindEdge(path[v],path[v+1]);
 	if(e->tests[i].allFeasible==1) continue;
 	numEdgeChecks++;
-	if(!IsVisible(space,e->e->Start(),e->e->Goal(),i,temp)) {
+	if(!IsVisible(space,e->e->Start(),e->e->End(),i,temp)) {
 	  feasible = false;
 	  break;
 	}
@@ -1374,7 +1374,7 @@ int DisplacementPlanner::AddNode(const Config& q,int parent)
   int index=(int)roadmap.nodes.size();
   roadmap.AddNode(Milestone());
   roadmap.nodes[index].q = q;
-  int n=space->NumObstacles();
+  int n=space->NumConstraints();
   //initialize empty test results
   roadmap.nodes[index].tests.resize(n);
   for(int i=0;i<n;i++) {
@@ -1448,7 +1448,7 @@ void DisplacementPlanner::AddEdge(int i,int j)
   assert(j >= 0 && j < (int)roadmap.nodes.size());
   assert(!roadmap.HasEdge(i,j));
   TestResults ev;
-  int n=space->NumObstacles();
+  int n=space->NumConstraints();
   ev.resize(n);
   for(int c=0;c<n;c++) {
     ev[c].allFeasible = -1;
@@ -1563,7 +1563,7 @@ bool DisplacementPlanner::CheckEdgeConstraint(Edge& e,int i,int j)
   if(j == -1) { //indicate all-feasible check
     if(e.tests[i].allFeasible == -1) {
       numEdgeChecks++;
-      e.tests[i].allFeasible = (space->IsVisibleAll(e.e->Start(),e.e->Goal(),i)?1:0);
+      e.tests[i].allFeasible = (space->IsVisibleAll(e.e->Start(),e.e->End(),i)?1:0);
     }
     return (e.tests[i].allFeasible == 1);
   }
@@ -1573,7 +1573,7 @@ bool DisplacementPlanner::CheckEdgeConstraint(Edge& e,int i,int j)
   else if(e.tests[i].infeasible.count(j) == 1) return false;
   //untested
   numEdgeChecks++;
-  if(IsVisible(space,e.e->Start(),e.e->Goal(),i,displacementSamples[i][j])) {
+  if(IsVisible(space,e.e->Start(),e.e->End(),i,displacementSamples[i][j])) {
     e.tests[i].feasible.insert(j);
     return true;
   }
@@ -2050,7 +2050,7 @@ void DisplacementPlanner::GetMilestonePath(const std::vector<int>& path,Mileston
     else
       mpath.edges[i] = roadmap.FindEdge(path[i],path[i+1])->e->ReverseCopy();
     assert(mpath.edges[i]->Start()==roadmap.nodes[path[i]].q);
-    assert(mpath.edges[i]->Goal()==roadmap.nodes[path[i+1]].q);
+    assert(mpath.edges[i]->End()==roadmap.nodes[path[i+1]].q);
   }
 }
 

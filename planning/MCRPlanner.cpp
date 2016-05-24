@@ -26,18 +26,19 @@ inline Real WeightedCost(const Subset& s,const vector<Real>& weights)
 }
 
 
-Subset Violations(ExplicitCSpace* space,const Config& q)
+Subset Violations(CSpace* space,const Config& q)
 {
   vector<bool> vis;
-  space->CheckObstacles(q,vis);
+  space->CheckConstraints(q,vis);
+  for(size_t i=0;i<vis.size();i++) vis[i] = !vis[i];
   return Subset(vis);
 }
 
-Subset Violations(ExplicitCSpace* space,const Config& a,const Config& b)
+Subset Violations(CSpace* space,const Config& a,const Config& b)
 {
-  vector<bool> vis(space->NumObstacles());
+  vector<bool> vis(space->NumConstraints());
   for(size_t i=0;i<vis.size();i++) {
-    EdgePlanner* e=space->LocalPlanner(a,b,i);
+    EdgePlanner* e=space->PathChecker(a,b,i);
     vis[i] = !e->IsVisible();
     delete e;
   }
@@ -47,7 +48,7 @@ Subset Violations(ExplicitCSpace* space,const Config& a,const Config& b)
 
 
 
-MCRPlanner::MCRPlanner(ExplicitCSpace* _space)
+MCRPlanner::MCRPlanner(CSpace* _space)
   :space(_space),
    updatePathsComplete(false),updatePathsDynamic(true),updatePathsMax(INT_MAX),
    numExpands(0),numRefinementAttempts(0),numRefinementSuccesses(0),numExplorationAttempts(0),
@@ -483,7 +484,7 @@ bool MCRPlanner::CanImproveConnectivity(const Mode& ma,const Mode& mb,Real maxEx
 //Otherwise, return false and compute the subset of violations
 bool MCRPlanner::ExceedsCostLimit(const Config& q,Real limit,Subset& violations)
 {
-  int n=space->NumObstacles();
+  int n=(int)space->NumConstraints();
   /*
   if(!space->IsFeasible(q)) return true;
   violations.maxItem = n;
@@ -493,7 +494,7 @@ bool MCRPlanner::ExceedsCostLimit(const Config& q,Real limit,Subset& violations)
   vector<bool> vis(n);
   Real vcount = 0;
   for(int i=0;i<n;i++) {
-    if(!space->IsFeasible(q,i)) {
+    if(!space->constraints[i]->Contains(q)) {
       if(obstacleWeights.empty()) vcount += 1.0;
       else vcount += obstacleWeights[i];
       vis[i] = true;
@@ -510,7 +511,7 @@ bool MCRPlanner::ExceedsCostLimit(const Config& q,Real limit,Subset& violations)
 //Otherwise, return false and compute the subset of violations
 bool MCRPlanner::ExceedsCostLimit(const Config& a,const Config& b,Real limit,Subset& violations)
 {
-  int n=space->NumObstacles();
+  int n=(int)space->NumConstraints();
   /*
   EdgePlanner* e=space->LocalPlanner(a,b);
   if(!e->IsVisible()) {
@@ -525,7 +526,7 @@ bool MCRPlanner::ExceedsCostLimit(const Config& a,const Config& b,Real limit,Sub
   vector<bool> vis(n);
   Real vcount = 0;
   for(int i=0;i<n;i++) {
-    EdgePlanner* e=space->LocalPlanner(a,b,i);
+    EdgePlanner* e=space->PathChecker(a,b,i);
     vis[i] = !e->IsVisible();
     delete e;
     if(vis[i]) {
@@ -541,9 +542,7 @@ bool MCRPlanner::ExceedsCostLimit(const Config& a,const Config& b,Real limit,Sub
 
 int MCRPlanner::AddNode(const Config& q,int parent)
 {
-  vector<bool> subsetbits;
-  space->CheckObstacles(q,subsetbits);
-  return AddNode(q,Subset(subsetbits),parent);
+  return AddNode(q,Violations(space,q),parent);
 }
 
 int MCRPlanner::AddNode(const Config& q,const Subset& subset,int parent)
@@ -557,9 +556,7 @@ int MCRPlanner::AddNode(const Config& q,const Subset& subset,int parent)
 
   /*
   //Sanity check?
-  vector<bool> subsetbits;
-  space->CheckObstacles(q,subsetbits);
-  assert(subset == Subset(subsetbits));
+  assert(subset == Violations(space,q));
   */
 
   if(parent < 0 || modeGraph.nodes[roadmap.nodes[parent].mode].subset != subset)  {
@@ -1024,9 +1021,7 @@ void MCRPlanner::Expand(Real maxExplanationCost,vector<int>& newNodes)
     
     //do a direct connection
     numConfigChecks++;
-    vector<bool> subsetbits;
-    space->CheckObstacles(q,subsetbits);
-    qsubset = Subset(subsetbits);
+    qsubset = Violations(space,q);
     
     int nearmode = roadmap.nodes[kneighbors[closestIndex]].mode;
     if(WithinThreshold(modeGraph.nodes[nearmode],qsubset,maxExplanationCost,obstacleWeights)) { //if config itself violates too many constraints, we're not going to connect any nodes
@@ -1155,9 +1150,7 @@ void MCRPlanner::Expand2(Real maxExplanationCost,vector<int>& newNodes)
     
     //do a direct connection
     numConfigChecks++;
-    vector<bool> subsetbits;
-    space->CheckObstacles(q,subsetbits);
-    qsubset = Subset(subsetbits);
+    qsubset = Violations(space,q);
 
     int nearmode = roadmap.nodes[neighbor[0]].mode;    
     if(WithinThreshold(modeGraph.nodes[nearmode],qsubset,maxExplanationCost,obstacleWeights)) { //if config itself violates too many constraints, we're not going to connect any nodes
@@ -1283,12 +1276,9 @@ void MCRPlanner::Plan(int initialLimit,const vector<int>& expansionSchedule,vect
   Completion(0,0,1,bestCover);
 
   Subset lowerCover;
-  vector<bool> violations;
   numConfigChecks += 2;
-  space->CheckObstacles(start,violations);
-  lowerCover=Subset(violations);
-  space->CheckObstacles(goal,violations);
-  lowerCover=lowerCover+Subset(violations);
+  lowerCover=Violations(space,start);
+  lowerCover=lowerCover+Violations(space,goal);
 
   Real lowerCost = Cost(lowerCover);
   Real bestCost = Cost(bestCover);
@@ -1572,7 +1562,7 @@ struct GreedySubsetAStar : public GeneralizedAStar<int,SubsetCost>
       }
       else {
 	//same subset
-	SubsetCost c(planner->space->NumObstacles(),dist);
+	SubsetCost c(planner->space->NumConstraints(),dist);
 	cost.push_back(c);
       }
     }
@@ -1629,7 +1619,7 @@ struct OptimalSubsetAStar : public GeneralizedAStar<pair<int,Subset>,SubsetCost>
       }
       else {
 	//same subset
-	SubsetCost c(planner->space->NumObstacles(),dist,&planner->obstacleWeights);
+	SubsetCost c(planner->space->NumConstraints(),dist,&planner->obstacleWeights);
 	cost.push_back(c);
       }
       successors.push_back(pair<int,Subset>(e.target(),cost.back().subset+s.second));
@@ -1720,6 +1710,6 @@ void MCRPlanner::GetMilestonePath(const std::vector<int>& path,MilestonePath& mp
     else
       mpath.edges[i] = roadmap.FindEdge(path[i],path[i+1])->e->ReverseCopy();
     assert(mpath.edges[i]->Start()==roadmap.nodes[path[i]].q);
-    assert(mpath.edges[i]->Goal()==roadmap.nodes[path[i+1]].q);
+    assert(mpath.edges[i]->End()==roadmap.nodes[path[i+1]].q);
   }
 }

@@ -2,7 +2,6 @@
 #define DISPLACEMENT_PLANNER_H
 
 #include "MotionPlanner.h"
-#include "ExplicitCSpace.h"
 #include <KrisLibrary/utils/Subset.h>
 #include <KrisLibrary/structs/IndexedPriorityQueue.h>
 
@@ -32,7 +31,7 @@
  * Sample(), the ExplicitCSpace NumObstacles() and LocalPlanner() method, 
  * and optionally the CSpace Distance(), Interpolate(), and Midpoint() methods.
  */
-class ObstacleDisplacementCSpace : public ExplicitCSpace 
+class ObstacleDisplacementCSpace : public CSpace 
 {
 public:
   ObstacleDisplacementCSpace();

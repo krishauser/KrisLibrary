@@ -43,7 +43,7 @@ public:
   virtual double Distance(const Config& a,const Config& b);
   virtual void Interpolate(const Config& a,const Config& b,Real u,Config& x);
   virtual void Midpoint(const Config& x,const Config& y,Config& out) { Interpolate(x,y,0.5,out); }
-  virtual EdgePlanner* LocalPlanner(const Config& x,const Config& y);  
+  virtual EdgePlanner* PathChecker(const Config& x,const Config& y);  
   virtual void Properties(PropertyMap&) const;
 
   ob::SpaceInformationPtr si_;

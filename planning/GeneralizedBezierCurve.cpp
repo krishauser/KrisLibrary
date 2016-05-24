@@ -3,7 +3,7 @@
 #include <math/interpolate.h>
 using namespace std;
 
-GeneralizedCubicBezierCurve::GeneralizedCubicBezierCurve(CSpace* _space,GeodesicManifold* _manifold)
+GeneralizedCubicBezierCurve::GeneralizedCubicBezierCurve(CSpace* _space,GeodesicSpace* _manifold)
   :space(_space),manifold(_manifold)
 {}
 

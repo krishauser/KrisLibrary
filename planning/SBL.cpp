@@ -68,7 +68,7 @@ void CreateMilestonePath(const list<SBLTree::EdgeInfo>& in,MilestonePath& out)
     if(i->reversed) out.edges[index] = i->e->ReverseCopy();
     else out.edges[index] = i->e->Copy();
     Assert(out.edges[index]->Start() == *i->s);
-    Assert(out.edges[index]->Goal() == *i->t);
+    Assert(out.edges[index]->End() == *i->t);
     index++;
   }
 }
@@ -77,7 +77,7 @@ void SBLPlanner::CreatePath(MilestonePath& path) const
 {
   CreateMilestonePath(outputPath,path);
   Assert(path.edges.front()->Start() == *tStart->root);
-  Assert(path.edges.back()->Goal() == *tGoal->root);
+  Assert(path.edges.back()->End() == *tGoal->root);
 }
 
 SBLPlannerWithGrid::SBLPlannerWithGrid(CSpace* s)
@@ -96,13 +96,9 @@ void SBLPlannerWithGrid::Init(const Config& qStart,const Config& qGoal)
   s->A.h.resize(qStart.n,gridDivision);
   g->A.h.resize(qStart.n,gridDivision);
   //this is kinda stupid, should figure out a cleaner way to do this
-  if(qStart.n < (int)s->A.subsetToFull.mapping.size()) {
-    s->A.subsetToFull.mapping.resize(qStart.n);
-    g->A.subsetToFull.mapping.resize(qStart.n);
-    s->A.temp.resize(qStart.n);
-    g->A.temp.resize(qStart.n);
-    s->A.subdiv.h.n = qStart.n;
-    g->A.subdiv.h.n = qStart.n;
+  if(qStart.n < (int)s->A.mappedDims.size()) {
+    s->A.Randomize(qStart.n,qStart.n,gridDivision);
+    g->A.Randomize(qStart.n,qStart.n,gridDivision);
   }
   if(CheckPath(s->root,g->root)) {
     //cout<<"SBLPlanner::Init(): Start and goal connected!"<<endl;
@@ -310,14 +306,14 @@ void SBLPRT::CreatePath(int i,int j,MilestonePath& path)
     Assert(!subpath.edges.empty());
     //forward path or backward path?
     if(subpath.edges.front()->Start() == *roadmap.nodes[s]->root) {
-      Assert(subpath.edges.back()->Goal() == *roadmap.nodes[g]->root);
+      Assert(subpath.edges.back()->End() == *roadmap.nodes[g]->root);
       //forward path
       path.Concat(subpath);
       if(!path.IsValid()) fprintf(stderr,"SBLPRT::CreatePath: Path invalidated on %d %d\n",s,g);
     }
     else {
       Assert(subpath.edges.front()->Start() == *roadmap.nodes[g]->root);
-      Assert(subpath.edges.back()->Goal() == *roadmap.nodes[s]->root);
+      Assert(subpath.edges.back()->End() == *roadmap.nodes[s]->root);
       //backward path
       for(int k=(int)subpath.edges.size()-1;k>=0;k--) {
 	path.edges.push_back(subpath.edges[k]->ReverseCopy());

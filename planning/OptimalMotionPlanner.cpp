@@ -8,7 +8,7 @@
 //if this is on, this will check any optimal edges as they are added
 #define PRECHECK_OPTIMAL_EDGES 1
 //Do not do heuristic pruning with bidirectional (this doesn't seem to help much with lazy)
-#define HEURISTIC_PRUNING 1
+#define HEURISTIC_PRUNING 0
 //Prunes new configurations whose straight line distance to start and goal
 //is greater than the current goal cost
 #define ELLIPSOID_PRUNING 1
@@ -27,7 +27,7 @@
 //if 1, the path checking is done adaptively so that edges are placed in a priority queue
 //and bisected until an infeasible solution is found.  If 0, the path checking is done by
 //walking along the path and calling IsVisible() along each unchecked edge
-#define ADAPTIVE_SUBDIVISION 1
+#define ADAPTIVE_SUBDIVISION 0
 #define ADAPTIVE_SUBDIVISION_CHECK_COUNT 10
 
 #if TEST_EDGE_DISCOUNTING
@@ -47,7 +47,7 @@ class EdgeDistance
   Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
   {
     assert(e->Space() != NULL);
-    Real res = e->Space()->Distance(e->Start(),e->Goal());
+    Real res = e->Space()->Distance(e->Start(),e->End());
     if(res <= 0) {
       printf("PRMStarPlanner: Warning, edge has nonpositive length %g\n",res);
       return Epsilon;
@@ -64,7 +64,7 @@ class DiscountedEdgeDistance
   Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
   {
     assert(e->Space() != NULL);
-    Real res = e->Space()->Distance(e->Start(),e->Goal());
+    Real res = e->Space()->Distance(e->Start(),e->End());
     if(e->Done()) {
       Assert(!e->Failed());
       res *= factor;
@@ -641,7 +641,7 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
       if(spp.p[b] >= 0) {
 	SmartPointer<EdgePlanner>* e=roadmap.FindEdge(b,spp.p[b]);
 	Assert(e != NULL);
-	w=(*e)->Space()->Distance((*e)->Start(),(*e)->Goal());
+	w=(*e)->Space()->Distance((*e)->Start(),(*e)->End());
 	feas = (*e)->IsVisible();
       }
       printf("%d,%g,%d,%g,%d\n",b,spp.d[b],spp.p[b],w,feas);
@@ -703,7 +703,7 @@ public:
     vector<pair<int,int> > todelete;
     for(planner->LBroadmap.Begin(s,e);!e.end();e++) {
       int t = e.target();
-      double c = planner->space->Distance((*e)->Start(),(*e)->Goal());
+      double c = planner->space->Distance((*e)->Start(),(*e)->End());
       if(planner->roadmap.HasEdge(s,t)) {
 	successors.push_back(t);
 	cost.push_back(c);

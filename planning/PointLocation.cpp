@@ -244,17 +244,40 @@ bool RandomBestPointLocation::FilteredKNN(const Vector& p,int k,bool (*filter)(i
 
 KDTreePointLocation::KDTreePointLocation(vector<Vector>& points) 
   :PointLocationBase(points),norm(2.0)
-{}
+{
+  tree = new Geometry::KDTree;
+  if(!points.empty()) OnBuild();
+}
 
 
 KDTreePointLocation::KDTreePointLocation(vector<Vector>& points,Real _norm,const Vector& _weights) 
   :PointLocationBase(points),norm(_norm),weights(_weights)
-{}
+{
+  tree = new Geometry::KDTree;
+  if(!points.empty()) OnBuild();
+}
+
+KDTreePointLocation::~KDTreePointLocation()
+{
+  delete tree;
+}
+
+void KDTreePointLocation::OnBuild()
+{
+  delete tree;
+  vector<Geometry::KDTree::Point> pts(points.size());
+  int k = (points.empty() ? 0 : points[0].n);
+  for(size_t i=0;i<points.size();i++) {
+    pts[i].pt.setRef(points[i]);
+    pts[i].id = (int)i;
+  }
+  tree = new Geometry::KDTree(pts, k, 100);
+}
 
 void KDTreePointLocation::OnAppend()
 {
   int id=(int)points.size()-1;
-  tree.Insert(points.back(),id);
+  tree->Insert(points.back(),id);
   /*
   if(points.size() % 100 == 0)
     printf("K-D Tree size %d, depth %d\n",tree.TreeSize(),tree.MaxDepth());
@@ -263,13 +286,13 @@ void KDTreePointLocation::OnAppend()
 
 bool KDTreePointLocation::OnClear()
 {
-  tree.Clear();
+  tree->Clear();
   return true;
 }
 
 bool KDTreePointLocation::NN(const Vector& p,int& nn,Real& distance)
 { 
-  nn = tree.ClosestPoint(p,distance);
+  nn = tree->ClosestPoint(p,2,weights,distance);
   return true;
 }
 
@@ -277,7 +300,7 @@ bool KDTreePointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::ve
 { 
   nn.resize(k);
   distances.resize(k);
-  tree.KClosestPoints(p,k,norm,weights,&distances[0],&nn[0]);
+  tree->KClosestPoints(p,k,norm,weights,&distances[0],&nn[0]);
   //may have fewer than k points
   for(size_t i=0;i<nn.size();i++)
     if(nn[i] < 0) {
@@ -298,6 +321,6 @@ bool KDTreePointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::ve
 
 bool KDTreePointLocation::Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances) 
 { 
-  tree.ClosePoints(p,r,norm,weights,distances,nn);
+  tree->ClosePoints(p,r,norm,weights,distances,nn);
   return true;
 }

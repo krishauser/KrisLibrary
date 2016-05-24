@@ -141,11 +141,11 @@ bool Grid2DCSpace::IsFeasible(const Config& x)
   return !occupied(i,j);
 }
 
-EdgePlanner* Grid2DCSpace::LocalPlanner(const Config& a,const Config& b)
+EdgePlanner* Grid2DCSpace::PathChecker(const SmartPointer<Interpolator>& path)
 {
   Real res = Min((domain.bmax.x-domain.bmin.x)/Real(occupied.m),
 		 (domain.bmax.y-domain.bmin.y)/Real(occupied.n));
-  return new BisectionEpsilonEdgePlanner(this,a,b,res);
+  return new EpsilonEdgeChecker(this,path,res);
 }
 
 Real Grid2DCSpace::Distance(const Config& x, const Config& y)

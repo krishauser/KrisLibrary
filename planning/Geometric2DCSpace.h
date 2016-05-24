@@ -2,7 +2,6 @@
 #define GEOMETRIC_2D_CSPACE_H
 
 #include "CSpace.h"
-#include "ExplicitCSpace.h"
 #include <KrisLibrary/math3d/geometry2d.h>
 #include <vector>
 using namespace Math3D;
@@ -67,10 +66,11 @@ class Geometric2DCollection
  * The C-space obstacles are explicitly given as aabbs, boxes, triangles,
  * and spheres.
  */
-class Geometric2DCSpace : public ExplicitCSpace, public Geometric2DCollection
+class Geometric2DCSpace : public CSpace, public Geometric2DCollection
 {
 public:
   Geometric2DCSpace();
+  void InitConstraints();
   void DrawGL() const;
 
   Real ObstacleDistance(const Vector2& x) const;
@@ -81,14 +81,11 @@ public:
   bool ObstacleOverlap(const Triangle2D& tri) const;
   bool ObstacleOverlap(const Segment2D& s,int obstacle) const;
 
+  virtual int NumDimensions() const { return 2; }
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual int NumObstacles();
-  virtual std::string ObstacleName(int obstacle);
-  virtual bool IsFeasible(const Config& x);
-  virtual bool IsFeasible(const Config& x,int obstacle);
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b,int obstacle);
+  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
+  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int obstacle);
   virtual Real Distance(const Config& x, const Config& y);
   virtual Real ObstacleDistance(const Config& x) { return ObstacleDistance(Vector2(x(0),x(1))); }
   virtual void Properties(PropertyMap&) const;
@@ -97,5 +94,21 @@ public:
   Real visibilityEpsilon;
   AABB2D domain;
 };
+
+class Geometric2DObstacleFreeSet : public CSet
+{
+public:
+  Geometric2DObstacleFreeSet(const GeometricPrimitive2D& obstacle);
+  Geometric2DObstacleFreeSet(const GeometricPrimitive2D& obstacle,const Geometric2DCollection& robot,bool translationOnly);
+  virtual ~Geometric2DObstacleFreeSet() {}
+  virtual int NumDimensions() { return translationOnly ? 2:3; }
+  virtual bool Contains(const Config& x);
+  virtual Real ObstacleDistance(const Config& x);
+
+  GeometricPrimitive2D obstacle;
+  const Geometric2DCollection* robot;
+  bool translationOnly;
+};
+
 
 #endif

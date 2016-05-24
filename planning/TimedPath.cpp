@@ -1,10 +1,18 @@
 #include "TimedPath.h"
 
-Real TimedMilestonePath::Length() const
+Real TimedMilestonePath::ParamEnd() const
 {
   Real t=0;
   for(size_t i=0;i<durations.size();i++) t+=durations[i];
   return t;
+}
+
+Real TimedMilestonePath::Length() const
+{
+  Real len=0;
+  for(size_t i=0;i<edges.size();i++)
+    len += edges[i]->Length();
+  return len;
 }
 
 void TimedMilestonePath::SetConstant(const Config& q,CSpace* space)
@@ -15,32 +23,32 @@ void TimedMilestonePath::SetConstant(const Config& q,CSpace* space)
   durations[0] = 0;
 }
 
-inline Real Length(const EdgePlanner* e)
-{
-  return e->Space()->Distance(e->Start(),e->Goal());
-}
-
-void TimedMilestonePath::Set(const MilestonePath& path)
+void TimedMilestonePath::Set(const MilestonePath& path,int timeIndex)
 {
   edges = path.edges;
   durations.resize(edges.size());
-  for(size_t i=0;i<edges.size();i++)
-    durations[i] = ::Length(edges[i]);
+  for(size_t i=0;i<edges.size();i++) {
+    if(timeIndex >= 0) 
+      durations[i] = edges[i]->End()[timeIndex] - edges[i]->Start()[timeIndex];
+    else
+      durations[i] = edges[i]->Length();
+  }
 }
 
-void TimedMilestonePath::Set(const SmartPointer<EdgePlanner>& e)
+void TimedMilestonePath::Set(const SmartPointer<EdgePlanner>& e,int timeIndex)
 {
   edges.resize(1);
   durations.resize(1);
   edges[0] = e;
-  durations[0] = ::Length(e);
+  durations[0] = (timeIndex >= 0 ? e->End()[timeIndex]-e->Start()[timeIndex] : e->Length());
 }
 
-void TimedMilestonePath::Append(const SmartPointer<EdgePlanner>& e)
+void TimedMilestonePath::Append(const SmartPointer<EdgePlanner>& e,int timeIndex)
 {
   if(!edges.empty()) Assert(e->Start()==End());
   edges.push_back(e);
-  durations.push_back(::Length(e));
+  Real duration = (timeIndex >= 0 ? e->End()[timeIndex]-e->Start()[timeIndex] : e->Length());
+  durations.push_back(duration);
 }
 
 void TimedMilestonePath::AppendDelay(Real t)
@@ -61,7 +69,7 @@ void TimedMilestonePath::Concat(const TimedMilestonePath& path)
   durations.insert(durations.end(),path.durations.begin(),path.durations.end());
 }
 
-int TimedMilestonePath::Eval(Real t,Config& x) const
+int TimedMilestonePath::Eval2(Real t,Config& x) const
 {
   Assert(!edges.empty());
   if(t < 0) {
@@ -110,7 +118,7 @@ void TimedMilestonePath::Split(Real dt,TimedMilestonePath& before,TimedMilestone
 	else edges[i]->Eval(dt/durations[i],x);
 	before.edges.push_back(cspace->LocalPlanner(edges[i]->Start(),x));
 	before.durations.push_back(dt);
-	after.edges.push_back(cspace->LocalPlanner(x,edges[i]->Goal()));
+	after.edges.push_back(cspace->LocalPlanner(x,edges[i]->End()));
 	after.durations.push_back(durations[i]-dt);
       }
       else {

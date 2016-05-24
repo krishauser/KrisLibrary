@@ -65,6 +65,8 @@ class HaltingCondition
 class MotionPlannerInterface
 {
  public:
+  typedef Graph::UndirectedGraph<Config,SmartPointer<EdgePlanner> > Roadmap;
+
   MotionPlannerInterface() {}
   virtual ~MotionPlannerInterface() {}
   ///Plans until a given termination condition holds true, returns the
@@ -113,7 +115,7 @@ class MotionPlannerInterface
   ///For single-query planners, returns the solution path
   virtual void GetSolution(MilestonePath& path) { return GetPath(0,1,path); }
   ///Returns a full-blown roadmap representation of the roadmap
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const {}
+  virtual void GetRoadmap(Roadmap& roadmap) const {}
   ///Returns some named statistics about the planner, implementation-dependent
   virtual void GetStats(PropertyMap& stats) const;
 };
@@ -129,9 +131,9 @@ class MotionPlanningProblem
   ///Create a point-to-point problem
   MotionPlanningProblem(CSpace* space,const Config& a,const Config& b);
   ///Create a point-to-set problem
-  MotionPlanningProblem(CSpace* space,const Config& a,CSpace* goalSet);
+  MotionPlanningProblem(CSpace* space,const Config& a,CSet* goalSet);
   ///Create a set-to-set problem
-  MotionPlanningProblem(CSpace* space,CSpace* startSet,CSpace* goalSet);
+  MotionPlanningProblem(CSpace* space,CSet* startSet,CSet* goalSet);
   ///Create an initial value problem (placeholder -- objectives not done yet)
   MotionPlanningProblem(CSpace* space,const Config& a,void* objective);
 
@@ -139,7 +141,7 @@ class MotionPlanningProblem
   ///Non-empty if the start/end point is given
   Config qstart,qgoal;
   ///Non-NULL if the start/end point must be in a given set
-  CSpace *startSet, *goalSet;
+  CSet *startSet, *goalSet;
   ///Placeholder -- objectives not done yet
   void* objective;
 };
@@ -240,7 +242,7 @@ class MotionPlannerFactory
   ///Make a point-to-point motion planner (start is milestone 0 and goal is milestone 1)
   virtual MotionPlannerInterface* Create(CSpace* space,const Config& a,const Config& b);
   ///Make a point-to-set motion planner
-  virtual MotionPlannerInterface* Create(CSpace* space,const Config& a,CSpace* goalSet);
+  virtual MotionPlannerInterface* Create(CSpace* space,const Config& a,CSet* goalSet);
   ///Helper: make a motion planner without shortcut / restart modifiers
   virtual MotionPlannerInterface* CreateRaw(CSpace* space);
   ///Helper: apply shortcut / restart modifiers to a given planner interface
