@@ -34,12 +34,28 @@ inline int _MaxDist(Real* dist, int k)
   return imax;
 } 
 
+KDTree::Point::Point()
+:id(-1)
+{}
+
+KDTree::Point::Point(const Point& p)
+{
+  pt.setRef(p.pt);
+  id = p.id;
+}
+
+const KDTree::Point& KDTree::Point::operator = (const Point& p)
+{
+  pt.setRef(p.pt);
+  id = p.id;
+  return *this;
+}
 
 KDTree* KDTree::Create(const std::vector<Vector>& p, int k, int maxDepth)
 {
   std::vector<Point> pts(p.size());
   for(size_t i=0; i<p.size();i++) {
-    pts[i].pt = p[i];
+    pts[i].pt.setRef(p[i]);
     pts[i].id=(int)i;
   }
   return new KDTree(pts,k,0,maxDepth);
@@ -65,10 +81,12 @@ KDTree::KDTree(const std::vector<Point>& _pts,int k, int _depth, int maxDepth)
       std::vector<Point> p1,p2;
       std::vector<int> i1,i2;
       for(size_t i=0;i<_pts.size();i++) {
-	if(Pos(_pts[i],splitDim,splitVal)) 
+	if(Pos(_pts[i],splitDim,splitVal)) {
 	  p1.push_back(_pts[i]);
-	else 
-	  p2.push_back(_pts[i]);
+  }
+	else  {
+    p2.push_back(_pts[i]);
+  }
       }
       if(!p1.empty() && !p2.empty()) { //go down another level
 	pos = new KDTree(p1,k,depth+1,maxDepth);
@@ -80,7 +98,7 @@ KDTree::KDTree(const std::vector<Point>& _pts,int k, int _depth, int maxDepth)
   }
   splitDim=-1;
   pos=neg=NULL;
-  pts=_pts;
+  pts = _pts;
 }
 
 KDTree::~KDTree()
@@ -183,7 +201,7 @@ KDTree* KDTree::Insert(const Vector& p,int id,int maxLeafPoints)
   Assert(node->IsLeaf());
   //just add to the node
   node->pts.resize(node->pts.size()+1);
-  node->pts.back().pt = p;
+  node->pts.back().pt.setRef(p);
   node->pts.back().id = id;
   if((int)node->pts.size() >= maxLeafPoints) {
     //split
@@ -286,7 +304,7 @@ void KDTree::KClosestPoints(const Vector& pt,int k,Real n,const Vector& w,Real* 
 
 Real KDTree::Select(const std::vector<Point>& S, int d, int k)
 {
-  return ArrayUtils::nth_element(S,k,DDimensionCmp(d)).pt[d];
+  return (ArrayUtils::nth_element(S,k,DDimensionCmp(d)).pt)[d];
   /*
   Assert(k >= 0 && k < S.size());
   int i=rand()%S.size();

@@ -8,7 +8,7 @@ using namespace Math;
 namespace Geometry {
 
 /** @ingroup Geometry
- * @brief A node of a kd-tree.
+ * @brief A kd-tree or a node of one.
  *
  * A whole kd-tree is created from the return value of KDTree::Create().
  * At the end of its life, delete it.
@@ -20,11 +20,17 @@ namespace Geometry {
  *   all points x with x(d)>val)
  * - neg: the node on the negative side of val
  * - pts: if this is a leaf, the set of points contained within
+ *
+ * NOTE: kd-trees only store REFERENCES to the Vectors that are given as input.
+ * As a result you must store them in some auxiliary data structure.
  */
 class KDTree
 {
  public:
   struct Point {
+    Point();
+    Point(const Point& pt);
+    const Point& operator = (const Point&);
     Vector pt;
     int id;
   };
