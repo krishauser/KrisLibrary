@@ -13,7 +13,7 @@
  * See K. Hauser and Y. Zhou, "Asymptotically-Optimal Kinodynamic Motion Planning in State-Cost Space"
  * IEEE Transactions on Robotics, 2016.
  */
-class CostSpaceRRTPlanner : public RRTKinodynamicPlanner
+class CostSpaceRRTPlanner : public LazyRRTKinodynamicPlanner
 {
 public:
   typedef Real (*HeuristicFn) (const Config& x);
@@ -28,11 +28,13 @@ public:
   void SetHeuristic(HeuristicFn f);
   virtual void Init(const State& xinit,CSet* goalSet);
   virtual bool Plan(int maxIters);
+  virtual bool Done() const;
   virtual bool GetPath(KinodynamicMilestonePath& path);
   virtual void PickDestination(State& xdest);
   virtual bool FilterExtension(Node* n,const KinodynamicMilestonePath& path);
   virtual RRTKinodynamicPlanner::Node* ExtendToward(const State& xdest);
   virtual void OnNewBestPath();
+  virtual void GetStats(PropertyMap& stats) const;
   void PruneTree();
   Real PathCost() const;
   Real TerminalCost(const State& xc);
@@ -43,13 +45,18 @@ public:
   SmartPointer<CSet> costGoalSet;
   HeuristicFn heuristic;
   Real costSpaceDistanceWeight;
+  bool lazy;
 
-  //keeps track of the best path cost
+  //keeps track of the best path and cost
+  KinodynamicMilestonePath bestPath;
   Real bestPathCost;
 
   //temp: keeps track of how much of the tree is suboptimal
   int prunableNodeSampleCount;
   int nodeSampleCount;
+
+  //keeps track of some statistics
+  int numGoalsSampled,numPrunedNodes;
 };
 
 /** @brief An optimizing planner that progressively produces better paths using state-cost space.
@@ -80,6 +87,7 @@ public:
   virtual bool GetPath(KinodynamicMilestonePath& path);
   virtual bool FilterExtension(Node* n,const KinodynamicMilestonePath& path);
   virtual void OnNewBestPath();
+  virtual void GetStats(PropertyMap& stats) const;
   void PruneTree();
   Real PathCost() const;
   Real TerminalCost(const State& xc);
@@ -98,6 +106,9 @@ public:
   //temp: keeps track of how much of the tree is suboptimal
   int prunableNodeSampleCount;
   int nodeSampleCount;
+
+  //keeps track of some statistics
+  int numGoalsSampled,numPrunedNodes;
 };
 
 
