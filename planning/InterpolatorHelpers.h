@@ -1,3 +1,6 @@
+#ifndef PLANNING_INTERPOLATOR_HELPERS_H
+#define PLANNING_INTERPOLATOR_HELPERS_H
+
 #include "Interpolator.h"
 #include "GeodesicSpace.h"
 #include <KrisLibrary/utils/SmartPointer.h>
@@ -12,15 +15,18 @@
 class LinearInterpolator : public Interpolator
 {
 public:
-  LinearInterpolator(Real ax,Real bx);
-  LinearInterpolator(const Config& a,const Config& b);
+  LinearInterpolator(Real ax,Real bx,Real ta=0,Real tb=1);
+  LinearInterpolator(const Config& a,const Config& b,Real ta=0,Real tb=1);
   virtual ~LinearInterpolator() {}
-  virtual void Eval(Real u,Config& x) const { interpolate(a,b,u,x); }
+  virtual void Eval(Real u,Config& x) const;
   virtual Real Length() const { return a.distance(b); }
   virtual const Config& Start() const { return a; }
   virtual const Config& End() const { return b; }
+  virtual Real ParamStart() const { return ta; }
+  virtual Real ParamEnd() const { return tb; }
 
   Config a, b;
+  Real ta, tb;
 };
 
 /** @ingroup MotionPlanning
@@ -192,3 +198,4 @@ public:
   Config a,b;
 };
 
+#endif

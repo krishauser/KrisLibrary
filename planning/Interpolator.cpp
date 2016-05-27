@@ -6,13 +6,27 @@
 using namespace Spline;
 using namespace std;
 
-LinearInterpolator::LinearInterpolator(Real ax,Real bx)
-:a(1,ax),b(1,bx)
+LinearInterpolator::LinearInterpolator(Real ax,Real bx,Real ap,Real bp)
+:a(1,ax),b(1,bx),ta(ap),tb(bp)
 {}
 
-LinearInterpolator::LinearInterpolator(const Config& _a,const Config& _b)
-:a(_a),b(_b)
+LinearInterpolator::LinearInterpolator(const Config& _a,const Config& _b,Real ap,Real bp)
+:a(_a),b(_b),ta(ap),tb(bp)
 {}
+
+void LinearInterpolator::Eval(Real u,Config& x) const
+{
+  if(tb==1 && ta==0)
+    interpolate(a,b,u,x);
+  else if(ta == tb) {
+    if(u<ta)
+      x=a;
+    else
+      x=b;
+  }
+  else
+    interpolate(a,b,(u-ta)/(tb-ta),x);
+}
 
 GeodesicInterpolator::GeodesicInterpolator(GeodesicSpace* _space,const Config& _a,const Config& _b)
 :space(_space),a(_a),b(_b)
@@ -194,10 +208,9 @@ Real PiecewisePolynomialInterpolator::Length() const
   Real s = 0;
   Vector prev,next;
   for(set<double>::const_iterator i=divs.begin();i!=divs.end();i++) {
-    if(!prev.empty()) {
-      next = path.Evaluate(*i);
+    next = path.Evaluate(*i);
+    if(!prev.empty()) 
       s += prev.distance(next);
-    }
     swap(prev,next);
   }
   return s;
