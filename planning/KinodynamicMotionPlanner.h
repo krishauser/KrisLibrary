@@ -43,9 +43,12 @@ public:
   void Reroot(Node* n);
   Node* PickRandom();
   Node* FindClosest(const State& x);
-  ///Deletes n and its subtree.  If point location is not enabled, cost is O(k) where k is the
-  ///size of the subtree.  Otherwise, cost is O(N) where N is the number of nodes!
-  void DeleteSubTree(Node* n);
+  ///Deletes n and its subtree.  If point location is not enabled or rebuild=true, cost is O(k)
+  ///where k is the size of the subtree.  Otherwise, cost is O(N) where N is the number of nodes!
+  ///If you plan to make several deletions, delete the subtrees with rebuild=false, then call
+  ///RebuildPointLocation before calling FindClosest() or PickRandom() again.
+  void DeleteSubTree(Node* n,bool rebuild=true);
+  void RebuildPointLocation();
 
   static void GetPath(Node* start,Node* goal,KinodynamicMilestonePath& path);
 
@@ -68,6 +71,7 @@ public:
   virtual bool Plan(int maxIters)=0;
   virtual bool Done() const=0;
   virtual bool GetPath(KinodynamicMilestonePath& path)=0;
+  virtual void GetStats(PropertyMap& stats) const {}
 
   KinodynamicSpace* space;
   CSet* goalSet;
@@ -97,12 +101,18 @@ public:
   ///Subclasses can overload this to eliminate certain extensions of the tree
   virtual bool FilterExtension(Node* n,const KinodynamicMilestonePath& path) { return false; }
 
+  virtual void GetStats(PropertyMap& stats) const;
+
   Real goalSeekProbability;
   KinodynamicTree tree;
+  Real delta;
 
   //temporary output
   Node* goalNode;
+  int numIters,numInfeasibleControls,numInfeasibleEndpoints,numFilteredExtensions,numSuccessfulExtensions;
+  Real nnTime,pickControlTime,visibleTime,overheadTime;
 };
+
 
 /** @brief The EST planner for kinodynamic systems.
  *
@@ -132,6 +142,7 @@ public:
   virtual bool GetPath(KinodynamicMilestonePath& path);
   ///Subclasses can overload this to eliminate certain extensions of the tree
   virtual bool FilterExtension(Node* n,const KinodynamicMilestonePath& path) { return false; }
+  virtual void GetStats(PropertyMap& stats) const;
   
   void RebuildDensityEstimator();
 
@@ -146,6 +157,8 @@ public:
   
   //temporary output
   Node* goalNode;
+  int numIters,numFilteredExtensions,numSuccessfulExtensions;
+  Real sampleTime,simulateTime,visibleTime,overheadTime;
 };
 
 
@@ -157,7 +170,7 @@ public:
   LazyRRTKinodynamicPlanner(KinodynamicSpace* s);
   virtual ~LazyRRTKinodynamicPlanner() {}
   virtual bool Plan(int maxIters);
-  Node* ExtendToward(const State& xdest);
+  virtual Node* ExtendToward(const State& xdest);
   bool CheckPath(Node* n);
 };
 
