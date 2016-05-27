@@ -54,7 +54,7 @@ void KinodynamicTree::Init(const State& initialState)
 
 void KinodynamicTree::EnablePointLocation(const char* type)
 { 
-  if(type == NULL)
+  if(type == NULL) 
     pointLocation = new NaivePointLocation(pointRefs,space->GetStateSpace());
   else if(0==strcmp(type,"kdtree")) {
     PropertyMap props;
@@ -76,6 +76,7 @@ void KinodynamicTree::EnablePointLocation(const char* type)
   else
     FatalError("Invalid point location method %s\n",type);
   //rebuild point location data structures
+  printf("Rebuilding point location data structures\n");
   VectorizeCallback callback;
   if(root) root->DFS(callback);
   index = callback.nodes;
@@ -200,17 +201,28 @@ void KinodynamicTree::GetPath(Node* start,Node* goal,KinodynamicMilestonePath& p
     path.Concat(npath[i]->edgeFromParent().path);
 }
 
-void KinodynamicTree::DeleteSubTree(Node* n)
+void KinodynamicTree::DeleteSubTree(Node* n,bool rebuild)
 {
   //EZCallTrace tr("KinodynamicTree::DeleteSubTree()");
   if(n == root) root = NULL;
   Node* p=n->getParent();
   if(p) p->detachChild(n);
+  Node* c = p->getFirstChild();
+  while(c) {
+    Assert(c != n);
+    c = c->getNextSibling();
+  }
   delete n;  //this automatically deletes n and all children
 
-  if(pointLocation) {
+  if(rebuild && pointLocation) {
     printf("Rebuilding point location data structure on subtree delete..\n");
+    RebuildPointLocation();
+  }
+}
 
+void KinodynamicTree::RebuildPointLocation()
+{
+  if(pointLocation) {
     //TODO: faster deletion, if this is a small subtree
     VectorizeCallback callback;
     if(root) root->DFS(callback);
@@ -241,7 +253,9 @@ void KinodynamicPlannerBase::Init(const State& xinit,const State& xgoal,Real goa
 
 
 RRTKinodynamicPlanner::RRTKinodynamicPlanner(KinodynamicSpace* s)
-  :KinodynamicPlannerBase(s),goalSeekProbability(0.1),tree(s),goalNode(NULL)
+  :KinodynamicPlannerBase(s),goalSeekProbability(0.1),tree(s),delta(Inf),goalNode(NULL),
+  numIters(0),numInfeasibleControls(0),numInfeasibleEndpoints(0),numFilteredExtensions(0),numSuccessfulExtensions(0),
+  nnTime(0),pickControlTime(0),visibleTime(0),overheadTime(0)
 {}
 
 bool RRTKinodynamicPlanner::Plan(int maxIters)
@@ -253,28 +267,53 @@ bool RRTKinodynamicPlanner::Plan(int maxIters)
     getchar();
   }
   for(int i=0;i<maxIters;i++) {
+    numIters++;
     Node* n=Extend();
+    Timer timer;
     if(n && goalSet && goalSet->Contains(*n)) {
+      overheadTime += timer.ElapsedTime();
       goalNode = n;
       return true;
     }
+    overheadTime += timer.ElapsedTime();
   }
   return false;
 }
 
+void RRTKinodynamicPlanner::GetStats(PropertyMap& stats) const
+{
+  stats.set("numIters",numIters);
+  stats.set("numInfeasibleControls",numInfeasibleControls);
+  stats.set("numInfeasibleEndpoints",numInfeasibleEndpoints);
+  stats.set("numFilteredExtensions",numFilteredExtensions);
+  stats.set("numSuccessfulExtensions",numSuccessfulExtensions);
+  stats.set("nnTime",nnTime);
+  stats.set("pickControlTime",pickControlTime);
+  stats.set("visibleTime",visibleTime);
+  stats.set("overheadTime",overheadTime);
+}
+
 void RRTKinodynamicPlanner::Init(const State& xinit,CSet* _goalSet)
 {
+  Timer timer;
   goalNode = NULL;
   tree.Init(xinit);
   goalSet = _goalSet;
   if(goalSet->Contains(xinit)) goalNode = tree.root;
-  tree.EnablePointLocation("kdtree");
+  if(!tree.pointLocation) {
+    //tree.EnablePointLocation("kdtree");
+    tree.EnablePointLocation(NULL);
+  }
+  overheadTime += timer.ElapsedTime();
 }
 
 void RRTKinodynamicPlanner::PickDestination(State& xdest)
 {
-  if(goalSet && RandBool(goalSeekProbability)) {
+  if(goalSet && goalSet->IsSampleable() && RandBool(goalSeekProbability)) {
     goalSet->Sample(xdest);
+    if(!goalSet->Project(xdest)) {
+      printf("Warning: goal set doesnt sample a feasible configuration\n");
+    }
   }
   else {
     space->GetStateSpace()->Sample(xdest);
@@ -283,31 +322,61 @@ void RRTKinodynamicPlanner::PickDestination(State& xdest)
 
 Node* RRTKinodynamicPlanner::Extend()
 {
+  Timer timer;
   State xdest;
   PickDestination(xdest);
+  overheadTime += timer.ElapsedTime();
   return ExtendToward(xdest);
 }
 
 
 Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
 {
+  Timer timer;
   //EZCallTrace tr("RRTKinodynamicPlanner::Extend()");
   Node* n=tree.FindClosest(xdest);
+  nnTime += timer.ElapsedTime();
+  timer.Reset();
+  Vector temp = xdest;
+  Real d = space->GetStateSpace()->Distance(*n,xdest);
+  if(d > delta)  {
+    space->GetStateSpace()->Interpolate(*n,xdest,delta/d,temp);
+  }
   KinodynamicMilestonePath path;
-  if(!PickControl(*n,xdest,path)) return NULL;
+  if(!PickControl(*n,temp,path)) {
+    numInfeasibleControls++;
+    pickControlTime += timer.ElapsedTime();
+    return NULL;
+  }
+  pickControlTime += timer.ElapsedTime();
+  timer.Reset();
   if(!space->GetStateSpace()->IsFeasible(path.End())) {
     //printf("Edge endpoint is not feasible\n");
+    visibleTime += timer.ElapsedTime();
+    numInfeasibleEndpoints++;
+    return NULL;
+  }
+  visibleTime += timer.ElapsedTime();
+  timer.Reset();
+
+  if(FilterExtension(n,path)) {
+    numFilteredExtensions++;
     return NULL;
   }
 
-  if(FilterExtension(n,path)) return NULL;
-
+  timer.Reset();
   SmartPointer<EdgePlanner> e = space->TrajectoryChecker(path);
   if(e->IsVisible()) {
-    return tree.AddMilestone(n,path,e);
+    numSuccessfulExtensions++;
+    visibleTime += timer.ElapsedTime();
+    timer.Reset();
+    Node * n = tree.AddMilestone(n,path,e);
+    overheadTime += timer.ElapsedTime();
+    return n;
   }
   else {
     //printf("Edge is not visible\n");
+    visibleTime += timer.ElapsedTime();
     return NULL;
   }
 }
@@ -329,6 +398,7 @@ bool RRTKinodynamicPlanner::PickControl(const State& x0, const State& xDest, Kin
   SmartPointer<SteeringFunction> sf = space->GetControlSpace()->GetSteeringFunction();
   if(!sf)  {
     int nd = space->GetControlSet(x0)->NumDimensions();
+    if(nd < 0) nd = space->GetStateSpace()->NumDimensions();
     sf = new RandomBiasSteeringFunction(space,3*nd);
   }
   if(sf->Connect(x0,xDest,path)) {
@@ -336,14 +406,21 @@ bool RRTKinodynamicPlanner::PickControl(const State& x0, const State& xDest, Kin
     for(size_t i=0;i<path.controls.size();i++) 
       assert(space->IsValidControl(path.milestones[i],path.controls[i]));
     path.MakeEdges(space);
+    Assert(path.Start() == x0);
+    Assert(path.End().n == space->GetStateSpace()->NumDimensions());
     return true;
+  }
+  else {
+    cout<<"Failed to connect "<<x0<<" toward "<<xDest<<endl;
   }
   return false;
 }
 
 
 ESTKinodynamicPlanner::ESTKinodynamicPlanner(KinodynamicSpace* s)
-:KinodynamicPlannerBase(s),tree(s),extensionCacheSize(0)
+:KinodynamicPlannerBase(s),tree(s),extensionCacheSize(0),
+numIters(0),numFilteredExtensions(0),numSuccessfulExtensions(0),
+sampleTime(0),simulateTime(0),visibleTime(0),overheadTime(0)
 {
   if(s)
     densityEstimator = new MultiGridDensityEstimator(s->GetStateSpace()->NumDimensions(),3,0.1);
@@ -369,6 +446,7 @@ void ESTKinodynamicPlanner::SetDensityEstimatorResolution(const Vector& res)
   else {
     MultiGridDensityEstimator* mgrid = dynamic_cast<MultiGridDensityEstimator*>(&*densityEstimator);
     Assert(mgrid != NULL);
+    mgrid->numDims = space->GetStateSpace()->NumDimensions();
     mgrid->h = res;
     mgrid->Randomize();
   }
@@ -402,6 +480,7 @@ bool ESTKinodynamicPlanner::Plan(int maxIters)
   const static int gESTNumControlSamplesPerNode = 1;
   SmartPointer<ControlSpace> controlSpace = space->GetControlSpace();
   for(int iters=0;iters<maxIters;iters++) {
+    numIters++;
     int numNodeSamples = extensionCacheSize - (int)extensionCache.size();
     if(extensionCacheSize == 0) numNodeSamples = 1;
     for(int nsample=0;nsample<numNodeSamples;nsample++) {
@@ -417,6 +496,7 @@ bool ESTKinodynamicPlanner::Plan(int maxIters)
         if(!c) continue;
         //TODO: test whether prechecking the edges is useful
         if(FilterExtension(n,c->edgeFromParent().path)) {
+          numFilteredExtensions++;
           tree.DeleteSubTree(c);
           continue;
         }
@@ -455,6 +535,7 @@ bool ESTKinodynamicPlanner::Plan(int maxIters)
     }
     //it's a good extension, add it as a candidate to be expanded
     densityEstimator->Add(*c,c);
+    numSuccessfulExtensions++;
   }
   return false;
 }
@@ -469,6 +550,13 @@ bool ESTKinodynamicPlanner::GetPath(KinodynamicMilestonePath& path)
   if(goalNode == NULL) return false;
   tree.GetPath(tree.root,goalNode,path);
   return true;
+}
+
+void ESTKinodynamicPlanner::GetStats(PropertyMap& stats) const
+{
+  stats.set("numIters",numIters);
+  stats.set("numFilteredExtensions",numFilteredExtensions);
+  stats.set("numSuccessfulExtensions",numSuccessfulExtensions);
 }
 
 
@@ -492,11 +580,16 @@ bool LazyRRTKinodynamicPlanner::Plan(int maxIters)
   }
   for(int i=0;i<maxIters;i++) {
     Node* n=Extend();
+    Timer timer;
     if(n && goalSet && goalSet->Contains(*n)) {
       if(CheckPath(n)) {
+        overheadTime += timer.ElapsedTime();
 	goalNode = n;
 	return true;
       }
+    }
+    else {
+      overheadTime += timer.ElapsedTime();
     }
   }
   return false;
@@ -504,15 +597,43 @@ bool LazyRRTKinodynamicPlanner::Plan(int maxIters)
 
 Node* LazyRRTKinodynamicPlanner::ExtendToward(const State& xdest)
 {
-  //EZCallTrace tr("LazyRRTKinodynamicPlanner::Extend()");
+  Timer timer;
+  //EZCallTrace tr("RRTKinodynamicPlanner::Extend()");
   Node* n=tree.FindClosest(xdest);
-  KinodynamicMilestonePath ed;
-  if(!PickControl(*n,xdest,ed)) return NULL;
-  if(space->GetStateSpace()->IsFeasible(ed.End())) {
-    return tree.AddMilestone(n,ed);
+  nnTime += timer.ElapsedTime();
+  timer.Reset();
+  Vector temp = xdest;
+  Real d = space->GetStateSpace()->Distance(*n,xdest);
+  if(d > delta)  {
+    space->GetStateSpace()->Interpolate(*n,xdest,delta/d,temp);
   }
-  return NULL;
+  KinodynamicMilestonePath path;
+  if(!PickControl(*n,temp,path)) {
+    numInfeasibleControls++;
+    pickControlTime += timer.ElapsedTime();
+    return NULL;
+  }
+  pickControlTime += timer.ElapsedTime();
+  timer.Reset();
+  if(!space->GetStateSpace()->IsFeasible(path.End())) {
+    //printf("Edge endpoint is not feasible\n");
+    visibleTime += timer.ElapsedTime();
+    numInfeasibleEndpoints++;
+    return NULL;
+  }
+  visibleTime += timer.ElapsedTime();
+  timer.Reset();
+
+  if(FilterExtension(n,path)) {
+    numFilteredExtensions++;
+    return NULL;
+  }
+
+  SmartPointer<EdgePlanner> e = space->TrajectoryChecker(path);
+  numSuccessfulExtensions++;
+  return tree.AddMilestone(n,path,e);
 }
+
 
 struct NodeWithPriority
 {
@@ -530,24 +651,39 @@ bool LazyRRTKinodynamicPlanner::CheckPath(Node* n)
 {
   //EZCallTrace tr("LazyRRTKinodynamicPlanner::CheckPath()");
   //add all nodes up to n, except root
+  if(!n->getParent()) return true;
+  if(!CheckPath(n->getParent())) return false;
+  if(!n->edgeFromParent().checker->IsVisible()) {
+    Timer timer;
+    tree.DeleteSubTree(n);
+    overheadTime += timer.ElapsedTime();
+    return false;
+  }
+  return true;
+
   priority_queue<NodeWithPriority,vector<NodeWithPriority> > q;
   while(n != tree.root) {
     q.push(n);
     n = n->getParent();
     Assert(n != NULL);
   }
+  printf("LazyRRTKinodynamicPlanner::CheckPath: %d nodes to check\n",q.size());
   while(!q.empty()) {
     n=q.top(); q.pop();
     EdgePlanner* e=n->edgeFromParent().checker;
     if(!e->Done()) {
       if(!e->Plan()) {
+        printf("Edge found infeasible, deleting\n");
 	//disconnect n from the rest of the tree
+  Timer timer;
 	tree.DeleteSubTree(n);
+  overheadTime += timer.ElapsedTime();
 	return false;
       }
       q.push(n);
     }
   }
+  printf("Path checking successful!\n");
   return true;
 }
 
