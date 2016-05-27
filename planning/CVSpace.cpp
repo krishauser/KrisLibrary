@@ -4,7 +4,14 @@
 
 CVSpace::CVSpace(const SmartPointer<CSpace>& _baseSpace,const SmartPointer<CSpace>& _velSpace)
   :MultiCSpace(_baseSpace,_velSpace)
-{}
+{
+  Assert(components.size()==2);
+  Assert(components[0] == _baseSpace);
+  Assert(components[1] == _velSpace);
+  Assert(componentNames.size()==2);
+  componentNames[0] = "q";
+  componentNames[1] = "v";
+}
 
 void CVSpace::GetState(const Config& x,Config& q,Vector& v)
 {
