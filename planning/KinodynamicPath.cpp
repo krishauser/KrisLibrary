@@ -265,6 +265,8 @@ void KinodynamicMilestonePath::Splice(Real u1,Real u2,const KinodynamicMilestone
   int e2 = (int)Floor(paths.size()*u2);
   Real s1 = paths.size()*u1 - Real(e1);
   Real s2 = paths.size()*u2 - Real(e2);
+  Assert(e1 < (int)paths.size());
+  Assert(e2 >= 0);
   KinodynamicMilestonePath spath;
   if(e1 >= 0 && s1 > 0) {
     spath.milestones.resize(2);
@@ -279,9 +281,9 @@ void KinodynamicMilestonePath::Splice(Real u1,Real u2,const KinodynamicMilestone
     spath.milestones.push_back(milestones[e2+1]);
     spath.controls.push_back(controls[e2]);
     spath.controls.back()[0] *= (1.0-s2);  ///assume it the control scales
-    spath.paths.push_back( new TimeRemappedInterpolator(paths[e1],s2,1));
+    spath.paths.push_back( new TimeRemappedInterpolator(paths[e2],s2,1));
   }
-  if(!edges.empty()) spath.MakeEdges(space);
+  if(!edges.empty() && space) spath.MakeEdges(space);
   Splice2(e1,e2+1,spath);
 }
 
@@ -309,11 +311,11 @@ void KinodynamicMilestonePath::Splice2(int start,int goal,const KinodynamicMiles
     paths.erase(paths.begin()+start,paths.begin()+goal);
     if(!edges.empty())
       edges.erase(edges.begin()+start,edges.begin()+goal);
-    milestones.insert(milestones.begin()+start+2,path.milestones.begin()+1,path.milestones.end()-1);
-    controls.insert(controls.begin()+start+1,path.controls.begin(),path.controls.end());
-    paths.insert(paths.begin()+start+1,path.paths.begin(),path.paths.end());
+    milestones.insert(milestones.begin()+start+1,path.milestones.begin()+1,path.milestones.end()-1);
+    controls.insert(controls.begin()+start,path.controls.begin(),path.controls.end());
+    paths.insert(paths.begin()+start,path.paths.begin(),path.paths.end());
     if(!edges.empty())
-      edges.insert(edges.begin()+start+1,path.edges.begin(),path.edges.end());
+      edges.insert(edges.begin()+start,path.edges.begin(),path.edges.end());
   }
 }
 

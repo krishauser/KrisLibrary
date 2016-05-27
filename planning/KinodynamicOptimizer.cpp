@@ -21,7 +21,7 @@ KinodynamicLocalOptimizer::KinodynamicLocalOptimizer(KinodynamicSpace* s,SmartPo
   methodAvailable[Shortcut] = (sf != NULL && sf->IsExact());
   methodAvailable[RandomDescent] = false;
   methodAvailable[GradientDescent] = false;
-  methodAvailable[DDP] = true;
+  methodAvailable[DDP] = false;
   optimizer = new Optimization::BlackBoxConstraintOptimizer(Optimization::NonlinearProgram(NULL),NULL);
   optimizer->tolf = optimizer->tolx = 0;
 }
@@ -101,7 +101,6 @@ void KinodynamicLocalOptimizer::ComputeCosts()
   for(size_t i=0;i<bestPath.paths.size();i++)
     cumulativeCosts[i+1] = cumulativeCosts[i] + objective->IncrementalCost(bestPath.controls[i],bestPath.paths[i]);
   bestPathCost = cumulativeCosts.back()+objective->TerminalCost(bestPath.milestones.back());
-  printf("Manually computed costs: %g, PathCost computed: %g\n",bestPathCost,objective->PathCost(bestPath));
 }
 
 bool KinodynamicLocalOptimizer::DoShortcut() 
@@ -123,10 +122,10 @@ bool KinodynamicLocalOptimizer::DoShortcut()
   Real s2 = u2*(Real)bestPath.edges.size() - Floor(u2*(Real)bestPath.edges.size());
   Real cOrig = (1-s1)*(cumulativeCosts[e1+1]-cumulativeCosts[e1]) + cumulativeCosts[e2] - cumulativeCosts[e1+1] + s2*(cumulativeCosts[e2+1]-cumulativeCosts[e2]);
   if(cshortcut < cOrig) {
-    SmartPointer<EdgePlanner> checker = space->TrajectoryChecker(shortcut);
-    if(checker->IsVisible()) {
+    shortcut.MakeEdges(space);
+    if(shortcut.IsFeasible()) {
       //splice into best path
-      bestPath.Splice(u1,u2,shortcut);
+      bestPath.Splice(u1,u2,shortcut,space);
       ComputeCosts();
       return true;
     }
