@@ -151,7 +151,7 @@ void BoxCSpace::Sample(Config& x)
 
 void BoxCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
 {
-  CSpace::SampleNeighborhood(c,r,x);
+  CartesianCSpace::SampleNeighborhood(c,r,x);
 }
 
 void BoxCSpace::Properties(PropertyMap& pmap)
@@ -368,7 +368,7 @@ bool MultiCSpace::IsFeasible(const Config& x)
 {
   vector<Config> xitems;
   SplitRef(x,xitems);
-  for(size_t i=0;i<components.size();i++)
+  for(size_t i=0;i<components.size();i++) 
     if(!components[i]->IsFeasible(xitems[i])) return false;
   return true;
 }
@@ -511,7 +511,7 @@ void MultiCSpace::Properties(PropertyMap& map)
       cspacemaximum[i] = cmax;
     if(!cmap.get("diameter",cvolume))
       diameter = -Inf;
-    else
+    else if(!distanceWeights.empty())
       diameter += distanceWeights[i]*cvolume;
   }
   if(volume > 0) map.set("volume",volume);
