@@ -138,6 +138,9 @@ public:
   enum TimeSelection { Uniform, Maximum, Biased };
 
   IntegratedControlSet(const SmartPointer<CSet>& base,Real dtmax);
+  virtual int NumDimensions() const;
+  virtual bool Project(Config& x);
+  virtual bool IsSampleable() const;
   virtual void Sample(ControlInput& u);
   virtual bool Contains(const ControlInput& u);
   

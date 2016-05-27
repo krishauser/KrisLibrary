@@ -37,6 +37,27 @@ IntegratedControlSet::IntegratedControlSet(const SmartPointer<CSet>& _base,Real 
 :timeSelection(Biased),base(_base),dtmax(_dtmax)
 {}
 
+int IntegratedControlSet::NumDimensions() const
+{
+  int nd = base->NumDimensions();
+  if(nd < 0) return -1;
+  return nd+1;
+}
+
+bool IntegratedControlSet::Project(Config& u)
+{
+  Vector ubase;
+  ubase.setRef(u,1,1,u.n-1);
+  if(!base->Project(ubase)) return false;
+  if(u(0) < 0) u(0) = 0;
+  return true;
+}
+
+bool IntegratedControlSet::IsSampleable() const
+{
+  return base->IsSampleable();
+}
+
 void IntegratedControlSet::Sample(ControlInput& u)
 {
   ControlInput ubase;
