@@ -3,6 +3,7 @@
 #include "ParabolicRamp.h"
 #include "KinodynamicPath.h"
 #include "CSetHelpers.h"
+#include <iostream>
 #include <sstream>
 using namespace std;
 
@@ -92,11 +93,16 @@ Interpolator* DoubleIntegratorControlSpace::Simulate(const State& x0, const Cont
   ubase.setRef(u,1,1,u.n-1);
   vector<Spline::Polynomial<double> > elements(x0.n);
   assert(q0.n == ubase.n);
-  for(int i=0;i<x0.n;i++) {
-    elements[i].Resize(2);
+  for(int i=0;i<q0.n;i++) {
+    elements[i].Resize(3);
     elements[i].SetCoef(0,q0[i]);
     elements[i].SetCoef(1,v0[i]);
     elements[i].SetCoef(2,0.5*ubase[i]);
+  }
+  for(int i=0;i<q0.n;i++) {
+    elements[i+q0.n].Resize(2);
+    elements[i+q0.n].SetCoef(0,v0[i]);
+    elements[i+q0.n].SetCoef(1,ubase[i]);
   }
   Spline::PiecewisePolynomialND path(elements,0,udt);
   return new PiecewisePolynomialInterpolator(path);
@@ -192,13 +198,18 @@ bool DoubleIntegratorBoxBoundedSteeringFunction::Connect(const State& x,const St
   ramp.dx0 = vx;
   ramp.dx1 = vy;
   if(!ramp.SolveMinTime(vector<double>(amax),vector<double>(vmax))) return false;
+  path.milestones.resize(2);
   path.milestones[0] = x;
   path.milestones[1] = y;
   //NOTE: THE CONTROL IS INVALID.  SHOULD WE SPLIT UP THE PATH INTO PIECEWISE QUADRATIC SEGMENTS?
   path.controls.resize(1);
-  path.controls[0].resize(0);
+  path.controls[0].resize(qx.n+1,0.0);
+  path.controls[0][0] = ramp.endTime;
   Spline::PiecewisePolynomialND ppath;
   Convert(ramp,ppath);
+  Spline::PiecewisePolynomialND dpath = ppath.Differentiate();
+  //the polynomial needs derivative information too...
+  ppath.elements.insert(ppath.elements.end(),dpath.elements.begin(),dpath.elements.end());
   path.paths.push_back(new PiecewisePolynomialInterpolator(ppath));
   return true;
 }
