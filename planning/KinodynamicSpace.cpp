@@ -37,14 +37,23 @@ bool RandomBiasSteeringFunction::Connect(const State& x,const State& xGoal,Kinod
   ControlInput u;
   SmartPointer<Interpolator> bestpath;
   SmartPointer<Interpolator> pathtemp;
+  SmartPointer<CSet> uspace = space->controlSpace->GetControlSet(x);
+  if(!uspace) {
+    cout<<"RandomBiasSteeringFunction::Connect(): Warning, no control set at "<<x<<"?"<<endl;
+    return false;
+  }
   for(int i=0;i<sampleCount;i++) {
-    SmartPointer<CSet> uspace = space->controlSpace->GetControlSet(x);
-    if(!uspace) continue;
     uspace->Sample(temp);
-    if(temp.empty()) { fprintf(stderr,"Warning, control space does not have Sample() method implemented\n"); return false; }
-    if(!uspace->Contains(temp)) continue;
+    if(temp.empty()) { fprintf(stderr,"RandomBiasSteeringFunction::Connect(): Warning, control space does not have Sample() method implemented\n"); return false; }
+    if(!uspace->Contains(temp)) {
+      cout<<"RandomBiasSteeringFunction::Connect(): Warning, sampled infeasible control "<<temp<<"?"<<endl;
+      continue;
+    }
     pathtemp = space->controlSpace->Simulate(x,temp);
-    if(!pathtemp) continue;
+    if(!pathtemp) {
+      cout<<"RandomBiasSteeringFunction::Connect(): Warning, simulated path is null?"<<endl;
+      continue;
+    }
     Real dist = space->GetStateSpace()->Distance(pathtemp->End(),xGoal);
     if(dist < closest) {
       closest = dist;
