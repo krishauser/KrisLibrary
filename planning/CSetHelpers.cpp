@@ -193,7 +193,14 @@ bool FiniteSet::Project(Config& x)
   return true;
 }
 
-int FiniteSet::NumDimensions() const { if(items.empty()) return -1; return items[0].n; }
+int FiniteSet::NumDimensions() const
+{
+  if(items.empty()) {
+    fprintf(stderr,"FiniteSet::NumDimensions(): no items, returning -1\n");
+    return -1;
+  }
+  return items[0].n;
+}
 Real FiniteSet::ObstacleDistance(const Config& x)
 {
   if(Contains(x)) return 0;
