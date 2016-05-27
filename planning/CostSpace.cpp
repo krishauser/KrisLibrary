@@ -26,8 +26,9 @@ class StateCostSteeringFunction : public SteeringFunction
 {
 public:
   SmartPointer<SteeringFunction> base;
-  StateCostSteeringFunction(const SmartPointer<SteeringFunction>& _base)
-  :base(_base)
+  SmartPointer<ObjectiveFunctionalBase> objective;
+  StateCostSteeringFunction(const SmartPointer<SteeringFunction>& _base,const SmartPointer<ObjectiveFunctionalBase>& _objective)
+  :base(_base),objective(_objective)
   {}
   virtual bool IsExact() const { return false; }
   virtual bool Connect(const State& x0,const State& x1,KinodynamicMilestonePath& path) {
@@ -41,15 +42,17 @@ public:
     path.controls.resize(qpath.controls.size());
     path.paths.resize(qpath.paths.size());
     Real dt = 1.0 / Real(qpath.paths.size());
+    Real c = c0;
     for(size_t i=0;i<qpath.milestones.size();i++) {
       Real u = Real(i)*dt;
-      Real c = c0 + u*(c1-c0);
       StateCostControlSpace::Join(qpath.milestones[i],c,path.milestones[i]);
       if(i+1 < qpath.milestones.size()) {
         path.controls[i] = qpath.controls[i];
         Real u2 = Real(i+1)*dt;
-        Real c2 = c0 + u2*(c1-c0);
-        path.paths[i] = new MultiInterpolator(qpath.paths[i],new LinearInterpolator(c,c2));
+        Real c2 = c + objective->IncrementalCost(qpath.controls[i],qpath.paths[i]);
+        path.paths[i] = new MultiInterpolator(qpath.paths[i],new LinearInterpolator(c,c2,qpath.paths[i]->ParamStart(),qpath.paths[i]->ParamEnd()));
+
+        c = c2;
       }
     }
     path.edges.resize(0);
@@ -60,7 +63,7 @@ public:
 SmartPointer<SteeringFunction> StateCostControlSpace::GetSteeringFunction()
 {
   SmartPointer<SteeringFunction> bsf = base->GetSteeringFunction();
-  if(bsf) return new StateCostSteeringFunction(bsf);
+  if(bsf) return new StateCostSteeringFunction(bsf,objective);
   return NULL;
 }
 
@@ -69,7 +72,7 @@ Interpolator* StateCostControlSpace::Simulate(const State& x0, const ControlInpu
   Vector q; Real c; SplitRef(x0,q,c);
   Interpolator* qpath = base->Simulate(q,u);
   Real dc = objective->IncrementalCost(u,qpath);
-  return new MultiInterpolator(qpath,new LinearInterpolator(c,c+dc));
+  return new MultiInterpolator(qpath,new LinearInterpolator(c,c+dc,qpath->ParamStart(),qpath->ParamEnd()));
 }
 
 void StateCostControlSpace::Successor(const State& x0, const ControlInput& u,State& x1)
@@ -105,6 +108,10 @@ EdgePlanner* StateCostKinodynamicSpace::TrajectoryChecker(const ControlInput& u,
 {
   const MultiInterpolator* mi = dynamic_cast<const MultiInterpolator*>(&*path);
   if(!mi) return KinodynamicSpace::TrajectoryChecker(u,path);
+  Assert(path->Start().n == GetStateSpace()->NumDimensions());
+  Assert(path->End().n == GetStateSpace()->NumDimensions());
+  Assert(mi->components[0]->Start().n == base->GetStateSpace()->NumDimensions());
+  Assert(mi->components[0]->End().n == base->GetStateSpace()->NumDimensions());
   EdgePlanner* ebase = base->TrajectoryChecker(u,mi->components[0]);
   return new PiggybackEdgePlanner(GetStateSpace(),path,ebase);
 }
