@@ -484,7 +484,9 @@ void SBLSubdivision::RandomizeSubset()
     p[i] = p[i+rand()%(n-i)];
     subsetToFull.mapping[i] = p[i];
   }
-  subsetToFull.InvMap(h,subdiv.h);
+  subsetToFull.InvMap(h,subdiv.hinv);
+  for(int i=0;i<subdiv.hinv.n;i++)
+    subdiv.hinv[i] = 1.0/subdiv.hinv[i];
   temp.resize(subsetToFull.Size());
 }
 
@@ -511,6 +513,13 @@ void SBLSubdivision::RemovePoint(Node* n)
   Assert(res == true);
 }
 
+void* RandomObject(const vector<void*>& objs)
+{
+  Assert(!objs.empty());
+  return objs[RandInt(objs.size())];
+}
+
+
 void* RandomObject(const list<void*>& objs)
 {
   //pick a random point from objs
@@ -529,7 +538,7 @@ Node* SBLSubdivision::PickPoint(const Config& x)
 
   GridSubdivision::Index index;
   subdiv.PointToIndex(temp,index);
-  list<void*>* objs = subdiv.GetObjectSet(index);
+  vector<void*>* objs = subdiv.GetObjectSet(index);
   if(!objs) return NULL;
 
   return (Node*)RandomObject(*objs);
