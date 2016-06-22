@@ -3,9 +3,6 @@
 
 #include "KinodynamicMotionPlanner.h"
 
-//forward declaration
-namespace Optimization { class BlackBoxConstraintOptimizer; }
-
 class KinodynamicLocalOptimizer : public KinodynamicPlannerBase
 {
 public:
@@ -36,7 +33,6 @@ public:
   std::vector<Real> methodCosts;
   //temporary
   KinodynamicMilestonePath tempPath;
-  Optimization::BlackBoxConstraintOptimizer* optimizer;
 };
 
 #endif

@@ -5,7 +5,6 @@
 #include <KrisLibrary/math/differentiation.h>
 #include <KrisLibrary/math/stacking.h>
 #include <KrisLibrary/math/LDL.h>
-#include <KrisLibrary/optimization/BlackBoxOptimization.h>
 #include <KrisLibrary/Timer.h>
 using namespace std;
 
@@ -22,13 +21,10 @@ KinodynamicLocalOptimizer::KinodynamicLocalOptimizer(KinodynamicSpace* s,SmartPo
   methodAvailable[RandomDescent] = false;
   methodAvailable[GradientDescent] = false;
   methodAvailable[DDP] = false;
-  optimizer = new Optimization::BlackBoxConstraintOptimizer(Optimization::NonlinearProgram(NULL),NULL);
-  optimizer->tolf = optimizer->tolx = 0;
 }
 
 KinodynamicLocalOptimizer::~KinodynamicLocalOptimizer()
 {
-  delete optimizer;
 }
 
 void KinodynamicLocalOptimizer::Init(const KinodynamicMilestonePath& path,CSet* _goalSet)
@@ -542,8 +538,10 @@ bool KinodynamicLocalOptimizer::DoDDP()
       du[i] = dJ;
     }
     du[i].inplaceNegative();
+    /*
     if(du[i].norm() > optimizer->trustRegionSize)
       du[i] *= optimizer->trustRegionSize / du[i].norm();
+      */
     cout<<"Du "<<i<<": "<<du[i]<<endl;
     //now that u[i] moves to u[i] + du[i], compute 2nd order approximation to the cost as a function of x[i].  Store in Ak, bk 
     Vector xnext;
@@ -586,6 +584,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     bk = bkprev;
   }
 
+  /*
   if(optimizer->x.n != (int)bestPath.controls.size()*bestPath.controls[0].n) {
     //need to redo x
     optimizer->baseProgram.f = new PathCostFunction(space,bestPath,objective);
@@ -613,6 +612,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     ComputeCosts();
     return true;
   }
+  */
   return false;
 }
 
@@ -655,6 +655,7 @@ bool KinodynamicLocalOptimizer::DoGradientDescent()
     jxgrad[i] += gxgrad[i];
   }
 
+  /*
   if(optimizer->x.n != (int)bestPath.controls.size()*bestPath.controls[0].n) {
     //need to redo x
     optimizer->baseProgram.f = new PathCostFunction(space,bestPath,objective);
@@ -683,6 +684,7 @@ bool KinodynamicLocalOptimizer::DoGradientDescent()
     ComputeCosts();
     return true;
   }
+  */
   return false;
   /*
   tempPath = bestPath;
