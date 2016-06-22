@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <utils/SimpleFile.h>
 #include <string.h>
 #include <errors.h>
 
@@ -29,7 +30,7 @@ using namespace GLDraw;
 namespace Meshing {
 
 static string gTexturePath;
-bool LoadOBJ(FILE* f,TriMesh& tri,GeometryAppearance& app);
+bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app);
 
 ///Returns true if the extension is a file type that we can load from
 bool CanLoadTriMeshExt(const char* ext)
@@ -105,7 +106,7 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
   else {
     if(0==strcmp(ext,"obj")) {
       FILE* f = fopen(fn,"r");
-      if(f && LoadOBJ(f,tri,app)) return true;
+      if(f && LoadOBJ(fn,f,tri,app)) return true;
     }
 #if HAVE_ASSIMP
     //setup texture path to same directory as fn
@@ -323,9 +324,33 @@ bool fgetline(FILE* f, char* buf,int bufsize)
   return false;
 }
 
+bool LoadOBJMaterial(const char* path,const char* file,GeometryAppearance& app)
+{
+  string fn = string(path)+string(file);
+  SimpleFile sf;
+  if(!sf.Load(fn.c_str())) return false;
+  if(sf.entries.count("Kd") != 0) {
+    GLColor diffuse;
+    diffuse.rgba[1] = 1;
+    for(size_t i=0;i<sf.entries["Kd"].size();i++) {
+      diffuse.rgba[i] = sf.entries["Kd"][i].AsDouble();
+    }
+  }
+  if(sf.entries.count("map_Kd") != 0) {
+    string textureMap = sf.entries["map_Kd"][0].AsString();
+    string fullpath = string(path)+textureMap;
+    app.tex2D = new Image;
+    if(!ImportImage(fullpath.c_str(),*app.tex2D)) {
+      app.tex2D = NULL;
+      printf("Unable to load image file %s\n",fullpath.c_str());
+      return false;
+    }
+  }
+  return true;
+}
 
 ///Loads from the Wavefront OBJ format, with per-vertex colors?
-bool LoadOBJ(FILE* f,TriMesh& tri,GeometryAppearance& app)
+bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
 {
   tri.verts.resize(0);
   tri.tris.resize(0);
@@ -346,7 +371,15 @@ bool LoadOBJ(FILE* f,TriMesh& tri,GeometryAppearance& app)
     else if(c == '#') fscanto(f,'\n');
     else if(c == 'v') {
       c = fgetc(f);
-      if(c == 'n')  fscanto(f,'\n');
+      if(c == 'n')  fscanto(f,'\n'); ///normal 
+      else if(c == 't') { //texture coordinate
+        int n=fscanf(f," %lf %lf",&pt.x,&pt.y);
+        if(n != 2) {
+          fprintf(stderr,"LoadOBJ: erroneous vt line on line %d\n",lineno);
+          return false;
+        }
+        app.texcoords.push_back(Vector2(pt.x,pt.y));
+      }
       else if(isspace(c)) { ///just vertex
 	int n=fscanf(f," %lf %lf %lf",&pt.x,&pt.y,&pt.z);
 	if(n != 3) {
@@ -413,6 +446,33 @@ bool LoadOBJ(FILE* f,TriMesh& tri,GeometryAppearance& app)
       }
       for(size_t i=2;i<face.size();i++) 
 	tri.tris.push_back(IntTriple(face[0],face[i-1],face[i]));
+    }
+    else if(c=='m') {
+      int i=0;
+      while(!isspace(c) && i < 63) {
+        buf[i] = c;
+        i++;
+        c = fgetc(f);
+      }
+      if(i>=63) {
+        buf[64]=0;
+        fprintf(stderr,"LoadOBJ: unsupported command \"%s\" on line %d\n",buf,lineno);
+        return false;
+      }
+      buf[i]=0;
+      if(0==strcmp(buf,"mtllib")) {
+        fgetline(f,buf,1024);
+        char* path = new char [strlen(fn)];
+        GetFilePath(fn,path);
+        if(!LoadOBJMaterial(path,buf,app)) {
+          fprintf(stderr,"LoadOBJ: error loading material file \"%s\" on line %d\n",(string(path)+"/"+string(buf)).c_str(),lineno);
+          return false;
+        }
+      }
+      else {
+        fprintf(stderr,"LoadOBJ: unsupported command \"%s\" on line %d\n",buf,lineno);
+        return false;
+      }
     }
     else {
       fprintf(stderr,"LoadOBJ: unsupported start character \"%c\" on line %d\n",c,lineno);
@@ -618,9 +678,12 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 	// If the import failed, report it
-	if (!scene || scene->mNumMeshes == 0) {
-		std::cout << "AssimpImporter:"<<importer.GetErrorString() << std::endl;
-		cout << "AssimpImporter:"<<"Error Processing " << fn << "!" << endl;
+	if (!scene) {
+		std::cout << "AssimpImporter error: "<<importer.GetErrorString() << " while loading "<< fn << std::endl;
+    return false;
+  }
+  if(scene->mNumMeshes == 0) {
+		std::cout << "AssimpImporter: Error processing " << fn << "!" << endl;
 		return false;
 	}
 	models.resize(0);
