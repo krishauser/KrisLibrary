@@ -24,6 +24,30 @@ template class BasicResource<double>;
 template class BasicResource<std::string>;
 template class BasicArrayResource<int>;
 template class BasicArrayResource<double>;
+
+//specialization to allow for whitespace in strings
+template <>
+bool BasicArrayResource<std::string>::Load(std::istream& in) {
+  size_t n;
+  in>>n;
+  if(in.bad()) return false;
+  data.resize(n);
+  for(size_t i=0;i<n;i++) {
+    if(!SafeInputString(in,data[i])) return false;
+  }
+  return true;
+}
+//specialization to allow for whitespace in strings
+template <>
+bool BasicArrayResource<std::string>::Save(std::ostream& out) {
+  out<<data.size()<<'\t';
+  for(size_t i=0;i<data.size();i++) {
+    SafeOutputString(out,data[i]);
+    if(i+1!=data.size()) out<<" ";
+  }
+  out<<std::endl;
+  return true;
+}
 template class BasicArrayResource<std::string>;
 
 

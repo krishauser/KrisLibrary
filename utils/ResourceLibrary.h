@@ -242,6 +242,7 @@ typedef BasicResource<int> IntResource;
 typedef BasicResource<double> FloatResource;
 typedef BasicResource<std::string> StringResource;
 
+
 /** @brief A resource that is composed of multiple sub-objects, which can
  * themselves be considered resources.
  *
