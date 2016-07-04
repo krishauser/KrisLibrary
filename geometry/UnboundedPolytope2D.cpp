@@ -47,7 +47,25 @@ void UnboundedPolytope2D::CalcPlanes()
 
 void UnboundedPolytope2D::CalcVertices()
 {
-  FatalError("UnboundedPolytope2D::CalcVertices(): Not done yet");
+  vertices.resize(0);
+  for(size_t i=0;i<planes.size();i++) {
+    size_t n=(i+1)%planes.size();
+    size_t p=(i+planes.size()-1)%planes.size();
+    Vector2 pt;
+    int num = planes[i].allIntersections(planes[n],pt);
+    if(num == 0 || num == 2) continue;
+    vertices.resize(vertices.size()+1);
+    if(planes[p].distance(pt) > 0) {
+      vertices.back().x = -planes[n].normal.y;
+      vertices.back().y = planes[n].normal.x;
+      vertices.back().isRay = true;
+    }
+    else {
+      vertices.back().x = pt.x;
+      vertices.back().y = pt.y;
+      vertices.back().isRay = false;
+    }
+  }
 }
 
 bool UnboundedPolytope2D::Contains(const Vector2& x) const
