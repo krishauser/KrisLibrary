@@ -191,7 +191,7 @@ void Point2DListToPlanes(const Point2D P[], int n, Plane2D H[])
 {
   for(int i=0;i<n;i++) {
     int j=(i+1)%n;
-    H[i].setPoints(P[i],P[j]);
+    H[i].setPoints(P[j],P[i]);
   }
 }
 
