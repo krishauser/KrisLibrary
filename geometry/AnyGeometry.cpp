@@ -1619,6 +1619,7 @@ bool UpdateQMesh(AnyCollisionQuery* q)
 
 bool AnyCollisionQuery::Collide()
 {
+  if(!a || !b) return false;
   elements1.resize(0);
   elements2.resize(0);
   points1.resize(0);
@@ -1635,6 +1636,7 @@ bool AnyCollisionQuery::Collide()
 
 bool AnyCollisionQuery::CollideAll()
 {
+  if(!a || !b) return false;
   elements1.resize(0);
   elements2.resize(0);
   points1.resize(0);
@@ -1651,6 +1653,7 @@ bool AnyCollisionQuery::CollideAll()
 
 bool AnyCollisionQuery::WithinDistance(Real d)
 {
+  if(!a || !b) return false;
   elements1.resize(0);
   elements2.resize(0);
   points1.resize(0);
@@ -1688,6 +1691,7 @@ bool AnyCollisionQuery::WithinDistanceAll(Real d)
 
 Real AnyCollisionQuery::PenetrationDepth()
 {
+  if(!a || !b) return -Inf;
   if(UpdateQMesh(this)) {
     return qmesh.PenetrationDepth();
   }
@@ -1696,6 +1700,7 @@ Real AnyCollisionQuery::PenetrationDepth()
 
 Real AnyCollisionQuery::Distance(Real absErr,Real relErr,Real bound)
 {
+  if(!a || !b) return Inf;
   elements1.resize(1);
   elements2.resize(1);
   points1.resize(0);
