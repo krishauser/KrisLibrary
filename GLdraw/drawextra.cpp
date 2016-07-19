@@ -406,8 +406,7 @@ void drawCircle(const Vector3& axis,float r, int numIncrements)
 void drawPyramid(float l, float w, float h)
 {
 	float L = l*0.5f, W = w*0.5f;
-	drawTriangle(Vector3(-L,-W,0),Vector3(L,-W,0),Vector3(L,W,0));
-	drawTriangle(Vector3(L,W,0),Vector3(-L,W,0),Vector3(-L,-W,0));
+	drawQuad(Vector3(-L,-W,0),Vector3(-L,W,0),Vector3(L,W,0),Vector3(L,-W,0));
 	drawTriangle(Vector3(0,0,h),Vector3(-L,-W,0),Vector3(L,-W,0));
 	drawTriangle(Vector3(0,0,h),Vector3(L,-W,0),Vector3(L,W,0));
 	drawTriangle(Vector3(0,0,h),Vector3(L,W,0),Vector3(-L,W,0));
