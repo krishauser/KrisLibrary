@@ -17,7 +17,7 @@ Viewport::Viewport()
 
 void Viewport::setLensAngle(float rads)
 {
-	scale = Inv(Tan(rads));
+	scale = 0.5*Inv(Tan(rads*0.5));
 }
 
 void Viewport::setPerspective(bool persp)
