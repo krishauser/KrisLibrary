@@ -517,8 +517,10 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
       vector<AnyCollisionGeometry3D>& colitems = GroupCollisionData();
       vector<AnyGeometry3D>& items = AsGroup();
       colitems.resize(items.size());
-      for(size_t i=0;i<items.size();i++)
-	colitems[i] = AnyCollisionGeometry3D(items[i]);
+      for(size_t i=0;i<items.size();i++) {
+        colitems[i] = AnyCollisionGeometry3D(items[i]);
+        colitems[i].InitCollisionData();
+      }
     }
     break;
   }

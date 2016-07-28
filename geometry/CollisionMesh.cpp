@@ -1518,6 +1518,21 @@ void NearbyTriangles(const CollisionMesh& m,const Vector3& p,Real d,vector<int>&
   CollideAll(m,s,tris,max);
 }
 
+///fits an oriented bounding box to the geometry.
+///TODO: do a better job on triangles, segments
+void FitBox(const GeometricPrimitive3D& g,Box3D& box) {
+  switch(g.type) {
+  case GeometricPrimitive3D::Box:
+    box = *AnyCast<Box3D>(&g.data);
+    break;
+  default:
+    {
+      box.set(g.GetAABB());
+    }
+    break;
+  }
+}
+
 void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d,vector<int>& tris,int max)
 {
   switch(g.type) { 
@@ -1534,7 +1549,34 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
   case GeometricPrimitive3D::AABB:
   case GeometricPrimitive3D::Box:
     if(d != 0) {
-      FatalError("Not yet able to within-distance test of %s with a CollisionMesh\n",g.TypeName());
+      if(!g.SupportsDistance(GeometricPrimitive3D::Triangle)) {
+        FatalError("Not yet able to within-distance test of %s with a CollisionMesh\n",g.TypeName());
+      }
+      //compute an expanded bounding box and collide them
+      Box3D bbox;
+      FitBox(g,bbox);
+      bbox.origin -= d*(bbox.xbasis+bbox.ybasis+bbox.zbasis);
+      bbox.dims += Vector3(d*2);
+      vector<int> temptris;
+      int tempmax = max;
+      while(true) {
+        CollideAll(m,bbox,temptris,tempmax);
+        //check which ones are actually within the given distance
+        tris.resize(0);
+        Triangle3D tri;
+        for(size_t i=0;i<temptris.size();i++) {
+          m.GetTriangle(temptris[i],tri);
+          if(g.Distance(tri) <= d) {
+            tris.push_back(temptris[i]);
+            if((int)tris.size()==max) return; //done!
+          }
+        }
+        if(temptris.size()<tempmax) 
+          return;
+        else  
+          //filled out all the temp triangles, but may have missed some due to filtering
+          tempmax *= 2;
+      }
     }
     CollideAll(m,g,tris,max);
     break;
