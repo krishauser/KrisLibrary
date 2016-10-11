@@ -519,8 +519,12 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
       colitems.resize(items.size());
       for(size_t i=0;i<items.size();i++) {
         colitems[i] = AnyCollisionGeometry3D(items[i]);
-        colitems[i].InitCollisionData();
+        colitems[i].ReinitCollisionData();
+        Assert(colitems[i].CollisionDataInitialized());
       }
+      vector<AnyCollisionGeometry3D>& bitems = GroupCollisionData();
+      for(size_t i=0;i<bitems.size();i++) 
+        Assert(bitems[i].CollisionDataInitialized());
     }
     break;
   }
@@ -825,6 +829,7 @@ bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
   if(a.type == GeometricPrimitive3D::Empty) return false;
+  Assert(b.CollisionDataInitialized());
   GeometricPrimitive3D aw=a;
   aw.Transform(Ta);
   switch(b.type) {
@@ -863,6 +868,7 @@ bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin
       elements1.resize(0);
       elements2.resize(0);
       for(size_t i=0;i<bitems.size();i++) {
+  assert(bitems[i].CollisionDataInitialized());
 	vector<int> e1,e2;
 	if(Collides(a,Ta,margin+b.margin,bitems[i],e1,e2,maxContacts)) {
 	  for(size_t j=0;j<e1.size();j++) {
