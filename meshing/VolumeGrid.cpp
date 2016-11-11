@@ -323,28 +323,32 @@ Real VolumeGrid::Average(const AABB3D& range) const
   return sumValue / rangeVolume;
 }
 
-void VolumeGrid::Resample(const VolumeGrid& grid)
+void VolumeGrid::ResampleTrilinear(const VolumeGrid& grid)
+{
+  if(IsSimilar(grid)) {
+    value = grid.value;
+    return;
+  }
+  Vector3 c;
+  for(iterator it=getIterator();!it.isDone();++it) {
+    it.getCellCenter(c);
+    *it = grid.TrilinearInterpolate(c);
+  }
+}
+
+void VolumeGrid::ResampleAverage(const VolumeGrid& grid)
 {
   if(IsSimilar(grid)) {
     value = grid.value;
     return;
   }
 
+
   AABB3D cell;
   for(iterator it=getIterator();!it.isDone();++it) {
     it.getCell(cell);
     *it = grid.Average(cell);
   }
-  /*
-  for(int i=0;i<value.m;i++) {
-    for(int j=0;j<value.n;j++) {
-      for(int k=0;k<value.p;k++) {
-	GetCell(i,j,k,cell);
-	value(i,j,k) = grid.Average(cell);
-      }
-    }
-  }
-  */
 }
 
 void VolumeGrid::Add(const VolumeGrid& grid)
@@ -353,7 +357,7 @@ void VolumeGrid::Add(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Add(resample);
     return;
   }
@@ -375,7 +379,7 @@ void VolumeGrid::Subtract(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Subtract(resample);
     return;
   }
@@ -397,7 +401,7 @@ void VolumeGrid::Multiply(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Multiply(resample);
     return;
   }
@@ -419,7 +423,7 @@ void VolumeGrid::Max(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Max(resample);
     return;
   }
@@ -441,7 +445,7 @@ void VolumeGrid::Min(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Min(resample);
     return;
   }
