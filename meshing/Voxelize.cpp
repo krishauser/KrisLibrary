@@ -278,7 +278,9 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
   cells.resize(0);
 
   Real tmin,tmax;
-  if(!s.intersects(bb,tmin,tmax)) return;
+  if(!s.intersects(bb,tmin,tmax)) {
+    return;
+  }
   Vector3 d = s.b - s.a;
 
   IntTriple i;
@@ -309,7 +311,7 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
     cells.push_back(i);
     //see which cell face is hit next
     int closest=0;  //1=+x,-1=-x,2=+y,-2=-y,3=+z,-3=-z
-    Real param=Inf;
+    param=Inf;
     if(d.x > 0) { //check +x face
       param = ((cellCorner.x+cellSize.x)-s.a.x)/d.x;
       closest = 1;
@@ -343,7 +345,7 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
       }
     }
     switch(closest) {
-    case 0: param = 1; break;
+    case 0: param = tmax; break;
     case 1: i.a++; cellCorner.x+=cellSize.x; break;
     case -1: i.a--; cellCorner.x-=cellSize.x; break;
     case 2: i.b++; cellCorner.y+=cellSize.y; break;
@@ -1786,5 +1788,6 @@ void DensityEstimate_FMM(const Array3D<Real>& distance,const Array3D<Vector3>& g
     }
   }
 }
+
 
 } //namespace Meshing
