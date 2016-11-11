@@ -25,7 +25,9 @@ void MarchingCubes(ScalarFieldFunction& f,Real isoval,const AABB3D& bb,const int
 /// Takes a 3D function as input, meshes the isosurface at f(x)=isoval
 void MarchingCubes(Real (*f)(Real,Real,Real),Real isoval,const AABB3D& bb,const int dims[3],TriMesh& m);
 
-/// Takes a 3D grid as input, meshes the isosurface at f(x)=isoval
+/// Takes a 3D grid as input, meshes the isosurface at f(x)=isoval.
+/// Assumes the input values are defined at the vertices of a grid with
+/// m-1 x n-1 x p-1 cells
 void MarchingCubes(const Array3D<Real>& input,Real isoval,const AABB3D& bb,TriMesh& m);
 
 /// Takes values of a function f at a cube's vertices as input,
