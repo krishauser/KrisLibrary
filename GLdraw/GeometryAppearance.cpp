@@ -7,8 +7,8 @@
 #include "drawextra.h"
 #include <meshing/PointCloud.h>
 #include <meshing/VolumeGrid.h>
-#include <meshing/MarchingCubes.h>
 #include <meshing/Expand.h>
+#include <geometry/Conversions.h>
 #include "Timer.h"
 
 using namespace Geometry;
@@ -271,7 +271,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
     const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
-    MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
+    ImplicitSurfaceToMesh(*g,*implicitSurfaceMesh);
     drawFaces = true;
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
@@ -371,7 +371,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
     const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
-    MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
+    ImplicitSurfaceToMesh(*g,*implicitSurfaceMesh);
     drawFaces = true;
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
