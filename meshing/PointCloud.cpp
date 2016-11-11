@@ -1,6 +1,7 @@
 #include "PointCloud.h"
 #include <iostream>
 #include <math3d/AABB3D.h>
+#include <math3d/rotation.h>
 #include <utils/SimpleParser.h>
 #include <utils/stringutils.h>
 #include <utils/ioutils.h>
@@ -196,18 +197,21 @@ public:
 	}
       }
       else {
-	string value;
-	if(!ReadLine(value)) return Error;
-	pc.settings[word] = Strip(value);
+        string value;
+        if(!ReadLine(value)) return Error;
 
-	if(word == "VERSION") {
-	  if(pc.settings[word] != "0.7" && pc.settings[word] != ".7") {
-	    fprintf(stderr,"PCD parser: Warning, PCD version 0.7 expected, got %s\n",pc.settings[word].c_str());
-	  }
-	}
-	else {
-	  //printf("PCD parser: Read property \"%s\" = \"%s\"\n",word.c_str(),pc.settings[word].c_str());
-	}
+        if(word == "VERSION") {
+          if(value != "0.7" && value != ".7") {
+            fprintf(stderr,"PCD parser: Warning, PCD version 0.7 expected, got %s\n",value.c_str());
+          }
+          pc.settings["pcd_version"] = value;
+        }
+        else {
+          //printf("PCD parser: Read property \"%s\" = \"%s\"\n",word.c_str(),pc.settings[word].c_str());
+          string key=word;
+          Lowercase(key);
+          pc.settings[key] = Strip(value);
+        }
       }
     }
     return Continue;
@@ -242,6 +246,7 @@ bool PointCloud3D::LoadPCL(const char* fn)
   ifstream in(fn,ios::in);
   if(!in) return false;
   if(!LoadPCL(in)) return false;
+  settings["file"] = fn;
   in.close();
   return true;
 }
@@ -321,8 +326,8 @@ bool PointCloud3D::LoadPCL(istream& in)
 bool PointCloud3D::SavePCL(ostream& out) const
 {
   out<<"# .PCD v0.7 - Point Cloud Data file format"<<endl;
-  if(settings.find("VERSION") != settings.end())
-    out<<"VERSION "<<settings.find("VERSION")->second<<endl;
+  if(settings.find("pcd_version") != settings.end())
+    out<<"VERSION "<<settings.find("pcd_version")->second<<endl;
   else
     out<<"VERSION 0.7"<<endl;
   bool addxyz = !HasXYZAsProperties();
@@ -346,8 +351,10 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<"POINTS "<<points.size()<<"\n";
 
   for(map<string,string>::const_iterator i=settings.begin();i!=settings.end();i++) {
-    if(i->first == "VERSION") continue;
-    out<<i->first<<" "<<i->second<<"\n";
+    if(i->first == "pcd_version" || i->first == "file") continue;
+    string key = i->first;
+    Uppercase(key);
+    out<<key<<" "<<i->second<<"\n";
   }
   out<<"DATA ascii"<<"\n";  
   if(propertyNames.empty()) {
@@ -364,6 +371,80 @@ bool PointCloud3D::SavePCL(ostream& out) const
     }
   }
   return true;
+}
+
+bool PointCloud3D::IsStructured() const
+{
+  return GetStructuredWidth() >= 1 && GetStructuredHeight() > 1;
+}
+
+int PointCloud3D::GetStructuredWidth() const
+{
+  return settings.getDefault("width",0);
+}
+
+int PointCloud3D::GetStructuredHeight() const
+{
+  return settings.getDefault("height",0);
+}
+
+void PointCloud3D::SetStructured(int w,int h)
+{
+  settings.set("width",w);
+  settings.set("height",h);
+  points.resize(w*h);
+}
+
+Vector3 PointCloud3D::GetOrigin() const
+{
+  string viewport;
+  if(!settings.get("viewport",viewport)) return Vector3(0.0);
+  stringstream ss(viewport);
+  Vector3 o;
+  ss>>o;
+  return o;
+}
+
+void PointCloud3D::SetOrigin(const Vector3& origin)
+{
+  string viewport;
+  if(!settings.get("viewport",viewport)) {
+    stringstream ss;
+    ss<<origin<<" 1 0 0 0";
+    settings.set("viewport",ss.str());
+    return;
+  }
+  stringstream ss(viewport);
+  Vector3 o;
+  Vector4 q;
+  ss>>o>>q;
+  stringstream ss2;
+  ss2<<origin<<" "<<q;
+  settings.set("viewport",ss2.str());
+}
+
+RigidTransform PointCloud3D::GetViewport() const
+{
+  RigidTransform T;
+  string viewport;
+  if(!settings.get("viewport",viewport)) {
+    T.setIdentity();
+    return T;
+  }
+  stringstream ss(viewport);
+  QuaternionRotation q;
+  ss>>T.t>>q;
+  q.getMatrix(T.R);
+  return T;
+}
+
+void PointCloud3D::SetViewport(const RigidTransform& T)
+{
+  QuaternionRotation q;
+  q.setMatrix(T.R);
+  stringstream ss;
+  ss<<T.t<<" "<<q;
+  settings.set("viewport",ss.str());
 }
 
 void PointCloud3D::GetAABB(Vector3& bmin,Vector3& bmax) const
@@ -542,9 +623,8 @@ bool PointCloud3D::UnpackColorChannels(bool alpha)
   return false;
 }
 
-bool PointCloud3D::PackColorChannels(const string& property,const char* fmt)
+bool PointCloud3D::PackColorChannels(const char* fmt)
 {
-  if(fmt==NULL) fmt=property.c_str();
   vector<Real> r,g,b,a;
   if(!GetProperty("r",r)) return false;
   if(!GetProperty("g",g)) return false;
