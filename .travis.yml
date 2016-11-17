@@ -7,3 +7,12 @@ compiler:
 # Build steps
 script:
   - cmake . && make
+addons:
+  apt:
+    packages:
+    - cmake
+    - libboost-system-dev
+    - libboost-thread-dev
+    - freeglut3
+    - freeglut3-dev
+    - libglpk-dev
