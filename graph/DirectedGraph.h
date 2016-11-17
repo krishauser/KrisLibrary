@@ -36,8 +36,7 @@ template <class Node,class Edge>
 bool DirectedGraph<Node,Edge>::HasDescendent(const int n,const int d)
 {
   P::NewTraversal();
-  FindCallback<int> findNode;
-  findNode.node = d;
+  FindCallback<int> findNode(d);
   ForwardIterator it;
   return P::_SimpleDFS(n,findNode,it);
 }
