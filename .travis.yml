@@ -15,4 +15,6 @@ addons:
     - libboost-thread-dev
     - freeglut3
     - freeglut3-dev
+    - libxmu-dev
+    - libxi-dev
     - libglpk-dev
