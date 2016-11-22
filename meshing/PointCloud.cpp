@@ -652,6 +652,50 @@ bool PointCloud3D::PackColorChannels(const char* fmt)
   return false;
 }
 
+bool PointCloud3D::GetColors(vector<Vector4>& out) const
+{
+  vector<Real> rgb;
+  if(GetProperty("rgb",rgb)) {
+    //convert real to hex to GLcolor
+    out.resize(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) {
+      int col = (int)rgb[i];
+      Real r=((col&0xff0000)>>16) / 255.0;
+      Real g=((col&0xff00)>>8) / 255.0;
+      Real b=(col&0xff) / 255.0;
+      out[i].set(r,g,b,1.0);
+    }
+    return true;
+  }
+  else if(GetProperty("rgba",rgb)) {
+    //convert real to hex to GLcolor
+    //following PCD, this is actuall A-RGB
+    out.resize(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) {
+      int col = (int)rgb[i];
+      Real r = ((col&0xff0000)>>16) / 255.0;
+      Real g = ((col&0xff00)>>8) / 255.0;
+      Real b = (col&0xff) / 255.0;
+      Real a = ((col&0xff000000)>>24) / 255.0;
+      out[i].set(r,g,b,a);
+    }
+    return true;
+  }
+  else if(GetProperty("opacity",rgb)) {
+    out.resize(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) 
+      out[i].set(1,1,1,rgb[i]);
+    return true;
+  }
+  else if(GetProperty("c",rgb)) {
+    out.resize(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) 
+      out[i].set(1,1,1,rgb[i]/255.0);
+    return true;
+  }
+  return false;
+}
+
 bool PointCloud3D::GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vector<Real>& a) const
 {
   vector<Real> rgb;
@@ -742,6 +786,62 @@ void PointCloud3D::SetColors(const vector<Real>& r,const vector<Real>& g,const v
     }
     SetProperty("rgba",rgba);
   }
+}
+
+void PointCloud3D::SetColors(const vector<Vector4>& rgba,bool includeAlpha)
+{
+  Assert(points.size()==rgba.size());
+  Real r,g,b,a;
+  if(!includeAlpha) {
+    //pack it
+    vector<Real> packed(rgba.size());
+    for(size_t i=0;i<rgba.size();i++) {
+      rgba[i].get(r,g,b,a);
+      int col = ((int(r*255.0) & 0xff) << 16) |
+  ((int(g*255.0) & 0xff) << 8) |
+  (int(b*255.0) & 0xff);
+      packed[i] = Real(col);
+    }
+    SetProperty("rgb",packed);
+  }
+  else {
+    //pack it
+    vector<Real> packed(rgba.size());
+    for(size_t i=0;i<rgba.size();i++) {
+      rgba[i].get(r,g,b,a);
+      int col = ((int(a*255.0) & 0xff) << 24) |
+  ((int(r*255.0) & 0xff) << 16) |
+  ((int(g*255.0) & 0xff) << 8) |
+  (int(b*255.0) & 0xff);
+      packed[i] = Real(col);
+    }
+    SetProperty("rgba",packed);
+  }
+}
+
+void PointCloud3D::SetUV(const vector<Vector2>& uvs)
+{
+  Assert(points.size()==uvs.size());
+  vector<Real> u(uvs.size()),v(uvs.size());
+  for(size_t i=0;i<uvs.size();i++) {
+    uvs[i].get(u[i],v[i]);
+  }
+  SetProperty("u",u);
+  SetProperty("v",v);
+}
+
+bool PointCloud3D::GetUV(vector<Vector2>& uvs) const
+{
+  vector<Real> u,v;
+  if(GetProperty("u",u) && GetProperty("v",v)) {
+    //convert real to hex to GLcolor
+    uvs.resize(u.size());
+    for(size_t i=0;i<uvs.size();i++) {
+      uvs[i].set(u[i],v[i]);
+    }
+    return true;
+  }
+  return false;
 }
 
 int PointCloud3D::PropertyIndex(const string& name) const

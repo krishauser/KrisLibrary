@@ -83,10 +83,12 @@ class PointCloud3D
   ///Converts unpacked color channels into packed channel. fmt is the desired property, either "rgb" or "rgba". Removes old channels.
   bool PackColorChannels(const char* fmt="rgba");
   bool GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vector<Real>& a) const;
+  bool GetColors(vector<Vector4>& rgba) const;
   void SetColors(const vector<Real>& r,const vector<Real>& g,const vector<Real>& b,bool includeAlpha = false);
   void SetColors(const vector<Real>& r,const vector<Real>& g,const vector<Real>& b,const vector<Real>& a,bool includeAlpha = true);
+  void SetColors(const vector<Vector4>& rgba,bool includeAlpha=true);
   bool HasUV() const;
-  void GetUV(vector<Vector2>& uvs) const;
+  bool GetUV(vector<Vector2>& uvs) const;
   void SetUV(const vector<Vector2>& uvs);
 
   vector<Vector3> points;
