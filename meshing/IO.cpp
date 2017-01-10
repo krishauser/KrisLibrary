@@ -1,4 +1,5 @@
 #include "IO.h"
+#include <locale.h>
 #include <utils/AnyValue.h>
 #include <utils/stringutils.h>
 #include <GLdraw/GeometryAppearance.h>
@@ -68,6 +69,11 @@ bool Import(const char* fn,TriMesh& tri)
   if(0==strcmp(ext,"tri")) {
     return LoadMultipleTriMeshes(fn,tri);
   }
+  else if(0==strcmp(ext,"off")) {
+    ifstream in(fn,ios::in);
+    if(!in) return false;
+    return LoadOFF(in,tri);
+  }
   else {
 #if HAVE_ASSIMP
     if(!LoadAssimp(fn,tri)) {
@@ -83,11 +89,7 @@ bool Import(const char* fn,TriMesh& tri)
       if(!in) return false;
       return LoadVRML(in,tri);
     }
-    else if(0==strcmp(ext,"off")) {
-      ifstream in(fn,ios::in);
-      if(!in) return false;
-      return LoadOFF(in,tri);
-    }
+    
     else {
       fprintf(stderr,"Import(TriMesh): file extension %s not recognized\n",ext);
       return false;
@@ -107,6 +109,11 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
     if(0==strcmp(ext,"obj")) {
       FILE* f = fopen(fn,"r");
       if(f && LoadOBJ(fn,f,tri,app)) return true;
+    }
+    else if(0==strcmp(ext,"off")) {
+      ifstream in(fn,ios::in);
+      if(!in) return false;
+      return LoadOFF(in,tri);
     }
 #if HAVE_ASSIMP
     //setup texture path to same directory as fn
@@ -128,11 +135,7 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
       if(!in) return false;
       return LoadVRML(in,tri);
     }
-    else if(0==strcmp(ext,"off")) {
-      ifstream in(fn,ios::in);
-      if(!in) return false;
-      return LoadOFF(in,tri);
-    }
+
     else {
       fprintf(stderr,"Import(TriMesh): file extension %s not recognized\n",ext);
       return false;
@@ -211,10 +214,16 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
   int mode = 0; //0: waiting for sizes, 1: reading verts, 2: reading tris
   int numFaces = 0;
   int vertIndex=0,faceIndex=0;
+  int lineno = 0;
   string line;
   while(in) {
+    lineno++;
     getline(in,line);
-    if(in.bad()) return false;
+    if(in.bad()) {
+      if(faceIndex == numFaces) return true;
+      fprintf(stderr,"LoadOFF: error reading line %d\n",lineno);
+      return false;
+    }
     if(line.length() == 0) continue;
     if(line[0] == '#') continue; //comment line
     if(mode == 0) {
@@ -222,6 +231,7 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
       int nv,nf,ne;
       ss>>nv>>nf>>ne;
       if(ss.bad()) {
+        fprintf(stderr,"LoadOFF: unable to read first line\n");
 	in.setstate(ios::badbit);
 	return false;
       }
@@ -229,51 +239,57 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
       tri.tris.resize(0);
       numFaces = nf;
       mode = 1;
-    }
-    if(mode == 1) {
       if((int)tri.verts.size() == vertIndex) mode=2;
-      else {
-	stringstream ss(line);
-	ss >> tri.verts[vertIndex];
-	if(ss.bad()) {
-	  in.setstate(ios::badbit);
-	  return false;
-	}
-	//ignore RGBA colors
-	vertIndex++;
-      }
     }
-    if(mode == 2) {
-      if(faceIndex == numFaces) return true;
-      else {
-	stringstream ss(line);
-	int nv;
-	vector<int> face;
-	ss >> nv;
-	if(ss.bad()) {
-	  in.setstate(ios::badbit);
-	  return false;
-	}
-	for(int i=0;i<nv;i++) {
-	  int v;
-	  ss>>v;
-	  face.push_back(v);
-	}
-	if(ss.bad()) {
-	  in.setstate(ios::badbit);
-	  return false;
-	}
-	//ignore RGBA colors
-
-	//triangulate faces, assume convex
-	for(int i=1;i+1<nv;i++) {
-	  tri.tris.push_back(IntTriple(face[0],face[i],face[i+1]));
-	}
-
-	faceIndex++;
+    else if(mode == 1) {
+      stringstream ss(line);
+      ss >> tri.verts[vertIndex];
+      if(ss.bad()) {
+        fprintf(stderr,"LoadOFF: unable to read vertex from line %d = %s\n",lineno,line.c_str());
+        in.setstate(ios::badbit);
+        return false;
       }
+      //ignore RGBA colors
+      vertIndex++;
+      if((int)tri.verts.size() == vertIndex) mode=2;
+      if(faceIndex == numFaces) return true;
+    }
+    else if(mode == 2) {
+      stringstream ss(line);
+      int nv;
+      vector<int> face;
+      ss >> nv;
+      if(ss.bad()) {
+        fprintf(stderr,"LoadOFF: unable to load number of vertices on face line %d = %s\n",lineno,line.c_str());
+        in.setstate(ios::badbit);
+        return false;
+      }
+      for(int i=0;i<nv;i++) {
+        int v;
+        ss>>v;
+        if(v < 0 || v >= int(tri.verts.size())) {
+          fprintf(stderr,"LoadOFF: invalid vertex reference on line %d = %s\n",lineno,line.c_str());
+          return false;
+        }
+        face.push_back(v);
+      }
+      if(ss.bad()) {
+        fprintf(stderr,"LoadOFF: incorrect number of vertices on line %d = %s?\n",lineno,line.c_str());
+        in.setstate(ios::badbit);
+        return false;
+      }
+      //ignore RGBA colors
+
+      //triangulate faces, assume convex
+      for(int i=1;i+1<nv;i++) {
+        tri.tris.push_back(IntTriple(face[0],face[i],face[i+1]));
+      }
+      faceIndex++;
+      if(faceIndex == numFaces) return true;
     }
   }
+  if(faceIndex == numFaces) return true;
+  fprintf(stderr,"LoadOFF: Unexpected end of file on line %d, face %d / %d\n",lineno,faceIndex,numFaces);
   return false;
 }
 
@@ -352,6 +368,7 @@ bool LoadOBJMaterial(const char* path,const char* file,GeometryAppearance& app)
 ///Loads from the Wavefront OBJ format, with per-vertex colors?
 bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
 {
+  setlocale(LC_NUMERIC, "en_US.UTF-8");
   tri.verts.resize(0);
   tri.tris.resize(0);
   app.vertexColors.resize(0);
@@ -435,7 +452,7 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
 	}
 	f-=1;   //1 based
 	if(f < 0 || f >= (int)tri.verts.size()) {
-	  fprintf(stderr,"LoadOBJ: vertex %d on f line %d is out of bounds 0,...,%d\n",f,lineno,tri.verts.size());
+	  fprintf(stderr,"LoadOBJ: vertex %d on f line %d is out of bounds 0,...,%d\n",f,lineno,(int)tri.verts.size());
 	  return false;
 	}
 	face[i] = f;
