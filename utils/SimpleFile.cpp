@@ -57,7 +57,7 @@ bool SimpleFile::Load(istream& in)
     while(!foundEndline) {
       for(int i=0;i<1024;i++) {
 	int c=in.get();
-	if(c == '\n') {
+	if(c == '\n' || c == EOF) {
 	  buf[i] = 0;
 	  foundEndline = true;
 	  break;
