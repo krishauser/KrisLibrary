@@ -4,6 +4,8 @@
 #include <windows.h>
 #include <strsafe.h>
 #include <shlobj.h>    // for SHCreateDirectoryEx
+#include <direct.h>
+#define GetCurrentDir _getcwd
 #else
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -12,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
+#define GetCurrentDir getcwd
 #endif //_WIN32
 #ifdef __APPLE__
 #include <unistd.h>
@@ -232,6 +235,18 @@ bool ListDirectory(const char* path,std::vector<std::string>& files)
   closedir(d);
   return true;
 #endif
+}
+
+static char cCurrentPath[FILENAME_MAX];
+
+std::string GetWorkingDirectory()
+{
+  if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath)))
+  {
+    return "";
+  }
+  cCurrentPath[sizeof(cCurrentPath) - 1] = '\0'; /* not really required */
+  return cCurrentPath;
 }
 
 } // namespace FileUtils
