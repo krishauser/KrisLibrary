@@ -3,6 +3,10 @@
 
 #include "AnyGeometry.h"
 
+namespace GLDraw {
+	class GeometryAppearance;
+};
+
 /** @file geometry/Conversions.h
  * @ingroup Geometry
  * @brief 3D geometry conversion routines.
@@ -16,7 +20,7 @@ namespace Geometry {
  * If any triangle has vertices farther away than maxDispersion, the triangle is subdivided until
  * all triangles are covered by balls of radius maxDispersion.
  */
-void MeshToPointCloud(const Meshing::TriMesh& mesh,Meshing::PointCloud3D& pc,Real maxDispersion=Inf);
+void MeshToPointCloud(const Meshing::TriMesh& mesh,Meshing::PointCloud3D& pc,Real maxDispersion=Inf,bool wantNormals=false);
 
 /** @ingroup Geometry
  * @brief If a point cloud is structured, this creates a uniform mesh out of it.  If depthDiscontinuity
@@ -24,6 +28,11 @@ void MeshToPointCloud(const Meshing::TriMesh& mesh,Meshing::PointCloud3D& pc,Rea
  * depthDiscontinuity * average depth.  (A decent value is 0.02 for typical depth sensors.)
  */
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Real depthDiscontinuity=Inf);
+
+/** @ingroup Geometry
+ * @brief Same as normal PointCloudToMesh, but colors and UV coordinates are extracted
+ */
+void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& appearance,Real depthDiscontinuity=Inf);
 
 /** @ingroup Geometry
  * @brief Creates a mesh for a geometric primitive.  If the primitive has curved surfaces, they
@@ -36,6 +45,11 @@ void PrimitiveToMesh(const GeometricPrimitive3D& primitive,Meshing::TriMesh& mes
  * resolution no more than resolution on each axis. 
  */
 void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
+
+/** @ingroup Geometry
+ * @brief Creates an implicit surface for a mesh using a Fast Marching Method.
+ */
+void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution);
 
 /** @ingroup Geometry
  * @brief Creates an implicit surface for a mesh using a space-carving technique.
