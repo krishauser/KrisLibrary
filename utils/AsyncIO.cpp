@@ -24,7 +24,7 @@ void AsyncReaderQueue::OnRead_NoLock(const string& msg)
     msgQueue.pop_front();
     numDroppedMsgs++;
     if(numDroppedMsgs % 1000 == 1) {
-      fprintf(stderr,"AsyncReaderQueue: Warning, dropped %d messages, ask your sender to reduce the send rate\n",numDroppedMsgs);
+      fprintf(stderr,"AsyncReaderQueue: Warning, dropped %d messages, ask your sender to reduce the send rate\n",(int)numDroppedMsgs);
     }
   }
   msgQueue.push_back(msg);
@@ -86,7 +86,7 @@ string AsyncWriterQueue::OnWrite_NoLock()
     msgQueue.pop_front();
     numDroppedMsgs++;
     if(numDroppedMsgs % 1000 == 1) {
-      fprintf(stderr,"AsyncWriterQueue: Warning, dropped %d messages, slow down the rate of sending via SendMessage\n",numDroppedMsgs);
+      fprintf(stderr,"AsyncWriterQueue: Warning, dropped %d messages, slow down the rate of sending via SendMessage\n",(int)numDroppedMsgs);
     }
   }
   msgQueue.pop_front();
@@ -152,10 +152,10 @@ void SyncPipe::Work()
 {
   bool readerr=false,writeerr=false;
   if(transport->ReadReady()) {
-    const char* res = transport->DoRead();
+    const string* res = transport->DoRead();
     if(res) {
-      if(res[0] != 0) {
-	AsyncPipeQueue::OnRead(res);
+      if((*res)[0] != 0) {
+	AsyncPipeQueue::OnRead(*res);
 	lastReadTime = timer.ElapsedTime();
       }
     }
@@ -166,7 +166,7 @@ void SyncPipe::Work()
     string str = AsyncPipeQueue::OnWrite();
     if(!str.empty()) {
       lastWriteTime = timer.ElapsedTime();
-      if(!transport->DoWrite(str.c_str(),str.size()))
+      if(!transport->DoWrite(str))
 	writeerr = true;
     }
   }
@@ -200,18 +200,18 @@ void* read_worker_thread_func(void * ptr)
 {
   AsyncReaderThread* data = reinterpret_cast<AsyncReaderThread*>(ptr);
   while(data->timer.ElapsedTime() < data->lastReadTime + data->timeout) {
-    const char* res = data->transport->DoRead();
+    const string* res = data->transport->DoRead();
     if(!res) {
       fprintf(stderr,"AsyncReaderThread: abnormal termination, read failed\n");
       data->transport->Stop();
       data->initialized = false;
       return NULL;
     }
-    if(res[0] == 0) continue;
+    if((*res)[0] == 0) continue;
 
     {
       ScopedLock lock(data->mutex);     
-      data->OnRead_NoLock(res);
+      data->OnRead_NoLock(*res);
       data->lastReadTime = data->timer.ElapsedTime();
     }
   }
@@ -279,36 +279,42 @@ void* pipe_worker_thread_func(void * ptr)
       return NULL;
     }
     if(data->transport->ReadReady()) {
-      const char* res = data->transport->DoRead();
+      const string* res = data->transport->DoRead();
       if(!res) {
 	fprintf(stderr,"AsyncPipeThread: abnormal termination, read failed\n");
 	data->transport->Stop();
 	data->initialized = false;
 	return NULL;
       } 
-      if(res[0] != 0) { //nonempty string
+      if((*res)[0] != 0) { //nonempty string
 	ScopedLock lock(data->mutex);     
 	//don't do _NoLock: the read queue needs locking
-	data->OnRead(res);
+	data->OnRead(*res);
 	data->lastReadTime = data->timer.ElapsedTime();
 	//mutex unlocked
       }
     }
     if(data->transport->WriteReady()) {
       string send;
-      {
-	ScopedLock lock(data->mutex);
-	//don't do _NoLock: the write queue needs locking
-	send = data->OnWrite();
-	data->lastWriteTime = data->timer.ElapsedTime();
-	//mutex unlocked
-      }
-      if(!send.empty()) {
-	if(!data->transport->DoWrite(send.c_str(),send.length())) {
-	  fprintf(stderr,"AsyncPipeThread: abnormal termination, write failed\n");
-	  data->transport->Stop();
-	  return NULL;
-	}
+      bool done = false;
+      //suppose multiple items are present... send all of them without yielding the thread
+      while(!done) {
+        {
+  	ScopedLock lock(data->mutex);
+  	//don't do _NoLock: the write queue needs locking
+  	send = data->OnWrite();
+  	data->lastWriteTime = data->timer.ElapsedTime();
+  	//mutex unlocked
+        }
+        if(send.empty()) 
+          done = true;
+        else {
+  	if(!data->transport->DoWrite(send)) {
+  	  fprintf(stderr,"AsyncPipeThread: abnormal termination, write failed\n");
+  	  data->transport->Stop();
+  	  return NULL;
+  	}
+        }
       }
     }
     else {
@@ -320,8 +326,8 @@ void* pipe_worker_thread_func(void * ptr)
 	ThreadSleep(0.01);
       }
     }
-    //ThreadYield();
-    ThreadSleep(0.001);
+    ThreadYield();
+    //ThreadSleep(0.001);
   }
   return NULL;
 }
@@ -360,7 +366,7 @@ StreamTransport::StreamTransport(std::istream& _in,std::ostream& _out)
   :in(&_in),out(&_out),format(IntLengthPrepended)
 {}
 
-const char* StreamTransport::DoRead()
+const string* StreamTransport::DoRead()
 {
   if(!in) return NULL;
   buffer = "";
@@ -402,7 +408,7 @@ const char* StreamTransport::DoRead()
     }
     break;
   }
-  return buffer.c_str();
+  return &buffer;
 }
 
 bool StreamTransport::DoWrite(const char* msg,int length)
@@ -480,14 +486,14 @@ bool ReadIntPrependedString(File& file,std::string& buf)
   return true;
 }
 
-const char* SocketClientTransport::DoRead()
+const string* SocketClientTransport::DoRead()
 {
   ScopedLock lock(mutex);
   if(!ReadIntPrependedString(socket,buf)) {
     cout<<"SocketClientTransport: Error reading string on "<<addr<<"..."<<endl;
     return NULL;
   }
-  return buf.c_str();
+  return &buf;
 }
 
 bool SocketClientTransport::Start()
@@ -575,7 +581,7 @@ bool SocketServerTransport::WriteReady()
   return !clientsockets.empty();
 }
 
-const char* SocketServerTransport::DoRead()
+const string* SocketServerTransport::DoRead()
 {
   ScopedLock lock(mutex);
   if((int)clientsockets.size() < maxclients) {
@@ -590,7 +596,7 @@ const char* SocketServerTransport::DoRead()
   if(clientsockets.empty()) {
     //tolerant of failed clients
     buf.resize(0);
-    return buf.c_str();
+    return &buf;
   }
 
   int iters=0;
@@ -605,7 +611,7 @@ const char* SocketServerTransport::DoRead()
       continue;
     }
     if(ReadIntPrependedString(*clientsockets[currentclient],buf)) {
-      return buf.c_str();
+      return &buf;
     }
     //close the client
     printf("SocketServerTransport: Lost client %d\n",currentclient);
@@ -620,7 +626,7 @@ const char* SocketServerTransport::DoRead()
   }
   //should we be tolerant of failed clients?
   buf.resize(0);
-  return buf.c_str();
+  return &buf;
   return NULL;
 }
 

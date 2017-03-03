@@ -138,15 +138,25 @@ class TransportBase
   virtual bool ReadReady() { return true; }
   ///Subclasses -- can the object write?
   virtual bool WriteReady() { return true; }
-  ///Subclasses -- in thread, do some I/O and processing (which may block), return the payload message.
+  ///Subclasses -- in thread, do some I/O and processing (which may block), return the payload
+  ///message.
   ///If NULL is returned, there is some error and the thread quits
-  virtual const char* DoRead() { return NULL; }
+  virtual const std::string* DoRead() { return NULL; }
   ///Subclasses -- in thread, do some I/O and processing (which may block)
-  ///If false is returned, there is some error and the thread quits
+  ///If false is returned, there is some error and the caller should quit or
+  ///reopen the connection.
+  virtual bool DoWrite(const char* msg,int length) { return false; }
+
+  ///Subclasses -- in thread, do some I/O and processing (which may block)
+  ///If false is returned, there is some error and the caller should quit or
+  ///reopen the connection.
+  ///(Helper function -- raw C strings)
   virtual bool DoWrite(const char* msg) { return DoWrite(msg,strlen(msg)); }
   ///Subclasses -- in thread, do some I/O and processing (which may block)
-  ///If false is returned, there is some error and the thread quits
-  virtual bool DoWrite(const char* msg,int length) { return false; }
+  ///If false is returned, there is some error and the caller should quit or
+  ///reopen the connection.
+  ///(Helper function -- raw strings)
+  virtual bool DoWrite(const std::string& msg) { return DoWrite(msg.c_str(),msg.length()); }
 };
 
 
@@ -176,7 +186,7 @@ class StreamTransport : public TransportBase
   virtual ~StreamTransport() {}
   virtual bool ReadReady() { return (in != NULL) && *in; }
   virtual bool WriteReady() { return (out != NULL) && *out; }
-  virtual const char* DoRead();
+  virtual const std::string* DoRead();
   virtual bool DoWrite(const char* msg,int length);
 };
 
@@ -194,7 +204,7 @@ class SocketClientTransport : public TransportBase
   virtual bool Start();
   virtual bool Stop();
   ///Reads a string (4 byte length + data). Note: blocking
-  virtual const char* DoRead();
+  virtual const std::string* DoRead();
   ///Writes a string (4 byte length + data). Note: blocking.
   virtual bool DoWrite (const char* str,int length);
 
@@ -216,7 +226,7 @@ class SocketServerTransport : public TransportBase
   virtual bool ReadReady();
   virtual bool WriteReady();
   ///Reads a string (4 byte length + data) from all clients. Note: blocking
-  virtual const char* DoRead();
+  virtual const std::string* DoRead();
   ///Writes a string (4 byte length + data) to all clients. Note: blocking.
   virtual bool DoWrite (const char* str,int length);
 
