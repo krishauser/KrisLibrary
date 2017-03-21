@@ -399,14 +399,18 @@ CSpaceOMPLStateSpace::CSpaceOMPLStateSpace(CSpace* _space,CSpaceOMPLSpaceInforma
 {
   PropertyMap props;
   space->Properties(props);
-  vector<double> minimum,maximum;
   if(props.getArray("minimum",minimum) && props.getArray("maximum",maximum)) {
   }
   else {
     minimum.resize(0);
     maximum.resize(0);
   }
+  ob::RealVectorBounds bounds(minimum.size());
+  bounds.low = minimum;
+  bounds.high = maximum;
+  setBounds(bounds);
 }
+
 
 unsigned int CSpaceOMPLStateSpace::getDimension (void) const
 {
