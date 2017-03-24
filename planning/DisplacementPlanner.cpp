@@ -1351,7 +1351,7 @@ void DisplacementPlanner::BuildRoadmap(Real maxTotalCost,RoadmapPlanner& prm)
   Graph::CopyStructure(roadmap,copy);
   for(size_t i=0;i<roadmap.nodes.size();i++) {
     copy.nodes[i].setRef(roadmap.nodes[i].q);
-    for(Roadmap::EdgeIterator e=roadmap.edges[i].begin();e!=roadmap.edges[i].end();e++) {
+    for(Roadmap::EdgeListIterator e=roadmap.edges[i].begin();e!=roadmap.edges[i].end();e++) {
       SmartPointer<EdgePlanner>* ecopy = copy.FindEdge(i,e->first);
       Assert(ecopy != NULL);
       *ecopy = e->second->e;

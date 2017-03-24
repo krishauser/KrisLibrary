@@ -163,12 +163,12 @@ template <class Node,class Edge>
 void UndirectedGraph<Node,Edge>::NormalizeEdges(int n)
 {
   Assert(0 <= n && n < P::NumNodes());
-  typedef typename P::EdgeIterator EdgeIterator;
-  typedef typename P::CoEdgeIterator CoEdgeIterator;
+  typedef typename P::EdgeListIterator EdgeIterator;
+  typedef typename P::CoEdgeListIterator CoEdgeIterator;
   typedef typename P::EdgeDataPtr EdgeDataPtr;
   std::map<int,EdgeDataPtr> delEdges,delCoEdges;
-  EdgeIterator ebegin=P::edges[n].begin(),eend=P::edges[n].end();
-  for(EdgeIterator e=ebegin;e!=eend;e++) {
+  EdgeListIterator ebegin=P::edges[n].begin(),eend=P::edges[n].end();
+  for(EdgeListIterator e=ebegin;e!=eend;e++) {
     int tgt=e->first;
     Assert(0 <= tgt && tgt < P::NumNodes());
     if(tgt < n) //swap the edge

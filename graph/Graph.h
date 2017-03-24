@@ -30,7 +30,7 @@ namespace Graph {
  * An adjacency list in 'edges' or 'co_edges' is represented as 
  * a map from adjacent node indices to EdgeData pointers.
  *
- * Edges are most easily traversed using the EdgeIterator classes in
+ * Edges are most easily traversed using the EdgeListIterator classes in
  * Edge.h.  They allow forwards, backwards, or bidirectional traversals.
  * For more strict definition of directed vs. undirected graphs, consider
  * DirectedGraph or UndirectedGraph.
@@ -122,9 +122,9 @@ public:
   typedef typename std::list<EdgeData>::iterator EdgeDataPtr;
   typedef std::map<int,EdgeDataPtr> EdgeList;
   typedef std::map<int,EdgeDataPtr> CoEdgeList;
-  typedef typename EdgeList::iterator EdgeIterator;
-  typedef typename CoEdgeList::iterator CoEdgeIterator;
-  typedef typename EdgeList::const_iterator ConstEdgeIterator;
+  typedef typename EdgeList::iterator EdgeListIterator;
+  typedef typename CoEdgeList::iterator CoEdgeListIterator;
+  typedef typename EdgeList::const_iterator ConstEdgeListIterator;
   std::vector<Color> nodeColor;
   std::vector<NodeData> nodes;
   std::vector<EdgeList> edges;
@@ -152,7 +152,7 @@ void Graph<NodeData,EdgeData>::Copy(const Graph<NodeData,EdgeData>& g)
   for(size_t i=0;i<edges.size();i++) edges[i].clear();
   for(size_t i=0;i<co_edges.size();i++) co_edges[i].clear();
   for(size_t i=0;i<edges.size();i++) {
-    for(ConstEdgeIterator e=g.edges[i].begin();e!=g.edges[i].end();e++) 
+    for(ConstEdgeListIterator e=g.edges[i].begin();e!=g.edges[i].end();e++)
       AddEdge(i,e->first,e->second);
   }
 }
@@ -168,7 +168,7 @@ void Graph<NodeData,EdgeData>::SetTranspose(const Graph<NodeData,EdgeData>& g)
   for(size_t i=0;i<edges.size();i++) edges[i].clear();
   for(size_t i=0;i<co_edges.size();i++) co_edges[i].clear();
   for(size_t i=0;i<edges.size();i++) {
-    for(ConstEdgeIterator e=g.edges[i].begin();e!=g.edges[i].end();e++) 
+    for(ConstEdgeListIterator e=g.edges[i].begin();e!=g.edges[i].end();e++)
       AddEdge(e->first,i,e->second);
   }
 }
@@ -195,10 +195,10 @@ void Graph<NodeData,EdgeData>::DeleteNode(int n)
   nodeColor[n] = nodeColor[rep];  nodeColor.resize(nodeColor.size()-1);
   nodes[n] = nodes[rep];  nodes.resize(nodes.size()-1);
   //here we must move outgoing edges of rep to point to n
-  EdgeIterator ebegin=edges[rep].begin(),eend=edges[rep].end();
-  for(EdgeIterator e=ebegin;e!=eend;e++) {
+  EdgeListIterator ebegin=edges[rep].begin(),eend=edges[rep].end();
+  for(EdgeListIterator e=ebegin;e!=eend;e++) {
     int t = e->first;
-    CoEdgeIterator crep=co_edges[t].find(rep);
+    CoEdgeListIterator crep=co_edges[t].find(rep);
     Assert(crep->second == e->second);
     co_edges[t].erase(crep);
     co_edges[t][n] = e->second;
@@ -206,10 +206,10 @@ void Graph<NodeData,EdgeData>::DeleteNode(int n)
   edges[n] = edges[rep];  edges.erase(--edges.end());
 
   //here we must move incoming edges of rep to point to n
-  CoEdgeIterator cbegin=co_edges[rep].begin(),cend=co_edges[rep].end();
-  for(CoEdgeIterator e=cbegin;e!=cend;e++) {
+  CoEdgeListIterator cbegin=co_edges[rep].begin(),cend=co_edges[rep].end();
+  for(CoEdgeListIterator e=cbegin;e!=cend;e++) {
     int s = e->first;
-    EdgeIterator erep=edges[s].find(rep);
+    EdgeListIterator erep=edges[s].find(rep);
     Assert(erep->second == e->second);
     edges[s].erase(erep);
     edges[s][n] = e->second;
@@ -281,7 +281,7 @@ bool Graph<NodeData,EdgeData>::HasEdge(int i,int j) const
 template <class NodeData,class EdgeData>
 EdgeData* Graph<NodeData,EdgeData>::FindEdge(int i,int j) const
 {
-  ConstEdgeIterator e=edges[i].find(j);
+  ConstEdgeListIterator e=edges[i].find(j);
   if(e == edges[i].end()) return NULL;
   return &(*e->second);
 }
@@ -289,14 +289,14 @@ EdgeData* Graph<NodeData,EdgeData>::FindEdge(int i,int j) const
 template <class NodeData,class EdgeData>
 void Graph<NodeData,EdgeData>::DeleteEdge(int i,int j)
 {
-  EdgeIterator k=edges[i].find(j);
+  EdgeListIterator k=edges[i].find(j);
   if(k == edges[i].end()) {
     FatalError("Graph::DeleteEdge(): Edge doesn't exist");
   }
   EdgeDataPtr ptr = k->second;
   edges[i].erase(k);
 
-  CoEdgeIterator k_co = co_edges[j].find(i);
+  CoEdgeListIterator k_co = co_edges[j].find(i);
   if(k_co == co_edges[j].end()) {
     FatalError("Graph::DeleteEdge(): Co-edge doesn't exist");
   }
@@ -309,11 +309,11 @@ template <class NodeData,class EdgeData>
 void Graph<NodeData,EdgeData>::DeleteOutgoingEdges(int i)
 {
   //delete co-edges
-  EdgeIterator k;
+  EdgeListIterator k;
 
-  EdgeIterator ebegin=edges[i].begin(),eend=edges[i].end();
+  EdgeListIterator ebegin=edges[i].begin(),eend=edges[i].end();
   for(k=ebegin;k!=eend;++k) {
-    EdgeIterator it = co_edges[k->first].find(i);
+    EdgeListIterator it = co_edges[k->first].find(i);
     Assert(it != co_edges[k->first].end());
     Assert(it->second == k->second);
     edgeData.erase(it->second);
@@ -328,10 +328,10 @@ template <class NodeData,class EdgeData>
 void Graph<NodeData,EdgeData>::DeleteIncomingEdges(int i)
 {
   //delete edges
-  CoEdgeIterator k;
-  CoEdgeIterator cbegin=co_edges[i].begin(),cend=co_edges[i].end();
+  CoEdgeListIterator k;
+  CoEdgeListIterator cbegin=co_edges[i].begin(),cend=co_edges[i].end();
   for(k=cbegin;k!=cend;++k) {
-    EdgeIterator it = edges[k->first].find(i);
+    EdgeListIterator it = edges[k->first].find(i);
     edgeData.erase(it->second);
     edges[k->first].erase(it);
   }
@@ -368,8 +368,8 @@ bool Graph<NodeData,EdgeData>::IsValid() const
   }
   int numEdges=0;
   for(size_t i=0;i<edges.size();i++) {
-    ConstEdgeIterator ebegin=edges[i].begin(),eend=edges[i].end();
-    for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
+    ConstEdgeListIterator ebegin=edges[i].begin(),eend=edges[i].end();
+    for(ConstEdgeListIterator e=ebegin;e!=eend;e++) {
       numEdges++;
       if(e->first < 0 || e->first >= (int)nodes.size()) {
 	fprintf(stderr,"Edge (%d,%d) points to invalid index\n",i,e->first);
@@ -380,7 +380,7 @@ bool Graph<NodeData,EdgeData>::IsValid() const
 	res=false;
       }
       else if(edges.size() == co_edges.size()) {
-	ConstEdgeIterator f=co_edges[e->first].find((int)i);
+	ConstEdgeListIterator f=co_edges[e->first].find((int)i);
 	if(f == co_edges[e->first].end()) {
 	  fprintf(stderr,"Edge (%d,%d) doesn't have a corresponding co-edge\n",i,e->first);
 	  res=false;
@@ -405,15 +405,15 @@ bool Graph<NodeData,EdgeData>::IsValid() const
   }
   int numCoEdges=0;
   for(size_t i=0;i<co_edges.size();i++) {
-    ConstEdgeIterator ebegin=co_edges[i].begin(),eend=co_edges[i].end();
-    for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
+    List ebegin=co_edges[i].begin(),eend=co_edges[i].end();
+    for(ConstEdgeListIterator e=ebegin;e!=eend;e++) {
       numCoEdges++;
       if(e->first < 0 || e->first >= (int)nodes.size()) {
 	fprintf(stderr,"Co-edge (%d,%d) points to invalid index\n",i,e->first);
 	res=false;
       }
       else if(edges.size() == co_edges.size()) {
-	ConstEdgeIterator f=edges[e->first].find((int)i);
+	ConstEdgeListIterator f=edges[e->first].find((int)i);
 	if(f == edges[e->first].end()) {
 	  fprintf(stderr,"Co-edge (%d,%d) doesn't have a corresponding edge\n",i,e->first);
 	  res=false;
@@ -681,7 +681,7 @@ void Graph<NodeData,EdgeData>::WriteDOT(std::ostream& out)
 {
   out<<"digraph {"<<std::endl;
   for(size_t i=0;i<nodeColor.size();i++) {
-    for(EdgeIterator e=edges[i].begin();e!=edges[i].end();e++)
+    for(EdgeListIterator e=edges[i].begin();e!=edges[i].end();e++)
       out<<"  "<<i<<" -> "<<e->target<<";"<<std::endl;
   }
   out<<"}"<<std::endl;
