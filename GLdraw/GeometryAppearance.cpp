@@ -7,8 +7,8 @@
 #include "drawextra.h"
 #include <meshing/PointCloud.h>
 #include <meshing/VolumeGrid.h>
-#include <meshing/MarchingCubes.h>
 #include <meshing/Expand.h>
+#include <geometry/Conversions.h>
 #include "Timer.h"
 
 using namespace Geometry;
@@ -269,68 +269,10 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 {
   geom = &_geom;
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
-    const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
-    if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
-    MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
-    drawFaces = true;
+    Set(*geom);
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
-    drawVertices = true;
-    vector<Real> rgb;
-    const Meshing::PointCloud3D& pc = geom->AsPointCloud();
-    if(pc.GetProperty("rgb",rgb)) {
-      //convert real to hex to GLcolor
-      vertexColors.resize(rgb.size());
-      for(size_t i=0;i<rgb.size();i++) {
-	unsigned int col = (unsigned int)rgb[i];
-	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
-			    ((col&0xff00)>>8) / 255.0,
-			    (col&0xff) / 255.0);
-      }
-    }
-    if(pc.GetProperty("rgba",rgb)) {
-      //convert real to hex to GLcolor
-      //following PCD, this is actuall A-RGB
-      vertexColors.resize(rgb.size());
-      for(size_t i=0;i<rgb.size();i++) {
-	unsigned int col = (unsigned int)rgb[i];
-	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
-			    ((col&0xff00)>>8) / 255.0,
-			    (col&0xff) / 255.0,
-			    ((col&0xff000000)>>24) / 255.0);
-      }
-    }
-    if(pc.GetProperty("opacity",rgb)) {
-      if(!vertexColors.empty()) {
-	//already assigned color, just get opacity
-	for(size_t i=0;i<rgb.size();i++) {
-	  vertexColors[i].rgba[3] = rgb[i];
-	}
-      }
-      else {
-	vertexColors.resize(rgb.size());
-	for(size_t i=0;i<rgb.size();i++) {
-	  vertexColors[i] = vertexColor.rgba;
-	  vertexColors[i].rgba[3] = rgb[i];
-	}
-      }
-    }
-    if(pc.GetProperty("c",rgb)) {
-      //this is a weird opacity in UINT byte format
-      if(!vertexColors.empty()) {
-	//already assigned color, just get opacity
-	for(size_t i=0;i<rgb.size();i++) {
-	  vertexColors[i].rgba[3] = rgb[i]/255.0;
-	}
-      }
-      else {
-	vertexColors.resize(rgb.size());
-	for(size_t i=0;i<rgb.size();i++) {
-	  vertexColors[i] = vertexColor.rgba;
-	  vertexColors[i].rgba[3] = rgb[i]/255.0;
-	}
-      }
-    }
+    Set(*geom);
   }
   else if(geom->type == AnyGeometry3D::Group) {
     if(!_geom.CollisionDataInitialized()) {
@@ -371,7 +313,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
     const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
-    MarchingCubes(g->value,0,g->bb,*implicitSurfaceMesh);
+    ImplicitSurfaceToMesh(*g,*implicitSurfaceMesh);
     drawFaces = true;
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
@@ -382,11 +324,92 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       //convert real to hex to GLcolor
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
-	unsigned int col = (int)rgb[i];
- 	vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
-			    ((col&0xff00)>>8) / 255.0,
-			    (col&0xff) / 255.0);
+  unsigned int col = (unsigned int)rgb[i];
+  vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
+          ((col&0xff00)>>8) / 255.0,
+          (col&0xff) / 255.0);
       }
+    }
+    if(pc.GetProperty("rgba",rgb)) {
+      //convert real to hex to GLcolor
+      //following PCD, this is actuall A-RGB
+      vertexColors.resize(rgb.size());
+      for(size_t i=0;i<rgb.size();i++) {
+  unsigned int col = (unsigned int)rgb[i];
+  vertexColors[i].set(((col&0xff0000)>>16) / 255.0,
+          ((col&0xff00)>>8) / 255.0,
+          (col&0xff) / 255.0,
+          ((col&0xff000000)>>24) / 255.0);
+      }
+    }
+    if(pc.GetProperty("opacity",rgb)) {
+      if(!vertexColors.empty()) {
+  //already assigned color, just get opacity
+  for(size_t i=0;i<rgb.size();i++) {
+    vertexColors[i].rgba[3] = rgb[i];
+  }
+      }
+      else {
+  vertexColors.resize(rgb.size());
+  for(size_t i=0;i<rgb.size();i++) {
+    vertexColors[i] = vertexColor.rgba;
+    vertexColors[i].rgba[3] = rgb[i];
+  }
+      }
+    }
+    if(pc.GetProperty("c",rgb)) {
+      //this is a weird opacity in UINT byte format
+      if(!vertexColors.empty()) {
+  //already assigned color, just get opacity
+  for(size_t i=0;i<rgb.size();i++) {
+    vertexColors[i].rgba[3] = rgb[i]/255.0;
+  }
+      }
+      else {
+	vertexColors.resize(rgb.size());
+	for(size_t i=0;i<rgb.size();i++) {
+	  vertexColors[i] = vertexColor.rgba;
+	  vertexColors[i].rgba[3] = rgb[i]/255.0;
+	}
+      }
+    }
+  }
+  else if(geom->type == AnyGeometry3D::Group) {
+    if(!_geom.CollisionDataInitialized()) {
+      const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
+      subAppearances.resize(subgeoms.size());
+      for(size_t i=0;i<subAppearances.size();i++) {
+        subAppearances[i].Set(subgeoms[i]);
+        subAppearances[i].vertexSize = vertexSize;
+        subAppearances[i].edgeSize = edgeSize;
+        subAppearances[i].lightFaces = lightFaces;
+        subAppearances[i].vertexColor = vertexColor;
+        subAppearances[i].edgeColor = edgeColor;
+        subAppearances[i].faceColor = faceColor;
+      }
+    }
+    else {
+      const std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = _geom.GroupCollisionData();
+      subAppearances.resize(subgeoms.size());
+      for(size_t i=0;i<subAppearances.size();i++) {
+        subAppearances[i].Set(subgeoms[i]);
+        subAppearances[i].vertexSize = vertexSize;
+        subAppearances[i].edgeSize = edgeSize;
+        subAppearances[i].lightFaces = lightFaces;
+        subAppearances[i].vertexColor = vertexColor;
+        subAppearances[i].edgeColor = edgeColor;
+        subAppearances[i].faceColor = faceColor;
+      }
+    }
+  }
+      }
+    }
+    if(pc.IsStructured()) {
+      //draw mesh rather than points
+      drawFaces = true;
+      drawVertices = false;
+      if(!implicitSurfaceMesh) implicitSurfaceMesh = new Meshing::TriMesh;
+      PointCloudToMesh(pc,*implicitSurfaceMesh,*this,0.02);
     }
   }
   else if(geom->type == AnyGeometry3D::Group) {
@@ -537,6 +560,8 @@ void GeometryAppearance::DrawGL()
       const Meshing::TriMesh* trimesh = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface) 
 	trimesh = implicitSurfaceMesh;
+      if(geom->type == AnyGeometry3D::PointCloud) 
+  trimesh = implicitSurfaceMesh;
       if(geom->type == AnyGeometry3D::TriangleMesh) 
 	trimesh = &geom->AsTriangleMesh();
 
@@ -545,7 +570,7 @@ void GeometryAppearance::DrawGL()
       //draw the mesh
       if(trimesh) {
 	if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
-	  fprintf(stderr,"GeometryAppearance: warning, texcoords wrong size: %d vs %d\n",texcoords.size(),trimesh->verts.size());
+	  fprintf(stderr,"GeometryAppearance: warning, texcoords wrong size: %d vs %d\n",(int)texcoords.size(),(int)trimesh->verts.size());
 	if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
 	  if(vertexColors.size() != trimesh->verts.size()) {
 	    DrawGLTris(*trimesh);

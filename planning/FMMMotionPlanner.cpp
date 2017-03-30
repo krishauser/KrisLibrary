@@ -159,7 +159,7 @@ bool FMMMotionPlanner::SolveFMM()
   bool feasible = true;
   for(size_t i=0;i<pathCheck.edges.size();i++) {
     if(!pathCheck.edges[i]->IsVisible()) {
-      cout<<"Path check failed on edge "<<pathCheck.edges[i]->Start()<<" -> "<<pathCheck.edges[i]->Goal()<<endl;
+      cout<<"Path check failed on edge "<<pathCheck.edges[i]->Start()<<" -> "<<pathCheck.edges[i]->End()<<endl;
       feasible = false;
       break;
     }

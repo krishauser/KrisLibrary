@@ -219,26 +219,30 @@ void OMPLCSpace::Interpolate(const Config& a,const Config& b,Real u,Config& x)
   FromOMPL(stemp3,x);
 }
 
-class OMPLEdgePlanner : public StraightLineEpsilonPlanner
+class OMPLEdgePlanner : public EpsilonEdgeChecker
 {
 public:
   OMPLEdgePlanner(OMPLCSpace* space,const Config& x,const Config& y,Real resolution)
-  :StraightLineEpsilonPlanner(space,x,y,resolution),omplspace(space)
+  :EpsilonEdgeChecker(space,x,y,resolution),omplspace(space)
+  {
+  }
+  OMPLEdgePlanner(OMPLCSpace* space,const SmartPointer<Interpolator>& path,Real resolution)
+  :EpsilonEdgeChecker(space,path,resolution),omplspace(space)
   {
   }
   virtual bool IsVisible() {
-    omplspace->ToOMPL(this->a,omplspace->stemp1);
-    omplspace->ToOMPL(this->b,omplspace->stemp2);
+    omplspace->ToOMPL(this->Start(),omplspace->stemp1);
+    omplspace->ToOMPL(this->End(),omplspace->stemp2);
     this->foundInfeasible = !omplspace->si_->checkMotion(omplspace->stemp1,omplspace->stemp2);
     this->dist = 0;
     return !this->foundInfeasible;
   }
-  virtual EdgePlanner* Copy() const { return new OMPLEdgePlanner(omplspace,a,b,epsilon); }
-  virtual EdgePlanner* ReverseCopy() { return new OMPLEdgePlanner(omplspace,b,a,epsilon); }
+  virtual EdgePlanner* Copy() const { return new OMPLEdgePlanner(omplspace,path,epsilon); }
+  virtual EdgePlanner* ReverseCopy() { return new OMPLEdgePlanner(omplspace,new ReverseInterpolator(path),epsilon); }
   OMPLCSpace* omplspace;
 };
 
-EdgePlanner* OMPLCSpace::LocalPlanner(const Config& x, const Config& y)
+EdgePlanner* OMPLCSpace::PathChecker(const Config& x, const Config& y)
 {
   return new OMPLEdgePlanner(this,x,y,resolution);
 }
@@ -292,16 +296,16 @@ void KrisLibraryOMPLPlanner::getPlannerData (ob::PlannerData &data) const
 {
   if(!planner) return;
   OMPLCSpace* nc_cspace = const_cast<OMPLCSpace*>((const OMPLCSpace*)cspace);
-  RoadmapPlanner roadmap(nc_cspace);
+  RoadmapPlanner::Roadmap roadmap;
   MotionPlannerInterface* iplanner = const_cast<MotionPlannerInterface*>((const MotionPlannerInterface*)planner);
   iplanner->GetRoadmap(roadmap);
-  for(size_t i=0;i<roadmap.roadmap.nodes.size();i++) {
-    unsigned int id = data.addVertex(ob::PlannerDataVertex(nc_cspace->ToOMPL(roadmap.roadmap.nodes[i]),(int)i));
+  for(size_t i=0;i<roadmap.nodes.size();i++) {
+    unsigned int id = data.addVertex(ob::PlannerDataVertex(nc_cspace->ToOMPL(roadmap.nodes[i]),(int)i));
     Assert(id == i);
   }
-  for(size_t i=0;i<roadmap.roadmap.nodes.size();i++) {
+  for(size_t i=0;i<roadmap.nodes.size();i++) {
     RoadmapPlanner::Roadmap::Iterator e;
-    for(roadmap.roadmap.Begin(i,e);!e.end();e++)
+    for(roadmap.Begin(i,e);!e.end();e++)
       data.addEdge(e.source(),e.target());
   }
 }
@@ -354,6 +358,9 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
 
     planner->PlanMore(increment); 
   }
+  PropertyMap stats;
+  planner->GetStats(stats);
+  stats.Print(cout);
   if(planner->IsSolved()) {
     //convert solution to OMPL solution
     MilestonePath path;

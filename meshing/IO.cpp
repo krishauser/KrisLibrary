@@ -154,8 +154,14 @@ bool Export(const char* fn,const TriMesh& tri)
     out<<tri;
     return true;
   }
+  else if(0==strcmp(ext,"off")) {
+      ofstream out(fn,ios::out);
+      if(!out) return false;
+      return SaveOFF(out,tri);
+    }
   else {
-#if HAVE_ASSIMP
+#if HAVE_ASSIMP && 0
+    //right now SaveAssimp is not working yet...
     if(!SaveAssimp(fn,tri)) {
       fprintf(stderr,"Export(TriMesh): file %s could not be saved to type %s\n",fn,ext);
       return false;
@@ -168,11 +174,6 @@ bool Export(const char* fn,const TriMesh& tri)
       ofstream out(fn,ios::out);
       if(!out) return false;
       return SaveVRML(out,tri);
-    }
-    else if(0==strcmp(ext,"off")) {
-      ofstream out(fn,ios::out);
-      if(!out) return false;
-      return SaveOFF(out,tri);
     }
     else {
       fprintf(stderr,"Export(TriMesh): file extension %s not recognized\n",ext);

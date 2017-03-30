@@ -4,6 +4,7 @@
 #include <structs/FixedSizeHeap.h>
 #include <structs/Heap.h>
 #include <graph/Path.h>
+#include <optimization/NonlinearProgram.h>
 #include <Timer.h>
 #include <algorithm>
 using namespace AI;
@@ -16,8 +17,8 @@ const static double gSubdivideThreshold = 1e-3;
 
 
 //defined in MCRPlanner.cpp
-Subset Violations(ExplicitCSpace* space,const Config& q);
-Subset Violations(ExplicitCSpace* space,const Config& a,const Config& b);
+Subset Violations(CSpace* space,const Config& q);
+Subset Violations(CSpace* space,const Config& a,const Config& b);
 
 
 inline Real WeightedCost(const Subset& s,const vector<Real>& weights)
@@ -46,11 +47,28 @@ bool WithinThreshold(const MCRPlannerGoalSet::Mode& mode,const Subset& extra,Rea
   return false;
 }
 
+Real MaxError(Optimization::NonlinearProgram* p,const Config& x)
+{
+  Real maxError = 0;
+  if(p->c) {
+    Vector v(p->c->NumDimensions());
+    (*p->c)(x,v);
+    maxError = v.maxAbsElement();
+  }
+  if(p->d) {
+    Vector v(p->d->NumDimensions());
+    (*p->d)(x,v);
+    if(p->inequalityLess)
+      maxError = Max(maxError,v.maxElement());
+    else 
+      maxError = Max(maxError,-v.minElement());
+  }
+  return maxError;
+}
 
 
-
-MCRPlannerGoalSet::MCRPlannerGoalSet(ExplicitCSpace* _space)
-  :goalSetProjector(NULL),space(_space),
+MCRPlannerGoalSet::MCRPlannerGoalSet(CSpace* _space)
+  :space(_space),goalSet(NULL),goalNumeric(NULL),
    updatePathsComplete(false),updatePathsDynamic(true),updatePathsMax(INT_MAX),
    numExpands(0),numRefinementAttempts(0),numRefinementSuccesses(0),numExplorationAttempts(0),
    numEdgeChecks(0),numConfigChecks(0),
@@ -72,7 +90,7 @@ Real MCRPlannerGoalSet::Cost(const Subset& s) const
   return WeightedCost(s,obstacleWeights);
 }
 
-void MCRPlannerGoalSet::Init(const Config& _start,SubsetProjector* _goalProjector)
+void MCRPlannerGoalSet::Init(const Config& _start,CSet* _goal)
 {
   roadmap.Cleanup();
   modeGraph.Cleanup();
@@ -86,7 +104,8 @@ void MCRPlannerGoalSet::Init(const Config& _start,SubsetProjector* _goalProjecto
   numUpdatePathsIterations=0;
 
   start=_start; 
-  goalSetProjector = _goalProjector;
+  goalSet = _goal; 
+  if(_goal) goalNumeric = _goal->Numeric();
   goalNodes.resize(0);
   AddNode(start);
   if(updatePathsComplete) UpdatePathsComplete();
@@ -493,7 +512,7 @@ bool MCRPlannerGoalSet::CanImproveConnectivity(const Mode& ma,const Mode& mb,Rea
 //Otherwise, return false and compute the subset of violations
 bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& q,Real limit,Subset& violations)
 {
-  int n=space->NumObstacles();
+  int n=(int)space->constraints.size();
   /*
   if(!space->IsFeasible(q)) return true;
   violations.maxItem = n;
@@ -520,7 +539,7 @@ bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& q,Real limit,Subset& viol
 //Otherwise, return false and compute the subset of violations
 bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& a,const Config& b,Real limit,Subset& violations)
 {
-  int n=space->NumObstacles();
+  int n=(int)space->constraints.size();
   /*
   EdgePlanner* e=space->LocalPlanner(a,b);
   if(!e->IsVisible()) {
@@ -535,7 +554,7 @@ bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& a,const Config& b,Real li
   vector<bool> vis(n);
   Real vcount = 0;
   for(int i=0;i<n;i++) {
-    EdgePlanner* e=space->LocalPlanner(a,b,i);
+    EdgePlanner* e=space->PathChecker(a,b,i);
     vis[i] = !e->IsVisible();
     delete e;
     if(vis[i]) {
@@ -551,9 +570,7 @@ bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& a,const Config& b,Real li
 
 int MCRPlannerGoalSet::AddNode(const Config& q,int parent)
 {
-  vector<bool> subsetbits;
-  space->CheckObstacles(q,subsetbits);
-  return AddNode(q,Subset(subsetbits),parent);
+  return AddNode(q,Violations(space,q),parent);
 }
 
 int MCRPlannerGoalSet::AddNode(const Config& q,const Subset& subset,int parent)
@@ -567,9 +584,7 @@ int MCRPlannerGoalSet::AddNode(const Config& q,const Subset& subset,int parent)
 
   /*
   //Sanity check?
-  vector<bool> subsetbits;
-  space->CheckObstacles(q,subsetbits);
-  assert(subset == Subset(subsetbits));
+  assert(subset == Violations(space,q));
   */
 
   if(parent < 0 || modeGraph.nodes[roadmap.nodes[parent].mode].subset != subset)  {
@@ -1019,9 +1034,7 @@ void MCRPlannerGoalSet::Expand(Real maxExplanationCost,vector<int>& newNodes)
     
     //do a direct connection
     numConfigChecks++;
-    vector<bool> subsetbits;
-    space->CheckObstacles(q,subsetbits);
-    qsubset = Subset(subsetbits);
+    qsubset = Violations(space,q);
     
     int nearmode = roadmap.nodes[kneighbors[closestIndex]].mode;
     if(WithinThreshold(modeGraph.nodes[nearmode],qsubset,maxExplanationCost,obstacleWeights)) { //if config itself violates too many constraints, we're not going to connect any nodes
@@ -1076,18 +1089,37 @@ void MCRPlannerGoalSet::Expand(Real maxExplanationCost,vector<int>& newNodes)
 #endif //DO_TIMING
 
   if(!bidirectional) {
+    //check for connection with goal
     for(size_t i=0;i<newNodes.size();i++) {
-      Real d=goalSetProjector->Distance(roadmap.nodes[newNodes[i]].q);
-      Config qgoal;
-      if(d < goalConnectThreshold && goalSetProjector->Project(roadmap.nodes[newNodes[i]].q,qgoal)) {
-	int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
-	if(res >= 0) {
-	  didRefine = true;
-	  if(goalSetProjector->Distance(qgoal)==0)
-	    goalNodes.push_back(res);
-	  else
-	    printf("Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
-	}
+      Config qgoal = roadmap.nodes[newNodes[i]].q;
+      int goalindex = -1;
+      if(goalSet->Contains(qgoal)) {
+        goalindex = newNodes[i];
+        didRefine = true;
+      }
+      else {
+        bool project = false;
+        if(IsInf(goalConnectThreshold)) project = true;
+        else {
+          if(goalNumeric) {
+            if(MaxError(goalNumeric,qgoal) < goalConnectThreshold)
+              project = true;
+          }
+        }
+        if(project) {
+          if(goalSet->Project(qgoal)) {
+            int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
+            didRefine = true;
+            if(res >= 0) {
+              if(goalSet->Contains(qgoal)) 
+                goalindex = res;
+              else 
+                printf("Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
+            }
+          }
+        }
+        if(goalindex >= 0)
+    	    goalNodes.push_back(goalindex);
       }
     }
   }
@@ -1156,9 +1188,7 @@ void MCRPlannerGoalSet::Expand2(Real maxExplanationCost,vector<int>& newNodes)
     
     //do a direct connection
     numConfigChecks++;
-    vector<bool> subsetbits;
-    space->CheckObstacles(q,subsetbits);
-    qsubset = Subset(subsetbits);
+    qsubset = Violations(space,q);
 
     int nearmode = roadmap.nodes[neighbor[0]].mode;    
     if(WithinThreshold(modeGraph.nodes[nearmode],qsubset,maxExplanationCost,obstacleWeights)) { //if config itself violates too many constraints, we're not going to connect any nodes
@@ -1230,17 +1260,35 @@ void MCRPlannerGoalSet::Expand2(Real maxExplanationCost,vector<int>& newNodes)
 
   if(!bidirectional) {
     for(size_t i=0;i<newNodes.size();i++) {
-      Real d=goalSetProjector->Distance(roadmap.nodes[newNodes[i]].q);
-      Config qgoal;
-      if(d < goalConnectThreshold && goalSetProjector->Project(roadmap.nodes[newNodes[i]].q,qgoal)) {
-	int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
-	if(res >= 0) {
-	  didRefine = true;
-	  if(goalSetProjector->Distance(qgoal)==0)
-	    goalNodes.push_back(res);
-	  else
-	    printf("Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
-	}
+      Config qgoal = roadmap.nodes[newNodes[i]].q;
+      int goalindex = -1;
+      if(goalSet->Contains(qgoal)) {
+        goalindex = newNodes[i];
+        didRefine = true;
+      }
+      else {
+        bool project = false;
+        if(IsInf(goalConnectThreshold)) project = true;
+        else {
+          if(goalNumeric) {
+            if(MaxError(goalNumeric,qgoal) < goalConnectThreshold)
+              project = true;
+          }
+        }
+        if(project) {
+          if(goalSet->Project(qgoal)) {
+            int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
+            didRefine = true;
+            if(res >= 0) {
+              if(goalSet->Contains(qgoal)) 
+                goalindex = res;
+              else 
+                printf("Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
+            }
+          }
+        }
+        if(goalindex >= 0)
+          goalNodes.push_back(goalindex);
       }
     }
   }
@@ -1270,16 +1318,14 @@ void MCRPlannerGoalSet::Expand2(Real maxExplanationCost,vector<int>& newNodes)
 
 void MCRPlannerGoalSet::Plan(int initialLimit,const vector<int>& expansionSchedule,vector<int>& bestPath,Subset& bestCover)
 {
-  bestCover.maxItem = space->NumObstacles();
+  bestCover.maxItem = space->constraints.size();
   bestCover.items.resize(bestCover.maxItem);
   for(int i=0;i<bestCover.maxItem;i++)
     bestCover.items[i] = (int)i;
 
   Subset lowerCover;
-  vector<bool> violations;
-  numConfigChecks += 2;
-  space->CheckObstacles(start,violations);
-  lowerCover=Subset(violations);
+  numConfigChecks += 1;
+  lowerCover=Violations(space,start);
 
   Real lowerCost = Cost(lowerCover);
   Real bestCost = Cost(bestCover);
@@ -1569,7 +1615,7 @@ struct GreedySubsetAStar2 : public GeneralizedAStar<int,SubsetCost>
       }
       else {
 	//same subset
-	SubsetCost c(planner->space->NumObstacles(),dist);
+	SubsetCost c(planner->space->constraints.size(),dist);
 	cost.push_back(c);
       }
     }
@@ -1627,7 +1673,7 @@ struct OptimalSubsetAStar2 : public GeneralizedAStar<pair<int,Subset>,SubsetCost
       }
       else {
 	//same subset
-	SubsetCost c(planner->space->NumObstacles(),dist,&planner->obstacleWeights);
+	SubsetCost c(planner->space->constraints.size(),dist,&planner->obstacleWeights);
 	cost.push_back(c);
       }
       successors.push_back(pair<int,Subset>(e.target(),cost.back().subset+s.second));
@@ -1752,6 +1798,6 @@ void MCRPlannerGoalSet::GetMilestonePath(const std::vector<int>& path,MilestoneP
     else
       mpath.edges[i] = roadmap.FindEdge(path[i],path[i+1])->e->ReverseCopy();
     assert(mpath.edges[i]->Start()==roadmap.nodes[path[i]].q);
-    assert(mpath.edges[i]->Goal()==roadmap.nodes[path[i+1]].q);
+    assert(mpath.edges[i]->End()==roadmap.nodes[path[i+1]].q);
   }
 }

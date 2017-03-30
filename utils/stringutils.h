@@ -74,7 +74,7 @@ const char* FileExtension (const char* str);
 void ChangeFileExtension (char* str, const char* ext);
 ///Returns "file.ext" for the str="dir1/dir2/.../file.ext"
 const char* GetFileName(const char* str);
-///Extracts the path from str (formatted as above) into buf
+///Extracts the path from str (formatted as above) into buf, not including the trailing '/'
 void GetFilePath(const char* str, char* buf);
 ///Removes the file extension of str
 void StripExtension(char* str);
@@ -85,7 +85,7 @@ std::string FileExtension (const std::string& str);
 void ChangeFileExtension (std::string& str, const char* ext);
 ///Returns "file.ext" for the str="dir1/dir2/.../file.ext"
 std::string GetFileName(const std::string& str);
-///Extracts the path from str (formatted as above) into buf
+///Extracts the path from str (formatted as above), not including the trailing '/'
 std::string GetFilePath(const std::string& str);
 ///Removes the file extension of str
 void StripExtension(std::string& str);

@@ -35,9 +35,9 @@ struct ClosestMilestoneCallback : public Node::Callback
 
 struct AddPointCallback : public Node::Callback
 {
-  AddPointCallback(SBLSubdivision& _s) :s(_s) {}
-  virtual void Visit(Node* n) { s.AddPoint(n); }
-  SBLSubdivision& s;
+  AddPointCallback(DensityEstimatorBase* _de) :de(_de) {}
+  virtual void Visit(Node* n) { de->Add(*n,n); }
+  DensityEstimatorBase* de;
 };
 
 struct PickCallback : public Node::Callback
@@ -243,12 +243,12 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
     //Real len=temp.e->Priority();
 #if USE_PLAN_EXTENSIONS
     Config *a,*b;
-    BisectionEpsilonEdgePlanner* bisectionEdge;
+    BisectionEpsilonEdgeChecker* bisectionEdge;
     try {
-      bisectionEdge=dynamic_cast<BisectionEpsilonEdgePlanner*>((EdgePlanner*)temp.e);
+      bisectionEdge=dynamic_cast<BisectionEpsilonEdgeChecker*>((EdgePlanner*)temp.e);
     }
     catch(exception& e) {
-      FatalError("SBLPlanner is unable to cast edge planner to BisectionEpsilonEdgePlanner - turn off USE_PLAN_EXTENSIONS in SBLTree.cpp");
+      FatalError("SBLPlanner is unable to cast edge planner to BisectionEpsilonEdgeChecker - turn off USE_PLAN_EXTENSIONS in SBLTree.cpp");
     }
     //assert(len == temp.e->Priority());
     if(!bisectionEdge->Plan(a,b)) {
@@ -359,7 +359,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
       if(*i->s == i->e->Start()) i->reversed=false;
     }
     else {
-      if(*i->s == i->e->Goal()) i->reversed=true;
+      if(*i->s == i->e->End()) i->reversed=true;
     }
   }
   return true;
@@ -460,108 +460,15 @@ Node* SBLTreeWithIndex::PickRandom() const
 }
 
 
-SBLSubdivision::SBLSubdivision(int mappedDims)
-  :subdiv(mappedDims,0.1)
-{
-  subsetToFull.mapping.resize(mappedDims);
-  for(int i=0;i<mappedDims;i++)
-    subsetToFull.mapping[i] = i;
-  temp.resize(mappedDims);
-}
-
-void SBLSubdivision::Clear()
-{
-  subdiv.Clear();
-}
-
-void SBLSubdivision::RandomizeSubset()
-{
-  Assert(h.n >= subsetToFull.Size());
-  int n=h.n;
-  vector<int> p(n); //make a permutation
-  for(int i=0;i<n;i++) p[i]=i;
-  for(size_t i=0;i<subsetToFull.mapping.size();i++) {
-    p[i] = p[i+rand()%(n-i)];
-    subsetToFull.mapping[i] = p[i];
-  }
-  subsetToFull.InvMap(h,subdiv.hinv);
-  for(int i=0;i<subdiv.hinv.n;i++)
-    subdiv.hinv[i] = 1.0/subdiv.hinv[i];
-  temp.resize(subsetToFull.Size());
-}
-
-void SBLSubdivision::AddPoint(Node* n)
-{
-  Assert(temp.n == subsetToFull.Size());
-  const Vector& p = *n;
-  subsetToFull.InvMap(p,temp);
-
-  GridSubdivision::Index index;
-  subdiv.PointToIndex(temp,index);
-  subdiv.Insert(index,(void*)n);
-}
-
-void SBLSubdivision::RemovePoint(Node* n)
-{
-  Assert(temp.n == subsetToFull.Size());
-  const Vector& p = *n;
-  subsetToFull.InvMap(p,temp);
-
-  GridSubdivision::Index index;
-  subdiv.PointToIndex(temp,index);
-  bool res=subdiv.Erase(index,(void*)n);
-  Assert(res == true);
-}
-
-void* RandomObject(const vector<void*>& objs)
-{
-  Assert(!objs.empty());
-  return objs[RandInt(objs.size())];
-}
-
-
-void* RandomObject(const list<void*>& objs)
-{
-  //pick a random point from objs
-  int n=objs.size();
-  Assert(n != 0);
-  int k=RandInt(n);
-  list<void*>::const_iterator obj=objs.begin();
-  for(int i=0;i<k;i++,obj++);
-  return (*obj);
-}
-
-Node* SBLSubdivision::PickPoint(const Config& x)
-{
-  Assert(temp.n == subsetToFull.Size());
-  subsetToFull.InvMap(x,temp);
-
-  GridSubdivision::Index index;
-  subdiv.PointToIndex(temp,index);
-  vector<void*>* objs = subdiv.GetObjectSet(index);
-  if(!objs) return NULL;
-
-  return (Node*)RandomObject(*objs);
-}
-
-Node* SBLSubdivision::PickRandom()
-{
-  int n=subdiv.buckets.size();
-  Assert(n > 0);
-  int k=RandInt(n);
-  GridSubdivision::HashTable::iterator bucket=subdiv.buckets.begin();
-  for(int i=0;i<k;i++,bucket++);
-  return (Node*)RandomObject(bucket->second);
-}
-
 
 
 
 
 
 SBLTreeWithGrid::SBLTreeWithGrid(CSpace* space)
-  :SBLTree(space),A(3)
+  :SBLTree(space),gridDivision(0.1)
 {
+  A.Randomize(space->NumDimensions(),3,gridDivision);
 }
 
 void SBLTreeWithGrid::Cleanup()
@@ -574,44 +481,45 @@ void SBLTreeWithGrid::Init(const Config& qStart)
 {
   SBLTree::Init(qStart);
   A.Clear();
-  A.AddPoint(root);
+  A.Add(*root,root);
 }
 
 void SBLTreeWithGrid::InitDefaultGrid(int numDims,Real h)
 {
-  A.h.resize(numDims,h);
+  gridDivision = h;
+  A.Randomize(space->NumDimensions(),numDims,gridDivision);
 }
 
 void SBLTreeWithGrid::RandomizeSubset()
 {
   //cout<<"SBLTreeWithGrid: Randomizing subset"<<endl;
   A.Clear();
-  A.RandomizeSubset();
+  A.Randomize(space->NumDimensions(),3,gridDivision);
 
   if(root) {
-    AddPointCallback callback(A);
+    AddPointCallback callback(&A);
     root->DFS(callback);
   }
 }
 
 void SBLTreeWithGrid::AddMilestone(Node* n)
 {
-  A.AddPoint(n);
+  A.Add(*n,n);
 }
 
 void SBLTreeWithGrid::RemoveMilestone(Node* n)
 {
-  A.RemovePoint(n);
+  A.Remove(*n,n);
 }
 
 Node* SBLTreeWithGrid::PickExpand()
 {
-  return A.PickRandom();
+  return (Node*)A.Random();
 }
 
 Node* SBLTreeWithGrid::FindNearby(const Config& x)
 {
-  Node* n=A.PickPoint(x);
+  Node* n=(Node*)A.RandomNear(x);
   if(n) return n;
-  return A.PickRandom();
+  return (Node*)A.Random();
 }

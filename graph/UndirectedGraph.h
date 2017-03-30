@@ -137,7 +137,7 @@ bool UndirectedGraph<Node,Edge>::IsValid() const
 {
   if(!P::IsValid()) return false;
   bool res=true;
-  typedef typename P::ConstEdgeIterator ConstEdgeIterator;
+  typedef typename P::ConstEdgeListIterator ConstEdgeIterator;
   for(size_t i=0;i<P::edges.size();i++) {
     ConstEdgeIterator ebegin=P::edges[i].begin(),eend=P::edges[i].end();
     for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
@@ -163,8 +163,8 @@ template <class Node,class Edge>
 void UndirectedGraph<Node,Edge>::NormalizeEdges(int n)
 {
   Assert(0 <= n && n < P::NumNodes());
-  typedef typename P::EdgeIterator EdgeIterator;
-  typedef typename P::CoEdgeIterator CoEdgeIterator;
+  typedef typename P::EdgeListIterator EdgeIterator;
+  typedef typename P::CoEdgeListIterator CoEdgeIterator;
   typedef typename P::EdgeDataPtr EdgeDataPtr;
   std::map<int,EdgeDataPtr> delEdges,delCoEdges;
   EdgeIterator ebegin=P::edges[n].begin(),eend=P::edges[n].end();

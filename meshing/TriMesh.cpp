@@ -1,4 +1,5 @@
 #include "TriMesh.h"
+#include <locale.h>
 #include <iostream>
 #include <utils/stringutils.h>
 #include <math3d/geometry3d.h>
@@ -264,6 +265,7 @@ void TriMesh::RemoveUnusedVerts()
 bool LoadTriMesh(FILE* f,TriMesh& tri)
 {
   int numverts,numtris;
+  setlocale(LC_NUMERIC, "en_US.UTF-8");
   if(fscanf(f,"%d",&numverts) <= 0) return false;
   if(numverts <= 0 || numverts>10000000) {
     cerr << "LoadTriMesh: Invalid number of vertices: "<<numverts<<endl;

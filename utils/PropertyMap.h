@@ -48,6 +48,8 @@ class PropertyMap : public std::map<std::string,std::string>
   template <class T>
   T as(const std::string& key) const;
   template <class T>
+  T getDefault(const std::string& key,T defaultValue=T()) const;
+  template <class T>
   void setArray(const std::string& key,const std::vector<T>& value);
   template <class T>
   bool getArray(const std::string& key,std::vector<T>& values) const;
@@ -96,6 +98,15 @@ T PropertyMap::as(const std::string& key) const
 {
   T res;
   get(key,res);
+  return res;
+}
+
+template <class T>
+T PropertyMap::getDefault(const std::string& key,T defaultValue) const
+{
+  T res;
+  if(!get(key,res))
+    return defaultValue;
   return res;
 }
 

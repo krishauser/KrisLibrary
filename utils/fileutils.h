@@ -50,6 +50,9 @@ bool MakeDirectoryRecursive(const char* path);
 /// Returns a list of filenames in the given directory
 bool ListDirectory(const char* path,std::vector<std::string>& items);
 
+/// Returns the current working directory
+std::string GetWorkingDirectory();
+
 } //namespace FileUtils
 
 /*@}*/

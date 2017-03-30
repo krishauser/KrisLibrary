@@ -48,6 +48,9 @@ struct VolumeGridIterator
  * coordinates within that cell.
  *
  * Cells can be quickly iterated over using the iterator class.
+ * 
+ * Values are interpreted so they are defined over an entire cell,
+ * *not* the vertices.
  */
 class VolumeGrid
 {
@@ -67,10 +70,16 @@ class VolumeGrid
   inline void GetCenter(const IntTriple& index,Vector3& center) const { GetCellCenter(index.a,index.b,index.c,center); }
   inline void GetIndex(const Vector3& pt,IntTriple& index) const { GetIndex(pt,index.a,index.b,index.c); }
 
+  ///Computes the trilinear interpolation of the field at pt, assuming values are sampled exactly at cell centers
   Real TrilinearInterpolate(const Vector3& pt) const;
+  ///Used only for fast marching method, really.
   Real MinimumFreeInterpolate(const Vector3& pt) const;
+  ///Average value of the range.  Each cell's value is weighted by the volume overlap with range
   Real Average(const AABB3D& range) const;
-  void Resample(const VolumeGrid& grid);
+  ///Resamples the given volume grid onto the current grid, taking trilinear interpolation at cell centers
+  void ResampleTrilinear(const VolumeGrid& grid);
+  ///Resamples the given volume grid onto the current grid, taking averages over grid cells
+  void ResampleAverage(const VolumeGrid& grid);
   void Add(const VolumeGrid& grid);
   void Subtract(const VolumeGrid& grid);
   void Multiply(const VolumeGrid& grid);

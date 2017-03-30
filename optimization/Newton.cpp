@@ -275,6 +275,9 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       }
     }
     p.inplaceNegative();
+    //TEST: make length of step decrease with larger error?
+    p *= 1.0 / (1.0 + fx.norm()/fx.n);
+    //printf("Step size: %g\n",1.0 / (1.0 + fx.norm());
     if(verbose >= 2) cout<<"  Descent direction "<<p<<endl;
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
@@ -496,9 +499,11 @@ bool NewtonRoot::LineMinimization(const Vector& g, const Vector& p, Real *f)
     *f=Merit();
     if (alam < alamin) { //Convergence on  x. For zero finding, the calling program should verify the convergence. 
       //x.copy(xold);
+      //printf("Resulting step size %g\n",alam);
       return true;
     }
     else if (*f <= fold+ALF*alam*slope) {
+      //printf("Resulting step size %g\n",alam);
       return false; //Sufficient function decrease. 
     }
     else if(!IsFinite(*f)) {

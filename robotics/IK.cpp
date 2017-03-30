@@ -222,7 +222,18 @@ void IKGoal::GetClosestGoalTransform(const RigidTransform& T0,RigidTransform& T)
     T.t = T0.t;
 }
 
-
+void IKGoal::MatchGoalTransform(const RigidTransform& Trel)
+{
+  Trel.mul(localPosition,endPosition);
+  if(rotConstraint == RotFixed) {
+    MomentRotation m;
+    m.setMatrix(Trel.R);
+    endRotation = m;
+  }
+  else if(rotConstraint == RotAxis) {
+    Trel.R.mul(localAxis,endRotation);
+  }
+}
 
 
 

@@ -2,41 +2,15 @@
 #define MCR_PLANNER_GOAL_SET_H
 
 #include "MotionPlanner.h"
-#include "ExplicitCSpace.h"
+#include "CSpace.h"
 #include <KrisLibrary/utils/Subset.h>
-
-/** @brief A subset of a configuration space equipped with a projection
- * mechanism.
- *
- * Distance returns 0 if q is within the subset.
- * Project attempts to find a qout near q that is within the subset.
- */
-class SubsetProjector
-{
- public:
-  virtual bool Project(const Config& q,Config& qout) { return false; }
-  virtual Real Distance(const Config& q) { return 0; }
-};
-
-/// A single-element subset
-class SingletonSetProjector : public SubsetProjector
-{
- public:
-  CSpace* space;
-  Config element;
-  SingletonSetProjector(CSpace* _space,const Config& _element)
-    :space(_space),element(_element)
-    {}
-  virtual bool Project(const Config& q,Config& qout) { qout=element; return true; }
-  virtual Real Distance(const Config& q) { return space->Distance(q,element); }
-};
 
 
 /** @brief A planner that minimizes the the number of violated constraints
  * using a RRT-like strategy.
  * 
  * Usage:
- *   //first, set up ExplicitCSpace cspace.
+ *   //first, set up CSpace cspace.
  *   MCRPlannerGoalSet planner(&cspace);
  *   planner.Init(start,goal);
  *   
@@ -77,8 +51,8 @@ class MCRPlannerGoalSet
   };
   typedef Graph::UndirectedGraph<Mode,Transition> ModeGraph;
 
-  MCRPlannerGoalSet(ExplicitCSpace* space);
-  void Init(const Config& start,SubsetProjector* goalProjector);
+  MCRPlannerGoalSet(CSpace* space);
+  void Init(const Config& start,CSet* goal);
   ///Performs one iteration of planning given a limit on the explanation size
   void Expand(Real maxExplanationCost,vector<int>& newNodes);
   void Expand2(Real maxExplanationCost,vector<int>& newNodes);
@@ -134,8 +108,9 @@ class MCRPlannerGoalSet
   void GetMilestonePath(const std::vector<int>& path,MilestonePath& mpath) const;
  
   Config start;
-  ExplicitCSpace* space;
-  SubsetProjector* goalSetProjector;
+  CSpace* space;
+  CSet* goalSet;
+  Optimization::NonlinearProgram* goalNumeric;
   vector<int> goalNodes;   //a list of goal nodes in roadmap
 
   //weighted explanation

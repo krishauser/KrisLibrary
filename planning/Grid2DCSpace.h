@@ -24,7 +24,7 @@ public:
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual bool IsFeasible(const Config& x);
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
+  virtual EdgePlanner* PathChecker(const SmartPointer<Interpolator>& b);
   virtual Real Distance(const Config& x, const Config& y);
 
   bool euclideanSpace;

@@ -173,12 +173,14 @@ void Segment2D::getAABB(AABB2D& bb) const
 
 bool Segment2D::intersects(const AABB2D& bb) const
 {
-  Real u1=0,u2=1;
+  Real u1,u2;
   return intersects(bb,u1,u2);
 }
 
 bool Segment2D::intersects(const AABB2D& bb, Real& u1, Real& u2) const
 {
+  u1=0;
+  u2=0;
   return ClipLine(a, b-a, bb, u1,u2);
 }
 
