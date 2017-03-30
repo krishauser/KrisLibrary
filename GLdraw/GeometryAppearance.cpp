@@ -373,37 +373,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 	}
       }
     }
-  }
-  else if(geom->type == AnyGeometry3D::Group) {
-    if(!_geom.CollisionDataInitialized()) {
-      const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
-      subAppearances.resize(subgeoms.size());
-      for(size_t i=0;i<subAppearances.size();i++) {
-        subAppearances[i].Set(subgeoms[i]);
-        subAppearances[i].vertexSize = vertexSize;
-        subAppearances[i].edgeSize = edgeSize;
-        subAppearances[i].lightFaces = lightFaces;
-        subAppearances[i].vertexColor = vertexColor;
-        subAppearances[i].edgeColor = edgeColor;
-        subAppearances[i].faceColor = faceColor;
-      }
-    }
-    else {
-      const std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = _geom.GroupCollisionData();
-      subAppearances.resize(subgeoms.size());
-      for(size_t i=0;i<subAppearances.size();i++) {
-        subAppearances[i].Set(subgeoms[i]);
-        subAppearances[i].vertexSize = vertexSize;
-        subAppearances[i].edgeSize = edgeSize;
-        subAppearances[i].lightFaces = lightFaces;
-        subAppearances[i].vertexColor = vertexColor;
-        subAppearances[i].edgeColor = edgeColor;
-        subAppearances[i].faceColor = faceColor;
-      }
-    }
-  }
-      }
-    }
     if(pc.IsStructured()) {
       //draw mesh rather than points
       drawFaces = true;
