@@ -405,7 +405,7 @@ bool Graph<NodeData,EdgeData>::IsValid() const
   }
   int numCoEdges=0;
   for(size_t i=0;i<co_edges.size();i++) {
-    List ebegin=co_edges[i].begin(),eend=co_edges[i].end();
+	ConstEdgeListIterator  ebegin=co_edges[i].begin(),eend=co_edges[i].end();
     for(ConstEdgeListIterator e=ebegin;e!=eend;e++) {
       numCoEdges++;
       if(e->first < 0 || e->first >= (int)nodes.size()) {
