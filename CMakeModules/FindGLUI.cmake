@@ -79,7 +79,7 @@ if(OPENGL_FOUND AND GLUT_FOUND)
 
 		if(APPLE)
 			find_path(GLUI_INCLUDE_DIR
-				GLUI/glui.h
+				GL/glui.h
 				HINTS
 				${OPENGL_INCLUDE_DIR}
 				DOC
