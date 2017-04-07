@@ -506,7 +506,7 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     }
     Matrix3 test;
     getMatrix(test);
-    if(!test.isEqual(r,5e-3)) {
+    if(!test.isEqual(r,1e-3)) {
       fprintf(stderr,"MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
       fprintf(stderr,"  %g %g %g\n",r(0,0),r(0,1),r(0,2));
       fprintf(stderr,"  %g %g %g\n",r(1,0),r(1,1),r(1,2));
@@ -519,22 +519,25 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     Assert(IsFinite(z));
     return true;
   }
-
   //Matrix3 r_cross;
   //r_cross.setTranspose(r);
   //r_cross.sub(r, r_cross);
   //r_cross.inplaceScale(scale);
 
   //this is a better method for angles close to pi
-  if(FuzzyEquals(theta,Pi,0.02)) {
+  if(FuzzyEquals(theta,Pi,0.5)) {
+    //c ~= -1
     Real c = Cos(theta);
-    x = theta*Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
-    y = theta*Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
-    z = theta*Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
+    x = Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
+    y = Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
+    z = Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
     double eps = Pi-theta;
     x *= Sign(eps)*Sign(r.data[1][2]-r.data[2][1]);
     y *= Sign(eps)*Sign(r.data[2][0]-r.data[0][2]);
     z *= Sign(eps)*Sign(r.data[0][1]-r.data[1][0]);
+    x *= theta;
+    y *= theta;
+    z *= theta;
   }
   else {
     //Real scale = Half*theta/Sin(theta);
@@ -550,7 +553,7 @@ bool MomentRotation::setMatrix(const Matrix3& r)
   Assert(IsFinite(z));
   Matrix3 test;
   getMatrix(test);
-  if (!test.isEqual(r, 5e-3)) {
+  if (!test.isEqual(r, 1e-3)) {
 	  fprintf(stderr, "MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
     fprintf(stderr,"Input:\n");
     fprintf(stderr,"  %g %g %g\n",r(0,0),r(0,1),r(0,2));
@@ -566,6 +569,7 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     fprintf(stderr,"  %g %g %g\n",test(0,0),test(0,1),test(0,2));
     fprintf(stderr,"  %g %g %g\n",test(1,0),test(1,1),test(1,2));
     fprintf(stderr,"  %g %g %g\n",test(2,0),test(2,1),test(2,2));
+    fprintf(stderr,"Sinc function should not be near 0: %g\n",Sinc(theta));
 	  return false;
   }
   return true;
