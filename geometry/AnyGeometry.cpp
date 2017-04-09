@@ -529,6 +529,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
     break;
   }
   SetTransform(T);
+  assert(!collisionData.empty());
 }
 
 AABB3D AnyCollisionGeometry3D::GetAABB() const
@@ -820,6 +821,18 @@ bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,const Collis
 bool Collides(const CollisionMesh& a,const CollisionMesh& b,Real margin,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
+  if(maxContacts==1) {
+    CollisionMeshQueryEnhanced query(a,b);
+    query.margin1 = 0;
+    query.margin2 = margin;
+    bool res = query.Collide();
+    if(res) {
+      query.CollisionPairs(elements1,elements2);
+      assert(elements1.size()==1);
+      assert(elements2.size()==1);
+    }
+    return res;
+  }
   NearbyTriangles(a,b,margin,elements1,elements2,maxContacts);
   return !elements1.empty();
 }
@@ -1259,7 +1272,6 @@ public:
 bool Collides(const CollisionPointCloud& a,Real margin,const CollisionMesh& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
-  Timer timer;
   PointMeshCollider collider(a,b,margin);
   bool res=collider.Recurse(maxContacts);
   if(res) {
@@ -1273,7 +1285,6 @@ bool Collides(const CollisionPointCloud& a,Real margin,const CollisionMesh& b,
 bool Collides(const CollisionPointCloud& a,Real margin,const CollisionPointCloud& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
-  Timer timer;
   PointPointCollider collider(a,b,margin);
   bool res=collider.Recurse(maxContacts);
   if(res) {
