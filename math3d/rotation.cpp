@@ -444,42 +444,41 @@ bool MomentRotation::setMatrix(const Matrix3& r)
 {
   //calculate theta
   Real theta;
-  Real s=(r.trace() - One)*Half;
-  if(!IsFinite(s)) {
+  Real c=(r.trace() - One)*Half;
+  if(!IsFinite(c)) {
     cerr<<"MomentRotation::setMatrix(): Warning- trace of matrix is not finite!"<<endl;
     cerr<<r<<endl;
     return false;
   }
-  if(s >= One) {
-    if(s > One+Epsilon) {
+  if(c >= One) {
+    if(c > One+Epsilon) {
       cerr<<"MomentRotation::setMatrix(): Warning- trace of matrix is greater than 3"<<endl;
       cerr<<"  Matrix:"<<endl<<r<<endl;
     }
+    c = One;
     theta = Zero;
   }
-  else if(s <= -One) {
-    if(s < -One-Epsilon) {
+  else if(c <= -One) {
+    if(c < -One-Epsilon) {
       cerr<<"MomentRotation::setMatrix(): Warning- trace of matrix is less than -1"<<endl;
       cerr<<"  Matrix:"<<endl<<r<<endl;
     }
+    c = -One;
     theta = Pi;
   }
   else 
-    theta = Acos(s);
+    theta = Acos(c);
 
   if(FuzzyEquals(theta,Pi,angleEps)) {
     //can't do normal version because the scale factor reaches a singularity
-    Real x2=(r(0,0)+One)*Half;
-    Real y2=(r(1,1)+One)*Half;
-    Real z2=(r(2,2)+One)*Half;
-    if(x2 < 0) { Assert(FuzzyZero(x2)); x2=0; }
-    if(y2 < 0) { Assert(FuzzyZero(y2)); y2=0; }
-    if(z2 < 0) { Assert(FuzzyZero(z2)); z2=0; }
-    x = Pi*Sqrt(x2);
-    y = Pi*Sqrt(y2);
-    z = Pi*Sqrt(z2);
-    //determined up to sign changes, we know r12=2xy,r13=2xz,r23=2yz
-    Real xy=r(0,1),xz=r(0,2),yz=r(1,2);
+    x = Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
+    y = Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
+    z = Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
+    x = theta*x;
+    y = theta*y;
+    z = theta*z;
+    //determined up to sign changes, we know r12+r21~=4xy,r13+r31~=4xz,r23+r32~=4yz
+    Real xy=r(0,1)+r(1,0),xz=r(0,2)+r(2,0),yz=r(1,2)+r(2,1);
     if(x > y) {
       if(x > z) {
 	//x is largest
@@ -506,11 +505,22 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     }
     Matrix3 test;
     getMatrix(test);
-    if(!test.isEqual(r,1e-3)) {
+    if(!test.isEqual(r,2e-3)) {
       fprintf(stderr,"MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
       fprintf(stderr,"  %g %g %g\n",r(0,0),r(0,1),r(0,2));
       fprintf(stderr,"  %g %g %g\n",r(1,0),r(1,1),r(1,2));
       fprintf(stderr,"  %g %g %g\n",r(2,0),r(2,1),r(2,2));
+      fprintf(stderr,"Input*Input^T (should be orthogonal)\n");
+      Matrix3 ortho;
+      ortho.mulTransposeB(r,r);
+      fprintf(stderr,"  %g %g %g\n",ortho(0,0),ortho(0,1),ortho(0,2));
+      fprintf(stderr,"  %g %g %g\n",ortho(1,0),ortho(1,1),ortho(1,2));
+      fprintf(stderr,"  %g %g %g\n",ortho(2,0),ortho(2,1),ortho(2,2));
+      fprintf(stderr,"Test errors with moment %g %g %g:\n",x,y,z);
+      test -= r;
+      fprintf(stderr,"  %g %g %g\n",test(0,0),test(0,1),test(0,2));
+      fprintf(stderr,"  %g %g %g\n",test(1,0),test(1,1),test(1,2));
+      fprintf(stderr,"  %g %g %g\n",test(2,0),test(2,1),test(2,2));
       return false;
     }
 
@@ -527,7 +537,6 @@ bool MomentRotation::setMatrix(const Matrix3& r)
   //this is a better method for angles close to pi
   if(FuzzyEquals(theta,Pi,0.5)) {
     //c ~= -1
-    Real c = Cos(theta);
     x = Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
     y = Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
     z = Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
