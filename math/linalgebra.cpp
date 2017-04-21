@@ -96,7 +96,7 @@ bool IterativeMethod::Solve(Type type,Vector& x0,int& maxIters,Real& tol) const
   default: AssertNotReached();
   }
   if(!valid) {
-    cout<<"Warning: matrix in IterativeMethod::Solve() won't guarantee convergence"<<endl;
+    cerr<<"Warning: matrix in IterativeMethod::Solve() won't guarantee convergence"<<endl;
   }
 
   Vector r;
@@ -136,7 +136,7 @@ MatrixEquation::MatrixEquation(const Matrix& _A, const Vector& _b)
 bool MatrixEquation::LBackSubstitute(Vector& x) const
 {
   if(!A.isSquare() || !IsValid()) {
-    cout<<"Invalid dims in LBackSubstitute"<<endl;
+    cerr<<"Invalid dims in LBackSubstitute"<<endl;
     return false;
   }
   x.resize(A.n);
@@ -146,7 +146,7 @@ bool MatrixEquation::LBackSubstitute(Vector& x) const
 bool MatrixEquation::UBackSubstitute(Vector& x) const
 {
   if(!A.isSquare() || !IsValid()) {
-    cout<<"Invalid dims in UBackSubstitute"<<endl;
+    cerr<<"Invalid dims in UBackSubstitute"<<endl;
     return false;
   }
   x.resize(A.n);
@@ -156,7 +156,7 @@ bool MatrixEquation::UBackSubstitute(Vector& x) const
 bool MatrixEquation::LTBackSubstitute(Vector& x) const
 {
   if(!A.isSquare() || !IsValid()) {
-    cout<<"Invalid dims in LTBackSubstitute"<<endl;
+    cerr<<"Invalid dims in LTBackSubstitute"<<endl;
     return false;
   }
   x.resize(A.n);
@@ -171,10 +171,11 @@ bool MatrixEquation::Solve(Vector& x) const
 bool MatrixEquation::Solve_Cholesky(Vector& x) const
 {
   if(!IsValid() || !A.isSquare()) {
-    cout<<"Invalid dimensions in Solve_Cholesky"<<endl;
+    cerr<<"Invalid dimensions in Solve_Cholesky"<<endl;
     return false;
   }
   LDLDecomposition<Real> chol;
+  chol.verbose = 0;
   chol.set(A);
   return chol.backSub(b,x);
 }
@@ -182,7 +183,7 @@ bool MatrixEquation::Solve_Cholesky(Vector& x) const
 bool MatrixEquation::Solve_LU(Vector& x) const
 {
   if(!IsValid() || !A.isSquare()) {
-    cout<<"Invalid dimensions in Solve_LU"<<endl;
+    cerr<<"Invalid dimensions in Solve_LU"<<endl;
     return false;
   }
   LUDecomposition<Real> lu;
@@ -228,7 +229,7 @@ bool MatrixEquation::Solve_SOR(Vector& x,Real omega,int maxIters,Real tol) const
 bool MatrixEquation::LeastSquares(Vector& x) const
 {
   if(!IsValid()) {
-    cout<<"Invalid dimensions in LeastSquares()"<<endl;
+    cerr<<"Invalid dimensions in LeastSquares()"<<endl;
     return false;
   }
   if(LeastSquares_Cholesky(x)) {
@@ -242,7 +243,7 @@ bool MatrixEquation::LeastSquares(Vector& x) const
 bool MatrixEquation::LeastSquares_Cholesky(Vector& x) const
 {
   if(!IsValid()) {
-    cout<<"Invalid dimensions in LeastSquares_Cholesky()"<<endl;
+    cerr<<"Invalid dimensions in LeastSquares_Cholesky()"<<endl;
     return false;
   }
   if(A.m < A.n) {
@@ -279,7 +280,7 @@ bool MatrixEquation::LeastSquares_Cholesky(Vector& x) const
 bool MatrixEquation::LeastSquares_GaussSeidel(Vector& x,int maxIters,Real tol) const
 {
   if(!IsValid()) {
-    cout<<"Invalid dimensions in LeastSquares_GaussSeidel()"<<endl;
+    cerr<<"Invalid dimensions in LeastSquares_GaussSeidel()"<<endl;
     return false;
   }
   if(A.m < A.n) {
@@ -347,7 +348,7 @@ bool MatrixEquation::LeastSquares_SVD(Vector& x) const
     Matrix At; At.setRefTranspose(A);
     if(!svd.set(At)) return false;
     svd.getInverse(At);
-    cout<<"Result"<<endl<<MatrixPrinter(At)<<endl;
+    cerr<<"Result"<<endl<<MatrixPrinter(At)<<endl;
     Matrix Ainv; Ainv.setRefTranspose(At);
     Ainv.mul(b,x);
     return true;
@@ -364,7 +365,7 @@ bool MatrixEquation::AllSolutions(Vector& x0,Matrix& N) const
 bool MatrixEquation::AllSolutions_RE(Vector& x0,Matrix& N) const
 {
   if(A.n < A.m) {
-    cout<<"Warning: matrix is overconstrained"<<endl;
+    cerr<<"Warning: matrix is overconstrained"<<endl;
   }
   RowEchelon<Real> re;
   re.set(A,b);
@@ -375,7 +376,7 @@ bool MatrixEquation::AllSolutions_RE(Vector& x0,Matrix& N) const
 bool MatrixEquation::AllSolutions_SVD(Vector& x0,Matrix& N) const
 {
   if(A.n < A.m) {
-    cout<<"Warning: matrix is overconstrained"<<endl;
+    cerr<<"Warning: matrix is overconstrained"<<endl;
   }
   SVDecomposition<Real> svd;
   if(!svd.set(A)) return false;

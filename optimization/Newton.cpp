@@ -270,8 +270,10 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       //least squares
       MatrixEquation eq(fJx,fx);
       if(!eq.LeastSquares_Cholesky(p)) {
-	printf("NewtonRoot::Solve: Unable to compute either pseudoinverse or Cholesky least-squares\n");
-	return ConvergenceError;
+        if(verbose >= 2) {
+          printf("NewtonRoot::Solve: Unable to compute either pseudoinverse or Cholesky least-squares\n");
+        }
+        return ConvergenceError;
       }
     }
     p.inplaceNegative();
