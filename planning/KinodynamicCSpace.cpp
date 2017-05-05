@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "KinodynamicCSpace.h"
 #include <math/diffeq.h>
 #include <math/random.h>
@@ -14,9 +16,9 @@ GivenPathEdgePlanner::GivenPathEdgePlanner(CSpace* _space,const vector<State>& _
   bool feasible = true;
   for(size_t i=0;i<dists.size();i++) {
     if(dists[i] < 0 || IsInf(dists[i])) {
-      cout<<"Invalid distance "<<i<<": "<<dists[i]<<endl;
-      if(i > 0) cout<<path[i-1]<<endl;
-      cout<<path[i]<<endl;
+      LOG4CXX_INFO(logger,"Invalid distance "<<i<<": "<<dists[i]<<"\n");
+      if(i > 0) LOG4CXX_INFO(logger,path[i-1]<<"\n");
+      LOG4CXX_INFO(logger,path[i]<<"\n");
       feasible = false;
     }
   }
@@ -103,7 +105,7 @@ bool GivenPathEdgePlanner::Plan()
   Config x;
   Eval(0.5*(e.a+e.b),x);
   if(!space->IsFeasible(x)) {
-    //fprintf(stderr,"Infeasibility at %g\n",0.5*(e.a+e.b));
+        //LOG4CXX_ERROR(logger,"Infeasibility at "<<0.5*(e.a+e.b));
     e.bdist = Inf;
     //make sure subsequent calls to Plan also return false
     edgeQueue.push(e);

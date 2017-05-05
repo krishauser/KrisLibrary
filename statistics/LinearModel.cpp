@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "LinearModel.h"
 #include "OLS.h"
 #include "errors.h"
@@ -150,8 +152,8 @@ bool LinearModel::LeastSquares_Cholesky(const Matrix& data,const Vector& outcome
   ldl.set(A);
   ldl.backSub(b,coeffs);
   /*  {
-    cout<<"Cholesky didn't succeed!"<<endl;
-    cout<<"Matrix: "<<endl<<MatrixPrinter(A)<<endl;
+    LOG4CXX_INFO(logger,"Cholesky didn't succeed!"<<"\n");
+    LOG4CXX_INFO(logger,"Matrix: "<<"\n"<<MatrixPrinter(A)<<"\n");
     return false;
   }
   */

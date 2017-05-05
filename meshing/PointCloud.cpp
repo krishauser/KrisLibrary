@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "PointCloud.h"
 #include <iostream>
 #include <math3d/AABB3D.h>
@@ -28,36 +30,36 @@ public:
     }
     else if(state == READING_TYPES) {
       if(word != "F" && word != "U" && word != "I") {
-	fprintf(stderr,"PCD parser: Invalid PCD TYPE %s\n",word.c_str());
+		LOG4CXX_ERROR(logger,"PCD parser: Invalid PCD TYPE "<<word.c_str()<<"\n");
 	return Error;
       }
       types.push_back(word);
     }
     else if(state == READING_COUNTS) {
       if(!IsValidInteger(word.c_str())) {
-	fprintf(stderr,"PCD parser: Invalid PCD COUNT string %s, must be integer\n",word.c_str());
-	return Error;
+		  LOG4CXX_ERROR(logger, "PCD parser: Invalid PCD COUNT string " << word.c_str() << "must be integer\n");
+		  return Error;
       }
       stringstream ss(word);
       int count;
       ss>>count;
       if(count != 1) {
-	fprintf(stderr,"PCD parser: Invalid PCD COUNT %s, we only handle counts of 1\n",word.c_str());
-	return Error;
+		  LOG4CXX_ERROR(logger, "PCD parser: Invalid PCD COUNT " << word.c_str() << "we only handle counts of 1\n");
+		  return Error;
       }
       counts.push_back(count);
     }
     else if(state == READING_SIZES) {
       if(!IsValidInteger(word.c_str())) {
-	fprintf(stderr,"PCD parser: Invalid PCD SIZE string %s, must be integer\n",word.c_str());
-	return Error;
+		  LOG4CXX_ERROR(logger, "PCD parser: Invalid PCD SIZE string " << word.c_str() << "must be integer\n");
+		  return Error;
       }
       stringstream ss(word);
       int size;
       ss>>size;
       if(size <= 0) {
-	fprintf(stderr,"PCD parser: Invalid PCD SIZE %s, must be positive\n",word.c_str());
-	return Error;
+		  LOG4CXX_ERROR(logger, "PCD parser: Invalid PCD SIZE " << word.c_str() << " must be positive\n");
+		  return Error;
       }
       sizes.push_back(size);
     }
@@ -68,7 +70,7 @@ public:
 	stringstream ss(points);
 	ss>>numPoints;
 	if(!ss) {
-	  fprintf(stderr,"PCD parser: Unable to read integer POINTS\n");
+	  	  LOG4CXX_ERROR(logger,"PCD parser: Unable to read integer POINTS\n");
 	  return Error;
 	}
       }
@@ -94,15 +96,15 @@ public:
 	  assert(c == '\n');
 	  //read in binary data
 	  if(numPoints < 0) {
-	    fprintf(stderr,"PCD parser: DATA specified before POINTS element\n");
+	    	    LOG4CXX_ERROR(logger,"PCD parser: DATA specified before POINTS element\n");
 	    return Error;
 	  }
 	  if(sizes.size() != pc.propertyNames.size()) {
-	    fprintf(stderr,"PCD parser: Invalid number of SIZE elements\n");
+	    	    LOG4CXX_ERROR(logger,"PCD parser: Invalid number of SIZE elements\n");
 	    return Error;
 	  }
 	  if(types.size() != pc.propertyNames.size()) {
-	    fprintf(stderr,"PCD parser: Invalid number of TYPE elements\n");
+	    	    LOG4CXX_ERROR(logger,"PCD parser: Invalid number of TYPE elements\n");
 	    return Error;
 	  }
 	  int pointsize = 0;
@@ -112,7 +114,7 @@ public:
 	  for(int i=0;i<numPoints;i++) {
 	    in.read(&buffer[0],pointsize);
 	    if(!in) {
-	      fprintf(stderr,"PCD parser: Error reading data for point %d\n",i);
+	      	      LOG4CXX_ERROR(logger,"PCD parser: Error reading data for point "<<i);
 	      return Error;
 	    }
 	    //parse the point and add it
@@ -131,13 +133,13 @@ public:
 		  v[j] = f;
 		}
 		else {
-		  fprintf(stderr,"PCD parser: Invalid float size %d\n",sizes[j]);
+		  		  LOG4CXX_ERROR(logger,"PCD parser: Invalid float size "<<sizes[j]);
 		  return Error;
 		}
 	      }
 	      else if(types[j] == "U") {
 		if(sizes[j] > 4) {
-		  fprintf(stderr,"PCD parser: Invalid unsigned int size %d\n",sizes[j]);
+		  		  LOG4CXX_ERROR(logger,"PCD parser: Invalid unsigned int size "<<sizes[j]);
 		  return Error;		  
 		}
 		unsigned i=0;
@@ -145,13 +147,13 @@ public:
 		v[j] = Real(i);
 	      }
 	      else if(types[j] == "I") {
-		fprintf(stderr,"PCD parser: Invalid int size %d\n",sizes[j]);
+				LOG4CXX_ERROR(logger,"PCD parser: Invalid int size "<<sizes[j]);
 		int i=0;
 		memcpy(&i,&buffer[ofs],sizes[j]);
 		v[j] = Real(i);
 	      }
 	      else {
-		fprintf(stderr,"PCD parser: Invalid type %s\n",types[i].c_str());
+				LOG4CXX_ERROR(logger,"PCD parser: Invalid type "<<types[i].c_str());
 		return Error;
 	      }
 	      ofs += sizes[j];
@@ -161,7 +163,7 @@ public:
 	}
 	else if(datatype == "ascii") {
 	  if(numPoints < 0) {
-	    fprintf(stderr,"PCD parser: DATA specified before POINTS element\n");
+	    	    LOG4CXX_ERROR(logger,"PCD parser: DATA specified before POINTS element\n");
 	    return Error;
 	  }
 	  string line;
@@ -170,16 +172,16 @@ public:
 	    assert(c=='\n' || c==EOF);
 	    lineno++;
 	    if(c==EOF) {
-	      fprintf(stderr,"PCD parser: Premature end of DATA element\n");
+	      	      LOG4CXX_ERROR(logger,"PCD parser: Premature end of DATA element\n");
 	      return Error;
 	    }
 	    if(!ReadLine(line)) {
-	      fprintf(stderr,"PCD parser: Error reading point %d\n",i);
+	      	      LOG4CXX_ERROR(logger,"PCD parser: Error reading point "<<i);
 	      return Error;
 	    }
 	    vector<string> elements = Split(line," ");
 	    if(elements.size() != pc.propertyNames.size()) {
-	      fprintf(stderr,"PCD parser: DATA element %d has length %d, but %d properties specified\n",i,elements.size(),pc.propertyNames.size());
+	      	      LOG4CXX_ERROR(logger,"PCD parser: DATA element "<<i<<" has length "<<elements.size()<<", but "<<pc.propertyNames.size());
 	      return Error;
 	    }
 	    Vector v(elements.size());
@@ -191,7 +193,7 @@ public:
 	  }
 	}
 	else {
-	  fprintf(stderr,"PCD parser: DATA is not spcified as ascii or binary\n");
+	  	  LOG4CXX_ERROR(logger,"PCD parser: DATA is not spcified as ascii or binary\n");
 	  return Error;
 	}
       }
@@ -202,11 +204,11 @@ public:
 
 	if(word == "VERSION") {
 	  if(pc.settings[word] != "0.7" && pc.settings[word] != ".7") {
-	    fprintf(stderr,"PCD parser: Warning, PCD version 0.7 expected, got %s\n",pc.settings[word].c_str());
+	    	    LOG4CXX_ERROR(logger,"PCD parser: Warning, PCD version 0.7 expected, got "<<pc.settings[word].c_str());
 	  }
 	}
 	else {
-	  //printf("PCD parser: Read property \"%s\" = \"%s\"\n",word.c_str(),pc.settings[word].c_str());
+	  //LOG4CXX_INFO(logger,"PCD parser: Read property \""<<word.c_str()<<"\" = \""<<pc.settings[word].c_str());
 	}
       }
     }
@@ -259,7 +261,7 @@ bool PointCloud3D::LoadPCL(istream& in)
 {
   PCLParser parser(in,*this);
   if(!parser.Read()) {
-    fprintf(stderr,"PCD parser: Unable to parse PCD file\n");
+        LOG4CXX_ERROR(logger,"PCD parser: Unable to parse PCD file\n");
     return false;
   }
   int elemIndex[3] = {-1,-1,-1};
@@ -269,11 +271,11 @@ bool PointCloud3D::LoadPCL(istream& in)
     if(propertyNames[i]=="z") elemIndex[2] = (int)i;
   }
   if(elemIndex[0]<0 || elemIndex[1]<0 || elemIndex[2]<0) {
-    fprintf(stderr,"PCD parser: Warning, PCD file does not have x, y or z\n");
-    fprintf(stderr,"  Properties:");
+        LOG4CXX_ERROR(logger,"PCD parser: Warning, PCD file does not have x, y or z\n");
+        LOG4CXX_ERROR(logger,"  Properties:");
     for(size_t i=0;i<propertyNames.size();i++)
-      fprintf(stderr," \"%s\"",propertyNames[i].c_str());
-    fprintf(stderr,"\n");
+            LOG4CXX_ERROR(logger," \""<<propertyNames[i].c_str());
+        LOG4CXX_ERROR(logger,"\n");
     return true;
   }
 
@@ -292,7 +294,7 @@ bool PointCloud3D::LoadPCL(istream& in)
 	}
       }
       if(docast) {
-	//fprintf(stderr,"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast\n");
+		//LOG4CXX_ERROR(logger,"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast\n");
 	for(size_t i=0;i<properties.size();i++) {
 	  Vector& v = properties[i];
 	  float f = float(v[k]);
@@ -308,7 +310,7 @@ bool PointCloud3D::LoadPCL(istream& in)
   for(size_t i=0;i<properties.size();i++) {
     points[i].set(properties[i][elemIndex[0]],properties[i][elemIndex[1]],properties[i][elemIndex[2]]);
   }
-  //printf("PCD parser: %d points read\n",points.size());
+  //LOG4CXX_INFO(logger,"PCD parser: "<<points.size());
 
   if(properties.size()==3 && elemIndex[0]==0 && elemIndex[1]==1 && elemIndex[2]==2) {
     //x,y,z are the only properties, go ahead and take them out
@@ -715,7 +717,7 @@ void PointCloud3D::RemoveProperty(const string& name)
     return;
   }
   else
-    fprintf(stderr,"PointCloud3D::RemoveProperty: warning, property %s does not exist\n",name.c_str());
+        LOG4CXX_ERROR(logger,"PointCloud3D::RemoveProperty: warning, property "<<name.c_str());
 }
 
 void PointCloud3D::GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud)
@@ -765,7 +767,7 @@ void PointCloud3D::GetSubCloud(const string& property,Real minValue,Real maxValu
   else {
     int i=PropertyIndex(property);
     if(i < 0) {
-      fprintf(stderr,"PointCloud3D::GetSubCloud: warning, property %s does not exist\n",property.c_str());
+            LOG4CXX_ERROR(logger,"PointCloud3D::GetSubCloud: warning, property "<<property.c_str());
       return;
     }
     for(size_t k=0;k<properties.size();k++)

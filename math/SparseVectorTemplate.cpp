@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "SparseVectorTemplate.h"
 #include "fastarray.h"
 #include <algorithm>
@@ -737,14 +739,14 @@ void SparseVectorCompressed<T>::print(std::ostream& out) const
 
 template<> Complex SparseVectorTemplate<Complex>::minElement(int* index) const
 {
-  cerr<<"Incomplete"<<endl;
+  LOG4CXX_ERROR(logger,"Incomplete"<<"\n");
   AssertNotReached();
   return Zero;
 }
 
 template<> Complex SparseVectorTemplate<Complex>::maxElement(int* index) const
 {
-  cerr<<"Incomplete"<<endl;
+  LOG4CXX_ERROR(logger,"Incomplete"<<"\n");
   AssertNotReached();
   return Zero;
 }

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GeneralizedBezierCurve.h"
 #include <iostream>
 #include <math/interpolate.h>
@@ -240,13 +242,13 @@ void GeneralizedCubicBezierCurve::Deriv(Real u,Config& dx) const
   }
   /*
   if(u == 1.0) {
-    cout<<"End deriv: "<<endl;
-    cout<<" x0="<<x0<<endl;
-    cout<<" x1="<<x1<<endl;
-    cout<<" x2="<<x2<<endl;
-    cout<<" x3="<<x3<<endl;
-    cout<<"Result="<<dx<<endl;
-    cout<<"Ideal="<<(x3-x2)*3.0<<endl;
+    LOG4CXX_INFO(logger,"End deriv: "<<"\n");
+    LOG4CXX_INFO(logger," x0="<<x0<<"\n");
+    LOG4CXX_INFO(logger," x1="<<x1<<"\n");
+    LOG4CXX_INFO(logger," x2="<<x2<<"\n");
+    LOG4CXX_INFO(logger," x3="<<x3<<"\n");
+    LOG4CXX_INFO(logger,"Result="<<dx<<"\n");
+    LOG4CXX_INFO(logger,"Ideal="<<(x3-x2)*3.0<<"\n");
   }
   */
 }
@@ -283,7 +285,7 @@ void GeneralizedCubicBezierCurve::Accel(Real u,Config& ddx) const
   else {
     static bool warned = false;
     if(!warned) {
-      fprintf(stderr,"GeneralizedCubicBezierCurve: Warning, using linear accel evaluation with geodesic manifold\n");
+            LOG4CXX_ERROR(logger,"GeneralizedCubicBezierCurve: Warning, using linear accel evaluation with geodesic manifold\n");
       warned=true;
     }
     Vector temp;

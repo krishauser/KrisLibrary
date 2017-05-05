@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "CartesianDrive.h"
 #include "IKFunctions.h"
 #include "Rotation.h"
@@ -114,10 +116,10 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       desiredTransforms[i].R = increment * driveTransforms[i].R;
     }
     /*
-    cout<<"Desired transform for link "<<links[i]<<endl;
-    cout<<desiredTransforms[i]<<endl;
-    cout<<" current transform"<<endl;
-    cout<<originalTransforms[i]<<endl;
+    LOG4CXX_INFO(logger,"Desired transform for link "<<links[i]<<"\n");
+    LOG4CXX_INFO(logger,desiredTransforms[i]<<"\n");
+    LOG4CXX_INFO(logger," current transform"<<"\n");
+    LOG4CXX_INFO(logger,originalTransforms[i]<<"\n");
     */
   }
 
@@ -142,7 +144,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       /*
       Real poserr[3]={0,0,0},orierr[3]={0,0,0};
       tempGoals[i].GetError(originalTransforms[i],poserr,orierr);
-      printf("Error on link %d: %g %g %g, %g %g %g\n",links[i],poserr[0],poserr[1],poserr[2],orierr[0],orierr[1],orierr[2]);
+      LOG4CXX_ERROR(logger,"Error on link "<<links[i]<<": "<<poserr[0]<<" "<<poserr[1]<<" "<<poserr[2]<<", "<<orierr[0]<<" "<<orierr[1]<<" "<<orierr[2]);
       */
     }
   }
@@ -189,7 +191,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       goalfunc->rotationScale = Min(positionTolerance,rotationTolerance)/rotationTolerance;
       goalfunc->positionScale = Min(positionTolerance,rotationTolerance)/positionTolerance;
     }
-    //printf("Position scale %g, rotation scale %g\n",goalfunc->positionScale,goalfunc->rotationScale);
+    //LOG4CXX_INFO(logger,"Position scale "<<goalfunc->positionScale<<", rotation scale "<<goalfunc->rotationScale);
     function.functions.push_back(goalfunc);
   }
 
@@ -198,13 +200,13 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   function.GetState(x0);
   function(x0,err0);
   /*
-  cout<<"Active dofs: ";
+  LOG4CXX_INFO(logger,"Active dofs: ");
   for(size_t i=0;i<tempActiveDofs.mapping.size();i++) {
-    printf("%d ",tempActiveDofs.mapping[i]);
+    LOG4CXX_INFO(logger,""<<tempActiveDofs.mapping[i]);
   }
-  printf("\n");
-  cout<<"Active dof state "<<x0<<endl;
-  cout<<"IK goal residual "<<err0<<endl;
+  LOG4CXX_INFO(logger,"\n");
+  LOG4CXX_INFO(logger,"Active dof state "<<x0<<"\n");
+  LOG4CXX_INFO(logger,"IK goal residual "<<err0<<"\n");
   */
 
   Real quality0 = err0.normSquared();
@@ -230,7 +232,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	else if(tempqmin[k] <= robot->q[k] - TwoPi && robot->q[k] - TwoPi <= tempqmax[k])
 	  robot->q[k] -= TwoPi;
 	else {
-	  printf("CartesianDriveSolver: Warning, result from IK solve is out of bounds: index %d, %g <= %g <= %g\n",k,tempqmin[k],robot->q[k],tempqmax[k]);
+	  LOG4CXX_WARN(logger,"CartesianDriveSolver: Warning, result from IK solve is out of bounds: index "<<k<<", "<<tempqmin[k]<<" <= "<<robot->q[k]<<" <= "<<tempqmax[k]);
 	  robot->q[k] = Clamp(robot->q[k],tempqmin[k],tempqmax[k]);
 	  robot->UpdateFrames();
 	}
@@ -243,7 +245,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   function(x0,err0);
   Real qualityAfter = err0.normSquared();
   if(qualityAfter > quality0) {
-    printf("CartesianDriveSolver: Solve failed: original configuration was better: %g vs %g\n",quality0,qualityAfter);
+    LOG4CXX_INFO(logger,"CartesianDriveSolver: Solve failed: original configuration was better: "<<quality0<<" vs "<<qualityAfter);
     res = false;
   }
   else {
@@ -252,11 +254,11 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       //test constraints
       Vector3 perr(0.0),rerr(0.0);
       tempGoals[i].GetError(robot->links[links[i]].T_World,perr,rerr);
-      //cout<<"Position error link "<<links[i]<<": "<<perr<<", rotation error: "<<rerr<<endl;
+      //LOG4CXX_ERROR(logger,"Position error link "<<links[i]<<": "<<perr<<", rotation error: "<<rerr<<"\n");
       if(perr.norm() > positionTolerance || rerr.norm() > rotationTolerance) {
         res = false;
-        printf("CartesianDriveSolver: Position error: %g, rotation error: %g not under tolerances %g, %g\n",perr.norm(),rerr.norm(),positionTolerance,rotationTolerance);
-        printf("  Solve tolerance %g, result %d\n",tolerance,(int)res);
+        LOG4CXX_ERROR(logger,"CartesianDriveSolver: Position error: "<<perr.norm()<<", rotation error: "<<rerr.norm()<<" not under tolerances "<<positionTolerance<<", "<<rotationTolerance);
+        LOG4CXX_INFO(logger,"  Solve tolerance "<<tolerance<<", result "<<(int)res);
         break;
       }
     }
@@ -283,7 +285,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     for(size_t i=0;i<links.size();i++) {
       achievedTransforms[i].R = robot->links[links[i]].T_World.R;
       achievedTransforms[i].t = robot->links[links[i]].T_World*endEffectorOffsets[i];
-      //cout<<"  Solved limb transform: "<<achievedTransforms[i].t<<endl;
+      //LOG4CXX_INFO(logger,"  Solved limb transform: "<<achievedTransforms[i].t<<"\n");
       
       //adjust drive transform along screw to minimize distance to the achieved transform      
       if(IsFiniteV(driveVel[i])) {
@@ -291,8 +293,8 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	Vector3 axis = driveVel[i] / Max(driveVel[i].length(),Epsilon);
 	Real ut = driveVel[i].length();
 	Real tdistance = trel.dot(axis);
-	//cout<<"  translation vector"<<trel<<endl;
-	//printf("  Translation amount: %g\n",tdistance);
+	//LOG4CXX_INFO(logger,"  translation vector"<<trel<<"\n");
+	//LOG4CXX_INFO(logger,"  Translation amount: "<<tdistance);
 	tdistance = Clamp(tdistance,0.0,dt*driveVel[i].length());
 	numerator += ut*tdistance;
 	denominator += Sqr(ut);
@@ -302,7 +304,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	Rrel.mulTransposeB(achievedTransforms[i].R,driveTransforms[i].R);
 	Vector3 rotaxis = driveAngVel[i] / Max(driveAngVel[i].length(),Epsilon);
 	Real Rdistance = AxisRotationMagnitude(Rrel,rotaxis);
-	//printf("  Rotation amount: %g (desired %g)\n",Rdistance,dt*driveAngVel[i].length());
+	//LOG4CXX_INFO(logger,"  Rotation amount: "<<Rdistance<<" (desired "<<dt*driveAngVel[i].length());
 	Rdistance = Clamp(Rdistance,0.0,dt*driveAngVel[i].length());
 	Real uR = driveAngVel[i].length();
 	numerator += uR*Rdistance;
@@ -310,7 +312,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       }
     }
     Real distance = numerator / Max(denominator,Epsilon);
-    //printf("Distance %g\n",distance);
+    //LOG4CXX_INFO(logger,"Distance "<<distance);
       
     //computed error-minimizing distance along screw motion
     for(size_t i=0;i<links.size();i++) {
@@ -341,10 +343,10 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     driveSpeedAdjustment -= 0.1;
     if(driveSpeedAdjustment <= Epsilon) {
       //don't adjust drive transform
-      printf("  CartesianDriveSolver: IK solve failed completely.  Must restart.\n");
+      LOG4CXX_INFO(logger,"  CartesianDriveSolver: IK solve failed completely.  Must restart.\n");
       return -1;
     }
-    printf("  CartesianDriveSolver: Solve failed, next trying with amount %g\n",driveSpeedAdjustment);
+    LOG4CXX_INFO(logger,"  CartesianDriveSolver: Solve failed, next trying with amount "<<driveSpeedAdjustment);
     return 0;
   }
 }

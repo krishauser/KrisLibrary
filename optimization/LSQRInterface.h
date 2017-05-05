@@ -1,6 +1,8 @@
 #ifndef OPTIMIZATION_LSQR_INTERFACE_H
 #define OPTIMIZATION_LSQR_INTERFACE_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include <KrisLibrary/math/sparsematrix.h>
 
 namespace Optimization

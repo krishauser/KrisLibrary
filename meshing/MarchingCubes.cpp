@@ -2,6 +2,8 @@
  * Based on the algorithm & look-up tables by Paul Bourke        [http://astronomy.swin.edu.au/~pbourke/modelling/polygonise/]
  */
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "MarchingCubes.h"
 #include <math3d/interpolate.h>
 #include <math/function.h>
@@ -471,10 +473,10 @@ void MarchingCubes(ScalarFieldFunction& input,Real isoLevel,const AABB3D& bb,con
 	     tri.b < vertoffset || tri.b >= (int)m.verts.size() ||
 	     tri.c < vertoffset || tri.c >= (int)m.verts.size())
 	    {
-	      fprintf(stderr,"Internal Marching cubes error!\n");
-	      fprintf(stderr,"Triangle %d %d %d invalid\n",tri.a,tri.b,tri.c);
-	      fprintf(stderr,"Starting vertex size: %d ending vertex size %d\n",vertoffset,m.verts.size());
-	      fprintf(stderr,"cube index %d\n",cubeIndex);
+	      	      LOG4CXX_ERROR(logger,"Internal Marching cubes error!\n");
+	      	      LOG4CXX_ERROR(logger,"Triangle "<<tri.a<<" "<<tri.b<<" "<<tri.c);
+	      	      LOG4CXX_ERROR(logger,"Starting vertex size: "<<vertoffset<<" ending vertex size "<<m.verts.size());
+	      	      LOG4CXX_ERROR(logger,"cube index "<<cubeIndex);
 	      abort();
 	    }
 	  m.tris.push_back(tri);
@@ -588,10 +590,10 @@ void MarchingCubes(Real (*input)(Real,Real,Real),Real isoLevel,const AABB3D& bb,
 	     tri.b < vertoffset || tri.b >= (int)m.verts.size() ||
 	     tri.c < vertoffset || tri.c >= (int)m.verts.size())
 	    {
-	      fprintf(stderr,"Internal Marching cubes error!\n");
-	      fprintf(stderr,"Triangle %d %d %d invalid\n",tri.a,tri.b,tri.c);
-	      fprintf(stderr,"Starting vertex size: %d ending vertex size %d\n",vertoffset,m.verts.size());
-	      fprintf(stderr,"cube index %d\n",cubeIndex);
+	      	      LOG4CXX_ERROR(logger,"Internal Marching cubes error!\n");
+	      	      LOG4CXX_ERROR(logger,"Triangle "<<tri.a<<" "<<tri.b<<" "<<tri.c);
+	      	      LOG4CXX_ERROR(logger,"Starting vertex size: "<<vertoffset<<" ending vertex size "<<m.verts.size());
+	      	      LOG4CXX_ERROR(logger,"cube index "<<cubeIndex);
 	      abort();
 	    }
 	  m.tris.push_back(tri);

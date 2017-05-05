@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "Line3D.h"
 #include "Segment3D.h"
 #include "clip.h"
@@ -168,7 +170,7 @@ void Line3D::closestPoint(const Line3D& l, Real& t, Real& u) const
   AtA(1,1) = dot(l.direction,l.direction);
   bool res=AtA.getInverse(AtAinv);
   if(!res) {
-    fprintf(stderr,"Warning, Line3D closest points matrix inverse failed\n");
+        LOG4CXX_ERROR(logger,"Warning, Line3D closest points matrix inverse failed\n");
     t=u=0;
     return;
   }

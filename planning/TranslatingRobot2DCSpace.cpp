@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "TranslatingRobot2DCSpace.h"
 #include "EdgePlanner.h"
 #include <GLdraw/GL.h>

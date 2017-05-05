@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "KinodynamicPath.h"
 #include "KinodynamicCSpace.h"
 using namespace std;
@@ -40,9 +42,9 @@ void KinodynamicMilestonePath::Append(const ControlInput& u,const std::vector<St
   Assert(!path.empty());
   if(!milestones.empty()) {
     if(path.front() != milestones.back()) {
-      cout<<"KinodynamicMilestonePath::Append: incorrect starting point"<<endl;
-      cout<<path.front()<<endl;
-      cout<<milestones.back()<<endl;
+      LOG4CXX_INFO(logger,"KinodynamicMilestonePath::Append: incorrect starting point"<<"\n");
+      LOG4CXX_INFO(logger,path.front()<<"\n");
+      LOG4CXX_INFO(logger,milestones.back()<<"\n");
     }
   }
   Assert(path.front() == milestones.back());
@@ -68,46 +70,46 @@ void KinodynamicMilestonePath::Concat(const KinodynamicMilestonePath& suffix)
 bool KinodynamicMilestonePath::IsValid() const
 {
   if(milestones.empty()) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: no milestones\n");
+        LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: no milestones\n");
     return false;
   }
   if(milestones.size() != edges.size()+1) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: wrong sized edges (%d!=%d)\n",edges.size(),milestones.size()-1);
+        LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: wrong sized edges ("<<edges.size()<<"!="<<milestones.size()-1);
     return false;
   }
   if(edges.size() != controls.size()) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: wrong sized controls (%d!=%d)\n",controls.size(),edges.size());
+        LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: wrong sized controls ("<<controls.size()<<"!="<<edges.size());
     return false;
   }
   if(edges.size() != paths.size()) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: wrong sized paths (%d!=%d)\n",paths.size(),edges.size());
+        LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: wrong sized paths ("<<paths.size()<<"!="<<edges.size());
     return false;
   }
   for(size_t i=0;i<paths.size();i++) {
     if(paths[i].front() != milestones[i]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: path %d starts at wrong milestone\n",i);
-      cerr<<paths[i].front()<<endl;
-      cerr<<milestones[i]<<endl;
+            LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: path "<<i);
+      LOG4CXX_ERROR(logger,paths[i].front()<<"\n");
+      LOG4CXX_ERROR(logger,milestones[i]<<"\n");
       return false;
     }
     if(paths[i].back() != milestones[i+1]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: path %d ends at wrong milestone\n",i);
-      cerr<<paths[i].back()<<endl;
-      cerr<<milestones[i+1]<<endl;
+            LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: path "<<i);
+      LOG4CXX_ERROR(logger,paths[i].back()<<"\n");
+      LOG4CXX_ERROR(logger,milestones[i+1]<<"\n");
       return false;
     }
   }
   for(size_t i=0;i<edges.size();i++) {
     if(edges[i]->Start() != milestones[i]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: edge planner %d starts at wrong milestone\n",i);
-      cerr<<edges[i]->Start()<<endl;
-      cerr<<milestones[i]<<endl;
+            LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: edge planner "<<i);
+      LOG4CXX_ERROR(logger,edges[i]->Start()<<"\n");
+      LOG4CXX_ERROR(logger,milestones[i]<<"\n");
       return false;
     }
     if(edges[i]->Goal() != milestones[i+1]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: edge planner %d ends at wrong milestone\n",i);
-      cerr<<edges[i]->Goal()<<endl;
-      cerr<<milestones[i+1]<<endl;
+            LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValid: edge planner "<<i);
+      LOG4CXX_ERROR(logger,edges[i]->Goal()<<"\n");
+      LOG4CXX_ERROR(logger,milestones[i+1]<<"\n");
       return false;
     }
   }
@@ -171,8 +173,8 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
 {
   if(t <= milestones.front()(timeIndex) || edges.empty()) {
     if(t < milestones.front()(timeIndex)) {
-      fprintf(stderr,"Warning, can't properly split before the beginning of a path\n");
-      getchar();
+            LOG4CXX_ERROR(logger,"Warning, can't properly split before the beginning of a path\n");
+      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     before.Clear();
     before.milestones.resize(1);
@@ -299,14 +301,14 @@ bool KinodynamicMilestonePath::IsValidTime(int timeIndex) const
 {
   for(size_t i=0;i+1<milestones.size();i++) {
     if(!(milestones[i](timeIndex) <= milestones[i+1](timeIndex))) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValidTime: Edge %d has time reversed: %g > %g\n",i,milestones[i](timeIndex),milestones[i+1](timeIndex));
+            LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValidTime: Edge "<<i<<" has time reversed: "<<milestones[i](timeIndex)<<" > "<<milestones[i+1](timeIndex));
       return false;
     }
   }
   for(size_t i=0;i<paths.size();i++) {
     for(size_t j=0;j+1<paths[i].size();j++) {
       if(!(paths[i][j](timeIndex) <= paths[i][j+1](timeIndex))) {
-	fprintf(stderr,"KinodynamicMilestonePath::IsValidTime: Path %d[%d] has time reversed: %g > %g\n",i,j,paths[i][j](timeIndex),paths[i][j+1](timeIndex));
+		LOG4CXX_ERROR(logger,"KinodynamicMilestonePath::IsValidTime: Path "<<i<<"["<<j<<"] has time reversed: "<<paths[i][j](timeIndex)<<" > "<<paths[i][j+1](timeIndex));
 	return false;
       }
     }

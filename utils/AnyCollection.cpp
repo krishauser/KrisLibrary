@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "AnyCollection.h"
 #include "stringutils.h"
 #include "ioutils.h"
@@ -17,14 +19,14 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
 {
   EatWhitespace(in);
   if(!in) {
-    printf("ReadValue: hit end of file\n");
+    LOG4CXX_INFO(logger,"ReadValue: hit end of file\n");
     return false;
   }
   if(in.peek() == '"') {
     //beginning of string
     std::string str;
     if(!InputQuotedString(in,str)) {
-      printf("ReadValue: unable to read quoted string\n");
+      LOG4CXX_INFO(logger,"ReadValue: unable to read quoted string\n");
       return false;
     }
     value = str;
@@ -37,7 +39,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
     value = c;
     char end=in.get();
     if(end != '\'') {
-      printf("ReadValue: character not delimited properly\n");
+      LOG4CXX_INFO(logger,"ReadValue: character not delimited properly\n");
       return false;
     }
     return true;
@@ -52,7 +54,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       }
     }
     if(str.empty()) {
-      printf("ReadValue: read an empty string\n");
+      LOG4CXX_INFO(logger,"ReadValue: read an empty string\n");
       return false;
     }
     if(IsValidInteger(str.c_str())) {
@@ -87,7 +89,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       //check for invalid values
       for(size_t i=0;i<str.length();i++) {
 	if(!(isalnum(str[i])||str[i]=='_')) {
-	  std::cerr<<"ReadValue: Invalid basic data type \""<<str<<"\""<<std::endl;
+	  LOG4CXX_ERROR(logger,"ReadValue: Invalid basic data type \""<<str<<"\""<<"\n");
 	  return false;
 	}
       }
@@ -304,7 +306,7 @@ void AnyCollection::resize(size_t n)
     FatalError("AnyCollection::resize(): Cannot resize value without clearing first\n");
   }
   if(type == Map) {
-    std::cout<<*this<<std::endl;
+    LOG4CXX_INFO(logger,*this<<"\n");
     //TODO: check to see if there are integer entries
     FatalError("AnyCollection::resize(): Cannot resize map without clearing first\n");
   }
@@ -478,11 +480,11 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       }
       else {
 	if(reference[i]==rbracket) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: unexpected right bracket in position "<<(int)i);
 	  return false;
 	}
 	if(i!=0) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected string in position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: unexpected string in position "<<(int)i);
 	  return false;
 	}
 	mode = 1;
@@ -492,7 +494,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
     case 1: //reading member key
       if(reference[i]=='\"') {
 	if(i>start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation at position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: unexpected quotation at position "<<(int)i);
 	  return false;
 	}
 	mode = 3;
@@ -501,7 +503,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       else if(reference[i]==delim || reference[i]==lbracket) { 
 	//read out path entry
 	if(i<start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: empty reference string in position %d, start of ref in position %d\n",(int)i,(int)start);
+	  	  LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: empty reference string in position "<<(int)i<<", start of ref in position "<<(int)start);
 	  return false;
 	}
 	path.push_back(reference.substr(start,i-start));
@@ -510,14 +512,14 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
 	else mode = 1; //ending at delim
       }
       else if(reference[i]==rbracket) {
-	fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",(int)i);
+		LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: unexpected right bracket in position "<<(int)i);
 	return false;
       }
       break;
     case 2: //reading array key
       if(reference[i]=='\"') {
 	if(i>start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation in key at position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: unexpected quotation in key at position "<<(int)i);
 	  return false;
 	}
 	mode = 4;
@@ -528,7 +530,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
 	mode = 0;
       }
       else if(reference[i]==lbracket || reference[i]==delim) {
-	fprintf(stderr,"AnyCollection::parse_reference: unexpected character %c in key in position %d\n",reference[i],(int)i);
+		LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: unexpected character "<<reference[i]<<" in key in position "<<(int)i);
 	return false;
       }
       break;
@@ -546,7 +548,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       break;
     case 5: //end of quoted array key
       if(reference[i]!=rbracket) {
-	fprintf(stderr,"AnyCollection::parse_reference: quoted array key must be followed by right bracket at position %d\n",(int)i);
+		LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: quoted array key must be followed by right bracket at position "<<(int)i);
 	return false;
       }
       mode = 0;
@@ -558,7 +560,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
     path.push_back(reference.substr(start,reference.length()-start));
   }
   if(mode >= 2) {
-    fprintf(stderr,"AnyCollection::parse_reference: unexpected termination of reference\n");
+        LOG4CXX_ERROR(logger,"AnyCollection::parse_reference: unexpected termination of reference\n");
     return false;
   }
   return true;
@@ -572,7 +574,7 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
   if(type == Array) {
     int index;
     if(!LexicalCast(path[0],index)) {
-      fprintf(stderr,"AnyCollection::lookup(): invalid array index %s\n",path[0].c_str());
+            LOG4CXX_ERROR(logger,"AnyCollection::lookup(): invalid array index "<<path[0].c_str());
       return false;
     }
     key_path[0] = AnyKeyable(index);
@@ -600,7 +602,7 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
     if(type == Array) {
       int index;
       if(!LexicalCast(path[i],index)) {
-	fprintf(stderr,"AnyCollection::lookup(): invalid array index %s\n",path[i].c_str());
+		LOG4CXX_ERROR(logger,"AnyCollection::lookup(): invalid array index "<<path[i].c_str());
 	return false;
       }
       key_path[i] = AnyKeyable(index);
@@ -629,7 +631,7 @@ SmartPointer<AnyCollection> AnyCollection::lookup(const std::string& reference,b
 {
   std::vector<std::string> path;
   if(!parse_reference(reference,path,delim,lbracket,rbracket)) {
-    fprintf(stderr,"AnyCollection::lookup: unable to parse reference string %s\n",reference.c_str());
+        LOG4CXX_ERROR(logger,"AnyCollection::lookup: unable to parse reference string "<<reference.c_str());
     return NULL;
   }
   return lookup(path,insert);
@@ -650,7 +652,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
   char comma = delims[4];
   if(reference[0]==member) {
     if(type != Map) {
-      fprintf(stderr,"AnyCollection: slice reference %s in a non-map type\n",reference.c_str());
+            LOG4CXX_ERROR(logger,"AnyCollection: slice reference "<<reference.c_str());
       return NULL;
     }
     //parse out the key lookup
@@ -672,7 +674,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	pos = (int)i;
       }
     if(pos < 0) {
-      fprintf(stderr,"AnyCollection: lookup reference %s has unterminated bracket\n",reference.c_str());
+            LOG4CXX_ERROR(logger,"AnyCollection: lookup reference "<<reference.c_str());
       return NULL;
     }
     std::string key = reference.substr(1,pos-1);
@@ -682,7 +684,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
       if(type == Array) {
 	//cast to an integer
 	if(!IsValidInteger(key.c_str())) {
-	  fprintf(stderr,"AnyCollection: lookup index %s is not a valid integer\n",key.c_str());
+	  	  LOG4CXX_ERROR(logger,"AnyCollection: lookup index "<<key.c_str());
 	  return NULL;
 	}
 	int index;
@@ -714,27 +716,27 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	  if(islice1 < 0) {
 	    islice1 = islice1 + (int)array.size();
 	    if(islice1 < 0) {
-	      fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice1-(int)array.size());
+	      	      LOG4CXX_ERROR(logger,"AnyCollection: Invalid array index "<<islice1-(int)array.size());
 	      return NULL;
 	    }
 	  }
 	  else if (islice1 >= (int)array.size()) {
-	    fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice1);
+	    	    LOG4CXX_ERROR(logger,"AnyCollection: Invalid array index "<<islice1);
 	    return NULL;
 	  }
 	  if(islice2 < 0) {
 	    islice2 = islice2 + (int)array.size();
 	    if(islice2 < 0) {
-	      fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice2-(int)array.size());
+	      	      LOG4CXX_ERROR(logger,"AnyCollection: Invalid array index "<<islice2-(int)array.size());
 	      return NULL;
 	    }
 	  }
 	  else if (islice2 >= (int)array.size()) {
-	    fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice2);
+	    	    LOG4CXX_ERROR(logger,"AnyCollection: Invalid array index "<<islice2);
 	    return NULL;
 	  }
 	  if(islice1 > islice2) {
-	    fprintf(stderr,"AnyCollection: Invalid array slice %d:%d\n",islice1,islice2);
+	    	    LOG4CXX_ERROR(logger,"AnyCollection: Invalid array slice "<<islice1<<":"<<islice2);
 	    return NULL;
 	  }
 	  for(int i=islice1;i<islice2;i++) {
@@ -746,7 +748,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	  //go through the elements
 	  for(size_t i=0;i<ielements.size();i++) {
 	    if(ielements[i] < 0 || ielements[i] >= (int)array.size()) {
-	      fprintf(stderr,"AnyCollection: Invalid array index %d\n",ielements[i]);
+	      	      LOG4CXX_ERROR(logger,"AnyCollection: Invalid array index "<<ielements[i]);
 	      return NULL;
 	    }
 	    res->array.push_back(array[ielements[i]]->slice(reference.substr(pos+1,reference.length()-pos-1),delims));
@@ -761,7 +763,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
     return NULL;
   }
   else {
-    fprintf(stderr,"AnyCollection: cannot lookup reference %s in a primitive type\n",reference.c_str());
+        LOG4CXX_ERROR(logger,"AnyCollection: cannot lookup reference "<<reference.c_str());
     return NULL;
   }
 }
@@ -782,7 +784,7 @@ bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyColle
     else {
       std::vector<std::string> path;
       if(!parse_reference(paths[i],path,member,lbracket,rbracket)) {
-	fprintf(stderr,"AnyCollection::subcollection(): error parsing path %s\n",paths[i].c_str());
+		LOG4CXX_ERROR(logger,"AnyCollection::subcollection(): error parsing path "<<paths[i].c_str());
 	return false;
       }
       //parse strings into ints if necessary
@@ -798,7 +800,7 @@ bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyColle
       }
       SmartPointer<AnyCollection> item = lookup(key_path);
       if(!item) {
-	fprintf(stderr,"AnyCollection::subcollection(): invalid item %s\n",paths[i].c_str());
+		LOG4CXX_ERROR(logger,"AnyCollection::subcollection(): invalid item "<<paths[i].c_str());
 	return false;
       }
       subset.lookup(key_path,true)->deepmerge(*item);
@@ -1063,9 +1065,9 @@ const AnyCollection& AnyCollection::operator[](AnyKeyable key) const
     MapType::const_iterator i=map.find(key);
     if(i == map.end()) {
       return nullCollection;
-      std::cerr<<"AnyCollection: const [] accessor can't find key";
+      LOG4CXX_ERROR(logger,"AnyCollection: const [] accessor can't find key");
       WriteValue(key.value,std::cerr);
-      std::cerr<<std::endl;
+      LOG4CXX_ERROR(logger,"\n");
       Abort();
       return *this;
     }
@@ -1398,26 +1400,26 @@ bool AnyCollection::read(std::istream& in)
     SmartPointer<AnyCollection> value;
     value = new AnyCollection();
     if(!value->read(in)) {
-      fprintf(stderr,"AnyCollection::read(): failed on array item %d\n",(int)array.size());
+            LOG4CXX_ERROR(logger,"AnyCollection::read(): failed on array item "<<(int)array.size());
       return false;
     }
     array.push_back(value);
     EatWhitespace(in);
     while(in.peek() != ']') {
       if(in.get() != ',') {
-	std::cerr<<"AnyCollection::read(): List not separated by commas"<<std::endl;
+	LOG4CXX_ERROR(logger,"AnyCollection::read(): List not separated by commas"<<"\n");
 	return false;
       }
       value = new AnyCollection();
       if(!value->read(in)) {
-	fprintf(stderr,"AnyCollection::read(): failed on array item %d\n",(int)array.size());
+		LOG4CXX_ERROR(logger,"AnyCollection::read(): failed on array item "<<(int)array.size());
 	return false;
       }
       array.push_back(value);
       EatWhitespace(in);
     }
     if(!in) {
-      fprintf(stderr,"AnyCollection::read(): file ended before end-of-list item %d\n",(int)array.size());
+            LOG4CXX_ERROR(logger,"AnyCollection::read(): file ended before end-of-list item "<<(int)array.size());
       return false;
     }
     in.get();
@@ -1437,22 +1439,22 @@ bool AnyCollection::read(std::istream& in)
     SmartPointer<AnyCollection> value;
     while(true) {
       if(!ReadValue(key.value,in,":")) {
-	fprintf(stderr,"AnyCollection::read(): failed on map item %d\n",(int)map.size());
+		LOG4CXX_ERROR(logger,"AnyCollection::read(): failed on map item "<<(int)map.size());
 	return false;
       }
       EatWhitespace(in);
       if(in.peek() != ':') {
-	std::cerr<<"AnyCollection::read(): Map missing a colon-separator between key-value pair ";
+	LOG4CXX_ERROR(logger,"AnyCollection::read(): Map missing a colon-separator between key-value pair ");
 	WriteValue(key.value,std::cerr);
-	std::cerr<<std::endl;
+	LOG4CXX_ERROR(logger,"\n");
 	return false;
       }
       in.get();
       value = new AnyCollection();
       if(!value->read(in)) {
-	std::cerr<<"AnyCollection::read(): couldn't read map value for key ";
+	LOG4CXX_ERROR(logger,"AnyCollection::read(): couldn't read map value for key ");
 	WriteValue(key.value,std::cerr);
-	std::cerr<<std::endl;
+	LOG4CXX_ERROR(logger,"\n");
 	return false;
       }
       map[key] = value;
@@ -1460,7 +1462,7 @@ bool AnyCollection::read(std::istream& in)
       char c = in.get();
       if(c == '}') return true;
       if(c != ',') {
-	std::cerr<<"AnyCollection::read(): Map entries not separated by commas"<<std::endl;
+	LOG4CXX_ERROR(logger,"AnyCollection::read(): Map entries not separated by commas"<<"\n");
 	return false;
       }
     }
@@ -1469,14 +1471,14 @@ bool AnyCollection::read(std::istream& in)
     //could be part of a list or map
     type = Value;
     if(!ReadValue(value,in,",]}")) {
-      std::cerr<<"AnyCollection::read() Unable to read primitive value"<<std::endl;
+      LOG4CXX_ERROR(logger,"AnyCollection::read() Unable to read primitive value"<<"\n");
       return false;
     }
     if(value.empty()) //read a null
       type = None;
     return true;
   }
-  std::cerr<<"AnyCollection::read() failed for some reason..."<<std::endl;
+  LOG4CXX_ERROR(logger,"AnyCollection::read() failed for some reason..."<<"\n");
   return false;
 }
 

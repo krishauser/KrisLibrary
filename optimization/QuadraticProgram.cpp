@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "QuadraticProgram.h"
 #include "LinearProgram.h"
 #include "LPRobust.h"
@@ -32,10 +34,10 @@ Real SumOfSquaredEquality(const Matrix& A,const Vector& b,const Vector& x)
 
 void QuadraticProgram::Print(ostream& out) const
 {
-  cout<<"min 1/2 x^T A x + x^T b with A="<<endl;
-  cout<<MatrixPrinter(Pobj)<<endl;
-  cout<<"and b="<<VectorPrinter(qobj)<<endl;
-  cout<<"s.t."<<endl;
+  LOG4CXX_INFO(logger,"min 1/2 x^T A x + x^T b with A="<<"\n");
+  LOG4CXX_INFO(logger,MatrixPrinter(Pobj)<<"\n");
+  LOG4CXX_INFO(logger,"and b="<<VectorPrinter(qobj)<<"\n");
+  LOG4CXX_INFO(logger,"s.t."<<"\n");
   LinearConstraints::Print(out);
 }
 
@@ -50,10 +52,10 @@ void QuadraticProgram::Resize(int m,int n)
 bool QuadraticProgram::IsValid() const
 {
   // Check sizes.
-  if(!Pobj.isSquare()) { cout << "ERROR: Pobj is not square." << endl; return false; }
-  if(Pobj.m != qobj.n) { cout << "ERROR: Pobj and qobj must have compatible sizes." << endl; return false; }
+  if(!Pobj.isSquare()) { LOG4CXX_ERROR(logger, "ERROR: Pobj is not square." << "\n"); return false; }
+  if(Pobj.m != qobj.n) { LOG4CXX_ERROR(logger, "ERROR: Pobj and qobj must have compatible sizes." << "\n"); return false; }
   if(A.n != 0) 
-    if (A.n != qobj.n) { cout << "ERROR: Aeq and qobj must have compatible sizes." << endl; return false; }
+    if (A.n != qobj.n) { LOG4CXX_ERROR(logger, "ERROR: Aeq and qobj must have compatible sizes." << "\n"); return false; }
   if(!LinearConstraints::IsValid()) return false;
   return true;
 }

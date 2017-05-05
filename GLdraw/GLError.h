@@ -1,6 +1,8 @@
 #ifndef GLDRAW_GL_ERROR_H
 #define GLDRAW_GL_ERROR_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GL.h"
 
 //Returns the string corresponding to the GL error code err
@@ -14,7 +16,7 @@ bool CheckGLErrors(const char* name="GL error",bool pause=true);
 #define DEBUG_GL_ERRORS() { \
   GLenum err; \
   while((err=glGetError()) != GL_NO_ERROR) { \
-    fprintf(stderr,"glError %s found at %s:%u\n",GLErrorString(err),__FILE__,__LINE__); \
+        LOG4CXX_ERROR(logger,"glError "<<GLErrorString(err)<<" found at "<<__FILE__<<":"<<__LINE__); \
     if(GL_ERROR_QUIT) exit(1); \
   } \
 }

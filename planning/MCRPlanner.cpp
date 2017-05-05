@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "MCRPlanner.h"
 #include "GeneralizedAStar.h"
 #include <math/random.h>
@@ -150,11 +152,11 @@ void MCRPlanner::UpdatePathsGreedy()
   }
   /*
 
-    cout<<"Mode "<<i<<": subset "<<modeGraph.nodes[i].subset<<", size "<<modeGraph.nodes[i].roadmapNodes.size()<<", cover: ";
+    LOG4CXX_INFO(logger,"Mode "<<i<<": subset "<<modeGraph.nodes[i].subset<<", size "<<modeGraph.nodes[i].roadmapNodes.size()<<", cover: ");
     if(modeGraph.nodes[i].pathCovers.size() > 0)
-      cout<<modeGraph.nodes[i].pathCovers[0]<<endl;
+      LOG4CXX_INFO(logger,modeGraph.nodes[i].pathCovers[0]<<"\n");
     else
-      cout<<"(not reached)"<<endl;
+      LOG4CXX_INFO(logger,"(not reached)"<<"\n");
   }
   */
 }
@@ -232,7 +234,7 @@ void MCRPlanner::UpdatePathsGreedy2(int nstart)
     UpdatePathsGreedy();
     for(size_t i=0;i<modeGraph.nodes.size();i++) 
       if(modeMinCost[i] != modeGraph.nodes[i].minCost) 
-	printf("Warning, dynamic path error, mode with cover %d actually %d\n",modeMinCost[i],modeGraph.nodes[i].minCost);
+	LOG4CXX_WARN(logger,"Warning, dynamic path error, mode with cover "<<modeMinCost[i]<<" actually "<<modeGraph.nodes[i].minCost);
   }
   */
 }
@@ -563,9 +565,9 @@ int MCRPlanner::AddNode(const Config& q,const Subset& subset,int parent)
   */
 
   if(parent < 0 || modeGraph.nodes[roadmap.nodes[parent].mode].subset != subset)  {
-    //cout<<"New mode graph node:"<<subset<<endl;
+    //LOG4CXX_INFO(logger,"New mode graph node:"<<subset<<"\n");
     //if(parent >= 0)
-    //  cout<<"Parent mode: "<<modeGraph.nodes[roadmap.nodes[parent].mode].subset<<endl;
+    //  LOG4CXX_INFO(logger,"Parent mode: "<<modeGraph.nodes[roadmap.nodes[parent].mode].subset<<"\n");
     //add a new mode
     int mode = (int)modeGraph.nodes.size();
     modeGraph.AddNode(Mode());
@@ -584,7 +586,7 @@ int MCRPlanner::AddNode(const Config& q,const Subset& subset,int parent)
       for(size_t i=0;i<modeGraph.nodes[pmode].pathCovers.size();i++)
 	modeGraph.nodes.back().pathCovers[i] = modeGraph.nodes[pmode].pathCovers[i] + subset;
       UpdateMinCost(modeGraph.nodes.back());
-      //cout<<"New mode min cost: "<<modeGraph.nodes.back().minCost<<endl;
+      //LOG4CXX_INFO(logger,"New mode min cost: "<<modeGraph.nodes.back().minCost<<"\n");
     }
   }
   else {
@@ -696,7 +698,7 @@ void MCRPlanner::AddEdgeRaw(int i,int j)
   assert(mi >= 0 && mi < (int)modeGraph.nodes.size());
   assert(mj >= 0 && mj < (int)modeGraph.nodes.size());
   if(modeGraph.nodes[mi].subset != modeGraph.nodes[mj].subset) {
-    //printf("Adding a transition: %d->%d\n",mi,mj);
+    //LOG4CXX_INFO(logger,"Adding a transition: "<<mi<<"->"<<mj);
     //add a transition
     Transition* t=modeGraph.FindEdge(mi,mj);
     if(!t) {
@@ -713,9 +715,9 @@ void MCRPlanner::AddEdgeRaw(int i,int j)
 
     /*
     if(nmi != 1 && nmj != 1){
-      printf("Merging two modes: %d->%d, sizes %d %d\n",mi,mj,nmi,nmj);
-      cout<<ma.subset<<endl;
-      cout<<mb.subset<<endl;
+      LOG4CXX_INFO(logger,"Merging two modes: "<<mi<<"->"<<mj<<", sizes "<<nmi<<" "<<nmj);
+      LOG4CXX_INFO(logger,ma.subset<<"\n");
+      LOG4CXX_INFO(logger,mb.subset<<"\n");
     }
     */
 
@@ -770,7 +772,7 @@ void MCRPlanner::AddEdgeRaw(int i,int j)
     else {
       if(mb.minCost < ma.minCost) {
 	if(mb.pathCovers.empty()) { 
-	  printf("Warning, empty cover but minCost=%g!=DBL_MAX?\n",mb.minCost);
+	  LOG4CXX_WARN(logger,"Warning, empty cover but minCost="<<mb.minCost);
 	  mb.minCost = DBL_MAX;
 	}
 	else {
@@ -792,7 +794,7 @@ void MCRPlanner::AddEdgeRaw(int i,int j)
 	t->connections = e->connections;
       }
     }
-    //printf("Deleting mode %d / %d and merging into %d\n",mj,modeGraph.nodes.size(),mi);
+    //LOG4CXX_INFO(logger,"Deleting mode "<<mj<<" / "<<modeGraph.nodes.size()<<" and merging into "<<mi);
     modeGraph.DeleteNode(mj);
     if(mj < (int)modeGraph.nodes.size()) {
       //the n-1'th mode was moved into the mj'th spot
@@ -811,12 +813,12 @@ void MCRPlanner::AddEdgeRaw(int i,int j)
 	roadmap.nodes[modeGraph.nodes[mi].roadmapNodes[k]].mode = mi;
     }
     /*
-    printf("%d roadmap nodes\n",roadmap.nodes.size());
+    LOG4CXX_INFO(logger,""<<roadmap.nodes.size());
     for(size_t k=0;k<modeGraph.nodes.size();k++) {
-      printf("Mode %d: ");
+      LOG4CXX_INFO(logger,"Mode %d: ");
       for(size_t m=0;m<modeGraph.nodes[k].roadmapNodes.size();m++) 
-	printf("%d ",modeGraph.nodes[k].roadmapNodes[m]);
-      printf("\n");
+	LOG4CXX_INFO(logger,""<<modeGraph.nodes[k].roadmapNodes[m]);
+      LOG4CXX_INFO(logger,"\n");
     }
     */
   }
@@ -1065,7 +1067,7 @@ void MCRPlanner::Expand(Real maxExplanationCost,vector<int>& newNodes)
 
     int n=kneighbors[closestIndex];
     /*if(validModes[roadmap.nodes[n].mode])*/ {
-      //printf("ExtendTowards from %d\n",n);
+      //LOG4CXX_INFO(logger,"ExtendTowards from "<<n);
       //do an RRT-style extension
       Real u=expandDistance/kclosest[closestIndex];
       Config qu;
@@ -1237,16 +1239,16 @@ void MCRPlanner::Expand2(Real maxExplanationCost,vector<int>& newNodes)
 	if(CanImproveConnectivity(modeGraph.nodes[mode],modeGraph.nodes[gmode],maxExplanationCost)) {
 	  if(AddEdge(1,newNodes[i])) {
 	    /*
-	    printf("Added edge to goal!\n");
-	    printf("Cost to node %g\n",modeGraph.nodes[mode].minCost);
-	    printf("Cost to goal %g\n",modeGraph.nodes[gmode].minCost);
+	    LOG4CXX_INFO(logger,"Added edge to goal!\n");
+	    LOG4CXX_INFO(logger,"Cost to node "<<modeGraph.nodes[mode].minCost);
+	    LOG4CXX_INFO(logger,"Cost to goal "<<modeGraph.nodes[gmode].minCost);
 	    Subset vn = Violations(space,roadmap.nodes[newNodes[i]].q);
 	    Subset vg = Violations(space,roadmap.nodes[1].q);
 	    Subset ve = Violations(space,roadmap.nodes[1].q,roadmap.nodes[newNodes[i]].q);
-	    cout<<"Vn "<<vn<<endl;
-	    cout<<"Vg "<<vg<<endl;
-	    cout<<"Ve "<<ve<<endl;
-	    cout<<"Goal cover "<<ve + modeGraph.nodes[mode].pathCovers[0]<<endl;
+	    LOG4CXX_INFO(logger,"Vn "<<vn<<"\n");
+	    LOG4CXX_INFO(logger,"Vg "<<vg<<"\n");
+	    LOG4CXX_INFO(logger,"Ve "<<ve<<"\n");
+	    LOG4CXX_INFO(logger,"Goal cover "<<ve + modeGraph.nodes[mode].pathCovers[0]<<"\n");
 	    */
 	    didRefine = true;
 	  }
@@ -1318,7 +1320,7 @@ void MCRPlanner::Plan(int initialLimit,const vector<int>& expansionSchedule,vect
       if(limit >= bestCost)
 	limit = bestCost-costEpsilon;
       if(limit < lowerCost) limit = lowerCost;
-      //printf("Iter %d, now searching at limit %g\n",iters,limit);
+      //LOG4CXX_INFO(logger,"Iter "<<iters<<", now searching at limit "<<limit);
       expansionIndex++;
     }
     if(FuzzyEquals(bestCost,lowerCost)) break;
@@ -1334,7 +1336,7 @@ void MCRPlanner::Plan(int initialLimit,const vector<int>& expansionSchedule,vect
 	//assert(res);
 	bestCover = modeGraph.nodes[mgoal].pathCovers[k];
 	bestCost = Cost(bestCover);
-	//printf("Iter %d: improved cover to %g\n",iters,bestCost);
+	//LOG4CXX_INFO(logger,"Iter "<<iters<<": improved cover to "<<bestCost);
 	progress_covers.push_back(bestCost);
 	progress_iters.push_back(iters);
 	progress_times.push_back(timer.ElapsedTime());
@@ -1348,19 +1350,17 @@ void MCRPlanner::Plan(int initialLimit,const vector<int>& expansionSchedule,vect
 
   if(!progress_iters.empty()) {
     /*
-    printf("Cover: ");
+    LOG4CXX_INFO(logger,"Cover: ");
     for(size_t i=0;i<progress.size();i++)
-      printf("%d, ",progress[i].second);
-    printf("\n");
-    printf("Iters: ");
+      LOG4CXX_INFO(logger,""<< "    LOG4CXX_INFO(logger,"\n");
+    LOG4CXX_INFO(logger,"Iters: ");
     for(size_t i=0;i<progress.size();i++)
-      printf("%d, ",progress[i].first);
-    printf("\n");
+      LOG4CXX_INFO(logger,""<< "    LOG4CXX_INFO(logger,"\n");
     */
-    printf("Cover %g, best time %g\n",progress_covers.back(),progress_times.back());
+    LOG4CXX_INFO(logger,"Cover "<<progress_covers.back()<<", best time "<<progress_times.back());
   }
   else
-    printf("Cover %g, best time %g\n",Cost(bestCover),timer.ElapsedTime());
+    LOG4CXX_INFO(logger,"Cover "<<Cost(bestCover)<<", best time "<<timer.ElapsedTime());
   /*
   if(GreedyPath(0,1,bestPath,bestCover)) {
   }

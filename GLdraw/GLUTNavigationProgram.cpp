@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GLUTNavigationProgram.h"
 #include "GL.h"
 #include "GLView.h"
@@ -366,120 +368,120 @@ GLUTNavigationProgram::GLUTNavigationProgram()
 
 bool GLUTNavigationProgram::Initialize()
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
   return true;
 }
 
 void GLUTNavigationProgram::Handle_Display()
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::Handle_Reshape(int w,int h)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::Handle_Keypress(unsigned char key,int x,int y)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::BeginDrag(int x,int y,int button,int modifiers)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::EndDrag(int x,int y,int button,int modifiers)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DoDrag(int dx,int dy,int button,int modifiers)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DoFreeDrag(int dx,int dy,int button)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DoCtrlDrag(int dx,int dy,int button)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DoAltDrag(int dx,int dy,int button)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DoShiftDrag(int dx,int dy,int button)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 
 void GLUTNavigationProgram::DragPan(int dx,int dy)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DragRotate(int dx,int dy)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DragZoom(int dx,int dy)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DragTruck(int dx,int dy)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 
 void GLUTNavigationProgram::Handle_Click(int button,int state,int x,int y)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::Handle_Drag(int x,int y)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::Handle_Idle()
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::DisplayCameraTarget()
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::Set2DMode(bool mode)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::CenterCameraOn(const AABB3D& aabb)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::WriteDisplaySettings(ostream& out) const
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 void GLUTNavigationProgram::ReadDisplaySettings(istream& in)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLUT not defined"<<"\n");
 }
 
 

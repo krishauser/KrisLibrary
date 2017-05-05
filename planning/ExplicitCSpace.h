@@ -1,6 +1,8 @@
 #ifndef ROBOTICS_EXPLICIT_CSPACE_H
 #define ROBOTICS_EXPLICIT_CSPACE_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "CSpace.h"
 #include "EdgePlanner.h"
 #include <vector>

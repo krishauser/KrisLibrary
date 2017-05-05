@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "TransformWidget.h"
 #include "drawextra.h"
 #include <math3d/geometry3d.h>
@@ -57,7 +59,7 @@ void WidgetSet::SetHighlight(bool value)
   Widget::SetHighlight(value);
   if(value) {
     if(activeWidget != closestWidget) {
-      //printf("Activate widget\n");
+      //LOG4CXX_INFO(logger,"Activate widget\n");
       if(activeWidget && activeWidget != closestWidget) activeWidget->SetHighlight(false);
       if(closestWidget) closestWidget->SetHighlight(true);
       if(closestWidget && closestWidget->requestRedraw) {
@@ -74,7 +76,7 @@ void WidgetSet::SetHighlight(bool value)
   }
   else {
     if(activeWidget) {
-      //printf("Deactivate widget\n");
+      //LOG4CXX_INFO(logger,"Deactivate widget\n");
       activeWidget->SetHighlight(false);
       if(activeWidget->requestRedraw) {
 	Refresh();
@@ -127,9 +129,9 @@ void WidgetSet::SetFocus(bool value)
 {
   Widget::SetFocus(value);
   if(value) {
-    //printf("Set focus on widget %s, sub-widget %s\n",typeid(*this).name(),(closestWidget?typeid(*closestWidget).name():"NULL"));
+    //LOG4CXX_INFO(logger,"Set focus on widget "<<typeid(*this).name()<<", sub-widget "<<(closestWidget?typeid(*closestWidget).name():"NULL"));
     if(activeWidget && activeWidget != closestWidget) {
-      //printf("... Removing focus on sub-widget %s\n",(activeWidget?typeid(*activeWidget).name():"NULL"));
+      //LOG4CXX_INFO(logger,"... Removing focus on sub-widget "<<(activeWidget?typeid(*activeWidget).name():"NULL"));
       activeWidget->SetFocus(false);
     }
     if(closestWidget) closestWidget->SetFocus(true);  
@@ -145,7 +147,7 @@ void WidgetSet::SetFocus(bool value)
     closestWidget = NULL;
   }
   else {
-    //printf("Remove focus on widget %s, sub-widget %s\n",typeid(*this).name(),(activeWidget?typeid(*activeWidget).name():"NULL"));
+    //LOG4CXX_INFO(logger,"Remove focus on widget "<<typeid(*this).name()<<", sub-widget "<<(activeWidget?typeid(*activeWidget).name():"NULL"));
     if(activeWidget) activeWidget->SetFocus(false);
     activeWidget = NULL;
   }

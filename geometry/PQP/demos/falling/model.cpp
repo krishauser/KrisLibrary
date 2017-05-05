@@ -38,6 +38,8 @@
 
 \**************************************************************************/
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -81,7 +83,7 @@ Model::Model(char *tris_file)
   FILE *fp = fopen(tris_file,"r");
   if (fp == NULL)
   { 
-    fprintf(stderr,"Model Constructor: Couldn't open %s\n",tris_file); 
+        LOG4CXX_ERROR(logger,"Model Constructor: Couldn't open "<<tris_file); 
     exit(-1); 
   }
 

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "EdgePlanner.h"
 #include <errors.h>
 using namespace std;
@@ -113,7 +115,7 @@ bool StraightLineObstacleDistancePlanner::CheckVisibility(const Config& a,const 
 {
   Real dmin = Min(da,db);
   if(dmin < Epsilon) {
-    cout<<"Warning, da or db is close to zero"<<endl;
+    LOG4CXX_WARN(logger,"Warning, da or db is close to zero"<<"\n");
     return false;
   }
   Real r = space->Distance(a,b);
@@ -178,11 +180,11 @@ bool BisectionEpsilonEdgePlanner::IsVisible()
 
 void BisectionEpsilonEdgePlanner::Eval(Real u,Config& x) const
 {
-  //if(!Done()) cout<<"Warning, edge planner not done!"<<endl;
+  //if(!Done()) LOG4CXX_WARN(logger,"Warning, edge planner not done!"<<"\n");
   if(IsNaN(u) || u < 0 || u > 1) {
-    cout<<"Uh... evaluating path outside of [0,1] range"<<endl;
-    cout<<"u="<<u<<endl;
-    getchar();
+    LOG4CXX_INFO(logger,"Uh... evaluating path outside of [0,1] range"<<"\n");
+    LOG4CXX_INFO(logger,"u="<<u<<"\n");
+    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   Assert(u >= Zero && u <= One);
   Real dt = One/(Real)(path.size()-1);
@@ -191,7 +193,7 @@ void BisectionEpsilonEdgePlanner::Eval(Real u,Config& x) const
   while(t+dt < u) {
     t+=dt;
     i++;
-    if(i == path.end()) { cout<<"End of path, u="<<u<<endl; x=path.back(); return; }
+    if(i == path.end()) { LOG4CXX_INFO(logger,"End of path, u="<<u<<"\n"); x=path.back(); return; }
   }
   Assert(t<=u);
   if(t==u) { x=*i; }
@@ -215,14 +217,14 @@ EdgePlanner* BisectionEpsilonEdgePlanner::Copy() const
     BisectionEpsilonEdgePlanner* p=new BisectionEpsilonEdgePlanner(space,epsilon);
     p->path = path;
     if(!Done()) {
-      cout<<"Warning: making a copy of a bisection edge planner that is not done!"<<endl;
+      LOG4CXX_WARN(logger,"Warning: making a copy of a bisection edge planner that is not done!"<<"\n");
       Segment s;
       s.prev = p->path.begin();
       s.length = space->Distance(path.front(),path.back());
       p->q.push(s);
       Assert(!p->Done());
-      //cout<<"Press any key to continue..."<<endl;
-      //getchar();
+      //LOG4CXX_INFO(logger,"Press any key to continue..."<<"\n");
+      //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     return p;
   }
@@ -248,7 +250,7 @@ bool BisectionEpsilonEdgePlanner::Plan()
   list<Config>::iterator a=s.prev, b=a; b++;
   space->Midpoint(*a,*b,x);
   if(!space->IsFeasible(x)) { 
-    //printf("Midpoint was not feasible\n");
+    //LOG4CXX_INFO(logger,"Midpoint was not feasible\n");
     s.length=Inf; q.push(s); return false;
   }
   list<Config>::iterator m=path.insert(b,x);
@@ -257,15 +259,15 @@ bool BisectionEpsilonEdgePlanner::Plan()
      Real(q.size())*epsilon > 4.0*space->Distance(Start(),Goal())) {
     s.length = Inf;
     q.push(s);
-    cout<<"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<endl;
-    cout<<"Original length "<<space->Distance(Start(),Goal())<<", epsilon "<<epsilon<<endl;
+    LOG4CXX_INFO(logger,"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<"\n");
+    LOG4CXX_INFO(logger,"Original length "<<space->Distance(Start(),Goal())<<", epsilon "<<epsilon<<"\n");
     return false;
   }
   //insert the split segments back in the queue
   Real l1=space->Distance(*a,x);
   Real l2=space->Distance(x,*b);
   if(l1 > 0.9*s.length || l2 > 0.9*s.length) {
-    printf("Midpoint exceeded 0.9 time segment distance: %g, %g > 0.9*%g\n",l1,l2,s.length);
+    LOG4CXX_INFO(logger,"Midpoint exceeded 0.9 time segment distance: "<<l1<<", "<<l2<<" > 0.9*"<<s.length);
     s.length = Inf;
     q.push(s);
     return false;

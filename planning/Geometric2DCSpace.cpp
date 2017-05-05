@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "Geometric2DCSpace.h"
 #include <math/random.h>
 #include <math/sample.h>

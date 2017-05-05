@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "quatinline.h"
 #include <math/math.h>
 #include <stdio.h>
@@ -18,7 +20,7 @@ cos(theta)*|a||b| = <a,b>
 	}
 	else if(FuzzyEquals(dot,-One))	//axes are opposing axis
 	{
-		fprintf(stderr, "Quaternions on opposing sides of unit sphere\n");
+				LOG4CXX_ERROR(logger, "Quaternions on opposing sides of unit sphere\n");
 		return;
 	}
 	Real theta = Acos(dot);

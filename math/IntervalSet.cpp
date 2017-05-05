@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "IntervalSet.h"
 #include <algorithm>
 #include <iostream>
@@ -142,13 +144,13 @@ void ClosedIntervalSet::Intersect(const BaseT& set)
     Assert(y[i].b <= y[i+1].a);
 
   /*
-  cout<<"Intersecting intervals: "<<endl;
+  LOG4CXX_INFO(logger,"Intersecting intervals: "<<"\n");
   for(size_t i=0;i<x.size();i++)
-    cout<<"["<<x[i].a<<","<<x[i].b<<"] ";
-  cout<<endl;
+    LOG4CXX_INFO(logger,"["<<x[i].a<<","<<x[i].b<<"] ");
+  LOG4CXX_INFO(logger,"\n");
   for(size_t i=0;i<y.size();i++)
-    cout<<"["<<y[i].a<<","<<y[i].b<<"] ";
-  cout<<endl;
+    LOG4CXX_INFO(logger,"["<<y[i].a<<","<<y[i].b<<"] ");
+  LOG4CXX_INFO(logger,"\n");
   */
 
   size_t i=0,j=0;
@@ -172,10 +174,10 @@ void ClosedIntervalSet::Intersect(const BaseT& set)
   }
 
   /*
-  cout<<"Res: "<<endl;
+  LOG4CXX_INFO(logger,"Res: "<<"\n");
   for(size_t i=0;i<size();i++)
-    cout<<"["<<(*this)[i].a<<","<<(*this)[i].b<<"] ";
-  cout<<endl;
+    LOG4CXX_INFO(logger,"["<<(*this)[i].a<<","<<(*this)[i].b<<"] ");
+  LOG4CXX_INFO(logger,"\n");
   */
 }
 /*

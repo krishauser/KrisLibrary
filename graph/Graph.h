@@ -1,6 +1,8 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "Callback.h"
 #include "Node.h"
 #include "Edge.h"
@@ -355,15 +357,15 @@ bool Graph<NodeData,EdgeData>::IsValid() const
 {
   bool res=true;
   if(nodeColor.size() != nodes.size()) {
-    fprintf(stderr,"nodeColor.size() doesn't match nodes.size(): %d vs %d\n",nodeColor.size(),nodes.size());
+        LOG4CXX_ERROR(logger,"nodeColor.size() doesn't match nodes.size(): "<<nodeColor.size()<<" vs "<<nodes.size());
     res=false;
   }
   if(edges.size() != nodes.size()) {
-    fprintf(stderr,"edges.size() doesn't match nodes.size(): %d vs %d\n",edges.size(),nodes.size());
+        LOG4CXX_ERROR(logger,"edges.size() doesn't match nodes.size(): "<<edges.size()<<" vs "<<nodes.size());
     res=false;
   }
   if(co_edges.size() != nodes.size()) {
-    fprintf(stderr,"co_edges.size() doesn't match nodes.size(): %d vs %d\n",co_edges.size(),nodes.size());
+        LOG4CXX_ERROR(logger,"co_edges.size() doesn't match nodes.size(): "<<co_edges.size()<<" vs "<<nodes.size());
     res=false;
   }
   int numEdges=0;
@@ -372,27 +374,27 @@ bool Graph<NodeData,EdgeData>::IsValid() const
     for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
       numEdges++;
       if(e->first < 0 || e->first >= (int)nodes.size()) {
-	fprintf(stderr,"Edge (%d,%d) points to invalid index\n",i,e->first);
+		LOG4CXX_ERROR(logger,"Edge ("<<i<<","<<e->first);
 	res=false;
       }
       else if(e->first == (int)i) {
-	fprintf(stderr,"Edge (%d,%d) points to itself\n",i,e->first);
+		LOG4CXX_ERROR(logger,"Edge ("<<i<<","<<e->first);
 	res=false;
       }
       else if(edges.size() == co_edges.size()) {
 	ConstEdgeIterator f=co_edges[e->first].find((int)i);
 	if(f == co_edges[e->first].end()) {
-	  fprintf(stderr,"Edge (%d,%d) doesn't have a corresponding co-edge\n",i,e->first);
+	  	  LOG4CXX_ERROR(logger,"Edge ("<<i<<","<<e->first);
 	  res=false;
 	}
 	else {
 	  Assert(f->first == (int)i);  //STL guarantees this...
 	  if(e->second != f->second) {
-	    fprintf(stderr,"Edge (%d,%d) and co-edge don't point to the same data",i,e->first);
+	    	    LOG4CXX_ERROR(logger,"Edge ("<<i<<","<<e->first);
 	    res=false;
 	  }
 	  else if(e->second == edgeData.end()) {
-	    fprintf(stderr,"Edge (%d,%d) points to invalid data\n",i,e->first);
+	    	    LOG4CXX_ERROR(logger,"Edge ("<<i<<","<<e->first);
 	    res=false;
 	  }
 	}
@@ -400,7 +402,7 @@ bool Graph<NodeData,EdgeData>::IsValid() const
     }
   }
   if(numEdges != (int)edgeData.size()) {
-    fprintf(stderr,"Different number of edges vs edge data: %d vs %d\n",numEdges,edgeData.size());
+        LOG4CXX_ERROR(logger,"Different number of edges vs edge data: "<<numEdges<<" vs "<<edgeData.size());
     res=false;
   }
   int numCoEdges=0;
@@ -409,23 +411,23 @@ bool Graph<NodeData,EdgeData>::IsValid() const
     for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
       numCoEdges++;
       if(e->first < 0 || e->first >= (int)nodes.size()) {
-	fprintf(stderr,"Co-edge (%d,%d) points to invalid index\n",i,e->first);
+		LOG4CXX_ERROR(logger,"Co-edge ("<<i<<","<<e->first);
 	res=false;
       }
       else if(edges.size() == co_edges.size()) {
 	ConstEdgeIterator f=edges[e->first].find((int)i);
 	if(f == edges[e->first].end()) {
-	  fprintf(stderr,"Co-edge (%d,%d) doesn't have a corresponding edge\n",i,e->first);
+	  	  LOG4CXX_ERROR(logger,"Co-edge ("<<i<<","<<e->first);
 	  res=false;
 	}
 	else {
 	  Assert(f->first == (int)i);  //STL guarantees this...
 	  if(e->second != f->second) {
-	    fprintf(stderr,"Co-edge (%d,%d) and edge don't point to the same data",i,e->first);
+	    	    LOG4CXX_ERROR(logger,"Co-edge ("<<i<<","<<e->first);
 	    res=false;
 	  }
 	  else if(e->second == edgeData.end()) {
-	    fprintf(stderr,"Co-edge (%d,%d) points to invalid data\n",i,e->first);
+	    	    LOG4CXX_ERROR(logger,"Co-edge ("<<i<<","<<e->first);
 	    res=false;
 	  }
 	}
@@ -433,7 +435,7 @@ bool Graph<NodeData,EdgeData>::IsValid() const
     }
   }
   if(numCoEdges != (int)edgeData.size()) {
-    fprintf(stderr,"Different number of coedges vs edge data: %d vs %d\n",numCoEdges,edgeData.size());
+        LOG4CXX_ERROR(logger,"Different number of coedges vs edge data: "<<numCoEdges<<" vs "<<edgeData.size());
     res=false;
   }
   return res;

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "LPOptimumFunction.h"
 using namespace Optimization;
 using namespace std;
@@ -126,14 +128,14 @@ void LPOptimumFunction::Gradient(const Vector& x,Vector& grad)
       if(!lp.minimize) grad.inplaceNegative();
     }
     /*
-    cout<<"Row duals: ";
+    LOG4CXX_INFO(logger,"Row duals: ");
     for(int i=0;i<lp.A.m;i++)
-      cout<<glpk.GetRowDual(i)<<" ";
-    cout<<endl;
-    cout<<"Variable duals: ";
+      LOG4CXX_INFO(logger,glpk.GetRowDual(i)<<" ");
+    LOG4CXX_INFO(logger,"\n");
+    LOG4CXX_INFO(logger,"Variable duals: ");
     for(int j=0;j<lp.A.n;j++)
-      cout<<glpk.GetVariableDual(j)<<" ";
-    cout<<endl;
+      LOG4CXX_INFO(logger,glpk.GetVariableDual(j)<<" ");
+    LOG4CXX_INFO(logger,"\n");
     */
     for(int i=0;i<lp.A.m;i++) {
       if(!glpk.GetRowBasic(i)) {
@@ -152,7 +154,7 @@ void LPOptimumFunction::Gradient(const Vector& x,Vector& grad)
 	}
 	if(upper) {
 	  if(multiplier > Epsilon)
-	    printf("Not understanding multipliers correctly -- upper bound %d reached, multiplier = %g\n",i,multiplier);
+	    LOG4CXX_INFO(logger,"Not understanding multipliers correctly -- upper bound "<<i<<" reached, multiplier = "<<multiplier);
 	  Assert(multiplier <= Epsilon);
 	  //use the upper bound
 	  if(LPJacobianA_i(x,i,Jai)) {
@@ -164,7 +166,7 @@ void LPOptimumFunction::Gradient(const Vector& x,Vector& grad)
 	}
 	else {
 	  if(multiplier < -Epsilon)
-	    printf("Not understanding multipliers correctly -- lower bound %d reached, multiplier = %g\n",i,multiplier);
+	    LOG4CXX_INFO(logger,"Not understanding multipliers correctly -- lower bound "<<i<<" reached, multiplier = "<<multiplier);
 	  Assert(multiplier >= -Epsilon);
 	  if(LPJacobianA_i(x,i,Jai)) {
 	    Jai.mulTranspose(yopt,temp);

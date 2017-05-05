@@ -1,4 +1,7 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GLPKInterface.h"
+#include <iostream>
 #if HAVE_GLPK
 
 #include <utils.h>
@@ -214,12 +217,12 @@ void GLPKInterface::SetVariableNonBasic(int j,bool upper)
 
 int my_gglp_fault_handler(void* info,const char* msg)
 {
-  printf("GLPK error message %s\n",msg);
-  //printf("GLPK fatal error %s\n",msg);
-  //printf("jumping...\n");
+  LOG4CXX_ERROR(logger,"GLPK error message "<<msg);
+  //LOG4CXX_ERROR(logger,"GLPK fatal error "<<msg);
+  //LOG4CXX_INFO(logger,"jumping...\n");
   //throw(std::runtime_error(msg));
   /*
-  printf("GLPK fatal error, dumping!\n");
+  LOG4CXX_ERROR(logger,"GLPK fatal error, dumping!\n");
   GLP* lp=(GLP*)info;
   glp_write_cpxlp(lp,"temp_lp.txt");
   */
@@ -228,7 +231,7 @@ int my_gglp_fault_handler(void* info,const char* msg)
 
 void my_gglp_fault_handler2(void* info)
 {
-  printf("GLPK error, quitting\n");
+  LOG4CXX_ERROR(logger,"GLPK error, quitting\n");
 }
 
 
@@ -241,7 +244,7 @@ public:
 
   virtual void OnRaise(int signum) 
   {
-    printf("Interrupt called during GLPK solve... possible infinite loop\n");
+    LOG4CXX_INFO(logger,"Interrupt called during GLPK solve... possible infinite loop\n");
     glp_prob* lp=glpk->lp;
     glp_write_lp(lp,NULL,"temp_lp.txt");
     throw(std::runtime_error("Interrupt called during GLPK solve"));
@@ -273,12 +276,12 @@ LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
     res=glp_simplex(lp,&params);
   }
   catch(const std::exception& e) {
-    printf("GLPK internal error: ");
-    printf(e.what());
+    LOG4CXX_ERROR(logger,"GLPK internal error: ");
+    LOG4CXX_INFO(logger,e.what());
     return LinearProgram::Error;
   }
   catch (...) {
-    printf("Unknown error occurred\n");
+    LOG4CXX_ERROR(logger,"Unknown error occurred\n");
     return LinearProgram::Error;
   }
 #if GLP_MINOR_VERSION >= 43
@@ -289,31 +292,31 @@ LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
   case 0:
     break;
   case GLP_EFAIL:
-    cout<<"Error in matrix construction!"<<endl;
+    LOG4CXX_ERROR(logger,"Error in matrix construction!"<<"\n");
     return LinearProgram::Error;
   case GLP_EOBJLL:
-    cout<<"Objective reached lower limit!"<<endl;
+    LOG4CXX_INFO(logger,"Objective reached lower limit!"<<"\n");
     return LinearProgram::Error;
   case GLP_EOBJUL:
-    cout<<"Objective reached upper limit!"<<endl;
+    LOG4CXX_INFO(logger,"Objective reached upper limit!"<<"\n");
     return LinearProgram::Error;
   case GLP_ENOPFS:
-    cout<<"Linear program has no primary feasible solution!"<<endl;
+    LOG4CXX_INFO(logger,"Linear program has no primary feasible solution!"<<"\n");
     return LinearProgram::Infeasible;
   case GLP_ENODFS:
-    cout<<"Linear program has no dual feasible solution!"<<endl;
+    LOG4CXX_INFO(logger,"Linear program has no dual feasible solution!"<<"\n");
     return LinearProgram::Infeasible;
   case GLP_EITLIM:
-    cout<<"Max iterations reached!"<<endl;
+    LOG4CXX_INFO(logger,"Max iterations reached!"<<"\n");
     return LinearProgram::Error;
   case GLP_ETMLIM:
-    cout<<"Time limit reached!"<<endl;
+    LOG4CXX_INFO(logger,"Time limit reached!"<<"\n");
     return LinearProgram::Error;
   case GLP_ESING:
-    cout<<"Singularity reached!"<<endl;
+    LOG4CXX_INFO(logger,"Singularity reached!"<<"\n");
     return LinearProgram::Error;
   default:
-	  cout<<"Unknown error"<<endl;
+	  LOG4CXX_ERROR(logger,"Unknown error"<<"\n");
 	  return LinearProgram::Error;
   }
 
@@ -333,10 +336,10 @@ LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
   case GLP_UNBND:
     return LinearProgram::Unbounded;
   case GLP_UNDEF:
-    cout<<"Solution is undefined!"<<endl;
+    LOG4CXX_INFO(logger,"Solution is undefined!"<<"\n");
     return LinearProgram::Error;
   default:
-    cout<<"Shouldn't get here!"<<endl;
+    LOG4CXX_INFO(logger,"Shouldn't get here!"<<"\n");
     return LinearProgram::Error;
   }
 }
@@ -358,17 +361,17 @@ GLPKInterface::~GLPKInterface()
 
 void GLPKInterface::Set(const LinearProgram& LP)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 void GLPKInterface::Set(const LinearProgram_Sparse& LP)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 void GLPKInterface::Create(int m,int n)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 void GLPKInterface::Clear()
@@ -377,65 +380,65 @@ void GLPKInterface::Clear()
 
 void GLPKInterface::SetRow(int i,const Vector& Ai)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 void GLPKInterface::SetRowBounds(int i,Real low,Real high)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 void GLPKInterface::SetVariableBounds(int j,Real low,Real high)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 void GLPKInterface::SetRowBasic(int i)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 bool GLPKInterface::GetRowBasic(int i)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
   return false;
 }
 
 double GLPKInterface::GetRowDual(int i){
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
   return 0;
 }
 
 void GLPKInterface::SetRowNonBasic(int i,bool upper)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 void GLPKInterface::SetVariableBasic(int j)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 bool GLPKInterface::GetVariableBasic(int i)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
   return false;
 }
 
 void GLPKInterface::SetVariableNonBasic(int j,bool upper)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 
 void GLPKInterface::SetObjective(const Vector& c,bool minimize)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 LinearProgram::Result GLPKInterface::Solve(Vector& xopt)
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
   return LinearProgram::Error;
 }
 
@@ -443,7 +446,7 @@ bool GLPKInterface::Enabled() { return false; }
 
 void GLPKInterface::SelfTest()
 {
-  cerr<<"Warning, GLPK not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, GLPK not defined"<<"\n");
 }
 
 #endif //HAVE_GLPK

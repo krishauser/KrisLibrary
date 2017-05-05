@@ -1,871 +1,883 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\errors.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\errors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\myfile.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\myfile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Timer.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\Timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\camera\camera.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\camera\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\camera\clip.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\camera\clip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\camera\frustum.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\camera\frustum.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\camera\transform.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\camera\transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\camera\viewport.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\camera\viewport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\AnyGeometry.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\AnyGeometry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\Arrangement1D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Arrangement1D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\CollisionMesh.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\CollisionMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\CollisionPointCloud.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\CollisionPointCloud.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\ConvexHull2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\ConvexHull2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\Fitting.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Fitting.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\Grid.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Grid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\GridSubdivision.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\GridSubdivision.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\KDTree.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\KDTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\MonotoneChain.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\MonotoneChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\NeighborGraph.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\NeighborGraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\Octree.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Octree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\PenetrationDepth.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PenetrationDepth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\PolytopeProjection.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PolytopeProjection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\SegmentOverlay.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\SegmentOverlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\UnboundedPolytope2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\UnboundedPolytope2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\ColorGradient.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\ColorGradient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\drawextra.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\drawextra.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\drawgeometry.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\drawgeometry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GeometryAppearance.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GeometryAppearance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLColor.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLColor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLDisplayList.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLDisplayList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLError.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLError.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLFog.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLFog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLLight.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLMaterial.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLMaterial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLScreenshot.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLScreenshot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLTexture1D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLTexture1D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLTexture2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLTexture2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLTextureObject.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLTextureObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLUINavigationProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUINavigationProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLUIProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUIProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLUTNavigationProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUTNavigationProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLUTProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUTProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\GLView.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\GLdraw\TransformWidget.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\TransformWidget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\image\bmp.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\graph\IO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\image\gdi.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\image\bmp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\image\image.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\image\gdi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\image\import.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\image\image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\image\ppm.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\image\import.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\image\textureops.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\image\ppm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\image\tga.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\image\textureops.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\AABB.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\image\tga.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\angle.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\AABB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\AngleSet.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\angle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\ASCIIShade.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\AngleSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\backsubstitute.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\ASCIIShade.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\BLASInterface.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\backsubstitute.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\BlockPrinter.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\BLASInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\BlockTridiagonalMatrix.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\BlockPrinter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\BlockVector.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\BlockTridiagonalMatrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\brent.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\BlockVector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\CholeskyDecomposition.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\brent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\complex.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\CholeskyDecomposition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\ConditionedConstraint.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\complex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\Conditioner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\ConditionedConstraint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\DiagonalMatrix.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\Conditioner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\diffeq.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\DiagonalMatrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\differentiation.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\diffeq.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\function.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\differentiation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\gaussian.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\function.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\GramSchmidt.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\gaussian.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\Householder.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\GramSchmidt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\InequalityConstraint.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\Householder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\infnan.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\InequalityConstraint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\IntervalSet.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\infnan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\LAPACKInterface.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\IntervalSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\LDL.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\LAPACKInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\linalgebra.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\LDL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\LinearlyDependent.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\linalgebra.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\LinearPath.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\LinearlyDependent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\LUDecomposition.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\LinearPath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\MatrixEquationPrinter.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\LUDecomposition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\MatrixPrinter.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\MatrixEquationPrinter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\MatrixTemplate.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\MatrixPrinter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\metric.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\MatrixTemplate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\misc.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\metric.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\QRDecomposition.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\quadrature.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\QRDecomposition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\QuasiNewton.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\quadrature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\random.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\QuasiNewton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\realfunction.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\root.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\realfunction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\RowEchelon.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\root.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\sample.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\RowEchelon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\SelfTest.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\sample.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\SparseMatrixTemplate.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\SelfTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\SparseVectorTemplate.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\SparseMatrixTemplate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\SVDecomposition.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\SparseVectorTemplate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\vectorfunction.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\SVDecomposition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\VectorPrinter.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\vectorfunction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math\VectorTemplate.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\VectorPrinter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\AABB2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\VectorTemplate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\AABB3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\AABB2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Box3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\AABB3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Circle3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Box3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\clip.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Circle3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Cylinder3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\clip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\geometry2d.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Cylinder3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\geometry3d.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\geometry2d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\interpolate.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\geometry3d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Line2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\interpolate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Line3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Line2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\LinearAlgebra.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Line3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\LinearlyDependent.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LinearAlgebra.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\LocalCoordinates2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LinearlyDependent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\LocalCoordinates3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LocalCoordinates2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Plane3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LocalCoordinates3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\polar.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Plane3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Polygon2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\polar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Polygon3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Polygon2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Polyhedron3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Polygon3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\primitives.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Polyhedron3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\quatinline.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\primitives.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\random.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\quatinline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Ray3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\rotation.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Ray3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\rotationfit.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\rotation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Segment2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\rotationfit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Segment3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Segment2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Triangle2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Segment3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\math3d\Triangle3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Triangle2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\ClosestPoint.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Triangle3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\Expand.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\ClosestPoint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\Geodesic.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Expand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\IO.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Geodesic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\LSConformalMapping.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\IO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\MarchingCubes.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\LSConformalMapping.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\Meshing.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\MarchingCubes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\MeshPrimitives.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Meshing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\PointCloud.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\MeshPrimitives.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\Rasterize.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\PointCloud.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\TriMesh.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Rasterize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\TriMeshOperators.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\TriMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\TriMeshTopology.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\TriMeshOperators.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\VolumeGrid.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\TriMeshTopology.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\meshing\Voxelize.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\VolumeGrid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\BoundedLSQRSolver.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Voxelize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\GLPKInterface.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\BoundedLSQRSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\LCP.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\GLPKInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\LeastSquares.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LCP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\LinearProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LeastSquares.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\LPOptimumFunction.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LinearProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\LPRobust.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LPOptimumFunction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\LP_InteriorPoint.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LPRobust.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\lsqr.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LP_InteriorPoint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\LSQRInterface.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\lsqr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\Minimization.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LSQRInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\MinNormProblem.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\Minimization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\Newton.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\MinNormProblem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\NewtonSolver.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\Newton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\NonlinearProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\NewtonSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\QuadProgPPInterface.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\NonlinearProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\QuadraticProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\QuadProgPPInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\RegularizedLinearProgram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\QuadraticProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\optimization\SelfTest.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\RegularizedLinearProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\AnyMotionPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\SelfTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\CSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\AnyMotionPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\CSpaceAnalysis.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\CSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\CVSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\CSpaceAnalysis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\DisplacementPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\CVSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\EdgePlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\DisplacementPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\ExplicitCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\EdgePlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\FMM.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\ExplicitCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\FMMMotionPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\FMM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\GeneralizedBezierCurve.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\FMMMotionPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\Geometric2DCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\GeneralizedBezierCurve.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\Grid2DCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\Geometric2DCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\KinodynamicCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\Grid2DCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\KinodynamicMotionPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\KinodynamicCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\KinodynamicPath.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\KinodynamicMotionPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\MCRPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\KinodynamicPath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\MCRPlannerGoalSet.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MCRPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\MotionPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MCRPlannerGoalSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\MultiModalPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MotionPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\MultiRobot2DCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MultiModalPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\OptimalMotionPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MultiRobot2DCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\Path.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\OMPLInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\PerturbationCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\OptimalMotionPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\PointLocation.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\Path.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\RigidRobot2DCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\PerturbationCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\SBL.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\PointLocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\SBLTree.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\RigidRobot2DCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\SpaceTimeCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\SBL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\TimedPath.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\SBLTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\TranslatingRobot2DCSpace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\SpaceTimeCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\planning\VisibilityGraphPlanner.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\TimedPath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\AnalyticIK.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\TranslatingRobot2DCSpace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\AngleBracket.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\VisibilityGraphPlanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Chain.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\AnalyticIK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\ConstrainedDynamics.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\AngleBracket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Contact.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\CartesianDrive.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\DenavitHartenberg.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Chain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\DynamicChain.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\ConstrainedDynamics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\DynamicChain3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Contact.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Geometry.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\DenavitHartenberg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\IK.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\DynamicChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\IKFunctions.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\DynamicChain3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Inertia.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Geometry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\JointStructure.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\IK.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\KinematicChain.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\IKFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\KinematicChain3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Inertia.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Kinematics.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\JointStructure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\NewtonEuler.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\KinematicChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\RigidBodyDynamics.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\KinematicChain3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\RLG.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Kinematics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\RobotDynamics3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\NewtonEuler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\RobotKinematics3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RigidBodyDynamics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\RobotLink3D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RLG.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\RobotWithGeometry.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotDynamics3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Rotation.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotKinematics3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\SelfTest.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotLink3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Simulate.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotWithGeometry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\Stability.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Rotation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\TorqueSolver.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\SelfTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\robotics\WorkspaceBound.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Simulate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\spline\basis.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Stability.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\spline\BSpline.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\TorqueSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\spline\Hermite.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\WorkspaceBound.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\spline\MonotonicSpline.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\spline\basis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\spline\path.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\spline\BSpline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\spline\PiecewisePolynomial.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\spline\Hermite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\spline\spline.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\spline\MonotonicSpline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\BetaDistribution.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\spline\path.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\CategoricalDistribution.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\spline\PiecewisePolynomial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\DataSet.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\spline\spline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\DistributionCollector.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\BetaDistribution.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\GaussianDistribution.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\CategoricalDistribution.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\GaussianHMM.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\DataSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\GaussianMixtureModel.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\DistributionCollector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\HierarchicalClustering.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\GaussianDistribution.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\Histogram.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\GaussianHMM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\HistogramND.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\GaussianMixtureModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\KMeans.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\HierarchicalClustering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\LinearModel.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\Histogram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\LinearProcessHMM.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\HistogramND.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\LogisticModel.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\KMeans.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\OLS.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\LinearModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\OnlineMoments.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\LinearProcessHMM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\OnlineOLS.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\LogisticModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\statistics.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\OLS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\statistics\UniformDistribution.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\OnlineMoments.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\AnyCollection.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\OnlineOLS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\AnyMapper.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\statistics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\AsyncIO.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\UniformDistribution.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\CommandLine.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\AnyCollection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\CoverSet.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\AnyMapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\DataCollector.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\apputils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\EZTrace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\AsyncIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\fileutils.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\CommandLine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\indexing.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\CoverSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\IndexSet.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\DataCollector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\IntPair.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\EZTrace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\IntTriple.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\fileutils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\ioutils.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\indexing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\ParamList.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\IndexSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\PrimitiveValue.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\IntPair.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\ProgressPrinter.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\IntTriple.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\PropertyMap.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ioutils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\RangeSet.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ParamList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\RangeSet2D.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\PrimitiveValue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\RefPointer.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ProgressPrinter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\ResourceLibrary.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\PropertyMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\SignalHandler.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\RangeSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\SimpleFile.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\RangeSet2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\SimpleParser.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\RefPointer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\socketutils.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ResourceLibrary.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\StatCollector.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\SignalHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\stringutils.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\SimpleFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\Subset.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\SimpleParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\Trace.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\socketutils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\unionfind.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\StatCollector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\PQP\src\Build.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\stringutils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\PQP\src\BV.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\Subset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\PQP\src\PQP.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\threadutils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\geometry\PQP\src\TriDist.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\Trace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\utils\threadutils.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\utils\unionfind.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\Build.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\BV.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\PQP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\TriDist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\CMakeLists.txt" />
+    <CustomBuild Include="C:\Code\KrisLibrary\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{D57C719D-CBBC-48D4-916B-746D9C1FE882}</UniqueIdentifier>
+      <UniqueIdentifier>{0FAFF225-C99D-4BBC-9C4B-926F7D58E729}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

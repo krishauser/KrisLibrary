@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "image.h"
 #include <stdlib.h>
 #include <iostream>
@@ -42,20 +44,20 @@ struct tga_file_header
 
 void print_header(tga_file_header& h)
 {
-	printf("size ident: %d\n", h.size_image_identification);
-	printf("color map type: %d\n", h.color_map_type);
-	printf("image type: %d\n\n", h.image_type);
+	LOG4CXX_INFO(logger,"size ident: "<< h.size_image_identification);
+	LOG4CXX_INFO(logger,"color map type: "<< h.color_map_type);
+	LOG4CXX_INFO(logger,"image type: "<< h.image_type);
 
-	printf("color map origin: %d\n", h.color_map_origin);
-	printf("color map size: %d\n", h.color_map_size);
-	printf("color map bpp: %d\n\n", h.color_map_bpp);
+	LOG4CXX_INFO(logger,"color map origin: "<< h.color_map_origin);
+	LOG4CXX_INFO(logger,"color map size: "<< h.color_map_size);
+	LOG4CXX_INFO(logger,"color map bpp: "<< h.color_map_bpp);
 
-	printf("x origin: %d\n", h.x_origin);
-	printf("y origin: %d\n", h.y_origin);
-	printf("width: %d\n", h.width);
-	printf("height: %d\n", h.height);
-	printf("bpp: %d\n", h.bpp);
-	printf("color map bpp: %d\n\n", h.color_map_bpp);
+	LOG4CXX_INFO(logger,"x origin: "<< h.x_origin);
+	LOG4CXX_INFO(logger,"y origin: "<< h.y_origin);
+	LOG4CXX_INFO(logger,"width: "<< h.width);
+	LOG4CXX_INFO(logger,"height: "<< h.height);
+	LOG4CXX_INFO(logger,"bpp: "<< h.bpp);
+	LOG4CXX_INFO(logger,"color map bpp: "<< h.color_map_bpp);
 }
 
 #include <memory.h>
@@ -98,7 +100,7 @@ bool ImportImageTGA(const char* fn, Image& image)
 //	if(fread(&header, sizeof(tga_file_header), 1, f) != 1)
 //		return false;
 
-	printf("size of header %d\n", sizeof(tga_file_header));
+	LOG4CXX_INFO(logger,"size of header "<< sizeof(tga_file_header));
 
 	print_header(header);
 
@@ -121,7 +123,7 @@ bool ImportImageTGA(const char* fn, Image& image)
 			image.format = Image::A8R8G8B8;
 			break;
 		default:
-		  cerr<<"Dont know how to read "<<header.bpp<<" bit targas"<<endl;
+		  LOG4CXX_ERROR(logger,"Dont know how to read "<<header.bpp<<" bit targas"<<"\n");
 		  return false;
 		}
 	}
@@ -139,25 +141,25 @@ bool ImportImageTGA(const char* fn, Image& image)
 			image.format = Image::A8R8G8B8;
 			break;
 		default:
-		  cerr<<"Dont know how to read "<<header.color_map_bpp<<" bit color-mapped targas"<<endl;
+		  LOG4CXX_ERROR(logger,"Dont know how to read "<<header.color_map_bpp<<" bit color-mapped targas"<<"\n");
 		  return false;
 		}
 	}
 	else
 	{
-	  cerr<<"Dont know how to read that format targa"<<endl;
+	  LOG4CXX_ERROR(logger,"Dont know how to read that format targa"<<"\n");
 	  return false;
 	}
 
 	
 	if(image.pixelBPP() != header.bpp)
 	{
-	  cerr<<"Invalid bpp in targa file"<<endl;
+	  LOG4CXX_ERROR(logger,"Invalid bpp in targa file"<<"\n");
 	  return false;
 	}
 
 //	if(header.image_descriptor != 0)
-//		cerr<<"odd image descriptor, "<<hex<<header.image_descriptor<<endl;
+//		LOG4CXX_ERROR(logger,"odd image descriptor, "<<hex<<header.image_descriptor<<"\n");
 
 	//skip over image identification
 	if(header.size_image_identification!= 0)
@@ -183,7 +185,7 @@ bool ImportImageTGA(const char* fn, Image& image)
 	{
 		if(fread(image.data, 1, image.num_bytes, f) != image.num_bytes)
 		{
-		  cerr<<"Error reading image, "<<image.num_bytes<<" bytes"<<endl;
+		  LOG4CXX_ERROR(logger,"Error reading image, "<<image.num_bytes<<" bytes"<<"\n");
 		  return false;
 		}
 	}

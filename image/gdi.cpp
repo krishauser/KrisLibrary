@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "gdi.h"
 #include <errors.h>
 #include <utils/stringutils.h>
@@ -178,7 +180,7 @@ bool ExportImageGDIPlus(const char* fn, Image& img)
 	if(0==strcmp(ext,"tif")) ext="tiff";
 	char typebuf[32];
 #ifndef _WIN32
-	snprintf(typebuf,32,"image/%s", ext);
+	snLOG4CXX_INFO(logger,typebuf,32,"image/"<< ext);
 #else
 	sprintf_s<32>(typebuf,"image/%s", ext);
 #endif //_WIN32

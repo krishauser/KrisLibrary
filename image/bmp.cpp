@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "image.h"
 #ifdef _WIN32
 #include <windows.h>
@@ -47,21 +49,21 @@ bool ImportImageBMP(const char* fn, Image& image)
 
 	FILE* f = fopen(fn, "rb");
 	if(!f) {
-	  fprintf(stderr,"ImportImage %s: Couldn't open image",fn);
+	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
 	  return false;
 	}
 
 	BITMAPFILEHEADER bfh;
 	if(fread(&bfh, sizeof(bfh), 1, f) != 1)
 	{
-	  fprintf(stderr,"ImportImage %s: Couldn't load file header",fn);
+	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
 
 	if(memcmp(&bfh.bfType, "BM", 2) != 0) 
 	{
-	  fprintf(stderr,"ImportImage %s: This isn't a bitmap file",fn);
+	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
@@ -69,7 +71,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 	BITMAPINFOHEADER bi;
 	if(fread(&bi, sizeof(bi), 1, f) != 1)
 	{
-	  fprintf(stderr,"ImportImage %s: Couldn't load info header",fn);
+	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
@@ -86,7 +88,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 			image.num_bytes = image.w * image.h * (bi.biBitCount>>3);
 		break;
 	default:
-	  fprintf(stderr,"ImportImage %s: Unsupported compression type 0x%x",fn,bi.biCompression);
+	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn<<": Unsupported compression type 0x"<<bi.biCompression);
 		fclose(f);
 		return false;
 	}
@@ -106,7 +108,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 		decode_8 = true;
 		if(fread(&palette, sizeof(RGBQUAD), palette_size, f) != palette_size)
 		{
-		  fprintf(stderr,"ImportImage %s: Couldnt read palette",fn);
+		  		  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
 		  fclose(f);
 		  return false;
 		}
@@ -121,7 +123,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 		image.format = Image::R8G8B8;
 		break;
 	default:
-	  fprintf(stderr,"ImportImage %s: Unsupported bit count",fn);
+	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
@@ -131,7 +133,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 	unsigned char* bits = new unsigned char [size_to_read];
 	if(fread(bits, 1, size_to_read, f) != size_to_read)
 	{
-	  fprintf(stderr,"ImportImage %s: Couldnt read bits",fn);
+	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
 	  fclose(f);
 		delete [] bits;
 		return false;
@@ -146,8 +148,8 @@ bool ImportImageBMP(const char* fn, Image& image)
 	}
 
 	if(image.num_bytes < image.w*image.h*image.pixelSize()) {
-	  printf("Strange, the number of bytes is not correct for the format?\n");
-	  printf("Bytes %d should equal %d x %d x %d = %d\n",image.num_bytes,image.w,image.h,image.pixelSize(),image.w*image.h*image.pixelSize());
+	  LOG4CXX_INFO(logger,"Strange, the number of bytes is not correct for the format?\n");
+	  LOG4CXX_INFO(logger,"Bytes "<<image.num_bytes<<" should equal "<<image.w<<" x "<<image.h<<" x "<<image.pixelSize()<<" = "<<image.w*image.h*image.pixelSize());
 	}
 	assert(image.num_bytes >= image.w*image.h*image.pixelSize());
 	image.initialize(image.w,image.h,image.format);

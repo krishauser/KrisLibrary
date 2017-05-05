@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "MotionPlanner.h"
 #include "PointLocation.h"
 #include <graph/Path.h>
@@ -18,7 +20,7 @@ class EdgeDistance
     assert(e->Space() != NULL);
     Real res = e->Space()->Distance(e->Start(),e->Goal());
     if(res <= 0) {
-      printf("RoadmapPlanner: Warning, edge has nonpositive length %g\n",res);
+      LOG4CXX_WARN(logger,"RoadmapPlanner: Warning, edge has nonpositive length "<<res);
       return Epsilon;
     }
     return res;
@@ -411,7 +413,7 @@ void TreeRoadmapPlanner::CreatePath(Node* a, Node* b, MilestonePath& path)
   for(list<Node*>::iterator i=++atob.begin();i!=atob.end();i++) {
     b=*i;
     if(b->edgeFromParent()==NULL) {
-      //printf("Hmm... constructing new edge?\n");
+      //LOG4CXX_INFO(logger,"Hmm... constructing new edge?\n");
       //edge data not stored
       list<Node*>::iterator p=i; --p;
       Node* bp = *p;
@@ -561,7 +563,7 @@ TreeRoadmapPlanner::Node* PerturbationTreePlanner::AddMilestone(const Config& x)
 void PerturbationTreePlanner::GenerateConfig(Config& x)
 {
   if(milestones.empty()) {
-    cerr<<"PerturbationTreePlanner::GenerateConfig(): No nodes to choose from!"<<endl;
+    LOG4CXX_ERROR(logger,"PerturbationTreePlanner::GenerateConfig(): No nodes to choose from!"<<"\n");
     space->Sample(x);
   }
   else {
@@ -685,7 +687,7 @@ void BidirectionalRRTPlanner::CreatePath(MilestonePath& p) const
       p.edges.push_back(e);
     }
     else {
-      cerr<<"Hmm... edge doesn't have node as its start or its goal!"<<endl;
+      LOG4CXX_ERROR(logger,"Hmm... edge doesn't have node as its start or its goal!"<<"\n");
       Abort();
     }
   }

@@ -1,6 +1,8 @@
 #ifndef SPLINE_POLYNOMIAL_H
 #define SPLINE_POLYNOMIAL_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include <vector>
 #include <iostream>
 #include <assert.h>

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "FMM.h"
 #include <structs/FixedSizeHeap.h>
 #include <utils/indexing.h>
@@ -49,8 +51,8 @@ Real best_diag_distanceN(const Vector& d)
   Real dsqsum = d.normSquared();
   Real det = dsumsq - n*(dsqsum-1.0);
   if(det < 0.0) {
-    //fprintf(stderr,"Negative determinant: %g\n",det);
-    //cerr<<"D: "<<d<<endl;
+        //LOG4CXX_ERROR(logger,"Negative determinant: "<<det);
+    //LOG4CXX_ERROR(logger,"D: "<<d<<"\n");
     return d.minElement()+1.0;
   }
   Real sqdet = Sqrt(det);
@@ -222,14 +224,14 @@ struct SimplexEnumerator
       for(size_t i=0;i<node.size();i++)
 	if(!candidates[i].empty()) occupied.push_back(i);
       /*
-      printf("Pruned: ");
+      LOG4CXX_INFO(logger,"Pruned: ");
       for(size_t i=0;i<prunedAxes.size();i++)
-	printf("%d ",prunedAxes[i]);
-      printf("\n");
-      printf("AxisIndex: ");
+	LOG4CXX_INFO(logger,""<<prunedAxes[i]);
+      LOG4CXX_INFO(logger,"\n");
+      LOG4CXX_INFO(logger,"AxisIndex: ");
       for(size_t i=0;i<axisIndex.size();i++)
-	printf("%d ",axisIndex[i]);
-      printf("\n");
+	LOG4CXX_INFO(logger,""<<axisIndex[i]);
+      LOG4CXX_INFO(logger,"\n");
       */
       int k = 0;
       for(size_t i=0;i<axisIndex.size();i++) {
@@ -329,9 +331,9 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
     //check if goal is reached
     if(nindex==gindex) {
 #if DO_TIMING
-      printf("Time for init %g, propagate %g, estimate %g, overhead %g\n",initTime,propagateTime,estimateTime,overheadTime);
+      LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
-      printf("%d nodes visited, avg # of simplices %g\n",numVisited,Real(numSimplices)/Real(numVisited));
+      LOG4CXX_INFO(logger,""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
       return true;
     }
 
@@ -350,7 +352,7 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
 	//do we have a better distance than the existing?
 	if (ncost < distances.values[next]) {
 	  if(!q.find(next)) {
-	    printf("Warning, want to adjust %d but couldn't find in queue\n",next);
+	    LOG4CXX_WARN(logger,"Warning, want to adjust "<<next);
 	    q.push(next,-ncost);
 	  }
 	  else {
@@ -360,8 +362,8 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
       }
       else {
 	if(ncost < distances.values[next]) {
-	  //printf("Hmm... better path to complete node!\n");
-	  //printf("Difference: %g vs %g\n",ncost,distances.values[next]);
+	  //LOG4CXX_INFO(logger,"Hmm... better path to complete node!\n");
+	  //LOG4CXX_INFO(logger,"Difference: "<<ncost<<" vs "<<distances.values[next]);
 	  distances.values[next] = ncost;
 	}
       }
@@ -372,7 +374,7 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
 #endif // DO_TIMING
   }
 #if DO_TIMING
-  printf("Time for init %g, propagate %g, estimate %g, overhead %g\n",initTime,propagateTime,estimateTime,overheadTime);
+  LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
 
   //couldn't find goal
@@ -496,9 +498,9 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
       gIndices.erase(gIndices.find(nindex));
       if(gIndices.empty()) {
 #if DO_TIMING
-	printf("Time for init %g, propagate %g, estimate %g, overhead %g\n",initTime,propagateTime,estimateTime,overheadTime);
+	LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
-	printf("%d nodes visited, avg # of simplices %g\n",numVisited,Real(numSimplices)/Real(numVisited));
+	LOG4CXX_INFO(logger,""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
 	return true;
       }
     }
@@ -559,7 +561,7 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
 	//do we have a better distance than the existing?
 	if (ncost < distances.values[next]) {
 	  if(!q.find(next)) {
-	    printf("Warning, want to adjust %d but couldn't find in queue\n",next);
+	    LOG4CXX_WARN(logger,"Warning, want to adjust "<<next);
 	    q.push(next,-ncost);
 	  }
 	  else {
@@ -569,8 +571,8 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
       }
       else {
 	if(ncost < distances.values[next]) {
-	  //printf("Hmm... better path to complete node!\n");
-	  //printf("Difference: %g vs %g\n",ncost,distances.values[next]);
+	  //LOG4CXX_INFO(logger,"Hmm... better path to complete node!\n");
+	  //LOG4CXX_INFO(logger,"Difference: "<<ncost<<" vs "<<distances.values[next]);
 	  distances.values[next] = ncost;
 	}
       }
@@ -594,7 +596,7 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
 #endif // DO_TIMING
   }
 #if DO_TIMING
-  printf("Time for init %g, propagate %g, estimate %g, overhead %g\n",initTime,propagateTime,estimateTime,overheadTime);
+  LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
 
   //couldn't find goal
@@ -676,9 +678,9 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
       gIndices.erase(gIndices.find(nindex));
       if(gIndices.empty()) {
 #if DO_TIMING
-	printf("Time for init %g, propagate %g, estimate %g, overhead %g\n",initTime,propagateTime,estimateTime,overheadTime);
+	LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
-	printf("%d nodes visited, avg # of simplices %g\n",numVisited,Real(numSimplices)/Real(numVisited));
+	LOG4CXX_INFO(logger,""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
 	return true;
       }
     }
@@ -748,7 +750,7 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
 	//do we have a better distance than the existing?
 	if (ncost < distances.values[next]) {
 	  if(!q.find(next)) {
-	    printf("Warning, want to adjust %d but couldn't find in queue\n",next);
+	    LOG4CXX_WARN(logger,"Warning, want to adjust "<<next);
 	    q.push(next,-ncost);
 	  }
 	  else {
@@ -758,8 +760,8 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
       }
       else {
 	if(ncost < distances.values[next]) {
-	  //printf("Hmm... better path to complete node!\n");
-	  //printf("Difference: %g vs %g\n",ncost,distances.values[next]);
+	  //LOG4CXX_INFO(logger,"Hmm... better path to complete node!\n");
+	  //LOG4CXX_INFO(logger,"Difference: "<<ncost<<" vs "<<distances.values[next]);
 	  distances.values[next] = ncost;
 	}
       }
@@ -783,7 +785,7 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
 #endif // DO_TIMING
   }
 #if DO_TIMING
-  printf("Time for init %g, propagate %g, estimate %g, overhead %g\n",initTime,propagateTime,estimateTime,overheadTime);
+  LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
 
   //couldn't find goal
@@ -919,7 +921,7 @@ vector<Vector> GradientDescent(const ArrayND<Real>& field,const Vector& start)
       }
     }
     if(IsInf(t)) {
-      //cout<<"Terminated search at "<<pt<<", gradient is zero"<<endl;
+      //LOG4CXX_INFO(logger,"Terminated search at "<<pt<<", gradient is zero"<<"\n");
       return path;
     }
     Vector next = pt-grad*t;
@@ -947,19 +949,19 @@ vector<Vector> GradientDescent(const ArrayND<Real>& field,const Vector& start)
       }
       if(best < 0) {
 	/*
-	cout<<"Terminated, next point "<<next<<" has cost "<<EvalMultilinear(field,next)<<", increase from "<<EvalMultilinear(field,pt)<<" at "<<pt<<endl;
-	cout<<"Gradient: "<<grad<<endl;
-	cout<<"inf dirs: ";
+	LOG4CXX_INFO(logger,"Terminated, next point "<<next<<" has cost "<<EvalMultilinear(field,next)<<", increase from "<<EvalMultilinear(field,pt)<<" at "<<pt<<"\n");
+	LOG4CXX_INFO(logger,"Gradient: "<<grad<<"\n");
+	LOG4CXX_INFO(logger,"inf dirs: ");
 	for(size_t i=0;i<infDirs.size();i++)
-	  cout<<infDirs[i]<<" ";
-	cout<<endl;
-	cout<<"Adjacent cell values: "<<endl;
+	  LOG4CXX_INFO(logger,infDirs[i]<<" ");
+	LOG4CXX_INFO(logger,"\n");
+	LOG4CXX_INFO(logger,"Adjacent cell values: "<<"\n");
 	for(size_t i=0;i<gridpts.size();i++) {
 	  for(size_t k=0;k<gridpts[i].size();k++)
-	    cout<<gridpts[i][k]<<" ";
-	  cout<<": "<<field[gridpts[i]]<<endl;
+	    LOG4CXX_INFO(logger,gridpts[i][k]<<" ");
+	  LOG4CXX_INFO(logger,": "<<field[gridpts[i]]<<"\n");
 	}
-	cout<<endl;
+	LOG4CXX_INFO(logger,"\n");
 	*/
 	return path;
       }

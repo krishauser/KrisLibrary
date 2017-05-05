@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "SVDecomposition.h"
 #include "misc.h"
 #include "QRDecomposition.h"
@@ -10,8 +12,8 @@
 namespace Math {
 
 #define CHECKNAN(x) {  \
-    if(IsNaN(x)) { fprintf(stderr,"Error in SVD: NaN encountered\n"); return false; } \
-    if(IsInf(x)) { fprintf(stderr,"Error in SVD: inf encountered\n"); return false; } \
+        if(IsNaN(x)) { LOG4CXX_ERROR(logger,"Error in SVD: NaN encountered\n"); return false; } \
+        if(IsInf(x)) { LOG4CXX_ERROR(logger,"Error in SVD: inf encountered\n"); return false; } \
   }
 
 
@@ -179,7 +181,7 @@ as a vector w[1..n]. The matrix V (not the transpose V T ) is output as v[1..n,1
 			}
 			if (its == maxIters) 
 			{
-			  //printf("no convergence in %d svdcmp iterations\n",maxIters);
+			  //LOG4CXX_INFO(logger,"no convergence in "<<maxIters);
 				return false;
 			}
 			x=W[l]; //Shift from bottom 2-by-2 minor.
@@ -396,9 +398,9 @@ void SVDecomposition<T>::nullspaceComponent(const VectorT& x,VectorT& xNull) con
       if(W(j) < epsilon) continue;
       Real UUij = U.dotCol(j,Ui); 
       if(!FuzzyEquals(UUij,Delta(i,j))) {
-	cout<<i<<" "<<j<<endl;
-	cout<<"Ack, UUij = "<<UUij<<" != "<<Delta(i,j)<<endl;
-	cout<<W(i)<<" "<<W(j)<<endl;
+	LOG4CXX_INFO(logger,i<<" "<<j<<"\n");
+	LOG4CXX_INFO(logger,"Ack, UUij = "<<UUij<<" != "<<Delta(i,j)<<"\n");
+	LOG4CXX_INFO(logger,W(i)<<" "<<W(j)<<"\n");
       }
       Assert(FuzzyEquals(UUij,Delta(i,j)));
     }
@@ -425,7 +427,7 @@ void SVDecomposition<T>::nullspaceComponent(const VectorT& x,VectorT& xNull) con
   xNull2.inplaceNegative();
 
   xNull2-=xNull;
-  cout<<"Difference between 2 approaches: "<<xNull2<<endl;;
+  LOG4CXX_INFO(logger,"Difference between 2 approaches: "<<xNull2<<"\n");;
   Assert(xNull2.maxAbsElement() < 1e-5);
   */
 }
@@ -564,9 +566,9 @@ template<> bool RobustSVD<double>::set(const MatrixT& A)
   if(svd.set(Atemp)) 
     return true;
 
-  //cout<<"Couldn't set SVD of conditioned matrix "<<endl;
+  //LOG4CXX_INFO(logger,"Couldn't set SVD of conditioned matrix "<<"\n");
   //OutputASCIIShade(cout,Atemp); cout<<endl;
-  //getchar();
+  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   QRDecomposition<double> QR;
   if(QR.set(Atemp)) {
@@ -583,7 +585,7 @@ template<> bool RobustSVD<double>::set(const MatrixT& A)
     Rsvd.svd.W.setRef(svd.W);
     Rsvd.svd.V.setRef(svd.V);
     if(Rsvd.setConditioned(R)) { 
-      //cout<<"Robust svd of QR decomposed matrix succeeded!"<<endl;
+      //LOG4CXX_INFO(logger,"Robust svd of QR decomposed matrix succeeded!"<<"\n");
       //A' = Q.R = Q.U.W.Vt.Post => U' = Q.U, Post'' = Post.Post'
       MatrixT Q;
       QR.getQ(Q);
@@ -596,9 +598,9 @@ template<> bool RobustSVD<double>::set(const MatrixT& A)
 	getInverse(temp);
 	temp2.mul(A,temp);
 	for(int i=0;i<A.m;i++) if(temp2(i,i) != 0) temp2(i,i) -= 1;
-	cout<<"Robust SVD Error "<<temp2.maxAbsElement()<<endl;
+	LOG4CXX_ERROR(logger,"Robust SVD Error "<<temp2.maxAbsElement()<<"\n");
       }
-      getchar();
+      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       */
       return true;
     }
@@ -736,7 +738,7 @@ void RobustSVD<T>::calcConditioning(const MatrixT& A)
   Pre.resize(A.m);
   Post.resize(A.n);
   if(preMultiply && postMultiply) {
-    cout<<"RobustSVD: Warning, using both pre/postmultiply aren't done yet"<<endl;
+    LOG4CXX_WARN(logger,"RobustSVD: Warning, using both pre/postmultiply aren't done yet"<<"\n");
     for(int i=0;i<A.m;i++) {
       Pre(i) = 0;
       for(int j=0;j<A.n;j++) 
@@ -764,12 +766,11 @@ void RobustSVD<T>::calcConditioning(const MatrixT& A)
     }
   }
   else {
-    //cout<<"RobustSVD: Warning, neither pre nor postmultiply are set"<<endl;
+    //LOG4CXX_WARN(logger,"RobustSVD: Warning, neither pre nor postmultiply are set"<<"\n");
     Pre.set(One);
     Post.set(One);
   }
-  //cout<<"Premultiply: "; OutputASCIIShade(cout,Pre); cout<<endl;
-  //cout<<"Postmultiply: "; OutputASCIIShade(cout,Post); cout<<endl;
+  //LOG4CXX_INFO(logger,"Premultiply: "); OutputASCIIShade(  //LOG4CXX_INFO(logger,"Postmultiply: "); OutputASCIIShade(
 }
 
 template class SVDecomposition<float>;

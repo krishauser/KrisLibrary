@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "EZTrace.h"
 #include <errors.h>
 using namespace std;
@@ -13,18 +15,18 @@ EZTrace::EZTrace()
 
 EZTrace::~EZTrace()
 {
-  cout<<"Destroying EZTrace object..."<<endl;
+  LOG4CXX_INFO(logger,"Destroying EZTrace object..."<<"\n");
   Assert(curTrace != NULL);
   Assert(curTrace == &myTrace);
   if(dumpTrace) {
-    cout<<"********* Program execution trace: **********"<<endl;
+    LOG4CXX_INFO(logger,"********* Program execution trace: **********"<<"\n");
     curTrace->DumpTrace(cout);
-    cout<<"*********************************************"<<endl;
+    LOG4CXX_INFO(logger,"*********************************************"<<"\n");
   }
   if(dumpStats) {
-    cout<<"********** Function call stats: *************"<<endl;
+    LOG4CXX_INFO(logger,"********** Function call stats: *************"<<"\n");
     curTrace->DumpStats(cout);
-    cout<<"*********************************************"<<endl;
+    LOG4CXX_INFO(logger,"*********************************************"<<"\n");
   }
   curTrace = NULL;
 }
@@ -47,9 +49,10 @@ EZCallTrace::EZCallTrace(const char* name,const char* fmt,...)
     va_list args;
     va_start(args, fmt);
 #ifdef _WIN32
-    _vsnprintf(buf, MAXBUF, fmt, args);
+	//_vsn
+	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
 #else
-    vsnprintf(buf, MAXBUF, fmt, args);
+    vsnLOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
 #endif
     EZTrace::curTrace->Call(name,buf);
     this->name = name;

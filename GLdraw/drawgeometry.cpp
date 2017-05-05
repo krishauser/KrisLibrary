@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "drawgeometry.h"
 #include "drawextra.h"
 #include <typeinfo>
@@ -159,7 +161,7 @@ namespace GLDraw {
       }
       break;
     default:
-      fprintf(stderr,"draw: Unsupported geometry type\n");
+            LOG4CXX_ERROR(logger,"draw: Unsupported geometry type\n");
       return;
     }
   }

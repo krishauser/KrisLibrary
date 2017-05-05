@@ -1,6 +1,8 @@
 #ifndef FAST_FIND_HEAP_H
 #define FAST_FIND_HEAP_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include <vector>
 #include <map>
 #include <iostream>
@@ -88,12 +90,12 @@ public:
     int level=1;
     for(int i=1;i<=size();i++) {
       if(i == (1<<level)) {
-        cout<<endl;
+        LOG4CXX_INFO(logger,"\n");
         level++;
       }
-      cout<<"("<<h[i].x<<","<<h[i].p<<")"<<" ";
+      LOG4CXX_INFO(logger,"("<<h[i].x<<","<<h[i].p<<")"<<" ");
     }
-    cout<<endl;
+    LOG4CXX_INFO(logger,"\n");
   }
   
 private:

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "KinodynamicMotionPlanner.h"
 #include <graph/Callback.h>
 #include <algorithm>
@@ -250,9 +252,9 @@ RRTKinodynamicPlanner::RRTKinodynamicPlanner(KinodynamicCSpace* s)
 Node* RRTKinodynamicPlanner::Plan(int maxIters)
 {
   if(!goalSet) {
-    fprintf(stderr,"RRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
-    fprintf(stderr,"   Press enter to continue\n");
-    getchar();
+        LOG4CXX_ERROR(logger,"RRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
+        LOG4CXX_ERROR(logger,"   Press enter to continue\n");
+    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   if(goalSet && goalSet->IsFeasible(*tree.root)) {
     goalNode = tree.root;
@@ -302,7 +304,7 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
   vector<State> path;
   space->Simulate(*n,u,path);
   if(!space->IsFeasible(path.back())) {
-    //printf("Edge endpoint is not feasible\n");
+    //LOG4CXX_INFO(logger,"Edge endpoint is not feasible\n");
     return NULL;
   }
   EdgePlanner* e=space->TrajectoryChecker(path);
@@ -310,7 +312,7 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
     return tree.AddMilestone(n,u,path,e);
   }
   else {
-    //printf("Edge is not visible\n");
+    //LOG4CXX_INFO(logger,"Edge is not visible\n");
     delete e;
     return NULL;
   }
@@ -341,9 +343,9 @@ LazyRRTKinodynamicPlanner::LazyRRTKinodynamicPlanner(KinodynamicCSpace* s)
 Node* LazyRRTKinodynamicPlanner::Plan(int maxIters)
 {
   if(!goalSet) {
-    fprintf(stderr,"LazyRRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
-    fprintf(stderr,"   Press enter to continue\n");
-    getchar();
+        LOG4CXX_ERROR(logger,"LazyRRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
+        LOG4CXX_ERROR(logger,"   Press enter to continue\n");
+    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   if(goalSet && goalSet->IsFeasible(*tree.root)) {
     goalNode = tree.root;
@@ -510,7 +512,7 @@ bool BidirectionalRRTKP::ConnectTrees(Node* a,Node* b)
       space->Simulate(*a,bridge.u,bridge.path);
       Real d=space->Distance(bridge.path.back(),*b);
       if(d >= 1e-3) {
-	fprintf(stderr,"BidirectionRRTKP: error detected in CSpace's ConnectionControl() method, distance %g\n",d);;
+		LOG4CXX_ERROR(logger,"BidirectionRRTKP: error detected in CSpace's ConnectionControl() method, distance "<<d);;
       }
       Assert(d < 1e-3);
       bridge.e = space->TrajectoryChecker(bridge.path);

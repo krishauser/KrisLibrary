@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "TriMeshOperators.h"
 #include <math/SVDecomposition.h>
 #include <math/matrix.h>
@@ -247,7 +249,7 @@ void MergeVertices(TriMeshWithTopology& mesh,Real tolerance=0)
       newtris.push_back(newtri);
     }
   }
-  printf("Vertex merging reduced %d verts and %d tris to %d verts and %d tris\n",mesh.verts.size(),mesh.tris.size(),newpts.size(),newtris.size());
+  LOG4CXX_INFO(logger,"Vertex merging reduced "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris to "<<newpts.size()<<" verts and "<<newtris.size());
   swap(mesh.verts,newpts);
   swap(mesh.tris,newtris);
   Assert(mesh.IsValid());
@@ -291,12 +293,12 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
       if(!duplicate)
 	ni.push_back(n[mesh.incidentTris[i][j]]);
     }
-    //cout<<"ApproximateShrink "<<i<<" "<<ni.size()<<endl;
+    //LOG4CXX_INFO(logger,"ApproximateShrink "<<i<<" "<<ni.size()<<"\n");
     if(ni.empty()) continue;
     else if(ni.size() == 1) {
       //shift inward
       mesh.verts[i] -= amount*ni[0];
-      //cout<<"  "<<ni[0]<<endl;
+      //LOG4CXX_INFO(logger,"  "<<ni[0]<<"\n");
     }
     else if(ni.size() == 2) {
       //shift inward, solve analytically
@@ -318,8 +320,8 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	  Vector3 navg = (ni[0]+ni[1])/2.0;
 	  mesh.verts[i] -= navg*amount;
 	}
-	//cout<<"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<endl;
-	//cout<<"  coeffs "<<coeffs[0]<<endl;
+	//LOG4CXX_INFO(logger,"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<"\n");
+	//LOG4CXX_INFO(logger,"  coeffs "<<coeffs[0]<<"\n");
       }
     }
     else if(ni.size()==3) {
@@ -330,7 +332,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	Vector3 navg = (ni[0]+ni[1]+ni[2])/3.0;
 	mesh.verts[i] -= navg*amount;
       }
-      //cout<<"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<endl;
+      //LOG4CXX_INFO(logger,"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<"\n");
     }
     else {
       //simple method: loop through all triples and pick the deepest
@@ -349,7 +351,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	}
       }
       while(!NextCombination(triple,ni.size()));
-      //cout<<"  Deepest is "<<deepest<<" with depth "<<maxdepth<<endl;
+      //LOG4CXX_INFO(logger,"  Deepest is "<<deepest<<" with depth "<<maxdepth<<"\n");
       if(deepest.normSquared() > threshold*threshold) {
 	Vector3 navg = ni[0];
 	for(size_t j=1;j<ni.size();j++)

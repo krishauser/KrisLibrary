@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "DisplacementPlanner.h"
 #include <math/random.h>
 #include <structs/IndexedPriorityQueue.h>
@@ -163,22 +165,22 @@ bool DisplacementPlanner::SanityCheck(bool checkOneCoverGreedy)
   for(size_t i=0;i<pathCovers.size();i++) {
     if(!updatePathsComplete && checkOneCoverGreedy) {
       if(pathCovers[i].covers.size() > 1) {
-	fprintf(stderr,"%d > 1 paths to node %d in greedy mode\n",pathCovers[i].covers.size(),i);
+		LOG4CXX_ERROR(logger,""<<pathCovers[i].covers.size()<<" > 1 paths to node "<<i);
 	return false;
       }
     }
     for(size_t j=0;j<pathCovers[i].covers.size();j++) {
       if(pathCovers[i].covers[j]->vertex != (int)i) {
-	fprintf(stderr,"Path search node doesn't match vertex, %d %d\n",pathCovers[i].covers[j]->vertex,i);
+		LOG4CXX_ERROR(logger,"Path search node doesn't match vertex, "<<pathCovers[i].covers[j]->vertex<<" "<<i);
 	return false;
       }
       if(pathCovers[i].covers[j]->parent != NULL) {
 	if(roadmap.FindEdge(i,pathCovers[i].covers[j]->parent->vertex)==NULL) {
-	  fprintf(stderr,"Invalid path search parent %d -> %d not in graph\n",pathCovers[i].covers[j]->parent->vertex,i);
+	  	  LOG4CXX_ERROR(logger,"Invalid path search parent "<<pathCovers[i].covers[j]->parent->vertex<<" -> "<<i);
 	  return false;
 	}
 	if(pathCovers[i].covers[j]->parent->totalCost > pathCovers[i].covers[j]->totalCost) {
-	  fprintf(stderr,"Path cost appears to decrease %g -> %g on edge %d -> %d\n",pathCovers[i].covers[j]->parent->totalCost,pathCovers[i].covers[j]->totalCost,pathCovers[i].covers[j]->parent->vertex,i);
+	  	  LOG4CXX_ERROR(logger,"Path cost appears to decrease "<<pathCovers[i].covers[j]->parent->totalCost<<" -> "<<pathCovers[i].covers[j]->totalCost<<" on edge "<<pathCovers[i].covers[j]->parent->vertex<<" -> "<<i);
 	  return false;
 	}
       }
@@ -187,7 +189,7 @@ bool DisplacementPlanner::SanityCheck(bool checkOneCoverGreedy)
       PathSearchNode* n=pathCovers[i].covers[j];
       while(n != NULL) {
 	if(visited.count(n) != 0) {
-	  fprintf(stderr,"Cycle in search tree starting at node %d\n",i);
+	  	  LOG4CXX_ERROR(logger,"Cycle in search tree starting at node "<<i);
 	  return false;
 	}
 	visited.insert(n);
@@ -240,12 +242,12 @@ void DisplacementPlanner::Init(const Config& _start,const Config& _goal)
   for(size_t i=0;i<displacementSamples.size();i++)
     if(space->displacementSpaces[i]==NULL) {
       if(!roadmap.nodes[0].tests[i].infeasible.empty()) {
-	printf("Warning, Start configuration violates fixed constraint %d\n",i);
-	getchar();
+	LOG4CXX_WARN(logger,"Warning, Start configuration violates fixed constraint "<<i);
+	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       if(!roadmap.nodes[1].tests[i].infeasible.empty()) {
-	printf("Warning, Goal configuration violates fixed constraint %d\n",i);
-	getchar();
+	LOG4CXX_WARN(logger,"Warning, Goal configuration violates fixed constraint "<<i);
+	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
     }
 }
@@ -253,7 +255,7 @@ void DisplacementPlanner::Init(const Config& _start,const Config& _goal)
 bool DisplacementPlanner::Plan(int numIters,int numExpandsPerDisp,int numLocalOptimize,Real expandLimitStep,vector<int>& bestPath,vector<int>& bestDisplacements)
 {
   if(expandLimitStep <= 0) {
-    printf("Invalid expand limit step %g\n",expandLimitStep);
+    LOG4CXX_INFO(logger,"Invalid expand limit step "<<expandLimitStep);
     return false;
   }
   Real maxExplanationCost = 0;
@@ -263,18 +265,18 @@ bool DisplacementPlanner::Plan(int numIters,int numExpandsPerDisp,int numLocalOp
   if(n != NULL) maxExplanationCost = bestCost;
   for(int iters=0;iters<numIters;iters++) {
     if(n == NULL) {
-      //printf("Increasing explanation cost from %g by %g to %g.\n",maxExplanationCost,expandLimitStep,maxExplanationCost+expandLimitStep);
+      //LOG4CXX_INFO(logger,"Increasing explanation cost from "<<maxExplanationCost<<" by "<<expandLimitStep<<" to "<<maxExplanationCost+expandLimitStep);
       maxExplanationCost += expandLimitStep;
     }
     if((iters+1) % numExpandsPerDisp == 0) {
-      printf("Displacement sample iter %d...\n",iters);
+      LOG4CXX_INFO(logger,"Displacement sample iter "<<iters);
       AddNewDisplacement(maxExplanationCost);
     }
     vector<int> newnodes;
     Expand(maxExplanationCost,newnodes);
     if(OptimalPathTo(1) != n) {
       if(OptimalCost(1) < bestCost) {
-	printf("Got a new path, optimizing\n");
+	LOG4CXX_INFO(logger,"Got a new path, optimizing\n");
 	if(numLocalOptimize>0) {
 	  RefineGoalPathAndDisplacements(numLocalOptimize,0.5,1.0);
 	  ShortcutGoalPath(1,5);
@@ -301,11 +303,11 @@ int DisplacementPlanner::AddNewDisplacement(Real maxTotalCost)
 {
   pair<int,Real> des = PickObstacleToSample(maxTotalCost);
   if(des.first < 0) {
-    printf("DisplacementPlanner::AddNewDisplacement: No obstacle needs sampling\n");
+    LOG4CXX_INFO(logger,"DisplacementPlanner::AddNewDisplacement: No obstacle needs sampling\n");
     return -1;
   }
   if(!space->displacementSpaces[des.first]) {
-    printf("DisplacementPlanner::AddNewDisplacement: Obstacle picker returned immovable obstacle\n");
+    LOG4CXX_INFO(logger,"DisplacementPlanner::AddNewDisplacement: Obstacle picker returned immovable obstacle\n");
     return -1;    
   }
   if(GenerateDisplacementSample(des.first,des.second,maxTotalCost,obstacleSampleCount))
@@ -326,35 +328,35 @@ pair<int,Real> DisplacementPlanner::PickObstacleToSample(Real maxTotalCost)
   pair<int,Real> res;
   if(!pathCovers[1].covers.empty()) { //goal has been reached
     if(Rand() < 0.5) {
-      printf("  Goal reached, refining goal path\n");
+      LOG4CXX_INFO(logger,"  Goal reached, refining goal path\n");
       res = PickGoalRefineObstacle(maxTotalCost);
       if(res.first >= 0) return res;
     }
     if(Rand() < 0.2) {
-      printf("  Goal reached, refining new candidate goal paths\n");
+      LOG4CXX_INFO(logger,"  Goal reached, refining new candidate goal paths\n");
       res = PickGoalExploreObstacle(maxTotalCost);
       if(res.first >= 0) return res;
     }
     if(Rand()<0.9) {
-      printf("  Goal reached, exploring\n");
+      LOG4CXX_INFO(logger,"  Goal reached, exploring\n");
       res = PickExploreObstacle(maxTotalCost);
       if(res.first >= 0) return res;
     }
-    printf("  Goal reached, refining overall\n");
+    LOG4CXX_INFO(logger,"  Goal reached, refining overall\n");
     return PickRefineObstacle(maxTotalCost);
   }
   if(Rand() < 0.2) {
-    printf("  Goal not reached, refining goal path\n");
+    LOG4CXX_INFO(logger,"  Goal not reached, refining goal path\n");
     res = PickGoalExploreObstacle(maxTotalCost);
     if(res.first >= 0) return res;
   }
   //goal has not been reached
   if(Rand() < 0.9) {
-    printf("  Goal not reached, exploring\n");
+    LOG4CXX_INFO(logger,"  Goal not reached, exploring\n");
     res=PickExploreObstacle(maxTotalCost);
     if(res.first >= 0) return res;
   }
-  printf("  Goal not reached, refining\n");
+  LOG4CXX_INFO(logger,"  Goal not reached, refining\n");
   return PickRefineObstacle(maxTotalCost);
 }
 
@@ -414,12 +416,12 @@ pair<int,Real> DisplacementPlanner::PickExploreObstacle(Real maxTotalCost)
     if(IsCandidateForExploration(i)) {
       LocalImprovementCandidates(i,candidatelist);
       if(i==0) {
-	printf("Root improvement candidates: ");
+	LOG4CXX_INFO(logger,"Root improvement candidates: ");
 	for(size_t j=0;j<candidatelist.size();j++)
-	  printf("%d\n",candidatelist[j]);
-	printf("\n");
+	  LOG4CXX_INFO(logger,""<<candidatelist[j]);
+	LOG4CXX_INFO(logger,"\n");
       }
-      //printf("boundary node %d feasible, has %d candidates\n",i,candidatelist.size());
+      //LOG4CXX_INFO(logger,"boundary node "<<i<<" feasible, has "<<candidatelist.size());
       for(size_t j=0;j<candidatelist.size();j++) {
 	int obs = candidatelist[j];
 	//look through costs of possible parent paths, assignments - obs
@@ -447,14 +449,14 @@ pair<int,Real> DisplacementPlanner::PickExploreObstacle(Real maxTotalCost)
 	    count_candidate[obs] ++;
 	  }
 	  else {
-	    //printf("A node %d has an infeasibility at obstacle %d, but no parent is reachable\n",i,obs);
+	    //LOG4CXX_INFO(logger,"A node "<< but no parent is reachable\n"<<" has an infeasibility at obstacle "<<i	 
 	  }
 	}
       }
     }
   /*
   for(size_t i=0;i<candidate_bound.size();i++)
-    printf("Candidate obstacle %d: count %d, bound %g\n",i,count_candidate[i],candidate_bound[i]);
+    LOG4CXX_INFO(logger,"Candidate obstacle "<<i<<": count "<<count_candidate[i]<<", bound "<<candidate_bound[i]);
   */
   for(size_t i=0;i<candidate_bound.size();i++)
     if(candidate_bound[i] <= 0)
@@ -556,7 +558,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
 {
   Real c0 = (initialDisplacementCosts.empty()?0:initialDisplacementCosts[obstacle]);
   if(c0 >= maxDispCost) {
-    printf("DisplacementPlanner::GenerateDisplacementSample: Cost bound %g too low\n",maxDispCost);
+    LOG4CXX_INFO(logger,"DisplacementPlanner::GenerateDisplacementSample: Cost bound "<<maxDispCost);
     return false;
   }
 
@@ -583,13 +585,13 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
   if(potential_changes.empty() && pathCovers[0].covers.empty())
     potential_changes.push_back(0);
   if(potential_changes.empty()) {
-    cout<<"Obstacle "<<obstacle<<" potential displacement was irrelevant for all nodes"<<endl;
+    LOG4CXX_INFO(logger,"Obstacle "<<obstacle<<" potential displacement was irrelevant for all nodes"<<"\n");
     return false;
   }
 
   //now sample a displacement to lead to an improved path to at least one of
   //those nodes
-  printf("Generating a displacement on obs %d to satisfy %d nodes\n",obstacle,potential_changes.size());
+  LOG4CXX_INFO(logger,"Generating a displacement on obs "<<obstacle<<" to satisfy "<<potential_changes.size());
 
   //combine # of satisfied node changes + cost of sample
   Real maxRad = maxDispCost-c0;
@@ -602,11 +604,11 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
     dspace->SampleNeighborhood(displacementSamples[obstacle][0],maxRad,sample);
     Real dist = dspace->Distance(sample,displacementSamples[obstacle][0]);
     if(dist > maxRad) {
-      printf("Warning, D-space's SampleNeighborhood failed to return a sample with a proper cost, %g > %g\n",dist,maxRad);
+      LOG4CXX_WARN(logger,"Warning, D-space's SampleNeighborhood failed to return a sample with a proper cost, "<<dist<<" > "<<maxRad);
       continue;
     }
     if(!dspace->IsFeasible(sample)) {
-      printf("Warning, D-space's SampleNeighborhood failed to return a feasible sample\n");
+      LOG4CXX_WARN(logger,"Warning, D-space's SampleNeighborhood failed to return a feasible sample\n");
       continue;
     }
 
@@ -621,7 +623,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
       }
     }
     Real score = Real(numfeas) / potential_changes.size() - dist/maxRad;
-    //printf("Sampled candidate feas %d dist %g\n",numfeas,dist);
+    //LOG4CXX_INFO(logger,"Sampled candidate feas "<<numfeas<<" dist "<<dist);
     if(score > bestSampleScore) {
       bestSampleScore = score;
       bestSample = sample;
@@ -641,7 +643,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
 	numConfigChecks++;
 	if(space->IsFeasible(roadmap.nodes[potential_changes[i]].q,obstacle,dispMid)) numfeas++;
       }
-      //printf("  Bisect %d candidate feas %d dist %g\n",diters,numfeas,dist);
+      //LOG4CXX_INFO(logger,"  Bisect "<<diters<<" candidate feas "<<numfeas<<" dist "<<dist);
       Real score = Real(numfeas) / potential_changes.size() - dist/maxRad;
       if(score > bestSampleScore) {
 	bestSampleScore = score;
@@ -653,12 +655,12 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
     }
   }
   if(IsInf(bestSampleScore )) {
-    printf("No good samples for obs %d were found\n",obstacle);
+    LOG4CXX_INFO(logger,"No good samples for obs "<<obstacle);
     return false;
   }
 
   Assert(dspace->Distance(bestSample,displacementSamples[obstacle][0]) <= maxRad);
-  printf("Adding displacement sample to obstacle %d, dist %g, bound %g\n",obstacle,dspace->Distance(bestSample,displacementSamples[obstacle][0]),maxRad);
+  LOG4CXX_INFO(logger, "Adding displacement sample to obstacle " << obstacle << ", dist " << dspace->Distance(bestSample, displacementSamples[obstacle][0]) << ", bound " << maxRad <<"\n");
   //add the displacement sample
   AddDisplacementSampleRaw(obstacle,bestSample);
 
@@ -700,7 +702,7 @@ bool DisplacementPlanner::AddDisplacementSample(int obstacle,const Vector& disp)
     }
   }
   if(potential_changes.empty()) {
-    //cout<<"Obstacle "<<obstacle<<" potential displacement "<<disp<<" was infeasible for all nodes"<<endl;
+    //LOG4CXX_INFO(logger,"Obstacle "<<obstacle<<" potential displacement "<<disp<<" was infeasible for all nodes"<<"\n");
     return false;
   }
 
@@ -725,7 +727,7 @@ bool DisplacementPlanner::AddDisplacementSample(int obstacle,const Vector& disp)
   int newSampleIndex = (int)displacementSamples[obstacle].size();
   AddDisplacementSampleRaw(obstacle,dispTemp);
 
-  //printf("New displacement sample, making %d changes\n",potential_changes.size());
+  //LOG4CXX_INFO(logger,"New displacement sample, making "<<potential_changes.size());
   //go through all touched nodes to add this sample
   for(size_t i=0;i<potential_changes.size();i++) {
     int node=potential_changes[i];
@@ -755,7 +757,7 @@ bool DisplacementPlanner::AddDisplacementSample(int obstacle,const Vector& disp)
       }
     }
     //else
-    //printf("Node %d (%d covers) reachability unchanged\n",node,pathCovers[node].covers.size());
+    //LOG4CXX_INFO(logger,"Node "<<node<<" ("<<pathCovers[node].covers.size());
   }
   if(updateAll) {
     //clear all covers and do search from scratch
@@ -767,7 +769,7 @@ bool DisplacementPlanner::AddDisplacementSample(int obstacle,const Vector& disp)
     UpdateCoversOut(0,Inf);
     if(!IsInf(goalCost)) {
       if(OptimalCost(1) > goalCost)
-	fprintf(stderr,"Warning: optimal cost to goal was increased! %g > %g\n",OptimalCost(1),goalCost);
+		LOG4CXX_ERROR(logger,"Warning: optimal cost to goal was increased! "<<OptimalCost(1)<<" > "<<goalCost);
       //Assert(OptimalCost(1) <= goalCost);
     }
   }
@@ -816,11 +818,11 @@ bool DisplacementPlanner::RefineGoalDisplacements(int numIters,Real perturbRadiu
       space->displacementSpaces[i]->SampleNeighborhood(optima[i],r,temp);
       //test for a decrease in cost
       if(space->displacementSpaces[i]->Distance(temp,displacementSamples[i][0]) > curCost[i]-c0) {
-	//printf("Sample for obstacle %d exceeded range\n",i);
+	//LOG4CXX_INFO(logger,"Sample for obstacle "<<i);
 	continue;
       }
       if(!space->displacementSpaces[i]->IsFeasible(temp)) {
-	printf("Sample for obstacle %d infeasible\n",i);
+	LOG4CXX_INFO(logger,"Sample for obstacle "<<i);
 	continue;
       }
 
@@ -835,7 +837,7 @@ bool DisplacementPlanner::RefineGoalDisplacements(int numIters,Real perturbRadiu
 	}
       }
       if(!feasible) {
-	printf("Displacement sample %d ",i); cout<<temp<<" vert infeasible"<<endl;
+	LOG4CXX_INFO(logger,"Displacement sample "<<i); LOG4CXX_INFO(logger,temp<<" vert infeasible"<<"\n");
 	continue;
       }
       for(size_t v=0;v+1<path.size();v++) {
@@ -848,19 +850,19 @@ bool DisplacementPlanner::RefineGoalDisplacements(int numIters,Real perturbRadiu
 	}
       }
       if(!feasible) {
-	printf("Displacement sample %d ",i); cout<<temp<<" edge infeasible"<<endl;
+	LOG4CXX_INFO(logger,"Displacement sample "<<i); LOG4CXX_INFO(logger,temp<<" edge infeasible"<<"\n");
 	continue;
       }
       optima[i] = temp;
       changed[i] = true;
       curCost[i] = space->displacementSpaces[i]->Distance(temp,displacementSamples[i][0])+c0;
-      printf("Displacement sample %d accepted\n",i);
+      LOG4CXX_INFO(logger,"Displacement sample "<<i);
     }
   }
   bool anyChanged = false;
   for(size_t i=0;i<changed.size();i++) {
     if(changed[i]) {
-      printf("Cost for obstacle %d changed to %g\n",i,curCost[i]);
+      LOG4CXX_INFO(logger,"Cost for obstacle "<<i<<" changed to "<<curCost[i]);
       anyChanged=true;
       AddDisplacementSampleRaw(i,optima[i]);
 
@@ -914,11 +916,11 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
       //test for a decrease in cost
       Real c=space->displacementSpaces[i]->Distance(temp,displacementSamples[i][0])+c0;
       if(c >= curCost[i]) {
-	//printf("Sample for obstacle %d exceeded range\n",i);
+	//LOG4CXX_INFO(logger,"Sample for obstacle "<<i);
 	continue;
       }
       if(!space->displacementSpaces[i]->IsFeasible(temp)) {
-	//printf("Sample for obstacle %d infeasible\n",i);
+	//LOG4CXX_INFO(logger,"Sample for obstacle "<<i);
 	continue;
       }
 
@@ -934,7 +936,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
       }
       //made the start or goal infeasible
       if(activeVertices[0] || activeVertices.back()) {
-	//printf("Displacement sample %d ",i); cout<<temp<<" made start/goal infeasible"<<endl;
+	//LOG4CXX_INFO(logger,"Displacement sample "<<i); LOG4CXX_INFO(logger,temp<<" made start/goal infeasible"<<"\n");
 	continue;
       }
       for(size_t v=0;v+1<path.size();v++) {
@@ -950,7 +952,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
 	optima[i] = temp;
 	changed[i] = true;
 	curCost[i] = space->displacementSpaces[i]->Distance(temp,displacementSamples[i][0])+c0;
-	//printf("Displacement sample %d accepted\n",i);
+	//LOG4CXX_INFO(logger,"Displacement sample "<<i);
 	continue;
       }
 
@@ -981,13 +983,13 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
 	  }
 	}
 	if(!feas) {
-	  //printf("Obs %d: path sample %d not feasible\n",i,v);
+	  //LOG4CXX_INFO(logger,"Obs "<<i<<": path sample "<<v);
 	  vertsfeas = false;
 	  break;
 	}
       }
       if(!vertsfeas) {
-	//printf("Obs %d: Displaced path not feasible\n",i);
+	//LOG4CXX_INFO(logger,"Obs "<<i);
 	continue;
       }
       for(size_t v=0;v<path.size();v++) 
@@ -1000,7 +1002,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
       for(size_t v=0;v+1<path.size();v++)
 	newlen += space->Distance(temps[v],temps[v+1]);
       if((newlen - curLen)*pathCostWeight >= curCost[i] - c) { //path too long
-	//printf("Obs %d: Displaced path too long\n",i);
+	//LOG4CXX_INFO(logger,"Obs "<<i);
 	continue;
       }
       //made a candidate displacement: check feasibility w.r.t to other
@@ -1019,7 +1021,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
 	}
       }
       if(!vertsfeas) {
-	//printf("Obs %d: Displaced path failed other tests\n",i);
+	//LOG4CXX_INFO(logger,"Obs "<<i);
 	continue;
       }
       //now check edge feasibility
@@ -1032,7 +1034,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
 	}
       }
       if(!vertsfeas) {
-	//printf("Obs %d: Displaced path failed edge check \n",i);
+	//LOG4CXX_INFO(logger,"Obs "<<i);
 	continue;
       }
       //check other edges
@@ -1048,10 +1050,10 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
 	}
       }
       if(!vertsfeas) {
-	//printf("Obs %d: Displaced path failed other edge check \n",i);
+	//LOG4CXX_INFO(logger,"Obs "<<i);
 	continue;
       }
-      //printf("Path successfully changed\n");
+      //LOG4CXX_INFO(logger,"Path successfully changed\n");
       //we are done.  now, store this in the current optimization variable
       for(size_t v=0;v<path.size();v++)
 	if(activeVertices[v])
@@ -1078,7 +1080,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
   bool anyChanged = false;
   for(size_t i=0;i<changed.size();i++) {
     if(changed[i]) {
-      printf("Cost for obstacle %d changed to %g\n",i,curCost[i]);
+      LOG4CXX_INFO(logger,"Cost for obstacle "<<i<<" changed to "<<curCost[i]);
       anyChanged=true;
       AddDisplacementSampleRaw(i,optima[i]);
       //mark all tests for the optimum feasible
@@ -1120,18 +1122,18 @@ bool DisplacementPlanner::ShortcutGoalPath(int skip,int numIters)
     for(size_t i=0;i+skip+1<path.size();i++) {
       size_t j=i+skip+1;
       if(roadmap.HasEdge(path[i],path[j])) {
-	//printf("Shortcut %d->%d already in graph\n",path[i],path[j]);
+	//LOG4CXX_INFO(logger,"Shortcut "<<path[i]<<"->"<<path[j]);
 	continue;
       }
       bool feasible = true;
       for(size_t k=0;k<displacementSamples.size();k++)
 	if(!IsVisible(space,roadmap.nodes[path[i]].q,roadmap.nodes[path[j]].q,k,displacementSamples[k][n->assignment[k]])) {  
 	  feasible = false;
-	  //printf("Shortcut %d->%d failed feasibility check %d = %d\n",i,j,k,n->assignment[k]);
+	  //LOG4CXX_INFO(logger,"Shortcut "<<i<<"->"<<j<<" failed feasibility check "<<k<<" = "<<n->assignment[k]);
 	  break;
 	}
       //else 
-      //printf("Shortcut %d->%d satisfied feasibility check %d = %d\n",i,j,k,n->assignment[k]);
+      //LOG4CXX_INFO(logger,"Shortcut "<<i<<"->"<<j<<" satisfied feasibility check "<<k<<" = "<<n->assignment[k]);
       if(!feasible) continue;
       TestResults tests(displacementSamples.size());
       for(size_t k=0;k<displacementSamples.size();k++) {
@@ -1201,7 +1203,7 @@ void DisplacementPlanner::Expand(Real maxExplanationCost,vector<int>& newNodes)
 #endif //DO_TIMING
 
   if(neighbor.empty()) {
-    printf("Expand(): no vertices reachable within the cost limit %g\n",maxExplanationCost);
+    LOG4CXX_INFO(logger,"Expand(): no vertices reachable within the cost limit "<<maxExplanationCost);
     return;
   }
 
@@ -1283,7 +1285,7 @@ void DisplacementPlanner::Expand(Real maxExplanationCost,vector<int>& newNodes)
   if(didRefine) {
     for(size_t i=0;i<newNodes.size();i++) {
       UpdateCoversOut(newNodes[i],maxExplanationCost);
-    //printf("Expand: New node %d cost %g\n",newNodes[i],OptimalCost(newNodes[i]));
+    //LOG4CXX_INFO(logger,"Expand: New node "<<newNodes[i]<<" cost "<<OptimalCost(newNodes[i]));
     }
 #if DO_TIMING
     timeUpdateCoversOut += timer.ElapsedTime();
@@ -1552,7 +1554,7 @@ bool DisplacementPlanner::CheckNodeConstraint(Milestone& v,int i,int j)
     return true;
   }
   else {
-    //if(i != 0) printf("Found infeasible vertex for obstacle %d, index %d\n",i,j);
+    //if(i != 0) LOG4CXX_INFO(logger,"Found infeasible vertex for obstacle "<<i<<", index "<<j);
     v.tests[i].infeasible.insert(j);
     return false;
   }
@@ -1578,7 +1580,7 @@ bool DisplacementPlanner::CheckEdgeConstraint(Edge& e,int i,int j)
     return true;
   }
   else {
-    //if(i != 0) printf("Found infeasible edge for obstacle %d, index %d\n",i,j);
+    //if(i != 0) LOG4CXX_INFO(logger,"Found infeasible edge for obstacle "<<i<<", index "<<j);
     e.tests[i].infeasible.insert(j);
     return false;
   }
@@ -1695,25 +1697,22 @@ SmartPointer<DisplacementPlanner::PathSearchNode> DisplacementPlanner::UpdateEdg
   c->totalCost = ns->totalCost + dst*pathCostWeight;
   //adjust its assignment (propagating upstream)
   if(!FindMinimumAssignment(c,maxTotalCost)) {
-    //printf("Unable to find feasible assignment %d->%d under cost %g\n",s,t,maxTotalCost);
-    //printf("  no edge update %d->%d, fail assignment\n",s,t);
-    return NULL;
+    //LOG4CXX_INFO(logger,"Unable to find feasible assignment "<<s<<"->"<<t<<" under cost "<<maxTotalCost);
+    //LOG4CXX_INFO(logger,"  no edge update "<< fail assignment\n"<<"->"<<s    return NULL;
   }
   c->totalCost = Cost(c->assignment) + c->pathLength*pathCostWeight;
 
   //check for revisited states
   bool revisited = Revisited(c);
   if(revisited) {
-    //printf("  no edge update %d->%d, revisited\n",s,t);
-    return NULL;
+    //LOG4CXX_INFO(logger,"  no edge update "<< revisited\n"<<"->"<<s    return NULL;
   }
   //if(t==1) 
-  //printf("New path to goal has displacement cost %g, total %g\n",Cost(c->assignment),c->totalCost);
+  //LOG4CXX_INFO(logger,"New path to goal has displacement cost "<<Cost(c->assignment)<<", total "<<c->totalCost);
 
   //allow intermediate between greedy and optimal
   if((int)pathCovers[t].covers.size()+1>updatePathsMax) {
-    //printf("  no edge update %d->%d, too many paths\n",s,t);
-    return NULL;
+    //LOG4CXX_INFO(logger,"  no edge update "<< too many paths\n"<<"->"<<s    return NULL;
   }
 
   //add to the covers at t
@@ -1812,8 +1811,8 @@ bool DisplacementPlanner::FindMinimumAssignment(PathSearchNode* n,Real maxTotalC
 	numFailedUpstream++;
     }
     if (!found) {
-      //printf("  Failed finding assignment to obs %d vertex %d\n",obs,n->vertex);
-      //printf("  %d branched, %d failed of %d samples\n",numBranched,numFailedUpstream,displacementSamples[obs].size());
+      //LOG4CXX_INFO(logger,"  Failed finding assignment to obs "<<obs<<" vertex "<<n->vertex);
+      //LOG4CXX_INFO(logger,"  "<<numBranched<<" branched, "<<numFailedUpstream<<" failed of "<<displacementSamples[obs].size());
       return false;
     }
     Real newcost = displacementSampleCosts[obs][n->assignment[obs]];
@@ -1823,10 +1822,10 @@ bool DisplacementPlanner::FindMinimumAssignment(PathSearchNode* n,Real maxTotalC
       paretoImprovement = true;
   }
   if(n->vertex==1 && !infeasible.empty()) {
-    //printf("Found a path to goal, sumcost %g\n",sumCost);
+    //LOG4CXX_INFO(logger,"Found a path to goal, sumcost "<<sumCost);
     /*
     for(size_t i=0;i<infeasible.size();i++)
-      printf("  assignment[%d] %d -> %d\n",infeasible[i],origAssignment[infeasible[i]],n->assignment[infeasible[i]]);
+      LOG4CXX_INFO(logger,"  assignment["<<infeasible[i]<<"] "<<origAssignment[infeasible[i]]<<" -> "<<n->assignment[infeasible[i]]);
     */
   }
   return true;
@@ -1847,7 +1846,7 @@ void DisplacementPlanner::PruneSearchNode(PathSearchNode* n,IndexedPriorityQueue
     IndexedPriorityQueue<PathSearchNode*,Real>::iterator it=q->find(n);
     if(it != q->end()) {
       q->erase(it);
-      //printf("  ...in heap\n");
+      //LOG4CXX_INFO(logger,"  ...in heap\n");
     }
   }
   for(size_t j=0;j<pathCovers[v].covers.size();j++)
@@ -1936,7 +1935,7 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
       oldCosts[i] = OptimalCost(i);
     }
   }
-  //printf("UpdateCoversOut\n");
+  //LOG4CXX_INFO(logger,"UpdateCoversOut\n");
   while(!q.empty()) {
     numUpdateCoversIterations++;
     PathSearchNode* n = q.top().second;   q.pop();
@@ -1960,7 +1959,7 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
 	  if(pathCovers[v].covers[j] == newNodes[i]) continue;
 	  if(Dominates(newNodes[i],pathCovers[v].covers[j])) {
 	    changed = true;
-	    //printf("  Erasing node %d cover %d, cost %g->%g\n",v,j,pathCovers[v].covers[j]->totalCost,newNodes[i]->totalCost);
+	    //LOG4CXX_INFO(logger,"  Erasing node "<<v<<" cover "<<j<<", cost "<<pathCovers[v].covers[j]->totalCost<<"->"<<newNodes[i]->totalCost);
 	    PruneSearchNode(pathCovers[v].covers[j],&q);
 	  }
 	}
@@ -1970,7 +1969,7 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
       if(c<=maxTotalCost)
 	q.insert(newNodes[i],c);
       //else
-      //printf("  Skipping node %d\n",newNodes[i]->vertex);
+      //LOG4CXX_INFO(logger,"  Skipping node "<<newNodes[i]->vertex);
     }
     if(DEBUG) Assert(SanityCheck(true));
 
@@ -1979,15 +1978,15 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
   }
   if(DEBUG) {
     if(!changedNodes.empty()) {
-      printf("  Changed: ");
+      LOG4CXX_INFO(logger,"  Changed: ");
       for(vector<int>::iterator i=changedNodes.begin();i!=changedNodes.end();i++)
-	printf("%d ",*i);
-      printf("\n");
+	LOG4CXX_INFO(logger,""<<*i);
+      LOG4CXX_INFO(logger,"\n");
     }
     for(size_t i=0;i<roadmap.nodes.size();i++) {
       if(oldCosts[i] <= maxTotalCost) {
 	if(OptimalCost(i) > oldCosts[i])
-	  fprintf(stderr,"Warning: cost to node %d increased %g > %g\n",i,OptimalCost(i),oldCosts[i]);
+	  	  LOG4CXX_ERROR(logger,"Warning: cost to node "<<i<<" increased "<<OptimalCost(i)<<" > "<<oldCosts[i]);
 	//Assert(OptimalCost(i) <= oldCosts[i]);
       }
     }

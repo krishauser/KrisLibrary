@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GLView.h"
 #include "GL.h"
 #include "drawextra.h"
@@ -41,10 +43,10 @@ void GLView::getCurrentGL()
 void GLView::updateInverses()
 {
   if(!modelviewInverse.setInverse(modelview)) {
-    fprintf(stderr,"GLView: Modelview matrix is singular!\n");
+        LOG4CXX_ERROR(logger,"GLView: Modelview matrix is singular!\n");
   }
   if(!projectionInverse.setInverse(projection)) {
-    fprintf(stderr,"GLView: Projection matrix is singular!\n");
+        LOG4CXX_ERROR(logger,"GLView: Projection matrix is singular!\n");
   }
 }
 
@@ -157,7 +159,7 @@ bool GLView::getViewport(Camera::Viewport& v) const
 	else error=true;
 	
 	if(error) {
-	  fprintf(stderr,"GLView: There was an error in the projection matrix\n");
+	  	  LOG4CXX_ERROR(logger,"GLView: There was an error in the projection matrix\n");
 	  return false;
 	}
 	return true;

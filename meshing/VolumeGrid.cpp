@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "VolumeGrid.h"
 #include <iostream>
 using namespace std;
@@ -247,15 +249,15 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
   Real vmax = ::Max(::Max(::Max(v111,v112),::Max(v121,v122)),
 		    ::Max(::Max(v211,v212),::Max(v221,v222)));
   if(val < vmin-Epsilon || val > vmax+Epsilon) {
-    cerr<<"Error in MinimumFreeInterpolate!"<<endl;
-    cerr<<"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax<<endl;
-    cerr<<"Params "<<u<<endl;
-    cerr<<"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122<<endl;
-    cerr<<"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222<<endl;
-    cerr<<"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]<<endl;
-    cerr<<"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2<<endl;
-    cerr<<"Tetrahedron Params "<<up<<" "<<back<<" "<<across<<endl;
-    getchar();
+    LOG4CXX_ERROR(logger,"Error in MinimumFreeInterpolate!"<<"\n");
+    LOG4CXX_ERROR(logger,"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax<<"\n");
+    LOG4CXX_ERROR(logger,"Params "<<u<<"\n");
+    LOG4CXX_ERROR(logger,"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122<<"\n");
+    LOG4CXX_ERROR(logger,"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222<<"\n");
+    LOG4CXX_ERROR(logger,"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]<<"\n");
+    LOG4CXX_ERROR(logger,"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2<<"\n");
+    LOG4CXX_ERROR(logger,"Tetrahedron Params "<<up<<" "<<back<<" "<<across<<"\n");
+    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   Assert(centerValue >= vmin-Epsilon && centerValue <= vmax+Epsilon);
   Assert(faceCenterValue >= vmin-Epsilon && faceCenterValue <= vmax+Epsilon);

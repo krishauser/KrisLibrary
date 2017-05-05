@@ -1,6 +1,8 @@
 #ifndef RESOURCE_LIBRARY_H
 #define RESOURCE_LIBRARY_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "SmartPointer.h"
 #include "AnyCollection.h"
 #include <string.h>
@@ -399,7 +401,7 @@ void ResourceLibrary::AddType()
   else {
     //potential conflict? check raw string
     if(knownTypes[res->Type()][0]->Type() != res->Type())
-      fprintf(stderr,"ResourceLibrary: Potential conflict with type %s\n",res->Type());
+            LOG4CXX_ERROR(logger,"ResourceLibrary: Potential conflict with type "<<res->Type());
     knownTypes[res->Type()][0] = res;
   }
 }

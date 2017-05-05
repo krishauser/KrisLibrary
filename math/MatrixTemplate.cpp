@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "MatrixTemplate.h"
 #include "fastarray.h"
 #include "complex.h"
@@ -663,7 +665,7 @@ void MatrixTemplate<T>::setInverse(const MyT& m)
   {
     RaiseErrorFmt(WHERE_AM_I,MatrixError_NotSquare);
   }
-  fprintf(stderr,"Inverse not done yet");
+    LOG4CXX_ERROR(logger,"Inverse not done yet");
   AssertNotReached();
 }
 
@@ -761,29 +763,29 @@ bool MatrixTemplate<T>::isValid() const
 {
   if(vals == NULL) {
     if(capacity != 0) {
-      cout<<"Invalid capacity on empty matrix"<<endl;
+      LOG4CXX_INFO(logger,"Invalid capacity on empty matrix"<<"\n");
       return false;
     }
     if(m > 0 && n > 0) {
-      cout<<"Invalid size on empty matrix"<<endl;
+      LOG4CXX_INFO(logger,"Invalid size on empty matrix"<<"\n");
       return false;
     }
     return true;
   }
   if(istride < 0 || jstride < 0) {
-    cout<<"Invalid strides "<<istride<<", "<<jstride<<endl;
+    LOG4CXX_INFO(logger,"Invalid strides "<<istride<<", "<<jstride<<"\n");
     return false;
   }
   //check non-overlap of rows/cols
   if(istride > jstride) {
     if(jstride*(n-1) >= istride) {
-      cout<<"J-row overlaps with I-row"<<endl;
+      LOG4CXX_INFO(logger,"J-row overlaps with I-row"<<"\n");
       return false;
     }
   }
   else if(jstride < istride) {
     if(istride*(m-1) >= jstride) { 
-      cout<<"I-row overlaps with J-row"<<endl;
+      LOG4CXX_INFO(logger,"I-row overlaps with J-row"<<"\n");
       return false;
     }
   }
@@ -792,17 +794,17 @@ bool MatrixTemplate<T>::isValid() const
     if(m == 0 && n == 0) ok=true;
     if(istride == 1 && (m<=1 || n<=1)) ok=true;
     if(!ok) {
-      cout<<"Equal i-stride and j-stride?"<<endl;
-      cout<<"dims "<<m<<"x"<<n<<endl;
+      LOG4CXX_INFO(logger,"Equal i-stride and j-stride?"<<"\n");
+      LOG4CXX_INFO(logger,"dims "<<m<<"x"<<n<<"\n");
       return false;
     }
   }
   if(base+(m-1)*istride+(n-1)*jstride>=capacity) {
-    cout<<"Overloaded capacity: "<<base+(m-1)*istride+(n-1)*jstride<<" vs "<<capacity<<endl;
+    LOG4CXX_INFO(logger,"Overloaded capacity: "<<base+(m-1)*istride+(n-1)*jstride<<" vs "<<capacity<<"\n");
     return false;
   }
   if(base < 0) {
-    cout<<"Negative base"<<endl;
+    LOG4CXX_INFO(logger,"Negative base"<<"\n");
     return false;
   }
   return true;
@@ -952,7 +954,7 @@ T MatrixTemplate<T>::determinant() const
   if(isEmpty()) return Zero;
   if(!isSquare()) RaiseErrorFmt(WHERE_AM_I,MatrixError_NotSquare);
 
-  fprintf(stderr,"Haven't completed the determinant\n");
+    LOG4CXX_ERROR(logger,"Haven't completed the determinant\n");
   AssertNotReached();
   /*
   LU_Decomposition(*this, L,U, P);

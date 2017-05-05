@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "JointStructure.h"
 #include "WorkspaceBound.h"
 #include <math3d/Circle3D.h>
@@ -114,14 +116,14 @@ bool JointStructure::IsFeasible() const
 {
   for(size_t k=0;k<bounds.size();k++)
     if(bounds[k].IsEmpty()) {
-      //cout<<"Bound for link "<<k<<" collapsed to nothing"<<endl;
+      //LOG4CXX_INFO(logger,"Bound for link "<<k<<" collapsed to nothing"<<"\n");
       return false;
     }
 
   for(size_t k=0;k<pointBounds.size();k++) 
     for(size_t m=0;m<pointBounds[k].size();m++) 
       if(pointBounds[k][m].IsEmpty()) {
-	//cout<<"Bound for point "<<m<<" on link "<<k<<" collapsed to nothing"<<endl;
+	//LOG4CXX_INFO(logger,"Bound for point "<<m<<" on link "<<k<<" collapsed to nothing"<<"\n");
 	return false;
       }
   return true;
@@ -163,7 +165,7 @@ void JointStructure::SetInitialBounds(WorkspaceBound& b,const IKGoal& c,const Ve
     }
     break;
   case IKGoal::RotTwoAxis:
-    cout<<"Can't have 2 rotation constraints"<<endl;
+    LOG4CXX_INFO(logger,"Can't have 2 rotation constraints"<<"\n");
     Abort();
   case IKGoal::RotAxis:
     {
@@ -358,7 +360,7 @@ Vector3 GetJointTranslation(const RobotKinematics3D& robot,int link1,int link2)
     return -robot.links[link2].T0_Parent.t;
   }
   else {
-    cout<<"GetJointTranslation(): Error! the joints are not on adjacent bodies"<<endl;
+    LOG4CXX_ERROR(logger,"GetJointTranslation(): Error! the joints are not on adjacent bodies"<<"\n");
     Abort();
   }
   return Zero;
@@ -398,7 +400,7 @@ void JointStructure::Expand(int n,int p)
 {
   WorkspaceBound b=InitialBound(robot,n,p);
   bounds[n].SetMinkowskiSum(bounds[p],b);
-  //cout<<"From "<<p<<" to "<<n<<" expanded from "<<bounds[p].outerRadius<<" to "<<bounds[n].outerRadius<<endl;
+  //LOG4CXX_INFO(logger,"From "<<p<<" to "<<n<<" expanded from "<<bounds[p].outerRadius<<" to "<<bounds[n].outerRadius<<"\n");
 }
 
 void JointStructure::SolveBoundsIter(int n,int p)
@@ -441,7 +443,7 @@ void JointStructure::SolveBoundsIter(int n,int p)
     //Get the true local dist -- either p is the joint of 
     //link n, or it's a child
     if(robot.links[n].type == RobotLink3D::Prismatic) {
-      cout<<"Can't yet do link points on prismatic joints!"<<endl;
+      LOG4CXX_INFO(logger,"Can't yet do link points on prismatic joints!"<<"\n");
       Abort();
     }
     Real ptDist;

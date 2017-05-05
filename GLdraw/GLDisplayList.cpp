@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GLDisplayList.h"
 #include "GL.h"
 #include <errors.h>
@@ -29,7 +31,7 @@ void GLDisplayList::beginCompile(int index)
     *id = glGenLists(count);
     gNumDisplayLists += count;
     if(gNumDisplayLists > 3000)
-      printf("Warning, compiling new OpenGL display list id %d, total number %d\n",*id,gNumDisplayLists);
+      LOG4CXX_WARN(logger,"Warning, compiling new OpenGL display list id "<<*id<<", total number "<<gNumDisplayLists);
   }
   glNewList(*id+index,GL_COMPILE);
 }
@@ -37,14 +39,14 @@ void GLDisplayList::beginCompile(int index)
 void GLDisplayList::endCompile()
 {
   if(id == NULL) return;
-  //printf("End compile,  list %d\n",*id);
+  //LOG4CXX_INFO(logger,"End compile,  list "<<*id);
   glEndList();
 }
 
 void GLDisplayList::call(int index) const
 {
   if(id == NULL) return;
-  //printf("Calling list %d\n",*id+index);
+  //LOG4CXX_INFO(logger,"Calling list "<<*id+index);
   glCallList(*id+index);
 }
 
@@ -58,12 +60,12 @@ void GLDisplayList::callAll() const
 void GLDisplayList::erase()
 {
   if(id && id.getRefCount()==1) {
-    //printf("Erasing OpenGL display list %d\n",*id);
+    //LOG4CXX_INFO(logger,"Erasing OpenGL display list "<<*id);
     glDeleteLists(*id,count);
     gNumDisplayLists -= count;
   }
   //else if(id)
-    //printf("Not yet erasing OpenGL display list %d has ref count %d\n",*id,id.getRefCount());
+    //LOG4CXX_INFO(logger,"Not yet erasing OpenGL display list "<<*id<<" has ref count "<<id.getRefCount());
 
   id=NULL;
 }

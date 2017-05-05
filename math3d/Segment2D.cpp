@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "Segment2D.h"
 #include "geometry2d.h"
 #include "clip.h"
@@ -138,12 +140,12 @@ bool Segment2D::intersects(const Vector2& A,const Vector2& B,Vector2& p) const
     Vector2 temp;
     interpolate(A,B,uv.y,temp);
     if(temp.distance(p) > 1e-3) {
-      cout<<"Error: intersection points are too far away "<<endl;
-      cout<<A<<" -> "<<B<<endl;
-      cout<<a<<" -> "<<b<<endl;
-      cout<<"u,v "<<uv<<endl;
-      cout<<"inverse basis "<<endl<<M<<endl;
-      cout<<"p1,p2 "<<p<<", "<<temp<<endl;
+      LOG4CXX_ERROR(logger,"Error: intersection points are too far away "<<"\n");
+      LOG4CXX_INFO(logger,A<<" -> "<<B<<"\n");
+      LOG4CXX_INFO(logger,a<<" -> "<<b<<"\n");
+      LOG4CXX_INFO(logger,"u,v "<<uv<<"\n");
+      LOG4CXX_INFO(logger,"inverse basis "<<"\n"<<M<<"\n");
+      LOG4CXX_INFO(logger,"p1,p2 "<<p<<", "<<temp<<"\n");
       abort();
     }
     return true;
@@ -154,11 +156,11 @@ bool Segment2D::intersects(const Vector2& A,const Vector2& B,Vector2& p) const
     if(Math::FuzzyEquals(uv.x,One)) { p=b; return true; }
     if(Math::FuzzyZero(uv.y)) { p=a; return true; }
     if(Math::FuzzyEquals(uv.y,One)) { p=b; return true; }
-    cout<<"Error! segment is supposed to intersect, but we don't have that in the basis!"<<endl;
-    cout<<A<<" -> "<<B<<endl;
-    cout<<a<<" -> "<<b<<endl;
-    cout<<"u,v "<<uv<<endl;
-    cout<<"inverse basis "<<endl<<M<<endl;
+    LOG4CXX_ERROR(logger,"Error! segment is supposed to intersect, but we don't have that in the basis!"<<"\n");
+    LOG4CXX_INFO(logger,A<<" -> "<<B<<"\n");
+    LOG4CXX_INFO(logger,a<<" -> "<<b<<"\n");
+    LOG4CXX_INFO(logger,"u,v "<<uv<<"\n");
+    LOG4CXX_INFO(logger,"inverse basis "<<"\n"<<M<<"\n");
     abort();
   }
   */

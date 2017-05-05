@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "QRDecomposition.h"
 #include "backsubstitute.h"
 #include "Householder.h"
@@ -66,14 +68,14 @@ void QRDecomposition<T>::backSub(const VectorT& b, VectorT& x) const
     UBackSubstitute(R1,rhs1,x);
   }
   else {
-    cerr<<"What do we do with m < n?"<<endl;
+    LOG4CXX_ERROR(logger,"What do we do with m < n?"<<"\n");
     MatrixPrinter mprint(QR); mprint.mode = MatrixPrinter::AsciiShade;
-    cerr<<mprint<<endl;
+    LOG4CXX_ERROR(logger,mprint<<"\n");
     //solve the left part of R x = rhs
     MatrixT R1; R1.setRef(QR,0,0,1,1,QR.m,QR.m);
     VectorT x1; x1.setRef(x,0,1,QR.m);
     UBackSubstitute(R1,rhs,x1);
-    getchar();
+    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
 }
 

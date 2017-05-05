@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "BLASInterface.h"
 #include <errors.h>
 using namespace Math;
@@ -281,90 +283,90 @@ using namespace std;
 
 float BLASInterface::Dot(const fVector& x,const fVector& y)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 double BLASInterface::Dot(const dVector& x,const dVector& y)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 float BLASInterface::Norm_L2(const fVector& x)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 double BLASInterface::Norm_L2(const dVector& x)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 float BLASInterface::Norm_L1(const fVector& x)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 double BLASInterface::Norm_L1(const dVector& x)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 int BLASInterface::MaxAbsIndex(const fVector& x)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 int BLASInterface::MaxAbsIndex(const dVector& x)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
   return 0;
 }
 
 void BLASInterface::Madd(fVector& v,const fVector& x,float a)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::Madd(dVector& v,const dVector& x,double a)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::InplaceMul(fVector& x,float a)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::InplaceMul(dVector& x,double a)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::Mul(const fMatrix& A,const fVector& x,fVector& out)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::Mul(const dMatrix& A,const dVector& x,dVector& out)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::MulTranspose(const fMatrix& A,const fVector& x,fVector& out)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::MulTranspose(const dMatrix& A,const dVector& x,dVector& out)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 
@@ -380,23 +382,23 @@ bool IsCompliant(const dMatrix& A)
 
 void BLASInterface::Madd(const fMatrix& A,const fVector& x,fVector& y,float alpha,float beta)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::Madd(const dMatrix& A,const dVector& x,dVector& y,double alpha,double beta)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::MaddTranspose(const fMatrix& A,const fVector& x,fVector& y,float alpha,float beta)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 
 void BLASInterface::MaddTranspose(const dMatrix& A,const dVector& x,dVector& y,double alpha,double beta)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 
@@ -404,22 +406,22 @@ void BLASInterface::MaddTranspose(const dMatrix& A,const dVector& x,dVector& y,d
 
 void BLASInterface::Mul(const fMatrix& A,const fMatrix& B,fMatrix& X)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::Mul(const dMatrix& A,const dMatrix& B,dMatrix& X)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::Madd(const fMatrix& A,const fMatrix& B,fMatrix& X,bool Atranspose,bool Btranspose,float alpha,float beta)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 void BLASInterface::Madd(const dMatrix& A,const dMatrix& B,dMatrix& X,bool Atranspose,bool Btranspose,double alpha,double beta)
 {
-  cerr<<"Warning, BLAS not defined"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, BLAS not defined"<<"\n");
 }
 
 

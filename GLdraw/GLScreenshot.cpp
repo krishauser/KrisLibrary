@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GLScreenshot.h"
 #include "GL.h"
 #include "GLError.h"
@@ -46,11 +48,11 @@ bool GLSaveScreenshot(const char* filename)
   glReadPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE,image.data);
   bool errors = CheckGLErrors("SaveScreenshot",false);
   if(errors) return false;
-  //printf("Flipping RGB image...\n");
+  //LOG4CXX_INFO(logger,"Flipping RGB image...\n");
   flipRGBImage(image.data,width,height);
-  //printf("Done, now exporting...\n");
+  //LOG4CXX_INFO(logger,"Done, now exporting...\n");
   return ExportImageGDIPlus(filename,image);
-  //printf("Done, saving screenshot.\n");
+  //LOG4CXX_INFO(logger,"Done, saving screenshot.\n");
   /*
   ImageOperator op(image);
   ImageOperator op2;
@@ -61,7 +63,7 @@ bool GLSaveScreenshot(const char* filename)
   ExportImageGDIPlus(filename,image2);
   */
 #else
-  fprintf(stderr,"Warning, saving screenshot in PPM format...\n");
+    LOG4CXX_ERROR(logger,"Warning, saving screenshot in PPM format...\n");
   return GLSaveScreenshotPPM(filename);
 #endif
 }

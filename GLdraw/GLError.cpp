@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "GLError.h"
 #include <iostream>
 #include <stdio.h>
@@ -23,11 +25,11 @@ bool CheckGLErrors(const char* name,bool pause)
   bool res=false;
   GLenum err;
   while((err=glGetError()) != GL_NO_ERROR) {
-    cout<<name<<" "<<GLErrorString(err)<<endl;
+    LOG4CXX_ERROR(logger,name<<" "<<GLErrorString(err)<<"\n");
     res=true;
   }
   if(res&&pause)
-    getchar();
+    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   return res;
 }
 

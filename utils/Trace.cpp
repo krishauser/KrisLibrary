@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "Trace.h"
 #include <KrisLibrary/myfile.h>
 #include <iostream>
@@ -66,7 +68,7 @@ void Trace::Clear()
 void Trace::ResetTrace()
 {
   if(cur != &root) {
-    cout<<"Trace::ResetLoop: Warning, there looks like an unended call in the trace log"<<endl;
+    LOG4CXX_WARN(logger,"Trace::ResetLoop: Warning, there looks like an unended call in the trace log"<<"\n");
     abort();
   }
   timer.Reset();
@@ -128,7 +130,7 @@ bool Trace::LoadIter(File& f,TraceItem& item,TraceFunctionCall* parent)
     item.text = buf;
     return true;
   }
-  cout<<"Trace::Load(): Wrong type, got "<<type<<endl;
+  LOG4CXX_INFO(logger,"Trace::Load(): Wrong type, got "<<type<<"\n");
   return false;
 }
 
@@ -219,9 +221,11 @@ void Trace::CallFmt(const char* function,const char* fmt,...)
   va_list args;
 	va_start(args, fmt);
 #ifdef _WIN32
-	_vsnprintf(buf, MAXBUF, fmt, args);
+	//_vsn
+	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
 #else
-  vsnprintf(buf, MAXBUF, fmt, args);
+  //vsn
+	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
 #endif
   Call(function,buf);
 }
@@ -248,9 +252,10 @@ void Trace::EndCallFmt(const char* function,const char* fmt,...)
   va_list args;
 	va_start(args, fmt);
 #ifdef _WIN32
-	_vsnprintf(buf, MAXBUF, fmt, args);
+	//_vsn
+	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
 #else
-  vsnprintf(buf, MAXBUF, fmt, args);
+  vsnLOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
 #endif
   EndCall(function,buf);
 }

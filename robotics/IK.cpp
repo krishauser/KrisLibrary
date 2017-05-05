@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "IK.h"
 #include "Rotation.h"
 #include "Geometry.h"
@@ -41,7 +43,7 @@ void IKGoal::SetFixedRotation(const Matrix3& R)
   rotConstraint = RotFixed;
   MomentRotation mR;
   if(!mR.setMatrix(R)) {
-    fprintf(stderr,"IKGoal::SetFixedRotation: matrix does not appear to be a rotation?\n");
+        LOG4CXX_ERROR(logger,"IKGoal::SetFixedRotation: matrix does not appear to be a rotation?\n");
     endRotation.setZero();
     rotConstraint = RotNone;
   }
@@ -103,23 +105,23 @@ void IKGoal::SetFromPoints(const vector<Vector3>& loc,const vector<Vector3>& wor
       SetFixedPosition(-(transpose(Twor.R)*Twor.t));
       SetFixedRotation(R);
 	  /*
-	  cout << "Fitting error " << res << endl;
-      cout<<"Local point rot to common coords: "<<Tloc.R<<endl;
-	  cout << "Local point translation to common coords: " << Tloc.t << endl;
-      cout<<"World point rot to common coords: "<<Twor.R<<endl;
-	  cout << "World point translation to common coords: " << Twor.t << endl;
-	  cout << endl;
-	  cout << "Points in common coordinates:" << endl;
+	  LOG4CXX_ERROR(logger, "Fitting error " << res << "\n");
+      LOG4CXX_INFO(logger,"Local point rot to common coords: "<<Tloc.R<<"\n");
+	  LOG4CXX_INFO(logger, "Local point translation to common coords: " << Tloc.t << "\n");
+      LOG4CXX_INFO(logger,"World point rot to common coords: "<<Twor.R<<"\n");
+	  LOG4CXX_INFO(logger, "World point translation to common coords: " << Twor.t << "\n");
+	  LOG4CXX_INFO(logger, "\n");
+	  LOG4CXX_INFO(logger, "Points in common coordinates:" << "\n");
 	  for (size_t i = 0; i<loc.size(); i++) 
-		  cout << Tloc*loc[i] << " vs " << Twor*wor[i] << " error "<< (Tloc*loc[i]).distance(Twor*wor[i]) << endl;
-	  cout << endl;
-	  cout << "Rotation: " << R << endl;
-	  cout << "local position: " << localPosition << endl;
-	  cout << "world position: " << endPosition << endl;
-	  cout << endl;
-	  cout << "Mapping: " << endl;
+		  LOG4CXX_ERROR(logger, Tloc*loc[i] << " vs " << Twor*wor[i] << " error "<< (Tloc*loc[i]).distance(Twor*wor[i]) << "\n");
+	  LOG4CXX_INFO(logger, "\n");
+	  LOG4CXX_INFO(logger, "Rotation: " << R << "\n");
+	  LOG4CXX_INFO(logger, "local position: " << localPosition << "\n");
+	  LOG4CXX_INFO(logger, "world position: " << endPosition << "\n");
+	  LOG4CXX_INFO(logger, "\n");
+	  LOG4CXX_INFO(logger, "Mapping: " << "\n");
       for(size_t i=0;i<loc.size();i++) {
-	cout<<loc[i]<<" -> "<< R*(loc[i]-localPosition) + endPosition <<" = "<<wor[i]<<endl;
+	LOG4CXX_INFO(logger,loc[i]<<" -> "<< R*(loc[i]-localPosition) + endPosition <<" = "<<wor[i]<<"\n");
       }
 	  */
       if(Abs(cov.z) < tol) {
@@ -239,7 +241,7 @@ void IKGoal::Transform(const RigidTransform& T)
     R = T.R*R;
     Assert(IsFinite(R));
     if(!m.setMatrix(R)) {
-      fprintf(stderr,"IKGoal::Transform: matrix does not appear to be a rotation?\n");
+            LOG4CXX_ERROR(logger,"IKGoal::Transform: matrix does not appear to be a rotation?\n");
       endRotation.setZero();
     }
     else
@@ -260,7 +262,7 @@ void IKGoal::TransformLocal(const RigidTransform& T)
     R.mulTransposeA(T.R,R);
     Assert(IsFinite(R));
     if(!m.setMatrix(R)) {
-      fprintf(stderr,"IKGoal::TransformLocal: matrix does not appear to be a rotation?\n");
+            LOG4CXX_ERROR(logger,"IKGoal::TransformLocal: matrix does not appear to be a rotation?\n");
       endRotation.setZero();
     }
     else
@@ -377,7 +379,7 @@ void IKGoal::GetError(const RigidTransform& Trel,Real poserr[3],Real orierr[3]) 
       orierr[2]=em.z;
     }
     else {
-      fprintf(stderr,"IKGoal::GetError: matrix does not appear to be a rotation?\n");
+            LOG4CXX_ERROR(logger,"IKGoal::GetError: matrix does not appear to be a rotation?\n");
       orierr[0]=orierr[1]=orierr[2] = Inf;
     }
   }
@@ -417,7 +419,7 @@ istream& operator >> (istream& in,IKGoal& data)
     in >> data.localPosition >> data.endPosition;
   }
   else {
-    fprintf(stderr,"IKGoal: invalid position type character %c\n",ptype);
+        LOG4CXX_ERROR(logger,"IKGoal: invalid position type character "<<ptype);
     in.setstate(ios::badbit);
     return in;
   }
@@ -438,7 +440,7 @@ istream& operator >> (istream& in,IKGoal& data)
     in >> data.endRotation;
   }
   else {
-    fprintf(stderr,"IKGoal: invalid rotation type character %c\n",rtype);
+        LOG4CXX_ERROR(logger,"IKGoal: invalid rotation type character "<<rtype);
     in.setstate(ios::badbit);
     return in;
   }

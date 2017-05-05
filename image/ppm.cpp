@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "ppm.h"
 #include "image.h"
 #include <stdio.h>
@@ -125,12 +127,12 @@ int input_int(const vector<char>& data,size_t& readpos,bool& eof)
 bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
 {
   if(image == NULL || m == NULL || n == NULL) {
-    fprintf(stderr,"ReadPPM_RGB: Invalid parameters\n");
+        LOG4CXX_ERROR(logger,"ReadPPM_RGB: Invalid parameters\n");
     return false;
   }
   FILE* f = fopen(file,"rb");
   if(!f) {
-    fprintf(stderr,"ReadPPM_RGB: Couldnt open file %s\n",file);
+        LOG4CXX_ERROR(logger,"ReadPPM_RGB: Couldnt open file "<<file);
     return false;
   }
   vector<char> data;
@@ -140,7 +142,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     data.insert(data.end(),buf+0,buf+MAX_LEN);
   }
   if(ferror(f)) {
-    fprintf(stderr,"ReadPPM_RGB: error reading PPM file\n");
+        LOG4CXX_ERROR(logger,"ReadPPM_RGB: error reading PPM file\n");
     fclose(f);
     return false;
   }
@@ -154,11 +156,11 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
   bool eof = 0;
   tok = input(data,readpos,eof);
   if(tok.length() != 2) {
-    fprintf(stderr,"ReadPPM_RGB: PPM file doesn't begin with PX\n");
+        LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file doesn't begin with PX\n");
     return false;
   }
   if(tok[0] != 'P') {
-    fprintf(stderr,"ReadPPM_RGB: PPM file doesn't begin with PX\n");
+        LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file doesn't begin with PX\n");
     return false;
   }
   if(tok[1] == '6') {
@@ -166,18 +168,18 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     *m = input_int(data,readpos,eof);
     *n = input_int(data,readpos,eof);
     if(*m <= 0 || *n<=0) {
-      fprintf(stderr,"ReadPPM_RGB: PPM file has invalid size %d %d\n",*m,*n);
+            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file has invalid size "<<*m<<" "<<*n);
       return false;
     }
     int maxdepth = input_int(data,readpos,eof);
     if(maxdepth != 255) {
-      fprintf(stderr,"ReadPPM_RGB: PPM file is not 24 bit\n");
+            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file is not 24 bit\n");
       return false;      
     }
     readpos++;
     int size=(*m)*(*n)*3;
     if(readpos+size > data.size()) {
-      fprintf(stderr,"ReadPPM_RGB: error reading PPM file?\n");
+            LOG4CXX_ERROR(logger,"ReadPPM_RGB: error reading PPM file?\n");
       delete [] *image;
       *image = NULL;
       return false;
@@ -192,12 +194,12 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     *m = input_int(data,readpos,eof);
     *n = input_int(data,readpos,eof);
     if(*m <= 0 || *n<=0) {
-      fprintf(stderr,"ReadPPM_RGB: PPM file has invalid size %d %d\n",*m,*n);
+            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file has invalid size "<<*m<<" "<<*n);
       return false;
     }
     int maxdepth = input_int(data,readpos,eof);
     if(maxdepth > 255) {
-      fprintf(stderr,"ReadPPM_RGB: PPM file is more than 24 bit\n");
+            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file is more than 24 bit\n");
       return false;      
     }
     *image = new unsigned char[(*m)*(*n)*3];
@@ -208,7 +210,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
       }
     }
     if(eof) {
-      fprintf(stderr,"ReadPPM_RGB: error reading PPM file?\n");
+            LOG4CXX_ERROR(logger,"ReadPPM_RGB: error reading PPM file?\n");
       delete [] *image;
       *image = NULL;
       return false;
@@ -217,7 +219,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     return true;
   }
   else {
-    fprintf(stderr,"ReadPPM_RGB: PPM file isn't RGB format\n");
+        LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file isn't RGB format\n");
     return false;
   }
   return true;
@@ -225,7 +227,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
 
 bool ReadPPM_Grayscale(unsigned char** image,int* m,int* n,const char* file)
 {
-  fprintf(stderr,"ReadPPM_Grayscale: Not done yet\n");
+    LOG4CXX_ERROR(logger,"ReadPPM_Grayscale: Not done yet\n");
   return false;
 }
 

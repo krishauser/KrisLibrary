@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 //#include "stdafx.h"
 #include "RefPointer.h"
 #include <iostream>
@@ -8,7 +10,7 @@ RefObjectBase::RefObjectBase()
 
 RefObjectBase::~RefObjectBase()
 {
-	if(numRefs != 0) { std::cerr<<"Deleting object without releasing refs"<<std::endl; abort(); }
+	if(numRefs != 0) { LOG4CXX_ERROR(logger,"Deleting object without releasing refs"<<"\n"); abort(); }
 }
 
 void RefObjectBase::Ref()
@@ -24,6 +26,6 @@ void RefObjectBase::Unref()
 
 void RefObjectBase::UnrefNoDelete()
 {
-	if(numRefs <= 0) { std::cerr<<"Unreffing with 0 refs!"<<std::endl; abort(); }
+	if(numRefs <= 0) { LOG4CXX_ERROR(logger,"Unreffing with 0 refs!"<<"\n"); abort(); }
 	numRefs--;
 }

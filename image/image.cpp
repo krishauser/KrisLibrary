@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include <KrisLibrary/myfile.h>
 #include <KrisLibrary/utils.h>
 #include <stdlib.h>
@@ -113,7 +115,7 @@ int Image::initialize(int _w, int _h, PixelFormat _fmt)
 		data = (unsigned char*)malloc(num_bytes);
 		if(!data)
 		{
-		  cerr<<"Error allocating "<<num_bytes<<" bytes"<<endl;
+		  LOG4CXX_ERROR(logger,"Error allocating "<<num_bytes<<" bytes"<<"\n");
 		  return -1;
 		}
 	}
@@ -158,12 +160,12 @@ bool Image::Read(File& f)
 	int hdr,tmp;
 	if(!ReadFile(f, hdr))
 	{
-	  cerr<<"Could not read header"<<endl;
+	  LOG4CXX_ERROR(logger,"Could not read header"<<"\n");
 	  return false;
 	}
 	if(hdr != IMAGEHEADER)
 	{
-	  cerr<<"Invalid header "<<hdr<<endl;
+	  LOG4CXX_ERROR(logger,"Invalid header "<<hdr<<"\n");
 	  return false;
 	}
 
@@ -173,13 +175,13 @@ bool Image::Read(File& f)
 	format = (PixelFormat)tmp;
 	if(initialize(w,h,format) < 0)
 	{
-	  cerr<<"Error initializing image"<<endl;
+	  LOG4CXX_ERROR(logger,"Error initializing image"<<"\n");
 	  return false;
 	}
 
 	if(!f.ReadData(data, num_bytes))
 	{
-	  cerr<<"Could not read texture"<<endl;
+	  LOG4CXX_ERROR(logger,"Could not read texture"<<"\n");
 	  unload();
 	  return false;
 	}
@@ -380,7 +382,7 @@ int countMipLevels(unsigned int w, unsigned int h)
 		mask=mask<<1;
 		if(!(minsize&mask)) return i;
 	}
-	cerr<<"Cant have more than 32 mip levels... something's fishy"<<endl;
+	LOG4CXX_ERROR(logger,"Cant have more than 32 mip levels... something's fishy"<<"\n");
 	abort();
 	return i;
 }
@@ -402,7 +404,7 @@ unsigned char* shrink_texture_boxfilter(const unsigned char* src, int w, int h, 
 	int size=w2*h2*pixelsize;
 	unsigned char* shrunken = new unsigned char[size];
 	if(!shrunken) {
-	  cerr<<"Not enough memory to allocate shrunken bitmap?"<<endl;
+	  LOG4CXX_ERROR(logger,"Not enough memory to allocate shrunken bitmap?"<<"\n");
 	  abort();
 	}
 	unsigned char* dest = shrunken;
@@ -458,7 +460,7 @@ void ImageMipmapped::createMipmaps()
 	mipmap_data = new unsigned char* [num_mipmap_levels];
 	if(!mipmap_data)
 	{
-	  cerr<<"Not enough memory to create mipmap bits?"<<endl;
+	  LOG4CXX_ERROR(logger,"Not enough memory to create mipmap bits?"<<"\n");
 	  mipmap_data = 0;
 	  return;
 	}

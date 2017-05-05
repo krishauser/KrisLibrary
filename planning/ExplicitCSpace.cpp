@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "ExplicitCSpace.h"
 using namespace std;
 
@@ -337,14 +339,14 @@ EdgePlanner* BisectionEpsilonExplicitEdgePlanner::Copy() const
     return p;
   }
   if(!Done()) {
-    cout<<"Warning: making a copy of a bisection edge planner that is not done!"<<endl;
+    LOG4CXX_WARN(logger,"Warning: making a copy of a bisection edge planner that is not done!"<<"\n");
     Segment s;
     s.prev = p->path.begin();
     s.length = space->Distance(path.front(),path.back());
     p->q.push(s);
     Assert(!p->Done());
-    //cout<<"Press any key to continue..."<<endl;
-    //getchar();
+    //LOG4CXX_INFO(logger,"Press any key to continue..."<<"\n");
+    //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   return p;
 }
@@ -385,15 +387,15 @@ bool BisectionEpsilonExplicitEdgePlanner::PlanAll()
      Real(q.size())*epsilon > 4.0*space->Distance(Start(),Goal())) {
     s.length = Inf;
     q.push(s);
-    cout<<"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<endl;
-    cout<<"Original length "<<space->Distance(Start(),Goal())<<", epsilon "<<epsilon<<endl;
+    LOG4CXX_INFO(logger,"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<"\n");
+    LOG4CXX_INFO(logger,"Original length "<<space->Distance(Start(),Goal())<<", epsilon "<<epsilon<<"\n");
     return false;
   }
   //insert the split segments back in the queue
   Real l1=space->Distance(*a,x);
   Real l2=space->Distance(x,*b);
   if(l1 > 0.9*s.length || l2 > 0.9*s.length) {
-    //printf("Midpoint exceeded 0.9 time segment distance\n");
+    //LOG4CXX_INFO(logger,"Midpoint exceeded 0.9 time segment distance\n");
     s.length = Inf;
     q.push(s);
     return false;
@@ -424,15 +426,15 @@ bool BisectionEpsilonExplicitEdgePlanner::Plan()
      Real(q.size())*epsilon > 4.0*space->Distance(Start(),Goal())) {
     s.length = Inf;
     q.push(s);
-    cout<<"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<endl;
-    cout<<"Original length "<<space->Distance(Start(),Goal())<<", epsilon "<<epsilon<<endl;
+    LOG4CXX_INFO(logger,"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<"\n");
+    LOG4CXX_INFO(logger,"Original length "<<space->Distance(Start(),Goal())<<", epsilon "<<epsilon<<"\n");
     return false;
   }
   //insert the split segments back in the queue
   Real l1=space->Distance(*a,x);
   Real l2=space->Distance(x,*b);
   if(l1 > 0.9*s.length || l2 > 0.9*s.length) {
-    //printf("Midpoint exceeded 0.9 time segment distance\n");
+    //LOG4CXX_INFO(logger,"Midpoint exceeded 0.9 time segment distance\n");
     s.length = Inf;
     q.push(s);
     return false;

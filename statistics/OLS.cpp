@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "OLS.h"
 #include <math/linalgebra.h>
 #include <math/LDL.h>
@@ -106,12 +108,12 @@ bool LeastSquares1D::SolvePerpendicular()
   }
   Real den = (x.n*xmean*ymean - dot(x,y));
   if(FuzzyZero(den)) {
-    cerr<<"Warning, denominator is close to zero"<<endl;
+    LOG4CXX_ERROR(logger,"Warning, denominator is close to zero"<<"\n");
   }
   Real B = (syy - sxx) / den;
   a = -B + Sqrt(Sqr(B)+1);
   b = ymean - xmean*b;
-  cerr<<"Warning, don't know how to calculate std errors for perpendicular least-squares"<<endl;
+  LOG4CXX_ERROR(logger,"Warning, don't know how to calculate std errors for perpendicular least-squares"<<"\n");
   stda = stdb = 0;
   corrCoeff = 1;
   return true;
@@ -145,8 +147,8 @@ bool LeastSquares(const Matrix& data,const Vector& outcome,
   ldl.set(A);
   ldl.backSub(b,c);
   /*  {
-    cout<<"Cholesky didn't succeed!"<<endl;
-    cout<<"Matrix: "<<endl<<MatrixPrinter(A)<<endl;
+    LOG4CXX_INFO(logger,"Cholesky didn't succeed!"<<"\n");
+    LOG4CXX_INFO(logger,"Matrix: "<<"\n"<<MatrixPrinter(A)<<"\n");
     return false;
   }
   */

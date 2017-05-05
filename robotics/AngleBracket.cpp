@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "AngleBracket.h"
 #include <math/misc.h>
 #include <math3d/basis.h>
@@ -17,19 +19,19 @@ AngleInterval AngleBracket_1D_Disk(Real p, Real c, Real r)
   //if the circle and disk don't intersect, return empty set
   else if(!(Abs(c) <= r+p) || !(p <= Abs(c)+r)) { //this takes care of NAN's
     i.setEmpty();
-    //cout<<"AngleBracket_1D_Disk: Empty"<<endl;
-    //cout<<i.c<<" -> "<<i.d<<endl;
+    //LOG4CXX_INFO(logger,"AngleBracket_1D_Disk: Empty"<<"\n");
+    //LOG4CXX_INFO(logger,i.c<<" -> "<<i.d<<"\n");
   }
   else {   //otherwise, calculate the intersection
     Real t = (p*p-r*r+c*c)*Half/c;
     if(!(Abs(t) <= Abs(p))) {
-      printf("ERROR!: calculated t=%f, p=%f, c=%f, r=%f\n",t,p,c,r);
+      LOG4CXX_ERROR(logger,"ERROR!: calculated t="<<t<<", p="<<p<<", c="<<c<<", r="<<r);
     }
     Assert(Abs(t) <= Abs(p));
     Assert(Abs(t) != Zero);
     Real theta = Acos(t/p);
     i.setRange(-theta,theta);
-    //printf("calculated theta=%f\n",theta);
+    //LOG4CXX_INFO(logger,"calculated theta="<<theta);
   }
   return i;
 }
@@ -47,8 +49,8 @@ AngleInterval AngleBracket_2D_Disk(const Vector2& p, const Vector2& c, Real r)
     else {
       i.setEmpty();
       i.d = 0;
-      //cout<<"AngleBracket_2D_Disk: Empty 1"<<endl;
-      //cout<<i.c<<" -> "<<i.d<<endl;
+      //LOG4CXX_INFO(logger,"AngleBracket_2D_Disk: Empty 1"<<"\n");
+      //LOG4CXX_INFO(logger,i.c<<" -> "<<i.d<<"\n");
     }
     return i;
   }
@@ -58,8 +60,8 @@ AngleInterval AngleBracket_2D_Disk(const Vector2& p, const Vector2& c, Real r)
     else {
       i.setEmpty();
       i.d = 0;
-      //cout<<"AngleBracket_2D_Disk: Empty 2"<<endl;
-      //cout<<i.c<<" -> "<<i.d<<endl;
+      //LOG4CXX_INFO(logger,"AngleBracket_2D_Disk: Empty 2"<<"\n");
+      //LOG4CXX_INFO(logger,i.c<<" -> "<<i.d<<"\n");
     }
     return i;
   }
@@ -71,9 +73,9 @@ AngleInterval AngleBracket_2D_Disk(const Vector2& p, const Vector2& c, Real r)
       i.inplaceShift(ctheta-ptheta);
     else {
       i.d=ctheta-ptheta;
-      //cout<<"AngleBracket_2D_Disk: Empty 3"<<endl;
-      //cout<<i.c<<" -> "<<i.d<<endl;
-      //cout<<"p: "<<p<<", c: "<<c<<endl;
+      //LOG4CXX_INFO(logger,"AngleBracket_2D_Disk: Empty 3"<<"\n");
+      //LOG4CXX_INFO(logger,i.c<<" -> "<<i.d<<"\n");
+      //LOG4CXX_INFO(logger,"p: "<<p<<", c: "<<c<<"\n");
     }
     return i;
   }
@@ -82,12 +84,12 @@ AngleInterval AngleBracket_2D_Disk(const Vector2& p, const Vector2& c, Real r)
 //p rotates around the z axis.  The ball B is centered at c, with radius r.
 AngleInterval AngleBracket_3D_Ball(const Vector3& p, const Vector3& c, Real r)
 {
-  //cout<<"3d ball bracket around z: "<<p<<", "<<c<<", "<<r<<endl;
+  //LOG4CXX_INFO(logger,"3d ball bracket around z: "<<p<<", "<<c<<", "<<r<<"\n");
   Real d = c.z-p.z;
   if(Abs(d) > r) {
     AngleInterval i;
     i.setEmpty();
-    //cout<<"AngleBracket_3D_Ball: Empty 3"<<endl;
+    //LOG4CXX_INFO(logger,"AngleBracket_3D_Ball: Empty 3"<<"\n");
     if(c.x==0 && c.y==0)
       i.d=0;
     else if(p.x==0 && p.y==0)
@@ -97,12 +99,12 @@ AngleInterval AngleBracket_3D_Ball(const Vector3& p, const Vector3& c, Real r)
       Real ctheta = Atan2(c.y,c.x);
       i.d=ctheta-ptheta;
     }
-    //cout<<i.c<<" -> "<<i.d<<endl;
+    //LOG4CXX_INFO(logger,i.c<<" -> "<<i.d<<"\n");
     return i;
   }
   //slice the sphere with the x,y plane through p.z
   Real r2 = pythag_leg(d,r);
-  //cout<<"r2 "<<r2<<endl;
+  //LOG4CXX_INFO(logger,"r2 "<<r2<<"\n");
   return AngleBracket_2D_Disk(Vector2(p.x,p.y),Vector2(c.x,c.y),r2);
 }
 
@@ -128,7 +130,7 @@ AngleInterval AngleBracket_3D_Ball(const Vector3& p, int axis, const Vector3& c,
   case 2:
     return AngleBracket_3D_Ball(p,c,r);
   default:
-    printf("Error: Invalid axis %d\n", axis);
+    LOG4CXX_ERROR(logger,"Error: Invalid axis "<< axis);
     break;
   }
   AngleInterval empty; empty.setEmpty();

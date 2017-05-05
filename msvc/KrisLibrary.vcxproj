@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGUID>{EF1CE3B7-34EE-4E67-B882-A7B6B6D49426}</ProjectGUID>
+    <ProjectGUID>{E72D18C2-287E-4B73-85ED-5AF0B5FBCA67}</ProjectGUID>
     <Keyword>Win32Proj</Keyword>
     <Platform>Win32</Platform>
     <ProjectName>KrisLibrary</ProjectName>
@@ -29,21 +29,25 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -54,26 +58,30 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Code\Klampt\Library\KrisLibrary\lib\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Code\KrisLibrary\lib\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">KrisLibrary.dir\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">KrisLibrary</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\Code\Klampt\Library\KrisLibrary\lib\Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\Code\KrisLibrary\lib\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">KrisLibrary.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">KrisLibrary</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:\Code\Klampt\Library\KrisLibrary\lib\MinSizeRel\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:\Code\KrisLibrary\lib\MinSizeRel\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">KrisLibrary.dir\MinSizeRel\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">KrisLibrary</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Code\Klampt\Library\KrisLibrary\lib\RelWithDebInfo\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Code\KrisLibrary\lib\RelWithDebInfo\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">KrisLibrary.dir\RelWithDebInfo\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">KrisLibrary</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.lib</TargetExt>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Logging\apache-log4cxx-0.10.0\projects\Release;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -85,15 +93,15 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -103,7 +111,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;C:\Logging\apache-log4cxx-0.10.0\src\main\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -113,17 +121,17 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -133,7 +141,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -143,17 +151,17 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -163,7 +171,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -174,15 +182,15 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;BOOST_ALL_NO_LIB;Boost_NO_BOOST_CMAKE;BOOST_TEST_DYN_LINK;USE_BOOST_THREADS=1;HAVE_GLUI=1;HAVE_GLUT=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLUT=1;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Code\Klampt\Library\KrisLibrary;C:\Code\Klampt\Library\KrisLibrary\..;C:\boost_1_54_0;C:\Code\Klampt\Library\glui-2.36\src\include;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include;C:\Code\Klampt\Library\glpk-4.52\src;C:\Code\Klampt\Library\tinyxml;C:\Code\Klampt\Library\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Code\KrisLibrary;C:\Code\KrisLibrary\..;C:\Code\Klampt\Library\freeglut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -191,10 +199,10 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="..\CMakeLists.txt">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Custom Rule C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt</Message>
+    <CustomBuild Include="C:\Code\KrisLibrary\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Custom Rule C:/Code/KrisLibrary/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">setlocal
-"C:\Program Files (x86)\CMake 2.8\bin\cmake.exe" -HC:/Code/Klampt/Library/KrisLibrary -BC:/Code/Klampt/Library/KrisLibrary/msvc --check-stamp-file C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Code/KrisLibrary -BC:/Code/KrisLibrary/msvc --check-stamp-file C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -202,11 +210,12 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeSystem.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCCompiler.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindBoost.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLPK.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\doxygen.conf.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPack.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:/Code/KrisLibrary/CMakeLists.txt;C:\Code\KrisLibrary\CMakeLists.txt;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCCompiler.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Code\KrisLibrary\CMakeModules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckIncludeFile.cxx.in;C:\Code\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPack.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Code\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule C:/Code/KrisLibrary/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
-"C:\Program Files (x86)\CMake 2.8\bin\cmake.exe" -HC:/Code/Klampt/Library/KrisLibrary -BC:/Code/Klampt/Library/KrisLibrary/msvc --check-stamp-file C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Code/KrisLibrary -BC:/Code/KrisLibrary/msvc --check-stamp-file C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -214,11 +223,12 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeSystem.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCCompiler.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindBoost.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLPK.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\doxygen.conf.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPack.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:/Code/KrisLibrary/CMakeLists.txt;C:\Code\KrisLibrary\CMakeLists.txt;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCCompiler.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Code\KrisLibrary\CMakeModules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckIncludeFile.cxx.in;C:\Code\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPack.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Code\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule C:/Code/KrisLibrary/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">setlocal
-"C:\Program Files (x86)\CMake 2.8\bin\cmake.exe" -HC:/Code/Klampt/Library/KrisLibrary -BC:/Code/Klampt/Library/KrisLibrary/msvc --check-stamp-file C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Code/KrisLibrary -BC:/Code/KrisLibrary/msvc --check-stamp-file C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -226,11 +236,12 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeSystem.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCCompiler.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindBoost.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLPK.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\doxygen.conf.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPack.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt</Message>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:/Code/KrisLibrary/CMakeLists.txt;C:\Code\KrisLibrary\CMakeLists.txt;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCCompiler.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Code\KrisLibrary\CMakeModules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckIncludeFile.cxx.in;C:\Code\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPack.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Code\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule C:/Code/KrisLibrary/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
-"C:\Program Files (x86)\CMake 2.8\bin\cmake.exe" -HC:/Code/Klampt/Library/KrisLibrary -BC:/Code/Klampt/Library/KrisLibrary/msvc --check-stamp-file C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Code/KrisLibrary -BC:/Code/KrisLibrary/msvc --check-stamp-file C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -238,327 +249,336 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:/Code/Klampt/Library/KrisLibrary/CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeSystem.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCCompiler.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\2.8.12.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindBoost.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindGLPK.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeParseArguments.cmake;C:\Code\Klampt\Library\KrisLibrary\doxygen.conf.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPack.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Templates\CPackConfig.cmake.in;C:\Code\Klampt\Library\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Code\Klampt\Library\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:/Code/KrisLibrary/CMakeLists.txt;C:\Code\KrisLibrary\CMakeLists.txt;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInitialize.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCCompiler.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeCXXCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeGenericSystem.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\WindowsPaths.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Code\KrisLibrary\msvc\CMakeFiles\3.2.2\CMakeRCCompiler.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeRCInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCXXInformation.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\Platform\Windows-MSVC.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCommonLanguageInclude.cmake;C:\Code\KrisLibrary\CMakeModules\CompilerSettings.cmake;C:\Code\KrisLibrary\CMakeModules\KrisLibraryDependencies.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Code\KrisLibrary\CMakeModules\CheckIncludeFileCXX.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CheckIncludeFile.cxx.in;C:\Code\KrisLibrary\CMakeModules\FindGLUI.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindGLUT.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindOpenGL.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindTinyXML.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\FindAssimp.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindDoxygen.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\FindPackageMessage.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CMakeParseArguments.cmake;C:\Code\KrisLibrary\CMakeModules\CMakeUninstall.cmake.in;C:\Code\KrisLibrary\CMakeModules\CPackSettings.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPack.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Modules\CPackComponent.cmake;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Program Files (x86)\CMake\share\cmake-3.2\Templates\CPackConfig.cmake.in;C:\Code\KrisLibrary\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Code\KrisLibrary\msvc\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\errors.cpp" />
-    <ClCompile Include="..\myfile.cpp" />
-    <ClCompile Include="..\Timer.cpp" />
-    <ClCompile Include="..\camera\camera.cpp" />
-    <ClCompile Include="..\camera\clip.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\errors.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\myfile.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\Timer.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\camera\camera.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\camera\clip.cpp">
       <ObjectFileName>$(IntDir)/camera/clip.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\camera\frustum.cpp" />
-    <ClCompile Include="..\camera\transform.cpp" />
-    <ClCompile Include="..\camera\viewport.cpp" />
-    <ClCompile Include="..\geometry\AnyGeometry.cpp" />
-    <ClCompile Include="..\geometry\Arrangement1D.cpp" />
-    <ClCompile Include="..\geometry\CollisionMesh.cpp" />
-    <ClCompile Include="..\geometry\CollisionPointCloud.cpp" />
-    <ClCompile Include="..\geometry\ConvexHull2D.cpp" />
-    <ClCompile Include="..\geometry\Fitting.cpp" />
-    <ClCompile Include="..\geometry\Grid.cpp" />
-    <ClCompile Include="..\geometry\GridSubdivision.cpp" />
-    <ClCompile Include="..\geometry\KDTree.cpp" />
-    <ClCompile Include="..\geometry\MonotoneChain.cpp" />
-    <ClCompile Include="..\geometry\NeighborGraph.cpp" />
-    <ClCompile Include="..\geometry\Octree.cpp" />
-    <ClCompile Include="..\geometry\PenetrationDepth.cpp" />
-    <ClCompile Include="..\geometry\PolytopeProjection.cpp" />
-    <ClCompile Include="..\geometry\SegmentOverlay.cpp" />
-    <ClCompile Include="..\geometry\UnboundedPolytope2D.cpp" />
-    <ClCompile Include="..\GLdraw\ColorGradient.cpp" />
-    <ClCompile Include="..\GLdraw\drawextra.cpp" />
-    <ClCompile Include="..\GLdraw\drawgeometry.cpp" />
-    <ClCompile Include="..\GLdraw\GeometryAppearance.cpp" />
-    <ClCompile Include="..\GLdraw\GLColor.cpp" />
-    <ClCompile Include="..\GLdraw\GLDisplayList.cpp" />
-    <ClCompile Include="..\GLdraw\GLError.cpp" />
-    <ClCompile Include="..\GLdraw\GLFog.cpp" />
-    <ClCompile Include="..\GLdraw\GLLight.cpp" />
-    <ClCompile Include="..\GLdraw\GLMaterial.cpp" />
-    <ClCompile Include="..\GLdraw\GLScreenshot.cpp" />
-    <ClCompile Include="..\GLdraw\GLTexture1D.cpp" />
-    <ClCompile Include="..\GLdraw\GLTexture2D.cpp" />
-    <ClCompile Include="..\GLdraw\GLTextureObject.cpp" />
-    <ClCompile Include="..\GLdraw\GLUINavigationProgram.cpp" />
-    <ClCompile Include="..\GLdraw\GLUIProgram.cpp" />
-    <ClCompile Include="..\GLdraw\GLUTNavigationProgram.cpp" />
-    <ClCompile Include="..\GLdraw\GLUTProgram.cpp" />
-    <ClCompile Include="..\GLdraw\GLView.cpp" />
-    <ClCompile Include="..\GLdraw\TransformWidget.cpp" />
-    <ClCompile Include="..\image\bmp.cpp" />
-    <ClCompile Include="..\image\gdi.cpp" />
-    <ClCompile Include="..\image\image.cpp" />
-    <ClCompile Include="..\image\import.cpp" />
-    <ClCompile Include="..\image\ppm.cpp" />
-    <ClCompile Include="..\image\textureops.cpp" />
-    <ClCompile Include="..\image\tga.cpp" />
-    <ClCompile Include="..\math\AABB.cpp" />
-    <ClCompile Include="..\math\angle.cpp" />
-    <ClCompile Include="..\math\AngleSet.cpp" />
-    <ClCompile Include="..\math\ASCIIShade.cpp" />
-    <ClCompile Include="..\math\backsubstitute.cpp" />
-    <ClCompile Include="..\math\BLASInterface.cpp" />
-    <ClCompile Include="..\math\BlockPrinter.cpp" />
-    <ClCompile Include="..\math\BlockTridiagonalMatrix.cpp" />
-    <ClCompile Include="..\math\BlockVector.cpp" />
-    <ClCompile Include="..\math\brent.cpp" />
-    <ClCompile Include="..\math\CholeskyDecomposition.cpp" />
-    <ClCompile Include="..\math\complex.cpp" />
-    <ClCompile Include="..\math\ConditionedConstraint.cpp" />
-    <ClCompile Include="..\math\Conditioner.cpp" />
-    <ClCompile Include="..\math\DiagonalMatrix.cpp" />
-    <ClCompile Include="..\math\diffeq.cpp" />
-    <ClCompile Include="..\math\differentiation.cpp" />
-    <ClCompile Include="..\math\function.cpp" />
-    <ClCompile Include="..\math\gaussian.cpp" />
-    <ClCompile Include="..\math\GramSchmidt.cpp" />
-    <ClCompile Include="..\math\Householder.cpp" />
-    <ClCompile Include="..\math\InequalityConstraint.cpp" />
-    <ClCompile Include="..\math\infnan.cpp" />
-    <ClCompile Include="..\math\IntervalSet.cpp" />
-    <ClCompile Include="..\math\LAPACKInterface.cpp" />
-    <ClCompile Include="..\math\LDL.cpp" />
-    <ClCompile Include="..\math\linalgebra.cpp" />
-    <ClCompile Include="..\math\LinearlyDependent.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\camera\frustum.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\camera\transform.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\camera\viewport.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\AnyGeometry.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Arrangement1D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\CollisionMesh.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\CollisionPointCloud.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\ConvexHull2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Fitting.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Grid.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\GridSubdivision.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\KDTree.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\MonotoneChain.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\NeighborGraph.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\Octree.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PenetrationDepth.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PolytopeProjection.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\SegmentOverlay.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\UnboundedPolytope2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\ColorGradient.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\drawextra.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\drawgeometry.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GeometryAppearance.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLColor.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLDisplayList.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLError.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLFog.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLLight.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLMaterial.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLScreenshot.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLTexture1D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLTexture2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLTextureObject.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUINavigationProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUIProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUTNavigationProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLUTProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\GLView.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\GLdraw\TransformWidget.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\graph\IO.cpp">
+      <ObjectFileName>$(IntDir)/graph/IO.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="C:\Code\KrisLibrary\image\bmp.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\image\gdi.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\image\image.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\image\import.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\image\ppm.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\image\textureops.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\image\tga.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\AABB.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\angle.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\AngleSet.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\ASCIIShade.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\backsubstitute.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\BLASInterface.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\BlockPrinter.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\BlockTridiagonalMatrix.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\BlockVector.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\brent.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\CholeskyDecomposition.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\complex.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\ConditionedConstraint.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\Conditioner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\DiagonalMatrix.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\diffeq.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\differentiation.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\function.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\gaussian.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\GramSchmidt.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\Householder.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\InequalityConstraint.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\infnan.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\IntervalSet.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\LAPACKInterface.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\LDL.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\linalgebra.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\LinearlyDependent.cpp">
       <ObjectFileName>$(IntDir)/math/LinearlyDependent.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\math\LinearPath.cpp" />
-    <ClCompile Include="..\math\LUDecomposition.cpp" />
-    <ClCompile Include="..\math\MatrixEquationPrinter.cpp" />
-    <ClCompile Include="..\math\MatrixPrinter.cpp" />
-    <ClCompile Include="..\math\MatrixTemplate.cpp" />
-    <ClCompile Include="..\math\metric.cpp" />
-    <ClCompile Include="..\math\misc.cpp" />
-    <ClCompile Include="..\math\QRDecomposition.cpp" />
-    <ClCompile Include="..\math\quadrature.cpp" />
-    <ClCompile Include="..\math\QuasiNewton.cpp" />
-    <ClCompile Include="..\math\random.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\LinearPath.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\LUDecomposition.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\MatrixEquationPrinter.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\MatrixPrinter.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\MatrixTemplate.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\metric.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\misc.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\QRDecomposition.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\quadrature.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\QuasiNewton.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\random.cpp">
       <ObjectFileName>$(IntDir)/math/random.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\math\realfunction.cpp" />
-    <ClCompile Include="..\math\root.cpp" />
-    <ClCompile Include="..\math\RowEchelon.cpp" />
-    <ClCompile Include="..\math\sample.cpp" />
-    <ClCompile Include="..\math\SelfTest.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\realfunction.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\root.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\RowEchelon.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\sample.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\SelfTest.cpp">
       <ObjectFileName>$(IntDir)/math/SelfTest.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\math\SparseMatrixTemplate.cpp" />
-    <ClCompile Include="..\math\SparseVectorTemplate.cpp" />
-    <ClCompile Include="..\math\SVDecomposition.cpp" />
-    <ClCompile Include="..\math\vectorfunction.cpp" />
-    <ClCompile Include="..\math\VectorPrinter.cpp" />
-    <ClCompile Include="..\math\VectorTemplate.cpp" />
-    <ClCompile Include="..\math3d\AABB2D.cpp" />
-    <ClCompile Include="..\math3d\AABB3D.cpp" />
-    <ClCompile Include="..\math3d\Box3D.cpp" />
-    <ClCompile Include="..\math3d\Circle3D.cpp" />
-    <ClCompile Include="..\math3d\clip.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math\SparseMatrixTemplate.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\SparseVectorTemplate.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\SVDecomposition.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\vectorfunction.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\VectorPrinter.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math\VectorTemplate.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\AABB2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\AABB3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Box3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Circle3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\clip.cpp">
       <ObjectFileName>$(IntDir)/math3d/clip.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\math3d\Cylinder3D.cpp" />
-    <ClCompile Include="..\math3d\geometry2d.cpp" />
-    <ClCompile Include="..\math3d\geometry3d.cpp" />
-    <ClCompile Include="..\math3d\interpolate.cpp" />
-    <ClCompile Include="..\math3d\Line2D.cpp" />
-    <ClCompile Include="..\math3d\Line3D.cpp" />
-    <ClCompile Include="..\math3d\LinearAlgebra.cpp" />
-    <ClCompile Include="..\math3d\LinearlyDependent.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Cylinder3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\geometry2d.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\geometry3d.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\interpolate.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Line2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Line3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LinearAlgebra.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LinearlyDependent.cpp">
       <ObjectFileName>$(IntDir)/math3d/LinearlyDependent.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\math3d\LocalCoordinates2D.cpp" />
-    <ClCompile Include="..\math3d\LocalCoordinates3D.cpp" />
-    <ClCompile Include="..\math3d\Plane3D.cpp" />
-    <ClCompile Include="..\math3d\polar.cpp" />
-    <ClCompile Include="..\math3d\Polygon2D.cpp" />
-    <ClCompile Include="..\math3d\Polygon3D.cpp" />
-    <ClCompile Include="..\math3d\Polyhedron3D.cpp" />
-    <ClCompile Include="..\math3d\primitives.cpp" />
-    <ClCompile Include="..\math3d\quatinline.cpp" />
-    <ClCompile Include="..\math3d\random.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LocalCoordinates2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\LocalCoordinates3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Plane3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\polar.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Polygon2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Polygon3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Polyhedron3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\primitives.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\quatinline.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\random.cpp">
       <ObjectFileName>$(IntDir)/math3d/random.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\math3d\Ray3D.cpp" />
-    <ClCompile Include="..\math3d\rotation.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Ray3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\rotation.cpp">
       <ObjectFileName>$(IntDir)/math3d/rotation.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\math3d\rotationfit.cpp" />
-    <ClCompile Include="..\math3d\Segment2D.cpp" />
-    <ClCompile Include="..\math3d\Segment3D.cpp" />
-    <ClCompile Include="..\math3d\Triangle2D.cpp" />
-    <ClCompile Include="..\math3d\Triangle3D.cpp" />
-    <ClCompile Include="..\meshing\ClosestPoint.cpp" />
-    <ClCompile Include="..\meshing\Expand.cpp" />
-    <ClCompile Include="..\meshing\Geodesic.cpp" />
-    <ClCompile Include="..\meshing\IO.cpp" />
-    <ClCompile Include="..\meshing\LSConformalMapping.cpp" />
-    <ClCompile Include="..\meshing\MarchingCubes.cpp" />
-    <ClCompile Include="..\meshing\Meshing.cpp" />
-    <ClCompile Include="..\meshing\MeshPrimitives.cpp" />
-    <ClCompile Include="..\meshing\PointCloud.cpp" />
-    <ClCompile Include="..\meshing\Rasterize.cpp" />
-    <ClCompile Include="..\meshing\TriMesh.cpp" />
-    <ClCompile Include="..\meshing\TriMeshOperators.cpp" />
-    <ClCompile Include="..\meshing\TriMeshTopology.cpp" />
-    <ClCompile Include="..\meshing\VolumeGrid.cpp" />
-    <ClCompile Include="..\meshing\Voxelize.cpp" />
-    <ClCompile Include="..\optimization\BoundedLSQRSolver.cpp" />
-    <ClCompile Include="..\optimization\GLPKInterface.cpp" />
-    <ClCompile Include="..\optimization\LCP.cpp" />
-    <ClCompile Include="..\optimization\LeastSquares.cpp" />
-    <ClCompile Include="..\optimization\LinearProgram.cpp" />
-    <ClCompile Include="..\optimization\LPOptimumFunction.cpp" />
-    <ClCompile Include="..\optimization\LPRobust.cpp" />
-    <ClCompile Include="..\optimization\LP_InteriorPoint.cpp" />
-    <ClCompile Include="..\optimization\lsqr.cpp" />
-    <ClCompile Include="..\optimization\LSQRInterface.cpp" />
-    <ClCompile Include="..\optimization\Minimization.cpp" />
-    <ClCompile Include="..\optimization\MinNormProblem.cpp" />
-    <ClCompile Include="..\optimization\Newton.cpp" />
-    <ClCompile Include="..\optimization\NewtonSolver.cpp" />
-    <ClCompile Include="..\optimization\NonlinearProgram.cpp" />
-    <ClCompile Include="..\optimization\QuadProgPPInterface.cpp" />
-    <ClCompile Include="..\optimization\QuadraticProgram.cpp" />
-    <ClCompile Include="..\optimization\RegularizedLinearProgram.cpp" />
-    <ClCompile Include="..\optimization\SelfTest.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\rotationfit.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Segment2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Segment3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Triangle2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\math3d\Triangle3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\ClosestPoint.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Expand.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Geodesic.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\IO.cpp">
+      <ObjectFileName>$(IntDir)/meshing/IO.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\LSConformalMapping.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\MarchingCubes.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Meshing.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\MeshPrimitives.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\PointCloud.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Rasterize.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\TriMesh.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\TriMeshOperators.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\TriMeshTopology.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\VolumeGrid.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\meshing\Voxelize.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\BoundedLSQRSolver.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\GLPKInterface.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LCP.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LeastSquares.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LinearProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LPOptimumFunction.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LPRobust.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LP_InteriorPoint.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\lsqr.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\LSQRInterface.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\Minimization.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\MinNormProblem.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\Newton.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\NewtonSolver.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\NonlinearProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\QuadProgPPInterface.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\QuadraticProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\RegularizedLinearProgram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\optimization\SelfTest.cpp">
       <ObjectFileName>$(IntDir)/optimization/SelfTest.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\planning\AnyMotionPlanner.cpp" />
-    <ClCompile Include="..\planning\CSpace.cpp" />
-    <ClCompile Include="..\planning\CSpaceAnalysis.cpp" />
-    <ClCompile Include="..\planning\CVSpace.cpp" />
-    <ClCompile Include="..\planning\DisplacementPlanner.cpp" />
-    <ClCompile Include="..\planning\EdgePlanner.cpp" />
-    <ClCompile Include="..\planning\ExplicitCSpace.cpp" />
-    <ClCompile Include="..\planning\FMM.cpp" />
-    <ClCompile Include="..\planning\FMMMotionPlanner.cpp" />
-    <ClCompile Include="..\planning\GeneralizedBezierCurve.cpp" />
-    <ClCompile Include="..\planning\Geometric2DCSpace.cpp" />
-    <ClCompile Include="..\planning\Grid2DCSpace.cpp" />
-    <ClCompile Include="..\planning\KinodynamicCSpace.cpp" />
-    <ClCompile Include="..\planning\KinodynamicMotionPlanner.cpp" />
-    <ClCompile Include="..\planning\KinodynamicPath.cpp" />
-    <ClCompile Include="..\planning\MCRPlanner.cpp" />
-    <ClCompile Include="..\planning\MCRPlannerGoalSet.cpp" />
-    <ClCompile Include="..\planning\MotionPlanner.cpp" />
-    <ClCompile Include="..\planning\MultiModalPlanner.cpp" />
-    <ClCompile Include="..\planning\MultiRobot2DCSpace.cpp" />
-    <ClCompile Include="..\planning\OptimalMotionPlanner.cpp" />
-    <ClCompile Include="..\planning\Path.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\AnyMotionPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\CSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\CSpaceAnalysis.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\CVSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\DisplacementPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\EdgePlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\ExplicitCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\FMM.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\FMMMotionPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\GeneralizedBezierCurve.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\Geometric2DCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\Grid2DCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\KinodynamicCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\KinodynamicMotionPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\KinodynamicPath.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MCRPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MCRPlannerGoalSet.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MotionPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MultiModalPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\MultiRobot2DCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\OMPLInterface.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\OptimalMotionPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\Path.cpp">
       <ObjectFileName>$(IntDir)/planning/Path.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\planning\PerturbationCSpace.cpp" />
-    <ClCompile Include="..\planning\PointLocation.cpp" />
-    <ClCompile Include="..\planning\RigidRobot2DCSpace.cpp" />
-    <ClCompile Include="..\planning\SBL.cpp" />
-    <ClCompile Include="..\planning\SBLTree.cpp" />
-    <ClCompile Include="..\planning\SpaceTimeCSpace.cpp" />
-    <ClCompile Include="..\planning\TimedPath.cpp" />
-    <ClCompile Include="..\planning\TranslatingRobot2DCSpace.cpp" />
-    <ClCompile Include="..\planning\VisibilityGraphPlanner.cpp" />
-    <ClCompile Include="..\robotics\AnalyticIK.cpp" />
-    <ClCompile Include="..\robotics\AngleBracket.cpp" />
-    <ClCompile Include="..\robotics\Chain.cpp" />
-    <ClCompile Include="..\robotics\ConstrainedDynamics.cpp" />
-    <ClCompile Include="..\robotics\Contact.cpp" />
-    <ClCompile Include="..\robotics\DenavitHartenberg.cpp" />
-    <ClCompile Include="..\robotics\DynamicChain.cpp" />
-    <ClCompile Include="..\robotics\DynamicChain3D.cpp" />
-    <ClCompile Include="..\robotics\Geometry.cpp" />
-    <ClCompile Include="..\robotics\IK.cpp" />
-    <ClCompile Include="..\robotics\IKFunctions.cpp" />
-    <ClCompile Include="..\robotics\Inertia.cpp" />
-    <ClCompile Include="..\robotics\JointStructure.cpp" />
-    <ClCompile Include="..\robotics\KinematicChain.cpp" />
-    <ClCompile Include="..\robotics\KinematicChain3D.cpp" />
-    <ClCompile Include="..\robotics\Kinematics.cpp" />
-    <ClCompile Include="..\robotics\NewtonEuler.cpp" />
-    <ClCompile Include="..\robotics\RigidBodyDynamics.cpp" />
-    <ClCompile Include="..\robotics\RLG.cpp" />
-    <ClCompile Include="..\robotics\RobotDynamics3D.cpp" />
-    <ClCompile Include="..\robotics\RobotKinematics3D.cpp" />
-    <ClCompile Include="..\robotics\RobotLink3D.cpp" />
-    <ClCompile Include="..\robotics\RobotWithGeometry.cpp" />
-    <ClCompile Include="..\robotics\Rotation.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\planning\PerturbationCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\PointLocation.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\RigidRobot2DCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\SBL.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\SBLTree.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\SpaceTimeCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\TimedPath.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\TranslatingRobot2DCSpace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\planning\VisibilityGraphPlanner.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\AnalyticIK.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\AngleBracket.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\CartesianDrive.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Chain.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\ConstrainedDynamics.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Contact.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\DenavitHartenberg.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\DynamicChain.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\DynamicChain3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Geometry.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\IK.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\IKFunctions.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Inertia.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\JointStructure.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\KinematicChain.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\KinematicChain3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Kinematics.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\NewtonEuler.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RigidBodyDynamics.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RLG.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotDynamics3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotKinematics3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotLink3D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\RobotWithGeometry.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Rotation.cpp">
       <ObjectFileName>$(IntDir)/robotics/Rotation.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\robotics\SelfTest.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\SelfTest.cpp">
       <ObjectFileName>$(IntDir)/robotics/SelfTest.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\robotics\Simulate.cpp" />
-    <ClCompile Include="..\robotics\Stability.cpp" />
-    <ClCompile Include="..\robotics\TorqueSolver.cpp" />
-    <ClCompile Include="..\robotics\WorkspaceBound.cpp" />
-    <ClCompile Include="..\spline\basis.cpp" />
-    <ClCompile Include="..\spline\BSpline.cpp" />
-    <ClCompile Include="..\spline\Hermite.cpp" />
-    <ClCompile Include="..\spline\MonotonicSpline.cpp" />
-    <ClCompile Include="..\spline\path.cpp">
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Simulate.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\Stability.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\TorqueSolver.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\robotics\WorkspaceBound.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\spline\basis.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\spline\BSpline.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\spline\Hermite.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\spline\MonotonicSpline.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\spline\path.cpp">
       <ObjectFileName>$(IntDir)/spline/path.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\spline\PiecewisePolynomial.cpp" />
-    <ClCompile Include="..\spline\spline.cpp" />
-    <ClCompile Include="..\statistics\BetaDistribution.cpp" />
-    <ClCompile Include="..\statistics\CategoricalDistribution.cpp" />
-    <ClCompile Include="..\statistics\DataSet.cpp" />
-    <ClCompile Include="..\statistics\DistributionCollector.cpp" />
-    <ClCompile Include="..\statistics\GaussianDistribution.cpp" />
-    <ClCompile Include="..\statistics\GaussianHMM.cpp" />
-    <ClCompile Include="..\statistics\GaussianMixtureModel.cpp" />
-    <ClCompile Include="..\statistics\HierarchicalClustering.cpp" />
-    <ClCompile Include="..\statistics\Histogram.cpp" />
-    <ClCompile Include="..\statistics\HistogramND.cpp" />
-    <ClCompile Include="..\statistics\KMeans.cpp" />
-    <ClCompile Include="..\statistics\LinearModel.cpp" />
-    <ClCompile Include="..\statistics\LinearProcessHMM.cpp" />
-    <ClCompile Include="..\statistics\LogisticModel.cpp" />
-    <ClCompile Include="..\statistics\OLS.cpp" />
-    <ClCompile Include="..\statistics\OnlineMoments.cpp" />
-    <ClCompile Include="..\statistics\OnlineOLS.cpp" />
-    <ClCompile Include="..\statistics\statistics.cpp" />
-    <ClCompile Include="..\statistics\UniformDistribution.cpp" />
-    <ClCompile Include="..\utils\AnyCollection.cpp" />
-    <ClCompile Include="..\utils\AnyMapper.cpp" />
-    <ClCompile Include="..\utils\AsyncIO.cpp" />
-    <ClCompile Include="..\utils\CommandLine.cpp" />
-    <ClCompile Include="..\utils\CoverSet.cpp" />
-    <ClCompile Include="..\utils\DataCollector.cpp" />
-    <ClCompile Include="..\utils\EZTrace.cpp" />
-    <ClCompile Include="..\utils\fileutils.cpp" />
-    <ClCompile Include="..\utils\indexing.cpp" />
-    <ClCompile Include="..\utils\IndexSet.cpp" />
-    <ClCompile Include="..\utils\IntPair.cpp" />
-    <ClCompile Include="..\utils\IntTriple.cpp" />
-    <ClCompile Include="..\utils\ioutils.cpp" />
-    <ClCompile Include="..\utils\ParamList.cpp" />
-    <ClCompile Include="..\utils\PrimitiveValue.cpp" />
-    <ClCompile Include="..\utils\ProgressPrinter.cpp" />
-    <ClCompile Include="..\utils\PropertyMap.cpp" />
-    <ClCompile Include="..\utils\RangeSet.cpp" />
-    <ClCompile Include="..\utils\RangeSet2D.cpp" />
-    <ClCompile Include="..\utils\RefPointer.cpp" />
-    <ClCompile Include="..\utils\ResourceLibrary.cpp" />
-    <ClCompile Include="..\utils\SignalHandler.cpp" />
-    <ClCompile Include="..\utils\SimpleFile.cpp" />
-    <ClCompile Include="..\utils\SimpleParser.cpp" />
-    <ClCompile Include="..\utils\socketutils.cpp" />
-    <ClCompile Include="..\utils\StatCollector.cpp" />
-    <ClCompile Include="..\utils\stringutils.cpp" />
-    <ClCompile Include="..\utils\Subset.cpp" />
-    <ClCompile Include="..\utils\threadutils.cpp" />
-    <ClCompile Include="..\utils\Trace.cpp" />
-    <ClCompile Include="..\utils\unionfind.cpp" />
-    <ClCompile Include="..\geometry\PQP\src\Build.cpp" />
-    <ClCompile Include="..\geometry\PQP\src\BV.cpp" />
-    <ClCompile Include="..\geometry\PQP\src\PQP.cpp" />
-    <ClCompile Include="..\geometry\PQP\src\TriDist.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\spline\PiecewisePolynomial.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\spline\spline.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\BetaDistribution.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\CategoricalDistribution.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\DataSet.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\DistributionCollector.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\GaussianDistribution.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\GaussianHMM.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\GaussianMixtureModel.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\HierarchicalClustering.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\Histogram.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\HistogramND.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\KMeans.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\LinearModel.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\LinearProcessHMM.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\LogisticModel.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\OLS.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\OnlineMoments.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\OnlineOLS.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\statistics.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\statistics\UniformDistribution.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\AnyCollection.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\AnyMapper.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\apputils.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\AsyncIO.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\CommandLine.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\CoverSet.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\DataCollector.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\EZTrace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\fileutils.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\indexing.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\IndexSet.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\IntPair.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\IntTriple.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ioutils.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ParamList.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\PrimitiveValue.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ProgressPrinter.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\PropertyMap.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\RangeSet.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\RangeSet2D.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\RefPointer.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\ResourceLibrary.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\SignalHandler.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\SimpleFile.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\SimpleParser.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\socketutils.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\StatCollector.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\stringutils.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\Subset.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\threadutils.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\Trace.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\utils\unionfind.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\Build.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\BV.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\PQP.cpp" />
+    <ClCompile Include="C:\Code\KrisLibrary\geometry\PQP\src\TriDist.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:/Code/Klampt/Library/KrisLibrary/msvc/ZERO_CHECK.vcxproj">
-      <Project>F8436A46-12BB-426C-AD04-9B0523609BC7</Project>
+    <ProjectReference Include="C:/Code/KrisLibrary/msvc/ZERO_CHECK.vcxproj">
+      <Project>DCD5C6A4-8F9D-45DC-9C6E-ADA1F25C8D2F</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

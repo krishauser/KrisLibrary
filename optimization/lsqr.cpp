@@ -10,6 +10,8 @@
 * 08 Sep 1999: First version from James W. Howse <jhowse@lanl.gov>
 */
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "lsqr.h"
 
 using namespace std;

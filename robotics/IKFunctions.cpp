@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "IKFunctions.h"
 #include "SelfTest.h"
 #include "Rotation.h"
@@ -224,7 +226,7 @@ void IKGoalFunction::Eval(const Vector& x, Vector& r)
     MomentRotation em;
     Assert(IsFinite(eerot));
     if(!em.setMatrix(eerot)) {
-      fprintf(stderr,"IK: Warning, end effector did not have a valid rotation matrix?\n");
+            LOG4CXX_ERROR(logger,"IK: Warning, end effector did not have a valid rotation matrix?\n");
       em.setZero();
     }
     r(m)=rotationScale*em.x;
@@ -280,7 +282,7 @@ Real IKGoalFunction::Eval_i(const Vector& x, int i)
       MomentRotation em;
       Assert(IsFinite(eerot));
       if(!em.setMatrix(eerot)) {
-        fprintf(stderr,"IK: Warning, end effector did not have a valid rotation matrix?\n");
+                LOG4CXX_ERROR(logger,"IK: Warning, end effector did not have a valid rotation matrix?\n");
         em.setZero();
       }
       return rotationScale*em[i];
@@ -301,7 +303,7 @@ Real IKGoalFunction::Eval_i(const Vector& x, int i)
 	return rotationScale*(Abs(dot(curAxis,y))+neg);
     }
     else {
-      printf("IK(): Invalid number of rotation terms\n");
+      LOG4CXX_INFO(logger,"IK(): Invalid number of rotation terms\n");
       Abort(); 
     }
   }
@@ -400,7 +402,7 @@ void IKGoalFunction::Jacobian(const Vector& x, Matrix& J)
     else if(goal.rotConstraint==IKGoal::RotNone) {
     }
     else {
-      printf("GetIKJacobian(): Invalid number of rotation terms\n");
+      LOG4CXX_INFO(logger,"GetIKJacobian(): Invalid number of rotation terms\n");
       Abort(); 
     }
   }
@@ -463,7 +465,7 @@ void IKGoalFunction::Jacobian_i(const Vector& x,int i,Vector& Ji)
 	  Ji(k)=rotationScale*(dot(axisRateOfChange,y)-dot(axisRateOfChange,d));
       }
       else {
-	printf("GetIKJacobian(): Invalid number of rotation terms\n");
+	LOG4CXX_INFO(logger,"GetIKJacobian(): Invalid number of rotation terms\n");
 	Abort(); 
       }
 
@@ -527,7 +529,7 @@ void IKGoalFunction::Hessian_i(const Vector& x,int component,Matrix& Hi)
 	  else if(goal.rotConstraint==IKGoal::RotNone) {
 	  }
 	  else {
-	    printf("GetIKJacobian(): Invalid number of rotation terms\n");
+	    LOG4CXX_INFO(logger,"GetIKJacobian(): Invalid number of rotation terms\n");
 	    Abort(); 
 	  }
 	}
@@ -698,10 +700,10 @@ void RobotIKFunction::UseIK(const IKGoal& g)
   
   /*
   WorldPositionFunction f(robot,ik[0].localPosition,ik[0].link,ik.activeDofs);
-  cout<<"WorldPositionFunction:"<<endl;
+  LOG4CXX_INFO(logger,"WorldPositionFunction:"<<"\n");
   TestJacobian(&f,x,0.001,0.001);
   */
-  cout<<"Differentiation test for RobotIKFunction:"<<endl;
+  LOG4CXX_INFO(logger,"Differentiation test for RobotIKFunction:"<<"\n");
   TestJacobian(this,x,0.001,0.001,0.001);
 #endif
 }
@@ -709,7 +711,7 @@ void RobotIKFunction::UseIK(const IKGoal& g)
 void RobotIKFunction::UseIK(const vector<IKGoal>& ik)
 {
   if(ik.empty()) {
-    cout<<"Warning, IK problem is empty"<<endl;
+    LOG4CXX_WARN(logger,"Warning, IK problem is empty"<<"\n");
     return;
   }
   functions.reserve(functions.size()+ik.size());
@@ -724,10 +726,10 @@ void RobotIKFunction::UseIK(const vector<IKGoal>& ik)
   
   /*
   WorldPositionFunction f(robot,ik[0].localPosition,ik[0].link,ik.activeDofs);
-  cout<<"WorldPositionFunction:"<<endl;
+  LOG4CXX_INFO(logger,"WorldPositionFunction:"<<"\n");
   TestJacobian(&f,x,0.001,0.001);
   */
-  cout<<"Differentiation test for RobotIKFunction:"<<endl;
+  LOG4CXX_INFO(logger,"Differentiation test for RobotIKFunction:"<<"\n");
   TestJacobian(this,x,0.001,0.001,0.001);
 #endif
 }
@@ -853,10 +855,10 @@ bool RobotIKSolver::Solve(Real tolerance,int& iters)
 void RobotIKSolver::PrintStats()
 {
   /*
-  printf("%d evals (%fs), %d jacobian evals(%fs)\n",robotIK.numEvals,robotIK.evalTime,robotIK.numJacobians,robotIK.jacobianTime);
-  printf("%fs in setstate\n",robotIK.setStateTime);
+  LOG4CXX_INFO(logger,""<<robotIK.numEvals<<" evals ("<<robotIK.evalTime<<"s), "<<robotIK.numJacobians<<" jacobian evals("<<robotIK.jacobianTime);
+  LOG4CXX_INFO(logger,""<<robotIK.setStateTime);
   */
-  cout<<"TODO: record IK solver stats..."<<endl;
+  LOG4CXX_INFO(logger,"TODO: record IK solver stats..."<<"\n");
   //Abort();
 }
 
@@ -923,18 +925,18 @@ bool SolveIK(RobotIKFunction& f,
 	     Real tolerance,int& iters,int verbose)
 {
   if(verbose >= 1) {
-    printf("SolveIK(tol=%f,iters=%d):\n",tolerance,iters);
+    LOG4CXX_INFO(logger,"SolveIK(tol="<<tolerance<<",iters="<<iters);
     Timer timer;
     RobotIKSolver solver(f);
     solver.UseJointLimits(TwoPi);
     solver.solver.verbose = verbose;
     if(solver.Solve(tolerance,iters)) {
-      printf("    Succeeded! %f seconds\n", timer.ElapsedTime());
+      LOG4CXX_INFO(logger,"    Succeeded! "<< timer.ElapsedTime());
       if(verbose >= 2) solver.PrintStats();
       return true;
     }
     else {
-      printf("    Failed... %f seconds\n", timer.ElapsedTime());
+      LOG4CXX_INFO(logger,"    Failed... "<< timer.ElapsedTime());
       if(verbose >= 2) solver.PrintStats();
       return false;
     }
@@ -986,7 +988,7 @@ bool IsReachableGoal(const RobotKinematics3D& robot,const IKGoal& a, const IKGoa
 bool IsReachableGoal(const IKGoal& a,const IKGoal& b,Real Lmax)
 {
   if(a.posConstraint != IKGoal::PosFixed || b.posConstraint != IKGoal::PosFixed) {
-    cout<<"IsReachableGoal(): Warning: unable to calculate reachability of sliding IK target"<<endl;
+    LOG4CXX_WARN(logger,"IsReachableGoal(): Warning: unable to calculate reachability of sliding IK target"<<"\n");
     return true;
   }
   if(b.rotConstraint > a.rotConstraint) return IsReachableGoal(b,a,Lmax);
@@ -1049,7 +1051,7 @@ bool IsReachableGoal(const IKGoal& a,const IKGoal& b,Real Lmax)
     Real d = (a.endPosition-b.endPosition).norm();
     return (d <= Lmax+da+db);
   }
-  cout<<"Shouldn't get here..."<<endl;
+  LOG4CXX_INFO(logger,"Shouldn't get here..."<<"\n");
   Abort();
   return false;
 }
@@ -1126,7 +1128,7 @@ void GetConstraintPoints(const IKGoal& g,vector<Vector3>& lp,vector<Vector3>& wp
     }
     break;
   default:
-    fprintf(stderr,"Two-axis rotations not supported\n");
+        LOG4CXX_ERROR(logger,"Two-axis rotations not supported\n");
     break;
   }
 }
@@ -1200,7 +1202,7 @@ bool IntersectGoals(const IKGoal& a,const IKGoal& b,IKGoal& c,Real tolerance)
       if(!b.endRotation.isEqual(R*b.localAxis)) return false;
     }
     else {
-      fprintf(stderr,"Two-axis rotations not supported\n");
+            LOG4CXX_ERROR(logger,"Two-axis rotations not supported\n");
       return false;
     }
   }
@@ -1218,12 +1220,12 @@ bool IntersectGoals(const IKGoal& a,const IKGoal& b,IKGoal& c,Real tolerance)
       if(!a.endRotation.isEqual(R*a.localAxis,tolerance)) return false;
     }
     else {
-      fprintf(stderr,"Two-axis rotations not supported\n");
+            LOG4CXX_ERROR(logger,"Two-axis rotations not supported\n");
       return false;
     }
   }
   else if(a.rotConstraint == IKGoal::RotTwoAxis || b.rotConstraint == IKGoal::RotTwoAxis) {
-    fprintf(stderr,"Two-axis rotations not supported\n");
+        LOG4CXX_ERROR(logger,"Two-axis rotations not supported\n");
     return false;
   }
   else {
@@ -1238,7 +1240,7 @@ bool IntersectGoals(const IKGoal& a,const IKGoal& b,IKGoal& c,Real tolerance)
     }
     else {
       //TODO find a rotation matrix that maps both axes to their directions
-      fprintf(stderr,"TODO: intersect two axis rotations\n");
+            LOG4CXX_ERROR(logger,"TODO: intersect two axis rotations\n");
       return false;
     }
   }
@@ -1296,7 +1298,7 @@ bool IntersectGoals(const IKGoal& a,const IKGoal& b,IKGoal& c,Real tolerance)
     }
     else {
       //fixed rotation, linear or planar positions
-      fprintf(stderr,"TODO: merging linear or planar position constraints\n");
+            LOG4CXX_ERROR(logger,"TODO: merging linear or planar position constraints\n");
       return false;
     }
   }
@@ -1312,7 +1314,7 @@ bool IntersectGoals(const IKGoal& a,const IKGoal& b,IKGoal& c,Real tolerance)
     }
   }
   //non-fixed rotation, linear or planar positions
-  fprintf(stderr,"TODO: merging linear or planar position constraints with non-fixed rotations\n");
+    LOG4CXX_ERROR(logger,"TODO: merging linear or planar position constraints with non-fixed rotations\n");
   return false;
 }
 

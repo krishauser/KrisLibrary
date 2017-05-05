@@ -1,6 +1,8 @@
 #ifndef VOLUME_GRID_H
 #define VOLUME_GRID_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include <KrisLibrary/structs/array3d.h>
 #include <KrisLibrary/math3d/AABB3D.h>
 #include <KrisLibrary/math3d/primitives.h>
@@ -141,23 +143,23 @@ void VolumeGridIterator<T>::operator ++()
   }
   /*
   if(index != it.getElement()) {
-    std::cerr<<"VolumeGridIterator: Internal error!"<<std::endl;
-    std::cerr<<"Index "<<index<<", iterator element "<<it.getElement()<<std::endl;
-    std::cerr<<"Low = "<<lo<<", high = "<<hi<<std::endl;
-    std::cerr<<"Array3d iterator element "<<it.it.getElement()<<std::endl;
-    std::cerr<<"Array3D size "<<cells.size()<<std::endl;
-    std::cerr<<"Array3d range base "<<it.range.base<<std::endl;
-    std::cerr<<"  size "<<it.range.isize<<" "<<it.range.jsize<<" "<<it.range.ksize<<std::endl;
-    std::cerr<<"  stride "<<it.range.istride<<" "<<it.range.jstride<<" "<<it.range.kstride<<std::endl;
+    LOG4CXX_ERROR(logger,"VolumeGridIterator: Internal error!"<<std::"\n");
+    LOG4CXX_ERROR(logger,"Index "<<index<<", iterator element "<<it.getElement()<<std::"\n");
+    LOG4CXX_ERROR(logger,"Low = "<<lo<<", high = "<<hi<<std::"\n");
+    LOG4CXX_ERROR(logger,"Array3d iterator element "<<it.it.getElement()<<std::"\n");
+    LOG4CXX_ERROR(logger,"Array3D size "<<cells.size()<<std::"\n");
+    LOG4CXX_ERROR(logger,"Array3d range base "<<it.range.base<<std::"\n");
+    LOG4CXX_ERROR(logger,"  size "<<it.range.isize<<" "<<it.range.jsize<<" "<<it.range.ksize<<std::"\n");
+    LOG4CXX_ERROR(logger,"  stride "<<it.range.istride<<" "<<it.range.jstride<<" "<<it.range.kstride<<std::"\n");
   }
   if(index.c + cells.p*(index.b + cells.n*index.a) != *it.it) {
-    std::cerr<<"VolumeGridIterator: Internal error!"<<std::endl;
-    std::cerr<<"Offset into array: "<<index.c + cells.p*(index.b + cells.n*index.a)<<", stripe iterator "<<*it.it<<std::endl;
-    std::cerr<<"iterator element "<<it.it.getElement()<<std::endl;
-    std::cerr<<"Array3D size "<<cells.size()<<std::endl;
-    std::cerr<<"Array3d range base "<<it.range.base<<std::endl;
-    std::cerr<<"  size "<<it.range.isize<<" "<<it.range.jsize<<" "<<it.range.ksize<<std::endl;
-    std::cerr<<"  stride "<<it.range.istride<<" "<<it.range.jstride<<" "<<it.range.kstride<<std::endl;
+    LOG4CXX_ERROR(logger,"VolumeGridIterator: Internal error!"<<std::"\n");
+    LOG4CXX_ERROR(logger,"Offset into array: "<<index.c + cells.p*(index.b + cells.n*index.a)<<", stripe iterator "<<*it.it<<std::"\n");
+    LOG4CXX_ERROR(logger,"iterator element "<<it.it.getElement()<<std::"\n");
+    LOG4CXX_ERROR(logger,"Array3D size "<<cells.size()<<std::"\n");
+    LOG4CXX_ERROR(logger,"Array3d range base "<<it.range.base<<std::"\n");
+    LOG4CXX_ERROR(logger,"  size "<<it.range.isize<<" "<<it.range.jsize<<" "<<it.range.ksize<<std::"\n");
+    LOG4CXX_ERROR(logger,"  stride "<<it.range.istride<<" "<<it.range.jstride<<" "<<it.range.kstride<<std::"\n");
   }
   */
   Assert(index == it.getElement());

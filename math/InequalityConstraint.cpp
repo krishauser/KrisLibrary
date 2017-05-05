@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "InequalityConstraint.h"
 #include "realfunction.h"
 #include "vectorfunction.h"
@@ -18,7 +20,7 @@ const static Real kPushDTolerance = (Real)1e-3;
 
 int InequalityConstraint::NumDimensions() const
 {
-  cout<<"InequalityConstraint::NumDimensions(): Shouldn't get here"<<endl;
+  LOG4CXX_INFO(logger,"InequalityConstraint::NumDimensions(): Shouldn't get here"<<"\n");
   AssertNotReached();
   return 1;
 }
@@ -61,7 +63,7 @@ void InequalityConstraint::LineSearch(const Vector& x0,const Vector& dx,Real& u)
   PreEval(x0);
   Real margin0 = Margin(x0,minConstraint);
   if(margin0 < 0) {
-    cout<<"LineSearch: Initial point is not feasible! Margin "<<margin0<<" at "<<Label(minConstraint)<<endl;
+    LOG4CXX_INFO(logger,"LineSearch: Initial point is not feasible! Margin "<<margin0<<" at "<<Label(minConstraint)<<"\n");
   }
   Assert(margin0 >= Zero);
 
@@ -73,23 +75,23 @@ void InequalityConstraint::LineSearch(const Vector& x0,const Vector& dx,Real& u)
     margin = Margin(x,minConstraint);
     if(minConstraint == oldMinConstraint) {
       if(margin < oldMargin) {
-	cout<<"At constraint "<<Label(minConstraint)<<", ";
-	cout<<"Line search at u gave a lower margin than previous value "<<margin<<" <= "<<oldMargin<<endl;
-	cout<<VectorPrinter(x)<<endl;
-	cout<<VectorPrinter(dx)<<endl;
-	cout<<"u is "<<u<<endl;
-	getchar();
+	LOG4CXX_INFO(logger,"At constraint "<<Label(minConstraint)<<", ");
+	LOG4CXX_INFO(logger,"Line search at u gave a lower margin than previous value "<<margin<<" <= "<<oldMargin<<"\n");
+	LOG4CXX_INFO(logger,VectorPrinter(x)<<"\n");
+	LOG4CXX_INFO(logger,VectorPrinter(dx)<<"\n");
+	LOG4CXX_INFO(logger,"u is "<<u<<"\n");
+	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       if(margin == oldMargin) {
-	cout<<"At constraint "<<Label(minConstraint)<<", ";
-	cout<<"Warning: margin didn't change"<<endl;
+	LOG4CXX_INFO(logger,"At constraint "<<Label(minConstraint)<<", ");
+	LOG4CXX_WARN(logger,"Warning: margin didn't change"<<"\n");
       }
       Assert(margin >= oldMargin);
     }
     else {
       if(margin < oldMargin) {
-	cout<<"At constraint "<<Label(minConstraint)<<", ";
-	cout<<"Warning, constraint changed from "<<oldMinConstraint<<" to "<<minConstraint<<" and decreased margin from "<<oldMargin<<" to "<<margin<<endl;
+	LOG4CXX_INFO(logger,"At constraint "<<Label(minConstraint)<<", ");
+	LOG4CXX_WARN(logger,"Warning, constraint changed from "<<oldMinConstraint<<" to "<<minConstraint<<" and decreased margin from "<<oldMargin<<" to "<<margin<<"\n");
       }
     }
 
@@ -99,8 +101,8 @@ void InequalityConstraint::LineSearch(const Vector& x0,const Vector& dx,Real& u)
     else 
       return;
   }
-  cout<<"LineSearch didn't converge within 1000 iters"<<endl;
-  cout<<"Resulting margin is "<<margin<<endl;
+  LOG4CXX_INFO(logger,"LineSearch didn't converge within 1000 iters"<<"\n");
+  LOG4CXX_INFO(logger,"Resulting margin is "<<margin<<"\n");
 }
 
 void InequalityConstraint::LineSearch_i(const Vector& x0,const Vector& dx,Real& u,int i)
@@ -119,21 +121,21 @@ void InequalityConstraint::LineSearch_i(const Vector& x0,const Vector& dx,Real& 
   case ConvergenceX:
     if(g(uroot) < Zero) {
       if(FuzzyZero(uroot)) { u=0; return; }
-      cout<<"At constraint "<<Label(i)<<", ";
-      cout<<"Error -- secant method didn't return valid u?"<<endl;
-      cout<<"u_root = "<<uroot<<", margin "<<g(uroot)<<endl;
-      cout<<"u = "<<u<<", margin "<<g(u)<<endl;
-      getchar();
+      LOG4CXX_INFO(logger,"At constraint "<<Label(i)<<", ");
+      LOG4CXX_ERROR(logger,"Error -- secant method didn't return valid u?"<<"\n");
+      LOG4CXX_INFO(logger,"u_root = "<<uroot<<", margin "<<g(uroot)<<"\n");
+      LOG4CXX_INFO(logger,"u = "<<u<<", margin "<<g(u)<<"\n");
+      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       Abort();
     }
     break;
   case MaxItersReached:
-    cout<<"InequalityConstraint::LineSearch_i(): Warning, max iters reached... should we try some more???"<<endl;
+    LOG4CXX_WARN(logger,"InequalityConstraint::LineSearch_i(): Warning, max iters reached... should we try some more???"<<"\n");
     break;
   case LocalMinimum:
   case Math::Divergence:
   case ConvergenceError:
-    cout<<"Error in secant method: start value is "<<f(umin)<<" end is "<<f(u)<<" for constraint "<<Label(i)<<endl;
+    LOG4CXX_ERROR(logger,"Error in secant method: start value is "<<f(umin)<<" end is "<<f(u)<<" for constraint "<<Label(i)<<"\n");
     Abort();
   }
   u=uroot;
@@ -164,8 +166,8 @@ bool InequalityConstraint::Push(Vector& x,Real d)
       return true;
     }
   }
-  cout<<"Push didn't converge within 1000 iters"<<endl;
-  cout<<"Resulting margin is "<<margin<<endl;
+  LOG4CXX_INFO(logger,"Push didn't converge within 1000 iters"<<"\n");
+  LOG4CXX_INFO(logger,"Resulting margin is "<<margin<<"\n");
   return false;
 }
 
@@ -179,9 +181,9 @@ bool InequalityConstraint::Push_i(Vector& x,int i,Real d)
   Real dtrue = p(x);
   if(res == ConvergenceF) {
     if(dtrue < d) {
-      cout<<"Hmm... Root_Newton worked, but didn't give a valid result!"<<endl;
-      cout<<"Desired d="<<d<<", true d="<<dtrue<<endl;
-      cout<<"Tolerance setting "<<kPushDTolerance<<endl;
+      LOG4CXX_INFO(logger,"Hmm... Root_Newton worked, but didn't give a valid result!"<<"\n");
+      LOG4CXX_INFO(logger,"Desired d="<<d<<", true d="<<dtrue<<"\n");
+      LOG4CXX_INFO(logger,"Tolerance setting "<<kPushDTolerance<<"\n");
     }
     Assert(dtrue >= d);
   }
@@ -190,12 +192,12 @@ bool InequalityConstraint::Push_i(Vector& x,int i,Real d)
   }
   else {
     if(dtrue > d) {
-      cout<<"Warning: overshot the desired distance "<<d<<", got "<<dtrue<<endl;
+      LOG4CXX_WARN(logger,"Warning: overshot the desired distance "<<d<<", got "<<dtrue<<"\n");
       return true;
     }
-    cout<<"At constraint "<<Label(i)<<", ";
-    cout<<"Unable to solve for f(x) == "<<d<<endl;
-    cout<<"Current f(x) == "<<dtrue<<endl;
+    LOG4CXX_INFO(logger,"At constraint "<<Label(i)<<", ");
+    LOG4CXX_INFO(logger,"Unable to solve for f(x) == "<<d<<"\n");
+    LOG4CXX_INFO(logger,"Current f(x) == "<<dtrue<<"\n");
     return false;
   }
   return true;
@@ -359,8 +361,8 @@ bool CompositeInequalityConstraint::Push(Vector& x,Real d)
     //Assert(margin == Margin(x,temp));
     /*
     if(margin < oldMargin) {
-      cout<<"Margin was decreased by last push!"<<endl;
-      cout<<"From "<<oldMargin<<" to "<<margin<<endl;
+      LOG4CXX_INFO(logger,"Margin was decreased by last push!"<<"\n");
+      LOG4CXX_INFO(logger,"From "<<oldMargin<<" to "<<margin<<"\n");
       return false;
     }
     */
@@ -369,9 +371,9 @@ bool CompositeInequalityConstraint::Push(Vector& x,Real d)
       marginC->PreEval(x);
       Real iMargin = marginC->Eval_i(x,minConstraint);
       if(iMargin < d-Epsilon) {
-	cout<<"Group "<<marginK<<", constraint "<<Label(minConstraint)<<endl;
-	cout<<"Push didn't move constraint to distance "<<d<<endl;
-	cout<<"Value went from "<<margin<<" to "<<iMargin<<endl;
+	LOG4CXX_INFO(logger,"Group "<<marginK<<", constraint "<<Label(minConstraint)<<"\n");
+	LOG4CXX_INFO(logger,"Push didn't move constraint to distance "<<d<<"\n");
+	LOG4CXX_INFO(logger,"Value went from "<<margin<<" to "<<iMargin<<"\n");
       }
       Assert(iMargin >= d-Epsilon);
     }
@@ -379,8 +381,8 @@ bool CompositeInequalityConstraint::Push(Vector& x,Real d)
       return true;
     }
   }
-  cout<<"Push didn't converge within 1000 iters"<<endl;
-  cout<<"Resulting margin is "<<margin<<endl;
+  LOG4CXX_INFO(logger,"Push didn't converge within 1000 iters"<<"\n");
+  LOG4CXX_INFO(logger,"Resulting margin is "<<margin<<"\n");
   return false;
 }
 
@@ -402,7 +404,7 @@ int CompositeInequalityConstraint::GetConstraint(int& i) const
       i -= nd;
     }
   }
-  cout<<"Shouldn't ever get here!  i="<<iorig<<" must be out of range 0->"<<NumDimensions()<<endl;
+  LOG4CXX_INFO(logger,"Shouldn't ever get here!  i="<<iorig<<" must be out of range 0->"<<NumDimensions()<<"\n");
   AssertNotReached();
   return -1;
 }
@@ -715,13 +717,13 @@ bool LinearConstraint::Push(Vector& x, Real d)
       return true;
     }
     if(maxPush >= pushLimit) {
-      cout<<"LinearConstraint::Push(): No convergence"<<endl;
+      LOG4CXX_INFO(logger,"LinearConstraint::Push(): No convergence"<<"\n");
       return false;
     }
     pushMultiple *= 1.01;
     pushLimit = maxPush*pushMultiple;
   }
-  cout<<"LinearConstraint::PushX(): No convergence in 1000 iters"<<endl;
+  LOG4CXX_INFO(logger,"LinearConstraint::PushX(): No convergence in 1000 iters"<<"\n");
   return false;
 }
 

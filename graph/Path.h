@@ -1,6 +1,8 @@
 #ifndef GRAPH_PATH_H
 #define GRAPH_PATH_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include <vector>
 #include <list>
 #include <map>
@@ -33,19 +35,19 @@ inline bool GetAncestorPath(const std::vector<int>& p,
     path.push_front(n);
     if(n == lastAncestor) return true;
     if(i++ > (int)p.size()) {
-      printf("GetAncestorPath(): Iterated more than the number of nodes, aborting\n");
+      LOG4CXX_INFO(logger,"GetAncestorPath(): Iterated more than the number of nodes, aborting\n");
       i=0;
       for(std::list<int>::iterator it=path.begin();it!=path.end()&&i<20;it++,i++) 
-	printf("%d ",*it);
-      printf("\n");
-      printf("...\n");
+	LOG4CXX_INFO(logger,""<<*it);
+      LOG4CXX_INFO(logger,"\n");
+      LOG4CXX_INFO(logger,"...\n");
       std::list<int>::iterator it = path.end();
       for(int i=0;i<20;i++) it--;
       while(it != path.end()) {
-	printf("%d ",*it);
+	LOG4CXX_INFO(logger,""<<*it);
 	it++;
       }
-      printf("\n");
+      LOG4CXX_INFO(logger,"\n");
       //abort();
       return false;
     }
@@ -80,7 +82,7 @@ inline void GetAncestorPath(const std::map<Node,Node>& p,
     n = p[n];
     path.push_front(n);
     if(i++ > p.size()) {
-      printf("GetAncestorPath(): Iterated more than the number of nodes, aborting\n");
+      LOG4CXX_INFO(logger,"GetAncestorPath(): Iterated more than the number of nodes, aborting\n");
       abort();
     }
   }

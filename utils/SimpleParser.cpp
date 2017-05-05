@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/logDummy.cpp>
 #include "SimpleParser.h"
 #include <iostream>
 #include <string>
@@ -25,7 +27,7 @@ bool SimpleParser::ReadLine(string& str)
   int c;
   while((c=in.peek()) != EOF) {
     if(!in) {
-      cerr<<"Error while reading line!"<<endl;
+      LOG4CXX_ERROR(logger,"Error while reading line!"<<"\n");
       return false;
     }
     if(c == '\\') { //read literal (or skip endline)
@@ -36,7 +38,7 @@ bool SimpleParser::ReadLine(string& str)
 	c = in.peek();
       }
       if(c == EOF) {
-	cerr<<"literal character \\ before end of file"<<endl;
+	LOG4CXX_ERROR(logger,"literal character \\ before end of file"<<"\n");
 	return false;
       }
       else if(c == '\n') { } //skip
@@ -48,7 +50,7 @@ bool SimpleParser::ReadLine(string& str)
     else str += c;
     c=in.get();
   }
-  cout<<"Reached end of file, line \""<<str<<"\""<<endl;
+  LOG4CXX_INFO(logger,"Reached end of file, line \""<<str<<"\""<<"\n");
   return true;
 }
 
@@ -59,7 +61,7 @@ bool SimpleParser::Read()
   string str;
   while((c=in.peek()) != EOF) {
     if(!in) {
-      cerr<<"Error while reading characters!"<<endl;
+      LOG4CXX_ERROR(logger,"Error while reading characters!"<<"\n");
       return false;
     }
     switch(mode) {
@@ -70,7 +72,7 @@ bool SimpleParser::Read()
       else if(IsToken(c)) { str+=c; mode=2;  }
       else if(IsPunct(c)) { str+=c; mode=3; }
       else {
-	cerr<<"Illegal character "<<(char)c<<endl;
+	LOG4CXX_ERROR(logger,"Illegal character "<<(char)c<<"\n");
 	return false;
       }
       break;
@@ -84,7 +86,7 @@ bool SimpleParser::Read()
 	Result res=InputToken(str);
 	if(res == Stop) return true;
 	else if(res == Error) {
-	  cerr<<"Error on token "<<str.c_str()<<endl;
+	  LOG4CXX_ERROR(logger,"Error on token "<<str.c_str()<<"\n");
 	  return false;
 	}
 	str.erase();
@@ -92,7 +94,7 @@ bool SimpleParser::Read()
 	  Result res=InputEndLine();
 	  if(res==Stop) return true;
 	  else if(res == Error) {
-	    cerr<<"Error on endline at line "<<lineno<<endl;
+	    LOG4CXX_ERROR(logger,"Error on endline at line "<<lineno<<"\n");
 	    return false;
 	  }
 	  lineno++;
@@ -102,7 +104,7 @@ bool SimpleParser::Read()
 	else if(IsComment(c)) mode=1;
 	else if(IsPunct(c)) { str+=c; mode=3;	}
 	else {
-	  cerr<<"Illegal character "<<(char)c<<endl;
+	  LOG4CXX_ERROR(logger,"Illegal character "<<(char)c<<"\n");
 	  return false;
 	}
       }
@@ -113,7 +115,7 @@ bool SimpleParser::Read()
 	Result res=InputPunct(str);
 	if(res == Stop) return true;
 	else if(res == Error) {
-	  cerr<<"Error on token "<<str.c_str()<<endl;
+	  LOG4CXX_ERROR(logger,"Error on token "<<str.c_str()<<"\n");
 	  return false;
 	}
 	str.erase();
@@ -121,7 +123,7 @@ bool SimpleParser::Read()
 	else if(IsComment(c)) mode=1;
 	else if(IsToken(c)) { str+=c; mode=2; }
 	else {
-	  cerr<<"Illegal character "<<(char)c<<endl;
+	  LOG4CXX_ERROR(logger,"Illegal character "<<(char)c<<"\n");
 	  return false;
 	}
       }
@@ -131,7 +133,7 @@ bool SimpleParser::Read()
       Result res=InputEndLine();
       if(res==Stop) return true;
       else if(res == Error) {
-	cerr<<"Error on endline at line "<<lineno<<endl;
+	LOG4CXX_ERROR(logger,"Error on endline at line "<<lineno<<"\n");
 	return false;
       }
       lineno++;
@@ -142,11 +144,11 @@ bool SimpleParser::Read()
     Result res=InputToken(str);
     if(res == Stop) return true;
     else if(res == Error) {
-      cerr<<"Error on token "<<str.c_str()<<endl;
+      LOG4CXX_ERROR(logger,"Error on token "<<str.c_str()<<"\n");
       return false;
     }
     else {
-      cerr<<"Incomplete read at EOF, string "<<str.c_str()<<endl;
+      LOG4CXX_ERROR(logger,"Incomplete read at EOF, string "<<str.c_str()<<"\n");
       return false;
     }
   }
