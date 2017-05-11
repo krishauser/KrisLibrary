@@ -221,11 +221,9 @@ void Trace::CallFmt(const char* function,const char* fmt,...)
   va_list args;
 	va_start(args, fmt);
 #ifdef _WIN32
-	//_vsn
-	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
+	_vsnprintf(buf, MAXBUF, fmt, args);
 #else
-  //vsn
-	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
+  vsnprintf(buf, MAXBUF, fmt, args);
 #endif
   Call(function,buf);
 }
@@ -252,10 +250,9 @@ void Trace::EndCallFmt(const char* function,const char* fmt,...)
   va_list args;
 	va_start(args, fmt);
 #ifdef _WIN32
-	//_vsn
-	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
+	_vsnprintf(buf, MAXBUF, fmt, args);
 #else
-  vsnLOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
+  vsnprintf(buf, MAXBUF, fmt, args);
 #endif
   EndCall(function,buf);
 }

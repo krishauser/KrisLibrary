@@ -49,10 +49,9 @@ EZCallTrace::EZCallTrace(const char* name,const char* fmt,...)
     va_list args;
     va_start(args, fmt);
 #ifdef _WIN32
-	//_vsn
-	LOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
+	_vsnprintf(buf, MAXBUF, fmt, args);
 #else
-    vsnLOG4CXX_INFO(logger,buf, MAXBUF, fmt, args);
+    vsnprintf(buf, MAXBUF, fmt, args);
 #endif
     EZTrace::curTrace->Call(name,buf);
     this->name = name;
