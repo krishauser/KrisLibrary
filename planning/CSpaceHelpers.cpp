@@ -799,11 +799,67 @@ bool AdaptiveCSpace::IsFeasible(const Config& x)
 {
   if(feasibleTestOrder.empty()) return PiggybackCSpace::IsFeasible(x);
   for(size_t i=0;i<feasibleTestOrder.size();i++)
-    if(!IsFeasible(x,feasibleTestOrder[i])) return false;
+    if(!IsFeasible_NoDeps(x,feasibleTestOrder[i])) return false;
   return true;
 }
 
-bool AdaptiveCSpace::IsFeasible(const Config& x,int obstacle)
+void AdaptiveCSpace::GetFeasibleDependencies(int obstacle,vector<int>& deps,bool recursive) const
+{
+  if(recursive) {
+    deps.resize(0);
+    vector<int> dfs(1,obstacle);
+    vector<bool> used(feasibleTestDeps.size(),false);
+    used[obstacle] = true;
+    while(!dfs.empty()) {
+      int n=dfs.back();
+      dfs.resize(dfs.size()-1);
+      deps.push_back(n);
+      for(size_t i=0;i<feasibleTestDeps[n].size();i++) {
+        int c = feasibleTestDeps[obstacle][i];
+        if(!used[c]) {
+          dfs.push_back(c);
+          used[c] = true;
+        }
+      }
+    }
+    std::reverse(deps.begin(),deps.end());
+    //tkake out obstacle
+    deps.resize(deps.size()-1);
+  }
+  else {
+    deps = feasibleTestDeps[obstacle];
+  }
+}
+
+void AdaptiveCSpace::GetVisibleDependencies(int obstacle,vector<int>& deps,bool recursive) const
+{
+  if(recursive) {
+    deps.resize(0);
+    vector<int> dfs(1,obstacle);
+    vector<bool> used(visibleTestDeps.size(),false);
+    used[obstacle] = true;
+    while(!dfs.empty()) {
+      int n=dfs.back();
+      dfs.resize(dfs.size()-1);
+      deps.push_back(n);
+      for(size_t i=0;i<visibleTestDeps[n].size();i++) {
+        int c = visibleTestDeps[obstacle][i];
+        if(!used[c]) {
+          dfs.push_back(c);
+          used[c] = true;
+        }
+      }
+    }
+    std::reverse(deps.begin(),deps.end());
+    //tkake out obstacle
+    deps.resize(deps.size()-1);
+  }
+  else {
+    deps = visibleTestDeps[obstacle];
+  }
+}
+
+bool AdaptiveCSpace::IsFeasible_NoDeps(const Config& x,int obstacle)
 {
   if(!adaptive) return PiggybackCSpace::IsFeasible(x,obstacle);
   if(feasibleStats.size() != constraints.size()) SetupAdaptiveInfo();  
@@ -813,11 +869,18 @@ bool AdaptiveCSpace::IsFeasible(const Config& x,int obstacle)
   return res;
 }
 
+bool AdaptiveCSpace::IsFeasible(const Config& x,int obstacle)
+{
+  for(size_t i=0;i<feasibleTestDeps[obstacle].size();i++)
+    if(!IsFeasible(x,feasibleTestDeps[obstacle][i])) return false;
+  return IsFeasible_NoDeps(x,obstacle);
+}
+
 void AdaptiveCSpace::CheckConstraints(const Config& x,std::vector<bool>& satisfied)
 {
   satisfied.resize(constraints.size());
   for(size_t i=0;i<constraints.size();i++)
-    satisfied[i] = IsFeasible(x,i);
+    satisfied[i] = IsFeasible_NoDeps(x,i);
 }
 
 class StatUpdatingEdgePlanner : public PiggybackEdgePlanner
@@ -848,6 +911,13 @@ EdgePlanner* AdaptiveCSpace::PathChecker(const Config& a,const Config& b)
 }
 
 EdgePlanner* AdaptiveCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+{
+  if(!visibleTestDeps[obstacle].empty()) fprintf(stderr,"AdaptiveCSpace: Warning, single-obstacle path checker has dependent visibility tests\n");
+  else if(!feasibleTestDeps[obstacle].empty()) fprintf(stderr,"AdaptiveCSpace: Warning, single-obstacle path checker has dependent feasibility tests\n");
+  return PathChecker_NoDeps(a,b,obstacle);
+}
+
+EdgePlanner* AdaptiveCSpace::PathChecker_NoDeps(const Config& a,const Config& b,int obstacle)
 {
   if(!adaptive) return PiggybackCSpace::PathChecker(a,b,obstacle);
   if(feasibleStats.size() != constraints.size()) SetupAdaptiveInfo();  
@@ -892,6 +962,9 @@ bool AdaptiveCSpace::AddFeasibleDependency(int cindex,int dindex)
   if(feasibleStats.size() != constraints.size()) SetupAdaptiveInfo();
   if(feasibleTestDeps.empty())
     feasibleTestDeps.resize(constraints.size());
+  if(dindex <= cindex) {
+    fprintf(stderr,"AdaptiveCSpace: Warning, added dependency of feasibility test %d on %d out of order\n",cindex,dindex);
+  }
   feasibleTestDeps[cindex].push_back(dindex);
   return true;
 }
@@ -975,18 +1048,36 @@ void AdaptiveCSpace::LoadStats(const PropertyMap& stats)
   }
 }
 
+class CSpaceConstraintSet : public CSet
+{
+public:
+  CSpace* space;
+  int constraint;
+  CSpaceConstraintSet(CSpace* _space,int _constraint)
+  :space(_space),constraint(_constraint)
+  {}
+  virtual ~CSpaceConstraintSet () {}
+  virtual int NumDimensions() const { return space->constraints[constraint]->NumDimensions(); }
+  virtual bool Contains(const Config& x) { return space->IsFeasible(x,constraint); }
+  virtual bool Project(Config& x) { return space->constraints[constraint]->Project(x); }
+  virtual bool IsSampleable() const { return space->constraints[constraint]->IsSampleable(); }
+  virtual void Sample(Config& x) { space->constraints[constraint]->Sample(x); }
+  virtual Optimization::NonlinearProgram* Numeric() { return space->constraints[constraint]->Numeric(); }
+  virtual bool IsConvex() const { return space->constraints[constraint]->IsConvex(); }
+  virtual Real ObstacleDistance(const Config& x) { return space->constraints[constraint]->ObstacleDistance(x); }
+};
+
 SubsetConstraintCSpace::SubsetConstraintCSpace(CSpace* baseSpace,const std::vector<int>& constraintIndices)
 :PiggybackCSpace(baseSpace),activeConstraints(constraintIndices)
 {
   for(size_t i=0;i<activeConstraints.size();i++)
-    AddConstraint(baseSpace->ConstraintName(activeConstraints[i]),baseSpace->Constraint(activeConstraints[i]));
+    AddConstraint(baseSpace->ConstraintName(activeConstraints[i]),new CSpaceConstraintSet(baseSpace,activeConstraints[i]));
 }
 
 SubsetConstraintCSpace::SubsetConstraintCSpace(CSpace* baseSpace,int constraint)
 :PiggybackCSpace(baseSpace),activeConstraints(1,constraint)
 {
-  for(size_t i=0;i<activeConstraints.size();i++)
-    AddConstraint(baseSpace->ConstraintName(activeConstraints[i]),baseSpace->Constraint(activeConstraints[i]));
+  AddConstraint(baseSpace->ConstraintName(constraint),new CSpaceConstraintSet(baseSpace,constraint));
 }
 
 EdgePlanner* SubsetConstraintCSpace::PathChecker(const Config& a,const Config& b)

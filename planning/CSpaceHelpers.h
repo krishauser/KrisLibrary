@@ -180,6 +180,7 @@ public:
   SubsetConstraintCSpace(CSpace* baseSpace,const std::vector<int>& constraints);
   SubsetConstraintCSpace(CSpace* baseSpace,int constraints);
   virtual bool IsFeasible(const Config& x) { return CSpace::IsFeasible(x); }
+  virtual bool IsFeasible(const Config& x,int obstacle) { return CSpace::IsFeasible(x,obstacle); }
   virtual bool ProjectFeasible(Config& x) { return CSpace::ProjectFeasible(x); }
   virtual Optimization::NonlinearProgram* FeasibleNumeric() { return CSpace::FeasibleNumeric(); }
   virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b) { return CSpace::LocalPlanner(a,b); }
@@ -192,6 +193,15 @@ public:
 
 /** @brief A class that optimizes constraint testing order using empirical
  * data.
+ *
+ * Allows feasibility and visibility tests to have dependent tests, which establishes
+ * constraints on the order of optimized feasibility/visibility testing.  This lets you
+ * implement quick-reject tests.
+ * 
+ * This functionality also (experimentally) allows a test to compute some data
+ * (e.g., forward kinematics) which will then shared between several subsequent
+ * tests.  However, this use case can lead to subtle bugs particularly with
+ * single-obstacle visibility checks.
  */
 class AdaptiveCSpace : public PiggybackCSpace
 {
@@ -202,12 +212,16 @@ public:
   virtual void CheckConstraints(const Config& x,std::vector<bool>& satisfied);
   virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
   virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int obstacle);
+  bool IsFeasible_NoDeps(const Config& x,int obstacle);
+  EdgePlanner* PathChecker_NoDeps(const Config& a,const Config& b,int obstacle);
   void SetupAdaptiveInfo();
   bool AddFeasibleDependency(int constraint,int dependency);
   bool AddVisibleDependency(int constraint,int dependency);
   bool AddFeasibleDependency(const char* name,const char* dependency);
   bool AddVisibleDependency(const char* name,const char* dependency);
   void OptimizeQueryOrder();
+  void GetFeasibleDependencies(int obstacle,std::vector<int>& deps,bool recursive=true) const;
+  void GetVisibleDependencies(int obstacle,std::vector<int>& deps,bool recursive=true) const;
   void GetStats(PropertyMap& stats) const;
   void LoadStats(const PropertyMap& stats);
 
