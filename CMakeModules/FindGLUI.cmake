@@ -2,7 +2,7 @@
 # Requires OpenGL and GLUT - searches for them using find_package
 # Once done, this will define
 #
-#	GLUI_INCLUDE_DIR, where to find GL/glui.h (or GLUI/glui.h on mac)
+#	GLUI_INCLUDE_DIR, where to find GL/glui.h 
 #	GLUI_LIBRARY, the libraries to link against
 #	GLUI_FOUND, If false, do not try to use GLUI.
 #
@@ -79,7 +79,7 @@ if(OPENGL_FOUND AND GLUT_FOUND)
 
 		if(APPLE)
 			find_path(GLUI_INCLUDE_DIR
-				GLUI/glui.h
+				GL/glui.h
 				HINTS
 				${OPENGL_INCLUDE_DIR}
 				DOC
