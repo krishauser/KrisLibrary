@@ -432,6 +432,12 @@ Real CollisionMeshQuery::PenetrationDepth_Cached() const
   else return Min(penetration1->maxDepth,penetration2->maxDepth);
 }
 
+inline void VEC3_COPY(PQP_REAL* res,const PQP_REAL* in)
+{
+  res[0] = in[0];
+  res[1] = in[1];
+  res[2] = in[2];
+}
 
 bool CollisionMeshQuery::WithinDistance(Real tol)
 {
@@ -444,6 +450,21 @@ bool CollisionMeshQuery::WithinDistance(Real tol)
 			 R2,T2,m2->pqpModel,
 			 tol);
   Assert(res == PQP_OK);
+  ///in case CollisionMeshQueryEnhanced is used to query TolerancePoints/TolerancePairs
+  pqpResults->toleranceAll.triDist1.clear();
+  pqpResults->toleranceAll.triDist2.clear();
+  pqpResults->toleranceAll.triPartner1.clear();
+  pqpResults->toleranceAll.triPartner2.clear();
+  pqpResults->toleranceAll.triCp1.clear();
+  pqpResults->toleranceAll.triCp2.clear();
+  pqpResults->toleranceAll.triDist1[pqpResults->tolerance.tid1] = pqpResults->tolerance.distance;
+  pqpResults->toleranceAll.triDist2[pqpResults->tolerance.tid2] = pqpResults->tolerance.distance;
+  pqpResults->toleranceAll.triPartner1[pqpResults->tolerance.tid1] = pqpResults->tolerance.tid2;
+  pqpResults->toleranceAll.triPartner2[pqpResults->tolerance.tid2] = pqpResults->tolerance.tid1;
+  VEC3_COPY(pqpResults->toleranceAll.triCp1[pqpResults->tolerance.tid1].p1,pqpResults->tolerance.p1);
+  VEC3_COPY(pqpResults->toleranceAll.triCp1[pqpResults->tolerance.tid1].p2,pqpResults->tolerance.p2);
+  VEC3_COPY(pqpResults->toleranceAll.triCp2[pqpResults->tolerance.tid2].p1,pqpResults->tolerance.p1);
+  VEC3_COPY(pqpResults->toleranceAll.triCp2[pqpResults->tolerance.tid2].p2,pqpResults->tolerance.p2);
   return pqpResults->tolerance.CloserThanTolerance();
 }
 
@@ -643,8 +664,9 @@ Real CollisionMeshQueryEnhanced::PenetrationDepth()
 
 void CollisionMeshQueryEnhanced::CollisionPairs(vector<int>& t1,vector<int>& t2) const
 { 
-  if(margin1 + margin2 > 0) 
+  if(margin1 + margin2 > 0) {
     CollisionMeshQuery::TolerancePairs(t1,t2);
+  }
   else 
     CollisionMeshQuery::CollisionPairs(t1,t2);
 }
@@ -1571,7 +1593,7 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
             if((int)tris.size()==max) return; //done!
           }
         }
-        if(temptris.size()<tempmax) 
+        if((int)temptris.size()<tempmax) 
           return;
         else  
           //filled out all the temp triangles, but may have missed some due to filtering
