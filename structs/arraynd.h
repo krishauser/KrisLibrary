@@ -2,7 +2,7 @@
 #define ARRAY_ND
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "array2d.h"
 #include "array3d.h"
 #include <KrisLibrary/utils/IntTuple.h>
@@ -460,7 +460,7 @@ template <class T>
 const ArrayNDRef<T>& ArrayNDRef<T>::operator = (const ArrayND<T>& val)
 {
   assert(curDim+val.dims.size() == (int)obj->dims.size());
-    LOG4CXX_ERROR(logger,"TODO: copy slices\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: copy slices\n");
   abort();
   return *this;
 }

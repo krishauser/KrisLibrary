@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "TriMeshOperators.h"
 #include <math/SVDecomposition.h>
 #include <math/matrix.h>
@@ -249,7 +249,7 @@ void MergeVertices(TriMeshWithTopology& mesh,Real tolerance=0)
       newtris.push_back(newtri);
     }
   }
-  LOG4CXX_INFO(logger,"Vertex merging reduced "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris to "<<newpts.size()<<" verts and "<<newtris.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Vertex merging reduced "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris to "<<newpts.size()<<" verts and "<<newtris.size());
   swap(mesh.verts,newpts);
   swap(mesh.tris,newtris);
   Assert(mesh.IsValid());
@@ -293,12 +293,12 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
       if(!duplicate)
 	ni.push_back(n[mesh.incidentTris[i][j]]);
     }
-    //LOG4CXX_INFO(logger,"ApproximateShrink "<<i<<" "<<ni.size()<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"ApproximateShrink "<<i<<" "<<ni.size()<<"\n");
     if(ni.empty()) continue;
     else if(ni.size() == 1) {
       //shift inward
       mesh.verts[i] -= amount*ni[0];
-      //LOG4CXX_INFO(logger,"  "<<ni[0]<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  "<<ni[0]<<"\n");
     }
     else if(ni.size() == 2) {
       //shift inward, solve analytically
@@ -320,8 +320,8 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	  Vector3 navg = (ni[0]+ni[1])/2.0;
 	  mesh.verts[i] -= navg*amount;
 	}
-	//LOG4CXX_INFO(logger,"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<"\n");
-	//LOG4CXX_INFO(logger,"  coeffs "<<coeffs[0]<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  coeffs "<<coeffs[0]<<"\n");
       }
     }
     else if(ni.size()==3) {
@@ -332,7 +332,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	Vector3 navg = (ni[0]+ni[1]+ni[2])/3.0;
 	mesh.verts[i] -= navg*amount;
       }
-      //LOG4CXX_INFO(logger,"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<"\n");
     }
     else {
       //simple method: loop through all triples and pick the deepest
@@ -351,7 +351,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	}
       }
       while(!NextCombination(triple,ni.size()));
-      //LOG4CXX_INFO(logger,"  Deepest is "<<deepest<<" with depth "<<maxdepth<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  Deepest is "<<deepest<<" with depth "<<maxdepth<<"\n");
       if(deepest.normSquared() > threshold*threshold) {
 	Vector3 navg = ni[0];
 	for(size_t j=1;j<ni.size();j++)

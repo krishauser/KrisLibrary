@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "GaussianHMM.h"
 #include "OnlineMoments.h"
 #include <math/indexing.h>
@@ -100,18 +100,18 @@ bool GaussianHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol,int 
     Real lltotal=0.0;
     for(size_t i=0;i<examples.size();i++)
       lltotal += LogLikelihood(examples[i]);
-    LOG4CXX_INFO(logger,"Log likelihood of data: "<<lltotal);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Log likelihood of data: "<<lltotal);
     if(Abs(lltotal-lltotal_old) < tol) {
       return true;
     }
     if((iters+1) % 10 == 0) {
-      LOG4CXX_INFO(logger,"Saving progress to temp.ghmm\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Saving progress to temp.ghmm\n");
       ofstream out("temp.ghmm");
       out<<*this<<endl;
       out.close();
     }
 
-    LOG4CXX_INFO(logger,"Performing EM iteration "<<iters);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Performing EM iteration "<<iters);
 
     //interleaved E/M steps to reduce memory consumption
     p0accum.resize(discretePrior.n);
@@ -139,10 +139,10 @@ bool GaussianHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol,int 
     }
     discretePrior = p0accum;
     NormalizeProbability(discretePrior);
-    //LOG4CXX_INFO(logger,"Priors: "<<discretePrior<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Priors: "<<discretePrior<<"\n");
     //now maximize transition matrix
     transitionMatrix = taccum;
-    //LOG4CXX_INFO(logger,"Counts: "<<transitionMatrix<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Counts: "<<transitionMatrix<<"\n");
     for(int i=0;i<transitionMatrix.m;i++) {
       Vector temp;
       transitionMatrix.getColRef(i,temp);
@@ -162,7 +162,7 @@ bool GaussianHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol,int 
 	emissionModels[i].mu = momentaccum[i].mean;
 	bool res=emissionModels[i].setCovariance(momentaccum[i].cov,verbose);
 	if(!res) {
-	  LOG4CXX_ERROR(logger,"Error setting gaussian "<<i);
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Error setting gaussian "<<i);
 	  return false;
 	}
 	int nzero = 0;
@@ -173,7 +173,7 @@ bool GaussianHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol,int 
 	  }
 	}
 	if(nzero > 0) {
-	  LOG4CXX_INFO(logger,"Gaussian "<<i<<" became degenerate on "<<nzero);
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<i<<" became degenerate on "<<nzero);
 	}
       }
     }

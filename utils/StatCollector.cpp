@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "StatCollector.h"
 #include <limits>
 #include <iostream>
@@ -272,16 +272,14 @@ void SaveRecurse(ostream& out,const string& name,const StatDatabase::Data& data,
 
 bool LoadRecurse(istream& in,string& name,StatDatabase::Data& data,int indent)
 {
-  if(!InputQuotedString(in,name)) { LOG4CXX_INFO(logger,"Failed to load name"<<"\n"); return false; }
+  if(!InputQuotedString(in,name)) { LOG4CXX_INFO(KrisLibrary::logger(),"Failed to load name"<<"\n"); return false; }
   in>>data.count;
-  if(!data.value.Load(in))  { LOG4CXX_INFO(logger,"Failed to load value for "<<name<<"\n"); return false; }
+  if(!data.value.Load(in))  { LOG4CXX_INFO(KrisLibrary::logger(),"Failed to load value for "<<name<<"\n"); return false; }
 
   EatWhitespace(in);
   int c = in.get();
-  if (!in) {
-	  LOG4CXX_INFO(logger, "Couldnt load open brace for " << name.c_str() << ", end of file\n");
-  }
-  if (c != '{') { LOG4CXX_INFO(logger, "Couldn't load open brace for " << name.c_str() << ", got " << c); return false; }
+  if(!in) { LOG4CXX_INFO(KrisLibrary::logger(),"Couldnt load open brace for "<<name.c_str() <<", end of file\n" );} 
+  if(c != '{') { LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't load open brace for "<<name.c_str()<<", got "<<c); return false; }
   EatWhitespace(in);
   c = in.peek();
   while(c != '}') {
@@ -312,7 +310,7 @@ bool StatDatabase::Load(istream& in)
   string temp;
   if(LoadRecurse(in,temp,root,0)) {
     if(temp != "StatDatabase") {
-      LOG4CXX_ERROR(logger,"StatDatabase::Load(): Warning, root is not set to \"StatDatabase\""<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"StatDatabase::Load(): Warning, root is not set to \"StatDatabase\""<<"\n");
     }
     return true;
   }

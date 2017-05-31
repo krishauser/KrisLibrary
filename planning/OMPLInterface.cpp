@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "OMPLInterface.h"
 #include <KrisLibrary/planning/EdgePlanner.h>
 #include <KrisLibrary/utils/stringutils.h>
@@ -221,26 +221,30 @@ void OMPLCSpace::Interpolate(const Config& a,const Config& b,Real u,Config& x)
   FromOMPL(stemp3,x);
 }
 
-class OMPLEdgePlanner : public StraightLineEpsilonPlanner
+class OMPLEdgePlanner : public EpsilonEdgeChecker
 {
 public:
   OMPLEdgePlanner(OMPLCSpace* space,const Config& x,const Config& y,Real resolution)
-  :StraightLineEpsilonPlanner(space,x,y,resolution),omplspace(space)
+  :EpsilonEdgeChecker(space,x,y,resolution),omplspace(space)
+  {
+  }
+  OMPLEdgePlanner(OMPLCSpace* space,const SmartPointer<Interpolator>& path,Real resolution)
+  :EpsilonEdgeChecker(space,path,resolution),omplspace(space)
   {
   }
   virtual bool IsVisible() {
-    omplspace->ToOMPL(this->a,omplspace->stemp1);
-    omplspace->ToOMPL(this->b,omplspace->stemp2);
+    omplspace->ToOMPL(this->Start(),omplspace->stemp1);
+    omplspace->ToOMPL(this->End(),omplspace->stemp2);
     this->foundInfeasible = !omplspace->si_->checkMotion(omplspace->stemp1,omplspace->stemp2);
     this->dist = 0;
     return !this->foundInfeasible;
   }
-  virtual EdgePlanner* Copy() const { return new OMPLEdgePlanner(omplspace,a,b,epsilon); }
-  virtual EdgePlanner* ReverseCopy() { return new OMPLEdgePlanner(omplspace,b,a,epsilon); }
+  virtual EdgePlanner* Copy() const { return new OMPLEdgePlanner(omplspace,path,epsilon); }
+  virtual EdgePlanner* ReverseCopy() { return new OMPLEdgePlanner(omplspace,new ReverseInterpolator(path),epsilon); }
   OMPLCSpace* omplspace;
 };
 
-EdgePlanner* OMPLCSpace::LocalPlanner(const Config& x, const Config& y)
+EdgePlanner* OMPLCSpace::PathChecker(const Config& x, const Config& y)
 {
   return new OMPLEdgePlanner(this,x,y,resolution);
 }
@@ -260,7 +264,7 @@ void KrisLibraryOMPLPlanner::setup()
 {
   ob::ProblemDefinitionPtr pdef = this->getProblemDefinition();
   if(pdef == NULL) {
-        LOG4CXX_ERROR(logger,"KrisLibraryOMPLPlanner::setup(): problem definition not set\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::setup(): problem definition not set\n");
     return;
   }
   cspace = new OMPLCSpace(pdef->getSpaceInformation());
@@ -277,7 +281,7 @@ void KrisLibraryOMPLPlanner::setup()
   //TODO: objective functions?
   planner = factory.Create(problem);
   if(!planner) {
-        LOG4CXX_ERROR(logger,"KrisLibraryOMPLPlanner::setup(): there was a problem creating the planner!\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::setup(): there was a problem creating the planner!\n");
     return;
   }
   if(planner->IsOptimizing()) {
@@ -294,16 +298,16 @@ void KrisLibraryOMPLPlanner::getPlannerData (ob::PlannerData &data) const
 {
   if(!planner) return;
   OMPLCSpace* nc_cspace = const_cast<OMPLCSpace*>((const OMPLCSpace*)cspace);
-  RoadmapPlanner roadmap(nc_cspace);
+  RoadmapPlanner::Roadmap roadmap;
   MotionPlannerInterface* iplanner = const_cast<MotionPlannerInterface*>((const MotionPlannerInterface*)planner);
   iplanner->GetRoadmap(roadmap);
-  for(size_t i=0;i<roadmap.roadmap.nodes.size();i++) {
-    unsigned int id = data.addVertex(ob::PlannerDataVertex(nc_cspace->ToOMPL(roadmap.roadmap.nodes[i]),(int)i));
+  for(size_t i=0;i<roadmap.nodes.size();i++) {
+    unsigned int id = data.addVertex(ob::PlannerDataVertex(nc_cspace->ToOMPL(roadmap.nodes[i]),(int)i));
     Assert(id == i);
   }
-  for(size_t i=0;i<roadmap.roadmap.nodes.size();i++) {
+  for(size_t i=0;i<roadmap.nodes.size();i++) {
     RoadmapPlanner::Roadmap::Iterator e;
-    for(roadmap.roadmap.Begin(i,e);!e.end();e++)
+    for(roadmap.Begin(i,e);!e.end();e++)
       data.addEdge(e.source(),e.target());
   }
 }
@@ -312,7 +316,7 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
 {
   if(!planner) {
     //may have had a previous clear() call
-        //LOG4CXX_ERROR(logger,"KrisLibraryOMPLPlanner::solve(): Warning, setup() not called yet\n");
+        //LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::solve(): Warning, setup() not called yet\n");
     setup();
     if(!planner) 
       return ob::PlannerStatus(ob::PlannerStatus::UNKNOWN);
@@ -356,6 +360,9 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
 
     planner->PlanMore(increment); 
   }
+  PropertyMap stats;
+  planner->GetStats(stats);
+  stats.Print(cout);
   if(planner->IsSolved()) {
     //convert solution to OMPL solution
     MilestonePath path;
@@ -434,7 +441,7 @@ void CSpaceOMPLStateSpace::enforceBounds (ob::State *state) const
     vector<Real> q;
     this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
-            LOG4CXX_ERROR(logger,"CSpaceOMPLStateSpace::enforceBounds: incorrect size of configuration?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"CSpaceOMPLStateSpace::enforceBounds: incorrect size of configuration?\n");
       return;
     }
     for(size_t i=0;i<q.size();i++)
@@ -449,7 +456,7 @@ bool CSpaceOMPLStateSpace::satisfiesBounds (const ob::State *state) const
     vector<Real> q;
     this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
-            LOG4CXX_ERROR(logger,"CSpaceOMPLStateSpace::satisfiesBounds: incorrect size of configuration?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"CSpaceOMPLStateSpace::satisfiesBounds: incorrect size of configuration?\n");
       return true;
     }
     for(size_t i=0;i<q.size();i++)

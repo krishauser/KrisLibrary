@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Meshing.h"
 #include <math3d/interpolate.h>
 #include <math3d/Plane3D.h>
@@ -320,12 +320,12 @@ void TriSplitter::Split(const Plane3D& p)
       v1=newVerts[i][0].second;
       a=t[e1];
       if(d[a] <= -tol || d[a] >= tol) {
-	LOG4CXX_ERROR(logger,"Error with the vertex split!"<<"\n");
-	LOG4CXX_INFO(logger,"Triangle "<<mesh.tris[i]<<"\n");
-	LOG4CXX_INFO(logger,"Distances "<<d[mesh.tris[i][0]]<<", "<<d[mesh.tris[i][1]]<<", "<<d[mesh.tris[i][2]]<<"\n");
-	LOG4CXX_INFO(logger,"Edge "<<e1<<"\n");
-	LOG4CXX_INFO(logger,"Split vertex "<<a<<"\n");
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error with the vertex split!"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<mesh.tris[i]<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Distances "<<d[mesh.tris[i][0]]<<", "<<d[mesh.tris[i][1]]<<", "<<d[mesh.tris[i][2]]<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Edge "<<e1<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Split vertex "<<a<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       Assert(d[a] >= -tol && d[a] <= tol);
       t.getCompliment(e1,b,c);
@@ -477,7 +477,7 @@ void GetConnectedCoplanarTris(TriMeshWithTopology& mesh,int t,Real tol,PolygonWi
   }
 
   //extract cycles from the edge list
-  LOG4CXX_INFO(logger,"TODO: extract cycles from edge list"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"TODO: extract cycles from edge list"<<"\n");
   abort();
 }
 */

@@ -5,6 +5,9 @@
 
 namespace Camera {
 
+/** @brief A class containing viewport / camera information.  This uses OpenGL coordinate convention
+ * in which x is to the right of the image, y is downward in the image, and z is backward. 
+ */
 class Viewport : public Camera
 {
 public:

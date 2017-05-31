@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "ppm.h"
 #include "image.h"
 #include <stdio.h>
@@ -127,12 +127,12 @@ int input_int(const vector<char>& data,size_t& readpos,bool& eof)
 bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
 {
   if(image == NULL || m == NULL || n == NULL) {
-        LOG4CXX_ERROR(logger,"ReadPPM_RGB: Invalid parameters\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: Invalid parameters\n");
     return false;
   }
   FILE* f = fopen(file,"rb");
   if(!f) {
-        LOG4CXX_ERROR(logger,"ReadPPM_RGB: Couldnt open file "<<file);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: Couldnt open file "<<file);
     return false;
   }
   vector<char> data;
@@ -142,7 +142,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     data.insert(data.end(),buf+0,buf+MAX_LEN);
   }
   if(ferror(f)) {
-        LOG4CXX_ERROR(logger,"ReadPPM_RGB: error reading PPM file\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: error reading PPM file\n");
     fclose(f);
     return false;
   }
@@ -156,11 +156,11 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
   bool eof = 0;
   tok = input(data,readpos,eof);
   if(tok.length() != 2) {
-        LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file doesn't begin with PX\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: PPM file doesn't begin with PX\n");
     return false;
   }
   if(tok[0] != 'P') {
-        LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file doesn't begin with PX\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: PPM file doesn't begin with PX\n");
     return false;
   }
   if(tok[1] == '6') {
@@ -168,18 +168,18 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     *m = input_int(data,readpos,eof);
     *n = input_int(data,readpos,eof);
     if(*m <= 0 || *n<=0) {
-            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file has invalid size "<<*m<<" "<<*n);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: PPM file has invalid size "<<*m<<" "<<*n);
       return false;
     }
     int maxdepth = input_int(data,readpos,eof);
     if(maxdepth != 255) {
-            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file is not 24 bit\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: PPM file is not 24 bit\n");
       return false;      
     }
     readpos++;
     int size=(*m)*(*n)*3;
     if(readpos+size > data.size()) {
-            LOG4CXX_ERROR(logger,"ReadPPM_RGB: error reading PPM file?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: error reading PPM file?\n");
       delete [] *image;
       *image = NULL;
       return false;
@@ -194,12 +194,12 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     *m = input_int(data,readpos,eof);
     *n = input_int(data,readpos,eof);
     if(*m <= 0 || *n<=0) {
-            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file has invalid size "<<*m<<" "<<*n);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: PPM file has invalid size "<<*m<<" "<<*n);
       return false;
     }
     int maxdepth = input_int(data,readpos,eof);
     if(maxdepth > 255) {
-            LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file is more than 24 bit\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: PPM file is more than 24 bit\n");
       return false;      
     }
     *image = new unsigned char[(*m)*(*n)*3];
@@ -210,7 +210,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
       }
     }
     if(eof) {
-            LOG4CXX_ERROR(logger,"ReadPPM_RGB: error reading PPM file?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: error reading PPM file?\n");
       delete [] *image;
       *image = NULL;
       return false;
@@ -219,7 +219,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
     return true;
   }
   else {
-        LOG4CXX_ERROR(logger,"ReadPPM_RGB: PPM file isn't RGB format\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_RGB: PPM file isn't RGB format\n");
     return false;
   }
   return true;
@@ -227,7 +227,7 @@ bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file)
 
 bool ReadPPM_Grayscale(unsigned char** image,int* m,int* n,const char* file)
 {
-    LOG4CXX_ERROR(logger,"ReadPPM_Grayscale: Not done yet\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ReadPPM_Grayscale: Not done yet\n");
   return false;
 }
 

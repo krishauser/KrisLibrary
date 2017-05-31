@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "ConstrainedDynamics.h"
 #include "NewtonEuler.h"
 #include "IKFunctions.h"
@@ -219,29 +219,29 @@ bool ConstrainedForwardDynamics(RobotDynamics3D& robot,const Vector& ddx,const M
   //Inspection code
   Vector D;
   ldl.getD(D);
-  LOG4CXX_INFO(logger,"LDL D: "<<D<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"LDL D: "<<D<<"\n");
 
-  LOG4CXX_INFO(logger,"Jc:"<<"\n"<<Jc<<"\n");
-  LOG4CXX_INFO(logger,"B^-1:"<<"\n"<<Binv<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Jc:"<<"\n"<<Jc<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"B^-1:"<<"\n"<<Binv<<"\n");
 
   Matrix B;
   robot.UpdateDynamics();
   robot.GetKineticEnergyMatrix(B);
-  LOG4CXX_INFO(logger,"B: "<<"\n"<<B<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"B: "<<"\n"<<B<<"\n");
   LDLDecomposition<Real> ldlB;
   ldlB.set(B);
   ldlB.getPseudoInverse(Binv);
-  LOG4CXX_INFO(logger,"Binv (pseudoinverted): "<<Binv<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Binv (pseudoinverted): "<<Binv<<"\n");
 
-  LOG4CXX_INFO(logger,"J*B^-1*Jt:"<<"\n"<<JBinvJt<<"\n");
-  LOG4CXX_INFO(logger,"(J*B^-1*Jt)^-1:"<<"\n"<<JBinvJT_Inv<<"\n");
-  LOG4CXX_INFO(logger,"Ddqref: "<<ddqref<<"\n");
-  LOG4CXX_INFO(logger,"Ddxref: "<<ddxref<<"\n");
-  LOG4CXX_INFO(logger,"f0:"<<f0<<"\n");
-  LOG4CXX_INFO(logger,"BinvJt*f: "<<bp<<"\n");
-  LOG4CXX_INFO(logger,"A:"<<"\n"<<A<<"\n");
-  LOG4CXX_INFO(logger,"b: "<<b<<"\n");
-  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"J*B^-1*Jt:"<<"\n"<<JBinvJt<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"(J*B^-1*Jt)^-1:"<<"\n"<<JBinvJT_Inv<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Ddqref: "<<ddqref<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Ddxref: "<<ddxref<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"f0:"<<f0<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"BinvJt*f: "<<bp<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"A:"<<"\n"<<A<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"b: "<<b<<"\n");
+  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   */
 
   //checking
@@ -254,16 +254,16 @@ bool ConstrainedForwardDynamics(RobotDynamics3D& robot,const Vector& ddx,const M
     A.mul(ei,temp);
     temp += b;
     if(ti.isEqual(temp,1e-3)) {
-      LOG4CXX_INFO(logger,"Agreement between CalcAccel and ForwardDynamics\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Agreement between CalcAccel and ForwardDynamics\n");
     }
     else {
-      LOG4CXX_INFO(logger,"Disagreement between CalcAccel and ForwardDynamics\n");
-      LOG4CXX_INFO(logger,"CalcAccel: "<<ti<<"\n");
-      LOG4CXX_INFO(logger,"ForwardDynamics: "<<temp<<"\n");
-      LOG4CXX_INFO(logger,"bp: "<<bp<<"\n");
-      LOG4CXX_INFO(logger,"f0: "<<f0<<"\n");
-      LOG4CXX_INFO(logger,"ddqref: "<<ddqref<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Disagreement between CalcAccel and ForwardDynamics\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"CalcAccel: "<<ti<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ForwardDynamics: "<<temp<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"bp: "<<bp<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"f0: "<<f0<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ddqref: "<<ddqref<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
   }
   */
@@ -284,7 +284,7 @@ bool ConstrainedCalcTorque(RobotDynamics3D& robot,const Vector& ddx,const Matrix
   ldl.set(A);
   ldl.zeroTolerance = 1e-6;
   if(!ldl.backSub(temp,t)) {
-        LOG4CXX_ERROR(logger,"ConstrainedCalcTorque could not invert dynamics matrix\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedCalcTorque could not invert dynamics matrix\n");
     return false;
   }
   return true;

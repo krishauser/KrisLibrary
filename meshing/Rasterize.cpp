@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Rasterize.h"
 #include "Meshing.h"
 #include <math/cast.h>
@@ -204,22 +204,22 @@ void GetTriangleCells_Clipped(const Triangle2D& torig,std::vector<IntPair>& cell
       int iymin,iymax;
       if(long_end_up) {
 	if(y1 < y2-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y1 = "<<y1<<", y2 = "<<y2<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y2,z2));
 	iymax = (int)iFloor(Max(y1,z1));
       }
       else {
 	if(y2 < y1-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y2 = "<<y2<<", y1 = "<<y1<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y1,z1));
 	iymax = (int)iFloor(Max(y2,z2));
@@ -254,22 +254,22 @@ void GetTriangleCells_Clipped(const Triangle2D& torig,std::vector<IntPair>& cell
       int iymin,iymax;
       if(long_end_up) {
 	if(y1 < y3-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y1 = "<<y1<<", y3 = "<<y3<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y3,z3));
 	iymax = (int)iFloor(Max(y1,z1));
       }
       else {
 	if(y3 < y1-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y3 = "<<y3<<", y1 = "<<y1<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y1,z1));
 	iymax = (int)iFloor(Max(y3,z3));
@@ -391,22 +391,22 @@ void GetTriangleCells(const Triangle2D& t,vector<IntPair>& cells)
       int iymin,iymax;
       if(long_end_up) {
 	if(y1 < y2-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y1 = "<<y1<<", y2 = "<<y2<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y2,z2));
 	iymax = (int)iFloor(Max(y1,z1));
       }
       else {
 	if(y2 < y1-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y2 = "<<y2<<", y1 = "<<y1<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y1,z1));
 	iymax = (int)iFloor(Max(y2,z2));
@@ -438,22 +438,22 @@ void GetTriangleCells(const Triangle2D& t,vector<IntPair>& cells)
       int iymin,iymax;
       if(long_end_up) {
 	if(y1 < y3-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y1 = "<<y1<<", y3 = "<<y3<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y3,z3));
 	iymax = (int)iFloor(Max(y1,z1));
       }
       else {
 	if(y3 < y1-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y3 = "<<y3<<", y1 = "<<y1<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	iymin = (int)iFloor(Min(y1,z1));
 	iymax = (int)iFloor(Max(y3,z3));
@@ -483,7 +483,7 @@ void Rasterizer2D::Rasterize(const Triangle2D& t)
 
 void Rasterizer2D::Rasterize(const Triangle2D& t,const Vector3& ba,const Vector3& bb,const Vector3& bc)
 {
-  //LOG4CXX_INFO(logger,"Rasterizing triangle "<<t.a<<", "<<t.b<<", "<<t.c<<"..."<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Rasterizing triangle "<<t.a<<", "<<t.b<<", "<<t.c<<"..."<<"\n");
   const Vector2* v[3]={&t.a,&t.b,&t.c};
   const Vector3* b[3]={&ba,&bb,&bc};
   //rotate so that least lexicographic is in position 0
@@ -572,21 +572,21 @@ void Rasterizer2D::Rasterize(const Triangle2D& t,const Vector3& ba,const Vector3
       //fill the segment (x,y1)->(x,y2)
       if(long_end_up) {
 	if(y1 < y2-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y1 = "<<y1<<", y2 = "<<y2<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	RasterizeVerticalSegment(ix,y2,y1,bary2,bary1);
       }
       else {
 	if(y2 < y1-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y2 = "<<y2<<", y1 = "<<y1<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	RasterizeVerticalSegment(ix,y1,y2,bary1,bary2);
       }
@@ -610,24 +610,24 @@ void Rasterizer2D::Rasterize(const Triangle2D& t,const Vector3& ba,const Vector3
       //fill the segment (x,y1)->(x,y3)
       if(long_end_up) {
 	if(y1 < y3-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  LOG4CXX_ERROR(logger,"y1 = "<<y1<<", y3 = "<<y3<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	RasterizeVerticalSegment(ix,y3,y1,bary3,bary1);
       }
       else {
 	if(y3 < y1-1e-3) {
-	  LOG4CXX_ERROR(logger,"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
-	  LOG4CXX_ERROR(logger,"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
-	  LOG4CXX_ERROR(logger,"y3 = "<<y3<<", y1 = "<<y1<<"\n");
-	  LOG4CXX_ERROR(logger,"Den3 = "<<den3<<"\n");
-	  LOG4CXX_ERROR(logger,"m3 = "<<m3<<"\n");
-	  LOG4CXX_ERROR(logger,"b3 = "<<b3<<"\n");
-	  LOG4CXX_ERROR(logger,"Press enter to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Den3 = "<<den3<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"m3 = "<<m3<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"b3 = "<<b3<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	RasterizeVerticalSegment(ix,y1,y3,bary1,bary3);
       }

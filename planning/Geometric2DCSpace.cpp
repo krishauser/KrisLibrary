@@ -1,14 +1,61 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Geometric2DCSpace.h"
-#include <math/random.h>
-#include <math/sample.h>
-#include <math3d/Segment2D.h>
-#include <math3d/Line2D.h>
-#include <utils/arrayutils.h>
-#include <GLdraw/drawextra.h>
+#include "EdgePlannerHelpers.h"
+#include "CSetHelpers.h"
+#include <KrisLibrary/math/random.h>
+#include <KrisLibrary/math/sample.h>
+#include <KrisLibrary/math3d/Segment2D.h>
+#include <KrisLibrary/math3d/Line2D.h>
+#include <KrisLibrary/utils/arrayutils.h>
+#include <KrisLibrary/GLdraw/drawextra.h>
 #include "EdgePlanner.h"
 using namespace GLDraw;
+
+Geometric2DObstacleFreeSet::Geometric2DObstacleFreeSet(const GeometricPrimitive2D& _obstacle)
+:obstacle(_obstacle),robot(NULL),translationOnly(true)
+{
+}
+
+Geometric2DObstacleFreeSet::Geometric2DObstacleFreeSet(const GeometricPrimitive2D& _obstacle,const Geometric2DCollection& _robot,bool _translationOnly)
+:obstacle(_obstacle),robot(&_robot),translationOnly(_translationOnly)
+{}
+
+bool Geometric2DObstacleFreeSet::Contains(const Config& x)
+{
+  if(robot==NULL) return !obstacle.Collides(Vector2(x[0],x[1]));
+  Geometric2DCollection trobot = *robot;
+  RigidTransform2D T;
+  if(translationOnly) {
+    T.R.setIdentity();
+    T.t.set(x[0],x[1]);
+    trobot.Transform(T);
+  }
+  else {
+    T.t.set(x[0],x[1]);
+    T.R.setRotate(x[2]);
+  }
+  return !trobot.Collides(obstacle);
+}
+
+Real Geometric2DObstacleFreeSet::ObstacleDistance(const Config& x)
+{
+  return Inf;
+  if(robot==NULL) return obstacle.Distance(Vector2(x[0],x[1]));
+  Geometric2DCollection trobot = *robot;
+  RigidTransform2D T;
+  if(translationOnly) {
+    T.R.setIdentity();
+    T.t.set(x[0],x[1]);
+    trobot.Transform(T);
+  }
+  else {
+    T.t.set(x[0],x[1]);
+    T.R.setRotate(x[2]);
+  }
+  //return trobot.Distance(obstacle);
+}
+
 
 void Geometric2DCollection::Clear()
 {
@@ -481,6 +528,16 @@ Geometric2DCSpace::Geometric2DCSpace()
   domain.bmax.set(1,1);
 }
 
+void Geometric2DCSpace::InitConstraints()
+{
+  AddConstraint("x_bound",new AxisRangeSet(0,domain.bmin.x,domain.bmax.x));
+  AddConstraint("y_bound",new AxisRangeSet(0,domain.bmin.y,domain.bmax.y));
+  char buf[64];
+  for(int i=0;i<Geometric2DCollection::NumObstacles();i++) {
+    sprintf(buf,"%s[%d]",ObstacleTypeName(i),ObstacleIndex(i));
+    AddConstraint(buf,new Geometric2DObstacleFreeSet(Obstacle(i)));
+  }
+}
 
 Real Geometric2DCSpace::ObstacleDistance(const Vector2& p) const
 {
@@ -572,87 +629,27 @@ void Geometric2DCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
   x += c;
 }
 
-int Geometric2DCSpace::NumObstacles()
-{
-  return 4+Geometric2DCollection::NumObstacles();
-}
-
-std::string Geometric2DCSpace::ObstacleName(int obstacle)
-{
-  if(obstacle == 0) return "xmin";
-  else if(obstacle == 1) return "xmax";
-  else if(obstacle == 2) return "ymin";
-  else if(obstacle == 3) return "ymax";
-  else {
-    obstacle -= 4;
-    char buf[64];
-    sprintf(buf,"%s[%d]",ObstacleTypeName(obstacle),ObstacleIndex(obstacle));
-    return buf;
-  }
-}
-
-bool Geometric2DCSpace::ObstacleOverlap(const Segment2D& s,int obstacle) const
-{
-  switch(obstacle) {
-  case 0: return s.a.x < domain.bmin.x || s.b.x < domain.bmin.x;
-  case 1: return s.a.x > domain.bmax.x || s.b.x > domain.bmax.x;
-  case 2: return s.a.y < domain.bmin.y || s.b.y < domain.bmin.y;
-  case 3: return s.a.y > domain.bmax.y || s.b.y > domain.bmax.y;
-  default:
-    return Geometric2DCollection::Collides(s,obstacle-4);
-  }
-}
-
-bool Geometric2DCSpace::IsFeasible(const Config& x,int obstacle)
-{
-  Vector2 p(x(0),x(1));
-  switch(obstacle) {
-  case 0: return p.x >= domain.bmin.x;
-  case 1: return p.x <= domain.bmax.x;
-  case 2: return p.y >= domain.bmin.y;
-  case 3: return p.y <= domain.bmax.y;
-  default:
-    return !Geometric2DCollection::Collides(p,obstacle-4);
-  }
-}
 
 
-bool Geometric2DCSpace::IsFeasible(const Config& x)
-{
-  Vector2 p(x(0),x(1));
-  if(!domain.contains(p)) return false;
-  return !Geometric2DCollection::Collides(p);
-}
-
-class Geometric2DEdgePlanner : public ExplicitEdgePlanner
+class Geometric2DEdgeChecker : public EdgeChecker
 {
 public:
-  Geometric2DEdgePlanner(const Config& _a,const Config& _b,Geometric2DCSpace* _space)
-    :ExplicitEdgePlanner(_space,_a,_b,false),gspace(_space),done(false),failed(false)
+  Geometric2DEdgeChecker(const Config& _a,const Config& _b,Geometric2DCSpace* _space,int _obstacle=-1)
+    :EdgeChecker(_space,_a,_b),gspace(_space),obstacle(_obstacle),done(false),failed(false)
   {
     s.a.set(_a(0),_a(1));
     s.b.set(_b(0),_b(1));
   }
   virtual bool IsVisible() {
-    return !gspace->ObstacleOverlap(s);
+    if(obstacle < 0)
+      return !gspace->Collides(s);
+    else
+      return !gspace->Collides(s,obstacle);
   }
-  virtual bool IsVisible(int i) {
-    return !gspace->ObstacleOverlap(s,i);
-  }
-  virtual void CheckVisible(std::vector<bool>& visible) {
-    visible.resize(gspace->NumObstacles());
-    for(size_t i=0;i<visible.size();i++)
-      visible[i] = IsVisible(i);
-  }
-  virtual void Eval(Real u,Config& x) const {
-    x.mul(a,1.0-u);
-    x.madd(b,u);
-  }
-  virtual const Config& Start() const { return a; }
-  virtual const Config& Goal() const { return b; }
+  
   virtual CSpace* Space() const { return space; }
-  virtual EdgePlanner* Copy() const { return new Geometric2DEdgePlanner(a,b,gspace); }
-  virtual EdgePlanner* ReverseCopy() const  { return new Geometric2DEdgePlanner(b,a,gspace); }
+  virtual EdgePlanner* Copy() const { return new Geometric2DEdgeChecker(path->Start(),path->End(),gspace,obstacle); }
+  virtual EdgePlanner* ReverseCopy() const  { return new Geometric2DEdgeChecker(path->End(),path->Start(),gspace,obstacle); }
 
   //for incremental planners
   virtual Real Priority() const { return s.a.distanceSquared(s.b); }
@@ -661,27 +658,29 @@ public:
   virtual bool Failed() const {  return failed; }
 
   Geometric2DCSpace* gspace;
+  int obstacle;
   Segment2D s;
   //used for incremental planner only
   bool done;
   bool failed;
 };
 
-EdgePlanner* Geometric2DCSpace::LocalPlanner(const Config& a,const Config& b)
+EdgePlanner* Geometric2DCSpace::PathChecker(const Config& a,const Config& b)
 {
-  //return new BisectionEpsilonEdgePlanner(a,b,this,visibilityEpsilon);
-  return new Geometric2DEdgePlanner(a,b,this);
+  //return new EpsilonEdgeChecker(a,b,this,visibilityEpsilon);
+  return new Geometric2DEdgeChecker(a,b,this);
 }
 
-EdgePlanner* Geometric2DCSpace::LocalPlanner(const Config& a,const Config& b,int obstacle)
+EdgePlanner* Geometric2DCSpace::PathChecker(const Config& a,const Config& b,int constraint)
 {
+  if(constraint <= 1) return new TrueEdgeChecker(this,a,b);
   Segment2D s;
   s.a.set(a(0),a(1));
   s.b.set(b(0),b(1));
-  if(ObstacleOverlap(s,obstacle))
-    return new FalseEdgePlanner(this,a,b);
+  if(Geometric2DCollection::Collides(s,constraint-1))
+    return new FalseEdgeChecker(this,a,b);
   else
-    return new TrueEdgePlanner(this,a,b);
+    return new TrueEdgeChecker(this,a,b);
 }
 
 Real Geometric2DCSpace::Distance(const Config& x, const Config& y)

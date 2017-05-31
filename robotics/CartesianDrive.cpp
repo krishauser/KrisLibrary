@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "CartesianDrive.h"
 #include "IKFunctions.h"
 #include "Rotation.h"
@@ -116,10 +116,10 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       desiredTransforms[i].R = increment * driveTransforms[i].R;
     }
     /*
-    LOG4CXX_INFO(logger,"Desired transform for link "<<links[i]<<"\n");
-    LOG4CXX_INFO(logger,desiredTransforms[i]<<"\n");
-    LOG4CXX_INFO(logger," current transform"<<"\n");
-    LOG4CXX_INFO(logger,originalTransforms[i]<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Desired transform for link "<<links[i]<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),desiredTransforms[i]<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger()," current transform"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),originalTransforms[i]<<"\n");
     */
   }
 
@@ -144,7 +144,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       /*
       Real poserr[3]={0,0,0},orierr[3]={0,0,0};
       tempGoals[i].GetError(originalTransforms[i],poserr,orierr);
-      LOG4CXX_ERROR(logger,"Error on link "<<links[i]<<": "<<poserr[0]<<" "<<poserr[1]<<" "<<poserr[2]<<", "<<orierr[0]<<" "<<orierr[1]<<" "<<orierr[2]);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error on link "<<links[i]<<": "<<poserr[0]<<" "<<poserr[1]<<" "<<poserr[2]<<", "<<orierr[0]<<" "<<orierr[1]<<" "<<orierr[2]);
       */
     }
   }
@@ -191,7 +191,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       goalfunc->rotationScale = Min(positionTolerance,rotationTolerance)/rotationTolerance;
       goalfunc->positionScale = Min(positionTolerance,rotationTolerance)/positionTolerance;
     }
-    //LOG4CXX_INFO(logger,"Position scale "<<goalfunc->positionScale<<", rotation scale "<<goalfunc->rotationScale);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Position scale "<<goalfunc->positionScale<<", rotation scale "<<goalfunc->rotationScale);
     function.functions.push_back(goalfunc);
   }
 
@@ -200,13 +200,13 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   function.GetState(x0);
   function(x0,err0);
   /*
-  LOG4CXX_INFO(logger,"Active dofs: ");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Active dofs: ");
   for(size_t i=0;i<tempActiveDofs.mapping.size();i++) {
-    LOG4CXX_INFO(logger,""<<tempActiveDofs.mapping[i]);
+    LOG4CXX_INFO(KrisLibrary::logger(),""<<tempActiveDofs.mapping[i]);
   }
-  LOG4CXX_INFO(logger,"\n");
-  LOG4CXX_INFO(logger,"Active dof state "<<x0<<"\n");
-  LOG4CXX_INFO(logger,"IK goal residual "<<err0<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Active dof state "<<x0<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"IK goal residual "<<err0<<"\n");
   */
 
   Real quality0 = err0.normSquared();
@@ -232,7 +232,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	else if(tempqmin[k] <= robot->q[k] - TwoPi && robot->q[k] - TwoPi <= tempqmax[k])
 	  robot->q[k] -= TwoPi;
 	else {
-	  LOG4CXX_WARN(logger,"CartesianDriveSolver: Warning, result from IK solve is out of bounds: index "<<k<<", "<<tempqmin[k]<<" <= "<<robot->q[k]<<" <= "<<tempqmax[k]);
+	  LOG4CXX_WARN(KrisLibrary::logger(),"CartesianDriveSolver: Warning, result from IK solve is out of bounds: index "<<k<<", "<<tempqmin[k]<<" <= "<<robot->q[k]<<" <= "<<tempqmax[k]);
 	  robot->q[k] = Clamp(robot->q[k],tempqmin[k],tempqmax[k]);
 	  robot->UpdateFrames();
 	}
@@ -245,7 +245,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   function(x0,err0);
   Real qualityAfter = err0.normSquared();
   if(qualityAfter > quality0) {
-    LOG4CXX_INFO(logger,"CartesianDriveSolver: Solve failed: original configuration was better: "<<quality0<<" vs "<<qualityAfter);
+    LOG4CXX_INFO(KrisLibrary::logger(),"CartesianDriveSolver: Solve failed: original configuration was better: "<<quality0<<" vs "<<qualityAfter);
     res = false;
   }
   else {
@@ -254,11 +254,11 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       //test constraints
       Vector3 perr(0.0),rerr(0.0);
       tempGoals[i].GetError(robot->links[links[i]].T_World,perr,rerr);
-      //LOG4CXX_ERROR(logger,"Position error link "<<links[i]<<": "<<perr<<", rotation error: "<<rerr<<"\n");
+      //LOG4CXX_ERROR(KrisLibrary::logger(),"Position error link "<<links[i]<<": "<<perr<<", rotation error: "<<rerr<<"\n");
       if(perr.norm() > positionTolerance || rerr.norm() > rotationTolerance) {
         res = false;
-        LOG4CXX_ERROR(logger,"CartesianDriveSolver: Position error: "<<perr.norm()<<", rotation error: "<<rerr.norm()<<" not under tolerances "<<positionTolerance<<", "<<rotationTolerance);
-        LOG4CXX_INFO(logger,"  Solve tolerance "<<tolerance<<", result "<<(int)res);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"CartesianDriveSolver: Position error: "<<perr.norm()<<", rotation error: "<<rerr.norm()<<" not under tolerances "<<positionTolerance<<", "<<rotationTolerance);
+        LOG4CXX_INFO(KrisLibrary::logger(),"  Solve tolerance "<<tolerance<<", result "<<(int)res);
         break;
       }
     }
@@ -285,7 +285,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     for(size_t i=0;i<links.size();i++) {
       achievedTransforms[i].R = robot->links[links[i]].T_World.R;
       achievedTransforms[i].t = robot->links[links[i]].T_World*endEffectorOffsets[i];
-      //LOG4CXX_INFO(logger,"  Solved limb transform: "<<achievedTransforms[i].t<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  Solved limb transform: "<<achievedTransforms[i].t<<"\n");
       
       //adjust drive transform along screw to minimize distance to the achieved transform      
       if(IsFiniteV(driveVel[i])) {
@@ -293,8 +293,8 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	Vector3 axis = driveVel[i] / Max(driveVel[i].length(),Epsilon);
 	Real ut = driveVel[i].length();
 	Real tdistance = trel.dot(axis);
-	//LOG4CXX_INFO(logger,"  translation vector"<<trel<<"\n");
-	//LOG4CXX_INFO(logger,"  Translation amount: "<<tdistance);
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  translation vector"<<trel<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  Translation amount: "<<tdistance);
 	tdistance = Clamp(tdistance,0.0,dt*driveVel[i].length());
 	numerator += ut*tdistance;
 	denominator += Sqr(ut);
@@ -304,7 +304,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	Rrel.mulTransposeB(achievedTransforms[i].R,driveTransforms[i].R);
 	Vector3 rotaxis = driveAngVel[i] / Max(driveAngVel[i].length(),Epsilon);
 	Real Rdistance = AxisRotationMagnitude(Rrel,rotaxis);
-	//LOG4CXX_INFO(logger,"  Rotation amount: "<<Rdistance<<" (desired "<<dt*driveAngVel[i].length());
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  Rotation amount: "<<Rdistance<<" (desired "<<dt*driveAngVel[i].length());
 	Rdistance = Clamp(Rdistance,0.0,dt*driveAngVel[i].length());
 	Real uR = driveAngVel[i].length();
 	numerator += uR*Rdistance;
@@ -312,7 +312,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       }
     }
     Real distance = numerator / Max(denominator,Epsilon);
-    //LOG4CXX_INFO(logger,"Distance "<<distance);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Distance "<<distance);
       
     //computed error-minimizing distance along screw motion
     for(size_t i=0;i<links.size();i++) {
@@ -343,10 +343,10 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     driveSpeedAdjustment -= 0.1;
     if(driveSpeedAdjustment <= Epsilon) {
       //don't adjust drive transform
-      LOG4CXX_INFO(logger,"  CartesianDriveSolver: IK solve failed completely.  Must restart.\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"  CartesianDriveSolver: IK solve failed completely.  Must restart.\n");
       return -1;
     }
-    LOG4CXX_INFO(logger,"  CartesianDriveSolver: Solve failed, next trying with amount "<<driveSpeedAdjustment);
+    LOG4CXX_INFO(KrisLibrary::logger(),"  CartesianDriveSolver: Solve failed, next trying with amount "<<driveSpeedAdjustment);
     return 0;
   }
 }

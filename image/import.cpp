@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "import.h"
 #include <string.h>
 #include <errors.h>
@@ -18,11 +18,11 @@ bool ImportImage(const char* fn, Image& img)
 {
 	const char* ext = FileExtension(fn);
 	if(!ext) {
-	  	  LOG4CXX_ERROR(logger,"Couldnt detect an extension on image import file "<< fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Couldnt detect an extension on image import file "<< fn);
 		return false;
 	}
 	if(strlen(ext) > 8) {
-	  	  LOG4CXX_ERROR(logger,"Unknown extension \""<< ext<<"\" on image import file "<< fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown extension \""<< ext<<"\" on image import file "<< fn);
 		return false;
 	}
 	char extbuf[8];
@@ -44,7 +44,7 @@ bool ImportImage(const char* fn, Image& img)
 #ifdef _WIN32
 		return ImportImageGDIPlus(fn, img);
 #else
-				LOG4CXX_ERROR(logger,"ImportImage: Unknown file extension \""<<extbuf<<"\" on image import file "<<fn);
+				LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage: Unknown file extension \""<<extbuf<<"\" on image import file "<<fn);
 		return false;
 #endif //_WIN32
 	}
@@ -71,21 +71,21 @@ bool ImportImageBMP(const char* fn, Image& img)
 	BITMAPFILEHEADER bfh;
 	if(fread(&bfh, sizeof(bfh), 1, f) != 1)
 	{
-		LOG4CXX_INFO(logger,"Couldn't load file header\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't load file header\n");
 		fclose(f);
 		return false;
 	}
 
 	if(memcmp(&bfh.bfType, "BM", 2) != 0) 
 	{
-		LOG4CXX_INFO(logger,"This isn't a bitmap file\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"This isn't a bitmap file\n");
 		return false;
 	}
 
 	BITMAPINFOHEADER bi;
 	if(fread(&bi, sizeof(bi), 1, f) != 1)
 	{
-		LOG4CXX_INFO(logger,"Couldn't load info header\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't load info header\n");
 		fclose(f);
 		return false;
 	}
@@ -99,7 +99,7 @@ bool ImportImageBMP(const char* fn, Image& img)
 			unpackedsize = bi.biWidth * bi.biHeight * (bi.biBitCount>>3);
 		break;
 	default:
-		LOG4CXX_INFO(logger,"Unsupported compression type\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Unsupported compression type\n");
 		fclose(f);
 		return false;
 	}
@@ -117,11 +117,11 @@ bool ImportImageBMP(const char* fn, Image& img)
 		{
 		if(bi.biClrUsed != 0)
 			palette_size = bi.biClrUsed;
-		LOG4CXX_INFO(logger,"8 bit\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"8 bit\n");
 		decode_8 = true;
 		if(fread(&palette, sizeof(RGBQUAD), palette_size, f) != palette_size)
 		{
-			LOG4CXX_INFO(logger,"Couldnt read palette\n");
+			LOG4CXX_INFO(KrisLibrary::logger(),"Couldnt read palette\n");
 			fclose(f);
 			return false;
 		}
@@ -129,27 +129,27 @@ bool ImportImageBMP(const char* fn, Image& img)
 		}
 		break;
 	case 16:
-		LOG4CXX_INFO(logger,"16 bit\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"16 bit\n");
 		fmt = Image::R5G6B5;
 		break;
 	case 24:
-		LOG4CXX_INFO(logger,"24 bit\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"24 bit\n");
 		fmt = Image::R8G8B8;
 		break;
 	default:
-		LOG4CXX_INFO(logger,"Unsupported bit count\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Unsupported bit count\n");
 		fclose(f);
 		return false;
 	}
 
-	LOG4CXX_INFO(logger,"currently "<< ftell(f));
+	LOG4CXX_INFO(KrisLibrary::logger(),"currently "<< ftell(f));
 	
 	fseek(f, bfh.bfOffBits, SEEK_SET);
 
 	unsigned char* bits = new unsigned char [size_to_read];
 	if(fread(bits, 1, size_to_read, f) != size_to_read)
 	{
-		LOG4CXX_INFO(logger,"Couldnt read bits\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Couldnt read bits\n");
 		fclose(f);
 		delete [] bits;
 		return false;
@@ -159,7 +159,7 @@ bool ImportImageBMP(const char* fn, Image& img)
 	{
 		int cur = ftell(f);
 		fseek(f, 0, SEEK_END);
-		LOG4CXX_INFO(logger,"Um, there was some stuff missed: offset is %d, size is %d, to read is %d, current is %d, end is %d\n",
+		LOG4CXX_INFO(KrisLibrary::logger(),"Um, there was some stuff missed: offset is %d, size is %d, to read is %d, current is %d, end is %d\n",
 			bfh.bfOffBits, bfh.bfSize, size_to_read, cur, ftell(f));
 	}
 
@@ -174,7 +174,7 @@ bool ImportImageBMP(const char* fn, Image& img)
 		{
 			if(*bit >= palette_size)
 			{
-				LOG4CXX_INFO(logger,"out of palette range\n");
+				LOG4CXX_INFO(KrisLibrary::logger(),"out of palette range\n");
 			}
 			pixel[0] = palette[*bit].rgbBlue;
 			pixel[1] = palette[*bit].rgbGreen;
@@ -232,20 +232,20 @@ struct tga_file_header
 
 void print_header(tga_file_header& h)
 {
-	LOG4CXX_INFO(logger,"size ident: "<< h.size_image_identification);
-	LOG4CXX_INFO(logger,"color map type: "<< h.color_map_type);
-	LOG4CXX_INFO(logger,"image type: "<< h.image_type);
+	LOG4CXX_INFO(KrisLibrary::logger(),"size ident: "<< h.size_image_identification);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map type: "<< h.color_map_type);
+	LOG4CXX_INFO(KrisLibrary::logger(),"image type: "<< h.image_type);
 
-	LOG4CXX_INFO(logger,"color map origin: "<< h.color_map_origin);
-	LOG4CXX_INFO(logger,"color map size: "<< h.color_map_size);
-	LOG4CXX_INFO(logger,"color map bpp: "<< h.color_map_bpp);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map origin: "<< h.color_map_origin);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map size: "<< h.color_map_size);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map bpp: "<< h.color_map_bpp);
 
-	LOG4CXX_INFO(logger,"x origin: "<< h.x_origin);
-	LOG4CXX_INFO(logger,"y origin: "<< h.y_origin);
-	LOG4CXX_INFO(logger,"width: "<< h.width);
-	LOG4CXX_INFO(logger,"height: "<< h.height);
-	LOG4CXX_INFO(logger,"bpp: "<< h.bpp);
-	LOG4CXX_INFO(logger,"color map bpp: "<< h.color_map_bpp);
+	LOG4CXX_INFO(KrisLibrary::logger(),"x origin: "<< h.x_origin);
+	LOG4CXX_INFO(KrisLibrary::logger(),"y origin: "<< h.y_origin);
+	LOG4CXX_INFO(KrisLibrary::logger(),"width: "<< h.width);
+	LOG4CXX_INFO(KrisLibrary::logger(),"height: "<< h.height);
+	LOG4CXX_INFO(KrisLibrary::logger(),"bpp: "<< h.bpp);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map bpp: "<< h.color_map_bpp);
 }
 
 #include <memory.h>
@@ -288,7 +288,7 @@ bool ImportImageTGA(const char* fn, Image& img)
 //	if(fread(&header, sizeof(tga_file_header), 1, f) != 1)
 //		return false;
 
-	LOG4CXX_INFO(logger,"size of header "<< sizeof(tga_file_header));
+	LOG4CXX_INFO(KrisLibrary::logger(),"size of header "<< sizeof(tga_file_header));
 
 	print_header(header);
 

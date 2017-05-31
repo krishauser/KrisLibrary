@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "BSpline.h"
 #include <math/fastarray.h>
 #include <errors.h>
@@ -213,7 +213,7 @@ void CoxDeBoorBasis2(int base,int p,const std::vector<Real>& u,Real** B)
   }
   if(u[base+p] < u[base+p+1]) B[p][0]=One;
   else {
-    LOG4CXX_ERROR(logger,"Uh... u[base] = u[base+1]?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Uh... u[base] = u[base+1]?"<<"\n");
     return;
   }
 
@@ -297,8 +297,8 @@ void BSplineBasis::Evaluate(Real t,SparseVector& basis) const
   Real* N = new Real[p+1];
   CoxDeBoor(knot-p,p,t,knots,N);
   for(int i=0;i<=p;i++) {
-    //LOG4CXX_INFO(logger,"N["<<i<<"]:"<<N[i]<<"\n");
-    //LOG4CXX_INFO(logger,"basis["<<knot-p+i<<"]:"<<basis(knot-p+i)<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"N["<<i<<"]:"<<N[i]<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"basis["<<knot-p+i<<"]:"<<basis(knot-p+i)<<"\n");
     basis.set(knot-p+i,N[i]);
   }
   delete [] N;
@@ -413,12 +413,12 @@ void BSplineBasis::EvaluateWithDerivs(Real t,vector<SparseVector >& db) const
 bool BSplineBasis::IsValid() const
 {
   if((int)knots.size() < numControlPoints) {
-        LOG4CXX_ERROR(logger,"Fewer knots than control points\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Fewer knots than control points\n");
     return false;
   }
   for(size_t i=1;i<knots.size();i++) {
     if(knots[i] < knots[i-1]) {
-            LOG4CXX_ERROR(logger,"Knot vector is not monotonic\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Knot vector is not monotonic\n");
       return false;
     }
   }
@@ -504,16 +504,16 @@ bool BSpline::IsValid() const
 {
   if(!basis.IsValid()) return false;
   if((int)cps.size() != basis.numControlPoints) {
-        LOG4CXX_ERROR(logger,"Invalid number of control points\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid number of control points\n");
     return false;
   }
   if(cps.empty()) {
-        LOG4CXX_ERROR(logger,"Spline is empty\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Spline is empty\n");
     return false;
   }
   for(size_t i=1;i<cps.size();i++) {
     if(cps[i].n != cps[0].n) {
-            LOG4CXX_ERROR(logger,"Invalid control point size\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid control point size\n");
       return false;
     }
   }

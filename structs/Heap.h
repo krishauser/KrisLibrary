@@ -2,7 +2,7 @@
 #define HEAP_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include <vector>
 #include <assert.h>
 using namespace std;
@@ -91,12 +91,12 @@ public:
     int level=1;
     for(int i=1;i<=size();i++) {
       if(i == (1<<level)) {
-        LOG4CXX_INFO(logger,"\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"\n");
         level++;
       }
-      LOG4CXX_INFO(logger,"("<<h[i].x<<","<<h[i].p<<")"<<" ");
+      LOG4CXX_INFO(KrisLibrary::logger(),"("<<h[i].x<<","<<h[i].p<<")"<<" ");
     }
-    LOG4CXX_INFO(logger,"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   }
   
 private:

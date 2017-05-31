@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "LDL.h"
 #include "backsubstitute.h"
 #include "DiagonalMatrix.h"
@@ -35,7 +35,7 @@ void LDLDecomposition<T>::set(const MatrixT& A)
     if(FuzzyZero(sum,zeroTolerance)) {
       /*
       if(verbose >= 1)
-	LOG4CXX_ERROR(logger,"Warning: LDLt decomposition has a zero element on diagonal "<<i<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: LDLt decomposition has a zero element on diagonal "<<i<<"\n");
       */
     }
 
@@ -44,7 +44,7 @@ void LDLDecomposition<T>::set(const MatrixT& A)
       for(int k=0;k<i;k++) sum -= LDL(k,k)*LDL(i,k)*LDL(j,k);
       if(LDL(i,i) == 0) {
 	if(!FuzzyZero(sum,zeroTolerance)) {
-	  if(verbose >= 1) LOG4CXX_ERROR(logger,"LDLDecomposition: Zero diagonal, what to do with sum "<<sum<<"?"<<"\n");
+	  if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"LDLDecomposition: Zero diagonal, what to do with sum "<<sum<<"?"<<"\n");
 	  sum = 0;
 	}
       }
@@ -60,16 +60,16 @@ void LDLDecomposition<T>::set(const MatrixT& A)
   VectorT D;
   getL(L);
   getD(D);
-  //LOG4CXX_INFO(logger,"A: "); A.print();
-  //LOG4CXX_INFO(logger,"L: "); L.print();
-  //LOG4CXX_INFO(logger,"D: "); D.print();
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A: "); A.print();
+  //LOG4CXX_INFO(KrisLibrary::logger(),"L: "); L.print();
+  //LOG4CXX_INFO(KrisLibrary::logger(),"D: "); D.print();
   LD = L;
   for(int i=0;i<A.n;i++)
     LD.scaleCol(i,LDL(i,i));
   LDLt.mulTransposeB(LD,L);
-  //LOG4CXX_INFO(logger,"LDLt: "); LDLt.print();
+  //LOG4CXX_INFO(KrisLibrary::logger(),"LDLt: "); LDLt.print();
   LDLt -= A;
-  LOG4CXX_ERROR(logger,"Max error in LDL "<<LDLt.maxAbsElement()<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Max error in LDL "<<LDLt.maxAbsElement()<<"\n");
   */
 }
 
@@ -123,7 +123,7 @@ bool LDLDecomposition<T>::DBackSub(const VectorT& b, VectorT& x) const
     else {
       if(!FuzzyZero(b(i),zeroTolerance)) {
 	if(verbose >= 1) 
-	  LOG4CXX_ERROR(logger,"LDLDecomposition::DBackSub(): Warning, zero on the diagonal, b("<<i<<")="<<b(i)<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"LDLDecomposition::DBackSub(): Warning, zero on the diagonal, b("<<i<<")="<<b(i)<<"\n");
 	res = false;
 	x(i) = Sign(b(i))*Inf;
       }
@@ -186,7 +186,7 @@ void LDLDecomposition<T>::getPseudoInverse(MatrixT& Ainv) const
   for(int i=0;i<LDL.n;i++)
     for(int j=0;j<i;j++) {
       if(!FuzzyEquals(Ainv(i,j),Ainv(j,i),tol))
-	LOG4CXX_INFO(logger,Ainv<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),Ainv<<"\n");
       Assert(FuzzyEquals(Ainv(i,j),Ainv(j,i),tol));
       Ainv(i,j)=Ainv(j,i) = 0.5*(Ainv(i,j)+Ainv(j,i));
     }

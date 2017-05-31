@@ -39,7 +39,7 @@
 \**************************************************************************/
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include <stdio.h>
 #include <string.h>
 #include "PQP.h"
@@ -101,7 +101,7 @@ PQP_Model::BeginModel(int n)
   tris = new Tri[n];
   if (!tris) 
   {
-        LOG4CXX_ERROR(logger, "PQP Error!  Out of memory for tri array on "
+        LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error!  Out of memory for tri array on "
                     "BeginModel() call!\n");
     return PQP_ERR_MODEL_OUT_OF_MEMORY;  
   }
@@ -110,7 +110,7 @@ PQP_Model::BeginModel(int n)
 
   if (build_state != PQP_BUILD_STATE_EMPTY)
   {
-        LOG4CXX_ERROR(logger,
+        LOG4CXX_ERROR(KrisLibrary::logger(),
             "PQP Warning! Called BeginModel() on a PQP_Model that \n"
             "was not empty. This model was cleared and previous\n"
             "triangle additions were lost.\n");
@@ -134,7 +134,7 @@ PQP_Model::AddTri(const PQP_REAL *p1,
   }
   else if (build_state == PQP_BUILD_STATE_PROCESSED)
   {
-        LOG4CXX_ERROR(logger,"PQP Warning! Called AddTri() on PQP_Model \n"
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Warning! Called AddTri() on PQP_Model \n"
                    "object that was already ended. AddTri() was\n"
                    "ignored.  Must do a BeginModel() to clear the\n"
                    "model for addition of new triangles\n");
@@ -149,7 +149,7 @@ PQP_Model::AddTri(const PQP_REAL *p1,
     temp = new Tri[num_tris_alloced*2];
     if (!temp)
     {
-            LOG4CXX_ERROR(logger, "PQP Error!  Out of memory for tri array on"
+            LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error!  Out of memory for tri array on"
 	              " AddTri() call!\n");
       return PQP_ERR_MODEL_OUT_OF_MEMORY;  
     }
@@ -185,7 +185,7 @@ PQP_Model::EndModel()
 {
   if (build_state == PQP_BUILD_STATE_PROCESSED)
   {
-        LOG4CXX_ERROR(logger,"PQP Warning! Called EndModel() on PQP_Model \n"
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Warning! Called EndModel() on PQP_Model \n"
                    "object that was already ended. EndModel() was\n"
                    "ignored.  Must do a BeginModel() to clear the\n"
                    "model for addition of new triangles\n");
@@ -196,7 +196,7 @@ PQP_Model::EndModel()
 
   if (num_tris == 0)
   {
-        LOG4CXX_ERROR(logger,"PQP Error! EndModel() called on model with"
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Error! EndModel() called on model with"
                    " no triangles\n");
     return PQP_ERR_BUILD_EMPTY_MODEL;
   }
@@ -208,7 +208,7 @@ PQP_Model::EndModel()
     Tri *new_tris = new Tri[num_tris];
     if (!new_tris) 
     {
-            LOG4CXX_ERROR(logger, "PQP Error!  Out of memory for tri array "
+            LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error!  Out of memory for tri array "
                       "in EndModel() call!\n");
       return PQP_ERR_MODEL_OUT_OF_MEMORY;  
     }
@@ -223,7 +223,7 @@ PQP_Model::EndModel()
   b = new BV[2*num_tris - 1];
   if (!b)
   {
-        LOG4CXX_ERROR(logger,"PQP Error! out of memory for BV array "
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Error! out of memory for BV array "
                    "in EndModel()\n");
     return PQP_ERR_MODEL_OUT_OF_MEMORY;
   }
@@ -248,11 +248,9 @@ PQP_Model::MemUsage(int msg) const
 
   if (msg) 
   {
-        LOG4CXX_ERROR(logger,"Total for model "<< this<<": "<< total_mem);
-        LOG4CXX_ERROR(logger,"BVs: %d alloced, take %d bytes each\n", 
-            num_bvs, sizeof(BV));
-        LOG4CXX_ERROR(logger,"Tris: %d alloced, take %d bytes each\n", 
-            num_tris, sizeof(Tri));
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Total for model "<< this<<": "<< total_mem);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"BVs: "<<num_bvs<<" alloced, take "<<sizeof(BV)<<" bytes each\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Tris: "<<num_tris<<" alloced, take "<<sizeof(Tri)<<" bytes each\n"); 
   }
   
   return total_mem;
@@ -291,9 +289,9 @@ PQP_CollideResult::SizeTo(int n)
 
   if (n < num_pairs) 
   {
-        LOG4CXX_ERROR(logger, "PQP Error: Internal error in "
+        LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error: Internal error in "
                     "'PQP_CollideResult::SizeTo(int n)'\n");
-        LOG4CXX_ERROR(logger, "       n = "<< n<<", but num_pairs = "<< num_pairs);
+        LOG4CXX_ERROR(KrisLibrary::logger(), "       n = "<< n<<", but num_pairs = "<< num_pairs);
     return;
   }
   
@@ -863,16 +861,16 @@ PQP_Distance(PQP_DistanceResult *res,
     assert(res->t1 >= 0);
     assert(res->t2 >= 0);
     if(res->distance == 0) {
-      LOG4CXX_INFO(logger,"Init distance "<<res->distance);
-      LOG4CXX_INFO(logger,"P = "<<p[0]<<" "<<p[1]<<" "<<p[2]);
-      LOG4CXX_INFO(logger,"Q = "<<q[0]<<" "<<q[1]<<" "<<q[2]);
-      LOG4CXX_INFO(logger,"T1.a = "<<o1->tris[res->t1].p1[0]<<" "<<o1->tris[res->t1].p1[1]<<" "<<o1->tris[res->t1].p1[2]);
-      LOG4CXX_INFO(logger,"T1.b = "<<o1->tris[res->t1].p2[0]<<" "<<o1->tris[res->t1].p2[1]<<" "<<o1->tris[res->t1].p2[2]);
-      LOG4CXX_INFO(logger,"T1.c = "<<o1->tris[res->t1].p3[0]<<" "<<o1->tris[res->t1].p3[1]<<" "<<o1->tris[res->t1].p3[2]);
-      LOG4CXX_INFO(logger,"T2.a = "<<o2->tris[res->t2].p1[0]<<" "<<o2->tris[res->t2].p1[1]<<" "<<o2->tris[res->t2].p1[2]);
-      LOG4CXX_INFO(logger,"T2.b = "<<o2->tris[res->t2].p2[0]<<" "<<o2->tris[res->t2].p2[1]<<" "<<o2->tris[res->t2].p2[2]);
-      LOG4CXX_INFO(logger,"T2.c = "<<o2->tris[res->t2].p3[0]<<" "<<o2->tris[res->t2].p3[1]<<" "<<o2->tris[res->t2].p3[2]);
-      LOG4CXX_INFO(logger,"Translation "<<res->T[0]<<" "<<res->T[1]<<" "<<res->T[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Init distance "<<res->distance);
+      LOG4CXX_INFO(KrisLibrary::logger(),"P = "<<p[0]<<" "<<p[1]<<" "<<p[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Q = "<<q[0]<<" "<<q[1]<<" "<<q[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"T1.a = "<<o1->tris[res->t1].p1[0]<<" "<<o1->tris[res->t1].p1[1]<<" "<<o1->tris[res->t1].p1[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"T1.b = "<<o1->tris[res->t1].p2[0]<<" "<<o1->tris[res->t1].p2[1]<<" "<<o1->tris[res->t1].p2[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"T1.c = "<<o1->tris[res->t1].p3[0]<<" "<<o1->tris[res->t1].p3[1]<<" "<<o1->tris[res->t1].p3[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"T2.a = "<<o2->tris[res->t2].p1[0]<<" "<<o2->tris[res->t2].p1[1]<<" "<<o2->tris[res->t2].p1[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"T2.b = "<<o2->tris[res->t2].p2[0]<<" "<<o2->tris[res->t2].p2[1]<<" "<<o2->tris[res->t2].p2[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"T2.c = "<<o2->tris[res->t2].p3[0]<<" "<<o2->tris[res->t2].p3[1]<<" "<<o2->tris[res->t2].p3[2]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Translation "<<res->T[0]<<" "<<res->T[1]<<" "<<res->T[2]);
     }
     */
   }
@@ -1210,7 +1208,7 @@ ToleranceRecurse2(PQP_ToleranceResult *res,
 
     int ti1=-o1->child(b1)->first_child - 1;
     int ti2=-o2->child(b2)->first_child - 1;
-    //LOG4CXX_INFO(logger,"Testing leaves "<<ti1<<" "<<ti2);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Testing leaves "<<ti1<<" "<<ti2);
     Tri *t1 = &o1->tris[ti1];
     Tri *t2 = &o2->tris[ti2];
 
@@ -1219,7 +1217,7 @@ ToleranceRecurse2(PQP_ToleranceResult *res,
     if (d <= res->tolerance)  
     {  
       // triangle pair distance less than tolerance
-      //LOG4CXX_INFO(logger,"Triangle pair "<<ti1<<" "<<ti2<<" within tolerance, distance "<<d);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Triangle pair "<<ti1<<" "<<ti2<<" within tolerance, distance "<<d);
       res->closer_than_tolerance = 1;
       if(d < res->distance) {
 	res->distance = d;
@@ -1395,7 +1393,7 @@ PQP_ToleranceAll(PQP_ToleranceResult* res,
   VmV(u, res->p2, res->T);
   MTxV(res->p2, res->R, u);
 
-  //LOG4CXX_INFO(logger,"Res num bv tests "<<res->num_bv_tests<<", num tri tests "<<res->num_tri_tests);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Res num bv tests "<<res->num_bv_tests<<", num tri tests "<<res->num_tri_tests);
 
   return PQP_OK;
 }

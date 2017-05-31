@@ -1,11 +1,11 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "GeneralizedBezierCurve.h"
 #include <iostream>
 #include <math/interpolate.h>
 using namespace std;
 
-GeneralizedCubicBezierCurve::GeneralizedCubicBezierCurve(CSpace* _space,GeodesicManifold* _manifold)
+GeneralizedCubicBezierCurve::GeneralizedCubicBezierCurve(CSpace* _space,GeodesicSpace* _manifold)
   :space(_space),manifold(_manifold)
 {}
 
@@ -242,13 +242,13 @@ void GeneralizedCubicBezierCurve::Deriv(Real u,Config& dx) const
   }
   /*
   if(u == 1.0) {
-    LOG4CXX_INFO(logger,"End deriv: "<<"\n");
-    LOG4CXX_INFO(logger," x0="<<x0<<"\n");
-    LOG4CXX_INFO(logger," x1="<<x1<<"\n");
-    LOG4CXX_INFO(logger," x2="<<x2<<"\n");
-    LOG4CXX_INFO(logger," x3="<<x3<<"\n");
-    LOG4CXX_INFO(logger,"Result="<<dx<<"\n");
-    LOG4CXX_INFO(logger,"Ideal="<<(x3-x2)*3.0<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"End deriv: "<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger()," x0="<<x0<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger()," x1="<<x1<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger()," x2="<<x2<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger()," x3="<<x3<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result="<<dx<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Ideal="<<(x3-x2)*3.0<<"\n");
   }
   */
 }
@@ -285,7 +285,7 @@ void GeneralizedCubicBezierCurve::Accel(Real u,Config& ddx) const
   else {
     static bool warned = false;
     if(!warned) {
-            LOG4CXX_ERROR(logger,"GeneralizedCubicBezierCurve: Warning, using linear accel evaluation with geodesic manifold\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"GeneralizedCubicBezierCurve: Warning, using linear accel evaluation with geodesic manifold\n");
       warned=true;
     }
     Vector temp;

@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "ResourceLibrary.h"
 #include "AnyCollection.h"
 #include "stringutils.h"
@@ -215,7 +215,7 @@ bool ResourceLibrary::SaveXml(const std::string& fn)
   if(!Save(element)) return false;
   return doc.SaveFile(fn.c_str());
 #else
-    LOG4CXX_ERROR(logger,"ResourceLibrary::SaveXml(): tinyxml not defined\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::SaveXml(): tinyxml not defined\n");
   return false;
 #endif
 }
@@ -238,7 +238,7 @@ bool ResourceLibrary::Save(TiXmlElement* root)
       }
       else {
 	if(!i->second[j]->Save()) {
-	  LOG4CXX_ERROR(logger,"ResourceLibrary::SaveXml(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::SaveXml(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName<<"\n");
 	  res=false;
 	  delete c;
 	}
@@ -250,7 +250,7 @@ bool ResourceLibrary::Save(TiXmlElement* root)
   }
   return res;
 #else
-    LOG4CXX_ERROR(logger,"ResourceLibrary::Save(): tinyxml not defined\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Save(): tinyxml not defined\n");
   return false;
 #endif
 }
@@ -280,12 +280,12 @@ bool ResourceLibrary::Save(AnyCollection& c)
 	c[k]["name"] = i->second[j]->name;
 	c[k]["file"] = i->second[j]->fileName;
 	if(!i->second[j]->Save()) {
-	  LOG4CXX_ERROR(logger,"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName<<"\n");
 	  return false;
 	}
       }
       else {
-	LOG4CXX_ERROR(logger,"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to AnyCollection or file"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to AnyCollection or file"<<"\n");
 	return false;
       }
     }
@@ -304,7 +304,7 @@ bool ResourceLibrary::LoadXml(const std::string& fn)
      return false;
   return Load(doc.RootElement());
 #else
-    LOG4CXX_ERROR(logger,"ResourceLibrary::LoadXml(): tinyxml not defined\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LoadXml(): tinyxml not defined\n");
   return false;
 #endif
 }
@@ -317,7 +317,7 @@ bool ResourceLibrary::Load(TiXmlElement* root)
   bool res=true;
   while(element != NULL) {
     if(knownTypes.count(element->Value()) == 0) {
-            LOG4CXX_ERROR(logger,"ResourceLibrary::LoadXml(): do not know how to load objects of type "<<element->Value());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LoadXml(): do not know how to load objects of type "<<element->Value());
       res = false;
     }
     else {
@@ -327,7 +327,7 @@ bool ResourceLibrary::Load(TiXmlElement* root)
       if(element->Attribute("file")!=NULL) {
 	resource->fileName = element->Attribute("file");
 	if(!resource->Load()) {
-	  	  LOG4CXX_ERROR(logger,"ResourceLibrary::LoadXml(): error loading element of type "<<element->Value());
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LoadXml(): error loading element of type "<<element->Value());
 	  res = false;
 	}
 	else {
@@ -335,7 +335,7 @@ bool ResourceLibrary::Load(TiXmlElement* root)
 	}
       }
       else if(!resource->Load(element)) {
-		LOG4CXX_ERROR(logger,"ResourceLibrary::LoadXml(): error loading element of type "<<element->Value());
+		LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LoadXml(): error loading element of type "<<element->Value());
 	res = false;
       }
       else {
@@ -346,7 +346,7 @@ bool ResourceLibrary::Load(TiXmlElement* root)
   }
   return res;
 #else
-    LOG4CXX_ERROR(logger,"ResourceLibrary::Load(): tinyxml not defined\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Load(): tinyxml not defined\n");
   return false;
 #endif
 }
@@ -367,23 +367,23 @@ bool ResourceLibrary::Load(AnyCollection& c)
     AnyCollection& c=(*subitems[i]);
     string type;
     if(!c["type"].as<string>(type)) {
-      LOG4CXX_INFO(logger,"ResourceLibrary::Load: Item "<<i);
+      LOG4CXX_INFO(KrisLibrary::logger(),"ResourceLibrary::Load: Item "<<i);
       return false;
     }
     if(knownTypes.count(type) == 0) {    
-      LOG4CXX_INFO(logger,"ResourceLibrary::Load: Item "<<i<<" type "<<type.c_str());
+      LOG4CXX_INFO(KrisLibrary::logger(),"ResourceLibrary::Load: Item "<<i<<" type "<<type.c_str());
       return false;
     }
     SmartPointer<ResourceBase> res = knownTypes[type][0]->Make();
     c["name"].as<string>(res->name);
     if(c["file"].as<string>(res->fileName)) {
       if(!res->Load()) {
-	LOG4CXX_ERROR(logger,"ResourceLibrary::Load: Error reading item "<<i);
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Load: Error reading item "<<i);
 	return false;
       }
     }
     else if(!res->Load(c)) {
-      LOG4CXX_ERROR(logger,"ResourceLibrary::Load: Error reading item "<<i);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Load: Error reading item "<<i);
       return false; 
     }
     Add(res);
@@ -401,7 +401,7 @@ bool ResourceLibrary::LazyLoadXml(const std::string& fn)
   bool res=true;
   while(element != NULL) {
     if(knownTypes.count(element->Value()) == 0) {
-            LOG4CXX_ERROR(logger,"ResourceLibrary::LoadXml(): do not know how to load objects of type "<<element->Value());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LoadXml(): do not know how to load objects of type "<<element->Value());
       res = false;
     }
     else {
@@ -414,7 +414,7 @@ bool ResourceLibrary::LazyLoadXml(const std::string& fn)
       }
       else {
 	if(!resource->Load(element)) {
-	  	  LOG4CXX_ERROR(logger,"ResourceLibrary::LoadXml(): error loading element of type "<<element->Value());
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LoadXml(): error loading element of type "<<element->Value());
 	  delete resource;
 	  res = false;
 	}
@@ -426,7 +426,7 @@ bool ResourceLibrary::LazyLoadXml(const std::string& fn)
   }
   return res;
 #else
-    LOG4CXX_ERROR(logger,"ResourceLibrary::LazyLoadXml(): tinyxml not defined\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LazyLoadXml(): tinyxml not defined\n");
   return false;
 #endif
 }
@@ -447,11 +447,11 @@ bool ResourceLibrary::LazyLoad(AnyCollection& c)
     AnyCollection& c=*subitems[i];
     string type;
     if(!c["type"].as<string>(type)) {
-      LOG4CXX_INFO(logger,"ResourceLibrary::LazyLoad: Item "<<i);
+      LOG4CXX_INFO(KrisLibrary::logger(),"ResourceLibrary::LazyLoad: Item "<<i);
       return false;
     }
     if(knownTypes.count(type) == 0) {    
-      LOG4CXX_INFO(logger,"ResourceLibrary::LazyLoad: Item "<<i<<" type "<<type.c_str());
+      LOG4CXX_INFO(KrisLibrary::logger(),"ResourceLibrary::LazyLoad: Item "<<i<<" type "<<type.c_str());
       return false;
     }
     SmartPointer<ResourceBase> res = knownTypes[type][0]->Make();
@@ -460,7 +460,7 @@ bool ResourceLibrary::LazyLoad(AnyCollection& c)
       //lazy load
     }
     else if(!res->Load(c)) {
-      LOG4CXX_ERROR(logger,"ResourceLibrary::LazyLoad: Error reading item "<<i);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::LazyLoad: Error reading item "<<i);
       return false;
     }
     Add(res);
@@ -473,7 +473,7 @@ ResourcePtr ResourceLibrary::LoadItem(const string& fn)
   string ext=FileExtension(fn);
   Map::iterator i=loaders.find(ext);
   if(i == loaders.end()) {
-        LOG4CXX_ERROR(logger,"No known loaders for type "<<ext.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"No known loaders for type "<<ext.c_str());
     return NULL;
   }
   for(size_t j=0;j<i->second.size();j++) {
@@ -485,10 +485,10 @@ ResourcePtr ResourceLibrary::LoadItem(const string& fn)
       return r;
     }
   }
-    LOG4CXX_ERROR(logger,"Unable to load "<<fn.c_str());
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load "<<fn.c_str());
   for(size_t j=0;j<i->second.size();j++) 
-        LOG4CXX_ERROR(logger," "<<i->second[j]->Type());
-    LOG4CXX_ERROR(logger,"\n");
+        LOG4CXX_ERROR(KrisLibrary::logger()," "<<i->second[j]->Type());
+    LOG4CXX_ERROR(KrisLibrary::logger(),"\n");
   return NULL;
 }
 
@@ -539,7 +539,7 @@ bool ResourceLibrary::LoadAll(const string& dir)
       swap(knownTypes,sublib.knownTypes);
       swap(loaders,sublib.loaders);
       if(!sublib.LoadAll(filepath)) {
-	LOG4CXX_ERROR(logger,"Unable to load sub-directory "<<filepath<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load sub-directory "<<filepath<<"\n");
 	res = false;
       }
       for(Map::iterator j=sublib.itemsByName.begin();j!=sublib.itemsByName.end();j++) {
@@ -553,7 +553,7 @@ bool ResourceLibrary::LoadAll(const string& dir)
     }
     else {
       if(LoadItem(filepath) == NULL) {
-	LOG4CXX_ERROR(logger,"Unable to load file "<<filepath<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load file "<<filepath<<"\n");
 	res = false;
       }
     }
@@ -576,7 +576,7 @@ bool ResourceLibrary::LazyLoadAll(const string& dir)
     string ext=FileExtension(fn);
     Map::iterator it=loaders.find(ext);
     if(it == loaders.end()) {
-      LOG4CXX_ERROR(logger,"Unable to load file "<<fn<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load file "<<fn<<"\n");
       res = false;
       continue;
     }

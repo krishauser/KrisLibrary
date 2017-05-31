@@ -2,7 +2,7 @@
 #define GRAPH_UNDIRECTED_GRAPH_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Graph.h"
 #include "Callback.h"
 
@@ -139,12 +139,12 @@ bool UndirectedGraph<Node,Edge>::IsValid() const
 {
   if(!P::IsValid()) return false;
   bool res=true;
-  typedef typename P::ConstEdgeIterator ConstEdgeIterator;
+  typedef typename P::ConstEdgeListIterator ConstEdgeIterator;
   for(size_t i=0;i<P::edges.size();i++) {
     ConstEdgeIterator ebegin=P::edges[i].begin(),eend=P::edges[i].end();
     for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
       if(e->first < (int)i) {
-		LOG4CXX_ERROR(logger,"Undirected edge ("<<i<<","<<e->first);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Undirected edge ("<<i<<","<<e->first);
 	res=false;
       }
     }
@@ -153,7 +153,7 @@ bool UndirectedGraph<Node,Edge>::IsValid() const
     ConstEdgeIterator ebegin=P::co_edges[i].begin(),eend=P::co_edges[i].end();
     for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
       if(e->first > (int)i) {
-		LOG4CXX_ERROR(logger,"Undirected co-edge ("<<e->first<<","<<i);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Undirected co-edge ("<<e->first<<","<<i);
 	res=false;
       }
     }
@@ -165,8 +165,8 @@ template <class Node,class Edge>
 void UndirectedGraph<Node,Edge>::NormalizeEdges(int n)
 {
   Assert(0 <= n && n < P::NumNodes());
-  typedef typename P::EdgeIterator EdgeIterator;
-  typedef typename P::CoEdgeIterator CoEdgeIterator;
+  typedef typename P::EdgeListIterator EdgeIterator;
+  typedef typename P::CoEdgeListIterator CoEdgeIterator;
   typedef typename P::EdgeDataPtr EdgeDataPtr;
   std::map<int,EdgeDataPtr> delEdges,delCoEdges;
   EdgeIterator ebegin=P::edges[n].begin(),eend=P::edges[n].end();

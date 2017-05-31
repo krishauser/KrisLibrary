@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "differentiation.h"
 #include "vectorfunction.h"
 #include <vector>
@@ -235,7 +235,7 @@ void HessianCenteredDifference(ScalarFieldFunction& f,Vector& x,Real h,Matrix& H
     H(i,i) = (Real)(-f2+16.0*f1-30.0*f0+16.0*f_1-f_2)*iiscale;
     /*  This is a test of this 4th order approx vs the std 2nd order
     Real temp = (f1 - Two*f0 + f_1)/Sqr(h);
-    LOG4CXX_INFO(logger,"f's: "<<f_2<<" "<<f_1<<" "<<f0<<" "<<f1<<" "<<f2<<" => H: "<<H(i<<"... or "<<i)    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger()(),"f's: "<<f_2<<" "<<f_1<<" "<<f0<<" "<<f1<<" "<<f2<<" => H: "<<H(i<<"... or "<<i)    if(KrisLibrary::logger()()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     */
 
     for(int j=i+1;j<x.n;j++) {

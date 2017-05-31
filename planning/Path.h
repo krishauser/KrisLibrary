@@ -10,17 +10,22 @@ using namespace std;
  * @brief A sequence of locally planned paths between milestones
  *
  * Milestones are indexed M0...Mn+1, such that segment k goes from Mk to Mk+1
+ *
+ * Note that the parameterization of the path is uniform on the range [0,1].
  */
-class MilestonePath
+class MilestonePath : public Interpolator
 {
 public:
   MilestonePath();
   ~MilestonePath();
 
+  virtual void Eval(Real u,Config& q) const { Eval2(u,q); }
+  virtual Real Length() const;
+  virtual const Config& Start() const { return edges.front()->Start(); }
+  virtual const Config& End() const { return edges.back()->End(); }
+
   const Config& GetMilestone(int milestone) const;
   void SetMilestone(int milestone,const Config& x);
-  const Config& Start() const { return edges.front()->Start(); }
-  const Config& End() const { return edges.back()->Goal(); }
   /// Sets the milestone to x only if x and the paths to adjoining 
   /// milestones are feasible 
   bool CheckSetMilestone(int milestone,const Config& x);
@@ -28,8 +33,6 @@ public:
   inline int NumMilestones() const { return (int)edges.size()+1; }
   inline int NumEdges() const { return (int)edges.size(); }
   bool IsValid();
-  /// Returns the sum of the distances between milestones
-  Real Length() const;
   /// Adds the path onto the end of this one
   void Concat(const MilestonePath& path);
   /// Create the path that connects the milestones in the given workspace
@@ -41,7 +44,7 @@ public:
   /// Supposing all milestones have equal time spacings, evaluates the
   /// point on the path at time t in [0,1].
   /// Returns the edge of time t.
-  int Eval(Real t, Config& c) const;
+  int Eval2(Real t, Config& c) const;
   /// Tries to shorten the path by connecting subsequent milestones.
   /// Returns # of shortcuts made.
   int Shortcut();

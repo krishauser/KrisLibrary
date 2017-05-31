@@ -1,11 +1,12 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "MCRPlannerGoalSet.h"
 #include "GeneralizedAStar.h"
 #include <math/random.h>
 #include <structs/FixedSizeHeap.h>
 #include <structs/Heap.h>
 #include <graph/Path.h>
+#include <optimization/NonlinearProgram.h>
 #include <Timer.h>
 #include <algorithm>
 using namespace AI;
@@ -18,8 +19,8 @@ const static double gSubdivideThreshold = 1e-3;
 
 
 //defined in MCRPlanner.cpp
-Subset Violations(ExplicitCSpace* space,const Config& q);
-Subset Violations(ExplicitCSpace* space,const Config& a,const Config& b);
+Subset Violations(CSpace* space,const Config& q);
+Subset Violations(CSpace* space,const Config& a,const Config& b);
 
 
 inline Real WeightedCost(const Subset& s,const vector<Real>& weights)
@@ -48,11 +49,28 @@ bool WithinThreshold(const MCRPlannerGoalSet::Mode& mode,const Subset& extra,Rea
   return false;
 }
 
+Real MaxError(Optimization::NonlinearProgram* p,const Config& x)
+{
+  Real maxError = 0;
+  if(p->c) {
+    Vector v(p->c->NumDimensions());
+    (*p->c)(x,v);
+    maxError = v.maxAbsElement();
+  }
+  if(p->d) {
+    Vector v(p->d->NumDimensions());
+    (*p->d)(x,v);
+    if(p->inequalityLess)
+      maxError = Max(maxError,v.maxElement());
+    else 
+      maxError = Max(maxError,-v.minElement());
+  }
+  return maxError;
+}
 
 
-
-MCRPlannerGoalSet::MCRPlannerGoalSet(ExplicitCSpace* _space)
-  :goalSetProjector(NULL),space(_space),
+MCRPlannerGoalSet::MCRPlannerGoalSet(CSpace* _space)
+  :space(_space),goalSet(NULL),goalNumeric(NULL),
    updatePathsComplete(false),updatePathsDynamic(true),updatePathsMax(INT_MAX),
    numExpands(0),numRefinementAttempts(0),numRefinementSuccesses(0),numExplorationAttempts(0),
    numEdgeChecks(0),numConfigChecks(0),
@@ -74,7 +92,7 @@ Real MCRPlannerGoalSet::Cost(const Subset& s) const
   return WeightedCost(s,obstacleWeights);
 }
 
-void MCRPlannerGoalSet::Init(const Config& _start,SubsetProjector* _goalProjector)
+void MCRPlannerGoalSet::Init(const Config& _start,CSet* _goal)
 {
   roadmap.Cleanup();
   modeGraph.Cleanup();
@@ -88,7 +106,8 @@ void MCRPlannerGoalSet::Init(const Config& _start,SubsetProjector* _goalProjecto
   numUpdatePathsIterations=0;
 
   start=_start; 
-  goalSetProjector = _goalProjector;
+  goalSet = _goal; 
+  if(_goal) goalNumeric = _goal->Numeric();
   goalNodes.resize(0);
   AddNode(start);
   if(updatePathsComplete) UpdatePathsComplete();
@@ -156,11 +175,11 @@ void MCRPlannerGoalSet::UpdatePathsGreedy()
   }
   /*
 
-    LOG4CXX_INFO(logger,"Mode "<<i<<": subset "<<modeGraph.nodes[i].subset<<", size "<<modeGraph.nodes[i].roadmapNodes.size()<<", cover: ");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Mode "<<i<<": subset "<<modeGraph.nodes[i].subset<<", size "<<modeGraph.nodes[i].roadmapNodes.size()<<", cover: ");
     if(modeGraph.nodes[i].pathCovers.size() > 0)
-      LOG4CXX_INFO(logger,modeGraph.nodes[i].pathCovers[0]<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),modeGraph.nodes[i].pathCovers[0]<<"\n");
     else
-      LOG4CXX_INFO(logger,"(not reached)"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"(not reached)"<<"\n");
   }
   */
 }
@@ -240,7 +259,7 @@ void MCRPlannerGoalSet::UpdatePathsGreedy2(int nstart)
     UpdatePathsGreedy();
     for(size_t i=0;i<modeGraph.nodes.size();i++) 
       if(modeMinCost[i] != modeGraph.nodes[i].minCost) 
-	LOG4CXX_WARN(logger,"Warning, dynamic path error, mode with cover "<<modeMinCost[i]<<" actually "<<modeGraph.nodes[i].minCost);
+	LOG4CXX_WARN(KrisLibrary::logger(),"Warning, dynamic path error, mode with cover "<<modeMinCost[i]<<" actually "<<modeGraph.nodes[i].minCost);
   }
   */
 }
@@ -495,7 +514,7 @@ bool MCRPlannerGoalSet::CanImproveConnectivity(const Mode& ma,const Mode& mb,Rea
 //Otherwise, return false and compute the subset of violations
 bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& q,Real limit,Subset& violations)
 {
-  int n=space->NumObstacles();
+  int n=(int)space->constraints.size();
   /*
   if(!space->IsFeasible(q)) return true;
   violations.maxItem = n;
@@ -522,7 +541,7 @@ bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& q,Real limit,Subset& viol
 //Otherwise, return false and compute the subset of violations
 bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& a,const Config& b,Real limit,Subset& violations)
 {
-  int n=space->NumObstacles();
+  int n=(int)space->constraints.size();
   /*
   EdgePlanner* e=space->LocalPlanner(a,b);
   if(!e->IsVisible()) {
@@ -537,7 +556,7 @@ bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& a,const Config& b,Real li
   vector<bool> vis(n);
   Real vcount = 0;
   for(int i=0;i<n;i++) {
-    EdgePlanner* e=space->LocalPlanner(a,b,i);
+    EdgePlanner* e=space->PathChecker(a,b,i);
     vis[i] = !e->IsVisible();
     delete e;
     if(vis[i]) {
@@ -553,9 +572,7 @@ bool MCRPlannerGoalSet::ExceedsCostLimit(const Config& a,const Config& b,Real li
 
 int MCRPlannerGoalSet::AddNode(const Config& q,int parent)
 {
-  vector<bool> subsetbits;
-  space->CheckObstacles(q,subsetbits);
-  return AddNode(q,Subset(subsetbits),parent);
+  return AddNode(q,Violations(space,q),parent);
 }
 
 int MCRPlannerGoalSet::AddNode(const Config& q,const Subset& subset,int parent)
@@ -569,15 +586,13 @@ int MCRPlannerGoalSet::AddNode(const Config& q,const Subset& subset,int parent)
 
   /*
   //Sanity check?
-  vector<bool> subsetbits;
-  space->CheckObstacles(q,subsetbits);
-  assert(subset == Subset(subsetbits));
+  assert(subset == Violations(space,q));
   */
 
   if(parent < 0 || modeGraph.nodes[roadmap.nodes[parent].mode].subset != subset)  {
-    //LOG4CXX_INFO(logger,"New mode graph node:"<<subset<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New mode graph node:"<<subset<<"\n");
     //if(parent >= 0)
-    //  LOG4CXX_INFO(logger,"Parent mode: "<<modeGraph.nodes[roadmap.nodes[parent].mode].subset<<"\n");
+    //  LOG4CXX_INFO(KrisLibrary::logger(),"Parent mode: "<<modeGraph.nodes[roadmap.nodes[parent].mode].subset<<"\n");
     //add a new mode
     int mode = (int)modeGraph.nodes.size();
     modeGraph.AddNode(Mode());
@@ -596,7 +611,7 @@ int MCRPlannerGoalSet::AddNode(const Config& q,const Subset& subset,int parent)
       for(size_t i=0;i<modeGraph.nodes[pmode].pathCovers.size();i++)
 	modeGraph.nodes.back().pathCovers[i] = modeGraph.nodes[pmode].pathCovers[i] + subset;
       UpdateMinCost(modeGraph.nodes.back());
-      //LOG4CXX_INFO(logger,"New mode min cost: "<<modeGraph.nodes.back().minCost<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"New mode min cost: "<<modeGraph.nodes.back().minCost<<"\n");
     }
   }
   else {
@@ -693,7 +708,7 @@ void MCRPlannerGoalSet::AddEdgeRaw(int i,int j)
   assert(mi >= 0 && mi < (int)modeGraph.nodes.size());
   assert(mj >= 0 && mj < (int)modeGraph.nodes.size());
   if(modeGraph.nodes[mi].subset != modeGraph.nodes[mj].subset) {
-    //LOG4CXX_INFO(logger,"Adding a transition: "<<mi<<"->"<<mj);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Adding a transition: "<<mi<<"->"<<mj);
     //add a transition
     Transition* t=modeGraph.FindEdge(mi,mj);
     if(!t) {
@@ -710,9 +725,9 @@ void MCRPlannerGoalSet::AddEdgeRaw(int i,int j)
 
     /*
     if(nmi != 1 && nmj != 1){
-      LOG4CXX_INFO(logger,"Merging two modes: "<<mi<<"->"<<mj<<", sizes "<<nmi<<" "<<nmj);
-      LOG4CXX_INFO(logger,ma.subset<<"\n");
-      LOG4CXX_INFO(logger,mb.subset<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Merging two modes: "<<mi<<"->"<<mj<<", sizes "<<nmi<<" "<<nmj);
+      LOG4CXX_INFO(KrisLibrary::logger(),ma.subset<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),mb.subset<<"\n");
     }
     */
 
@@ -767,7 +782,7 @@ void MCRPlannerGoalSet::AddEdgeRaw(int i,int j)
     else {
       if(mb.minCost < ma.minCost) {
 	if(mb.pathCovers.empty()) { 
-	  LOG4CXX_WARN(logger,"Warning, empty cover but minCost="<<mb.minCost);
+	  LOG4CXX_WARN(KrisLibrary::logger(),"Warning, empty cover but minCost="<<mb.minCost);
 	  mb.minCost = DBL_MAX;
 	}
 	else {
@@ -789,7 +804,7 @@ void MCRPlannerGoalSet::AddEdgeRaw(int i,int j)
 	t->connections = e->connections;
       }
     }
-    //LOG4CXX_INFO(logger,"Deleting mode "<<mj<<" / "<<modeGraph.nodes.size()<<" and merging into "<<mi);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Deleting mode "<<mj<<" / "<<modeGraph.nodes.size()<<" and merging into "<<mi);
     modeGraph.DeleteNode(mj);
     if(mj < (int)modeGraph.nodes.size()) {
       //the n-1'th mode was moved into the mj'th spot
@@ -808,12 +823,12 @@ void MCRPlannerGoalSet::AddEdgeRaw(int i,int j)
 	roadmap.nodes[modeGraph.nodes[mi].roadmapNodes[k]].mode = mi;
     }
     /*
-    LOG4CXX_INFO(logger,""<<roadmap.nodes.size());
+    LOG4CXX_INFO(KrisLibrary::logger(),""<<roadmap.nodes.size());
     for(size_t k=0;k<modeGraph.nodes.size();k++) {
-      LOG4CXX_INFO(logger,"Mode %d: ");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Mode %d: ");
       for(size_t m=0;m<modeGraph.nodes[k].roadmapNodes.size();m++) 
-	LOG4CXX_INFO(logger,""<<modeGraph.nodes[k].roadmapNodes[m]);
-      LOG4CXX_INFO(logger,"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<modeGraph.nodes[k].roadmapNodes[m]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"\n");
     }
     */
   }
@@ -1021,9 +1036,7 @@ void MCRPlannerGoalSet::Expand(Real maxExplanationCost,vector<int>& newNodes)
     
     //do a direct connection
     numConfigChecks++;
-    vector<bool> subsetbits;
-    space->CheckObstacles(q,subsetbits);
-    qsubset = Subset(subsetbits);
+    qsubset = Violations(space,q);
     
     int nearmode = roadmap.nodes[kneighbors[closestIndex]].mode;
     if(WithinThreshold(modeGraph.nodes[nearmode],qsubset,maxExplanationCost,obstacleWeights)) { //if config itself violates too many constraints, we're not going to connect any nodes
@@ -1062,7 +1075,7 @@ void MCRPlannerGoalSet::Expand(Real maxExplanationCost,vector<int>& newNodes)
 
     int n=kneighbors[closestIndex];
     /*if(validModes[roadmap.nodes[n].mode])*/ {
-      //LOG4CXX_INFO(logger,"ExtendTowards from "<<n);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"ExtendTowards from "<<n);
       //do an RRT-style extension
       Real u=expandDistance/kclosest[closestIndex];
       Config qu;
@@ -1078,18 +1091,37 @@ void MCRPlannerGoalSet::Expand(Real maxExplanationCost,vector<int>& newNodes)
 #endif //DO_TIMING
 
   if(!bidirectional) {
+    //check for connection with goal
     for(size_t i=0;i<newNodes.size();i++) {
-      Real d=goalSetProjector->Distance(roadmap.nodes[newNodes[i]].q);
-      Config qgoal;
-      if(d < goalConnectThreshold && goalSetProjector->Project(roadmap.nodes[newNodes[i]].q,qgoal)) {
-	int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
-	if(res >= 0) {
-	  didRefine = true;
-	  if(goalSetProjector->Distance(qgoal)==0)
-	    goalNodes.push_back(res);
-	  else
-	    LOG4CXX_INFO(logger,"Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
-	}
+      Config qgoal = roadmap.nodes[newNodes[i]].q;
+      int goalindex = -1;
+      if(goalSet->Contains(qgoal)) {
+        goalindex = newNodes[i];
+        didRefine = true;
+      }
+      else {
+        bool project = false;
+        if(IsInf(goalConnectThreshold)) project = true;
+        else {
+          if(goalNumeric) {
+            if(MaxError(goalNumeric,qgoal) < goalConnectThreshold)
+              project = true;
+          }
+        }
+        if(project) {
+          if(goalSet->Project(qgoal)) {
+            int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
+            didRefine = true;
+            if(res >= 0) {
+              if(goalSet->Contains(qgoal)) 
+                goalindex = res;
+              else 
+                LOG4CXX_INFO(KrisLibrary::logger(),"Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
+            }
+          }
+        }
+        if(goalindex >= 0)
+    	    goalNodes.push_back(goalindex);
       }
     }
   }
@@ -1158,9 +1190,7 @@ void MCRPlannerGoalSet::Expand2(Real maxExplanationCost,vector<int>& newNodes)
     
     //do a direct connection
     numConfigChecks++;
-    vector<bool> subsetbits;
-    space->CheckObstacles(q,subsetbits);
-    qsubset = Subset(subsetbits);
+    qsubset = Violations(space,q);
 
     int nearmode = roadmap.nodes[neighbor[0]].mode;    
     if(WithinThreshold(modeGraph.nodes[nearmode],qsubset,maxExplanationCost,obstacleWeights)) { //if config itself violates too many constraints, we're not going to connect any nodes
@@ -1232,17 +1262,35 @@ void MCRPlannerGoalSet::Expand2(Real maxExplanationCost,vector<int>& newNodes)
 
   if(!bidirectional) {
     for(size_t i=0;i<newNodes.size();i++) {
-      Real d=goalSetProjector->Distance(roadmap.nodes[newNodes[i]].q);
-      Config qgoal;
-      if(d < goalConnectThreshold && goalSetProjector->Project(roadmap.nodes[newNodes[i]].q,qgoal)) {
-	int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
-	if(res >= 0) {
-	  didRefine = true;
-	  if(goalSetProjector->Distance(qgoal)==0)
-	    goalNodes.push_back(res);
-	  else
-	    LOG4CXX_INFO(logger,"Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
-	}
+      Config qgoal = roadmap.nodes[newNodes[i]].q;
+      int goalindex = -1;
+      if(goalSet->Contains(qgoal)) {
+        goalindex = newNodes[i];
+        didRefine = true;
+      }
+      else {
+        bool project = false;
+        if(IsInf(goalConnectThreshold)) project = true;
+        else {
+          if(goalNumeric) {
+            if(MaxError(goalNumeric,qgoal) < goalConnectThreshold)
+              project = true;
+          }
+        }
+        if(project) {
+          if(goalSet->Project(qgoal)) {
+            int res=AddEdge(newNodes[i],qgoal,maxExplanationCost);
+            didRefine = true;
+            if(res >= 0) {
+              if(goalSet->Contains(qgoal)) 
+                goalindex = res;
+              else 
+                LOG4CXX_INFO(KrisLibrary::logger(),"Note: Goal projection got closer to the goal, but failed to reach it exactly\n");
+            }
+          }
+        }
+        if(goalindex >= 0)
+          goalNodes.push_back(goalindex);
       }
     }
   }
@@ -1272,16 +1320,14 @@ void MCRPlannerGoalSet::Expand2(Real maxExplanationCost,vector<int>& newNodes)
 
 void MCRPlannerGoalSet::Plan(int initialLimit,const vector<int>& expansionSchedule,vector<int>& bestPath,Subset& bestCover)
 {
-  bestCover.maxItem = space->NumObstacles();
+  bestCover.maxItem = space->constraints.size();
   bestCover.items.resize(bestCover.maxItem);
   for(int i=0;i<bestCover.maxItem;i++)
     bestCover.items[i] = (int)i;
 
   Subset lowerCover;
-  vector<bool> violations;
-  numConfigChecks += 2;
-  space->CheckObstacles(start,violations);
-  lowerCover=Subset(violations);
+  numConfigChecks += 1;
+  lowerCover=Violations(space,start);
 
   Real lowerCost = Cost(lowerCover);
   Real bestCost = Cost(bestCover);
@@ -1311,7 +1357,7 @@ void MCRPlannerGoalSet::Plan(int initialLimit,const vector<int>& expansionSchedu
       if(limit >= bestCost)
 	limit = bestCost-costEpsilon;
       if(limit < lowerCost) limit = lowerCost;
-      //LOG4CXX_INFO(logger,"Iter "<<iters<<", now searching at limit "<<limit);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Iter "<<iters<<", now searching at limit "<<limit);
       expansionIndex++;
     }
     if(FuzzyEquals(bestCost,lowerCost)) break;
@@ -1331,7 +1377,7 @@ void MCRPlannerGoalSet::Plan(int initialLimit,const vector<int>& expansionSchedu
 	  //assert(res);
 	  bestCover = modeGraph.nodes[mgoal].pathCovers[k];
 	  bestCost = Cost(bestCover);
-	  //LOG4CXX_INFO(logger,"Iter "<<iters<<": improved cover to "<<bestCost);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Iter "<<iters<<": improved cover to "<<bestCost);
 	  progress_covers.push_back(bestCost);
 	  progress_iters.push_back(iters);
 	  progress_times.push_back(timer.ElapsedTime());
@@ -1346,17 +1392,17 @@ void MCRPlannerGoalSet::Plan(int initialLimit,const vector<int>& expansionSchedu
 
   if(!progress_iters.empty()) {
     /*
-    LOG4CXX_INFO(logger,"Cover: ");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Cover: ");
     for(size_t i=0;i<progress.size();i++)
-      LOG4CXX_INFO(logger,""<< "    LOG4CXX_INFO(logger,"\n");
-    LOG4CXX_INFO(logger,"Iters: ");
+      LOG4CXX_INFO(KrisLibrary::logger(),""<< "    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Iters: ");
     for(size_t i=0;i<progress.size();i++)
-      LOG4CXX_INFO(logger,""<< "    LOG4CXX_INFO(logger,"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),""<< "    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
     */
-    LOG4CXX_INFO(logger,"Cover "<<progress_covers.back()<<", best time "<<progress_times.back());
+    LOG4CXX_INFO(KrisLibrary::logger(),"Cover "<<progress_covers.back()<<", best time "<<progress_times.back());
   }
   else
-    LOG4CXX_INFO(logger,"Cover "<<Cost(bestCover)<<", best time "<<timer.ElapsedTime());
+    LOG4CXX_INFO(KrisLibrary::logger(),"Cover "<<Cost(bestCover)<<", best time "<<timer.ElapsedTime());
   /*
   if(GreedyPath(0,1,bestPath,bestCover)) {
   }
@@ -1569,7 +1615,7 @@ struct GreedySubsetAStar2 : public GeneralizedAStar<int,SubsetCost>
       }
       else {
 	//same subset
-	SubsetCost c(planner->space->NumObstacles(),dist);
+	SubsetCost c(planner->space->constraints.size(),dist);
 	cost.push_back(c);
       }
     }
@@ -1627,7 +1673,7 @@ struct OptimalSubsetAStar2 : public GeneralizedAStar<pair<int,Subset>,SubsetCost
       }
       else {
 	//same subset
-	SubsetCost c(planner->space->NumObstacles(),dist,&planner->obstacleWeights);
+	SubsetCost c(planner->space->constraints.size(),dist,&planner->obstacleWeights);
 	cost.push_back(c);
       }
       successors.push_back(pair<int,Subset>(e.target(),cost.back().subset+s.second));
@@ -1752,6 +1798,6 @@ void MCRPlannerGoalSet::GetMilestonePath(const std::vector<int>& path,MilestoneP
     else
       mpath.edges[i] = roadmap.FindEdge(path[i],path[i+1])->e->ReverseCopy();
     assert(mpath.edges[i]->Start()==roadmap.nodes[path[i]].q);
-    assert(mpath.edges[i]->Goal()==roadmap.nodes[path[i+1]].q);
+    assert(mpath.edges[i]->End()==roadmap.nodes[path[i+1]].q);
   }
 }

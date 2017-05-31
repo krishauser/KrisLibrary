@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Polyhedron3D.h"
 #include "geometry3d.h"
 #include <math/Interval.h>
@@ -82,7 +82,7 @@ bool ConvexPolyhedron3D::intersects(const ConvexPolyhedron3D& other) const
 		if(other.planePos(planes[i])) return false;
 
 	//check edge/edge 
-	LOG4CXX_INFO(logger,"Not done with edge/edge splitting planes"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Not done with edge/edge splitting planes"<<"\n");
 	abort();
 
 	return true;

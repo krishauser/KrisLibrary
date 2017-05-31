@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "AnyGeometry.h"
 #include <math3d/geometry3d.h>
 #include <meshing/VolumeGrid.h>
@@ -208,7 +208,7 @@ bool AnyGeometry3D::Load(const char* fn)
   else if(0==strcmp(ext,"geom")) {
     ifstream in(fn,ios::in);
     if(!in) {
-            LOG4CXX_ERROR(logger,"AnyGeometry3D::Load: File "<<fn);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
       return false;
     }
     if(!Load(in)) return false;
@@ -218,7 +218,7 @@ bool AnyGeometry3D::Load(const char* fn)
   else {
     ifstream in(fn,ios::in);
     if(!in) {
-            LOG4CXX_ERROR(logger,"AnyGeometry3D::Load: File "<<fn);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
       return false;
     }
     if(!Load(in)) return false;
@@ -278,7 +278,7 @@ bool AnyGeometry3D::Load(istream& in)
       return true;
     }
     else {
-            LOG4CXX_ERROR(logger,"Failed to load Primitive type\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Failed to load Primitive type\n");
       return false;
     }
   }
@@ -299,11 +299,11 @@ bool AnyGeometry3D::Load(istream& in)
     in >> this->AsImplicitSurface();
   }
   else if(typestr == "Group") {
-        LOG4CXX_ERROR(logger,"AnyGeometry::Load(): TODO: groups\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): TODO: groups\n");
     return false;
   }
   else {
-        LOG4CXX_ERROR(logger,"AnyGeometry::Load(): Unknown type "<<typestr.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr.c_str());
   }
   if(!in) return false;
   return true;
@@ -326,7 +326,7 @@ bool AnyGeometry3D::Save(ostream& out) const
     out<<this->AsImplicitSurface()<<endl;
     break;
   case Group:
-        LOG4CXX_ERROR(logger,"AnyGeometry::Save(): TODO: groups\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Save(): TODO: groups\n");
     return false;
   }
   return true;
@@ -521,12 +521,17 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
       colitems.resize(items.size());
       for(size_t i=0;i<items.size();i++) {
         colitems[i] = AnyCollisionGeometry3D(items[i]);
-        colitems[i].InitCollisionData();
+        colitems[i].ReinitCollisionData();
+        Assert(colitems[i].CollisionDataInitialized());
       }
+      vector<AnyCollisionGeometry3D>& bitems = GroupCollisionData();
+      for(size_t i=0;i<bitems.size();i++) 
+        Assert(bitems[i].CollisionDataInitialized());
     }
     break;
   }
   SetTransform(T);
+  assert(!collisionData.empty());
 }
 
 AABB3D AnyCollisionGeometry3D::GetAABB() const
@@ -707,7 +712,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp)
       return d;
     }
   case ImplicitSurface:
-        LOG4CXX_ERROR(logger,"TODO: closest point from implicit surface to point\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: closest point from implicit surface to point\n");
     return Inf;
   case TriangleMesh:
     {
@@ -818,6 +823,18 @@ bool Collides(const Meshing::VolumeGrid& a,const RigidTransform& Ta,const Collis
 bool Collides(const CollisionMesh& a,const CollisionMesh& b,Real margin,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
+  if(maxContacts==1) {
+    CollisionMeshQueryEnhanced query(a,b);
+    query.margin1 = 0;
+    query.margin2 = margin;
+    bool res = query.Collide();
+    if(res) {
+      query.CollisionPairs(elements1,elements2);
+      assert(elements1.size()==1);
+      assert(elements2.size()==1);
+    }
+    return res;
+  }
   NearbyTriangles(a,b,margin,elements1,elements2,maxContacts);
   return !elements1.empty();
 }
@@ -827,6 +844,7 @@ bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
   if(a.type == GeometricPrimitive3D::Empty) return false;
+  Assert(b.CollisionDataInitialized());
   GeometricPrimitive3D aw=a;
   aw.Transform(Ta);
   switch(b.type) {
@@ -865,6 +883,7 @@ bool Collides(const GeometricPrimitive3D& a,const RigidTransform& Ta,Real margin
       elements1.resize(0);
       elements2.resize(0);
       for(size_t i=0;i<bitems.size();i++) {
+  assert(bitems[i].CollisionDataInitialized());
 	vector<int> e1,e2;
 	if(Collides(a,Ta,margin+b.margin,bitems[i],e1,e2,maxContacts)) {
 	  for(size_t j=0;j<e1.size();j++) {
@@ -986,7 +1005,7 @@ bool withinDistance_PC_AnyGeom(void* obj)
   RigidTransform Tident; Tident.R.setIdentity(); Tident.t = pw;
   vector<int> temp;
   if(Collides(point_primitive,Tident,gWithinDistanceMargin,*gWithinDistanceGeom,temp,*gWithinDistanceElements1,gWithinDistanceMaxContacts)) {
-    LOG4CXX_INFO(logger,"Colliding point "<<pw.x<<" "<<pw.y<<" "<<pw.z<<" distance "<<gWithinDistanceGeom->Distance(pw));
+    LOG4CXX_INFO(KrisLibrary::logger(),"Colliding point "<<pw.x<<" "<<pw.y<<" "<<pw.z<<" distance "<<gWithinDistanceGeom->Distance(pw));
     gWithinDistanceElements2->push_back(p-&gWithinDistancePC->points[0]);
     if(gWithinDistanceElements1->size() >= gWithinDistanceMaxContacts) 
       return false;
@@ -1255,7 +1274,6 @@ public:
 bool Collides(const CollisionPointCloud& a,Real margin,const CollisionMesh& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
-  Timer timer;
   PointMeshCollider collider(a,b,margin);
   bool res=collider.Recurse(maxContacts);
   if(res) {
@@ -1269,7 +1287,6 @@ bool Collides(const CollisionPointCloud& a,Real margin,const CollisionMesh& b,
 bool Collides(const CollisionPointCloud& a,Real margin,const CollisionPointCloud& b,
 	      vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
 {
-  Timer timer;
   PointPointCollider collider(a,b,margin);
   bool res=collider.Recurse(maxContacts);
   if(res) {
@@ -1316,7 +1333,7 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
       bbbexpanded.origin -= margin*(bbb.xbasis+bbb.ybasis+bbb.zbasis);
       //quick reject test
       if(!abb.intersectsApprox(bbbexpanded)) {
-	LOG4CXX_INFO(logger,"0 contacts (quick reject) time "<<timer.ElapsedTime());
+	LOG4CXX_INFO(KrisLibrary::logger(),"0 contacts (quick reject) time "<<timer.ElapsedTime());
 	return false;
       }
       RigidTransform Tw_a;
@@ -1341,15 +1358,15 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
 	if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
 	  elements2.push_back(i);
 	  if(elements2.size() >= maxContacts) {
-	    LOG4CXX_INFO(logger,""<<maxContacts<<" contacts time "<<timer.ElapsedTime());
+	    LOG4CXX_INFO(KrisLibrary::logger(),""<<maxContacts<<" contacts time "<<timer.ElapsedTime());
 
-	    //LOG4CXX_INFO(logger,"Collision in time "<<timer.ElapsedTime());
+	    //LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
 	    return true;
 	  }
 	}
       }
-      LOG4CXX_INFO(logger,""<<maxContacts<<" contacts time "<<timer.ElapsedTime());	    
-      // LOG4CXX_INFO(logger,"No collision in time "<<timer.ElapsedTime());
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<maxContacts<<" contacts time "<<timer.ElapsedTime());	    
+      // LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
       return !elements2.empty();
 
       /*
@@ -1369,16 +1386,16 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
 	  if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
 	    elements2.push_back(i);
 	    if(elements2.size() >= maxContacts) {
-	      LOG4CXX_INFO(logger,"Collision in time "<<timer.ElapsedTime());
+	      LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
 	      return true;
 	    }
 	  }
 	}
-	LOG4CXX_INFO(logger,"No collision in time "<<timer.ElapsedTime());
+	LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
 	return false;
       }
       else {
-	LOG4CXX_INFO(logger,"Box testing\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Box testing\n");
 	gWithinDistanceMargin = margin;
 	gWithinDistancePC = &a;
 	gWithinDistanceGeom = &b;
@@ -1386,8 +1403,8 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
 	gWithinDistanceElements2 = &elements2;
 	gWithinDistanceMaxContacts = maxContacts;
 	bool collisionFree = a.grid.IndexQuery(imin,imax,withinDistance_PC_AnyGeom);
-	if(collisionFree) LOG4CXX_INFO(logger,"No collision in time "<<timer.ElapsedTime());
-	else LOG4CXX_INFO(logger,"Collision in time "<<timer.ElapsedTime());
+	if(collisionFree) LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
+	else LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
 	return !collisionFree;
       }
       */

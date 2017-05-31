@@ -2,7 +2,7 @@
 #define MCR_PLANNER_H
 
 #include "MotionPlanner.h"
-#include "ExplicitCSpace.h"
+#include "CSpace.h"
 #include <KrisLibrary/utils/Subset.h>
 
 /** @brief A planner that minimizes the the number of violated constraints
@@ -50,7 +50,7 @@ class MCRPlanner
   };
   typedef Graph::UndirectedGraph<Mode,Transition> ModeGraph;
 
-  MCRPlanner(ExplicitCSpace* space);
+  MCRPlanner(CSpace* space);
   void Init(const Config& start,const Config& goal);
   ///Performs one iteration of planning given a limit on the explanation size
   void Expand(Real maxExplanationCost,vector<int>& newNodes);
@@ -107,7 +107,7 @@ class MCRPlanner
   void GetMilestonePath(const std::vector<int>& path,MilestonePath& mpath) const;
  
   Config start,goal;
-  ExplicitCSpace* space;
+  CSpace* space;
 
   //weighted explanation
   vector<Real> obstacleWeights;

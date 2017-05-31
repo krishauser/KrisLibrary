@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "RobotKinematics3D.h"
 #include "Rotation.h"
 #include "Inertia.h"

@@ -4,7 +4,17 @@
 //this file helps take care of the cross-platform, cross-compiler differences
 //in the STL TR1
 
-#if defined(_MSC_VER) || defined(__APPLE__)
+#if defined(_MSC_VER)
+#include <unordered_set>
+#include <unordered_map>
+  #if _MSC_VER >= 1700
+    #define TR1_NAMESPACE std
+    #define USE_TR1_NAMESPACE 0
+  #else
+    #define TR1_NAMESPACE std::tr1
+    #define USE_TR1_NAMESPACE 1
+  #endif
+#elif defined(__APPLE__)
 #include <unordered_set>
 #include <unordered_map>
 #define TR1_NAMESPACE std

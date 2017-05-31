@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "PolytopeProjection.h"
 #include <iostream>
 #include <geometry/ConvexHull2D.h>
@@ -52,16 +52,16 @@ void PolytopeProjection2D::Expand()
   Real angle = 0;
   Vector2 d(Cos(angle),Sin(angle));
   if(!f.EvalExtremum(d,initPts[0])) {
-        LOG4CXX_ERROR(logger,"PolytopeProjection2D::Expand(): looks like polytope is empty!\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PolytopeProjection2D::Expand(): looks like polytope is empty!\n");
     points.clear();
     return;
   }
   if(!f.EvalExtremum(-d,initPts[1])) {
-        LOG4CXX_ERROR(logger,"PolytopeProjection2D::Expand(): Strange! could eval one extremum of polytope, but not the second!\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PolytopeProjection2D::Expand(): Strange! could eval one extremum of polytope, but not the second!\n");
     points.clear();
     return;
   }
-  //LOG4CXX_INFO(logger,"Initial points "<<initPts[0]<<", "<<initPts[1]<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Initial points "<<initPts[0]<<", "<<initPts[1]<<"\n");
   points.push_back(initPts[0]);
   points.push_back(initPts[1]);
   PointIterator i1=points.begin();
@@ -74,8 +74,8 @@ void PolytopeProjection2D::Expand()
 void PolytopeProjection2D::ExpandEdge(PointIterator i,int depth)
 {
   if(depth > maxDepth) {
-    //LOG4CXX_INFO(logger,"ExpandEdge iters exceeding "<<maxDepth<<", quitting iteration"<<"\n");
-    //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //LOG4CXX_INFO(KrisLibrary::logger(),"ExpandEdge iters exceeding "<<maxDepth<<", quitting iteration"<<"\n");
+    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     return;
   }
   //get the next point in the list
@@ -88,24 +88,24 @@ void PolytopeProjection2D::ExpandEdge(PointIterator i,int depth)
     if(j->isRay) {
       //only expand if they're not ccw, and then do so with the angle bisector
       if(i->cross(*j) > Zero) {
-		LOG4CXX_ERROR(logger,"CCW turn of angle "<<Asin(i->cross(*j)));
+		LOG4CXX_ERROR(KrisLibrary::logger(),"CCW turn of angle "<<Asin(i->cross(*j)));
 	return;
       }
       else {
-	LOG4CXX_INFO(logger,"Expanding between rays "<<*i<<" and "<<*j<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Expanding between rays "<<*i<<" and "<<*j<<"\n");
 	n.set(-*i-*j);
 	n.inplaceNormalize();
 	PointRay2D x;
 	if(!f.EvalExtremum(n,x)) return;
 	
 	if(x.isRay) {
-	  LOG4CXX_INFO(logger,"It's a ray... "<<x<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"It's a ray... "<<x<<"\n");
 	  PointIterator k=points.insert(j,x);
 	  ExpandEdge(i,depth+1);
 	  ExpandEdge(k,depth+1);
 	}
 	else {
-	  LOG4CXX_INFO(logger,"It's a point... "<<x<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"It's a point... "<<x<<"\n");
 	  PointIterator k=points.insert(j,x);
 	  ExpandEdge(i,depth+1);
 	  ExpandEdge(k,depth+1);
@@ -129,7 +129,7 @@ void PolytopeProjection2D::ExpandEdge(PointIterator i,int depth)
   PointRay2D x;
   if(!f.EvalExtremum(n,x)) return;
 
-  //LOG4CXX_INFO(logger,"Extremum in direction "<<n<<": "<<x<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Extremum in direction "<<n<<": "<<x<<"\n");
   
   //if x doesn't lie on the edge, insert a point between i and j
   if(x.isRay) {
@@ -248,10 +248,10 @@ bool LPSolvePointCallback::EvalExtremum(const Vector2& dir, PointRay2D& x)
 	x.y = unboundedSolver.xopt(vary);
 	x.isRay = true;
 	x.inplaceNormalize();
-	LOG4CXX_INFO(logger,"Polytope projection unbounded in direction "<<dir<<", ray "<<x<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Polytope projection unbounded in direction "<<dir<<", ray "<<x<<"\n");
       }
       else {
-	LOG4CXX_INFO(logger,"Couldn't solve for unbounded direction! "<<dir<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't solve for unbounded direction! "<<dir<<"\n");
 	return false;
       }
     }

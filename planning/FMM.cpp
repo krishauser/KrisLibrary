@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "FMM.h"
 #include <structs/FixedSizeHeap.h>
 #include <utils/indexing.h>
@@ -51,8 +51,8 @@ Real best_diag_distanceN(const Vector& d)
   Real dsqsum = d.normSquared();
   Real det = dsumsq - n*(dsqsum-1.0);
   if(det < 0.0) {
-        //LOG4CXX_ERROR(logger,"Negative determinant: "<<det);
-    //LOG4CXX_ERROR(logger,"D: "<<d<<"\n");
+        //LOG4CXX_ERROR(KrisLibrary::logger(),"Negative determinant: "<<det);
+    //LOG4CXX_ERROR(KrisLibrary::logger(),"D: "<<d<<"\n");
     return d.minElement()+1.0;
   }
   Real sqdet = Sqrt(det);
@@ -224,14 +224,14 @@ struct SimplexEnumerator
       for(size_t i=0;i<node.size();i++)
 	if(!candidates[i].empty()) occupied.push_back(i);
       /*
-      LOG4CXX_INFO(logger,"Pruned: ");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Pruned: ");
       for(size_t i=0;i<prunedAxes.size();i++)
-	LOG4CXX_INFO(logger,""<<prunedAxes[i]);
-      LOG4CXX_INFO(logger,"\n");
-      LOG4CXX_INFO(logger,"AxisIndex: ");
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<prunedAxes[i]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"AxisIndex: ");
       for(size_t i=0;i<axisIndex.size();i++)
-	LOG4CXX_INFO(logger,""<<axisIndex[i]);
-      LOG4CXX_INFO(logger,"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<axisIndex[i]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"\n");
       */
       int k = 0;
       for(size_t i=0;i<axisIndex.size();i++) {
@@ -331,9 +331,9 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
     //check if goal is reached
     if(nindex==gindex) {
 #if DO_TIMING
-      LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
-      LOG4CXX_INFO(logger,""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
       return true;
     }
 
@@ -352,7 +352,7 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
 	//do we have a better distance than the existing?
 	if (ncost < distances.values[next]) {
 	  if(!q.find(next)) {
-	    LOG4CXX_WARN(logger,"Warning, want to adjust "<<next);
+	    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, want to adjust "<<next);
 	    q.push(next,-ncost);
 	  }
 	  else {
@@ -362,8 +362,8 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
       }
       else {
 	if(ncost < distances.values[next]) {
-	  //LOG4CXX_INFO(logger,"Hmm... better path to complete node!\n");
-	  //LOG4CXX_INFO(logger,"Difference: "<<ncost<<" vs "<<distances.values[next]);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... better path to complete node!\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Difference: "<<ncost<<" vs "<<distances.values[next]);
 	  distances.values[next] = ncost;
 	}
       }
@@ -374,7 +374,7 @@ bool FMMSearch(const vector<int>& start,const vector<int>& goal,const ArrayND<Re
 #endif // DO_TIMING
   }
 #if DO_TIMING
-  LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
 
   //couldn't find goal
@@ -498,9 +498,9 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
       gIndices.erase(gIndices.find(nindex));
       if(gIndices.empty()) {
 #if DO_TIMING
-	LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
-	LOG4CXX_INFO(logger,""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
 	return true;
       }
     }
@@ -561,7 +561,7 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
 	//do we have a better distance than the existing?
 	if (ncost < distances.values[next]) {
 	  if(!q.find(next)) {
-	    LOG4CXX_WARN(logger,"Warning, want to adjust "<<next);
+	    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, want to adjust "<<next);
 	    q.push(next,-ncost);
 	  }
 	  else {
@@ -571,8 +571,8 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
       }
       else {
 	if(ncost < distances.values[next]) {
-	  //LOG4CXX_INFO(logger,"Hmm... better path to complete node!\n");
-	  //LOG4CXX_INFO(logger,"Difference: "<<ncost<<" vs "<<distances.values[next]);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... better path to complete node!\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Difference: "<<ncost<<" vs "<<distances.values[next]);
 	  distances.values[next] = ncost;
 	}
       }
@@ -596,7 +596,7 @@ bool FMMSearch(const Vector& start,const Vector& goal,const ArrayND<Real>& costs
 #endif // DO_TIMING
   }
 #if DO_TIMING
-  LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
 
   //couldn't find goal
@@ -678,9 +678,9 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
       gIndices.erase(gIndices.find(nindex));
       if(gIndices.empty()) {
 #if DO_TIMING
-	LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
-	LOG4CXX_INFO(logger,""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<numVisited<<" nodes visited, avg # of simplices "<<Real(numSimplices)/Real(numVisited));
 	return true;
       }
     }
@@ -750,7 +750,7 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
 	//do we have a better distance than the existing?
 	if (ncost < distances.values[next]) {
 	  if(!q.find(next)) {
-	    LOG4CXX_WARN(logger,"Warning, want to adjust "<<next);
+	    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, want to adjust "<<next);
 	    q.push(next,-ncost);
 	  }
 	  else {
@@ -760,8 +760,8 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
       }
       else {
 	if(ncost < distances.values[next]) {
-	  //LOG4CXX_INFO(logger,"Hmm... better path to complete node!\n");
-	  //LOG4CXX_INFO(logger,"Difference: "<<ncost<<" vs "<<distances.values[next]);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... better path to complete node!\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Difference: "<<ncost<<" vs "<<distances.values[next]);
 	  distances.values[next] = ncost;
 	}
       }
@@ -785,7 +785,7 @@ bool FMMSearch(const Vector& startorig,const Vector& goalorig,
 #endif // DO_TIMING
   }
 #if DO_TIMING
-  LOG4CXX_INFO(logger,"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Time for init "<<initTime<<", propagate "<<propagateTime<<", estimate "<<estimateTime<<", overhead "<<overheadTime);
 #endif //DO_TIMING
 
   //couldn't find goal
@@ -921,7 +921,7 @@ vector<Vector> GradientDescent(const ArrayND<Real>& field,const Vector& start)
       }
     }
     if(IsInf(t)) {
-      //LOG4CXX_INFO(logger,"Terminated search at "<<pt<<", gradient is zero"<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Terminated search at "<<pt<<", gradient is zero"<<"\n");
       return path;
     }
     Vector next = pt-grad*t;
@@ -949,19 +949,19 @@ vector<Vector> GradientDescent(const ArrayND<Real>& field,const Vector& start)
       }
       if(best < 0) {
 	/*
-	LOG4CXX_INFO(logger,"Terminated, next point "<<next<<" has cost "<<EvalMultilinear(field,next)<<", increase from "<<EvalMultilinear(field,pt)<<" at "<<pt<<"\n");
-	LOG4CXX_INFO(logger,"Gradient: "<<grad<<"\n");
-	LOG4CXX_INFO(logger,"inf dirs: ");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Terminated, next point "<<next<<" has cost "<<EvalMultilinear(field,next)<<", increase from "<<EvalMultilinear(field,pt)<<" at "<<pt<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gradient: "<<grad<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"inf dirs: ");
 	for(size_t i=0;i<infDirs.size();i++)
-	  LOG4CXX_INFO(logger,infDirs[i]<<" ");
-	LOG4CXX_INFO(logger,"\n");
-	LOG4CXX_INFO(logger,"Adjacent cell values: "<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),infDirs[i]<<" ");
+	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Adjacent cell values: "<<"\n");
 	for(size_t i=0;i<gridpts.size();i++) {
 	  for(size_t k=0;k<gridpts[i].size();k++)
-	    LOG4CXX_INFO(logger,gridpts[i][k]<<" ");
-	  LOG4CXX_INFO(logger,": "<<field[gridpts[i]]<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),gridpts[i][k]<<" ");
+	  LOG4CXX_INFO(KrisLibrary::logger(),": "<<field[gridpts[i]]<<"\n");
 	}
-	LOG4CXX_INFO(logger,"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
 	*/
 	return path;
       }

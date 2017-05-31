@@ -1,17 +1,17 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "AnyMotionPlanner.h"
 #include <math/sample.h>
 #include <utils/AnyCollection.h>
 #include <utils/stringutils.h>
 #include <utils/PropertyMap.h>
-#include "ExplicitCSpace.h"
 #include "OptimalMotionPlanner.h"
 #include "OMPLInterface.h"
 #include "PointLocation.h"
 #include "SBL.h"
 #include "FMMMotionPlanner.h"
 #include "Timer.h"
+#include "CSpaceHelpers.h"
 
 #if HAVE_TINYXML
 #include <tinyxml.h>
@@ -38,7 +38,6 @@ void ToCollection(const MotionPlannerFactory& factory,AnyCollection& items)
   items["restartTermCond"] = factory.restartTermCond;
 }
 
-
 /** @brief Helper class for higher-order planners -- passes all calls to another motion planner.
  */
 class PiggybackMotionPlanner : public MotionPlannerInterface
@@ -62,9 +61,10 @@ class PiggybackMotionPlanner : public MotionPlannerInterface
   virtual bool IsLazyConnected(int ma,int mb) const { return mp->IsLazyConnected(ma,mb); }
   virtual bool CheckPath(int ma,int mb) { return mp->CheckPath(ma,mb); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { mp->GetPath(ma,mb,path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { mp->GetRoadmap(roadmap); }
+  virtual void GetRoadmap(Roadmap& roadmap) const { mp->GetRoadmap(roadmap); }
   virtual bool IsSolved() { return mp->IsSolved(); }
   virtual void GetSolution(MilestonePath& path) { return mp->GetSolution(path); }
+  virtual void GetStats(PropertyMap& stats) const { mp->GetStats(stats); }
 
   SmartPointer<MotionPlannerInterface> mp;
 };
@@ -77,7 +77,7 @@ class PiggybackMotionPlanner : public MotionPlannerInterface
 class PointToSetMotionPlanner : public PiggybackMotionPlanner
 {
  public:
-  PointToSetMotionPlanner(const SmartPointer<MotionPlannerInterface>& mp,const Config& qstart,CSpace* goalSpace);
+  PointToSetMotionPlanner(const SmartPointer<MotionPlannerInterface>& mp,const Config& qstart,CSet* goalSpace);
   virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
   virtual int PlanMore();
   virtual bool IsSolved();
@@ -87,7 +87,7 @@ class PointToSetMotionPlanner : public PiggybackMotionPlanner
   ///User can add goal nodes manually via this method
   virtual int AddMilestone(const Config& q);
 
-  CSpace* goalSpace;
+  CSet* goalSpace;
 
   ///Setting: the planner samples a new goal configuration every n*(|goalNodes|+1) iterations
   int sampleGoalPeriod;
@@ -103,7 +103,7 @@ class PointToSetMotionPlanner : public PiggybackMotionPlanner
 class PointToSetMotionPlannerAdaptor : public MotionPlannerInterface
 {
  public:
-  PointToSetMotionPlannerAdaptor(const MotionPlannerFactory& factory,CSpace* space,const Config& qstart,CSpace* goalSpace);
+  PointToSetMotionPlannerAdaptor(const MotionPlannerFactory& factory,CSpace* space,const Config& qstart,CSet* goalSpace);
   virtual int PlanMore();
   virtual int NumIterations() const { return numIters; }
   virtual int NumMilestones() const;
@@ -118,14 +118,18 @@ class PointToSetMotionPlannerAdaptor : public MotionPlannerInterface
   virtual bool IsLazyConnected(int ma,int mb) const;
   virtual bool CheckPath(int ma,int mb);
   virtual void GetPath(int ma,int mb,MilestonePath& path);
-  virtual void GetRoadmap(RoadmapPlanner& roadmap);
+  virtual void GetRoadmap(Roadmap& roadmap);
   virtual bool IsSolved();
   virtual void GetSolution(MilestonePath& path);
+  virtual void GetStats(PropertyMap& stats) const {
+    MotionPlannerInterface::GetStats(stats);
+    stats.set("numGoals",goalPlanners.size());
+  }
 
   MotionPlannerFactory factory;
   CSpace* space;
   Config qstart;
-  CSpace* goalSpace;
+  CSet* goalSpace;
 
   ///Setting: the planner samples a new goal configuration every n*|goalNodes| iterations
   int sampleGoalPeriod;
@@ -155,12 +159,14 @@ class RestartMotionPlanner : public PiggybackMotionPlanner
   virtual bool IsSolved() { return !bestPath.edges.empty(); }
   virtual void GetSolution(MilestonePath& path) { path = bestPath; }
   virtual int NumIterations() const { return numIters; }
+  virtual void GetStats(PropertyMap& stats) const;
 
   MotionPlannerFactory factory;
   MotionPlanningProblem problem;
   HaltingCondition iterTermCond;
   MilestonePath bestPath;
-  int numIters;
+  Real bestPathLength;
+  int numRestarts,numIters;
   double elapsedTime;
 };
 
@@ -176,11 +182,16 @@ class RestartShortcutMotionPlanner : public RestartMotionPlanner
   virtual bool IsOptimizing() const { return true; }
   virtual std::string Plan(MilestonePath& path,const HaltingCondition& cond);
   virtual int PlanMore();
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const;
+  virtual void GetRoadmap(Roadmap& roadmap) const;
+  virtual void GetStats(PropertyMap& stats) const {
+    RestartMotionPlanner::GetStats(stats);
+    stats.set("numShortcuts",numShortcutIters);
+  }
 
   bool shortcutMode;
   int numShortcutIters;
   vector<MilestonePath> candidatePaths;
+  vector<Real> candidatePathLengths;
 };
 
 /** @brief Plans a path and then tries to shortcut it with the remaining time.
@@ -212,7 +223,7 @@ void ReversePath(MilestonePath& path)
   }
   if(path.edges.size()%2 == 1)
     path.edges[path.edges.size()/2] = path.edges[path.edges.size()/2]->ReverseCopy();
-    if(!path.IsValid()) LOG4CXX_ERROR(logger,"ReversePath : Path invalidated ?!?!\n");
+    if(!path.IsValid()) LOG4CXX_ERROR(KrisLibrary::logger(),"ReversePath : Path invalidated ?!?!\n");
 }
 
 
@@ -255,11 +266,11 @@ MotionPlanningProblem::MotionPlanningProblem(CSpace* _space,const Config& a,cons
   :space(_space),qstart(a),qgoal(b),startSet(NULL),goalSet(NULL),objective(NULL)
 {}
 
-MotionPlanningProblem::MotionPlanningProblem(CSpace* _space,const Config& a,CSpace* _goalSet)
+MotionPlanningProblem::MotionPlanningProblem(CSpace* _space,const Config& a,CSet* _goalSet)
   :space(_space),qstart(a),startSet(NULL),goalSet(_goalSet),objective(NULL)
 {}
 
-MotionPlanningProblem::MotionPlanningProblem(CSpace* _space,CSpace* _startSet,CSpace* _goalSet)
+MotionPlanningProblem::MotionPlanningProblem(CSpace* _space,CSet* _startSet,CSet* _goalSet)
   :space(_space),startSet(_startSet),goalSet(_goalSet),objective(NULL)
 {}
 
@@ -369,7 +380,7 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
   virtual void GetPath(int ma,int mb,MilestonePath& path) { prm.CreatePath(ma,mb,path); }
   virtual bool IsSolved() const { return IsConnected(0,1); }
   virtual void GetSolution(MilestonePath& path) { GetPath(0,1,path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { roadmap = prm; }
+  virtual void GetRoadmap(Roadmap& roadmap) const { roadmap = prm.roadmap; }
 
   RoadmapPlanner prm;
   int knn;
@@ -378,17 +389,17 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
   bool ignoreConnectedComponents,storeEdges;
 };
 
-void GetRoadmapIter(TreeRoadmapPlanner::Node* node,RoadmapPlanner& roadmap,int pindex=-1)
+void GetRoadmapIter(TreeRoadmapPlanner::Node* node,MotionPlannerInterface::Roadmap& roadmap,int pindex=-1)
 {
   if(!node) return;
-  int nindex = roadmap.AddMilestone(node->x);
+  int nindex = roadmap.AddNode(node->x);
   if(pindex >= 0)
-    roadmap.ConnectEdge(pindex,nindex,node->edgeFromParent());
+    roadmap.AddEdge(pindex,nindex,node->edgeFromParent());
   for(TreeRoadmapPlanner::Node* c=node->getFirstChild();c!=NULL;c=c->getNextSibling())
     GetRoadmapIter(c,roadmap,nindex);
 }
 
-void GetRoadmap(const TreeRoadmapPlanner& planner,RoadmapPlanner& roadmap)
+void GetRoadmap(const TreeRoadmapPlanner& planner,MotionPlannerInterface::Roadmap& roadmap)
 {
   roadmap.Cleanup();
   for(size_t i=0;i<planner.connectedComponents.size();i++) {
@@ -408,7 +419,7 @@ class RRTInterface  : public MotionPlannerInterface
     TreeRoadmapPlanner::Node* n=rrt.TestAndAddMilestone(q);
     if(n) return rrt.milestones.size()-1;
     else {
-            LOG4CXX_ERROR(logger,"RRTInterface::AddMilestone: Warning, milestone is infeasible?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"RRTInterface::AddMilestone: Warning, milestone is infeasible?\n");
       return -1;
     }
   }
@@ -426,7 +437,7 @@ class RRTInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return rrt.connectedComponents.size(); }
   virtual bool IsConnected(int ma,int mb) const { return rrt.milestones[ma]->connectedComponent == rrt.milestones[mb]->connectedComponent; }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { rrt.CreatePath(rrt.milestones[ma],rrt.milestones[mb],path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { ::GetRoadmap(rrt,roadmap); }
+  virtual void GetRoadmap(Roadmap& roadmap) const { ::GetRoadmap(rrt,roadmap); }
 
   RRTPlanner rrt;
   int numIters;
@@ -444,7 +455,7 @@ class BiRRTInterface  : public MotionPlannerInterface
     TreeRoadmapPlanner::Node* n=rrt.TestAndAddMilestone(q);
     if(n) return rrt.milestones.size()-1;
     else {
-            LOG4CXX_ERROR(logger,"BiRRTInterface::AddMilestone: Warning, milestone is infeasible?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"BiRRTInterface::AddMilestone: Warning, milestone is infeasible?\n");
       return -1;
     }
   }
@@ -463,7 +474,7 @@ class BiRRTInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     rrt.CreatePath(path);
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { ::GetRoadmap(rrt,roadmap); }
+  virtual void GetRoadmap(Roadmap& roadmap) const { ::GetRoadmap(rrt,roadmap); }
 
   BidirectionalRRTPlanner rrt;
   int numIters;
@@ -502,14 +513,14 @@ class SBLInterface  : public MotionPlannerInterface
       sbl->Init(qStart,qGoal);
       return 1;
     }
-        LOG4CXX_ERROR(logger,"SBLInterface::AddMilestone: Warning, milestone is infeasible?\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"SBLInterface::AddMilestone: Warning, milestone is infeasible?\n");
     AssertNotReached();
     return -1;
   }
   virtual void GetMilestone(int i,Config& q) { if(i==0) q=*sbl->tStart->root; else q=*sbl->tGoal->root; }
   virtual int PlanMore() { 
     if(qStart.n == 0 || qGoal.n == 0) {
-            LOG4CXX_ERROR(logger,"AnyMotionPlanner::PlanMore(): SBL is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyMotionPlanner::PlanMore(): SBL is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
       return -1;
     }
     if(!sbl->IsDone()) sbl->Extend();
@@ -531,24 +542,24 @@ class SBLInterface  : public MotionPlannerInterface
   }
   virtual bool IsConnected(int ma,int mb) const { return sbl->IsDone(); }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { sbl->CreatePath(path); if(ma == 1) ReversePath(path); }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const {
+  virtual void GetRoadmap(Roadmap& roadmap) const {
     if(qStart.n != 0) 
-      roadmap.AddMilestone(qStart);
+      roadmap.AddNode(qStart);
     if(qGoal.n != 0) 
-      roadmap.AddMilestone(qGoal);
+      roadmap.AddNode(qGoal);
     if(sbl->tStart && sbl->tStart->root)
       GetRoadmapRecurse(sbl->tStart->root,roadmap,0);
     if(sbl->tGoal && sbl->tGoal->root)
       GetRoadmapRecurse(sbl->tGoal->root,roadmap,1);
   }
-  void GetRoadmapRecurse(SBLTree::Node* n,RoadmapPlanner& roadmap,int nIndex=-1) const
+  void GetRoadmapRecurse(SBLTree::Node* n,Roadmap& roadmap,int nIndex=-1) const
   {
     if(nIndex < 0)
-      nIndex = roadmap.AddMilestone(*n);
+      nIndex = roadmap.AddNode(*n);
     SBLTree::Node* c=n->getFirstChild();
     while(c != NULL) {
-      int cIndex = roadmap.AddMilestone(*c);
-      roadmap.ConnectEdge(nIndex,cIndex,c->edgeFromParent());
+      int cIndex = roadmap.AddNode(*c);
+      roadmap.AddEdge(nIndex,cIndex,c->edgeFromParent());
       GetRoadmapRecurse(c,roadmap,cIndex);
       c = c->getNextSibling();
     }
@@ -576,7 +587,7 @@ class SBLPRTInterface  : public MotionPlannerInterface
   virtual bool ConnectHint(int i,int j) { sblprt.AddRoadmapEdge(i,j); return false; }
   virtual int PlanMore() { 
     if(sblprt.roadmap.nodes.empty()) {
-            LOG4CXX_ERROR(logger,"SBLPRTInterface::PlanMore(): no seed configurations set yet\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"SBLPRTInterface::PlanMore(): no seed configurations set yet\n");
       return -1;
     }
     sblprt.Expand();
@@ -658,14 +669,14 @@ class PRMStarInterface  : public MotionPlannerInterface
       assert(planner.start == 0 && planner.goal == 1);
       return 1;
     }
-        LOG4CXX_ERROR(logger,"PRMStarInterface::AddMilestone: Warning, milestone is infeasible?\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PRMStarInterface::AddMilestone: Warning, milestone is infeasible?\n");
     AssertNotReached();
     return -1;
   }
   virtual void GetMilestone(int i,Config& q) { q=planner.roadmap.nodes[i]; }
   virtual int PlanMore() { 
     if(planner.start < 0 || planner.goal < 0) {
-            LOG4CXX_ERROR(logger,"AnyMotionPlanner::PlanMore(): PRM* is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyMotionPlanner::PlanMore(): PRM* is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
       return -1;
     }
     planner.PlanMore();
@@ -682,12 +693,11 @@ class PRMStarInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     planner.GetPath(path);
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
+  virtual void GetRoadmap(Roadmap& roadmap) const { 
     if(planner.lazy)
-      roadmap.roadmap = planner.LBroadmap;
+      roadmap = planner.LBroadmap;
     else
-      roadmap.roadmap = planner.roadmap;
-    CalcCCs(roadmap);
+      roadmap = planner.roadmap;
   }
   virtual void GetStats(PropertyMap& stats) const {
     MotionPlannerInterface::GetStats(stats);
@@ -700,6 +710,12 @@ class PRMStarInterface  : public MotionPlannerInterface
     stats.set("numEdgeChecks",planner.numEdgeChecks);
     if(planner.lazy)
       stats.set("numEdgesPrechecked",planner.numEdgePrechecks);
+    if(planner.lazy) {
+      stats.set("numLazyEdges",planner.LBroadmap.NumEdges());
+      stats.set("numFeasibleEdges",planner.roadmap.NumEdges());
+    }
+    else
+      stats.set("numFeasibleEdges",planner.roadmap.NumEdges());
   }
 
   PRMStarPlanner planner;
@@ -734,7 +750,7 @@ class FMMInterface  : public MotionPlannerInterface
   }
   virtual int PlanMore() { 
     if(qStart.n == 0 || qGoal.n == 0) {
-            LOG4CXX_ERROR(logger,"AnyMotionPlanner::PlanMore(): FMM is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyMotionPlanner::PlanMore(): FMM is a point-to-point planner, AddMilestone() must be called to set the start and goal configuration\n");
       return -1;
     }
     iterationCount++;
@@ -761,14 +777,14 @@ class FMMInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     path = planner.solution;
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
+  virtual void GetRoadmap(Roadmap& roadmap) const { 
     //simply output all the visited grid cells
     if(planner.distances.numValues()==0) return;
     vector<int> index(qStart.n,0);
     do {
       if(!IsInf(planner.distances[index])) {
 	Vector config = planner.FromGrid(index);
-	roadmap.AddMilestone(config);
+	roadmap.AddNode(config);
       }
     } while(IncrementIndex(index,planner.distances.dims)==0);
 
@@ -777,9 +793,9 @@ class FMMInterface  : public MotionPlannerInterface
       int prev = -1;
       for(size_t i=0;i<planner.failedCheck.edges.size();i++) {
 	if(prev < 0) 
-	  prev = roadmap.AddMilestone(planner.failedCheck.GetMilestone(0));
-	int n = roadmap.AddMilestone(planner.failedCheck.GetMilestone(i+1));
-	roadmap.ConnectEdge(prev,n,planner.failedCheck.edges[i]);
+	  prev = roadmap.AddNode(planner.failedCheck.GetMilestone(0));
+	int n = roadmap.AddNode(planner.failedCheck.GetMilestone(i+1));
+	roadmap.AddEdge(prev,n,planner.failedCheck.edges[i]);
 	prev = n;
       }
     }
@@ -878,7 +894,7 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
     {
       SetupOMPLAllocators();
       if(omplAllocators.count(plannerName) == 0) {
-		LOG4CXX_ERROR(logger,"OMPLPlannerInterface: no available OMPL planner of type "<<plannerName);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"OMPLPlannerInterface: no available OMPL planner of type "<<plannerName);
 	return;
       }
       problem = ob::ProblemDefinitionPtr(new ob::ProblemDefinition(spacePtr));
@@ -895,11 +911,11 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
         string val;
         bool converted = LexicalCast((const AnyValue&)items[i->first],val);
         if(!converted) {
-                    LOG4CXX_ERROR(logger,"OMPLPlannerInterface::ReadParameters: Warning, item "<<i->first.c_str());
+                    LOG4CXX_ERROR(KrisLibrary::logger(),"OMPLPlannerInterface::ReadParameters: Warning, item "<<i->first.c_str());
           continue;
         }
         if(!SetParameter(i->second,val)) {
-                    LOG4CXX_ERROR(logger,"OMPLPlannerInterface::ReadParameters: Warning, planner "<<type.c_str()<<" does not have parameter named "<<i->second.c_str());
+                    LOG4CXX_ERROR(KrisLibrary::logger(),"OMPLPlannerInterface::ReadParameters: Warning, planner "<<type.c_str()<<" does not have parameter named "<<i->second.c_str());
           continue;
         }
       }
@@ -942,7 +958,7 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
   }
   virtual int PlanMore() { 
     if(qStart.n == 0 || qGoal.n == 0) {
-            LOG4CXX_ERROR(logger,"AnyMotionPlanner::PlanMore(): OMPL interfaces onlys upports a point-to-point planners, AddMilestone() must be called to set the start and goal configuration\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyMotionPlanner::PlanMore(): OMPL interfaces onlys upports a point-to-point planners, AddMilestone() must be called to set the start and goal configuration\n");
       return -1;
     }
     if(!planner) return -1;
@@ -972,25 +988,25 @@ class OMPLPlannerInterface  : public MotionPlannerInterface
       }
     }
   }
-  virtual void GetRoadmap(RoadmapPlanner& roadmap) const { 
+  virtual void GetRoadmap(Roadmap& roadmap) const { 
     ob::PlannerData data(spacePtr);
     planner->getPlannerData(data);
-    roadmap.roadmap.Resize(data.numVertices());
+    roadmap.Resize(data.numVertices());
     for(size_t i=0;i<data.numVertices();i++)
-      roadmap.roadmap.nodes[i] = space->FromOMPL(data.getVertex(i).getState());
+      roadmap.nodes[i] = space->FromOMPL(data.getVertex(i).getState());
     for(size_t i=0;i<data.numVertices();i++) {
       vector<unsigned int> edges;
       data.getEdges(i,edges);
       for(size_t j=0;j<edges.size();j++) {
         if(edges[j] <= i) continue;  //undirected graph
-        if(roadmap.roadmap.HasEdge(i,edges[j])) {
-          LOG4CXX_INFO(logger,"Already have edge "<<i<<" "<<edges[j]);
+        if(roadmap.HasEdge(i,edges[j])) {
+          LOG4CXX_INFO(KrisLibrary::logger(),"Already have edge "<<i<<" "<<edges[j]);
           continue;
         }
-        Assert(edges[j] < roadmap.roadmap.nodes.size());
-        Assert(!roadmap.roadmap.nodes[i].empty());
-        Assert(!roadmap.roadmap.nodes[edges[j]].empty());
-      	roadmap.roadmap.AddEdge(i,edges[j],space->cspace->LocalPlanner(roadmap.roadmap.nodes[i],roadmap.roadmap.nodes[edges[j]]));
+        Assert(edges[j] < roadmap.nodes.size());
+        Assert(!roadmap.nodes[i].empty());
+        Assert(!roadmap.nodes[edges[j]].empty());
+      	roadmap.AddEdge(i,edges[j],space->cspace->LocalPlanner(roadmap.nodes[i],roadmap.nodes[edges[j]]));
       }
     }
   }
@@ -1018,7 +1034,7 @@ PiggybackMotionPlanner::PiggybackMotionPlanner(const SmartPointer<MotionPlannerI
   :mp(_mp)
 {}
 
-PointToSetMotionPlanner::PointToSetMotionPlanner(const SmartPointer<MotionPlannerInterface>& _mp,const Config& _qstart,CSpace* _goal)
+PointToSetMotionPlanner::PointToSetMotionPlanner(const SmartPointer<MotionPlannerInterface>& _mp,const Config& _qstart,CSet* _goal)
   :PiggybackMotionPlanner(_mp),goalSpace(_goal),sampleGoalPeriod(50),sampleGoalCounter(0)
 {
   int mstart = mp->AddMilestone(_qstart);
@@ -1048,7 +1064,7 @@ int PointToSetMotionPlanner::PlanMore()
   if(res >= 0) {
     Config q;
     mp->GetMilestone(res,q);
-    if(goalSpace->IsFeasible(q))
+    if(goalSpace->Contains(q))
       goalNodes.push_back(res);
   }
   return res;
@@ -1079,19 +1095,22 @@ void PointToSetMotionPlanner::GetSolution(MilestonePath& path)
  
 bool PointToSetMotionPlanner::SampleGoal(Config& q)
 {
-  goalSpace->Sample(q);
-  return goalSpace->IsFeasible(q);
+  if(goalSpace->IsSampleable())
+    goalSpace->Sample(q);
+  else
+    FatalError("Goal set can't be sampled?");
+  return goalSpace->Contains(q);
 }
 
 int PointToSetMotionPlanner::AddMilestone(const Config& q)
 {
   int n=mp->AddMilestone(q);
-  if(goalSpace->IsFeasible(q))
+  if(goalSpace->Contains(q))
     goalNodes.push_back(n);
   return n;
 }
 
-PointToSetMotionPlannerAdaptor::PointToSetMotionPlannerAdaptor(const MotionPlannerFactory& _factory,CSpace* _space,const Config& _qstart,CSpace* _goal)
+PointToSetMotionPlannerAdaptor::PointToSetMotionPlannerAdaptor(const MotionPlannerFactory& _factory,CSpace* _space,const Config& _qstart,CSet* _goal)
   :factory(_factory),space(_space),qstart(_qstart),goalSpace(_goal),sampleGoalPeriod(50),numIters(0),sampleGoalCounter(0)
 {
 }
@@ -1108,11 +1127,16 @@ int PointToSetMotionPlannerAdaptor::PlanMore()
   sampleGoalCounter += 1;
   numIters += 1;
   if(!anyRemaining || sampleGoalCounter >= sampleGoalPeriod*(int)goalPlanners.size()) {
-    //LOG4CXX_INFO(logger,"Sampling a goal configuration on iteration "<<numIters);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Sampling a goal configuration on iteration "<<numIters);
     sampleGoalCounter = 0;
     Config q;
-    goalSpace->Sample(q);
-    return AddMilestone(q);
+    if(goalSpace->IsSampleable())
+      goalSpace->Sample(q);
+    else
+      space->Sample(q);
+    if(goalSpace->Contains(q))
+      return AddMilestone(q);
+    return -1;
   }
   for(size_t i=0;i<goalPlanners.size();i++) {
     if(goalPlanners[i]->IsOptimizing() || IsInf(goalCosts[i])) {
@@ -1259,7 +1283,7 @@ void PointToSetMotionPlannerAdaptor::GetPath(int ma,int mb,MilestonePath& path)
   }
 }
 
-void PointToSetMotionPlannerAdaptor::GetRoadmap(RoadmapPlanner& roadmap)
+void PointToSetMotionPlannerAdaptor::GetRoadmap(Roadmap& roadmap)
 {
   FatalError("TODO: get roadmap for point-to-set adaptor");
 }
@@ -1287,7 +1311,7 @@ void PointToSetMotionPlannerAdaptor::GetSolution(MilestonePath& path)
  
 int PointToSetMotionPlannerAdaptor::AddMilestone(const Config& q)
 {
-  if(goalSpace->IsFeasible(q) && space->IsFeasible(q)) {
+  if(goalSpace->Contains(q) && space->IsFeasible(q)) {
     goalPlanners.push_back(factory.Create(space,qstart,q));
     goalCosts.push_back(Inf);
     if(goalPlanners.back()->IsConnected(0,1)) { //straight line connection
@@ -1301,7 +1325,7 @@ int PointToSetMotionPlannerAdaptor::AddMilestone(const Config& q)
     /*
     ExplicitCSpace* espace = dynamic_cast<ExplicitCSpace*>(goalSpace);
     if(espace) {
-      LOG4CXX_INFO(logger,"Failures:\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failures:\n");
       espace->PrintInfeasibleNames(q);
     }
     */
@@ -1335,8 +1359,8 @@ MotionPlannerInterface* MotionPlannerFactory::Create(const MotionPlanningProblem
     MotionPlannerInterface* mp = Create(problem.space);
     type = oldtype;
     if(mp->IsPointToPoint()) {
-		LOG4CXX_WARN(logger, "MotionPlannerFactory: warning, motion planner " << type.c_str() << "applying multi-query adaptor\n");
-		delete mp;
+      LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerFactory: warning, motion planner "<<type.c_str()<<"does not fully accept point-to-set problems, applying multi-query adaptor\n");
+      delete mp;
       return new PointToSetMotionPlannerAdaptor(*this,problem.space,problem.qstart,problem.goalSet);
     }
     else {
@@ -1408,7 +1432,7 @@ bool ReadPointLocation(const string& str,RoadmapPlanner& planner)
     int k;
     ss >> k;
     if(!ss) {
-            LOG4CXX_ERROR(logger,"Error reading point location string \"randombest [k]\"\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading point location string \"randombest [k]\"\n");
       return false;
     }
     planner.pointLocator = new RandomBestPointLocation(planner.roadmap.nodes,planner.space,k);
@@ -1419,7 +1443,7 @@ bool ReadPointLocation(const string& str,RoadmapPlanner& planner)
     planner.space->Properties(props);
     int euclidean;
     if(props.get("euclidean",euclidean) && euclidean == 0)
-            LOG4CXX_ERROR(logger,"MotionPlannerFactory: Warning, requesting K-D tree point location for non-euclidean space\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"MotionPlannerFactory: Warning, requesting K-D tree point location for non-euclidean space\n");
 
     vector<Real> weights;
     if(props.getArray("metricWeights",weights))
@@ -1429,7 +1453,7 @@ bool ReadPointLocation(const string& str,RoadmapPlanner& planner)
     return true;
   }
   else {
-        LOG4CXX_ERROR(logger,"Unsupported point location type "<<type.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Unsupported point location type "<<type.c_str());
     return false;
   }
 }
@@ -1495,7 +1519,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     prm->planner.connectionThreshold = connectionThreshold;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
-      LOG4CXX_WARN(logger,"MotionPlannerInterface: Warning, shortcut and restart are incompatible with PRM* planner\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerInterface: Warning, shortcut and restart are incompatible with PRM* planner\n");
     return prm;
   }
   else if(type=="rrt*") {
@@ -1507,7 +1531,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     prm->planner.suboptimalityFactor = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
-      LOG4CXX_WARN(logger,"MotionPlannerInterface: Warning, shortcut and restart are incompatible with RRT* planner\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerInterface: Warning, shortcut and restart are incompatible with RRT* planner\n");
     return prm;
   }
   else if(type=="lazyprm*") {
@@ -1517,7 +1541,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     prm->planner.suboptimalityFactor = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
-      LOG4CXX_WARN(logger,"MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-PRM* planner\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-PRM* planner\n");
     return prm;
   }
   else if(type=="lazyrrg*") {
@@ -1529,7 +1553,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     prm->planner.suboptimalityFactor = suboptimalityFactor;
     ReadPointLocation(pointLocation,prm->planner);
     if(shortcut || restart) 
-      LOG4CXX_WARN(logger,"MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-RRG* planner\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerInterface: Warning, shortcut and restart are incompatible with Lazy-RRG* planner\n");
     return prm;
   }
   else if(type=="fmm" || type=="fmm*") {
@@ -1543,7 +1567,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
     space->Properties(props); 
     int euclidean;
     if(props.get("euclidean",euclidean) && euclidean == 0)
-            LOG4CXX_ERROR(logger,"MotionPlannerFactory: Warning, FMM used in non-euclidean space\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"MotionPlannerFactory: Warning, FMM used in non-euclidean space\n");
     if(props.getArray("minimum",domainMin)) {
       if(domainMin.size()==1)  //single number
 	fmm->planner.bmin.resize(d,domainMin[0]);
@@ -1554,7 +1578,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
 	fmm->planner.bmin.n = d;
       }
       else {
-	LOG4CXX_WARN(logger,"MotionPlannerInterface: Warning, domainMin is of incorrect size, ignoring\n");
+	LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerInterface: Warning, domainMin is of incorrect size, ignoring\n");
       }
     }
     if(props.getArray("maximum",domainMax)) {
@@ -1567,7 +1591,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
 	fmm->planner.bmax.n = d;
       }
       else {
-	LOG4CXX_WARN(logger,"MotionPlannerInterface: Warning, domainMax is of incorrect size, ignoring\n");
+	LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerInterface: Warning, domainMax is of incorrect size, ignoring\n");
       }
     }
     if(gridResolution > 0) {
@@ -1583,7 +1607,7 @@ MotionPlannerInterface* MotionPlannerFactory::CreateRaw(CSpace* space)
       fmm->planner.dynamicDomain = false;
     }
     if(restart) 
-      LOG4CXX_WARN(logger,"MotionPlannerInterface: Warning, restart is incompatible with FMM planner\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"MotionPlannerInterface: Warning, restart is incompatible with FMM planner\n");
     return fmm;
   }
   else {
@@ -1597,7 +1621,7 @@ MotionPlannerInterface* MotionPlannerFactory::Create(CSpace* space,const Config&
   return Create(MotionPlanningProblem(space,a,b));
 }
 
-MotionPlannerInterface* MotionPlannerFactory::Create(CSpace* space,const Config& a,CSpace* goalSpace)
+MotionPlannerInterface* MotionPlannerFactory::Create(CSpace* space,const Config& a,CSet* goalSpace)
 {
   return Create(MotionPlanningProblem(space,a,goalSpace));
 }
@@ -1679,7 +1703,7 @@ string MotionPlannerFactory::SaveJSON() const
 
 
 RestartMotionPlanner::RestartMotionPlanner(const MotionPlannerFactory& _factory,const MotionPlanningProblem& _problem,const HaltingCondition& _iterTermCond)
-  :PiggybackMotionPlanner(NULL),factory(_factory),problem(_problem),iterTermCond(_iterTermCond),numIters(0),elapsedTime(0)
+  :PiggybackMotionPlanner(NULL),factory(_factory),problem(_problem),iterTermCond(_iterTermCond),numRestarts(0),numIters(0),elapsedTime(0),bestPathLength(Inf)
 {
   mp = factory.Create(problem);
 }
@@ -1715,7 +1739,7 @@ void RestartMotionPlanner::GetPath(int ma,int mb,MilestonePath& path)
 std::string RestartMotionPlanner::Plan(MilestonePath& path,const HaltingCondition& cond)
 {
   if(cond.foundSolution) {
-        LOG4CXX_ERROR(logger,"RestartMotionPlanner: warning, termination condition wants to stop at first solution. Ignoring\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"RestartMotionPlanner: warning, termination condition wants to stop at first solution. Ignoring\n");
   }
   bestPath.edges.clear();
   Real lastOuterCheckTime = 0, lastOuterCheckValue = 0;
@@ -1728,15 +1752,14 @@ std::string RestartMotionPlanner::Plan(MilestonePath& path,const HaltingConditio
       return "timeLimit";
     }
     if(!bestPath.edges.empty() && t > lastOuterCheckTime + cond.costImprovementPeriod) {
-      Real len = bestPath.Length();
-      if(len < cond.costThreshold)
+      if(bestPathLength < cond.costThreshold)
 	return "costThreshold";
-      if(lastOuterCheckValue - len < cond.costImprovementThreshold) {
+      if(lastOuterCheckValue - bestPathLength < cond.costImprovementThreshold) {
 	path = bestPath;
 	return "costImprovement";
       }
       lastOuterCheckTime = t;
-      lastOuterCheckValue = len;
+      lastOuterCheckValue = bestPathLength;
     }
 
     HaltingCondition myTermCond = iterTermCond;
@@ -1746,18 +1769,21 @@ std::string RestartMotionPlanner::Plan(MilestonePath& path,const HaltingConditio
       myTermCond.maxIters = cond.maxIters - numIters;
     //TODO: cost improvement checking
     mp = factory.Create(problem);
-    LOG4CXX_INFO(logger,"Starting new sub-plan at time "<<t<<", "<<myTermCond.maxIters<<" iters, "<<myTermCond.timeLimit<<" seconds"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Starting new sub-plan at time "<<t<<", "<<myTermCond.maxIters<<" iters, "<<myTermCond.timeLimit<<" seconds"<<"\n");
     mp->Plan(path,myTermCond);
-    LOG4CXX_INFO(logger,"  Result: ");
-    if(path.edges.empty())
-      LOG4CXX_INFO(logger,"Failure"<<"\n");
-    else
-      LOG4CXX_INFO(logger,"Length "<<path.Length()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Result: ");
+    if(path.edges.empty()){
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failure"<<"\n");
+    }
+    else{
+      LOG4CXX_INFO(KrisLibrary::logger(),"Length "<<path.Length()<<"\n");
+    }
     numIters += mp->NumIterations();
-    LOG4CXX_INFO(logger,"  Expended "<<mp->NumIterations()<<" iterations"<<"\n");
-    if(!path.edges.empty() && (bestPath.edges.empty() || path.Length() < bestPath.Length())) {
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Expended "<<mp->NumIterations()<<" iterations"<<"\n");
+    if(!path.edges.empty() && (bestPath.edges.empty() || path.Length() < bestPathLength)) {
       //update best path
       bestPath = path;
+      bestPathLength = bestPath.Length();
     }
   }
   path = bestPath;
@@ -1769,17 +1795,20 @@ int RestartMotionPlanner::PlanMore()
   Timer timer;
   int res=mp->PlanMore();
   numIters++;
-  //LOG4CXX_INFO(logger,"PlanMore "<<res<<" "<<numIters);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PlanMore "<<res<<" "<<numIters);
   if(mp->IsSolved()) {
     //update best path
     MilestonePath path;
     mp->GetSolution(path);
-    if(bestPath.edges.empty() || path.Length() < bestPath.Length()) {
+    Real len = path.Length();
+    if(bestPath.edges.empty() || len < bestPathLength) {
       bestPath = path;
+      bestPathLength = len;
     }
     if(iterTermCond.foundSolution) {
       elapsedTime += timer.ElapsedTime();
-      LOG4CXX_INFO(logger,"Restarting due to found solution, "<<elapsedTime);
+      numRestarts += 1;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Restarting due to found solution, "<<elapsedTime);
       //create a new planner
       mp = NULL;
       mp = factory.Create(problem);
@@ -1788,15 +1817,24 @@ int RestartMotionPlanner::PlanMore()
     }
   }
   elapsedTime += timer.ElapsedTime();
-  //LOG4CXX_INFO(logger,"Not solved, "<<mp->NumIterations()<<" iters "<<elapsedTime);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Not solved, "<<mp->NumIterations()<<" iters "<<elapsedTime);
   if(mp->NumIterations() > iterTermCond.maxIters || elapsedTime > iterTermCond.timeLimit) {
-    LOG4CXX_INFO(logger,"Restarting at "<<mp->NumIterations()<<" iters > "<<iterTermCond.maxIters<<" or "<<elapsedTime<<" elapsed time > "<<iterTermCond.timeLimit);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Restarting at "<<mp->NumIterations()<<" iters > "<<iterTermCond.maxIters<<" or "<<elapsedTime<<" elapsed time > "<<iterTermCond.timeLimit);
     //create a new planner
     mp = NULL;
     mp = factory.Create(problem);    
     elapsedTime = 0;
+    numRestarts += 1;
   }
   return res;
+}
+
+void RestartMotionPlanner::GetStats(PropertyMap& stats) const
+{
+  PiggybackMotionPlanner::GetStats(stats);
+  stats.set("numIters",numIters);
+  stats.set("numRestarts",numRestarts);
+  stats.set("bestPathLength",bestPathLength);
 }
 
 RestartShortcutMotionPlanner::RestartShortcutMotionPlanner(const MotionPlannerFactory& _factory,const MotionPlanningProblem& _problem,const HaltingCondition& _iterTermCond)
@@ -1807,7 +1845,7 @@ RestartShortcutMotionPlanner::RestartShortcutMotionPlanner(const MotionPlannerFa
 std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const HaltingCondition& cond)
 {
   if(cond.foundSolution) {
-        LOG4CXX_ERROR(logger,"RestartShortcutMotionPlanner: warning, termination condition wants to stop at first solution. Ignoring\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"RestartShortcutMotionPlanner: warning, termination condition wants to stop at first solution. Ignoring\n");
   }
   bestPath.edges.clear();
   candidatePaths.resize(0);
@@ -1822,15 +1860,14 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
       return "timeLimit";
     }
     if(!bestPath.edges.empty() && t > lastOuterCheckTime + cond.costImprovementPeriod) {
-      Real len = bestPath.Length();
-      if(len < cond.costThreshold)
+      if(bestPathLength < cond.costThreshold)
 	return "costThreshold";
-      if(lastOuterCheckValue - len < cond.costImprovementThreshold) {
+      if(lastOuterCheckValue - bestPathLength < cond.costImprovementThreshold) {
 	path = bestPath;
 	return "costImprovement";
       }
       lastOuterCheckTime = t;
-      lastOuterCheckValue = len;
+      lastOuterCheckValue = bestPathLength;
     }
 
     Timer mpTimer;
@@ -1841,32 +1878,36 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
       myTermCond.maxIters = cond.maxIters - numIters;
     //TODO: cost improvement checking
     mp = factory.Create(problem);
-    LOG4CXX_INFO(logger,"Starting new sub-plan at time "<<t<<", "<<myTermCond.maxIters<<" iters, "<<myTermCond.timeLimit<<" seconds"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Starting new sub-plan at time "<<t<<", "<<myTermCond.maxIters<<" iters, "<<myTermCond.timeLimit<<" seconds"<<"\n");
     mp->Plan(path,myTermCond);
-    LOG4CXX_INFO(logger,"  Result: ");
-    if(path.edges.empty())
-      LOG4CXX_INFO(logger,"Failure"<<"\n");
-    else
-      LOG4CXX_INFO(logger,"Length "<<path.Length()<<"\n");
-    LOG4CXX_INFO(logger,"  Expended "<<mp->NumIterations()<<" iterations"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Result: ");
+    if(path.edges.empty()){
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failure"<<"\n");
+    }
+    else{
+      LOG4CXX_INFO(KrisLibrary::logger(),"Length "<<path.Length()<<"\n");
+    }
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Expended "<<mp->NumIterations()<<" iterations"<<"\n");
     if(!path.edges.empty()) {
       candidatePaths.push_back(path);
-      if(bestPath.edges.empty() || path.Length() < bestPath.Length()) {
+      Real len = path.Length();
+      candidatePathLengths.push_back(len);
+      if(bestPath.edges.empty() || len < bestPathLength) {
 	//update best path
 	bestPath = path;
+  bestPathLength = len;
       }
     }
     if(candidatePaths.empty()) continue;
 
     //do shortcutting on all candidate paths
-    Real bestPathLength = bestPath.Length();
     if(bestPathLength == 0) {
       continue;
     }
 
     vector<Real> samplingWeights(candidatePaths.size());
     for(size_t i=0;i<candidatePaths.size();i++) 
-      samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
+      samplingWeights[i] = Exp(-(candidatePathLengths[i]/bestPathLength - 1.0)*3.0);
     numIters += mp->NumIterations();
     int numMpIters = mp->NumIterations();
     while(mpTimer.ElapsedTime() < myTermCond.timeLimit && numMpIters < myTermCond.maxIters) {
@@ -1875,11 +1916,12 @@ std::string RestartShortcutMotionPlanner::Plan(MilestonePath& path,const Halting
       //sample
       int index=WeightedSample(samplingWeights);
       if(candidatePaths[index].Reduce(1)) {
-	if(candidatePaths[index].Length() < bestPathLength) {
+        candidatePathLengths[index] = candidatePaths[index].Length();
+	if(candidatePathLengths[index] < bestPathLength) {
 	  bestPath = candidatePaths[index];
-	  bestPathLength = candidatePaths[index].Length();
+	  bestPathLength = candidatePathLengths[index];
 	  for(size_t i=0;i<candidatePaths.size();i++) 
-	    samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
+	    samplingWeights[i] = Exp(-(candidatePathLengths[i]/bestPathLength - 1.0)*3.0);
 	}
       }
       numMpIters++;
@@ -1898,20 +1940,21 @@ int RestartShortcutMotionPlanner::PlanMore()
     Assert(!candidatePaths.empty());
     numShortcutIters ++;
     numIters ++;
-    Real bestPathLength = bestPath.Length();
     if(bestPathLength == 0) {
       shortcutMode = false;
       return -1;
     }
     vector<Real> samplingWeights(candidatePaths.size());
     for(size_t i=0;i<candidatePaths.size();i++) 
-      samplingWeights[i] = Exp(-(candidatePaths[i].Length()/bestPathLength - 1.0)*3.0);
+      samplingWeights[i] = Exp(-(candidatePathLengths[i]/bestPathLength - 1.0)*3.0);
     int index = WeightedSample(samplingWeights);
     //round robin
     //int index = numShortcutIters % candidatePaths.size();
     if(candidatePaths[index].Reduce(1)) {
-      if(candidatePaths[index].Length() < bestPathLength) 
-	bestPath = candidatePaths[index];
+      if(candidatePaths[index].Length() < bestPathLength) {
+        bestPath = candidatePaths[index];
+        bestPathLength = candidatePathLengths[index];
+      }
     }
     elapsedTime += timer.ElapsedTime();
     if(numShortcutIters /*+ mp->NumIterations()*/ >= iterTermCond.maxIters || elapsedTime >= iterTermCond.timeLimit) {
@@ -1934,8 +1977,10 @@ int RestartShortcutMotionPlanner::PlanMore()
       MilestonePath path;
       mp->GetSolution(path);
       candidatePaths.push_back(path);
-      if(bestPath.edges.empty() || path.Length() < bestPath.Length()) {
+      candidatePathLengths.push_back(path.Length());
+      if(bestPath.edges.empty() || candidatePathLengths.back() < bestPathLength) {
 	bestPath = path;
+  bestPathLength = candidatePathLengths.back();
       }
       shortcutMode = true;
     }
@@ -1955,17 +2000,17 @@ int RestartShortcutMotionPlanner::PlanMore()
   }
 }
 
-void RestartShortcutMotionPlanner::GetRoadmap(RoadmapPlanner& roadmap) const
+void RestartShortcutMotionPlanner::GetRoadmap(Roadmap& roadmap) const
 {
   if(candidatePaths.empty()) {
     mp->GetRoadmap(roadmap);
     return;
   }
   for(size_t i=0;i<candidatePaths.size();i++) {
-    int prev = roadmap.AddMilestone(candidatePaths[i].GetMilestone(0));
+    int prev = roadmap.AddNode(candidatePaths[i].GetMilestone(0));
     for(size_t j=0;j<candidatePaths[i].edges.size();j++) {
-      int n = roadmap.AddMilestone(candidatePaths[i].GetMilestone(j+1));
-      roadmap.ConnectEdge(prev,n,candidatePaths[i].edges[j]);
+      int n = roadmap.AddNode(candidatePaths[i].GetMilestone(j+1));
+      roadmap.AddEdge(prev,n,candidatePaths[i].edges[j]);
       prev = n;
     }
   }
@@ -1982,13 +2027,13 @@ std::string ShortcutMotionPlanner::Plan(MilestonePath& path,const HaltingConditi
   string res = mp->Plan(path,cond);
   numIters = mp->NumIterations();
   if(res == "maxIters" || res == "timeLimit") {
-    LOG4CXX_INFO(logger,"Shortcutting not started\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Shortcutting not started\n");
     return res;  //out of time or iterations
   }
   assert(!path.edges.empty());
   int itersLeft = cond.maxIters - mp->NumIterations(); 
   Real lastCheckTime = timer.ElapsedTime(), lastCheckValue = path.Length();
-  LOG4CXX_INFO(logger,"Beginning shortcutting with "<<itersLeft<<" iters and "<<cond.timeLimit-timer.ElapsedTime());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Beginning shortcutting with "<<itersLeft<<" iters and "<<cond.timeLimit-timer.ElapsedTime());
   for(int iters=0;iters<itersLeft;iters++) {
     Real t = timer.ElapsedTime();
     if(t >= cond.timeLimit) {

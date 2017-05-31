@@ -2,7 +2,7 @@
 #define ANY_COLLECTION_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "AnyValue.h"
 #include "SmartPointer.h"
 #include <KrisLibrary/errors.h>
@@ -321,7 +321,7 @@ bool AnyCollection::asvector(std::vector<T>& values) const
   for(size_t i=0;i<values.size();i++) {
     bool res = CoerceCast<T>(anyvalues[i],values[i]);
     if(!res) {
-      LOG4CXX_INFO(logger,"Coerce cast "<<anyvalues[i].type().name()<<" to "<<typeid(T).name()<<" failed for element "<<(int)i);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Coerce cast "<<anyvalues[i].type().name()<<" to "<<typeid(T).name()<<" failed for element "<<(int)i);
       return false;
     }
   }

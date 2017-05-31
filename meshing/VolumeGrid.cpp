@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "VolumeGrid.h"
 #include <iostream>
 using namespace std;
@@ -249,15 +249,15 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
   Real vmax = ::Max(::Max(::Max(v111,v112),::Max(v121,v122)),
 		    ::Max(::Max(v211,v212),::Max(v221,v222)));
   if(val < vmin-Epsilon || val > vmax+Epsilon) {
-    LOG4CXX_ERROR(logger,"Error in MinimumFreeInterpolate!"<<"\n");
-    LOG4CXX_ERROR(logger,"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax<<"\n");
-    LOG4CXX_ERROR(logger,"Params "<<u<<"\n");
-    LOG4CXX_ERROR(logger,"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122<<"\n");
-    LOG4CXX_ERROR(logger,"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222<<"\n");
-    LOG4CXX_ERROR(logger,"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]<<"\n");
-    LOG4CXX_ERROR(logger,"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2<<"\n");
-    LOG4CXX_ERROR(logger,"Tetrahedron Params "<<up<<" "<<back<<" "<<across<<"\n");
-    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MinimumFreeInterpolate!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Params "<<u<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Tetrahedron Params "<<up<<" "<<back<<" "<<across<<"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   Assert(centerValue >= vmin-Epsilon && centerValue <= vmax+Epsilon);
   Assert(faceCenterValue >= vmin-Epsilon && faceCenterValue <= vmax+Epsilon);
@@ -325,28 +325,32 @@ Real VolumeGrid::Average(const AABB3D& range) const
   return sumValue / rangeVolume;
 }
 
-void VolumeGrid::Resample(const VolumeGrid& grid)
+void VolumeGrid::ResampleTrilinear(const VolumeGrid& grid)
+{
+  if(IsSimilar(grid)) {
+    value = grid.value;
+    return;
+  }
+  Vector3 c;
+  for(iterator it=getIterator();!it.isDone();++it) {
+    it.getCellCenter(c);
+    *it = grid.TrilinearInterpolate(c);
+  }
+}
+
+void VolumeGrid::ResampleAverage(const VolumeGrid& grid)
 {
   if(IsSimilar(grid)) {
     value = grid.value;
     return;
   }
 
+
   AABB3D cell;
   for(iterator it=getIterator();!it.isDone();++it) {
     it.getCell(cell);
     *it = grid.Average(cell);
   }
-  /*
-  for(int i=0;i<value.m;i++) {
-    for(int j=0;j<value.n;j++) {
-      for(int k=0;k<value.p;k++) {
-	GetCell(i,j,k,cell);
-	value(i,j,k) = grid.Average(cell);
-      }
-    }
-  }
-  */
 }
 
 void VolumeGrid::Add(const VolumeGrid& grid)
@@ -355,7 +359,7 @@ void VolumeGrid::Add(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Add(resample);
     return;
   }
@@ -377,7 +381,7 @@ void VolumeGrid::Subtract(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Subtract(resample);
     return;
   }
@@ -399,7 +403,7 @@ void VolumeGrid::Multiply(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Multiply(resample);
     return;
   }
@@ -421,7 +425,7 @@ void VolumeGrid::Max(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Max(resample);
     return;
   }
@@ -443,7 +447,7 @@ void VolumeGrid::Min(const VolumeGrid& grid)
     VolumeGrid resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
-    resample.Resample(grid);
+    resample.ResampleAverage(grid);
     Min(resample);
     return;
   }

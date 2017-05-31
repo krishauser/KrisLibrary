@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "MatrixPrinter.h"
 #include "complex.h"
 #include "ASCIIShade.h"
@@ -64,12 +64,12 @@ void MatrixPrinter::Print(ostream& out,int indent) const
   case AsciiShade:
     if(fm) OutputASCIIShade(out,*fm,0,indent);
     else if(dm) OutputASCIIShade(out,*dm,0,indent);
-    else if(cm) { LOG4CXX_ERROR(logger,"Unable to output an ASCII-shaded complex matrix"<<"\n"); }
+    else if(cm) { LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to output an ASCII-shaded complex matrix"<<"\n"); }
     break;
   case PlusMinus:
     if(fm) OutputPlusMinus(out,*fm,indent);
     else if(dm) OutputPlusMinus(out,*dm,indent);
-    else if(cm) { LOG4CXX_ERROR(logger,"Unable to output an +/- shaded complex matrix"<<"\n"); }
+    else if(cm) { LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to output an +/- shaded complex matrix"<<"\n"); }
     break;
   }
 }

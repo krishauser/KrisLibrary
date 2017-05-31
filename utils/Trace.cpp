@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Trace.h"
 #include <KrisLibrary/myfile.h>
 #include <iostream>
@@ -68,7 +68,7 @@ void Trace::Clear()
 void Trace::ResetTrace()
 {
   if(cur != &root) {
-    LOG4CXX_WARN(logger,"Trace::ResetLoop: Warning, there looks like an unended call in the trace log"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Trace::ResetLoop: Warning, there looks like an unended call in the trace log"<<"\n");
     abort();
   }
   timer.Reset();
@@ -130,7 +130,7 @@ bool Trace::LoadIter(File& f,TraceItem& item,TraceFunctionCall* parent)
     item.text = buf;
     return true;
   }
-  LOG4CXX_INFO(logger,"Trace::Load(): Wrong type, got "<<type<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Trace::Load(): Wrong type, got "<<type<<"\n");
   return false;
 }
 

@@ -1,35 +1,159 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "EdgePlanner.h"
+#include "EdgePlannerHelpers.h"
+#include "InterpolatorHelpers.h"
 #include <errors.h>
 using namespace std;
 
-
-TrueEdgePlanner::TrueEdgePlanner(CSpace* _space,const Config& x,const Config& y)
-  :a(x),b(y),space(_space)
+EdgeChecker::EdgeChecker(CSpace* _space,const SmartPointer<Interpolator>& _path)
+:space(_space),path(_path)
 {}
 
-FalseEdgePlanner::FalseEdgePlanner(CSpace* _space,const Config& x,const Config& y)
-  :a(x),b(y),space(_space)
+EdgeChecker::EdgeChecker(CSpace* _space,const Config& a,const Config& b)
+:space(_space),path(new CSpaceInterpolator(_space,a,b))
 {}
 
-PiggybackEdgePlanner::PiggybackEdgePlanner(CSpace* _space,const Config& _a,const Config& _b,const SmartPointer<EdgePlanner>& _e)
-  :a(_a),b(_b),space(_space),e(_e)
+
+TrueEdgeChecker::TrueEdgeChecker(CSpace* _space,const SmartPointer<Interpolator>& _path)
+  :EdgeChecker(_space,path)
 {}
 
-StraightLineEpsilonPlanner::StraightLineEpsilonPlanner(CSpace* _space,const Config& _a,const Config& _b,Real _epsilon)
-  :a(_a),b(_b),space(_space),epsilon(_epsilon)
+TrueEdgeChecker::TrueEdgeChecker(CSpace* _space,const Config& x,const Config& y)
+  :EdgeChecker(_space,x,y)
+{}
+
+
+FalseEdgeChecker::FalseEdgeChecker(CSpace* _space,const SmartPointer<Interpolator>& _path)
+  :EdgeChecker(_space,path)
+{}
+
+FalseEdgeChecker::FalseEdgeChecker(CSpace* _space,const Config& x,const Config& y)
+  :EdgeChecker(_space,x,y)
+{}
+
+
+EndpointEdgeChecker::EndpointEdgeChecker(CSpace* _space,const SmartPointer<Interpolator>& _path)
+  :EdgeChecker(_space,path)
+{}
+
+EndpointEdgeChecker::EndpointEdgeChecker(CSpace* _space,const Config& x,const Config& y)
+  :EdgeChecker(_space,x,y)
+{}
+
+bool EndpointEdgeChecker::IsVisible() { return space->IsFeasible(path->End()); }
+
+PiggybackEdgePlanner::PiggybackEdgePlanner(SmartPointer<EdgePlanner> _e)
+:EdgeChecker(_e->Space(),NULL),e(_e)
+{
+  EdgeChecker* ec = dynamic_cast<EdgeChecker*>(&*e);
+  if(ec)
+    path = ec->path;
+}
+
+PiggybackEdgePlanner::PiggybackEdgePlanner(CSpace* _space,const SmartPointer<Interpolator>& _path,SmartPointer<EdgePlanner> _e)
+  :EdgeChecker(_space,_path),e(_e)
+{}
+
+PiggybackEdgePlanner::PiggybackEdgePlanner(CSpace* _space,const Config& _a,const Config& _b,SmartPointer<EdgePlanner> _e)
+  :EdgeChecker(_space,_a,_b),e(_e)
+{}
+
+EdgePlanner* PiggybackEdgePlanner::Copy() const
+{
+  return new PiggybackEdgePlanner(space,path,e);
+}
+
+EdgePlanner* PiggybackEdgePlanner::ReverseCopy() const
+{
+  if(path)
+   return new PiggybackEdgePlanner(space,new ReverseInterpolator(path),e->ReverseCopy());
+ else
+  return new PiggybackEdgePlanner(e->ReverseCopy());
+}
+
+
+void PiggybackEdgePlanner::Eval(Real u,Config& x)
+{
+  if(path) EdgeChecker::Eval(u,x);
+  else e->Eval(u,x);
+}
+
+Real PiggybackEdgePlanner::Length() const
+{
+  if(path) return EdgeChecker::Length();
+  else return e->Length();
+}
+
+const Config& PiggybackEdgePlanner::Start() const
+{
+  if(path) return EdgeChecker::Start();
+  else return e->Start();
+}
+const Config& PiggybackEdgePlanner::End() const
+{
+  if(path) return EdgeChecker::End();
+  else return e->End();
+}
+
+CSpace* PiggybackEdgePlanner::Space() const
+{
+  if(space) return space;
+  return e->Space();
+}
+
+IncrementalizedEdgePlanner::IncrementalizedEdgePlanner(const SmartPointer<EdgePlanner>& e)
+:PiggybackEdgePlanner(e),checked(false),visible(false)
+{}
+
+Real IncrementalizedEdgePlanner::Priority() const { return (checked ? 0.0 : e->Length()); }
+bool IncrementalizedEdgePlanner::Plan() { if(!checked) visible = e->IsVisible(); checked=true; return false; }
+bool IncrementalizedEdgePlanner::Done() const { return checked; }
+bool IncrementalizedEdgePlanner::Failed() const { return checked && !visible; }
+EdgePlanner* IncrementalizedEdgePlanner::Copy() const {
+  IncrementalizedEdgePlanner *ie = new IncrementalizedEdgePlanner(e);
+  ie->checked = checked;
+  ie->visible = visible;
+  return ie;
+}
+EdgePlanner* IncrementalizedEdgePlanner::ReverseCopy() const
+{
+  IncrementalizedEdgePlanner *ie = new IncrementalizedEdgePlanner(e->ReverseCopy());
+  ie->checked = checked;
+  ie->visible = visible;
+  return ie;
+}
+
+EpsilonEdgeChecker::EpsilonEdgeChecker(CSpace* _space,const Config& _a,const Config& _b,Real _epsilon)
+  :EdgeChecker(_space,_a,_b),epsilon(_epsilon)
 {
   foundInfeasible = false;
-  dist = space->Distance(a,b);
+  dist = Length();
   depth = 0;
   segs = 1;
+  if(dist < 0) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"EpsilonEdgeChecker: Warning, path has negative length?\n");
+  }
 }
+
+EpsilonEdgeChecker::EpsilonEdgeChecker(CSpace* _space,const SmartPointer<Interpolator>& path,Real _epsilon)
+  :EdgeChecker(_space,path),epsilon(_epsilon)
+{
+  foundInfeasible = false;
+  dist = Length();
+  depth = 0;
+  segs = 1;
+  if(dist < 0) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"EpsilonEdgeChecker: Warning, path has negative length?\n");
+  }
+}
+
 
 Real Log2(Real r) { return Log(r)*Log2e; }
 
-bool StraightLineEpsilonPlanner::IsVisible()
+bool EpsilonEdgeChecker::IsVisible()
 {
+  if(foundInfeasible) return false;
   while(dist > epsilon) {
     depth++;
     segs *= 2;
@@ -37,24 +161,20 @@ bool StraightLineEpsilonPlanner::IsVisible()
     Real du2 = 2.0 / (Real)segs;
     Real u = du2*Half;
     for(int k=1;k<segs;k+=2,u+=du2) {
-      space->Interpolate(a,b,u,m);
+      path->Eval(u,m);
       if(!space->IsFeasible(m)) {
 	foundInfeasible = true;
 	return false;
       }
     }
   }
-  return !foundInfeasible;
+  return true;
 }
 
-void StraightLineEpsilonPlanner::Eval(Real u,Config& x) const
-{
-  space->Interpolate(a,b,u,x);
-}
 
-EdgePlanner* StraightLineEpsilonPlanner::Copy() const
+EdgePlanner* EpsilonEdgeChecker::Copy() const
 {
-  StraightLineEpsilonPlanner* p=new StraightLineEpsilonPlanner(space,a,b,epsilon);
+  EpsilonEdgeChecker* p=new EpsilonEdgeChecker(space,path,epsilon);
   p->depth=depth;
   p->segs=segs;
   p->dist=dist;
@@ -62,9 +182,9 @@ EdgePlanner* StraightLineEpsilonPlanner::Copy() const
   return p;
 }
 
-EdgePlanner* StraightLineEpsilonPlanner::ReverseCopy() const
+EdgePlanner* EpsilonEdgeChecker::ReverseCopy() const
 {
-  StraightLineEpsilonPlanner* p=new StraightLineEpsilonPlanner(space,b,a,epsilon);
+  EpsilonEdgeChecker* p=new EpsilonEdgeChecker(space,new ReverseInterpolator(path),epsilon);
   p->depth=depth;
   p->segs=segs;
   p->dist=dist;
@@ -72,9 +192,9 @@ EdgePlanner* StraightLineEpsilonPlanner::ReverseCopy() const
   return p;
 }
 
-Real StraightLineEpsilonPlanner::Priority() const { return dist; }
+Real EpsilonEdgeChecker::Priority() const { return dist; }
 
-bool StraightLineEpsilonPlanner::Plan() 
+bool EpsilonEdgeChecker::Plan() 
 {
   if(foundInfeasible || dist <= epsilon) return false;
   depth++;
@@ -83,7 +203,7 @@ bool StraightLineEpsilonPlanner::Plan()
   Real du2 = 2.0 / (Real)segs;
   Real u = du2*Half;
   for(int k=1;k<segs;k+=2,u+=du2) {
-    space->Interpolate(a,b,u,m);
+    path->Eval(u,m);
     if(!space->IsFeasible(m)) {
       dist = 0;
       foundInfeasible=true;
@@ -93,36 +213,47 @@ bool StraightLineEpsilonPlanner::Plan()
   return true;
 }
 
-bool StraightLineEpsilonPlanner::Done() const { return dist <= epsilon; }
+bool EpsilonEdgeChecker::Done() const { return dist <= epsilon; }
 
-bool StraightLineEpsilonPlanner::Failed() const { return foundInfeasible; }  
-
-
+bool EpsilonEdgeChecker::Failed() const { return foundInfeasible; }  
 
 
 
 
-StraightLineObstacleDistancePlanner::StraightLineObstacleDistancePlanner(CSpace* _space,const Config& _a,const Config& _b)
-  :a(_a),b(_b),space(_space)
+
+
+ObstacleDistanceEdgeChecker::ObstacleDistanceEdgeChecker(CSpace* _space,const Config& _a,const Config& _b)
+  :EdgeChecker(_space,_a,_b)
 {}
 
-bool StraightLineObstacleDistancePlanner::IsVisible()
+ObstacleDistanceEdgeChecker::ObstacleDistanceEdgeChecker(CSpace* _space,const SmartPointer<Interpolator>& path)
+  :EdgeChecker(_space,path)
+{}
+
+bool ObstacleDistanceEdgeChecker::IsVisible()
 {
-  return CheckVisibility(a,b,space->ObstacleDistance(a),space->ObstacleDistance(b));
+  const Config& a = path->Start();
+  const Config& b = path->End();
+  return CheckVisibility(path->ParamStart(),path->ParamStart(),a,b,space->ObstacleDistance(a),space->ObstacleDistance(b));
 }
 
-bool StraightLineObstacleDistancePlanner::CheckVisibility(const Config& a,const Config& b,Real da,Real db)
+bool ObstacleDistanceEdgeChecker::CheckVisibility(Real ua,Real ub,const Config& a,const Config& b,Real da,Real db)
 {
   Real dmin = Min(da,db);
+  if(dmin <= 0) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ObstacleDistanceEdgeChecker: being used when space doesn't properly implement ObstacleDistance()\n");
+    return false;
+  }
   if(dmin < Epsilon) {
-    LOG4CXX_WARN(logger,"Warning, da or db is close to zero"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, da or db is close to zero"<<"\n");
     return false;
   }
   Real r = space->Distance(a,b);
   Assert(r >= Zero);
   if(dmin > r) return true;
   Config m;
-  space->Midpoint(a,b,m);
+  Real um = (ua+ub)*0.5;
+  path->Eval(um,m);
   if(!space->IsFeasible(m)) return false;
   Real ram = space->Distance(a,m);
   Real rbm = space->Distance(b,m);
@@ -130,26 +261,22 @@ bool StraightLineObstacleDistancePlanner::CheckVisibility(const Config& a,const 
   Assert(rbm < r*0.9 && rbm > r*0.1);
   Real dm = space->ObstacleDistance(m);
   Assert(dm >= Zero);
-  return CheckVisibility(a,m,da,dm)
-    && CheckVisibility(m,b,dm,db);
+  return CheckVisibility(ua,um,a,m,da,dm)
+    && CheckVisibility(um,ub,m,b,dm,db);
 }
 
-void StraightLineObstacleDistancePlanner::Eval(Real u,Config& x) const
+EdgePlanner* ObstacleDistanceEdgeChecker::Copy() const
 {
-  space->Interpolate(a,b,u,x);
-}
-
-EdgePlanner* StraightLineObstacleDistancePlanner::Copy() const
-{
-  StraightLineObstacleDistancePlanner* p=new StraightLineObstacleDistancePlanner(space,a,b);
+  ObstacleDistanceEdgeChecker* p=new ObstacleDistanceEdgeChecker(space,path);
   return p;
 }
 
-EdgePlanner* StraightLineObstacleDistancePlanner::ReverseCopy() const
+EdgePlanner* ObstacleDistanceEdgeChecker::ReverseCopy() const
 {
-  StraightLineObstacleDistancePlanner* p=new StraightLineObstacleDistancePlanner(space,b,a);
+  ObstacleDistanceEdgeChecker* p=new ObstacleDistanceEdgeChecker(space,new ReverseInterpolator(path));
   return p;
 }
+
 
 
 
@@ -166,9 +293,24 @@ BisectionEpsilonEdgePlanner::BisectionEpsilonEdgePlanner(CSpace* _space,const Co
   q.push(s);
 }
 
+
 BisectionEpsilonEdgePlanner::BisectionEpsilonEdgePlanner(CSpace* _space,Real _epsilon)
   :space(_space),epsilon(_epsilon)
 {}
+
+Real BisectionEpsilonEdgePlanner::Length() const
+{
+  Real len = 0.0;
+  const Config* prev = &(*path.begin());
+  for(list<Config>::const_iterator i=++path.begin();i!=path.end();i++) {
+    len += space->Distance(*prev,*i);
+    prev = &(*i);
+  }
+  return len;
+}
+
+const Config& BisectionEpsilonEdgePlanner::Start() const { return path.front(); }
+const Config& BisectionEpsilonEdgePlanner::End() const { return path.back(); }
 
 bool BisectionEpsilonEdgePlanner::IsVisible()
 {
@@ -180,11 +322,11 @@ bool BisectionEpsilonEdgePlanner::IsVisible()
 
 void BisectionEpsilonEdgePlanner::Eval(Real u,Config& x) const
 {
-  //if(!Done()) LOG4CXX_WARN(logger,"Warning, edge planner not done!"<<"\n");
+  //if(!Done()) LOG4CXX_WARN(KrisLibrary::logger(),"Warning, edge planner not done!"<<"\n");
   if(IsNaN(u) || u < 0 || u > 1) {
-    LOG4CXX_INFO(logger,"Uh... evaluating path outside of [0,1] range"<<"\n");
-    LOG4CXX_INFO(logger,"u="<<u<<"\n");
-    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"Uh... evaluating path outside of [0,1] range"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"u="<<u<<"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   Assert(u >= Zero && u <= One);
   Real dt = One/(Real)(path.size()-1);
@@ -193,7 +335,7 @@ void BisectionEpsilonEdgePlanner::Eval(Real u,Config& x) const
   while(t+dt < u) {
     t+=dt;
     i++;
-    if(i == path.end()) { LOG4CXX_INFO(logger,"End of path, u="<<u<<"\n"); x=path.back(); return; }
+    if(i == path.end()) { LOG4CXX_INFO(KrisLibrary::logger(),"End of path, u="<<u<<"\n"); x=path.back(); return; }
   }
   Assert(t<=u);
   if(t==u) { x=*i; }
@@ -217,14 +359,14 @@ EdgePlanner* BisectionEpsilonEdgePlanner::Copy() const
     BisectionEpsilonEdgePlanner* p=new BisectionEpsilonEdgePlanner(space,epsilon);
     p->path = path;
     if(!Done()) {
-      LOG4CXX_WARN(logger,"Warning: making a copy of a bisection edge planner that is not done!"<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: making a copy of a bisection edge planner that is not done!"<<"\n");
       Segment s;
       s.prev = p->path.begin();
       s.length = space->Distance(path.front(),path.back());
       p->q.push(s);
       Assert(!p->Done());
-      //LOG4CXX_INFO(logger,"Press any key to continue..."<<"\n");
-      //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue..."<<"\n");
+      //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     return p;
   }
@@ -250,24 +392,28 @@ bool BisectionEpsilonEdgePlanner::Plan()
   list<Config>::iterator a=s.prev, b=a; b++;
   space->Midpoint(*a,*b,x);
   if(!space->IsFeasible(x)) { 
-    //LOG4CXX_INFO(logger,"Midpoint was not feasible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Midpoint was not feasible\n");
     s.length=Inf; q.push(s); return false;
   }
   list<Config>::iterator m=path.insert(b,x);
 
   if(q.size()%100 == 0 &&
-     Real(q.size())*epsilon > 4.0*space->Distance(Start(),Goal())) {
+     Real(q.size())*epsilon > 4.0*space->Distance(Start(),End())) {
     s.length = Inf;
     q.push(s);
-    LOG4CXX_INFO(logger,"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<"\n");
-    LOG4CXX_INFO(logger,"Original length "<<space->Distance(Start(),Goal())<<", epsilon "<<epsilon<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Original length "<<space->Distance(Start(),End())<<", epsilon "<<epsilon<<"\n");
     return false;
   }
   //insert the split segments back in the queue
   Real l1=space->Distance(*a,x);
   Real l2=space->Distance(x,*b);
   if(l1 > 0.9*s.length || l2 > 0.9*s.length) {
-    LOG4CXX_INFO(logger,"Midpoint exceeded 0.9 time segment distance: "<<l1<<", "<<l2<<" > 0.9*"<<s.length);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Midpoint exceeded 0.9x segment distance: "<<l1<<", "<<l2<<" > 0.9*"<<s.length);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"a = "<<*a<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"b = "<<*b<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Midpoint "<<x<<"\n");
+    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     s.length = Inf;
     q.push(s);
     return false;
@@ -327,4 +473,99 @@ bool BisectionEpsilonEdgePlanner::Failed() const
 
 
 
+
+
+
+
+PathEdgeChecker::PathEdgeChecker(CSpace* _space,const std::vector<SmartPointer<EdgePlanner> >& _path)
+:space(_space),path(_path),progress(0),foundInfeasible(false)
+{}
+void PathEdgeChecker::Eval(Real u,Config& x) const
+{
+  Real s =Floor(u*path.size());
+  int seg = int(s);
+  if(seg < 0) x = path.front()->Start();
+  else if(seg >= (int)path.size()) x = path.back()->End();
+  else
+    path[seg]->Eval(s - seg,x);
+}
+Real PathEdgeChecker::Length() const
+{
+  Real l = 0;
+  for(size_t i=0;i<path.size();i++) l += path[i]->Length();
+  return l;
+}
+const Config& PathEdgeChecker::Start() const { return path.front()->Start(); }
+const Config& PathEdgeChecker::End() const { return path.back()->End(); }
+bool PathEdgeChecker::IsVisible()
+{
+  while(progress < path.size()) {
+    if(!path[progress]->IsVisible()) {
+      foundInfeasible = true;
+      return false;
+    }
+    progress++;
+  }
+  return true;
+}
+EdgePlanner* PathEdgeChecker::Copy() const
+{
+  return new PathEdgeChecker(space,path);
+}
+
+EdgePlanner* PathEdgeChecker::ReverseCopy() const
+{
+  vector<SmartPointer<EdgePlanner> > rpath(path.size());
+  for(size_t i=0;i<path.size();i++)
+    rpath[path.size()-i-1] = path[i]->ReverseCopy();
+  return new PathEdgeChecker(space,rpath);
+}
+
+Real PathEdgeChecker::Priority() const
+{
+  return path.size()-progress;
+}
+bool PathEdgeChecker::Plan()
+{
+  if(foundInfeasible) return false;
+  if(progress < path.size()) {
+    if(!path[progress]->IsVisible()) {
+      foundInfeasible = true;
+      return false;
+    }
+    progress++;
+  }
+  return (progress < path.size());
+}
+bool PathEdgeChecker::Done() const
+{
+  return progress >= path.size() || foundInfeasible;
+}
+
+bool PathEdgeChecker::Failed() const
+{
+  return progress < path.size() && foundInfeasible;
+}
+
+
+MultiEdgePlanner::MultiEdgePlanner(CSpace* space,const SmartPointer<Interpolator>& path,const std::vector<SmartPointer<EdgePlanner> >& components)
+:PiggybackEdgePlanner(space,path,new PathEdgeChecker(space,components))
+{}
+
+
+
+EdgePlannerWithCSpaceContainer::EdgePlannerWithCSpaceContainer(const SmartPointer<CSpace>& space,const SmartPointer<EdgePlanner>& e)
+  :PiggybackEdgePlanner(e),spacePtr(space)
+{
+}
+
+EdgePlanner* EdgePlannerWithCSpaceContainer::Copy() const
+{
+  return new EdgePlannerWithCSpaceContainer(spacePtr,e->Copy());
+}
+
+EdgePlanner* EdgePlannerWithCSpaceContainer::ReverseCopy() const
+{
+  return new EdgePlannerWithCSpaceContainer(spacePtr,e->ReverseCopy());
+}
 

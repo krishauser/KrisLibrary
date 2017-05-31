@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "MinNormProblem.h"
 #include "LPRobust.h"
 #include "BoundedLSQRSolver.h"
@@ -31,24 +31,24 @@ void MinNormProblem::AddVariable(Real lj,Real uj)
 bool MinNormProblem::IsValid() const
 {
   if(norm != One && norm != Two && !IsInf(norm)) {
-    LOG4CXX_ERROR(logger,"MinNormProblem::IsValid(): Invalid norm"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem::IsValid(): Invalid norm"<<"\n");
     return false;
   }
   if(C.isEmpty()) {
-    LOG4CXX_ERROR(logger,"MinNormProblem::IsValid(): Empty problem"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem::IsValid(): Empty problem"<<"\n");
     return false;
   }
   if(C.m != d.n) {
-    LOG4CXX_ERROR(logger,"MinNormProblem::IsValid(): C.m != d.n"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem::IsValid(): C.m != d.n"<<"\n");
     return false;
   }
   if(!LinearConstraints::IsValid()) {
-    LOG4CXX_ERROR(logger,"MinNormProblem::IsValid(): Constraints not valid"<<"\n");
-    LOG4CXX_INFO(logger,"A("<<A.m<<" x "<<A.n<<") p("<<p.n<<") q("<<q.n<<") l("<<l.n<<") u("<<u.n);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem::IsValid(): Constraints not valid"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"A("<<A.m<<" x "<<A.n<<") p("<<p.n<<") q("<<q.n<<") l("<<l.n<<") u("<<u.n);
     return false;
   }
   if(!A.isEmpty() && C.n != A.n) {
-    LOG4CXX_ERROR(logger,"MinNormProblem::IsValid(): Constraint size does not match objective size"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem::IsValid(): Constraint size does not match objective size"<<"\n");
     return false;
   }
   return true;
@@ -62,8 +62,8 @@ void MinNormProblem::Print(std::ostream& out) const
     C.getRowRef(i,ci);
     out<<"["<<VectorPrinter(ci)<<"].x - "<<d(i)<<endl;
     if(i % 10 == 9 && (&out==&cout || &out==&cerr)) {
-      LOG4CXX_INFO(logger,"Press Enter to continue..."<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Press Enter to continue..."<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
   }
   out<<"w.r.t. x";
@@ -176,8 +176,8 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
       ConvergenceResult res=solver.Solve();
       if(res == ConvergenceError) {
 	if(verbose >= 1)
-	  LOG4CXX_ERROR(logger,"Quadratic program unable to solve constrained least-squares problem"<<"\n");
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Quadratic program unable to solve constrained least-squares problem"<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	return LinearProgram::Infeasible;
       }
       else if(res == MaxItersReached) {
@@ -217,10 +217,10 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
       MatrixEquation eq(A,p);
       if(!eq.AllSolutions(x0,N)) {
 	if(verbose >= 1)
-	  LOG4CXX_ERROR(logger,"MinNormProblem (norm 2): Error solving for all solutions to equality constraints"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem (norm 2): Error solving for all solutions to equality constraints"<<"\n");
 	if(verbose >= 2) {
-	  LOG4CXX_ERROR(logger,"Press any key to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	return LinearProgram::Error;
       }
@@ -228,22 +228,22 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
 	Vector r;
 	eq.Residual(x0,r);
 	if(r.norm() > 1e-4) {
-	  LOG4CXX_INFO(logger,"Residual of Aeq*x0=beq: "<<VectorPrinter(r)<<"\n");
-	  LOG4CXX_INFO(logger,"Norm is "<<r.norm()<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Residual of Aeq*x0=beq: "<<VectorPrinter(r)<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Norm is "<<r.norm()<<"\n");
 	  if(r.norm() > 1e-2) {
-	    LOG4CXX_INFO(logger,MatrixPrinter(A)<<"\n");
-	    LOG4CXX_INFO(logger,"Press any key to continue"<<"\n");
-	    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	    LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(A)<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	    return LinearProgram::Error;
 	  }
-	  LOG4CXX_INFO(logger,"Press any key to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
       }
       
       if(verbose >= 1) {
-	LOG4CXX_INFO(logger,"Projecting problem on equality constraints"<<"\n");
-	LOG4CXX_INFO(logger,"Original dimension "<<A.n<<", nullspace dimension "<<N.n<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Projecting problem on equality constraints"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Original dimension "<<A.n<<", nullspace dimension "<<N.n<<"\n");
       }
       
       //set bnew
@@ -253,17 +253,17 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
       C_new.mul(C,N);
       
       if(verbose >= 2) {
-	LOG4CXX_INFO(logger,"x0: "<<VectorPrinter(x0)<<"\n");
-	LOG4CXX_INFO(logger,"N: "<<"\n"<<MatrixPrinter(N)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"x0: "<<VectorPrinter(x0)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"N: "<<"\n"<<MatrixPrinter(N)<<"\n");
       }
-      if(verbose >=1) LOG4CXX_INFO(logger,"Solving transformed problem..."<<"\n");
+      if(verbose >=1) LOG4CXX_INFO(KrisLibrary::logger(),"Solving transformed problem..."<<"\n");
       
       MatrixEquation ls(C_new,d_new);
       if(!ls.LeastSquares(y)) {
-	LOG4CXX_ERROR(logger,"LeastSquares: Error solving transformed least squares!!!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LeastSquares: Error solving transformed least squares!!!"<<"\n");
 	if(verbose >=1) {
-	  LOG4CXX_ERROR(logger,"Press any key to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	return LinearProgram::Error;
       }
@@ -275,7 +275,7 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
     else {
       MatrixEquation ls(C,d);
       if(!ls.LeastSquares(x)) {
-	LOG4CXX_ERROR(logger,"Error solving for least squares!!!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error solving for least squares!!!"<<"\n");
 	return LinearProgram::Error;
       }
       return LinearProgram::Feasible;
@@ -292,7 +292,7 @@ LinearProgram::Result MinNormProblem::Solve(Vector& x)
     }
     return res;
   }
-  LOG4CXX_INFO(logger,"Not sure how we got here..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Not sure how we got here..."<<"\n");
   return LinearProgram::Error;
 }
   
@@ -322,23 +322,23 @@ void MinNormProblem_Sparse::AddVariable(Real lj,Real uj)
 bool MinNormProblem_Sparse::IsValid() const
 {
   if(norm != One && norm != Two && !IsInf(norm)) {
-    LOG4CXX_ERROR(logger,"MinNormProblem_Sparse::IsValid(): Invalid norm"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem_Sparse::IsValid(): Invalid norm"<<"\n");
     return false;
   }
   if(C.isEmpty()) {
-    LOG4CXX_ERROR(logger,"MinNormProblem_Sparse::IsValid(): Empty problem"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem_Sparse::IsValid(): Empty problem"<<"\n");
     return false;
   }
   if(C.m != d.n) {
-    LOG4CXX_ERROR(logger,"MinNormProblem_Sparse::IsValid(): C.m != d.n"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem_Sparse::IsValid(): C.m != d.n"<<"\n");
     return false;
   }
   if(!LinearConstraints_Sparse::IsValid()) {
-    LOG4CXX_ERROR(logger,"MinNormProblem_Sparse::IsValid(): Constraints not valid"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem_Sparse::IsValid(): Constraints not valid"<<"\n");
     return false;
   }
   if(!A.isEmpty() && C.n != A.n) {
-    LOG4CXX_ERROR(logger,"MinNormProblem_Sparse::IsValid(): Constraint size does not match objective size"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MinNormProblem_Sparse::IsValid(): Constraint size does not match objective size"<<"\n");
     return false;
   }
   return true;
@@ -472,7 +472,7 @@ LinearProgram::Result MinNormProblem_Sparse::Solve(Vector& x)
     else {
       LSQRInterface lsqr;
       if(!lsqr.Solve(C,d)) {
-	LOG4CXX_ERROR(logger,"Error solving for least squares!!!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error solving for least squares!!!"<<"\n");
 	return LinearProgram::Error;
       }
       x = lsqr.x;

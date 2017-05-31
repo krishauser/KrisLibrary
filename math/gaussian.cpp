@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "gaussian.h"
 #include "CholeskyDecomposition.h"
 #include "LDL.h"
@@ -74,7 +74,7 @@ bool Gaussian<T>::setCovariance(const MatrixT& sigma,int verbose)
   for(int i=0;i<D.n;i++) {
     if(D(i) < 0.0) {
       if(verbose >= 1) 
-	LOG4CXX_WARN(logger,"Gaussian::setCovariance(): Warning, sigma "<<i<<" = "<<D(i));
+	LOG4CXX_WARN(KrisLibrary::logger(),"Gaussian::setCovariance(): Warning, sigma "<<i<<" = "<<D(i));
       if(D(i) < -Epsilon) 
 	res = false;
       D(i) = 0.0;
@@ -182,7 +182,7 @@ bool Gaussian<T>::setMaximumLikelihood(const std::vector<VectorT>& examples,cons
     //degenerate
     L.resize(mu.n,mu.n,Zero);
     if(verbose >= 1)
-      LOG4CXX_INFO(logger,"Gaussian::setMaximumLikelihood: weights sum to zero\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian::setMaximumLikelihood: weights sum to zero\n");
     return false;
   }
 
@@ -547,7 +547,7 @@ void Gaussian<T>::setJoint(const MyT& g1,const MyT& g2,const MatrixT& corr)
   X.setRef(L,g1.mu.n,0,1,1,g2.mu.n,g1.mu.n);
   Xt.setRefTranspose(X);
   if(!LBackSubstitute(g1.L,corr,Xt)) {
-    LOG4CXX_WARN(logger,"Warning: Gaussian::setJoint failed!\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning: Gaussian::setJoint failed!\n");
     X.setZero();
   }
 }

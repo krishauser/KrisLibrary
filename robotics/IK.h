@@ -74,6 +74,10 @@ struct IKGoal
   ///is closest to the transform T0.  Useful for non-fixed IKGoals.
   void GetClosestGoalTransform(const RigidTransform& T0,RigidTransform& T) const;
 
+  ///sets the endPosition / endRotation values so that if the current relative transform
+  ///between the link and its target is Trel, the objective's error is 0
+  void MatchGoalTransform(const RigidTransform& Trel);
+
   /// Robot link index
   int link;
   /// Desintation link index (-1 means world frame)

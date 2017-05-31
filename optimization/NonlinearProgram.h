@@ -19,8 +19,9 @@ using namespace Math;
  * where <?> can be either >= or <= depending on the
  * value of inequalityLess.  By default, <= is used.
  */
-struct NonlinearProgram
+class NonlinearProgram
 {
+public:
   NonlinearProgram(const SmartPointer<ScalarFieldFunction>& f,const SmartPointer<VectorFieldFunction>& c=NULL,const SmartPointer<VectorFieldFunction>& d=NULL);
   void PreEval(const Vector& x);
   bool SatisfiesEquality(const Vector& x,Real tol=Epsilon);

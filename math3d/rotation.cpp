@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "rotation.h"
 #include <math/misc.h>
 #include <iostream>
@@ -40,7 +40,7 @@ bool EulerAngleRotation::setMatrix(int u,int v,int w,const Matrix3& m)
     return setMatrixYXZ(m);
   }
   else {
-        LOG4CXX_ERROR(logger,"Not done with general euler angle rotation setMatrix\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Not done with general euler angle rotation setMatrix\n");
     return false;
   }
 }
@@ -54,7 +54,7 @@ bool EulerAngleRotation::setMatrixXYZ(const Matrix3& m)
     Real ca, cc;
     ca = m(2,2)/cb;   //m(2,2)=ca*cb
     if(!(Abs(ca) <= 1+Epsilon)) {
-            LOG4CXX_ERROR(logger,"EulerAngleRotation::setMatrixXYZ: Matrix element m22/cos(m02) greater than 1\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"EulerAngleRotation::setMatrixXYZ: Matrix element m22/cos(m02) greater than 1\n");
       return false;
     }
     ca = Clamp(ca,-One,One);
@@ -75,7 +75,7 @@ bool EulerAngleRotation::setMatrixXYZ(const Matrix3& m)
     // this reduces the degrees of freedom, so we can set c=0
     c = 0;
     if(!(Abs(m(1,1)) <= 1+Epsilon)) {
-            LOG4CXX_ERROR(logger,"EulerAngleRotation::setMatrixXYZ: Matrix element greater than 1\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"EulerAngleRotation::setMatrixXYZ: Matrix element greater than 1\n");
       return false;
     }
     a = Acos(Clamp(m(1,1),-One,One)); //m(1,1)=ca
@@ -210,19 +210,19 @@ void EulerAngleRotation::getMatrix(int u,int v,int w,Matrix3& m) const
   case 0:  Ru.setRotateX(x);  break;
   case 1:  Ru.setRotateY(x);  break;
   case 2:  Ru.setRotateZ(x);  break;
-    default: LOG4CXX_ERROR(logger,"EulerAngleRotation::getMatrix(): Invalid axis "<<u); break;
+    default: LOG4CXX_ERROR(KrisLibrary::logger(),"EulerAngleRotation::getMatrix(): Invalid axis "<<u); break;
   }
   switch(v) {
   case 0:  Rv.setRotateX(y);  break;
   case 1:  Rv.setRotateY(y);  break;
   case 2:  Rv.setRotateZ(y);  break;
-    default: LOG4CXX_ERROR(logger,"EulerAngleRotation::getMatrix(): Invalid axis "<<v); break;
+    default: LOG4CXX_ERROR(KrisLibrary::logger(),"EulerAngleRotation::getMatrix(): Invalid axis "<<v); break;
   }
   switch(w) {
   case 0:  Rw.setRotateX(z);  break;
   case 1:  Rw.setRotateY(z);  break;
   case 2:  Rw.setRotateZ(z);  break;
-    default: LOG4CXX_ERROR(logger,"EulerAngleRotation::getMatrix(): Invalid axis "<<w); break;
+    default: LOG4CXX_ERROR(KrisLibrary::logger(),"EulerAngleRotation::getMatrix(): Invalid axis "<<w); break;
   }
   m = Ru*Rv*Rw;
 }
@@ -446,42 +446,41 @@ bool MomentRotation::setMatrix(const Matrix3& r)
 {
   //calculate theta
   Real theta;
-  Real s=(r.trace() - One)*Half;
-  if(!IsFinite(s)) {
-    LOG4CXX_ERROR(logger,"MomentRotation::setMatrix(): Warning- trace of matrix is not finite!"<<"\n");
-    LOG4CXX_ERROR(logger,r<<"\n");
+  Real c=(r.trace() - One)*Half;
+  if(!IsFinite(c)) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is not finite!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),r<<"\n");
     return false;
   }
-  if(s >= One) {
-    if(s > One+Epsilon) {
-      LOG4CXX_ERROR(logger,"MomentRotation::setMatrix(): Warning- trace of matrix is greater than 3"<<"\n");
-      LOG4CXX_ERROR(logger,"  Matrix:"<<"\n"<<r<<"\n");
+  if(c >= One) {
+    if(c > One+Epsilon) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is greater than 3"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"  Matrix:"<<"\n"<<r<<"\n");
     }
+    c = One;
     theta = Zero;
   }
-  else if(s <= -One) {
-    if(s < -One-Epsilon) {
-      LOG4CXX_ERROR(logger,"MomentRotation::setMatrix(): Warning- trace of matrix is less than -1"<<"\n");
-      LOG4CXX_ERROR(logger,"  Matrix:"<<"\n"<<r<<"\n");
+  else if(c <= -One) {
+    if(c < -One-Epsilon) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is less than -1"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"  Matrix:"<<"\n"<<r<<"\n");
     }
+    c = -One;
     theta = Pi;
   }
   else 
-    theta = Acos(s);
+    theta = Acos(c);
 
   if(FuzzyEquals(theta,Pi,angleEps)) {
     //can't do normal version because the scale factor reaches a singularity
-    Real x2=(r(0,0)+One)*Half;
-    Real y2=(r(1,1)+One)*Half;
-    Real z2=(r(2,2)+One)*Half;
-    if(x2 < 0) { Assert(FuzzyZero(x2)); x2=0; }
-    if(y2 < 0) { Assert(FuzzyZero(y2)); y2=0; }
-    if(z2 < 0) { Assert(FuzzyZero(z2)); z2=0; }
-    x = Pi*Sqrt(x2);
-    y = Pi*Sqrt(y2);
-    z = Pi*Sqrt(z2);
-    //determined up to sign changes, we know r12=2xy,r13=2xz,r23=2yz
-    Real xy=r(0,1),xz=r(0,2),yz=r(1,2);
+    x = Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
+    y = Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
+    z = Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
+    x = theta*x;
+    y = theta*y;
+    z = theta*z;
+    //determined up to sign changes, we know r12+r21~=4xy,r13+r31~=4xz,r23+r32~=4yz
+    Real xy=r(0,1)+r(1,0),xz=r(0,2)+r(2,0),yz=r(1,2)+r(2,1);
     if(x > y) {
       if(x > z) {
 	//x is largest
@@ -508,12 +507,23 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     }
     Matrix3 test;
     getMatrix(test);
-    if(!test.isEqual(r,5e-3)) {
-            LOG4CXX_ERROR(logger,"MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
-			LOG4CXX_ERROR(logger, "  " << r(0, 0) << " " << r(0, 1) << " " << r(0, 2) << "\n");
-			LOG4CXX_ERROR(logger, "  " << r(1, 0) << " " << r(1, 1) << " " << r(1, 2) << "\n");
-			LOG4CXX_ERROR(logger, "  " << r(2, 0) << " " << r(2, 1) << " " << r(2, 2) << "\n");
-			return false;
+    if(!test.isEqual(r,2e-3)) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(0,0)<<" "<<r(0,1)<<" "<<r(0,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(1,0)<<" "<<r(1,1)<<" "<<r(1,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(2,0)<<" "<<r(2,1)<<" "<<r(2,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Input*Input^T (should be orthogonal)\n");
+      Matrix3 ortho;
+      ortho.mulTransposeB(r,r);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(0,0)<<" "<<ortho(0,1)<<" "<<ortho(0,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(1,0)<<" "<<ortho(1,1)<<" "<<ortho(1,2)<<"\n");           
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(2,0)<<" "<<ortho(2,1)<<" "<<ortho(2,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Test errors with moment "<<x<<" "<<y<<" "<<z);
+      test -= r;
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(0,0)<<" "<<test(0,1)<<" "<<test(0,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(1,0)<<" "<<test(1,1)<<" "<<test(1,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(2,0)<<" "<<test(2,1)<<" "<<test(2,2)<<"\n");      
+            return false;
     }
 
     Assert(IsFinite(x));
@@ -521,22 +531,24 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     Assert(IsFinite(z));
     return true;
   }
-
   //Matrix3 r_cross;
   //r_cross.setTranspose(r);
   //r_cross.sub(r, r_cross);
   //r_cross.inplaceScale(scale);
 
   //this is a better method for angles close to pi
-  if(FuzzyEquals(theta,Pi,0.02)) {
-    Real c = Cos(theta);
-    x = theta*Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
-    y = theta*Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
-    z = theta*Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
+  if(FuzzyEquals(theta,Pi,0.5)) {
+    //c ~= -1
+    x = Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
+    y = Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
+    z = Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
     double eps = Pi-theta;
     x *= Sign(eps)*Sign(r.data[1][2]-r.data[2][1]);
     y *= Sign(eps)*Sign(r.data[2][0]-r.data[0][2]);
     z *= Sign(eps)*Sign(r.data[0][1]-r.data[1][0]);
+    x *= theta;
+    y *= theta;
+    z *= theta;
   }
   else {
     //Real scale = Half*theta/Sin(theta);
@@ -552,23 +564,24 @@ bool MomentRotation::setMatrix(const Matrix3& r)
   Assert(IsFinite(z));
   Matrix3 test;
   getMatrix(test);
-  if (!test.isEqual(r, 5e-3)) {
-	  	  LOG4CXX_ERROR(logger, "MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
-        LOG4CXX_ERROR(logger,"Input:\n");
-		LOG4CXX_ERROR(logger, "  " << r(0, 0) << " " << r(0, 1) << " " << r(0, 2) << "\n");
-		LOG4CXX_ERROR(logger, "  " << r(1, 0) << " " << r(1, 1) << " " << r(1, 2) << "\n");
-		LOG4CXX_ERROR(logger, "  " << r(2, 0) << " " << r(2, 1) << " " << r(2, 2) << "\n");
-		LOG4CXX_ERROR(logger,"Input*Input^T (should be orthogonal)\n");
+  if (!test.isEqual(r, 1e-3)) {
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(), "MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Input:\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(0,0)<<" "<<r(0,1)<<" "<<r(0,2)<<"\n");            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(1,0)<<" "<<r(1,1)<<" "<<r(1,2)<<"\n");            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(2,0)<<" "<<r(2,1)<<" "<<r(2,2)<<"\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Input*Input^T (should be orthogonal)\n");
     Matrix3 ortho;
     ortho.mulTransposeB(r,r);
-		LOG4CXX_ERROR(logger, "  " << ortho(0, 0) << " " << ortho(0, 1) << " " << ortho(0, 2) << "\n");
-		LOG4CXX_ERROR(logger, "  " << ortho(1, 0) << " " << ortho(1, 1) << " " << ortho(1, 2) << "\n");
-		LOG4CXX_ERROR(logger, "  " << ortho(2, 0) << " " << ortho(2, 1) << " " << ortho(2, 2) << "\n");
-		LOG4CXX_ERROR(logger,"Moment "<<x<<" "<<y<<" "<<z<<" (angle "<<theta);
-		LOG4CXX_ERROR(logger, "  " << test(0, 0) << " " << test(0, 1) << " " << test(0, 2) << "\n");
-		LOG4CXX_ERROR(logger, "  " << test(1, 0) << " " << test(1, 1) << " " << test(1, 2) << "\n");
-		LOG4CXX_ERROR(logger, "  " << test(2, 0) << " " << test(2, 1) << " " << test(2, 2) << "\n");
-		return false;
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(0,0)<<" "<<ortho(0,1)<<" "<<ortho(0,2)<<"\n");            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(1,0)<<" "<<ortho(1,1)<<" "<<ortho(1,2)<<"\n");            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(2,0)<<" "<<ortho(2,1)<<" "<<ortho(2,2)<<"\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Moment "<<x<<" "<<y<<" "<<z<<" (angle "<<theta);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(0,0)<<" "<<test(0,1)<<" "<<test(0,2)<<"\n");            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(1,0)<<" "<<test(1,1)<<" "<<test(1,2)<<"\n");            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(2,0)<<" "<<test(2,1)<<" "<<test(2,2)<<"\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Sinc function should not be near 0: "<<Sinc(theta));
+	  return false;
   }
   return true;
 }
@@ -659,9 +672,9 @@ bool QuaternionRotation::setMatrix(const Matrix3& m)
       // m(2,2) < -0.5
       // m(1,1) > -0.5
       // m(1,1) = -1 - m(2,2)
-      LOG4CXX_ERROR(logger,"QuaternionRotation::setMatrix(): s is zero, what do we do?"<<"\n");
-      LOG4CXX_ERROR(logger,"May be a non-rotation matrix"<<"\n");
-      LOG4CXX_ERROR(logger,m<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation::setMatrix(): s is zero, what do we do?"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"May be a non-rotation matrix"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),m<<"\n");
       for(int i=0;i<4;i++) q[i]=0;
       return false;
     }
@@ -683,9 +696,9 @@ bool QuaternionRotation::setMatrix(const Matrix3& m)
   Matrix3 temp;
   getMatrix(temp);
   if(!temp.isEqual(m,1e-2)) {
-    LOG4CXX_ERROR(logger,"Very different matrix in QuaternionRotation::setMatrix()!"<<"\n");
-    LOG4CXX_ERROR(logger,m<<" vs "<<"\n");
-    LOG4CXX_ERROR(logger,temp<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Very different matrix in QuaternionRotation::setMatrix()!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),m<<" vs "<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),temp<<"\n");
     return false;
   }
   return true;
@@ -753,11 +766,11 @@ void QuaternionRotation::slerp(const Quaternion& a, const Quaternion& b, Real t)
       set(b);
       return;
     }
-    LOG4CXX_ERROR(logger,"QuaternionRotation::slerp(): dot product is > 1, are quaternions not normalized?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation::slerp(): dot product is > 1, are quaternions not normalized?"<<"\n");
     if(!FuzzyEquals(a.norm(),One,angleEps)) 
-      LOG4CXX_ERROR(logger,"   a is not normalized. Norm="<<a.norm()<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"   a is not normalized. Norm="<<a.norm()<<"\n");
     if(!FuzzyEquals(b.norm(),One,angleEps)) 
-      LOG4CXX_ERROR(logger,"   b is not normalized. Norm="<<b.norm()<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"   b is not normalized. Norm="<<b.norm()<<"\n");
     Quaternion na,nb;
     na.setNormalized(a);
     nb.setNormalized(b);
@@ -791,7 +804,7 @@ void QuaternionRotation::mag(const Quaternion& a, Real t)
     return;
   }
   else if(a.w == -One) { //a is a rotation of 180 degrees
-	LOG4CXX_ERROR(logger,"QuaternionRotation.mag(): Quaternion is a rotation of 180 degrees"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation.mag(): Quaternion is a rotation of 180 degrees"<<"\n");
     return;
   }
 
@@ -822,7 +835,7 @@ void SLerp(const Quaternion& a,
     return;
   }
   else if(d == -One) {	//axes are opposing axis
-    LOG4CXX_ERROR(logger,"SLerp(): Quaternions on opposing sides of unit sphere"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SLerp(): Quaternions on opposing sides of unit sphere"<<"\n");
     return;
   }
   Real bscale = (d < 0 ? -One:One);

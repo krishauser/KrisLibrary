@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Stability.h"
 #include <math3d/basis.h>
 #include <geometry/PolytopeProjection.h>
@@ -331,17 +331,17 @@ bool TestForceClosure(const vector<CustomContactPoint> & cps)
     }
     if(res == Optimization::LinearProgram::Unbounded)  {
       /*
-      LOG4CXX_INFO(logger,"Direction "<<c<<" unbounded"<<"\n");
-      LOG4CXX_INFO(logger,"GLPK result "<<lps.xopt<<"\n");
-      LOG4CXX_INFO(logger,"Objective result "<<lps.xopt.dot(lp.c)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<c<<" unbounded"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"GLPK result "<<lps.xopt<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Objective result "<<lps.xopt.dot(lp.c)<<"\n");
       */
       continue;
     }
     if(res == Optimization::LinearProgram::Feasible) {
       /*
-      LOG4CXX_INFO(logger,"Direction "<<c<<"\n");
-      LOG4CXX_INFO(logger,"GLPK result "<<lps.xopt<<"\n");
-      LOG4CXX_INFO(logger,"Objective result "<<lps.xopt.dot(lp.c)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<c<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"GLPK result "<<lps.xopt<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Objective result "<<lps.xopt.dot(lp.c)<<"\n");
       */
       //test for zero
       if(lps.xopt.dot(lp.c) > -Epsilon) {
@@ -502,7 +502,7 @@ bool TestCOMEquilibrium(const vector<ContactPoint>& contacts,const Vector3& fext
 #endif // USE_SPARSE_LP
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   for(int j=0;j<numContacts;j++)
     contacts[j].n.get(lp.c(j*3),lp.c(j*3+1),lp.c(j*3+2));
@@ -579,7 +579,7 @@ bool TestAnyCOMEquilibrium(const vector<ContactPoint>& contacts,const Vector3& f
   GetFrictionConePlanes(contacts,numFCEdges,temp);
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   lp.c.setZero();
   for(int j=0;j<numContacts;j++)
@@ -642,7 +642,7 @@ bool TestCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Vecto
   GetFrictionConePlanes(contacts,temp,vtemp);
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   GetForceMinimizationDirection(contacts,lp.c);
   lp.minimize = true;
@@ -700,7 +700,7 @@ bool TestAnyCOMEquilibrium(const vector<CustomContactPoint2D>& contacts,const Ve
   GetFrictionConePlanes(contacts,temp,vtemp);
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   lp.c.setZero();
   GetForceMinimizationDirection(contacts,lp.c);
@@ -941,7 +941,7 @@ void EquilibriumTester::SetupAnyCOM(const std::vector<ContactPoint>& contacts,co
   lp.A.copySubMatrix(6,0,temp);
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   lp.c.setZero();
   GetForceMinimizationDirection(contacts,lp.c);
@@ -993,7 +993,7 @@ void EquilibriumTester::SetupAnyCOM(const std::vector<CustomContactPoint>& conta
   lp.p.copySubVector(6,btemp);
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   lp.c.setZero();
   GetForceMinimizationDirection(contacts,lp.c);
@@ -1045,7 +1045,7 @@ void EquilibriumTester::SetupAnyCOM(const CustomContactFormation& contacts,const
   lp.p.copySubVector(6,btemp);
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   lp.c.setZero();
   GetForceMinimizationDirection(contacts,lp.c);
@@ -1137,7 +1137,7 @@ bool EquilibriumTester::TestCurrent()
     return true;
   }
   if(res == Optimization::LinearProgram::Unbounded) {
-        LOG4CXX_ERROR(logger,"Strange, equilibrium test problem is unbounded?\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Strange, equilibrium test problem is unbounded?\n");
     lp.Print(cout);
   }
   Assert(res != Optimization::LinearProgram::Unbounded);
@@ -1331,7 +1331,7 @@ bool SupportPolygon::Set(const std::vector<ContactPoint>& cp,const Vector3& _fex
   }
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   lp.c.setZero();
   lp.minimize = false;
@@ -1352,7 +1352,7 @@ bool SupportPolygon::Set(const std::vector<ContactPoint>& cp,const Vector3& _fex
 
   /*
   for(size_t i=0;i<planes.size();i++) {
-    LOG4CXX_INFO(logger,"plane ["<<planes[i].normal<<"].x <= "<<planes[i].offset<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"plane ["<<planes[i].normal<<"].x <= "<<planes[i].offset<<"\n");
   }
   */
 
@@ -1434,7 +1434,7 @@ bool SupportPolygon::Set(const std::vector<CustomContactPoint>& cp,const Vector3
   GetFrictionConePlanes(cp,temp,btemp);
 
   //lp.Print(cout);
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
   lp.c.setZero();
   lp.minimize = false;
@@ -1455,7 +1455,7 @@ bool SupportPolygon::Set(const std::vector<CustomContactPoint>& cp,const Vector3
 
   /*
   for(size_t i=0;i<planes.size();i++) {
-    LOG4CXX_INFO(logger,"plane ["<<planes[i].normal<<"].x <= "<<planes[i].offset<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"plane ["<<planes[i].normal<<"].x <= "<<planes[i].offset<<"\n");
   }
   */
 
@@ -1575,7 +1575,7 @@ bool SupportPolygon::SolveA()
   FatalError("No polytope");
 #else
   if(!(fext.x == Zero && fext.y == Zero && fext.z != Zero)) {
-    LOG4CXX_INFO(logger,"SupportPolygon can only be solved for a z direction force\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"SupportPolygon can only be solved for a z direction force\n");
     Abort();
   }
   //solve for force limit polyhedron Af=b with all f>=0
@@ -1638,14 +1638,14 @@ bool SupportPolygon::SolveA()
     y.x = vpoly.points.dotRow(i,B1);
     y.y = vpoly.points.dotRow(i,B2);
     pts.push_back(y);
-    //LOG4CXX_INFO(logger,"point ("<<y.x<<","<<y.y);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"point ("<<y.x<<","<<y.y);
   }
   y.isRay = true;
   for(int i=0;i<vpoly.rays.m;i++) {
     y.x = vpoly.rays.dotRow(i,B1);
     y.y = vpoly.rays.dotRow(i,B2);
     pts.push_back(y);
-    //LOG4CXX_INFO(logger,"ray ("<<y.x<<","<<y.y);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"ray ("<<y.x<<","<<y.y);
   }
 
   //find the convex hull
@@ -1664,11 +1664,11 @@ bool SupportPolygon::SolveA()
 bool SupportPolygon::SolveB()
 {
 #ifndef HAS_CONTACT
-  LOG4CXX_INFO(logger,"No polytope"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"No polytope"<<"\n");
   Abort();
 #else
   if(!(fext.x == Zero && fext.y == Zero && fext.z != Zero)) {
-    LOG4CXX_INFO(logger,"SupportPolygon can only be solved for a z direction force\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"SupportPolygon can only be solved for a z direction force\n");
     Abort();
   }
   //solve for force limit polyhedron Af=b with fi in FCi

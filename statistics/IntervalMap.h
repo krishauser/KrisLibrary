@@ -2,7 +2,7 @@
 #define STATS_INTERVAL_MAP_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "statistics.h"
 #include <vector>
 #include <KrisLibrary/structs/array2d.h>
@@ -101,7 +101,7 @@ template <class Data>
 void IntervalMap<Data>::InitPartition(size_t n,Real a,Real b)
 {
   if(n == 0) {
-    LOG4CXX_ERROR(logger,"Warning, resizing interval map to have 0 divisions -- was this intended?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, resizing interval map to have 0 divisions -- was this intended?"<<"\n");
     Clear();
   }
   else {
@@ -162,7 +162,7 @@ template <class Data>
 void IntervalMap2D<Data>::InitPartition(const Size dims,const Point min,const Point max)
 {
   if(dims[0] == 0 || dims[1] == 0) {
-    LOG4CXX_ERROR(logger,"Warning, resizing interval map to have 0 divisions -- was this intended?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, resizing interval map to have 0 divisions -- was this intended?"<<"\n");
     Clear();
   }
   else {

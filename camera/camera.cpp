@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "camera.h"
 #include <math3d/rotation.h>
 #include <iostream>
@@ -27,7 +27,7 @@ void Camera::GetOrientationMatrix(Orientation o,Matrix3& mat)
     mat(2,1) = -One;
     break;
   default:
-    LOG4CXX_ERROR(logger,"Unknown orientation to Camera::GetOrientationMatrix"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown orientation to Camera::GetOrientationMatrix"<<"\n");
     abort();
     break;
   }
@@ -58,7 +58,7 @@ void Camera::Orient(Orientation o,Matrix3& mat)
     mat.setRow2(rz);
     break;
   default:
-    LOG4CXX_ERROR(logger,"Unknown orientation to Camera::Orient"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown orientation to Camera::Orient"<<"\n");
     abort();
     break;
   }
@@ -89,7 +89,7 @@ void Camera::Unorient(Orientation o,Matrix3& mat)
     mat.setRow2(rz);
     break;
   default:
-    LOG4CXX_ERROR(logger,"Unknown orientation to Camera::Unorient"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown orientation to Camera::Unorient"<<"\n");
     abort();
     break;
   }
@@ -134,7 +134,7 @@ void Camera::setCameraMatrix(const Matrix4& m)
 {
   Matrix4 minv;
   if(!minv.setInverse(m)) {
-    LOG4CXX_ERROR(logger,"Camera modelview matrix not invertible"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Camera modelview matrix not invertible"<<"\n");
     return;
   }
   xform.set(minv);

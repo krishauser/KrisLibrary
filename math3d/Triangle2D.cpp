@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Triangle2D.h"
 #include "geometry2d.h"
 #include "clip.h"
@@ -249,7 +249,7 @@ bool Triangle2D::intersects(const Plane2D& P, Segment2D& S) const
     p[j] = pi;
   }
   if(!(d[0] <= d[1] && d[1] <= d[2])) {
-	  LOG4CXX_INFO(logger,"AAAACK: " << d[0] << " " << d[1] << " " << d[2] <<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"AAAACK: "<<d[0]<<" "<<d[1]<<" "<<d[2]);
   }
   assert(d[0] <= d[1] && d[1] <= d[2]);
 

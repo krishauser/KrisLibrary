@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "misc.h"
 #include "stdio.h"
 #include <errors.h>
@@ -19,7 +19,7 @@ static const float fThird = 1.0f/3.0f;
 
 //returns the # of real roots found (-1 if infinite)
 int quadratic(double a, double b, double c, double& x1, double& x2) {
-  //LOG4CXX_INFO(logger,"quadratic "<< a<<" "<< b<<" "<< c);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"quadratic "<< a<<" "<< b<<" "<< c);
 
   if(a == 0)
   {
@@ -162,19 +162,19 @@ double ErfComplimentary(double x) { return gsl_sf_erfc(x); }
 
 #else
 
-double dFactorial(unsigned int n) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return Factorial(n); }
-double dLogFactorial(unsigned int n) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return Log(dFactorial(n)); }
-double dChoose(unsigned int n,unsigned int k) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return Choose(n,k); }
-double dLogChoose(unsigned int n,unsigned int k) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return Log(dChoose(n,k)); }
-double TaylorCoeff(double x,unsigned int n) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return IntegerPower(x,n); }
-double Gamma(double x) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
-double LogGamma(double x) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
-double GammaInv(double x) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
-double Beta(double a,double b) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
-double LogBeta(double a,double b) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
-double NormalizedIncompleteBeta(double a,double b,double x) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
-double Erf(double x) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
-double ErfComplimentary(double x) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); return 0; }
+double dFactorial(unsigned int n) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return Factorial(n); }
+double dLogFactorial(unsigned int n) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return Log(dFactorial(n)); }
+double dChoose(unsigned int n,unsigned int k) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return Choose(n,k); }
+double dLogChoose(unsigned int n,unsigned int k) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return Log(dChoose(n,k)); }
+double TaylorCoeff(double x,unsigned int n) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return IntegerPower(x,n); }
+double Gamma(double x) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
+double LogGamma(double x) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
+double GammaInv(double x) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
+double Beta(double a,double b) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
+double LogBeta(double a,double b) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
+double NormalizedIncompleteBeta(double a,double b,double x) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
+double Erf(double x) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
+double ErfComplimentary(double x) { LOG4CXX_ERROR(KrisLibrary::logger(),"GSL not defined!\n"); return 0; }
 
 #endif
 
@@ -182,7 +182,7 @@ double ErfComplimentary(double x) { LOG4CXX_ERROR(logger,"GSL not defined!\n"); 
 
 //returns the # of real roots found (-1 if infinite)
 int quadratic(float a, float b, float c, float& x1, float& x2) {
-  //LOG4CXX_INFO(logger,"quadratic "<< a<<" "<< b<<" "<< c);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"quadratic "<< a<<" "<< b<<" "<< c);
 
   if(a == 0)
   {
@@ -241,10 +241,10 @@ int cubic(float a, float b, float c, float d, float x[3])
     x[1] = -fTwo*sqrtQ*Cos(theta_3+fTwoPi_3) - b_3;
     x[2] = -fTwo*sqrtQ*Cos(theta_3-fTwoPi_3) - b_3;
     /*
-    LOG4CXX_INFO(logger,"x^3+"<<b<<"*x^2+"<<c<<"*x+"<<d);
-    LOG4CXX_INFO(logger,"Three solutions! "<<x[0]<<" "<<x[1]<<" "<<x[2]);
+    LOG4CXX_INFO(KrisLibrary::logger(),"x^3+"<<b<<"*x^2+"<<c<<"*x+"<<d);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Three solutions! "<<x[0]<<" "<<x[1]<<" "<<x[2]);
     for(int i=0;i<3;i++)
-      LOG4CXX_INFO(logger,"0="<<x[i]*x[i]*x[i]+b*x[i]*x[i]+c*x[i]+d);
+      LOG4CXX_INFO(KrisLibrary::logger(),"0="<<x[i]*x[i]*x[i]+b*x[i]*x[i]+c*x[i]+d);
     */
     return 3;
   }

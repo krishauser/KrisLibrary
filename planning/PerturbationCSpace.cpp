@@ -1,6 +1,7 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "PerturbationCSpace.h"
+#include "Interpolator.h"
 using namespace std;
 
 PerturbationCSpace::PerturbationCSpace(CSpace* _baseSpace,const vector<Vector>& _perturbations)
@@ -28,6 +29,11 @@ bool PerturbationCSpace::IsFeasible(const Config& q,int obstacle)
 EdgePlanner* PerturbationCSpace::LocalPlanner(const Config& a,const Config& b,int obstacle)
 {
   return baseSpace->LocalPlanner(Perturb(a,perturbations[obstacle]),Perturb(b,perturbations[obstacle]));
+}
+
+EdgePlanner* PerturbationCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+{
+  return baseSpace->PathChecker(a+perturbations[obstacle],b+perturbations[obstacle]);
 }
 
 int PerturbationCSpace::NumObstacles() { return (int)perturbations.size(); }

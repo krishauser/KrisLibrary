@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "LogisticModel.h"
 #include "DistributionCollector.h"
 #include <optimization/Minimization.h>
@@ -169,24 +169,26 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
   opt.tolf = tol;
   opt.tolgrad = tol;
 
-  LOG4CXX_INFO(logger,"Testing logit gradient...\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing logit gradient...\n");
   Real atol=1e-2;
   Real rtol=1e-2;
   bool test=TestGradient(&f,opt.x,1e-3,atol,rtol);
   if(!test) {
-    LOG4CXX_INFO(logger,"Testing failed!\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing failed!\n");
     Abort();
   }
   else {
-    LOG4CXX_INFO(logger,"Done.\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Done.\n");
   }
   
   ConvergenceResult r=opt.SolveQuasiNewton_Ident(numIters);
   Assert(r == ConvergenceX || r == ConvergenceF || r == MaxItersReached);
-  if(r == ConvergenceX || r == ConvergenceF)
-    LOG4CXX_INFO(logger,"Quasi-Newton method converged in "<<numIters<<" iterations"<<"\n");
-  else
-    LOG4CXX_INFO(logger,"Maximum iterations reached"<<"\n");
+  if(r == ConvergenceX || r == ConvergenceF){
+    LOG4CXX_INFO(KrisLibrary::logger(),"Quasi-Newton method converged in "<<numIters<<" iterations"<<"\n");
+  }
+  else{
+    LOG4CXX_INFO(KrisLibrary::logger(),"Maximum iterations reached"<<"\n");
+  }
 
   coeffs.clear();
   coeffs = opt.x;
@@ -211,7 +213,7 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
       for(int j=0;j<dlog.n;j++)
 	informationMatrix(i,j) += dv(i)*dv(j)*p*(1.0-p);
   }
-  //LOG4CXX_INFO(logger,"InformationMatrix"<<"\n"<<MatrixPrinter(informationMatrix,MatrixPrinter::AsciiShade)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"InformationMatrix"<<"\n"<<MatrixPrinter(informationMatrix,MatrixPrinter::AsciiShade)<<"\n");
 
   LDLDecomposition<Real> ldl;
   ldl.set(informationMatrix);
@@ -222,10 +224,10 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
       break;
     }
   if(singular) {
-    LOG4CXX_ERROR(logger,"Information matrix is singular, using SVD..."<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Information matrix is singular, using SVD..."<<"\n");
     RobustSVD<Real> svd;
     if(!svd.set(informationMatrix)) {
-      LOG4CXX_ERROR(logger,"Error inverting information matrix..."<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error inverting information matrix..."<<"\n");
       ldl.getInverse(covariance);
     }
     else {
@@ -237,27 +239,27 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
   else ldl.getInverse(covariance);
   for(int i=0;i<covariance.m;i++) {
     if(covariance(i,i) < 0) {
-      LOG4CXX_ERROR(logger,"Warning, covariance matrix has negative on diagonal!"<<"\n");
-      LOG4CXX_ERROR(logger,covariance(i,i)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, covariance matrix has negative on diagonal!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),covariance(i,i)<<"\n");
     }
     if(!IsFinite(covariance(i,i))) {
-      LOG4CXX_ERROR(logger,"Warning, covariance matrix has inf/nan on diagonal!"<<"\n");
-      LOG4CXX_ERROR(logger,covariance(i,i)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, covariance matrix has inf/nan on diagonal!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),covariance(i,i)<<"\n");
     }
   }
 
-  LOG4CXX_INFO(logger,"Resulting log-likelihood: "<<-f(opt.x)<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Resulting log-likelihood: "<<-f(opt.x)<<"\n");
 
   DistributionCollector error;
   for(size_t i=0;i<x.size();i++) {
     if(res[i]) error << 1-Evaluate(x[i]);
     else error << Evaluate(x[i]);
   }
-  LOG4CXX_ERROR(logger,"Actual error min "<<error.xmin<<", max "<<error.xmax<<", mean "<<error.mean()<<" mse "<<error.sumsquared/error.n<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Actual error min "<<error.xmin<<", max "<<error.xmax<<", mean "<<error.mean()<<" mse "<<error.sumsquared/error.n<<"\n");
   /*
-  LOG4CXX_INFO(logger,"Results: "<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Results: "<<"\n");
   for(size_t i=0;i<x.size();i++) {
-    LOG4CXX_INFO(logger,"Actual value "<<res[i]<<", evaluated "<<Evaluate(x[i])<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Actual value "<<res[i]<<", evaluated "<<Evaluate(x[i])<<"\n");
   }
   */
 }

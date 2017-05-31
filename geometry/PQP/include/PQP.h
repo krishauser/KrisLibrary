@@ -42,7 +42,7 @@
 #define PQP_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "PQP_Compile.h"   
 #include "PQP_Internal.h"                             
                         

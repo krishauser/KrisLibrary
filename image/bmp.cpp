@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "image.h"
 #ifdef _WIN32
 #include <windows.h>
@@ -49,21 +49,21 @@ bool ImportImageBMP(const char* fn, Image& image)
 
 	FILE* f = fopen(fn, "rb");
 	if(!f) {
-	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn);
 	  return false;
 	}
 
 	BITMAPFILEHEADER bfh;
 	if(fread(&bfh, sizeof(bfh), 1, f) != 1)
 	{
-	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
 
 	if(memcmp(&bfh.bfType, "BM", 2) != 0) 
 	{
-	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
@@ -71,7 +71,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 	BITMAPINFOHEADER bi;
 	if(fread(&bi, sizeof(bi), 1, f) != 1)
 	{
-	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
@@ -88,7 +88,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 			image.num_bytes = image.w * image.h * (bi.biBitCount>>3);
 		break;
 	default:
-	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn<<": Unsupported compression type 0x"<<bi.biCompression);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn<<": Unsupported compression type 0x"<<bi.biCompression);
 		fclose(f);
 		return false;
 	}
@@ -108,7 +108,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 		decode_8 = true;
 		if(fread(&palette, sizeof(RGBQUAD), palette_size, f) != palette_size)
 		{
-		  		  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
+		  		  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn);
 		  fclose(f);
 		  return false;
 		}
@@ -123,7 +123,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 		image.format = Image::R8G8B8;
 		break;
 	default:
-	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn);
 	  fclose(f);
 	  return false;
 	}
@@ -133,7 +133,7 @@ bool ImportImageBMP(const char* fn, Image& image)
 	unsigned char* bits = new unsigned char [size_to_read];
 	if(fread(bits, 1, size_to_read, f) != size_to_read)
 	{
-	  	  LOG4CXX_ERROR(logger,"ImportImage "<<fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage "<<fn);
 	  fclose(f);
 		delete [] bits;
 		return false;
@@ -148,8 +148,8 @@ bool ImportImageBMP(const char* fn, Image& image)
 	}
 
 	if(image.num_bytes < image.w*image.h*image.pixelSize()) {
-	  LOG4CXX_INFO(logger,"Strange, the number of bytes is not correct for the format?\n");
-	  LOG4CXX_INFO(logger,"Bytes "<<image.num_bytes<<" should equal "<<image.w<<" x "<<image.h<<" x "<<image.pixelSize()<<" = "<<image.w*image.h*image.pixelSize());
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Strange, the number of bytes is not correct for the format?\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Bytes "<<image.num_bytes<<" should equal "<<image.w<<" x "<<image.h<<" x "<<image.pixelSize()<<" = "<<image.w*image.h*image.pixelSize());
 	}
 	assert(image.num_bytes >= image.w*image.h*image.pixelSize());
 	image.initialize(image.w,image.h,image.format);

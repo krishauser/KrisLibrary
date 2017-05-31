@@ -2,7 +2,7 @@
 #define UTILS_ASYNC_IO
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include <KrisLibrary/myfile.h>
 #include <string>
 #include <vector>
@@ -289,7 +289,7 @@ class AsyncReaderThread : public AsyncReaderQueue
   AsyncReaderThread(double timeout=Math::Inf);
   virtual ~AsyncReaderThread();
   virtual void Reset();
-    virtual void Work() { LOG4CXX_ERROR(logger,"No need to call Work on AsyncReaderThread\n"); }
+    virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread\n"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
@@ -318,7 +318,7 @@ class AsyncPipeThread : public AsyncPipeQueue
   AsyncPipeThread(double timeout=Math::Inf);
   virtual ~AsyncPipeThread();
   virtual void Reset();
-    virtual void Work() { LOG4CXX_ERROR(logger,"No need to call Work on AsyncReaderThread\n"); }
+    virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread\n"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();

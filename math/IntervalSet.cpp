@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "IntervalSet.h"
 #include <algorithm>
 #include <iostream>
@@ -144,13 +144,13 @@ void ClosedIntervalSet::Intersect(const BaseT& set)
     Assert(y[i].b <= y[i+1].a);
 
   /*
-  LOG4CXX_INFO(logger,"Intersecting intervals: "<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Intersecting intervals: "<<"\n");
   for(size_t i=0;i<x.size();i++)
-    LOG4CXX_INFO(logger,"["<<x[i].a<<","<<x[i].b<<"] ");
-  LOG4CXX_INFO(logger,"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"["<<x[i].a<<","<<x[i].b<<"] ");
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   for(size_t i=0;i<y.size();i++)
-    LOG4CXX_INFO(logger,"["<<y[i].a<<","<<y[i].b<<"] ");
-  LOG4CXX_INFO(logger,"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"["<<y[i].a<<","<<y[i].b<<"] ");
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   */
 
   size_t i=0,j=0;
@@ -174,10 +174,10 @@ void ClosedIntervalSet::Intersect(const BaseT& set)
   }
 
   /*
-  LOG4CXX_INFO(logger,"Res: "<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Res: "<<"\n");
   for(size_t i=0;i<size();i++)
-    LOG4CXX_INFO(logger,"["<<(*this)[i].a<<","<<(*this)[i].b<<"] ");
-  LOG4CXX_INFO(logger,"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"["<<(*this)[i].a<<","<<(*this)[i].b<<"] ");
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   */
 }
 /*

@@ -39,7 +39,7 @@
 \**************************************************************************/
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -316,7 +316,7 @@ void main(int argc, char **argv)
   bunny_to_draw = new Model("bunny.tris");
 
   fp = fopen("bunny.tris","r");
-    if (fp == NULL) { LOG4CXX_ERROR(logger,"Couldn't open bunny.tris\n"); exit(-1); }
+    if (fp == NULL) { LOG4CXX_ERROR(KrisLibrary::logger(),"Couldn't open bunny.tris\n"); exit(-1); }
   fscanf(fp,"%d",&ntris);
 
   bunny.BeginModel();
@@ -339,7 +339,7 @@ void main(int argc, char **argv)
   torus_to_draw = new Model("torus.tris");
 
   fp = fopen("torus.tris","r");
-    if (fp == NULL) { LOG4CXX_ERROR(logger,"Couldn't open torus.tris\n"); exit(-1); }
+    if (fp == NULL) { LOG4CXX_ERROR(KrisLibrary::logger(),"Couldn't open torus.tris\n"); exit(-1); }
   fscanf(fp,"%d",&ntris);
 
   torus.BeginModel();
@@ -359,7 +359,7 @@ void main(int argc, char **argv)
 
   // print instructions
 
-  LOG4CXX_INFO(logger,"PQP Demo - Spinning:\n"
+  LOG4CXX_INFO(KrisLibrary::logger(),"PQP Demo - Spinning:\n"
          "Press 'q' to quit.\n"
          "Press any other key to toggle animation.\n"
          "Left-drag left & right to change angle of view.\n"

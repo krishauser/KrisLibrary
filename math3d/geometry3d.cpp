@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "geometry3d.h"
 #include "AABB2D.h"
 #include "Polygon2D.h"
@@ -100,11 +100,11 @@ bool Sphere3D::intersects(const Line3D& l, Real* t1, Real* t2) const
 	int res=quadratic(a,b,c,x1,x2);
 	if(res<=0) return false;
 	if(res==1) {
-	  //LOG4CXX_INFO(logger,"Whoa, line just intersects at one point on the sphere"<<"\n");
-	  //LOG4CXX_INFO(logger,"l= "<<l.source<<"->"<<l.direction<<"\n");
-	  //LOG4CXX_INFO(logger,"c= "<<center<<", r="<<radius<<"\n");
-	  //LOG4CXX_INFO(logger,"t="<<x1<<"\n");
-	  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Whoa, line just intersects at one point on the sphere"<<"\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"l= "<<l.source<<"->"<<l.direction<<"\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"c= "<<center<<", r="<<radius<<"\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"t="<<x1<<"\n");
+	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  x2=x1;
 	}
 	if(x1 > x2) Swap(x1,x2);
@@ -780,7 +780,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     }
     return false;
   case Segment:
-        LOG4CXX_ERROR(logger,"Segment ray cast not done yet\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Segment ray cast not done yet\n");
     return false;
   case Sphere:
     {
@@ -1323,7 +1323,7 @@ std::istream& operator >>(std::istream& in,GeometricPrimitive3D& g)
     g = GeometricPrimitive3D(s);
   }
   else {
-    LOG4CXX_INFO(logger,"istream >> GeometricPrimitive3D: Invalid type "<<type<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"istream >> GeometricPrimitive3D: Invalid type "<<type<<"\n");
     in.setstate(ios::badbit);
   }
   return in;

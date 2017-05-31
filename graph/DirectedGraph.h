@@ -18,7 +18,7 @@ class DirectedGraph : public Graph<Node,Edge>
 public:
   typedef Graph<Node,Edge> P;
   typedef EdgeIterator<Edge> ForwardIterator;
-  typedef CoEdgeIterator<Edge> ReverseIterator;
+  typedef EdgeIterator<Edge> ReverseIterator;
   void DFS(CallbackBase<Node>& f) { P::DFS(f,ForwardIterator()); }
   void DFSReverse(CallbackBase<Node>& f) { P::DFS(f,ReverseIterator()); }
   void SimpleDFS(CallbackBase<Node>& f) { P::SimpleDFS(f,ForwardIterator()); }

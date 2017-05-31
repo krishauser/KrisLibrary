@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Segment2D.h"
 #include "geometry2d.h"
 #include "clip.h"
@@ -140,12 +140,12 @@ bool Segment2D::intersects(const Vector2& A,const Vector2& B,Vector2& p) const
     Vector2 temp;
     interpolate(A,B,uv.y,temp);
     if(temp.distance(p) > 1e-3) {
-      LOG4CXX_ERROR(logger,"Error: intersection points are too far away "<<"\n");
-      LOG4CXX_INFO(logger,A<<" -> "<<B<<"\n");
-      LOG4CXX_INFO(logger,a<<" -> "<<b<<"\n");
-      LOG4CXX_INFO(logger,"u,v "<<uv<<"\n");
-      LOG4CXX_INFO(logger,"inverse basis "<<"\n"<<M<<"\n");
-      LOG4CXX_INFO(logger,"p1,p2 "<<p<<", "<<temp<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error: intersection points are too far away "<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),A<<" -> "<<B<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),a<<" -> "<<b<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"u,v "<<uv<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"inverse basis "<<"\n"<<M<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"p1,p2 "<<p<<", "<<temp<<"\n");
       abort();
     }
     return true;
@@ -156,11 +156,11 @@ bool Segment2D::intersects(const Vector2& A,const Vector2& B,Vector2& p) const
     if(Math::FuzzyEquals(uv.x,One)) { p=b; return true; }
     if(Math::FuzzyZero(uv.y)) { p=a; return true; }
     if(Math::FuzzyEquals(uv.y,One)) { p=b; return true; }
-    LOG4CXX_ERROR(logger,"Error! segment is supposed to intersect, but we don't have that in the basis!"<<"\n");
-    LOG4CXX_INFO(logger,A<<" -> "<<B<<"\n");
-    LOG4CXX_INFO(logger,a<<" -> "<<b<<"\n");
-    LOG4CXX_INFO(logger,"u,v "<<uv<<"\n");
-    LOG4CXX_INFO(logger,"inverse basis "<<"\n"<<M<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error! segment is supposed to intersect, but we don't have that in the basis!"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),A<<" -> "<<B<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),a<<" -> "<<b<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"u,v "<<uv<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"inverse basis "<<"\n"<<M<<"\n");
     abort();
   }
   */
@@ -175,12 +175,14 @@ void Segment2D::getAABB(AABB2D& bb) const
 
 bool Segment2D::intersects(const AABB2D& bb) const
 {
-  Real u1=0,u2=1;
+  Real u1,u2;
   return intersects(bb,u1,u2);
 }
 
 bool Segment2D::intersects(const AABB2D& bb, Real& u1, Real& u2) const
 {
+  u1=0;
+  u2=0;
   return ClipLine(a, b-a, bb, u1,u2);
 }
 

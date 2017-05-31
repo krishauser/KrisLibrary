@@ -3,7 +3,7 @@
  */
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "MarchingCubes.h"
 #include <math3d/interpolate.h>
 #include <math/function.h>
@@ -473,10 +473,10 @@ void MarchingCubes(ScalarFieldFunction& input,Real isoLevel,const AABB3D& bb,con
 	     tri.b < vertoffset || tri.b >= (int)m.verts.size() ||
 	     tri.c < vertoffset || tri.c >= (int)m.verts.size())
 	    {
-	      	      LOG4CXX_ERROR(logger,"Internal Marching cubes error!\n");
-	      	      LOG4CXX_ERROR(logger,"Triangle "<<tri.a<<" "<<tri.b<<" "<<tri.c);
-	      	      LOG4CXX_ERROR(logger,"Starting vertex size: "<<vertoffset<<" ending vertex size "<<m.verts.size());
-	      	      LOG4CXX_ERROR(logger,"cube index "<<cubeIndex);
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"Internal Marching cubes error!\n");
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<tri.a<<" "<<tri.b<<" "<<tri.c);
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"Starting vertex size: "<<vertoffset<<" ending vertex size "<<m.verts.size());
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"cube index "<<cubeIndex);
 	      abort();
 	    }
 	  m.tris.push_back(tri);
@@ -590,10 +590,10 @@ void MarchingCubes(Real (*input)(Real,Real,Real),Real isoLevel,const AABB3D& bb,
 	     tri.b < vertoffset || tri.b >= (int)m.verts.size() ||
 	     tri.c < vertoffset || tri.c >= (int)m.verts.size())
 	    {
-	      	      LOG4CXX_ERROR(logger,"Internal Marching cubes error!\n");
-	      	      LOG4CXX_ERROR(logger,"Triangle "<<tri.a<<" "<<tri.b<<" "<<tri.c);
-	      	      LOG4CXX_ERROR(logger,"Starting vertex size: "<<vertoffset<<" ending vertex size "<<m.verts.size());
-	      	      LOG4CXX_ERROR(logger,"cube index "<<cubeIndex);
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"Internal Marching cubes error!\n");
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<tri.a<<" "<<tri.b<<" "<<tri.c);
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"Starting vertex size: "<<vertoffset<<" ending vertex size "<<m.verts.size());
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"cube index "<<cubeIndex);
 	      abort();
 	    }
 	  m.tris.push_back(tri);

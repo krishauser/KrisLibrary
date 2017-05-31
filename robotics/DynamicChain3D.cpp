@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "DynamicChain3D.h"
 #include <math/CholeskyDecomposition.h>
 #include <Timer.h>
@@ -350,9 +350,9 @@ Real DynamicChain3D::GetKineticEnergyDeriv(int i,int j,int z) const
 	}
 
 	if(!FuzzyEquals(dB_dq[z](i,j),ke_dz)) {
-	  LOG4CXX_INFO(logger,"They don't agree on "<<i<<" "<<j<<" "<<z<<"\n");
-	  LOG4CXX_INFO(logger,dB_dq[z](i,j)<<" vs "<<ke_dz<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger(),"They don't agree on "<<i<<" "<<j<<" "<<z<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),dB_dq[z](i,j)<<" vs "<<ke_dz<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 
 	return ke_dz;
@@ -370,7 +370,7 @@ void DynamicChain3D::GetKineticEnergyMatrixDeriv(int z,Matrix& dB) const
 	    GetJacobianDeriv_Fast(links[i].com,i,j,z,dJO(i,j),dJP(i,j));
 	    /*
 	    if(!GetJacobianDeriv(links[i].com,i,j,z,dJO(i,j),dJP(i,j))) { 
-	      LOG4CXX_ERROR(logger,"Error, an invalid jacobian derivative in dB setup"<<std::"\n");
+	      LOG4CXX_ERROR(KrisLibrary::logger(),"Error, an invalid jacobian derivative in dB setup"<<"\n");
 	      Abort(); }
 	    */
 	  }
@@ -450,7 +450,7 @@ void DynamicChain3D::GetCoriolisForces(Vector& Cdq)
   Timer timer;
 	Cdq.resize(q.n);
 	Update_dB_dq();
-	LOG4CXX_INFO(logger,"Update took "<<timer.ElapsedTime()<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Update took "<<timer.ElapsedTime()<<"\n");
 	for(int i=0;i<q.n;i++) {
 		Real val=Zero;
 		for(int j=0;j<q.n;j++) {
@@ -467,7 +467,7 @@ void DynamicChain3D::GetCoriolisForces(Vector& Cdq)
 		val*=Half;
 		Cdq(i)=val;
 	}
-	LOG4CXX_INFO(logger,"triple product took "<<timer.ElapsedTime()<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"triple product took "<<timer.ElapsedTime()<<"\n");
 }
 
 void DynamicChain3D::GetForceVector(const Vector3& torque, const Vector3& force, int i, Vector& F) const
@@ -519,8 +519,8 @@ void DynamicChain3D::GetAcceleration(Vector& ddq, const Vector& fext)
 	GetKineticEnergyMatrix(B);
 	CholeskyDecomposition<Real> cholesky;
 	if(!cholesky.set(B)) {
-		LOG4CXX_ERROR(logger,"Kinetic energy matrix is not positive definite!"<<"\n");
-		LOG4CXX_ERROR(logger,B<<"\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Kinetic energy matrix is not positive definite!"<<"\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),B<<"\n");
 		Abort();
 	}
 

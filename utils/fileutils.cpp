@@ -1,11 +1,13 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "fileutils.h"
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <strsafe.h>
 #include <shlobj.h>    // for SHCreateDirectoryEx
+#include <direct.h>
+#define GetCurrentDir _getcwd
 #else
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -14,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
+#define GetCurrentDir getcwd
 #endif //_WIN32
 #ifdef __APPLE__
 #include <unistd.h>
@@ -178,7 +181,7 @@ bool ListDirectory(const char* path,std::vector<std::string>& files)
   StringCchLength(path, MAX_PATH, &length_of_arg);
 
   if (length_of_arg > (MAX_PATH - 3)) {
-        LOG4CXX_ERROR(logger,"Directory path "<<path);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Directory path "<<path);
     return false;
   }
 
@@ -210,7 +213,7 @@ bool ListDirectory(const char* path,std::vector<std::string>& files)
    dwError = GetLastError();
    if (dwError != ERROR_NO_MORE_FILES) 
    {
-          LOG4CXX_ERROR(logger,"Error while reading files from "<<path);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Error while reading files from "<<path);
      return false;
    }
 
@@ -234,6 +237,18 @@ bool ListDirectory(const char* path,std::vector<std::string>& files)
   closedir(d);
   return true;
 #endif
+}
+
+static char cCurrentPath[FILENAME_MAX];
+
+std::string GetWorkingDirectory()
+{
+  if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath)))
+  {
+    return "";
+  }
+  cCurrentPath[sizeof(cCurrentPath) - 1] = '\0'; /* not really required */
+  return cCurrentPath;
 }
 
 } // namespace FileUtils

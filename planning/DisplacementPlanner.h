@@ -2,9 +2,8 @@
 #define DISPLACEMENT_PLANNER_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
-#include "ExplicitCSpace.h"
 #include <KrisLibrary/utils/Subset.h>
 #include <KrisLibrary/structs/IndexedPriorityQueue.h>
 
@@ -34,7 +33,7 @@
  * Sample(), the ExplicitCSpace NumObstacles() and LocalPlanner() method, 
  * and optionally the CSpace Distance(), Interpolate(), and Midpoint() methods.
  */
-class ObstacleDisplacementCSpace : public ExplicitCSpace 
+class ObstacleDisplacementCSpace : public CSpace 
 {
 public:
   ObstacleDisplacementCSpace();
@@ -78,7 +77,7 @@ public:
  *   limits.push_back(limitN);  numIters.push_back(100);
  *   vector<int> assignment;
  *   if(planner.Plan(limits,numIters,bestPlan,assignment))
- *      LOG4CXX_INFO(logger,"Success\n");
+ *      LOG4CXX_INFO(KrisLibrary::logger(),"Success\n");
  *
  * Plan will keep going until all iterations are exhausted.  It will use the given
  * limit until the goal is reached, then it will use the existing cost to goal

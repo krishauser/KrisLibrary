@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "InequalityConstraint.h"
 #include "realfunction.h"
 #include "vectorfunction.h"
@@ -20,7 +20,7 @@ const static Real kPushDTolerance = (Real)1e-3;
 
 int InequalityConstraint::NumDimensions() const
 {
-  LOG4CXX_INFO(logger,"InequalityConstraint::NumDimensions(): Shouldn't get here"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"InequalityConstraint::NumDimensions(): Shouldn't get here"<<"\n");
   AssertNotReached();
   return 1;
 }
@@ -63,7 +63,7 @@ void InequalityConstraint::LineSearch(const Vector& x0,const Vector& dx,Real& u)
   PreEval(x0);
   Real margin0 = Margin(x0,minConstraint);
   if(margin0 < 0) {
-    LOG4CXX_INFO(logger,"LineSearch: Initial point is not feasible! Margin "<<margin0<<" at "<<Label(minConstraint)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"LineSearch: Initial point is not feasible! Margin "<<margin0<<" at "<<Label(minConstraint)<<"\n");
   }
   Assert(margin0 >= Zero);
 
@@ -75,23 +75,23 @@ void InequalityConstraint::LineSearch(const Vector& x0,const Vector& dx,Real& u)
     margin = Margin(x,minConstraint);
     if(minConstraint == oldMinConstraint) {
       if(margin < oldMargin) {
-	LOG4CXX_INFO(logger,"At constraint "<<Label(minConstraint)<<", ");
-	LOG4CXX_INFO(logger,"Line search at u gave a lower margin than previous value "<<margin<<" <= "<<oldMargin<<"\n");
-	LOG4CXX_INFO(logger,VectorPrinter(x)<<"\n");
-	LOG4CXX_INFO(logger,VectorPrinter(dx)<<"\n");
-	LOG4CXX_INFO(logger,"u is "<<u<<"\n");
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"At constraint "<<Label(minConstraint)<<", ");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Line search at u gave a lower margin than previous value "<<margin<<" <= "<<oldMargin<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(dx)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"u is "<<u<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       if(margin == oldMargin) {
-	LOG4CXX_INFO(logger,"At constraint "<<Label(minConstraint)<<", ");
-	LOG4CXX_WARN(logger,"Warning: margin didn't change"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"At constraint "<<Label(minConstraint)<<", ");
+	LOG4CXX_WARN(KrisLibrary::logger(),"Warning: margin didn't change"<<"\n");
       }
       Assert(margin >= oldMargin);
     }
     else {
       if(margin < oldMargin) {
-	LOG4CXX_INFO(logger,"At constraint "<<Label(minConstraint)<<", ");
-	LOG4CXX_WARN(logger,"Warning, constraint changed from "<<oldMinConstraint<<" to "<<minConstraint<<" and decreased margin from "<<oldMargin<<" to "<<margin<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"At constraint "<<Label(minConstraint)<<", ");
+	LOG4CXX_WARN(KrisLibrary::logger(),"Warning, constraint changed from "<<oldMinConstraint<<" to "<<minConstraint<<" and decreased margin from "<<oldMargin<<" to "<<margin<<"\n");
       }
     }
 
@@ -101,8 +101,8 @@ void InequalityConstraint::LineSearch(const Vector& x0,const Vector& dx,Real& u)
     else 
       return;
   }
-  LOG4CXX_INFO(logger,"LineSearch didn't converge within 1000 iters"<<"\n");
-  LOG4CXX_INFO(logger,"Resulting margin is "<<margin<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"LineSearch didn't converge within 1000 iters"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Resulting margin is "<<margin<<"\n");
 }
 
 void InequalityConstraint::LineSearch_i(const Vector& x0,const Vector& dx,Real& u,int i)
@@ -121,21 +121,21 @@ void InequalityConstraint::LineSearch_i(const Vector& x0,const Vector& dx,Real& 
   case ConvergenceX:
     if(g(uroot) < Zero) {
       if(FuzzyZero(uroot)) { u=0; return; }
-      LOG4CXX_INFO(logger,"At constraint "<<Label(i)<<", ");
-      LOG4CXX_ERROR(logger,"Error -- secant method didn't return valid u?"<<"\n");
-      LOG4CXX_INFO(logger,"u_root = "<<uroot<<", margin "<<g(uroot)<<"\n");
-      LOG4CXX_INFO(logger,"u = "<<u<<", margin "<<g(u)<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"At constraint "<<Label(i)<<", ");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error -- secant method didn't return valid u?"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"u_root = "<<uroot<<", margin "<<g(uroot)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"u = "<<u<<", margin "<<g(u)<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       Abort();
     }
     break;
   case MaxItersReached:
-    LOG4CXX_WARN(logger,"InequalityConstraint::LineSearch_i(): Warning, max iters reached... should we try some more???"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"InequalityConstraint::LineSearch_i(): Warning, max iters reached... should we try some more???"<<"\n");
     break;
   case LocalMinimum:
   case Math::Divergence:
   case ConvergenceError:
-    LOG4CXX_ERROR(logger,"Error in secant method: start value is "<<f(umin)<<" end is "<<f(u)<<" for constraint "<<Label(i)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in secant method: start value is "<<f(umin)<<" end is "<<f(u)<<" for constraint "<<Label(i)<<"\n");
     Abort();
   }
   u=uroot;
@@ -166,8 +166,8 @@ bool InequalityConstraint::Push(Vector& x,Real d)
       return true;
     }
   }
-  LOG4CXX_INFO(logger,"Push didn't converge within 1000 iters"<<"\n");
-  LOG4CXX_INFO(logger,"Resulting margin is "<<margin<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Push didn't converge within 1000 iters"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Resulting margin is "<<margin<<"\n");
   return false;
 }
 
@@ -181,9 +181,9 @@ bool InequalityConstraint::Push_i(Vector& x,int i,Real d)
   Real dtrue = p(x);
   if(res == ConvergenceF) {
     if(dtrue < d) {
-      LOG4CXX_INFO(logger,"Hmm... Root_Newton worked, but didn't give a valid result!"<<"\n");
-      LOG4CXX_INFO(logger,"Desired d="<<d<<", true d="<<dtrue<<"\n");
-      LOG4CXX_INFO(logger,"Tolerance setting "<<kPushDTolerance<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... Root_Newton worked, but didn't give a valid result!"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Desired d="<<d<<", true d="<<dtrue<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Tolerance setting "<<kPushDTolerance<<"\n");
     }
     Assert(dtrue >= d);
   }
@@ -192,12 +192,12 @@ bool InequalityConstraint::Push_i(Vector& x,int i,Real d)
   }
   else {
     if(dtrue > d) {
-      LOG4CXX_WARN(logger,"Warning: overshot the desired distance "<<d<<", got "<<dtrue<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: overshot the desired distance "<<d<<", got "<<dtrue<<"\n");
       return true;
     }
-    LOG4CXX_INFO(logger,"At constraint "<<Label(i)<<", ");
-    LOG4CXX_INFO(logger,"Unable to solve for f(x) == "<<d<<"\n");
-    LOG4CXX_INFO(logger,"Current f(x) == "<<dtrue<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"At constraint "<<Label(i)<<", ");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Unable to solve for f(x) == "<<d<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Current f(x) == "<<dtrue<<"\n");
     return false;
   }
   return true;
@@ -361,8 +361,8 @@ bool CompositeInequalityConstraint::Push(Vector& x,Real d)
     //Assert(margin == Margin(x,temp));
     /*
     if(margin < oldMargin) {
-      LOG4CXX_INFO(logger,"Margin was decreased by last push!"<<"\n");
-      LOG4CXX_INFO(logger,"From "<<oldMargin<<" to "<<margin<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Margin was decreased by last push!"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"From "<<oldMargin<<" to "<<margin<<"\n");
       return false;
     }
     */
@@ -371,9 +371,9 @@ bool CompositeInequalityConstraint::Push(Vector& x,Real d)
       marginC->PreEval(x);
       Real iMargin = marginC->Eval_i(x,minConstraint);
       if(iMargin < d-Epsilon) {
-	LOG4CXX_INFO(logger,"Group "<<marginK<<", constraint "<<Label(minConstraint)<<"\n");
-	LOG4CXX_INFO(logger,"Push didn't move constraint to distance "<<d<<"\n");
-	LOG4CXX_INFO(logger,"Value went from "<<margin<<" to "<<iMargin<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Group "<<marginK<<", constraint "<<Label(minConstraint)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Push didn't move constraint to distance "<<d<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Value went from "<<margin<<" to "<<iMargin<<"\n");
       }
       Assert(iMargin >= d-Epsilon);
     }
@@ -381,8 +381,8 @@ bool CompositeInequalityConstraint::Push(Vector& x,Real d)
       return true;
     }
   }
-  LOG4CXX_INFO(logger,"Push didn't converge within 1000 iters"<<"\n");
-  LOG4CXX_INFO(logger,"Resulting margin is "<<margin<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Push didn't converge within 1000 iters"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Resulting margin is "<<margin<<"\n");
   return false;
 }
 
@@ -404,7 +404,7 @@ int CompositeInequalityConstraint::GetConstraint(int& i) const
       i -= nd;
     }
   }
-  LOG4CXX_INFO(logger,"Shouldn't ever get here!  i="<<iorig<<" must be out of range 0->"<<NumDimensions()<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't ever get here!  i="<<iorig<<" must be out of range 0->"<<NumDimensions()<<"\n");
   AssertNotReached();
   return -1;
 }
@@ -717,13 +717,13 @@ bool LinearConstraint::Push(Vector& x, Real d)
       return true;
     }
     if(maxPush >= pushLimit) {
-      LOG4CXX_INFO(logger,"LinearConstraint::Push(): No convergence"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"LinearConstraint::Push(): No convergence"<<"\n");
       return false;
     }
     pushMultiple *= 1.01;
     pushLimit = maxPush*pushMultiple;
   }
-  LOG4CXX_INFO(logger,"LinearConstraint::PushX(): No convergence in 1000 iters"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"LinearConstraint::PushX(): No convergence in 1000 iters"<<"\n");
   return false;
 }
 

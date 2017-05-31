@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "apputils.h"
 #include "fileutils.h"
 #include <string.h>
@@ -21,7 +21,7 @@ std::string GetApplicationDataPath(const char* applicationName,const char* versi
   if(SUCCEEDED(SHGetFolderPath(NULL,CSIDL_APPDATA,NULL,0,szPath))) {
     return string(szPath)+string("\\")+string(applicationName)+versionSuffix;
   }
-    LOG4CXX_ERROR(logger,"GetApplicationDataPath: SHGetFolderPath failed? returning local folder\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"GetApplicationDataPath: SHGetFolderPath failed? returning local folder\n");
   return string(applicationName)+versionSuffix;
 }
 #else 

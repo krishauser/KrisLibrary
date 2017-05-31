@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "GaussianMixtureModel.h"
 #include "statistics.h"
 #include <math/matrix.h>
@@ -223,16 +223,16 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
     for(int q=p;q<mean.n;q++)
       if(Abs(allcov(p,q)) < structuralZeroTolerance) {
 	numStructural++; 
-	LOG4CXX_INFO(logger,"Structural zero at "<<p<<" "<<q);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Structural zero at "<<p<<" "<<q);
       }
   */
 
-  if(verbose >= 1) LOG4CXX_INFO(logger,"Training GMM with "<< m<<" examples, "<<n);
+  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Training GMM with "<< m<<" examples, "<<n);
   assert(m > 0);
   assert(n > 0);
   Real bestlikelihood, likelihood=LogLikelihood(examples);
   bestlikelihood = likelihood;
-  if(verbose >= 1) LOG4CXX_INFO(logger,"Initial likelihood: "<< likelihood);
+  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Initial likelihood: "<< likelihood);
   Matrix w(m,n),lp(m,n);
   //initialize log probabilities
   for(int i=0;i<m;i++)
@@ -242,15 +242,15 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
       else
 	lp(i,j) = -Inf;
   for(int s=0;s<maxIters;s++) {
-    if(verbose >= 1) LOG4CXX_INFO(logger,"Iteration "<< s);
+    if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Iteration "<< s);
     if((s+1) % 50 == 0) {
-      LOG4CXX_INFO(logger,"Saving progress to temp.gmm\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Saving progress to temp.gmm\n");
       ofstream out("temp.gmm");
       out<<*this<<endl;
       out.close();
     }
 
-    //if(verbose >= 1) LOG4CXX_INFO(logger,"E...\n");
+    //if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"E...\n");
     //E step - calculate expectation of predictions
     int ndropped = 0;
     w = lp;
@@ -267,7 +267,7 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
 	  wtot += w(i,j);
 	}
       }
-      //LOG4CXX_INFO(logger,"Weight for example "<<i<<": "<<wtot);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Weight for example "<<i<<": "<<wtot);
       //normalize
       if(wtot > 0.0) 
 	for(int j=0;j<n;j++) w(i,j) /= wtot;
@@ -289,8 +289,8 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
       }
     }
     if(ndropped != 0) {
-      LOG4CXX_WARN(logger,"Warning, "<<ndropped<<"/"<<m);
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning, "<<ndropped<<"/"<<m);
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
 
     Real elikelihood = 0.0;
@@ -298,10 +298,10 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
       for(int j=0;j<n;j++)
 	if(phi[j] > 0)
 	  elikelihood += w(i,j)*lp(i,j);
-    if(verbose >= 1) LOG4CXX_INFO(logger,"E step changed likelihood to "<<elikelihood);
+    if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"E step changed likelihood to "<<elikelihood);
 
   
-    //if(verbose >= 1) LOG4CXX_INFO(logger,"M...\n");
+    //if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"M...\n");
     //M step - maximize likelihood
     for(int j=0;j<n;j++) {
       if(phi[j] == 0.0) continue;
@@ -314,27 +314,27 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
 	sum_wxj.madd(examples[i],w(i,j));
       }
       if(!IsFinite(sum_wj)) {
-	LOG4CXX_ERROR(logger,"Numerical error on gaussian "<<j<<": probability "<<sum_wj);
-	LOG4CXX_INFO(logger,"phi "<<phi[j]<<std::"\n");
-	LOG4CXX_INFO(logger,"mean "<<gaussians[j].mu<<std::"\n");
-	LOG4CXX_INFO(logger,"L "<<gaussians[j].L<<std::"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Numerical error on gaussian "<<j<<": probability "<<sum_wj);
+	LOG4CXX_INFO(KrisLibrary::logger(),"phi "<<phi[j]<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"mean "<<gaussians[j].mu<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"L "<<gaussians[j].L<<"\n");
 	phi[j] = 0.0;
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	continue;
       }
-      LOG4CXX_INFO(logger,"Gaussian "<<j<<" probability changed from "<<phi[j]<<" to "<<sum_wj/m);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j<<" probability changed from "<<phi[j]<<" to "<<sum_wj/m);
       if(sum_wj == 0) {
-	LOG4CXX_INFO(logger,"Gaussian "<<j);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j);
 	phi[j] = 0.0;
 	continue;
       }
       if(j == 0) 
-	LOG4CXX_INFO(logger,"Pre: "<<gaussians[j].mu<<std::"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Pre: "<<gaussians[j].mu<<"\n");
       phi[j] = sum_wj/m;
       gaussians[j].mu.mul(sum_wxj,Inv(sum_wj));
       if(j == 0) {
-	LOG4CXX_INFO(logger,"Post: "<<gaussians[j].mu<<std::"\n");
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"Post: "<<gaussians[j].mu<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
 
       //fit mean
@@ -352,19 +352,19 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
       if(j == 0) {
 	Matrix cov;
 	gaussians[j].getCovariance(cov);
-	LOG4CXX_INFO(logger,cov<<std::"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),cov<<"\n");
       }
       gaussians[j].setCovariance(sum_wxtx);
       if(j == 0)
-	LOG4CXX_INFO(logger,sum_wxtx<<std::"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),sum_wxtx<<"\n");
       */
       Real sum_wj = Zero;
       for(int i=0;i<m;i++) sum_wj += w(i,j);
       if(sum_wj == Zero) {
-	LOG4CXX_INFO(logger,"Associations to Gaussian "<<j);
-	LOG4CXX_INFO(logger,"phi "<<phi[j]);
-	LOG4CXX_INFO(logger,gaussians[j].mu<<"\n");
-	LOG4CXX_INFO(logger,gaussians[j].L<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Associations to Gaussian "<<j);
+	LOG4CXX_INFO(KrisLibrary::logger(),"phi "<<phi[j]);
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].mu<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].L<<"\n");
 	for(int i=0;i<m;i+=10000) {
 	  Real maxlp = -Inf;
 	  int best = 0;
@@ -374,10 +374,9 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
 	      best = k;
 	    }
 	  }
-	  LOG4CXX_INFO(logger, "ll " << i << ": " << lp(i, j) << " (best " << maxlp << " in position " << best << ")\n");
-
-	}
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger(),"ll "<<i<<": "<<lp(i,j)<<" (best "<<maxlp<<" in position "<<best<<")\n");
+  }
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	gaussians[j].mu.setZero();
 	gaussians[j].L.setZero();
       }
@@ -387,7 +386,7 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
 	for(int i=0;i<m;i++) wj[i]=w(i,j)/sum_wj;
 	bool res=gaussians[j].setMaximumLikelihood(examples,wj);
 	if(!res) {
-	  LOG4CXX_ERROR(logger,"Error setting maximum likelihood for gaussian "<<j);
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Error setting maximum likelihood for gaussian "<<j);
 	}
 	if(numStructural > 0) {
 	  Matrix cov;
@@ -398,7 +397,7 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
 		cov(p,q) = 0.0;
 	  res = gaussians[j].setCovariance(cov);
 	  if(!res) {
-	    LOG4CXX_ERROR(logger,"Error setting structural covariance for gaussian "<<j);
+	    LOG4CXX_ERROR(KrisLibrary::logger(),"Error setting structural covariance for gaussian "<<j);
 	  }	  
 	}
       }
@@ -408,36 +407,37 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
       for(int i=0;i<examples[0].n;i++) {
 	if(gaussians[j].L(i,i) <= covarianceRegularizationFactor) {
 	  nzero++;
-	  //LOG4CXX_INFO(logger,sum_wxtx<<std::"\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),sum_wxtx<<"\n");
 	  //phi[j] = 0.0;
-	  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  gaussians[j].L(i,i) = covarianceRegularizationFactor;
 	  //break;
 	}
       }
       if(nzero == examples[0].n) {
-	LOG4CXX_INFO(logger,"Gaussian "<<j);
-	LOG4CXX_INFO(logger,"phi "<<phi[j]);
-	LOG4CXX_INFO(logger,gaussians[j].mu<<"\n");
-	LOG4CXX_INFO(logger,gaussians[j].L<<"\n");
-	for (int i = 0; i < m; i += 10000)
-		LOG4CXX_INFO(logger, "ll " << i << ": " << lp(i, j));
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j);
+	LOG4CXX_INFO(KrisLibrary::logger(),"phi "<<phi[j]);
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].mu<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].L<<"\n");
+	for(int i=0;i<m;i+=10000){
+	  LOG4CXX_INFO(KrisLibrary::logger(),"ll "<<i<<": "<<lp(i,j)<<"\n");	
+  }
+  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	phi[j] = 0.0;
       }
       else if(nzero > 0) {
-	LOG4CXX_INFO(logger,"Gaussian "<<j<<" became degenerate on "<<nzero);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j<<" became degenerate on "<<nzero);
       }
       for(int i=0;i<examples[0].n;i++) {
 	bool stop=false;
 	for(int k=0;k<examples[0].n;k++) {
 	  if(!IsFinite(gaussians[j].L(i,k))) {
-	    LOG4CXX_INFO(logger,"Gaussian "<<j);
-	    //LOG4CXX_INFO(logger,sum_wxtx<<std::"\n");
-	    LOG4CXX_INFO(logger,gaussians[j].L<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j);
+	    //LOG4CXX_INFO(KrisLibrary::logger(),sum_wxtx<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].L<<"\n");
 	    phi[j] = 0.0;
 	    stop=true;
-	    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	    break;
 	  }
 	}
@@ -461,13 +461,13 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
 	}
       SVDecomposition<Real> svd;
       if(!svd.set(gaussians[split].L)) {
-	LOG4CXX_INFO(logger,"SVD of gaussian "<<split);
+	LOG4CXX_INFO(KrisLibrary::logger(),"SVD of gaussian "<<split);
 	continue;
       }
       splits++;
       int bestDir;
       Real maxStd = svd.W.maxAbsElement(&bestDir);
-      LOG4CXX_INFO(logger,"Splitting "<<j<<" off of gaussian "<<split<<", p "<<phi[split]<<" stddev "<<maxStd);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Splitting "<<j<<" off of gaussian "<<split<<", p "<<phi[split]<<" stddev "<<maxStd);
       gaussians[j].mu = gaussians[split].mu;
       Vector d;
       svd.U.getColRef(bestDir,d);
@@ -503,7 +503,7 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
       phi[j] = maxphi*0.5;
       phi[split] = maxphi*0.5;
     }
-    if(splits > 0) if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    if(splits > 0) if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
     //recompute log probabilities
     for(int i=0;i<m;i++)
@@ -520,13 +520,13 @@ bool GaussianMixtureModel::TrainEM(const std::vector<Vector>& examples,Real& tol
       for(int j=0;j<n;j++)
 	if(phi[j] > 0)
 	  likelihood += w(i,j)*lp(i,j);
-    if(verbose >= 1) LOG4CXX_INFO(logger,"New likelihood: "<<likelihood);
+    if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"New likelihood: "<<likelihood);
     if(Abs(likelihood - oldlikelihood) < tol) {
       tol = likelihood;
       return true;
     }
     if(likelihood < bestlikelihood*(1.0 - 0.05*Sign(bestlikelihood))) {
-      LOG4CXX_WARN(logger,"Warning: EM algorithm is diverging?"<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: EM algorithm is diverging?"<<"\n");
       //return true;
     }
     bestlikelihood = Max(likelihood,bestlikelihood);
@@ -541,12 +541,12 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
   int n=(int)gaussians.size();
   int d=NumDims();
 
-  if(verbose >= 1) LOG4CXX_INFO(logger,"Training diagonal GMM with "<< m<<" examples, "<<n);
+  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Training diagonal GMM with "<< m<<" examples, "<<n);
   assert(m > 0);
   assert(n > 0);
   Real bestlikelihood, likelihood=LogLikelihood(examples);
   bestlikelihood = likelihood;
-  if(verbose >= 1) LOG4CXX_INFO(logger,"Initial likelihood: "<< likelihood);
+  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Initial likelihood: "<< likelihood);
   Matrix w(m,n),lp(m,n);
   //initialize log probabilities
   for(int i=0;i<m;i++)
@@ -556,9 +556,9 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
       else
 	lp(i,j) = -Inf;
   for(int s=0;s<maxIters;s++) {
-    if(verbose >= 1) LOG4CXX_INFO(logger,"Iteration "<< s);
+    if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Iteration "<< s);
 
-    //if(verbose >= 1) LOG4CXX_INFO(logger,"E...\n");
+    //if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"E...\n");
     //E step - calculate expectation of predictions
     int ndropped = 0;
     w = lp;
@@ -575,7 +575,7 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
 	  wtot += w(i,j);
 	}
       }
-      //LOG4CXX_INFO(logger,"Weight for example "<<i<<": "<<wtot);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Weight for example "<<i<<": "<<wtot);
       //normalize
       if(wtot > 0.0) 
 	for(int j=0;j<n;j++) w(i,j) /= wtot;
@@ -597,8 +597,8 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
       }
     }
     if(ndropped != 0) {
-      LOG4CXX_WARN(logger,"Warning, "<<ndropped<<"/"<<m);
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning, "<<ndropped<<"/"<<m);
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
 
     Real elikelihood = 0.0;
@@ -606,20 +606,20 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
       for(int j=0;j<n;j++)
 	if(phi[j] > 0)
 	  elikelihood += w(i,j)*lp(i,j);
-    if(verbose >= 1) LOG4CXX_INFO(logger,"E step changed likelihood to "<<elikelihood);
+    if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"E step changed likelihood to "<<elikelihood);
 
   
-    //if(verbose >= 1) LOG4CXX_INFO(logger,"M...\n");
+    //if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"M...\n");
     //M step - maximize likelihood
     for(int j=0;j<n;j++) {
       if(phi[j] == 0.0) continue;
       Real sum_wj = Zero;
       for(int i=0;i<m;i++) sum_wj += w(i,j);
       if(sum_wj == Zero) {
-	LOG4CXX_INFO(logger,"Associations to Gaussian "<<j);
-	LOG4CXX_INFO(logger,"phi "<<phi[j]);
-	LOG4CXX_INFO(logger,gaussians[j].mu<<"\n");
-	LOG4CXX_INFO(logger,gaussians[j].L<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Associations to Gaussian "<<j);
+	LOG4CXX_INFO(KrisLibrary::logger(),"phi "<<phi[j]);
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].mu<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].L<<"\n");
 	for(int i=0;i<m;i+=10000) {
 	  Real maxlp = -Inf;
 	  int best = 0;
@@ -629,9 +629,9 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
 	      best = k;
 	    }
 	  }
-	  LOG4CXX_INFO(logger, "ll " << i << ": " << lp(i, j) << " (best " << maxlp << " in position " << best << "\n");
-	}
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger(),"ll "<<i<<": "<<lp(i,j)<<" (best "<<maxlp<<" in position "<<best<<")\n");
+  }
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	gaussians[j].mu.setZero();
 	gaussians[j].L.setZero();
       }
@@ -647,36 +647,37 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
       for(int i=0;i<examples[0].n;i++) {
 	if(gaussians[j].L(i,i) <= 1e-3) {
 	  nzero++;
-	  //LOG4CXX_INFO(logger,sum_wxtx<<std::"\n");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),sum_wxtx<<"\n");
 	  //phi[j] = 0.0;
-	  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  gaussians[j].L(i,i) = 1e-3;
 	  //break;
 	}
       }
       if(nzero == examples[0].n) {
-	LOG4CXX_INFO(logger,"Gaussian "<<j);
-	LOG4CXX_INFO(logger,"phi "<<phi[j]);
-	LOG4CXX_INFO(logger,gaussians[j].mu<<"\n");
-	LOG4CXX_INFO(logger,gaussians[j].L<<"\n");
-	for (int i = 0; i < m; i += 10000)
-		LOG4CXX_INFO(logger, "ll " << i << ": " << lp(i, j) << "\n");
-	if (logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j);
+	LOG4CXX_INFO(KrisLibrary::logger(),"phi "<<phi[j]);
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].mu<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].L<<"\n");
+	for(int i=0;i<m;i+=10000){
+	  LOG4CXX_INFO(KrisLibrary::logger(),"ll "<<i<<": "<<lp(i,j));
+  }
+  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	phi[j] = 0.0;
       }
       else if(nzero > 0) {
-	LOG4CXX_INFO(logger,"Gaussian "<<j<<" became degenerate on "<<nzero);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j<<" became degenerate on "<<nzero);
       }
       for(int i=0;i<examples[0].n;i++) {
 	bool stop=false;
 	for(int k=0;k<examples[0].n;k++) {
 	  if(!IsFinite(gaussians[j].L(i,k))) {
-	    LOG4CXX_INFO(logger,"Gaussian "<<j);
-	    //LOG4CXX_INFO(logger,sum_wxtx<<std::"\n");
-	    LOG4CXX_INFO(logger,gaussians[j].L<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian "<<j);
+	    //LOG4CXX_INFO(KrisLibrary::logger(),sum_wxtx<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),gaussians[j].L<<"\n");
 	    phi[j] = 0.0;
 	    stop=true;
-	    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	    break;
 	  }
 	}
@@ -700,13 +701,13 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
 	}
       SVDecomposition<Real> svd;
       if(!svd.set(gaussians[split].L)) {
-	LOG4CXX_INFO(logger,"SVD of gaussian "<<split);
+	LOG4CXX_INFO(KrisLibrary::logger(),"SVD of gaussian "<<split);
 	continue;
       }
       splits++;
       int bestDir;
       Real maxStd = svd.W.maxAbsElement(&bestDir);
-      LOG4CXX_INFO(logger,"Splitting "<<j<<" off of gaussian "<<split<<", p "<<phi[split]<<" stddev "<<maxStd);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Splitting "<<j<<" off of gaussian "<<split<<", p "<<phi[split]<<" stddev "<<maxStd);
       gaussians[j].mu = gaussians[split].mu;
       Vector d;
       svd.U.getColRef(bestDir,d);
@@ -736,7 +737,7 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
       phi[j] = maxphi*0.5;
       phi[split] = maxphi*0.5;
     }
-    if(splits > 0) if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    if(splits > 0) if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
     //recompute log probabilities
     for(int i=0;i<m;i++)
@@ -753,13 +754,13 @@ bool GaussianMixtureModel::TrainDiagonalEM(const std::vector<Vector>& examples,R
       for(int j=0;j<n;j++)
 	if(phi[j] > 0)
 	  likelihood += w(i,j)*lp(i,j);
-    if(verbose >= 1) LOG4CXX_INFO(logger,"New likelihood: "<<likelihood);
+    if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"New likelihood: "<<likelihood);
     if(Abs(likelihood - oldlikelihood) < tol) {
       tol = likelihood;
       return true;
     }
     if(likelihood < bestlikelihood*(1.0 - 0.05*Sign(bestlikelihood))) {
-      LOG4CXX_WARN(logger,"Warning: EM algorithm is diverging?"<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: EM algorithm is diverging?"<<"\n");
       //return true;
     }
     bestlikelihood = Max(likelihood,bestlikelihood);
@@ -892,7 +893,7 @@ bool GaussianMixtureModelRaw::Get(GaussianMixtureModel& m) const
   for(size_t i=0;i<m.gaussians.size();i++) {
     m.gaussians[i].mu = means[i];
     if(!m.gaussians[i].setCovariance(covariances[i],1)) {
-      LOG4CXX_INFO(logger,"Failed to decompose covariance "<<i);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failed to decompose covariance "<<i);
       res=false;
     }
   }
@@ -1095,11 +1096,11 @@ void GaussianRegression::GetY(const Vector& x,Gaussian<Real>& y) const
   GetY(x,mean,cov);
   y.setMean(mean);
   bool res=y.setCovariance(cov,0);
-  if(!res) LOG4CXX_INFO(logger,"GaussianRegression: failed to set covariance\n");
+  if(!res) LOG4CXX_INFO(KrisLibrary::logger(),"GaussianRegression: failed to set covariance\n");
   for(int j=0;j<y.L.m;j++)
     if(y.L(j,j) <= 0.0) {
-		LOG4CXX_INFO(logger, "GaussianRegression: zero entry on diagonal? " << y.L(j, j) << "\n");
-	}
+      LOG4CXX_INFO(KrisLibrary::logger(),"GaussianRegression: zero entry on diagonal? "<<y.L(j,j)<<"\n");
+    }
 }
 
 void GaussianRegression::GetY(const Vector& xmean2,const Matrix& xcov,Vector& ymean,Matrix& ycov) const
@@ -1115,10 +1116,10 @@ void GaussianRegression::GetY(const Vector& xmean2,const Matrix& xcov,Vector& ym
   //TEST: sanity check
   temp.setTranspose(temp2);
   if(!temp.isEqual(temp2,1e-5*(1.0+temp2.maxAbsElement()))) {
-    LOG4CXX_INFO(logger,"GetY: result is not symmetric!\n");
-    LOG4CXX_INFO(logger,temp<<"\n");
-    LOG4CXX_INFO(logger,xcov<<"\n");
-    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"GetY: result is not symmetric!\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),temp<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),xcov<<"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   */
   ycov += temp2;
@@ -1556,15 +1557,15 @@ void GaussianMixtureModelRaw::Cluster(const GaussianMixtureModel& gmm_orig,int n
     }
   }
   /*
-    LOG4CXX_INFO(logger,"assignments:");
+    LOG4CXX_INFO(KrisLibrary::logger(),"assignments:");
     for(size_t i=0;i<p.size();i++)
-      LOG4CXX_INFO(logger,""<<assignments[i]);
-    LOG4CXX_INFO(logger,"\n");
-    LOG4CXX_INFO(logger,"probabilities:");
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<assignments[i]);
+    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"probabilities:");
     for(size_t i=0;i<p.size();i++) {
       for(size_t j=0;j<p[i].size();j++)
-	LOG4CXX_INFO(logger,""<<p[i][j]);
-      LOG4CXX_INFO(logger,"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<p[i][j]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"\n");
     }
   */
 
@@ -1592,16 +1593,16 @@ void GaussianMixtureModelRaw::Cluster(const GaussianMixtureModel& gmm_orig,int n
     gmm_orig.gaussians[i].getCovariance(cov);
     /*
     if(!IsFinite(cov)) {
-      LOG4CXX_INFO(logger,"Cluster: original covariance "<<i<<" became non-finite"<<"\n");
-      LOG4CXX_INFO(logger,cov<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Cluster: original covariance "<<i<<" became non-finite"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),cov<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }*/
     covariances[j].madd(cov,gmm_orig.phi[i]);
     /*
     if(!IsFinite(covariances[j])) {
-      LOG4CXX_INFO(logger,"Cluster: covariance "<<j<<" became non-finite after add"<<"\n");
-      LOG4CXX_INFO(logger,cov<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Cluster: covariance "<<j<<" became non-finite after add"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),cov<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     */
     for(int m=0;m<cov.m;m++)
@@ -1609,10 +1610,10 @@ void GaussianMixtureModelRaw::Cluster(const GaussianMixtureModel& gmm_orig,int n
 	covariances[j](m,n) += diff[m]*diff[n]*gmm_orig.phi[i];
     /*
     if(!IsFinite(covariances[j])) {
-      LOG4CXX_INFO(logger,"Cluster: covariance "<<j<<" became non-finite after outer product"<<"\n");
-      LOG4CXX_INFO(logger,diff<<"\n");
-      LOG4CXX_INFO(logger,covariances[j]<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Cluster: covariance "<<j<<" became non-finite after outer product"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),diff<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),covariances[j]<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     */
   }
@@ -1623,10 +1624,10 @@ void GaussianMixtureModelRaw::Cluster(const GaussianMixtureModel& gmm_orig,int n
       covariances[j].setIdentity();
     /*
     if(!IsFinite(covariances[j])) {
-      LOG4CXX_INFO(logger,"Cluster: covariance "<<j<<" became non-finite"<<"\n");
-      LOG4CXX_INFO(logger,covariances[j]<<"\n");
-      LOG4CXX_INFO(logger,phi[j]<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Cluster: covariance "<<j<<" became non-finite"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),covariances[j]<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),phi[j]<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     */
   }
@@ -1635,7 +1636,7 @@ void GaussianMixtureModelRaw::Cluster(const GaussianMixtureModel& gmm_orig,int n
 
   for(size_t i=0;i<phi.size();i++)
     if(phi[i] == 0.0) {
-      //LOG4CXX_INFO(logger,"Dropping gaussian "<<i);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Dropping gaussian "<<i);
       phi[i] = phi.back();
       swap(means[i],means.back());
       swap(covariances[i],covariances.back());

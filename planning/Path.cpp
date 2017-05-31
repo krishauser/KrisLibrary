@@ -1,7 +1,8 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Path.h"
 #include <math/random.h>
+#include <Timer.h>
 #include <errors.h>
 
 MilestonePath::MilestonePath()
@@ -43,7 +44,7 @@ bool MilestonePath::IsFeasible()
   CSpace* space=Space();
   if(!space->IsFeasible(edges[0]->Start())) return false;
   for(size_t i=0;i<edges.size();i++) {
-    if(!space->IsFeasible(edges[i]->Goal())) return false;
+    if(!space->IsFeasible(edges[i]->End())) return false;
   }
   //then check edges
   for(size_t i=0;i<edges.size();i++) 
@@ -51,10 +52,10 @@ bool MilestonePath::IsFeasible()
   return true;
 }
 
-int MilestonePath::Eval(Real t, Config& c) const
+int MilestonePath::Eval2(Real t, Config& c) const
 {
   if(t <= Zero) { c = edges.front()->Start(); return 0; }
-  else if(t >= One) { c = edges.back()->Goal(); return edges.size()-1; }
+  else if(t >= One) { c = edges.back()->End(); return edges.size()-1; }
   else {
     Real u=t*(Real)edges.size();
     Real u0=Floor(u);
@@ -97,21 +98,24 @@ int MilestonePath::Reduce(int numIters)
     i1 = rand()%edges.size();
     i2 = rand()%edges.size();
     if(i2 < i1) swap(i1,i2);
-    else if(i1 == i2) continue;  //if they're on the same segment, forget it
+    else if(i1 == i2) {
+      continue;  //if they're on the same segment, forget it
+    }
 
     Real t1=Rand();
     Real t2=Rand();
     edges[i1]->Eval(t1,x1);
     edges[i2]->Eval(t2,x2);
     const Config& a=edges[i1]->Start();
-    const Config& b=edges[i2]->Goal();
+    const Config& b=edges[i2]->End();
     EdgePlanner* e_x1x2=space->LocalPlanner(x1,x2);
+    Timer timer;
     if(e_x1x2->IsVisible()) {
       EdgePlanner* e_ax1=space->LocalPlanner(a,x1);
       EdgePlanner* e_x2b=space->LocalPlanner(x2,b);
       if(e_ax1->IsVisible() && e_x2b->IsVisible()) {
 	numsplices++;
-	//LOG4CXX_INFO(logger,"Visible subsegment "<<i1<<"->"<<i2<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Visible subsegment "<<i1<<"->"<<i2<<"\n");
 	//replace edges a->a',...,b'->b with a->x1,x1->x2,x2->b
 	edges.erase(edges.begin()+i1,edges.begin()+i2+1);
 
@@ -143,9 +147,9 @@ int MilestonePath::DiscretizeEdge(int i,Real h)
 {
   EdgePlanner* e=edges[i];
   const Config& a=e->Start();
-  const Config& b=e->Goal();
+  const Config& b=e->End();
   CSpace* space=e->Space();
-  int numDivs = (int)Ceil(space->Distance(a,b)/h);
+  int numDivs = (int)Ceil(e->Length()/h);
   //don't do anything...
   if(numDivs <= 1) return 1;
 
@@ -159,11 +163,11 @@ int MilestonePath::DiscretizeEdge(int i,Real h)
     else e->Eval(u,x1);
     if(k+1==numDivs) x2=b;
     else e->Eval(u+du,x2);
-    EdgePlanner* e2 = space->LocalPlanner(x1,x2);
+    EdgePlanner* e2 = space->PathChecker(x1,x2);
     if(e2->IsVisible()) 
       replacement.edges.push_back(e2);
     else {
-      LOG4CXX_ERROR(logger,"Warning, reparameterized edge "<<i<<" is infeasible"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, reparameterized edge "<<i<<" is infeasible"<<"\n");
       replacement.edges.push_back(e2);
     }
     u += du;
@@ -185,11 +189,11 @@ void MilestonePath::DiscretizeEdge(int i,const vector<Real>& u)
   x1 = e->Start();
   for(size_t k=1;k<u.size();k++) {
     e->Eval(u[k],x2);
-    EdgePlanner* e2 = space->LocalPlanner(x1,x2);
+    EdgePlanner* e2 = space->PathChecker(x1,x2);
     if(e2->IsVisible()) 
       replacement.edges.push_back(e2);
     else {
-      LOG4CXX_ERROR(logger,"Warning, reparameterized edge "<<i<<" is infeasible"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, reparameterized edge "<<i<<" is infeasible"<<"\n");
       replacement.edges.push_back(e2);
     }
     x1 = x2;
@@ -204,7 +208,7 @@ bool MilestonePath::IsValid()
   for(size_t i=0;i<edges.size();i++) {
     if(Space(i) != space) return false;
     if(i!=0) 
-      if(edges[i]->Start() != edges[i-1]->Goal()) return false;
+      if(edges[i]->Start() != edges[i-1]->End()) return false;
   }
   return true;
 }
@@ -213,7 +217,7 @@ Real MilestonePath::Length() const
 {
   Real len=0;
   for(size_t i=0;i<edges.size();i++)
-    len += Space(i)->Distance(edges[i]->Start(),edges[i]->Goal());
+    len += edges[i]->Length();
   return len;
 }
 
@@ -221,7 +225,7 @@ const Config& MilestonePath::GetMilestone(int i) const
 {
   Assert(i>=0 && i<=(int)edges.size());
   if(i==(int)edges.size())
-    return edges.back()->Goal();
+    return edges.back()->End();
   return edges[i]->Start();
 }
 
@@ -229,7 +233,7 @@ void MilestonePath::SetMilestone(int i,const Config& x)
 {
   if(i == 0) {
     //first milestone
-    const Config& b=edges[i]->Goal();
+    const Config& b=edges[i]->End();
     edges[i] = Space(i)->LocalPlanner(x,b);
   }
   else if(i==(int)edges.size()) {
@@ -240,7 +244,7 @@ void MilestonePath::SetMilestone(int i,const Config& x)
   }
   else {
     const Config& a=edges[i-1]->Start();
-    const Config& b=edges[i]->Goal();
+    const Config& b=edges[i]->End();
     edges[i-1] = Space(i-1)->LocalPlanner(a,x);
     edges[i] = Space(i)->LocalPlanner(x,b);
   }
@@ -250,7 +254,7 @@ bool MilestonePath::CheckSetMilestone(int i,const Config& x)
 {
   if(i == 0) {
     //first milestone
-    const Config& b=edges[i]->Goal();
+    const Config& b=edges[i]->End();
     EdgePlanner* e2=IsVisible(Space(i),x,b);
     if(!e2) return false;
     edges[i] = e2;
@@ -267,7 +271,7 @@ bool MilestonePath::CheckSetMilestone(int i,const Config& x)
   }
   else {
     const Config& a=edges[i-1]->Start();
-    const Config& b=edges[i]->Goal();
+    const Config& b=edges[i]->End();
     EdgePlanner* e1=IsVisible(Space(i-1),a,x);
     if(!e1) return false;
     EdgePlanner* e2=IsVisible(Space(i),x,b);
@@ -313,6 +317,6 @@ bool MilestonePath::Save(ostream& out)
   out<<edges.size()+1<<endl;
   for(size_t i=0;i<edges.size();i++)
     out<<edges[i]->Start()<<endl;
-  out<<edges.back()->Goal()<<endl;
+  out<<edges.back()->End()<<endl;
   return true;
 }

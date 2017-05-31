@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "IK.h"
 #include "Rotation.h"
 #include "Geometry.h"
@@ -43,7 +43,7 @@ void IKGoal::SetFixedRotation(const Matrix3& R)
   rotConstraint = RotFixed;
   MomentRotation mR;
   if(!mR.setMatrix(R)) {
-        LOG4CXX_ERROR(logger,"IKGoal::SetFixedRotation: matrix does not appear to be a rotation?\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"IKGoal::SetFixedRotation: matrix does not appear to be a rotation?\n");
     endRotation.setZero();
     rotConstraint = RotNone;
   }
@@ -105,23 +105,23 @@ void IKGoal::SetFromPoints(const vector<Vector3>& loc,const vector<Vector3>& wor
       SetFixedPosition(-(transpose(Twor.R)*Twor.t));
       SetFixedRotation(R);
 	  /*
-	  LOG4CXX_ERROR(logger, "Fitting error " << res << "\n");
-      LOG4CXX_INFO(logger,"Local point rot to common coords: "<<Tloc.R<<"\n");
-	  LOG4CXX_INFO(logger, "Local point translation to common coords: " << Tloc.t << "\n");
-      LOG4CXX_INFO(logger,"World point rot to common coords: "<<Twor.R<<"\n");
-	  LOG4CXX_INFO(logger, "World point translation to common coords: " << Twor.t << "\n");
-	  LOG4CXX_INFO(logger, "\n");
-	  LOG4CXX_INFO(logger, "Points in common coordinates:" << "\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(), "Fitting error " << res << "\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Local point rot to common coords: "<<Tloc.R<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "Local point translation to common coords: " << Tloc.t << "\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"World point rot to common coords: "<<Twor.R<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "World point translation to common coords: " << Twor.t << "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "Points in common coordinates:" << "\n");
 	  for (size_t i = 0; i<loc.size(); i++) 
-		  LOG4CXX_ERROR(logger, Tloc*loc[i] << " vs " << Twor*wor[i] << " error "<< (Tloc*loc[i]).distance(Twor*wor[i]) << "\n");
-	  LOG4CXX_INFO(logger, "\n");
-	  LOG4CXX_INFO(logger, "Rotation: " << R << "\n");
-	  LOG4CXX_INFO(logger, "local position: " << localPosition << "\n");
-	  LOG4CXX_INFO(logger, "world position: " << endPosition << "\n");
-	  LOG4CXX_INFO(logger, "\n");
-	  LOG4CXX_INFO(logger, "Mapping: " << "\n");
+		  LOG4CXX_ERROR(KrisLibrary::logger(), Tloc*loc[i] << " vs " << Twor*wor[i] << " error "<< (Tloc*loc[i]).distance(Twor*wor[i]) << "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "Rotation: " << R << "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "local position: " << localPosition << "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "world position: " << endPosition << "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(), "Mapping: " << "\n");
       for(size_t i=0;i<loc.size();i++) {
-	LOG4CXX_INFO(logger,loc[i]<<" -> "<< R*(loc[i]-localPosition) + endPosition <<" = "<<wor[i]<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),loc[i]<<" -> "<< R*(loc[i]-localPosition) + endPosition <<" = "<<wor[i]<<"\n");
       }
 	  */
       if(Abs(cov.z) < tol) {
@@ -224,7 +224,18 @@ void IKGoal::GetClosestGoalTransform(const RigidTransform& T0,RigidTransform& T)
     T.t = T0.t;
 }
 
-
+void IKGoal::MatchGoalTransform(const RigidTransform& Trel)
+{
+  Trel.mul(localPosition,endPosition);
+  if(rotConstraint == RotFixed) {
+    MomentRotation m;
+    m.setMatrix(Trel.R);
+    endRotation = m;
+  }
+  else if(rotConstraint == RotAxis) {
+    Trel.R.mul(localAxis,endRotation);
+  }
+}
 
 
 
@@ -241,7 +252,7 @@ void IKGoal::Transform(const RigidTransform& T)
     R = T.R*R;
     Assert(IsFinite(R));
     if(!m.setMatrix(R)) {
-            LOG4CXX_ERROR(logger,"IKGoal::Transform: matrix does not appear to be a rotation?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"IKGoal::Transform: matrix does not appear to be a rotation?\n");
       endRotation.setZero();
     }
     else
@@ -262,7 +273,7 @@ void IKGoal::TransformLocal(const RigidTransform& T)
     R.mulTransposeA(T.R,R);
     Assert(IsFinite(R));
     if(!m.setMatrix(R)) {
-            LOG4CXX_ERROR(logger,"IKGoal::TransformLocal: matrix does not appear to be a rotation?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"IKGoal::TransformLocal: matrix does not appear to be a rotation?\n");
       endRotation.setZero();
     }
     else
@@ -379,7 +390,7 @@ void IKGoal::GetError(const RigidTransform& Trel,Real poserr[3],Real orierr[3]) 
       orierr[2]=em.z;
     }
     else {
-            LOG4CXX_ERROR(logger,"IKGoal::GetError: matrix does not appear to be a rotation?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"IKGoal::GetError: matrix does not appear to be a rotation?\n");
       orierr[0]=orierr[1]=orierr[2] = Inf;
     }
   }
@@ -419,7 +430,7 @@ istream& operator >> (istream& in,IKGoal& data)
     in >> data.localPosition >> data.endPosition;
   }
   else {
-        LOG4CXX_ERROR(logger,"IKGoal: invalid position type character "<<ptype);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"IKGoal: invalid position type character "<<ptype);
     in.setstate(ios::badbit);
     return in;
   }
@@ -440,7 +451,7 @@ istream& operator >> (istream& in,IKGoal& data)
     in >> data.endRotation;
   }
   else {
-        LOG4CXX_ERROR(logger,"IKGoal: invalid rotation type character "<<rtype);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"IKGoal: invalid rotation type character "<<rtype);
     in.setstate(ios::badbit);
     return in;
   }

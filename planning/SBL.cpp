@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "SBL.h"
 #include <math/random.h>
 using namespace std;
@@ -29,10 +29,10 @@ void SBLPlanner::Init(const Config& qStart,const Config& qGoal)
   tGoal = new SBLTreeWithIndex(space);
   tStart->Init(qStart);
   tGoal->Init(qGoal);
-  //LOG4CXX_INFO(logger,"SBL: Distance "<<space->Distance(qStart,qGoal)<<"\n");
-  //LOG4CXX_INFO(logger,"SBL: Distance "<<space->Distance(*tStart,*tGoal)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBL: Distance "<<space->Distance(qStart,qGoal)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBL: Distance "<<space->Distance(*tStart,*tGoal)<<"\n");
   if(CheckPath(tStart->root,tGoal->root)) {
-    //LOG4CXX_INFO(logger,"SBLPlanner::Init(): Start and goal connected!"<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPlanner::Init(): Start and goal connected!"<<"\n");
   }
 }
 
@@ -70,7 +70,7 @@ void CreateMilestonePath(const list<SBLTree::EdgeInfo>& in,MilestonePath& out)
     if(i->reversed) out.edges[index] = i->e->ReverseCopy();
     else out.edges[index] = i->e->Copy();
     Assert(out.edges[index]->Start() == *i->s);
-    Assert(out.edges[index]->Goal() == *i->t);
+    Assert(out.edges[index]->End() == *i->t);
     index++;
   }
 }
@@ -79,7 +79,7 @@ void SBLPlanner::CreatePath(MilestonePath& path) const
 {
   CreateMilestonePath(outputPath,path);
   Assert(path.edges.front()->Start() == *tStart->root);
-  Assert(path.edges.back()->Goal() == *tGoal->root);
+  Assert(path.edges.back()->End() == *tGoal->root);
 }
 
 SBLPlannerWithGrid::SBLPlannerWithGrid(CSpace* s)
@@ -98,16 +98,12 @@ void SBLPlannerWithGrid::Init(const Config& qStart,const Config& qGoal)
   s->A.h.resize(qStart.n,gridDivision);
   g->A.h.resize(qStart.n,gridDivision);
   //this is kinda stupid, should figure out a cleaner way to do this
-  if(qStart.n < (int)s->A.subsetToFull.mapping.size()) {
-    s->A.subsetToFull.mapping.resize(qStart.n);
-    g->A.subsetToFull.mapping.resize(qStart.n);
-    s->A.temp.resize(qStart.n);
-    g->A.temp.resize(qStart.n);
-    s->A.subdiv.hinv.n = qStart.n;
-    g->A.subdiv.hinv.n = qStart.n;
+  if(qStart.n < (int)s->A.mappedDims.size()) {
+    s->A.Randomize(qStart.n,qStart.n,gridDivision);
+    g->A.Randomize(qStart.n,qStart.n,gridDivision);
   }
   if(CheckPath(s->root,g->root)) {
-    //LOG4CXX_INFO(logger,"SBLPlanner::Init(): Start and goal connected!"<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPlanner::Init(): Start and goal connected!"<<"\n");
   }
 }
 
@@ -185,17 +181,17 @@ pair<int,int> SBLPRT::Expand()
 
 int SBLPRT::ExpandTree(int t)
 {
-  //LOG4CXX_INFO(logger,"SBLPRT: Extend\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPRT: Extend\n");
   Node* n=roadmap.nodes[t]->Extend(maxExtendDistance,maxExtendIters);
   if(!n) {
-    //LOG4CXX_INFO(logger,"SBLPRT: No extend...\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPRT: No extend...\n");
     return -1;
   }
-  //LOG4CXX_INFO(logger,"SBLPRT: PickConnection\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPRT: PickConnection\n");
   pair<int,Node*> con=PickConnection(t,n);
   int tg = con.first;
   Node* ng = con.second;
-  if(tg < 0 && ng == NULL) { LOG4CXX_ERROR(logger,"Warning, picked a nonexistent connection"<<"\n"); return -1; }
+  if(tg < 0 && ng == NULL) { LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, picked a nonexistent connection"<<"\n"); return -1; }
 
   MilestonePath* p=roadmap.FindEdge(t,tg);
   Assert(p != NULL);
@@ -203,12 +199,12 @@ int SBLPRT::ExpandTree(int t)
   
   list<EdgeInfo> outputPath;
   if(SBLTree::CheckPath(roadmap.nodes[t],n,roadmap.nodes[tg],ng,outputPath)) {
-    //LOG4CXX_INFO(logger,"Connecting nodes "<<t<<" to "<<tg<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Connecting nodes "<<t<<" to "<<tg<<"\n");
     CreateMilestonePath(outputPath,*p);
     ccs.AddEdge(t,tg);
     return tg;
   }
-  //LOG4CXX_INFO(logger,"SBLPRT: No connect...\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPRT: No connect...\n");
   return -1;
 }
 
@@ -285,7 +281,7 @@ void SBLPRT::CreatePath(int i,int j,MilestonePath& path)
   roadmap.NewTraversal();
   roadmap._BFS(i,callback);
   if(!callback.found) {
-    LOG4CXX_ERROR(logger,"SBLPRT::CreatePath: Warning, a path doesn't exist between nodes "<<i<<" and "<<j<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SBLPRT::CreatePath: Warning, a path doesn't exist between nodes "<<i<<" and "<<j<<"\n");
     return;
   }
 
@@ -312,19 +308,19 @@ void SBLPRT::CreatePath(int i,int j,MilestonePath& path)
     Assert(!subpath.edges.empty());
     //forward path or backward path?
     if(subpath.edges.front()->Start() == *roadmap.nodes[s]->root) {
-      Assert(subpath.edges.back()->Goal() == *roadmap.nodes[g]->root);
+      Assert(subpath.edges.back()->End() == *roadmap.nodes[g]->root);
       //forward path
       path.Concat(subpath);
-            if(!path.IsValid()) LOG4CXX_ERROR(logger,"SBLPRT::CreatePath: Path invalidated on "<<s<<" "<<g);
+            if(!path.IsValid()) LOG4CXX_ERROR(KrisLibrary::logger(),"SBLPRT::CreatePath: Path invalidated on "<<s<<" "<<g);
     }
     else {
       Assert(subpath.edges.front()->Start() == *roadmap.nodes[g]->root);
-      Assert(subpath.edges.back()->Goal() == *roadmap.nodes[s]->root);
+      Assert(subpath.edges.back()->End() == *roadmap.nodes[s]->root);
       //backward path
       for(int k=(int)subpath.edges.size()-1;k>=0;k--) {
 	path.edges.push_back(subpath.edges[k]->ReverseCopy());
       }
-            if(!path.IsValid()) LOG4CXX_ERROR(logger,"SBLPRT::CreatePath: Path invalidated on backwards "<<s<<" "<<g);
+            if(!path.IsValid()) LOG4CXX_ERROR(KrisLibrary::logger(),"SBLPRT::CreatePath: Path invalidated on backwards "<<s<<" "<<g);
     }
   }
   Assert(path.IsValid());

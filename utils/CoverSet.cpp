@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "CoverSet.h"
 #include <iostream>
 #include <algorithm>
@@ -27,7 +27,7 @@ bool increment(vector<T>& counter,const T& max,const T inc=1)
   }
   Assert(carry != 0);
   if(carry >= max) {
-    LOG4CXX_ERROR(logger,"Final carry is greater than max, is the increment > max?  if so, this isn't done yet"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Final carry is greater than max, is the increment > max?  if so, this isn't done yet"<<"\n");
     Abort();
   }
   bool res=increment(counter,max,carry);
@@ -119,7 +119,7 @@ vector<bool> CalculateCoverset_BruteForce(const vector<vector<bool> >& sets)
   vector<bool> potential_values(M,false);
   for(size_t i=0;i<N;i++) {
     if(empty_set(sets[i])) {
-      LOG4CXX_ERROR(logger,"Empty set "<<i<<" given to coverset!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Empty set "<<i<<" given to coverset!"<<"\n");
       return vector<bool>();
     }
     for(size_t j=0;j<M;j++)
@@ -134,7 +134,7 @@ vector<bool> CalculateCoverset_BruteForce(const vector<vector<bool> >& sets)
   //go through 2^P combinations of subsets
   for(size_t k=1;k<=P;k++) {
     if(k > 20) {
-      LOG4CXX_ERROR(logger,"Warning: couldn't find a cover set of size less than 20, quitting"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: couldn't find a cover set of size less than 20, quitting"<<"\n");
       return vector<bool>();
     }
     //go through all subsets of size k

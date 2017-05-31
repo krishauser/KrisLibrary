@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "LeastSquares.h"
 #include "QuadraticProgram.h"
 #include <math/MatrixPrinter.h>
@@ -47,10 +47,10 @@ bool LeastSquares::Solve(Vector& x) const
     MatrixEquation eq(Aeq,beq);
     if(!eq.AllSolutions(x0,N)) {
       if(verbose >= 1)
-	LOG4CXX_ERROR(logger,"LeastSquares: Error solving for all solutions to equality constraints"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LeastSquares: Error solving for all solutions to equality constraints"<<"\n");
       if(verbose >= 2) {
-	LOG4CXX_ERROR(logger,"Press any key to continue"<<"\n");
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return false;
     }
@@ -58,22 +58,22 @@ bool LeastSquares::Solve(Vector& x) const
       Vector r;
       eq.Residual(x0,r);
       if(r.norm() > 1e-4) {
-	LOG4CXX_INFO(logger,"Residual of Aeq*x0=beq: "<<VectorPrinter(r)<<"\n");
-	LOG4CXX_INFO(logger,"Norm is "<<r.norm()<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Residual of Aeq*x0=beq: "<<VectorPrinter(r)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Norm is "<<r.norm()<<"\n");
 	if(r.norm() > 1e-2) {
-	  LOG4CXX_INFO(logger,MatrixPrinter(Aeq)<<"\n");
-	  LOG4CXX_INFO(logger,"Press any key to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(Aeq)<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  return false;
 	}
-	LOG4CXX_INFO(logger,"Press any key to continue"<<"\n");
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
     }
 
     if(verbose >= 1) {
-      LOG4CXX_INFO(logger,"Projecting problem on equality constraints"<<"\n");
-      LOG4CXX_INFO(logger,"Original dimension "<<A.n<<", nullspace dimension "<<N.n<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Projecting problem on equality constraints"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Original dimension "<<A.n<<", nullspace dimension "<<N.n<<"\n");
     }
 
     //set bnew
@@ -83,17 +83,17 @@ bool LeastSquares::Solve(Vector& x) const
     A_new.mul(A,N);
 
     if(verbose >= 2) {
-      LOG4CXX_INFO(logger,"x0: "<<VectorPrinter(x0)<<"\n");
-      LOG4CXX_INFO(logger,"N: "<<"\n"<<MatrixPrinter(N)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"x0: "<<VectorPrinter(x0)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"N: "<<"\n"<<MatrixPrinter(N)<<"\n");
     }
-    if(verbose >=1) LOG4CXX_INFO(logger,"Solving transformed problem..."<<"\n");
+    if(verbose >=1) LOG4CXX_INFO(KrisLibrary::logger(),"Solving transformed problem..."<<"\n");
       {
       MatrixEquation ls(A_new,b_new);
       if(!ls.LeastSquares(y)) {
-	LOG4CXX_ERROR(logger,"LeastSquares: Error solving transformed least squares!!!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LeastSquares: Error solving transformed least squares!!!"<<"\n");
 	if(verbose >=1) {
-	  LOG4CXX_ERROR(logger,"Press any key to continue"<<"\n");
-	  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	return false;
       }
@@ -101,22 +101,22 @@ bool LeastSquares::Solve(Vector& x) const
     x=x0;
     N.madd(y,x);
     if(verbose >= 1) {
-      LOG4CXX_INFO(logger,"Result of transformed problem: "<<VectorPrinter(y)<<"\n");
-      LOG4CXX_INFO(logger,"   in original space: "<<VectorPrinter(x)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Result of transformed problem: "<<VectorPrinter(y)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"   in original space: "<<VectorPrinter(x)<<"\n");
     }
   }
   else {
     if(Aineq.m == 0) {  //can just do regular least squares
       MatrixEquation ls(A,b);
       if(!ls.LeastSquares(x)) {
-	LOG4CXX_ERROR(logger,"Error solving for least squares!!!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error solving for least squares!!!"<<"\n");
 	return false;
       }
     }
     else {
       //form constrained quadratic program
       //min 0.5*x^t*A^t*A*x - A^t*b
-      if(Aineq.m < Aineq.n) LOG4CXX_WARN(logger,"Warning: may not find solution, unbounded domain"<<"\n");
+      if(Aineq.m < Aineq.n) LOG4CXX_WARN(KrisLibrary::logger(),"Warning: may not find solution, unbounded domain"<<"\n");
       QuadraticProgram qp;
       qp.Pobj.mulTransposeA(A,A);
       A.mulTranspose(b,qp.qobj); qp.qobj.inplaceNegative();
@@ -127,7 +127,7 @@ bool LeastSquares::Solve(Vector& x) const
     }
   }
   if(verbose >= 1) {
-    LOG4CXX_INFO(logger,"LeastSquares solved."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"LeastSquares solved."<<"\n");
   }
   return true;
 }

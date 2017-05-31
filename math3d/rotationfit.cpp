@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "rotationfit.h"
 #include "LinearAlgebra.h"
 #include <math/matrix.h>
@@ -40,7 +40,7 @@ Real RotationFit(const vector<Vector3>& a,const vector<Vector3>& b,Matrix3& R)
   Copy(C,mC);
   SVDecomposition<Real> svd;
   if(!svd.set(mC)) {
-    LOG4CXX_ERROR(logger,"RotationFit: Couldn't set svd of covariance matrix"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"RotationFit: Couldn't set svd of covariance matrix"<<"\n");
     R.setIdentity();
     return Inf;
   }
@@ -51,11 +51,11 @@ Real RotationFit(const vector<Vector3>& a,const vector<Vector3>& b,Matrix3& R)
   if(R.determinant() < 0) {  //it's a mirror
     svd.sortSVs();
     if(!FuzzyZero(svd.W(2),(Real)1e-2)) {
-      LOG4CXX_ERROR(logger,"RotationFit: Uhh... what do we do?  SVD of rotation doesn't have a zero singular value"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"RotationFit: Uhh... what do we do?  SVD of rotation doesn't have a zero singular value"<<"\n");
       /*
-      LOG4CXX_ERROR(logger,svd.W<<"\n");
-      LOG4CXX_ERROR(logger,"Press any key to continue"<<"\n");
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),svd.W<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Press any key to continue"<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       */
     }
     //negate the last column of V
@@ -217,7 +217,7 @@ Real FitFrames(const std::vector<Vector3>& a,const std::vector<Vector3>& b,
   Copy(C,mC);
   SVDecomposition<Real> svd;
   if(!svd.set(mC)) {
-    LOG4CXX_ERROR(logger,"FitFrames: Couldn't set svd of covariance matrix"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"FitFrames: Couldn't set svd of covariance matrix"<<"\n");
     Ta.R.setIdentity();
     Tb.R.setIdentity();
     return Inf;

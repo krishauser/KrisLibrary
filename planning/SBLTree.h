@@ -8,6 +8,7 @@
 #include <list>
 #include "CSpace.h"
 #include "EdgePlanner.h"
+#include "DensityEstimator.h"
 #include "Path.h"
 
 /** @ingroup MotionPlanning
@@ -68,40 +69,6 @@ class SBLTreeWithIndex : public SBLTree
 };
 
 /** @ingroup MotionPlanning
- * @brief A grid-based subdivision to be used for SBL.
- *
- * The grid operates on certain dimensions of the configuration.
- * Specifically, it picks mappedDims dimensions at random from
- * the full configuration space, and divides the space in those
- * dimensions into cells of width h.  If the mapped dimension is
- * that of index k.
- * 
- * NOTE: h must be initialized to the # of dims in the 
- * configuration space, and containing some cell width value, say 0.1.
- * @todo Do a defualt initialization of h.
- */
-class SBLSubdivision
-{
-public:
-  typedef SBLTree::Node Node;
-
-  SBLSubdivision(int mappedDims);
-  void Clear();
-  void RandomizeSubset();
-  void AddPoint(Node*);
-  void RemovePoint(Node*);
-  Node* PickPoint(const Config& x);
-  Node* PickRandom();
-
-  Vector h;
-  ArrayMapping subsetToFull;
-  Geometry::GridSubdivision subdiv;
-
-  //temporary
-  Vector temp;
-};
-
-/** @ingroup MotionPlanning
  * @brief An SBL motion planner that uses a SBLSubdivision to pick the
  * next node to expand, and nodes to connect.
  */
@@ -123,7 +90,8 @@ public:
   
   Node* FindNearby(const Config& x);
 
-  SBLSubdivision A;
+  Real gridDivision;
+  GridDensityEstimator A;
 };
 
 

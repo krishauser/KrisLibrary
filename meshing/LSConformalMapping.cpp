@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "LSConformalMapping.h"
 #include <optimization/LSQRInterface.h>
 #include <math/MatrixPrinter.h>
@@ -13,7 +13,7 @@ LSConformalMapping::LSConformalMapping(TriMeshWithTopology& _mesh,TriMeshChart& 
 bool LSConformalMapping::Calculate()
 {
   if(mesh.tris.empty()) return false;
-  LOG4CXX_INFO(logger,"LSConformalMapping: building..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"LSConformalMapping: building..."<<"\n");
   SparseMatrix Mre,Mim;
   Mre.resize(mesh.tris.size(),mesh.verts.size());
   Mim.resize(mesh.tris.size(),mesh.verts.size());
@@ -24,7 +24,7 @@ bool LSConformalMapping::Calculate()
     mesh.GetTriangle(i,tri);
     Real area = tri.area();
     if(area == Zero) {
-      LOG4CXX_ERROR(logger,"Error: degenerate triangle!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error: degenerate triangle!"<<"\n");
       return false;
     }
     Real invsqrtarea = One/Sqrt(Two*area);
@@ -102,7 +102,7 @@ bool LSConformalMapping::Calculate()
   }
   assert(k == Mre.n-npinned);
 
-  LOG4CXX_INFO(logger,"LSConformalMapping: creating A,b..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"LSConformalMapping: creating A,b..."<<"\n");
   //create the A,b matrices
   SparseMatrix A;
   Vector b;
@@ -152,24 +152,24 @@ bool LSConformalMapping::Calculate()
   }
   Vector x(2*(Mre.n-npinned));
 
-  LOG4CXX_INFO(logger,"LSConformalMapping: solving..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"LSConformalMapping: solving..."<<"\n");
   Optimization::LSQRInterface lsqr;
   //do we have any ideas for a start vector? planar projection maybe?
   bool res=lsqr.Solve(A,b);
   if(!res) {
-    LOG4CXX_ERROR(logger,"Sparse system couldn't be solved!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Sparse system couldn't be solved!"<<"\n");
     return false;
   }
   x = lsqr.x;
 
-  LOG4CXX_INFO(logger,"LSConformalMapping: done!"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"LSConformalMapping: done!"<<"\n");
 
   /*
   Matrix Adense;
   A.get(Adense);
-  LOG4CXX_INFO(logger,"A: "<<MatrixPrinter(Adense)<<"\n");
-  LOG4CXX_INFO(logger,"b: "<<VectorPrinter(b)<<"\n");
-  LOG4CXX_INFO(logger,"x: "<<VectorPrinter(x)<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"A: "<<MatrixPrinter(Adense)<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"b: "<<VectorPrinter(b)<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"x: "<<VectorPrinter(x)<<"\n");
   */
   chart.coordinates.resize(mesh.verts.size());
   for(size_t i=0;i<mesh.verts.size();i++) {

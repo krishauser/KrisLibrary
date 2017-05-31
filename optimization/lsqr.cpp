@@ -11,7 +11,7 @@
 */
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "lsqr.h"
 
 using namespace std;

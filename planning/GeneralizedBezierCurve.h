@@ -16,7 +16,7 @@
 class GeneralizedCubicBezierCurve
 {
  public:
-  GeneralizedCubicBezierCurve(CSpace* space=NULL,GeodesicManifold* manifold=NULL);
+  GeneralizedCubicBezierCurve(CSpace* space=NULL,GeodesicSpace* manifold=NULL);
   ///Evaluate the bezizer curve at point u
   void Eval(Real u,Config& x) const;
   ///Only works properly if the space is cartesian or manifold is set
@@ -51,7 +51,7 @@ class GeneralizedCubicBezierCurve
   void Bisect(GeneralizedCubicBezierCurve& c1,GeneralizedCubicBezierCurve& c2) const;
 
   CSpace* space;
-  GeodesicManifold* manifold;
+  GeodesicSpace* manifold;
   Config x0,x1,x2,x3;
 };
 

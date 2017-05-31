@@ -1,7 +1,8 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "RigidRobot2DCSpace.h"
-#include "EdgePlanner.h"
+#include "CSpaceHelpers.h"
+#include "EdgePlannerHelpers.h"
 #include <GLdraw/GL.h>
 #include <math/angle.h>
 #include <math/random.h>
@@ -9,11 +10,23 @@
 
 RigidRobot2DCSpace::RigidRobot2DCSpace()
 {
-  angleDistanceWeight = 0.3;
+  SetAngleWeight(0.3);
+  SetDomain(domain.bmin,domain.bmax);
   visibilityEpsilon = 0.01;
   domain.bmin.set(0,0);
   domain.bmax.set(1,1);
 }
+
+void RigidRobot2DCSpace::InitConstraints()
+{
+  SetDomain(domain.bmin,domain.bmax);
+  for(int i=0;i<obstacles.NumObstacles();i++) {
+    char buf[64];
+    sprintf(buf,"%s[%d]",obstacles.ObstacleTypeName(i),obstacles.ObstacleIndex(i));
+    CSpace::AddConstraint(buf,new Geometric2DObstacleFreeSet(obstacles.Obstacle(i),robot,false));
+  }
+}
+
 
 void RigidRobot2DCSpace::DrawWorkspaceGL() const
 {
@@ -58,113 +71,18 @@ void RigidRobot2DCSpace::DrawGL(const Config& x) const
   DrawRobotGL(x);
 }
 
-void RigidRobot2DCSpace::Sample(Config& x)
+EdgePlanner* RigidRobot2DCSpace::PathChecker(const Config& a,const Config& b)
 {
-  x.resize(3);
-  x(0) = Rand(domain.bmin.x,domain.bmax.x);
-  x(1) = Rand(domain.bmin.y,domain.bmax.y);
-  x(2) = Rand()*TwoPi;
+  return new EpsilonEdgeChecker(this,a,b,visibilityEpsilon);
 }
 
-void RigidRobot2DCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
+EdgePlanner* RigidRobot2DCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
-  Assert(c.n==3);
-  Real dx,dy;
-  SampleDisk(r,dx,dy);
-  x = c;
-  x(0) += dx;
-  x(1) += dy;
-  x(2) += Rand(-r,r)/angleDistanceWeight;
-  x(2)=AngleNormalize(x(2));
+  CSpace* space = new SubsetConstraintCSpace(this,obstacle);
+  return new EdgePlannerWithCSpaceContainer(space,new EpsilonEdgeChecker(space,a,b,visibilityEpsilon));
 }
 
-int RigidRobot2DCSpace::NumObstacles()
+void RigidRobot2DCSpace::Properties(PropertyMap& map)
 {
-  return 1+obstacles.NumObstacles();
-}
-
-std::string RigidRobot2DCSpace::ObstacleName(int obstacle)
-{
-  if(obstacle==0) return "domain";
-  else {
-    obstacle -= 1;
-    char buf[64];
-    sprintf(buf,"%s[%d]",obstacles.ObstacleTypeName(obstacle),obstacles.ObstacleIndex(obstacle));
-    return buf;
-  }
-}
-
-bool RigidRobot2DCSpace::IsFeasible(const Config& x,int obstacle)
-{
-  if(obstacle == 0) 
-    return domain.contains(Vector2(x(0),x(1)));
-  obstacle -= 1;
-  RigidTransform2D T;
-  T.t.set(x(0),x(1));
-  T.R.setRotate(x(2));
-  Geometric2DCollection temp = robot;
-  temp.Transform(T);
-  if(obstacles.Collides(temp,obstacle)) return false;
-  return true;
-}
-
-bool RigidRobot2DCSpace::IsFeasible(const Config& x)
-{
-  if(!domain.contains(Vector2(x(0),x(1)))) return false;
-  RigidTransform2D T;
-  T.t.set(x(0),x(1));
-  T.R.setRotate(x(2));
-  Geometric2DCollection temp = robot;
-  temp.Transform(T);
-  if(obstacles.Collides(temp)) return false;
-  return true;
-}
-
-EdgePlanner* RigidRobot2DCSpace::LocalPlanner(const Config& a,const Config& b)
-{
-  return new BisectionEpsilonExplicitEdgePlanner(this,a,b,visibilityEpsilon);
-}
-
-EdgePlanner* RigidRobot2DCSpace::LocalPlanner(const Config& a,const Config& b,int obstacle)
-{
-  CSpace* space = new SubsetExplicitCSpace(this,obstacle);
-  return new EdgePlannerWithCSpaceContainer(space,new BisectionEpsilonEdgePlanner(space,a,b,visibilityEpsilon));
-}
-
-Real RigidRobot2DCSpace::Distance(const Config& x, const Config& y)
-{
-  Real d2 = Vector2(x(0),x(1)).distanceSquared(Vector2(y(0),y(1)));
-  return Sqrt(d2 + Sqr(angleDistanceWeight)*Sqr(AngleDiff(AngleNormalize(x(2)),AngleNormalize(y(2)))));
-}
-
-void RigidRobot2DCSpace::Interpolate(const Config& x,const Config& y,Real u,Config& out)
-{
-  CSpace::Interpolate(x,y,u,out);
-  out(2) = AngleInterp(AngleNormalize(x(2)),AngleNormalize(y(2)),u);
-}
-
-void RigidRobot2DCSpace::Midpoint(const Config& x,const Config& y,Config& out)
-{
-  CSpace::Interpolate(x,y,0.5,out);
-  out(2) = AngleInterp(AngleNormalize(x(2)),AngleNormalize(y(2)),0.5);
-}
-
-void RigidRobot2DCSpace::Properties(PropertyMap& map) const
-{
-  map.set("cartesian",0);
-  map.set("geodesic",1);
-  map.set("metric","weighted euclidean");
-  vector<Real> w(3,1.0);
-  w[2] = angleDistanceWeight;
-  map.setArray("metricWeights",w);
-  Real v = (domain.bmax.x-domain.bmin.x)*(domain.bmax.y-domain.bmin.y)*angleDistanceWeight*TwoPi;
-  map.set("volume",v);
-  map.set("diameter",Sqrt(domain.bmin.distanceSquared(domain.bmax)+Sqr(angleDistanceWeight*TwoPi)));
-  vector<Real> bmin(3),bmax(3);
-  domain.bmin.get(bmin[0],bmin[1]);
-  domain.bmax.get(bmax[0],bmax[1]);
-  bmin[2]=0;
-  bmax[2]=TwoPi;
-  map.setArray("minimum",bmin);
-  map.setArray("maximum",bmax);
+  SE2CSpace::Properties(map);
 }

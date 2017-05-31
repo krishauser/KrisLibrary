@@ -3,7 +3,7 @@
 
 #if defined (__APPLE__) || defined (MACOSX)
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>

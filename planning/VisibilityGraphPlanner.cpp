@@ -77,7 +77,7 @@ int VisibilityGraphPlanner::TestAndConnectVertex(const Vertex& v)
 double LengthWeightFunc(const SmartPointer<EdgePlanner>& e,int s,int t)
 {
   Assert(e);
-  return e->Space()->Distance(e->Start(),e->Goal());
+  return e->Length();
 }
 
 bool VisibilityGraphPlanner::Plan(const Vector2& a,const Vector2& b,vector<Vector2>& path)

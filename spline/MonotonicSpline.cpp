@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "MonotonicSpline.h"
 #include <math/misc.h>
 #include <errors.h>
@@ -110,16 +110,16 @@ Real MonotonicSpline::TtoU(Real time) const
     }
     u[0] += offset;
     u[1] += offset;
-    //LOG4CXX_INFO(logger,"finding u for t(u)="<<time<<" approximated by "<<umid<<"\n");
-    //LOG4CXX_INFO(logger,"Roots to "<<coeffs[2]<<"x^2+"<<coeffs[1]<<"x+"<<coeffs[0]-time<<": "<<u0<<", "<<u1<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"finding u for t(u)="<<time<<" approximated by "<<umid<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Roots to "<<coeffs[2]<<"x^2+"<<coeffs[1]<<"x+"<<coeffs[0]-time<<": "<<u0<<", "<<u1<<"\n");
     if(res == 0) {
-      LOG4CXX_INFO(logger,"No roots to equation "<<coeffs[2]<<"x^2+"<<coeffs[1]<<"x+"<<coeffs[0]<<"=time "<<time);
-      LOG4CXX_INFO(logger,"offset and normalized: x^2+"<<b/a<<"x+"<<c/a);
-      LOG4CXX_INFO(logger,"Determinant: "<<Sqr(b)-4.0*a*c);
+      LOG4CXX_INFO(KrisLibrary::logger(),"No roots to equation "<<coeffs[2]<<"x^2+"<<coeffs[1]<<"x+"<<coeffs[0]<<"=time "<<time);
+      LOG4CXX_INFO(KrisLibrary::logger(),"offset and normalized: x^2+"<<b/a<<"x+"<<c/a);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Determinant: "<<Sqr(b)-4.0*a*c);
       if(Abs(Sqr(b)-(Real)4.0*a*c) < 1e-5) {  //determinant close to zero
 	u[0]=-Half*b/a+offset;
 	res=1;
-	LOG4CXX_INFO(logger,"revised estimate: "<<u[0]);
+	LOG4CXX_INFO(KrisLibrary::logger(),"revised estimate: "<<u[0]);
       }
     }
     Assert(res >= 1);
@@ -133,14 +133,14 @@ Real MonotonicSpline::TtoU(Real time) const
       }
     }
     if(bestmargin <= -tol) {
-      LOG4CXX_ERROR(logger,"MonotonicSpline::TtoU: possible numerical error: u="<<u[best]<<" in ["<<basis.knots[k]<<","<<basis.knots[k+1]);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MonotonicSpline::TtoU: possible numerical error: u="<<u[best]<<" in ["<<basis.knots[k]<<","<<basis.knots[k+1]);
       /*
       if(!FuzzyZero(coeffs[2],tol) && !FuzzyZero(coeffs[1],tol)) {
-	LOG4CXX_INFO(logger,"Uh... did the quadratic equation solve correctly?\n");
-	LOG4CXX_INFO(logger,""<<coeffs[2]<<"u^2+"<<coeffs[1]<<"u+"<<coeffs[0]<<"="<<time);
-	LOG4CXX_INFO(logger,"u="<<u[best]<<" in ["<<basis.knots[k]<<","<<basis.knots[k+1]);
-	LOG4CXX_INFO(logger,"umid = "<<umid);
-	if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"Uh... did the quadratic equation solve correctly?\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<coeffs[2]<<"u^2+"<<coeffs[1]<<"u+"<<coeffs[0]<<"="<<time);
+	LOG4CXX_INFO(KrisLibrary::logger(),"u="<<u[best]<<" in ["<<basis.knots[k]<<","<<basis.knots[k+1]);
+	LOG4CXX_INFO(KrisLibrary::logger(),"umid = "<<umid);
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       */
       return umid;
@@ -148,9 +148,9 @@ Real MonotonicSpline::TtoU(Real time) const
     Assert(bestmargin > -tol);
     Real ttol = tol*Abs(time+One);
     if(!FuzzyEquals(UtoT(u[best]),time,ttol)) {
-      LOG4CXX_ERROR(logger,"MonotonicSpline::TtoU: numerical error solving quadratic equation? "<<UtoT(u[best])<<" vs "<<time);
-      LOG4CXX_INFO(logger,""<<coeffs[2]<<"u^2+"<<coeffs[1]<<"u+"<<coeffs[0]<<"="<<time);
-      LOG4CXX_INFO(logger,"result="<<u[best]);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MonotonicSpline::TtoU: numerical error solving quadratic equation? "<<UtoT(u[best])<<" vs "<<time);
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<coeffs[2]<<"u^2+"<<coeffs[1]<<"u+"<<coeffs[0]<<"="<<time);
+      LOG4CXX_INFO(KrisLibrary::logger(),"result="<<u[best]);
     }
     Assert(FuzzyEquals(UtoT(u[best]),time,ttol));
     return u[best];
@@ -185,13 +185,13 @@ Real MonotonicSpline::TtoU(Real time) const
       }
     }
     if(bestmargin <= -tol) {
-      LOG4CXX_INFO(logger,"Best margin of cubic equation is outside of bracket ["<<u1<<","<<u2); 
-      LOG4CXX_INFO(logger,"Did the cubic solve correctly? "<<((coeffs[3]*u[best]+coeffs[2])*u[best]+coeffs[1])*u[best]+coeffs[0]<<"="<<time);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Best margin of cubic equation is outside of bracket ["<<u1<<","<<u2); 
+      LOG4CXX_INFO(KrisLibrary::logger(),"Did the cubic solve correctly? "<<((coeffs[3]*u[best]+coeffs[2])*u[best]+coeffs[1])*u[best]+coeffs[0]<<"="<<time);
     }
     Assert(bestmargin > -tol);
     Real ttol = tol*Abs(time+One);
     if(!FuzzyEquals(UtoT(u[best]),time,ttol)) {
-      LOG4CXX_ERROR(logger,"MonotonicSpline::TtoU: numerical error solving cubic equation? "<<UtoT(u[best])<<" vs "<<time);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MonotonicSpline::TtoU: numerical error solving cubic equation? "<<UtoT(u[best])<<" vs "<<time);
     }
     Assert(FuzzyEquals(UtoT(u[best]),time,ttol));
     return u[best];

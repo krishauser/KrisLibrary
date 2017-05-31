@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Triangle3D.h"
 #include "geometry3d.h"
 #include "clip.h"
@@ -191,7 +191,7 @@ Vector2 Triangle3D::closestPointCoords(const Point3D& in) const
 	E = dot(e2,x0);
 	Real det = A*C-B*B;
 	if(det == Zero) { //collapsed to a line
-	  //LOG4CXX_WARN(logger,"Triangle3D::closestPointCoords(): Warning, triangle is actually a line!!!"<<"\n");
+	  //LOG4CXX_WARN(KrisLibrary::logger(),"Triangle3D::closestPointCoords(): Warning, triangle is actually a line!!!"<<"\n");
 		return Vector2(Zero);
 	}
 
@@ -246,11 +246,11 @@ Point3D Triangle3D::closestPoint(const Point3D& x) const
     pc /= (pc.x+pc.y);
   Vector3 pt2 = planeCoordsToPoint(pc);
   if(x.distance(pt) > x.distance(pt2)+1e-6) {
-    LOG4CXX_ERROR(logger,"Error with closestpointcoords routine!!!"<<"\n");
-    LOG4CXX_INFO(logger,"x = "<<x<<"\n");
-    LOG4CXX_INFO(logger,"pt = "<<pt<<"\n");
-    LOG4CXX_INFO(logger,"pt2 = "<<pt2<<"\n");
-    LOG4CXX_INFO(logger,"planecoords = "<<planeCoords(x)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error with closestpointcoords routine!!!"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<x<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"pt = "<<pt<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"pt2 = "<<pt2<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"planecoords = "<<planeCoords(x)<<"\n");
     abort();
   }
   */
@@ -412,8 +412,8 @@ bool Triangle3D::intersects(const Plane3D& P, Segment3D& S) const
     p[j] = pi;
   }
   if(!(d[0] <= d[1] && d[1] <= d[2])) {
-	  LOG4CXX_INFO(logger, "AAAACK: " << d[0] << " " << d[1] << " " << d[2] <<"\n");
-}
+    LOG4CXX_INFO(KrisLibrary::logger() ,"AAAACK: "<<d[0]<<" "<<d[1]<<" "<<d[2]);
+  }
   assert(d[0] <= d[1] && d[1] <= d[2]);
 
   if(d[0] > Zero) return false;

@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "LP_InteriorPoint.h"
 #include <math/linalgebra.h>
 #include <math/Conditioner.h>
@@ -39,7 +39,7 @@ void LP_InteriorPointSolver::SetInitialPoint(const Vector& _x0)
 {
   x0 = _x0;
   if(x0.n != A.n) {
-    LOG4CXX_ERROR(logger,"ERROR: initial point has incorrect dimensions"<<"\n"); 
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR: initial point has incorrect dimensions"<<"\n"); 
     x0.resize(0);
   }
 }
@@ -56,8 +56,8 @@ double LP_InteriorPointSolver::Objective_Ineq(const Vector &x, double t) {
 
 bool LP_InteriorPointSolver::FindFeasiblePoint()
 {
-	if (verbose>=1) LOG4CXX_INFO(logger, " - finding feasible point:" << "\n");
-	if (verbose>=2) LOG4CXX_INFO(logger, " - setup feasibility problem" << "\n");
+	if (verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(), " - finding feasible point:" << "\n");
+	if (verbose>=2) LOG4CXX_INFO(KrisLibrary::logger(), " - setup feasibility problem" << "\n");
 
 	LP_InteriorPointSolver lp;
 	lp.Resize(A.m,A.n+1);
@@ -71,28 +71,28 @@ bool LP_InteriorPointSolver::FindFeasiblePoint()
 	x0_feas(0)=1e6;
 	lp.SetInitialPoint(x0_feas);
 	
-	if (verbose>=2) LOG4CXX_INFO(logger, " - create feasibility problem LP" << "\n");
+	if (verbose>=2) LOG4CXX_INFO(KrisLibrary::logger(), " - create feasibility problem LP" << "\n");
 	lp.SetObjectiveBreak(0);
 	lp.verbose = verbose;
 	
-	if (verbose>=2) LOG4CXX_INFO(logger, " - solve feasibility problem LP" << "\n");
+	if (verbose>=2) LOG4CXX_INFO(KrisLibrary::logger(), " - solve feasibility problem LP" << "\n");
 	bool res = (lp.Solve()!=Infeasible);
 	
 	if (!res) {
 		if (verbose>=1) {
-			LOG4CXX_INFO(logger, " - found NO feasible point" << "\n");
+			LOG4CXX_INFO(KrisLibrary::logger(), " - found NO feasible point" << "\n");
 		}
 		return false;
 	} else {
 		if (verbose>=1) {
-			LOG4CXX_INFO(logger, " - found a feasible point" << "\n");
+			LOG4CXX_INFO(KrisLibrary::logger(), " - found a feasible point" << "\n");
 		}
-		if (x0.n != 0) LOG4CXX_ERROR(logger, "ERROR: x0 is supposed to be NULL in LP_InteriorPointSolver::findFeasiblePoint()" << "\n");
+		if (x0.n != 0) LOG4CXX_ERROR(KrisLibrary::logger(), "ERROR: x0 is supposed to be NULL in LP_InteriorPointSolver::findFeasiblePoint()" << "\n");
 		const Vector& xopt_feas = lp.GetOptimum();
 		x0.resize(c.n);
 		xopt_feas.getSubVectorCopy(1,x0);
 		if(!SatisfiesInequalities(x0)) {
-		  LOG4CXX_ERROR(logger,"ERROR: initial point solved by LP_InteriorPointSolver::FindFeasibleInitialPoint() is not feasible!"<<"\n");
+		  LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR: initial point solved by LP_InteriorPointSolver::FindFeasibleInitialPoint() is not feasible!"<<"\n");
 		  return false;
 		}
 		return true;
@@ -101,16 +101,16 @@ bool LP_InteriorPointSolver::FindFeasiblePoint()
 
 LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
 {
-  if (verbose>=1) LOG4CXX_INFO(logger, "Solving LP_InteriorPoint:" << "\n");
+  if (verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(), "Solving LP_InteriorPoint:" << "\n");
   
   if (x0.n == 0) {
     if (! FindFeasiblePoint()) {
-      if(verbose>=1) LOG4CXX_INFO(logger, "Couldn't find an initial feasible point in LP_InteriorPointSolver::solve()" << "\n");
+      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(), "Couldn't find an initial feasible point in LP_InteriorPointSolver::solve()" << "\n");
       return Infeasible;
     }
   }
 	
-  if (verbose>=2) { LOG4CXX_INFO(logger, "x0 = "<<VectorPrinter(x0)<<"\n"); }
+  if (verbose>=2) { LOG4CXX_INFO(KrisLibrary::logger(), "x0 = "<<VectorPrinter(x0)<<"\n"); }
 	
   // Make sure starting xopt is always set to x0 when we begin to solve.
   xopt = x0;
@@ -140,25 +140,25 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
   Vector g;
   Vector dx;
   Vector xcur;
-  //LOG4CXX_INFO(logger,"A is "<<"\n"<<MatrixPrinter(A)<<"\n");
-  //LOG4CXX_INFO(logger,"b is "<<VectorPrinter(b)<<"\n");
-  //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A is "<<"\n"<<MatrixPrinter(A)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"b is "<<VectorPrinter(b)<<"\n");
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	
   double gap=1.0;
   int iter_outer=0;
   while (gap>tol_outer) {
-    if(verbose >= 2) { LOG4CXX_INFO(logger, "Current xopt = "<<VectorPrinter(xopt)<<"\n"); }
+    if(verbose >= 2) { LOG4CXX_INFO(KrisLibrary::logger(), "Current xopt = "<<VectorPrinter(xopt)<<"\n"); }
 		
     ++iter_outer;
     if (iter_outer > kMaxIters_Outer) {
-      LOG4CXX_WARN(logger, "WARNING: LP_InteriorPoint outer loop did not converge within max iters" << "\n");
+      LOG4CXX_WARN(KrisLibrary::logger(), "WARNING: LP_InteriorPoint outer loop did not converge within max iters" << "\n");
       return MaxItersReached;
     }
 		
     // Update position along the central path
     t *= mu;
 		
-    if (verbose>=2) LOG4CXX_INFO(logger, " Outer iter " << iter_outer << ", t=" << t << "\n");
+    if (verbose>=2) LOG4CXX_INFO(KrisLibrary::logger(), " Outer iter " << iter_outer << ", t=" << t << "\n");
 		
     //
     // Inner Loop
@@ -170,19 +170,19 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
       ++iter_inner;
       /*
 	if (iter_inner > kMaxIters_Inner) {
-	LOG4CXX_WARN(logger, "WARNING: LP_InteriorPoint inner loop did not converge within max iters" << "\n");
+	LOG4CXX_WARN(KrisLibrary::logger(), "WARNING: LP_InteriorPoint inner loop did not converge within max iters" << "\n");
 	return MaxItersReached;
 	}
       */
 			
-      if (verbose>=3) LOG4CXX_INFO(logger, "  Inner iter " << iter_inner << ", dec=" << dec << "\n");
+      if (verbose>=3) LOG4CXX_INFO(KrisLibrary::logger(), "  Inner iter " << iter_inner << ", dec=" << dec << "\n");
 			
       // (1) Compute the direction to descend
       //		- Newton direction is dx = -(Hessian^-1)*(gradient)
       //		- H = (Aineq'*(diag(d.^2))*Aineq)
       //		- g = (t*f) + (Aineq'*d)
 			
-      //LOG4CXX_INFO(logger, "Size of Aineq is " << A.m << " x " << A.n << "\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(), "Size of Aineq is " << A.m << " x " << A.n << "\n");
 
       //d = (bineq-Aineq*xopt)^-1 component-wise
       A.mul(xopt,d);  d.inplaceNegative();  d += p;
@@ -205,34 +205,34 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
 	RobustSVD<Real> svd;
 	if(svd.set(Hinv.A)) {
 	  svd.backSub(Hinv.b,dx);
-	  if(verbose >= 1) LOG4CXX_INFO(logger,"Solved by SVD"<<"\n");
+	  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Solved by SVD"<<"\n");
 	  if(verbose >= 2) {
-	    LOG4CXX_INFO(logger,"Singular values "<<svd.svd.W<<"\n");
-	    LOG4CXX_INFO(logger,"b "<<Hinv.b<<"\n");
-	    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Singular values "<<svd.svd.W<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"b "<<Hinv.b<<"\n");
+	    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  }
 	}
 	else {
 	  if(verbose >= 1) {
-	    //LOG4CXX_INFO(logger,"H Matrix "<<"\n"); H.print();
-	    //LOG4CXX_INFO(logger,"Scale is "); Hinv.S.print();
-	    LOG4CXX_INFO(logger,"Scaled H Matrix "<<"\n"<<MatrixPrinter(Hinv.A)<<"\n");
-	    LOG4CXX_ERROR(logger,"LP: Error performing H^-1*g!"<<"\n");
+	    //LOG4CXX_INFO(KrisLibrary::logger(),"H Matrix "<<"\n"); H.print();
+	    //LOG4CXX_INFO(KrisLibrary::logger(),"Scale is "); Hinv.S.print();
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Scaled H Matrix "<<"\n"<<MatrixPrinter(Hinv.A)<<"\n");
+	    LOG4CXX_ERROR(KrisLibrary::logger(),"LP: Error performing H^-1*g!"<<"\n");
 	  }
 	  return Error;
 	}
       }
       Hinv.Post(dx);
-      //if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
       dx.inplaceNegative();
 
       /*			
       // TEMPORARY!!!
-      LOG4CXX_INFO(logger, "H" << "\n"); H.print();
-      LOG4CXX_INFO(logger, "d" << "\n"); d.print();
-      LOG4CXX_INFO(logger, "g" << "\n"); g.print();
-      LOG4CXX_INFO(logger, "dx" << "\n"); dx.print();
+      LOG4CXX_INFO(KrisLibrary::logger(), "H" << "\n"); H.print();
+      LOG4CXX_INFO(KrisLibrary::logger(), "d" << "\n"); d.print();
+      LOG4CXX_INFO(KrisLibrary::logger(), "g" << "\n"); g.print();
+      LOG4CXX_INFO(KrisLibrary::logger(), "dx" << "\n"); dx.print();
       */
 			
       // (2) Compute decrement (a scalar) -> dec=abs(-g'*dx)
@@ -241,8 +241,8 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
       // (3) Line search along dx, using backtracking
       double s=1.0;
       Real obji_xopt = Objective_Ineq(xopt,t);
-      //LOG4CXX_INFO(logger,"Starting search at "<< Objective(xopt)<<", "); xopt.print();
-      //LOG4CXX_INFO(logger,"   direction "); dx.print();
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Starting search at "<< Objective(xopt)<<", "); xopt.print();
+      //LOG4CXX_INFO(KrisLibrary::logger(),"   direction "); dx.print();
       //can find max on s outside of the loop
       {
 	Real smax = 2;
@@ -262,7 +262,7 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
       bool done_backtrack=false;
       while (! done_backtrack) {
 	++iter_backtrack;
-	if (verbose>=4) LOG4CXX_INFO(logger, "   Backtrack iter " << iter_backtrack << ", s=" << s << ", dec=" << dec << "\n");
+	if (verbose>=4) LOG4CXX_INFO(KrisLibrary::logger(), "   Backtrack iter " << iter_backtrack << ", s=" << s << ", dec=" << dec << "\n");
 	xcur = xopt; xcur.madd(dx,s);
 	bool sat_ineq=SatisfiesInequalities(xcur);
 	//inequalities will be satisfied unless there's some numerical error
@@ -274,11 +274,11 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
 	    maxViolation = Max(maxViolation,-r);
 	  }
 	  if(!FuzzyZero(maxViolation)) {
-	    LOG4CXX_INFO(logger,"WHAT?!?! s is "<<s<<" on iter "<<iter_backtrack<<"\n");
-	    LOG4CXX_INFO(logger,"Maximum violation is "<<maxViolation<<"\n");  
-	    LOG4CXX_INFO(logger,"xcur "); xcur.print();
-	    LOG4CXX_INFO(logger,"dx "); dx.print();
-	    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	    LOG4CXX_INFO(KrisLibrary::logger(),"WHAT?!?! s is "<<s<<" on iter "<<iter_backtrack<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Maximum violation is "<<maxViolation<<"\n");  
+	    LOG4CXX_INFO(KrisLibrary::logger(),"xcur "); xcur.print();
+	    LOG4CXX_INFO(KrisLibrary::logger(),"dx "); dx.print();
+	    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  }
 	}
 	*/
@@ -288,14 +288,14 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
 	} else {
 	  s *= beta;
 	  if(s < 1e-10) {
-	    if(verbose >= 2) LOG4CXX_INFO(logger,"s is really small, breaking"<<"\n");
+	    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"s is really small, breaking"<<"\n");
 	    done_backtrack = true;
 	  }
 	}
       }
 
-      if (verbose>=3) LOG4CXX_INFO(logger, "  Inner iter " << iter_inner << ", obj=" << Objective(xopt) << ", s=" << s << ", dec=" << dec << ", gap=" << ((double) p.n) / t << "\n");
-      //if (verbose>=4) LOG4CXX_INFO(logger, "   Backtrack iter " << iter_backtrack << ", s=" << s << ", dec=" << dec << "\n");
+      if (verbose>=3) LOG4CXX_INFO(KrisLibrary::logger(), "  Inner iter " << iter_inner << ", obj=" << Objective(xopt) << ", s=" << s << ", dec=" << dec << ", gap=" << ((double) p.n) / t << "\n");
+      //if (verbose>=4) LOG4CXX_INFO(KrisLibrary::logger(), "   Backtrack iter " << iter_backtrack << ", s=" << s << ", dec=" << dec << "\n");
 			
       /*
 	while ((f_objective(x+(s*dx),f,Aineq,bineq,t) > (f_objective(x,f,Aineq,bineq,t)+(alpha*s*g'*dx))) | (max((Aineq*(x+(s*dx)))-bineq) > 0))
@@ -318,12 +318,12 @@ LP_InteriorPointSolver::Result LP_InteriorPointSolver::Solve()
     gap = ((double) p.n) / t;
   }
    
-  if (verbose>=1) LOG4CXX_INFO(logger, "Optimization was successful." << "\n");
+  if (verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(), "Optimization was successful." << "\n");
 
   // If we were going to stop when the objective is negative, check that the
   // objective actually _became_ negative!
   if (!IsInf(objectiveBreak) && (Objective(xopt) >= objectiveBreak)) {
-    if(verbose>=1) LOG4CXX_INFO(logger,"The max objective is not achieved! "<<Objective(xopt)<<"\n");
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"The max objective is not achieved! "<<Objective(xopt)<<"\n");
     return OptimalNoBreak;
   }
   else return Optimal;
@@ -389,7 +389,7 @@ bool LP_InteriorPoint::Set(const LinearProgram& lp)
 
   SVDecomposition<Real> svd;
   if(!svd.set(Aeq)) {
-    if(solver.verbose>=1) LOG4CXX_INFO(logger,"LP_InteriorPoint: Couldn't set SVD of equality constraints!!!"<<"\n");
+    if(solver.verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"LP_InteriorPoint: Couldn't set SVD of equality constraints!!!"<<"\n");
     return false;
   }
   svd.backSub(beq,x0);
@@ -397,18 +397,18 @@ bool LP_InteriorPoint::Set(const LinearProgram& lp)
 
   //Set the solver to use the new variable y
   if(N.n == 0) {  //overconstrained!
-    LOG4CXX_INFO(logger,"Overconstrained!"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Overconstrained!"<<"\n");
     solver.Resize(0,0);
     return true;
   }
 
   if(nineq == 0) {
-    LOG4CXX_INFO(logger,"No inequalities!"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"No inequalities!"<<"\n");
     abort();
     return true;
   }
 
-  if(solver.verbose >= 1) LOG4CXX_INFO(logger,"LP_InteriorPoint: Decomposed the problem from "<<lp.A.n<<" to "<<N.n<<" variables"<<"\n");
+  if(solver.verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"LP_InteriorPoint: Decomposed the problem from "<<lp.A.n<<" to "<<N.n<<" variables"<<"\n");
 
   solver.Resize(nineq,N.n);
   //objective
@@ -489,7 +489,7 @@ void LP_InteriorPoint::SetObjective(const Vector& c)
 
 void LP_InteriorPoint::SetInitialPoint(const Vector& xinit)
 {
-  LOG4CXX_INFO(logger,"TODO: SetInitialPoint"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"TODO: SetInitialPoint"<<"\n");
   abort();
   //solve for xinit = x0 + N*yinit
   Vector dx; dx.sub(xinit,x0);

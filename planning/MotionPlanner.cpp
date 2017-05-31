@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 #include "PointLocation.h"
 #include <graph/Path.h>
@@ -17,10 +17,9 @@ class EdgeDistance
   Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
   {
     if(!e) return 1.0;
-    assert(e->Space() != NULL);
-    Real res = e->Space()->Distance(e->Start(),e->Goal());
+    Real res = e->Length();
     if(res <= 0) {
-      LOG4CXX_WARN(logger,"RoadmapPlanner: Warning, edge has nonpositive length "<<res);
+      LOG4CXX_WARN(KrisLibrary::logger(),"RoadmapPlanner: Warning, edge has nonpositive length "<<res);
       return Epsilon;
     }
     return res;
@@ -242,7 +241,7 @@ void RoadmapPlanner::CreatePath(int i,int j,MilestonePath& path)
 	path.edges.push_back(*e);
       }
       else {
-	Assert((*e)->Goal() == roadmap.nodes[*p]);
+	Assert((*e)->End() == roadmap.nodes[*p]);
 	path.edges.push_back((*e)->ReverseCopy());
       }
     }
@@ -346,7 +345,7 @@ EdgePlanner* TreeRoadmapPlanner::TryConnect(Node* a,Node* b)
 void TreeRoadmapPlanner::AttachChild(Node* p, Node* c, EdgePlanner* e)
 {
   Assert(p->connectedComponent != c->connectedComponent);
-  if(e) Assert(e->Start() == p->x && e->Goal() == c->x);
+  if(e) Assert(e->Start() == p->x && e->End() == c->x);
   connectedComponents[c->connectedComponent] = NULL;
   c->reRoot();
   SetComponentCallback callback(p->connectedComponent);
@@ -401,7 +400,7 @@ void TreeRoadmapPlanner::CreatePath(Node* a, Node* b, MilestonePath& path)
     atob.push_front(b);
     Assert(b->connectedComponent == a->connectedComponent);
     if(b->getParent() != NULL) {
-      Assert(b->edgeFromParent()->Goal() == b->x);
+      Assert(b->edgeFromParent()->End() == b->x);
       Assert(b->edgeFromParent()->Start() == b->getParent()->x);
     }
     b = b->getParent();
@@ -413,7 +412,7 @@ void TreeRoadmapPlanner::CreatePath(Node* a, Node* b, MilestonePath& path)
   for(list<Node*>::iterator i=++atob.begin();i!=atob.end();i++) {
     b=*i;
     if(b->edgeFromParent()==NULL) {
-      //LOG4CXX_INFO(logger,"Hmm... constructing new edge?\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... constructing new edge?\n");
       //edge data not stored
       list<Node*>::iterator p=i; --p;
       Node* bp = *p;
@@ -424,7 +423,7 @@ void TreeRoadmapPlanner::CreatePath(Node* a, Node* b, MilestonePath& path)
       if(b->x == b->edgeFromParent()->Start())
 	path.edges[index]=b->edgeFromParent()->ReverseCopy();
       else {
-	Assert(b->x == b->edgeFromParent()->Goal());
+	Assert(b->x == b->edgeFromParent()->End());
 	//do we need a copy here?
 	//path.edges[index]=b->edgeFromParent()->Copy();
 	path.edges[index]=b->edgeFromParent();
@@ -467,7 +466,7 @@ TreeRoadmapPlanner::Node* TreeRoadmapPlanner::Extend(Node* n,const Config& x)
 {    //connect closest to n
   EdgePlanner* e=space->LocalPlanner(n->x,x);
   Assert(e->Start() == n->x);
-  Assert(e->Goal() == x);
+  Assert(e->End() == x);
   Node* c=AddMilestone(x);
   n->addChild(c);
   c->edgeFromParent() = e;
@@ -563,7 +562,7 @@ TreeRoadmapPlanner::Node* PerturbationTreePlanner::AddMilestone(const Config& x)
 void PerturbationTreePlanner::GenerateConfig(Config& x)
 {
   if(milestones.empty()) {
-    LOG4CXX_ERROR(logger,"PerturbationTreePlanner::GenerateConfig(): No nodes to choose from!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PerturbationTreePlanner::GenerateConfig(): No nodes to choose from!"<<"\n");
     space->Sample(x);
   }
   else {
@@ -683,11 +682,11 @@ void BidirectionalRRTPlanner::CreatePath(MilestonePath& p) const
     if(e->Start() == n->x) {
       p.edges.push_back(e->ReverseCopy());
     }
-    else if(e->Goal() == n->x) {
+    else if(e->End() == n->x) {
       p.edges.push_back(e);
     }
     else {
-      LOG4CXX_ERROR(logger,"Hmm... edge doesn't have node as its start or its goal!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Hmm... edge doesn't have node as its start or its goal!"<<"\n");
       Abort();
     }
   }

@@ -1,68 +1,70 @@
 #ifndef ROBOTICS_TIME_CSPACE_H
 #define ROBOTICS_TIME_CSPACE_H
 
-#include "KinodynamicCSpace.h"
+#include "CSpaceHelpers.h"
+#include "KinodynamicSpace.h"
 
-class TimeCSpace : public KinodynamicCSpace
+/** @brief a 1D cspace in the range [0,inf) but where Sample samples
+ * from the range [0,timeStepMax]
+ */
+class TimeCSpace : public BoxCSpace
+{
+public:
+  TimeCSpace(Real timeStepMax);
+  virtual void Sample(Config& x);
+
+  Real timeStepMax;
+};
+
+/** @brief A 1D ControlSpace that simulates time. */
+class TimeControlSpace : public ControlSpace
 {
  public:
-  TimeCSpace() : maxTimeStep(1.0) {}
-  virtual void Sample(Config& x) { x.resize(1);  x(0)=0; }
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) { 
-    x.resize(1);  x(0)=c(0)+Rand(0,r);  }
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b) {
-    if(a(0) > b(0)) return new FalseEdgePlanner(this,a,b);
-    else return new TrueEdgePlanner(this,a,b); }
-  virtual bool IsFeasible(const Config& x) { return true; }
-  virtual Real Distance(const Config& x, const Config& y) { return Abs(x(0)-y(0)); }
-
-  virtual void Simulate(const State& x0, const ControlInput& u,std::vector<State>& p)
-  {
-    p.resize(2);
-    p[0] = x0;
-    SimulateEndpoint(x0,u,p[1]);
-  }
+  TimeControlSpace(Real dtmax=1.0);
+  void SetMaxTimeStep(Real dtmax);
+  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
   virtual void SimulateEndpoint(const State& x0, const ControlInput& u,State& x1) { x1 = x0+u; }
-  virtual EdgePlanner* TrajectoryChecker(const std::vector<State>& p)
-  {
-    for(size_t i=0;i+1<p.size();i++)
-      if(p[i](0) > p[i+1](0)) return new FalseEdgePlanner(this,p.front(),p.back());
-    return new TrueEdgePlanner(this,p.front(),p.back());
-  }
-
-  virtual bool IsValidControl(const State& x,const ControlInput& u)
-  {
-    Assert(u.n==1);
-    return u(0) >= 0;
-  }
-
-  virtual void SampleControl(const State& x,ControlInput& u)
-  {
-    u.resize(1);
-    u(0) = Rand(0,maxTimeStep);
-  }
-
-  virtual bool ConnectionControl(const State& x,const State& xGoal,ControlInput& u)
-  {
-    if(xGoal(0) >= x(0)) {
-      u.resize(1);
-      u(0) = xGoal(0)-x(0);
-      return true;
-    }
-    return false;
-  }
-
-  virtual bool ReverseControl(const State& x0,const State& x1,ControlInput& u) { return true; }
-  virtual bool ReverseSimulate(const State& x1, const ControlInput& u,std::vector<State>& p) {
-    p.resize(2);
-    p[0] = x1-u;
-    p[1] = x1;
-  }
-  virtual bool IsValidReverseControl(const State& x1,const ControlInput& u)
-  { return IsValidControl(x1,u);  }
-  virtual void SampleReverseControl(const State& x,ControlInput& u) {  SampleControl(x,u);  }
-
-  Real maxTimeStep;
 };
+
+/** @ingroup MotionPlanning
+ * @brief A cspace that prepends a time variable to the given CSpace.
+ * This is best used with perturbation-sampling planners, and/or
+ * SpaceTimeIntegratedKinodynamicCSpace.
+ */
+class SpaceTimeCSpace : public MultiCSpace
+{
+public:
+  SpaceTimeCSpace(const SmartPointer<CSpace>& stateSpace,Real tmax=Inf);
+  void SetTimeMetricWeight(Real weight);
+  virtual void Sample(Config& x);
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
+  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
+  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
+};
+
+/** @brief Given an IntegratedControlSpace on a certain state space, this will produce a
+ * control space for the t-c state space that has time prepended to state.
+ */
+class SpaceTimeIntegratedControlSpace : public IntegratedControlSpace
+{
+public:
+  SpaceTimeIntegratedControlSpace(const SmartPointer<IntegratedControlSpace>& base);
+  virtual std::string VariableName(int i);
+  virtual void Derivative(const State& x, const ControlInput& u,State& dx);
+  virtual void UpdateIntegrationParameters(const State& x);
+  SmartPointer<IntegratedControlSpace> base;
+};
+
+/** @ingroup MotionPlanning
+ * @brief This KinodynamicCSpace prefixes time onto the state of the given CSpace instance
+ * and automatically increments the time state variable as the dynamics are integrated forward.
+ */
+class SpaceTimeIntegratedKinodynamicSpace : public IntegratedKinodynamicSpace
+{
+public:
+  SpaceTimeIntegratedKinodynamicSpace(const SmartPointer<CSpace>& space,const SmartPointer<IntegratedControlSpace>& controlSpace);
+  void SetTimeMetricWeight(Real weight);
+};
+
 
 #endif // ROBOTICS_TIME_CSPACE_H

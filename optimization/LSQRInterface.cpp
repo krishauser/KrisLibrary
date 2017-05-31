@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "LSQRInterface.h"
 #include <iostream>
 #include "lsqr.h"
@@ -51,8 +51,8 @@ bool LSQRInterface::Solve(const SparseMatrix& A,const Vector& b)
   if(x0.n == 0) input.sol.resize(A.n,Zero);
   else if(x0.n == A.n) input.sol.copy(x0);
   else {
-    LOG4CXX_ERROR(logger,"Initial guess doesn't have correct dimensions"<<"\n");
-    LOG4CXX_ERROR(logger,"Using zeros for initial guess"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Initial guess doesn't have correct dimensions"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Using zeros for initial guess"<<"\n");
     input.sol.resize(A.n,Zero);
   }
 
@@ -66,31 +66,31 @@ bool LSQRInterface::Solve(const SparseMatrix& A,const Vector& b)
   
   switch(output.term_flag) {
   case lsqr_output::X0Exact:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: X0 is the exact solution!"<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: X0 is the exact solution!"<<"\n");
     break;
   case lsqr_output::ExactSolutionRelMat:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: Solved approximately the exact solution"<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved approximately the exact solution"<<"\n");
     break;
   case lsqr_output::LSSolutionRelMat:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: Solved approximately a least-squares solution"<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved approximately a least-squares solution"<<"\n");
     break;
   case lsqr_output::IllConditioned:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: The matrix is probably ill-conditioned"<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: The matrix is probably ill-conditioned"<<"\n");
     return false;
   case lsqr_output::ExactSolution:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: Solved the exact solution"<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved the exact solution"<<"\n");
     break;
   case lsqr_output::LSSolution:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: Solved the least-squares solution"<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved the least-squares solution"<<"\n");
     break;
   case lsqr_output::ConditionError:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: The condition number became very large"<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: The condition number became very large"<<"\n");
     return false;
   case lsqr_output::MaxItersReached:
-    if(verbose) LOG4CXX_INFO(logger,"LSQR: The max # of iterations has been reached, residual "<<residualNorm<<"\n");
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: The max # of iterations has been reached, residual "<<residualNorm<<"\n");
     return false;
   default:
-    LOG4CXX_ERROR(logger,"LSQR: Unknown return value "<<output.term_flag<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"LSQR: Unknown return value "<<output.term_flag<<"\n");
     return false;
   }
   return true;

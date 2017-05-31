@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "DynamicChain.h"
 #include <iostream>
 #include <math/CholeskyDecomposition.h>
@@ -212,8 +212,8 @@ void DynamicChain2D::GetCoriolisForceMatrix(Matrix& C)
 
 void DynamicChain2D::GetCoriolisForces(Vector& Cdq)
 {
-	//LOG4CXX_INFO(logger,"q: "<<q<<std::"\n");
-	//LOG4CXX_INFO(logger,"dq: "<<dq<<std::"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"q: "<<q<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"dq: "<<dq<<"\n");
 	std::vector<Matrix> dBdi(q.n);
 	for(int z=0;z<q.n;z++)
 		GetKineticEnergyMatrixDeriv(z,dBdi[z]);
@@ -235,7 +235,7 @@ void DynamicChain2D::GetCoriolisForces(Vector& Cdq)
 		val*=Half;
 		Cdq(i)=val;
 	}
-	//LOG4CXX_INFO(logger,"Done"<<std::"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Done"<<"\n");
 }
 
 void DynamicChain2D::GetForceVector(Real torque, const Vector2& force, int i, Vector& F) const
@@ -286,8 +286,8 @@ void DynamicChain2D::GetAcceleration(Vector& ddq, const Vector& fext)
 	GetKineticEnergyMatrix(B);
 	CholeskyDecomposition<Real> cholesky;
 	if(!cholesky.set(B)) {
-		LOG4CXX_ERROR(logger,"Kinetic energy matrix is not positive definite!"<<"\n");
-		LOG4CXX_ERROR(logger,B<<"\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Kinetic energy matrix is not positive definite!"<<"\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),B<<"\n");
 		Abort();
 	}
 

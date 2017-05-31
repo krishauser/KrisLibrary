@@ -2,7 +2,7 @@
 #define GRAPH_SHORTEST_PATHS_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Graph.h"
 #include <KrisLibrary/math/math.h>
 #include <KrisLibrary/structs/FixedSizeHeap.h>
@@ -381,7 +381,7 @@ bool ShortestPathProblem<Node,Edge>::HasShortestPaths(int s,WeightFunc w,Iterato
     int n=H.top(); H.pop();
     if(n==s) {
       if(d[n]!=0) {
-	LOG4CXX_INFO(logger,"The start doesn't have distance 0\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"The start doesn't have distance 0\n");
 	return false;
       }
     }
@@ -390,13 +390,13 @@ bool ShortestPathProblem<Node,Edge>::HasShortestPaths(int s,WeightFunc w,Iterato
       double W=w(*it,it.source(),it.target());
       if(p[n] == t) {
 	if(fabs(d[n]-d[t]-W) > 1e-10) {
-	  LOG4CXX_INFO(logger,"Inconsistency in node "<< n<<"'s weight through parent "<< t<<", "<< d[n]<<" vs "<<d[t]+W<<"="<<d[t]<<"+"<<W);
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Inconsistency in node "<< n<<"'s weight through parent "<< t<<", "<< d[n]<<" vs "<<d[t]+W<<"="<<d[t]<<"+"<<W);
 	  return false;
 	}
       }
       if(d[n]-d[t]-W > 1e-10) {
-	LOG4CXX_INFO(logger,"There exists a shorter path ("<<t<<","<<n<<") not ("<<p[n]<<","<<n);
-	LOG4CXX_INFO(logger,"Weight 1 is "<< d[t]+W<<" compared to "<< d[n]);
+	LOG4CXX_INFO(KrisLibrary::logger(),"There exists a shorter path ("<<t<<","<<n<<") not ("<<p[n]<<","<<n);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Weight 1 is "<< d[t]+W<<" compared to "<< d[n]);
 	return false;
       }
     }

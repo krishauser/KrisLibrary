@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "GLUIProgram.h"
 
 #if HAVE_GLUI
@@ -26,9 +26,9 @@
 #define DEBUG(x) { x; }
 /*
 #define DEBUG(x) { \
-    LOG4CXX_ERROR(logger,"Debug begin "<<#x); \
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Debug begin "<<#x); \
   x; \
-    LOG4CXX_ERROR(logger,"Debug end "<<#x); \
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Debug end "<<#x); \
 }
 */
 
@@ -170,39 +170,39 @@ void GLUIProgramBase::PassiveMotionFunc(int x,int y) {  }
 void GLUIProgramBase::IdleFunc() { }
 
 void GLUIProgramBase::ControlFunc (int id) { 
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 int GLUIProgramBase::Run(const char *window_title,unsigned int mode)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
   return -1;
 }
 
 bool GLUIProgramBase::Initialize()
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 	return false;
 }
 
 void GLUIProgramBase::Refresh()
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUIProgramBase::SetFullscreen(bool fullscreen_on)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUIProgramBase::Handle_Idle()
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUIProgramBase::SleepIdleCallback(unsigned int time)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 

@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "LinearProgram.h"
 #include <iostream>
 #include <math/SVDecomposition.h>
@@ -270,8 +270,8 @@ bool LinearConstraints::IsFeasible(const Vector& x,Real equalityTol) const
 
 void LinearConstraints::ProjectDirection(Vector& v) const
 {
-  LOG4CXX_ERROR(logger,"LinearConstraints::ProjectDirection(): is deprecated!"<<"\n");
-  if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_ERROR(KrisLibrary::logger(),"LinearConstraints::ProjectDirection(): is deprecated!"<<"\n");
+  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   //if constraint is a.x <= b, if direction increases a.x, crop it to 0
   //if it's a.x = b, crop direction to 0
   Real initialMaxErr=Inf;
@@ -299,10 +299,10 @@ void LinearConstraints::ProjectDirection(Vector& v) const
       }
       if(include) {
 	/*
-	LOG4CXX_ERROR(logger,"ProjectDirection: error at bound "<<i<<": "<<p<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ProjectDirection: error at bound "<<i<<": "<<p<<"\n");
 	Vector ai;
 	A.getRowRef(i,ai);
-	LOG4CXX_INFO(logger,"Bound direction: "<<VectorPrinter(ai)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Bound direction: "<<VectorPrinter(ai)<<"\n");
 	*/
 	bounds.push_back(i);
 	maxErr = Max(maxErr,Abs(p));
@@ -311,13 +311,13 @@ void LinearConstraints::ProjectDirection(Vector& v) const
     if(maxErr < 1e-5) return;
     /*
     if(maxErr >= initialMaxErr) {
-      LOG4CXX_ERROR(logger,"ProjectDirection(): Error, the error bound increased!"<<"\n");
-      LOG4CXX_INFO(logger,"From "<<initialMaxErr<<" to "<<maxErr<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ProjectDirection(): Error, the error bound increased!"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"From "<<initialMaxErr<<" to "<<maxErr<<"\n");
       Abort();
     }
     */
     initialMaxErr=maxErr;
-    //LOG4CXX_ERROR(logger,"ProjectVector: "<<bounds.size()<<" bounds, max error "<<maxErr<<"\n");
+    //LOG4CXX_ERROR(KrisLibrary::logger(),"ProjectVector: "<<bounds.size()<<" bounds, max error "<<maxErr<<"\n");
     C.resize((int)bounds.size(),A.n);
     for(size_t i=0;i<bounds.size();i++) {
       Vector ai;
@@ -328,16 +328,16 @@ void LinearConstraints::ProjectDirection(Vector& v) const
     //TODO: should this be put into SVDecomposition::set()?
     svd.svd.U.resize(C.m,C.n);
     if(!svd.set(C)) {
-      LOG4CXX_WARN(logger,"ProjectDirection(): Warning: unable to set SVD, returning prematurely"<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"ProjectDirection(): Warning: unable to set SVD, returning prematurely"<<"\n");
       return;
     }
     svd.nullspaceComponent(v,vNull);
     v -= vNull;
   }
-  LOG4CXX_ERROR(logger,"Error: ProjectDirection didn't converge within "<<maxIters<<" iters, resulting error "<<maxErr<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Error: ProjectDirection didn't converge within "<<maxIters<<" iters, resulting error "<<maxErr<<"\n");
   if(maxErr > 1e-3) {
-    LOG4CXX_INFO(logger,"Press enter to continue..."<<"\n");
-    if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"Press enter to continue..."<<"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
 }
 
@@ -361,7 +361,7 @@ void LinearConstraints::Print(std::ostream& out) const
     
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       lastline = numlines;
     }
   }
@@ -378,7 +378,7 @@ void LinearConstraints::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       lastline = numlines;
     }
   }
@@ -746,7 +746,7 @@ void LinearConstraints_Sparse::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       lastline = numlines;
     }
     numlines += 1+(A.rows[i].numEntries()/6);
@@ -764,7 +764,7 @@ void LinearConstraints_Sparse::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) == 40) {
       out<<"Press enter to continue..."<<endl;
-      if(logger->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       lastline = numlines;
     }
   }

@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "EZTrace.h"
 #include <errors.h>
 using namespace std;
@@ -15,18 +15,18 @@ EZTrace::EZTrace()
 
 EZTrace::~EZTrace()
 {
-  LOG4CXX_INFO(logger,"Destroying EZTrace object..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Destroying EZTrace object..."<<"\n");
   Assert(curTrace != NULL);
   Assert(curTrace == &myTrace);
   if(dumpTrace) {
-    LOG4CXX_INFO(logger,"********* Program execution trace: **********"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"********* Program execution trace: **********"<<"\n");
     curTrace->DumpTrace(cout);
-    LOG4CXX_INFO(logger,"*********************************************"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************"<<"\n");
   }
   if(dumpStats) {
-    LOG4CXX_INFO(logger,"********** Function call stats: *************"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"********** Function call stats: *************"<<"\n");
     curTrace->DumpStats(cout);
-    LOG4CXX_INFO(logger,"*********************************************"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************"<<"\n");
   }
   curTrace = NULL;
 }
@@ -49,7 +49,7 @@ EZCallTrace::EZCallTrace(const char* name,const char* fmt,...)
     va_list args;
     va_start(args, fmt);
 #ifdef _WIN32
-	_vsnprintf(buf, MAXBUF, fmt, args);
+    _vsnprintf(buf, MAXBUF, fmt, args);
 #else
     vsnprintf(buf, MAXBUF, fmt, args);
 #endif

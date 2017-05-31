@@ -173,9 +173,9 @@ bool MultiRobot2DCSpace::IsFeasible(const Config& x)
   return true;
 }
 
-EdgePlanner* MultiRobot2DCSpace::LocalPlanner(const Config& a,const Config& b)
+EdgePlanner* MultiRobot2DCSpace::PathChecker(const Config& a,const Config& b)
 {
-  return new BisectionEpsilonEdgePlanner(this,a,b,visibilityEpsilon);
+  return new EpsilonEdgeChecker(this,a,b,visibilityEpsilon);
 }
 
 Real MultiRobot2DCSpace::Distance(const Config& x, const Config& y)

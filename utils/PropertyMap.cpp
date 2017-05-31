@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "PropertyMap.h"
 #include <errors.h>
 #include <fstream>
@@ -16,13 +16,13 @@ bool ReadString(std::istream& in,string& str,const std::string& delims)
 {
   EatWhitespace(in);
   if(!in) {
-    LOG4CXX_INFO(logger,"ReadValue: hit end of file\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: hit end of file\n");
     return false;
   }
   if(in.peek() == '"') {
     //beginning of string
     if(!InputQuotedString(in,str)) {
-      LOG4CXX_INFO(logger,"ReadValue: unable to read quoted string\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: unable to read quoted string\n");
       return false;
     }
     return true;
@@ -34,7 +34,7 @@ bool ReadString(std::istream& in,string& str,const std::string& delims)
     str = c;
     char end=in.get();
     if(end != '\'') {
-      LOG4CXX_INFO(logger,"ReadValue: character not delimited properly\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: character not delimited properly\n");
       return false;
     }
     return true;
@@ -72,7 +72,7 @@ bool PropertyMap::LoadJSON(istream& in)
   clear();
   EatWhitespace(in);
   if(in.peek()!='{') {
-        LOG4CXX_ERROR(logger,"PropertyMap: unable to read arrays or single values\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: unable to read arrays or single values\n");
     return false;
   }
   in.get();
@@ -81,17 +81,17 @@ bool PropertyMap::LoadJSON(istream& in)
     string key;
     string value;
     if(!InputQuotedString(in,key)) {
-            LOG4CXX_ERROR(logger,"PropertyMap: read failed on item "<<size());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: read failed on item "<<size());
       return false;
     }
     EatWhitespace(in);
     if(in.peek() != ':') {
-      LOG4CXX_ERROR(logger,"Map missing a colon-separator between key-value pair "<<key<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Map missing a colon-separator between key-value pair "<<key<<"\n");
       return false;
     }
     in.get();
     if(!ReadString(in,value,",}")) {
-      LOG4CXX_ERROR(logger,"PropertyMap: couldn't read value for key "<<key<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: couldn't read value for key "<<key<<"\n");
       return false;
     }
     (*this)[key] = value;
@@ -99,7 +99,7 @@ bool PropertyMap::LoadJSON(istream& in)
     int c = in.get();
     if(c == '}') return true;
     if(c != ',') {
-      LOG4CXX_ERROR(logger,"Map entries not separated by commas, character "<<char(c)<<" item "<<size()<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Map entries not separated by commas, character "<<char(c)<<" item "<<size()<<"\n");
       return false;
     }
   }
@@ -146,7 +146,7 @@ bool PropertyMap::Load(TiXmlElement* node)
   }
   return true;
 #else 
-    LOG4CXX_ERROR(logger,"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
   return false;
 #endif //HAVE_TINYXML
 }
@@ -158,7 +158,7 @@ bool PropertyMap::Save(TiXmlElement* node) const
     node->SetAttribute(i->first.c_str(),i->second.c_str());
   return true;
 #else 
-    LOG4CXX_ERROR(logger,"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
   return false;
 #endif //HAVE_TINYXML
 }

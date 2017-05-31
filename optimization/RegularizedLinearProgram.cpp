@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "RegularizedLinearProgram.h"
 #include "LPRobust.h"
 #include <math/VectorPrinter.h>
@@ -16,24 +16,24 @@ RegularizedLinearProgram::RegularizedLinearProgram()
 bool RegularizedLinearProgram::IsValid() const
 {
   if(norm != One && !IsInf(norm)) {
-    LOG4CXX_ERROR(logger,"RegularizedLinearProgram::IsValid(): Invalid norm"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"RegularizedLinearProgram::IsValid(): Invalid norm"<<"\n");
     return false;
   }
   if(!C.isEmpty() && C.n != c.n) {
-    LOG4CXX_ERROR(logger,"RegularizedLinearProgram::IsValid(): C.n != c.n"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"RegularizedLinearProgram::IsValid(): C.n != c.n"<<"\n");
     return false;
   }
   if(C.m != d.n) {
-    LOG4CXX_ERROR(logger,"RegularizedLinearProgram::IsValid(): C.m != d.n"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"RegularizedLinearProgram::IsValid(): C.m != d.n"<<"\n");
     return false;
   }
   if(!LinearConstraints::IsValid()) {
-    LOG4CXX_ERROR(logger,"RegularizedLinearProgram::IsValid(): Constraints not valid"<<"\n");
-    LOG4CXX_INFO(logger,"A("<<A.m<<" x "<<A.n<<") p("<<p.n<<") q("<<q.n<<") l("<<l.n<<") u("<<u.n);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"RegularizedLinearProgram::IsValid(): Constraints not valid"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"A("<<A.m<<" x "<<A.n<<") p("<<p.n<<") q("<<q.n<<") l("<<l.n<<") u("<<u.n);
     return false;
   }
   if(!A.isEmpty() && c.n != A.n) {
-    LOG4CXX_ERROR(logger,"RegularizedLinearProgram::IsValid(): Constraint size does not match objective size"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"RegularizedLinearProgram::IsValid(): Constraint size does not match objective size"<<"\n");
     return false;
   }
   return true;

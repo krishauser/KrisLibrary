@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Arrangement1D.h"
 #include <errors.h>
 #include <iostream>
@@ -181,7 +181,7 @@ void Arrangement1D::GetOverlapIntervals(Real imin,Real imax,vector<Interval>& se
       ids.push_back(&low->second.pointIDs);
     }
   }
-  //LOG4CXX_INFO(logger,"Overlap "<<imin<<" "<<imax<<", intervals "<<low->first<<" "<<high->first<<", check "<<(int)checkFirstPoint<<" "<<(int)checkLastInterval);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overlap "<<imin<<" "<<imax<<", intervals "<<low->first<<" "<<high->first<<", check "<<(int)checkFirstPoint<<" "<<(int)checkLastInterval);
   while(low != high) {
     segs.push_back(low->second.interval);
     ids.push_back(&low->second.intervalIDs);
@@ -212,10 +212,10 @@ Arrangement1D::SortedIntervals::iterator Arrangement1D::LocateInterval(Real x)
   SortedIntervals::iterator i=intervals.upper_bound(x);
   --i;
   if(i->second.interval.first > x || x >= i->second.interval.second) {
-    LOG4CXX_ERROR(logger,"Arrangement1D: LocateInterval failed"<<"\n");
-    LOG4CXX_ERROR(logger,"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D: LocateInterval failed"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
     i=intervals.upper_bound(x);
-    LOG4CXX_ERROR(logger,"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
   }
   Assert(i->second.interval.first <= x && x < i->second.interval.second);
   return i;
@@ -229,10 +229,10 @@ Arrangement1D::SortedIntervals::const_iterator Arrangement1D::LocateInterval(Rea
   SortedIntervals::const_iterator i=intervals.upper_bound(x);
   --i;
   if(i->second.interval.first > x || x >= i->second.interval.second) {
-    LOG4CXX_ERROR(logger,"Arrangement1D: LocateInterval failed"<<"\n");
-    LOG4CXX_ERROR(logger,"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D: LocateInterval failed"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
     i=intervals.upper_bound(x);
-    LOG4CXX_ERROR(logger,"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
   }
   Assert(i->second.interval.first <= x && x < i->second.interval.second);
   return i;
@@ -241,8 +241,8 @@ Arrangement1D::SortedIntervals::const_iterator Arrangement1D::LocateInterval(Rea
 void Arrangement1D::Split(SortedIntervals::iterator interval,Real x)
 {
   if(x <= interval->second.interval.first || x >= interval->second.interval.second) {
-    LOG4CXX_ERROR(logger,"Arrangement1D::Split(): interval doesn't contain x"<<"\n");
-    LOG4CXX_ERROR(logger,"x = "<<x<<", interval = ["<<interval->second.interval.first<<", "<<interval->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D::Split(): interval doesn't contain x"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<interval->second.interval.first<<", "<<interval->second.interval.second<<")"<<"\n");
   }
   Assert(x > interval->second.interval.first && x < interval->second.interval.second);
   Real right = interval->second.interval.second;

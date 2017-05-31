@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Histogram.h"
 #include "Histogram2D.h"
 #include "Histogram3D.h"
@@ -30,7 +30,7 @@ void Histogram::Resize(Real splitVal)
 void Histogram::Resize(size_t n,Real a,Real b)
 {
   if(n == 0) {
-    LOG4CXX_ERROR(logger,"Warning, resizing histogram to have 0 divisions -- was this intended?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, resizing histogram to have 0 divisions -- was this intended?"<<"\n");
     Clear();
   }
   else {
@@ -126,7 +126,7 @@ void Histogram2D::Clear()
 void Histogram2D::Resize(size_t m,size_t n,Real a1,Real b1,Real a2,Real b2)
 {
   if(m == 0 || n == 0) {
-    LOG4CXX_ERROR(logger,"Warning, resizing histogram to have 0 divisions -- was this intended?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, resizing histogram to have 0 divisions -- was this intended?"<<"\n");
     Clear();
   }
   else {
@@ -278,7 +278,7 @@ void Histogram3D::Clear()
 void Histogram3D::Resize(const Size dims,const Point min,const Point max)
 {
   if(dims[0] == 0 || dims[1] == 0 || dims[2] == 0) {
-    LOG4CXX_ERROR(logger,"Warning, resizing histogram to have 0 divisions -- was this intended?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, resizing histogram to have 0 divisions -- was this intended?"<<"\n");
     Clear();
   }
   else {

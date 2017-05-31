@@ -2,7 +2,7 @@
 #define TORQUE_SOLVER_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "RobotDynamics3D.h"
 #include "Contact.h"
 #include <KrisLibrary/optimization/MinNormProblem.h>
@@ -22,9 +22,9 @@
  * [add any force limits]
  * //solve
  * if(!solver.Solve())
- *   LOG4CXX_ERROR(logger,"Torque solver failed with error"<<"\n");
- * LOG4CXX_INFO(logger,"Torques: "<<solver.t<<"\n");
- * LOG4CXX_INFO(logger,"Contact forces: "<<solver.f<<"\n");
+ *   LOG4CXX_ERROR(KrisLibrary::logger(),"Torque solver failed with error"<<"\n");
+ * LOG4CXX_INFO(KrisLibrary::logger(),"Torques: "<<solver.t<<"\n");
+ * LOG4CXX_INFO(KrisLibrary::logger(),"Contact forces: "<<solver.f<<"\n");
  * @verbatim
  *
  * If you want to just test whether torque limits are satisfied, the

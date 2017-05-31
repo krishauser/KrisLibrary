@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "GLUINavigationProgram.h"
 
 #if HAVE_GLUI
@@ -368,120 +368,120 @@ GLUINavigationProgram::GLUINavigationProgram()
 
 bool GLUINavigationProgram::Initialize()
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
   return true;
 }
 
 void GLUINavigationProgram::Handle_Display()
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::Handle_Reshape(int w,int h)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::Handle_Keypress(unsigned char key,int x,int y)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::BeginDrag(int x,int y,int button,int modifiers)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::EndDrag(int x,int y,int button,int modifiers)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DoDrag(int dx,int dy,int button,int modifiers)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DoFreeDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DoCtrlDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DoAltDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DoShiftDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 
 void GLUINavigationProgram::DragPan(int dx,int dy)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DragRotate(int dx,int dy)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DragZoom(int dx,int dy)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DragTruck(int dx,int dy)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 
 void GLUINavigationProgram::Handle_Click(int button,int state,int x,int y)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::Handle_Drag(int x,int y)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::Handle_Idle()
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::DisplayCameraTarget()
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::Set2DMode(bool mode)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::CenterCameraOn(const Math3D::AABB3D& aabb)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::WriteDisplaySettings(ostream& out) const
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 void GLUINavigationProgram::ReadDisplaySettings(istream& in)
 {
-  LOG4CXX_ERROR(logger,"Warning, GLUI not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUI not defined"<<"\n");
 }
 
 

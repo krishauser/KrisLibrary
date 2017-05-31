@@ -91,12 +91,14 @@ void Segment3D::eval(Real t, Point3D& out) const
 
 bool Segment3D::intersects(const AABB3D& bb) const
 {
-	Real u1=0,u2=1;
+	Real u1,u2;
 	return intersects(bb,u1,u2);
 }
 
 bool Segment3D::intersects(const AABB3D& bb, Real& u1, Real& u2) const
 {
+  u1 = 0;
+  u2 = 1;
   return ClipLine(a, b-a, bb, u1,u2);
 }
 

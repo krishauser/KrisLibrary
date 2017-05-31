@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "linalgebra.h"
 #include "RowEchelon.h"
 #include "GramSchmidt.h"
@@ -98,7 +98,7 @@ bool IterativeMethod::Solve(Type type,Vector& x0,int& maxIters,Real& tol) const
   default: AssertNotReached();
   }
   if(!valid) {
-    LOG4CXX_WARN(logger,"Warning: matrix in IterativeMethod::Solve() won't guarantee convergence"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: matrix in IterativeMethod::Solve() won't guarantee convergence"<<"\n");
   }
 
   Vector r;
@@ -138,7 +138,7 @@ MatrixEquation::MatrixEquation(const Matrix& _A, const Vector& _b)
 bool MatrixEquation::LBackSubstitute(Vector& x) const
 {
   if(!A.isSquare() || !IsValid()) {
-    LOG4CXX_INFO(logger,"Invalid dims in LBackSubstitute"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dims in LBackSubstitute"<<"\n");
     return false;
   }
   x.resize(A.n);
@@ -148,7 +148,7 @@ bool MatrixEquation::LBackSubstitute(Vector& x) const
 bool MatrixEquation::UBackSubstitute(Vector& x) const
 {
   if(!A.isSquare() || !IsValid()) {
-    LOG4CXX_INFO(logger,"Invalid dims in UBackSubstitute"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dims in UBackSubstitute"<<"\n");
     return false;
   }
   x.resize(A.n);
@@ -158,7 +158,7 @@ bool MatrixEquation::UBackSubstitute(Vector& x) const
 bool MatrixEquation::LTBackSubstitute(Vector& x) const
 {
   if(!A.isSquare() || !IsValid()) {
-    LOG4CXX_INFO(logger,"Invalid dims in LTBackSubstitute"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dims in LTBackSubstitute"<<"\n");
     return false;
   }
   x.resize(A.n);
@@ -173,10 +173,11 @@ bool MatrixEquation::Solve(Vector& x) const
 bool MatrixEquation::Solve_Cholesky(Vector& x) const
 {
   if(!IsValid() || !A.isSquare()) {
-    LOG4CXX_INFO(logger,"Invalid dimensions in Solve_Cholesky"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dimensions in Solve_Cholesky"<<"\n");
     return false;
   }
   LDLDecomposition<Real> chol;
+  chol.verbose = 0;
   chol.set(A);
   return chol.backSub(b,x);
 }
@@ -184,7 +185,7 @@ bool MatrixEquation::Solve_Cholesky(Vector& x) const
 bool MatrixEquation::Solve_LU(Vector& x) const
 {
   if(!IsValid() || !A.isSquare()) {
-    LOG4CXX_INFO(logger,"Invalid dimensions in Solve_LU"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dimensions in Solve_LU"<<"\n");
     return false;
   }
   LUDecomposition<Real> lu;
@@ -230,7 +231,7 @@ bool MatrixEquation::Solve_SOR(Vector& x,Real omega,int maxIters,Real tol) const
 bool MatrixEquation::LeastSquares(Vector& x) const
 {
   if(!IsValid()) {
-    LOG4CXX_INFO(logger,"Invalid dimensions in LeastSquares()"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dimensions in LeastSquares()"<<"\n");
     return false;
   }
   if(LeastSquares_Cholesky(x)) {
@@ -244,7 +245,7 @@ bool MatrixEquation::LeastSquares(Vector& x) const
 bool MatrixEquation::LeastSquares_Cholesky(Vector& x) const
 {
   if(!IsValid()) {
-    LOG4CXX_INFO(logger,"Invalid dimensions in LeastSquares_Cholesky()"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dimensions in LeastSquares_Cholesky()"<<"\n");
     return false;
   }
   if(A.m < A.n) {
@@ -281,7 +282,7 @@ bool MatrixEquation::LeastSquares_Cholesky(Vector& x) const
 bool MatrixEquation::LeastSquares_GaussSeidel(Vector& x,int maxIters,Real tol) const
 {
   if(!IsValid()) {
-    LOG4CXX_INFO(logger,"Invalid dimensions in LeastSquares_GaussSeidel()"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid dimensions in LeastSquares_GaussSeidel()"<<"\n");
     return false;
   }
   if(A.m < A.n) {
@@ -318,7 +319,7 @@ bool MatrixEquation::LeastSquares_QR(Vector& x) const
   Assert(IsValid());
   QRDecomposition<Real> qr;
   if(A.m <= A.n) {
-    LOG4CXX_ERROR(logger,"Warning, not sure if QR with m<n works"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, not sure if QR with m<n works"<<"\n");
     if(!qr.set(A)) return false;
     qr.backSub(b,x);
     return true;
@@ -345,11 +346,11 @@ bool MatrixEquation::LeastSquares_SVD(Vector& x) const
     svd.backSub(b,x);
     return true;
     /*
-    LOG4CXX_ERROR(logger,"Doing the transpose SVD"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Doing the transpose SVD"<<"\n");
     Matrix At; At.setRefTranspose(A);
     if(!svd.set(At)) return false;
     svd.getInverse(At);
-    LOG4CXX_INFO(logger,"Result"<<"\n"<<MatrixPrinter(At)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Result"<<"\n"<<MatrixPrinter(At)<<"\n");
     Matrix Ainv; Ainv.setRefTranspose(At);
     Ainv.mul(b,x);
     return true;
@@ -366,7 +367,7 @@ bool MatrixEquation::AllSolutions(Vector& x0,Matrix& N) const
 bool MatrixEquation::AllSolutions_RE(Vector& x0,Matrix& N) const
 {
   if(A.n < A.m) {
-    LOG4CXX_WARN(logger,"Warning: matrix is overconstrained"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: matrix is overconstrained"<<"\n");
   }
   RowEchelon<Real> re;
   re.set(A,b);
@@ -377,7 +378,7 @@ bool MatrixEquation::AllSolutions_RE(Vector& x0,Matrix& N) const
 bool MatrixEquation::AllSolutions_SVD(Vector& x0,Matrix& N) const
 {
   if(A.n < A.m) {
-    LOG4CXX_WARN(logger,"Warning: matrix is overconstrained"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: matrix is overconstrained"<<"\n");
   }
   SVDecomposition<Real> svd;
   if(!svd.set(A)) return false;

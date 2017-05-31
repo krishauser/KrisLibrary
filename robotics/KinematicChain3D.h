@@ -2,7 +2,7 @@
 #define ROBOTICS_KINEMATIC_CHAIN3D_H
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "Frame.h"
 #include "Rotation.h"
 #include "Chain.h"

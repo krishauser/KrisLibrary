@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "socketutils.h"
 #include <math.h>
 #include <stdlib.h>
@@ -26,7 +26,7 @@ public:
   WSASocketGlobal() : started(false),failed(false) {}
   ~WSASocketGlobal() {
     if(started) {
-      LOG4CXX_INFO(logger,"Shutting down the Winsock 2.2 dll\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Shutting down the Winsock 2.2 dll\n");
       WSACleanup();
     }
   }
@@ -42,7 +42,7 @@ public:
     if (err != 0) {
         /* Tell the user that we could not find a usable */
         /* Winsock DLL.                                  */
-        LOG4CXX_ERROR(logger,"WSAStartup failed with error: "<< err);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"WSAStartup failed with error: "<< err);
 		failed = true;
         return false;
     }
@@ -56,13 +56,13 @@ public:
     if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
         /* Tell the user that we could not find a usable */
         /* WinSock DLL.                                  */
-        LOG4CXX_INFO(logger,"Could not find a usable version of Winsock.dll\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Could not find a usable version of Winsock.dll\n");
         WSACleanup();
 		failed = true;
         return false;
     }
     else {
-        LOG4CXX_INFO(logger,"The Winsock 2.2 dll was found successfully\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"The Winsock 2.2 dll was found successfully\n");
 	started = true;
 	return true;
     }
@@ -119,18 +119,18 @@ bool ParseAddr(const char* addr,char* protocol,char* host,int& port)
     char* endptr;
     long int res = strtol(colonpos,&endptr,0);
     if(res==0 && endptr==colonpos) {
-            LOG4CXX_ERROR(logger,"ParseAddr: address did not contain valid port\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ParseAddr: address did not contain valid port\n");
       return false;
     }
     if(res < 0 || res > 0xffff) {
-            LOG4CXX_ERROR(logger,"ParseAddr: address did not contain valid port\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ParseAddr: address did not contain valid port\n");
       return false;
     }
     port = (int)res;
   }
 
   if(port < 0) {
-        LOG4CXX_ERROR(logger,"ParseAddr: address did not contain valid port\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ParseAddr: address did not contain valid port\n");
     return false;
   }
   return true;
@@ -145,7 +145,7 @@ SOCKET Connect(const char* addr)
   char* host = new char[strlen(addr)];
   int port;
   if(!ParseAddr(addr,protocol,host,port)) {
-        LOG4CXX_ERROR(logger,"Connect: Error parsing address "<<addr);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Connect: Error parsing address "<<addr);
     delete [] protocol;
     delete [] host;
     return INVALID_SOCKET;
@@ -162,13 +162,13 @@ SOCKET Connect(const char* addr)
 	  
   SOCKET sockfd = socket(AF_INET, sockettype, 0);
   if (sockfd == INVALID_SOCKET) {
-        LOG4CXX_ERROR(logger,"Connect: Error creating socket\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Connect: Error creating socket\n");
     delete [] host;
     return INVALID_SOCKET;
   }
   server = gethostbyname(host);
   if (server == NULL) {
-        LOG4CXX_ERROR(logger,"Connect: Error, no such host "<<host<<":"<<port);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Connect: Error, no such host "<<host<<":"<<port);
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET;
@@ -181,7 +181,7 @@ SOCKET Connect(const char* addr)
   serv_addr.sin_port = htons(port);
 
   if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-        LOG4CXX_ERROR(logger,"socketutils.cpp Connect: Connect to server "<<host<<":"<<port);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Connect: Connect to server "<<host<<":"<<port);
     perror("  Reason");
     CloseSocket(sockfd);
     delete [] host;
@@ -200,7 +200,7 @@ SOCKET Bind(const char* addr,bool block)
   char* host = new char[strlen(addr)];
   int port;
   if(!ParseAddr(addr,protocol,host,port)) {
-        LOG4CXX_ERROR(logger,"Error parsing address "<<addr);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Error parsing address "<<addr);
     delete [] protocol;
     delete [] host;
     return INVALID_SOCKET;
@@ -217,7 +217,7 @@ SOCKET Bind(const char* addr,bool block)
 	  
   SOCKET sockfd = socket(AF_INET, sockettype, 0);
   if (sockfd == INVALID_SOCKET) {
-        LOG4CXX_ERROR(logger,"socketutils.cpp Bind: Error creating socket\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Bind: Error creating socket\n");
     delete [] host;
     return INVALID_SOCKET;
   }
@@ -227,7 +227,7 @@ SOCKET Bind(const char* addr,bool block)
 
   server = gethostbyname(host);
   if (server == NULL) {
-        LOG4CXX_ERROR(logger,"socketutils.cpp Bind: Error, no such host "<<host<<":"<<port);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Bind: Error, no such host "<<host<<":"<<port);
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET;
@@ -240,7 +240,7 @@ SOCKET Bind(const char* addr,bool block)
   serv_addr.sin_port = htons(port);
 
   if (bind(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-        LOG4CXX_ERROR(logger,"socketutils.cpp Bind: Bind server to "<<host<<":"<<port);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Bind: Bind server to "<<host<<":"<<port);
     perror("  Reason");
     CloseSocket(sockfd);
     delete [] host;
@@ -284,7 +284,7 @@ SOCKET Accept(SOCKET sockfd,double timeout)
   }
   else  {
     if(result < 0) {
-      LOG4CXX_ERROR(logger,"Error using select()\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error using select()\n");
     }
      //always here, even if i connect from another application
     return INVALID_SOCKET;
@@ -361,7 +361,7 @@ bool ReadAvailable(SOCKET socketfd)
     if(FD_ISSET(socketfd, &fds))
       return true;
     else
-      LOG4CXX_INFO(logger,"ReadAvailable: weird, select returned 1 but the FD set is not set\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadAvailable: weird, select returned 1 but the FD set is not set\n");
     return false;
   }
 }
@@ -396,7 +396,7 @@ bool WriteAvailable(SOCKET socketfd)
     if(FD_ISSET(socketfd, &fds))
       return true;
     else
-      LOG4CXX_INFO(logger,"WriteAvailable: weird, select returned 1 but the FD set is not set\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"WriteAvailable: weird, select returned 1 but the FD set is not set\n");
     return false;
   }
 }
@@ -431,7 +431,7 @@ bool HasException(SOCKET socketfd)
     if(FD_ISSET(socketfd, &fds))
       return true;
     else
-      LOG4CXX_INFO(logger,"HasException: weird, select returned 1 but the FD set is not set\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"HasException: weird, select returned 1 but the FD set is not set\n");
     return false;
   }
 }

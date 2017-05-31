@@ -1,5 +1,5 @@
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include "SparseMatrixTemplate.h"
 #include "complex.h"
 #include <iostream>
@@ -106,7 +106,7 @@ void SparseMatrixTemplate_RM<T>::eraseEntry(int i, int j)
   Assert(isValidCol(j));
   bool res = rows[i].erase(j);
   if(!res) {
-    LOG4CXX_ERROR(logger,"Warning, entry "<<i<<","<<j<<" doesn't exist"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, entry "<<i<<","<<j<<" doesn't exist"<<"\n");
   }
 }
 

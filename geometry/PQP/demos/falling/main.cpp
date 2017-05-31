@@ -39,7 +39,7 @@
 \**************************************************************************/
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/logDummy.cpp>
+#include <KrisLibrary/Logger.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -394,7 +394,7 @@ void LoadPath(PQP_REAL (* &R)[3][3], PQP_REAL (* &T)[3], char *filename)
   FILE *fp;
   if ( (fp = fopen(filename, "r")) == NULL ) 
   {
-        LOG4CXX_ERROR(logger, "Error opening file "<< filename);
+        LOG4CXX_ERROR(KrisLibrary::logger(), "Error opening file "<< filename);
     exit(1);
   }
   fscanf(fp, "%d", &number_of_steps);
@@ -523,7 +523,7 @@ void main(int argc, char **argv)
 
   // print instructions
 
-  LOG4CXX_INFO(logger,"PQP Demo - Falling:\n"
+  LOG4CXX_INFO(KrisLibrary::logger(),"PQP Demo - Falling:\n"
          "Press:\n"
          "0 - no proximity query, just animation\n"
          "1 - collision query\n"
