@@ -38,6 +38,8 @@
 
 \**************************************************************************/
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include <stdio.h>
 #include <math.h>
 #include "PQP.h"
@@ -54,7 +56,7 @@ main()
   
   // Add trianges to form tori
 
-  fprintf(stderr, "loading tris into PQP_Model objects...");  fflush(stderr);
+    LOG4CXX_ERROR(KrisLibrary::logger(), "loading tris into PQP_Model objects...");  fflush(stderr);
   
   PQP_REAL a = (PQP_REAL)1.0;  // major radius of the tori
   PQP_REAL b = (PQP_REAL)0.2;  // minor radius of the tori
@@ -100,12 +102,12 @@ main()
     }
   }
 
-  fprintf(stderr, "done\n");  fflush(stderr);
-  fprintf(stderr, "Tori have %d triangles each.\n", count);
-  fprintf(stderr, "building hierarchies...");  fflush(stderr);
+    LOG4CXX_ERROR(KrisLibrary::logger(), "done\n");  fflush(stderr);
+    LOG4CXX_ERROR(KrisLibrary::logger(), "Tori have "<< count);
+    LOG4CXX_ERROR(KrisLibrary::logger(), "building hierarchies...");  fflush(stderr);
   b1->EndModel();
   b2->EndModel();
-  fprintf(stderr, "done.\n"); 
+    LOG4CXX_ERROR(KrisLibrary::logger(), "done.\n"); 
   b1->MemUsage(1);
   b2->MemUsage(1);
   fflush(stderr); 
@@ -137,15 +139,15 @@ main()
   // looking at the report, we can see where all the contacts were, and
   // also how many tests were necessary:
 
-  printf("\nAll contact collision query between overlapping tori:\n");
-  printf("Num BV tests: %d\n", cres.NumBVTests());
-  printf("Num Tri tests: %d\n", cres.NumTriTests());
-  printf("Num contact pairs: %d\n", cres.NumPairs());
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nAll contact collision query between overlapping tori:\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< cres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< cres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num contact pairs: "<< cres.NumPairs());
 #if LISTS
   int i;
   for(i=0; i<cres.NumPairs(); i++)
   {
-    printf("\t contact %4d: tri %4d and tri %4d\n",
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n",
            i,
            cres.Id1(i),
            cres.Id2(i));
@@ -160,14 +162,14 @@ main()
 
   PQP_Collide(&cres, R1, T1, b1, R2, T2, b2, PQP_FIRST_CONTACT);
 
-  printf("\nFirst contact collision query between overlapping tori:\n");
-  printf("Num BV tests: %d\n", cres.NumBVTests());
-  printf("Num Tri tests: %d\n", cres.NumTriTests());
-  printf("Num contact pairs: %d\n", cres.NumPairs());
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nFirst contact collision query between overlapping tori:\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< cres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< cres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num contact pairs: "<< cres.NumPairs());
 #if LISTS
   for(i=0; i<cres.NumPairs(); i++)
   {
-    printf("\t contact %4d: tri %4d and tri %4d\n", 
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n", 
            i, 
            cres.Id1(i), 
            cres.Id2(i));
@@ -179,10 +181,10 @@ main()
   PQP_DistanceResult dres;
   PQP_Distance(&dres, R1, T1, b1, R2, T2, b2, 0.0, 0.0);
 
-  printf("\nDistance query between overlapping tori\n");
-  printf("Num BV tests: %d\n", dres.NumBVTests());
-  printf("Num Tri tests: %d\n", dres.NumTriTests());
-  printf("Distance: %lf\n", dres.Distance());
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nDistance query between overlapping tori\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< dres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< dres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Distance: "<< dres.Distance());
 
   // by rotating one of them around the x-axis 90 degrees, they 
   // are now interlocked, but not quite touching.
@@ -193,14 +195,14 @@ main()
   
   PQP_Collide(&cres, R1, T1, b1, R2, T2, b2, PQP_FIRST_CONTACT);
 
-  printf("\nCollision query between interlocked but nontouching tori:\n");
-  printf("Num BV tests: %d\n", cres.NumBVTests());
-  printf("Num Tri tests: %d\n", cres.NumTriTests());
-  printf("Num contact pairs: %d\n", cres.NumPairs());
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nCollision query between interlocked but nontouching tori:\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< cres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< cres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num contact pairs: "<< cres.NumPairs());
 #if LISTS
   for(i=0; i<cres.NumPairs(); i++)
   {
-    printf("\t contact %4d: tri %4d and tri %4d\n", 
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n", 
            i, 
            cres.Id1(i), 
            cres.Id2(i));
@@ -211,10 +213,10 @@ main()
 
   PQP_Distance(&dres, R1, T1, b1, R2, T2, b2, 0.0, 0.0);
 
-  printf("\nDistance query between interlocked but nontouching tori\n");
-  printf("Num BV tests: %d\n", dres.NumBVTests());
-  printf("Num Tri tests: %d\n", dres.NumTriTests());
-  printf("Distance: %lf\n", dres.Distance());
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nDistance query between interlocked but nontouching tori\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< dres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< dres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Distance: "<< dres.Distance());
 
   // Perform two tolerance queries. One tolerance setting is greater than the 
   // distance between the models, and one tolerance is less than the distance.
@@ -223,22 +225,22 @@ main()
   PQP_REAL tolerance = (PQP_REAL).60;
   PQP_Tolerance(&tres, R1, T1, b1, R2, T2, b2, tolerance);
 
-  printf("\nTolerance query between interlocked but nontouching tori\n"
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nTolerance query between interlocked but nontouching tori\n"
          "with tolerance %lf\n", tolerance);
-  printf("Num BV tests: %d\n", tres.NumBVTests());
-  printf("Num Tri tests: %d\n", tres.NumTriTests());
-  printf("Closer than tolerance? ",tolerance);
-  if (tres.CloserThanTolerance()) printf("yes.\n"); else printf("no.\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< tres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< tres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Closer than tolerance? ",tolerance);
+  if (tres.CloserThanTolerance()) LOG4CXX_INFO(KrisLibrary::logger(),"yes.\n"); else ,"no.\n");
 
   tolerance = (PQP_REAL).40;
   PQP_Tolerance(&tres, R1, T1, b1, R2, T2, b2, tolerance);
 
-  printf("\nTolerance query between interlocked but nontouching tori\n"
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nTolerance query between interlocked but nontouching tori\n"
          "with tolerance %lf\n", tolerance);
-  printf("Num BV tests: %d\n", tres.NumBVTests());
-  printf("Num Tri tests: %d\n", tres.NumTriTests());
-  printf("Closer than tolerance? ",tolerance);
-  if (tres.CloserThanTolerance()) printf("yes.\n"); else printf("no.\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< tres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< tres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Closer than tolerance? ",tolerance);
+  if (tres.CloserThanTolerance()) LOG4CXX_INFO(KrisLibrary::logger(),"yes.\n"); else ,"no.\n");
 
   // by moving one of the tori closer to the other, they
   // almost touch.  This is the case that requires a lot
@@ -253,14 +255,14 @@ main()
   
   PQP_Collide(&cres, R1, T1, b1, R2, T2, b2, PQP_FIRST_CONTACT);
 
-  printf("\nCollision query on interlocked and almost touching tori:\n");
-  printf("Num BV tests: %d\n", cres.NumBVTests());
-  printf("Num Tri tests: %d\n", cres.NumTriTests());
-  printf("Num contact pairs: %d\n", cres.NumPairs());
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nCollision query on interlocked and almost touching tori:\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< cres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< cres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num contact pairs: "<< cres.NumPairs());
 #if LISTS
   for(i=0; i<cres.NumPairs(); i++)
   {
-    printf("\t contact %4d: tri %4d and tri %4d\n", 
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n", 
            i, 
            cres.Id1(i), 
            cres.Id2(i));
@@ -269,30 +271,30 @@ main()
 
   PQP_Distance(&dres, R1, T1, b1, R2, T2, b2, 0.0, 0.0);
 
-  printf("\nDistance query between interlocked and almost touching tori\n");
-  printf("Num BV tests: %d\n", dres.NumBVTests());
-  printf("Num Tri tests: %d\n", dres.NumTriTests());
-  printf("Distance: %lf\n", dres.Distance());
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nDistance query between interlocked and almost touching tori\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< dres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< dres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Distance: "<< dres.Distance());
 
   tolerance = (PQP_REAL)0.00015;
   PQP_Tolerance(&tres, R1, T1, b1, R2, T2, b2, tolerance);
 
-  printf("\nTolerance query between interlocked and almost touching tori\n"
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nTolerance query between interlocked and almost touching tori\n"
          "with tolerance %lf\n", tolerance);
-  printf("Num BV tests: %d\n", tres.NumBVTests());
-  printf("Num Tri tests: %d\n", tres.NumTriTests());
-  printf("Closer than tolerance? ",tolerance);
-  if (tres.CloserThanTolerance()) printf("yes.\n"); else printf("no.\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< tres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< tres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Closer than tolerance? ",tolerance);
+  if (tres.CloserThanTolerance()) LOG4CXX_INFO(KrisLibrary::logger(),"yes.\n"); else ,"no.\n");
 
   tolerance = (PQP_REAL)0.00005;
   PQP_Tolerance(&tres, R1, T1, b1, R2, T2, b2, tolerance);
 
-  printf("\nTolerance query between interlocked and almost touching tori\n"
+  LOG4CXX_INFO(KrisLibrary::logger(),"\nTolerance query between interlocked and almost touching tori\n"
          "with tolerance %lf\n", tolerance);
-  printf("Num BV tests: %d\n", tres.NumBVTests());
-  printf("Num Tri tests: %d\n", tres.NumTriTests());
-  printf("Closer than tolerance? ",tolerance);
-  if (tres.CloserThanTolerance()) printf("yes.\n"); else printf("no.\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num BV tests: "<< tres.NumBVTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Num Tri tests: "<< tres.NumTriTests());
+  LOG4CXX_INFO(KrisLibrary::logger(),"Closer than tolerance? ",tolerance);
+  if (tres.CloserThanTolerance()) LOG4CXX_INFO(KrisLibrary::logger(),"yes.\n"); else ,"no.\n");
 
   delete b1;
   delete b2;

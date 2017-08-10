@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "AOMetaPlanner.h"
 #include "CostSpace.h"
 #include "InterpolatorHelpers.h"
@@ -180,30 +182,30 @@ RRTKinodynamicPlanner::Node* CostSpaceRRTPlanner::ExtendToward(const State& xdes
   Real cn = StateCostControlSpace::Cost(*n);
   if(!IsInf(bestPathCost)) {
     if(cn > bestPathCost) {
-      printf("Closest node is prunable\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Closest node is prunable\n");
       prunableNodeSampleCount+=1;
       return NULL;
     }
     if(heuristic && cn + heuristic(*n) > bestPathCost) {
-      printf("Closest node is prunable w/ heuristic\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Closest node is prunable w/ heuristic\n");
       prunableNodeSampleCount+=1;
       return NULL;
     }
   }
   Real d = space->GetStateSpace()->Distance(*n,xdest);
-  //cout<<"Source "<<*n<<" dest "<<xdest<<endl;
-  //cout<<"Distance to closest "<<d<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Source "<<*n<<" dest "<<xdest<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Distance to closest "<<d<<"\n");
   Vector temp = xdest;
   if(d > delta)  {
     space->GetStateSpace()->Interpolate(*n,xdest,delta/d,temp);
-    //cout<<"Interpolated point "<<temp<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Interpolated point "<<temp<<"\n");
   }
 
   KinodynamicMilestonePath path;
   if(!PickControl(*n,temp,path)) {
     pickControlTime += timer.ElapsedTime();
     numInfeasibleControls++;
-    //printf("PickControl failed\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"PickControl failed\n");
     return NULL;
   }
   pickControlTime += timer.ElapsedTime();
@@ -211,14 +213,14 @@ RRTKinodynamicPlanner::Node* CostSpaceRRTPlanner::ExtendToward(const State& xdes
   Assert(path.Start().n == space->GetStateSpace()->NumDimensions());
   Assert(path.End().n == space->GetStateSpace()->NumDimensions());
   if(FilterExtension(n,path)) {
-    //printf("Extension filtered\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Extension filtered\n");
     numFilteredExtensions++;
     return NULL;
   }
   if(!space->GetStateSpace()->IsFeasible(path.End())) {
-    //printf("Edge endpoint is not feasible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible\n");
     visibleTime += timer.ElapsedTime();
-    //printf("Infeasible endpoint\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Infeasible endpoint\n");
     numInfeasibleEndpoints++;
     return NULL;
   }
@@ -236,7 +238,7 @@ RRTKinodynamicPlanner::Node* CostSpaceRRTPlanner::ExtendToward(const State& xdes
   }
   else {
     visibleTime += timer.ElapsedTime();
-    //printf("Edge is not visible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge is not visible\n");
     return NULL;
   }
 }
@@ -249,7 +251,7 @@ bool CostSpaceRRTPlanner::Plan(int maxIters)
     bool prune = false;
     Node* n=RRTKinodynamicPlanner::Extend();
     if(n && goalSet && goalSet->Contains(*n)) {
-      printf("Got a new node in goal\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Got a new node in goal\n");
       //new goal node found
       Real cn = TerminalCost(*n);
       numGoalsSampled++;
@@ -258,7 +260,7 @@ bool CostSpaceRRTPlanner::Plan(int maxIters)
           goalNode = n;
           foundNewPath = true;
           if(IsInf(bestPathCost)) {
-            printf("Got initial best path, cost %g\n",cn);
+            LOG4CXX_INFO(KrisLibrary::logger(),"Got initial best path, cost "<<cn);
             bestPathCost = cn;
             RRTKinodynamicPlanner::GetPath(bestPath);
             EnableCostSpaceBias(true);
@@ -267,7 +269,7 @@ bool CostSpaceRRTPlanner::Plan(int maxIters)
           }
           else {
             //improves upon previous solution
-            printf("Improved best path cost from %g to %g\n",bestPathCost,cn);
+            LOG4CXX_INFO(KrisLibrary::logger(),"Improved best path cost from "<<bestPathCost<<" to "<<cn);
             //if(cn < 0.9*bestPathCost) prune = true;
             //TEST: always prune
             prune = true;
@@ -291,7 +293,7 @@ bool CostSpaceRRTPlanner::Plan(int maxIters)
     }
     if(prune || (prunableNodeSampleCount > 10 && prunableNodeSampleCount*100 > nodeSampleCount)) {
       //prune the tree
-      printf("Pruning the RRT tree\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Pruning the RRT tree\n");
       PruneTree();
       nodeSampleCount = prunableNodeSampleCount = 0;
     }
@@ -311,7 +313,7 @@ struct PruneCallback : public Graph::CallbackBase<CostSpaceRRTPlanner::Node*>
     }
     else if(planner->heuristic && cn + planner->heuristic(*n) > planner->bestPathCost) {
       if(find(prevent.begin(),prevent.end(),n) != prevent.end()) {
-        printf("CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node\n");
+        LOG4CXX_WARN(KrisLibrary::logger(),"CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node\n");
         return;
       }
       deleteNodes.push_back(n);
@@ -338,7 +340,7 @@ void CostSpaceRRTPlanner::PruneTree()
   */
   tree.root->DFS(callback);
   if(callback.deleteNodes.empty()) return;
-  printf("CostSpaceRRTPlanner::PruneTree() Pruning %d nodes\n",(int)callback.deleteNodes.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"CostSpaceRRTPlanner::PruneTree() Pruning "<<(int)callback.deleteNodes.size());
   numPrunedNodes += (int)callback.deleteNodes.size();
   for(size_t i=0;i+1<callback.deleteNodes.size();i++) {
     Node* p = callback.deleteNodes[i]->getParent();
@@ -517,7 +519,7 @@ bool CostSpaceESTPlanner::Plan(int maxIters)
 
         foundNewPath = true;
         if(IsInf(bestPathCost)) {
-          printf("Got initial best path, cost %g\n",cn);
+          LOG4CXX_INFO(KrisLibrary::logger(),"Got initial best path, cost "<<cn);
           bestPathCost = cn;
           EnableCostSpaceBias(true);
           nodeSampleCount = prunableNodeSampleCount = 0;
@@ -525,7 +527,7 @@ bool CostSpaceESTPlanner::Plan(int maxIters)
         }
         else {
           //improves upon previous solution
-          printf("Improved best path cost from %g to %g\n",bestPathCost,cn);
+          LOG4CXX_INFO(KrisLibrary::logger(),"Improved best path cost from "<<bestPathCost<<" to "<<cn);
           //if(cn < 0.9*bestPathCost) prune = true;
           //TEST: always prune
           prune = true;
@@ -537,7 +539,7 @@ bool CostSpaceESTPlanner::Plan(int maxIters)
     }
     if(prune || (prunableNodeSampleCount > 10 && prunableNodeSampleCount*10 > nodeSampleCount)) {
       //prune the tree
-      printf("Pruning the EST tree\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Pruning the EST tree\n");
       PruneTree();
       nodeSampleCount = prunableNodeSampleCount = 0;
     }
@@ -557,7 +559,7 @@ struct PruneCallback2 : public Graph::CallbackBase<CostSpaceESTPlanner::Node*>
     }
     else if(planner->heuristic && cn + planner->heuristic(*n) > planner->bestPathCost) {
       if(find(prevent.begin(),prevent.end(),n) != prevent.end()) {
-        printf("CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node\n");
+        LOG4CXX_WARN(KrisLibrary::logger(),"CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node\n");
         return;
       }
       deleteNodes.push_back(n);
@@ -583,7 +585,7 @@ void CostSpaceESTPlanner::PruneTree()
   tree.root->DFS(callback);
   if(callback.deleteNodes.empty()) return;
   numPrunedNodes += (int)callback.deleteNodes.size();
-  printf("CostSpaceESTPlanner::PruneTree() Pruning %d nodes\n",(int)callback.deleteNodes.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"CostSpaceESTPlanner::PruneTree() Pruning "<<(int)callback.deleteNodes.size());
   for(size_t i=0;i+1<callback.deleteNodes.size();i++) {
     Node* p = callback.deleteNodes[i]->getParent();
     p->detachChild(callback.deleteNodes[i]);

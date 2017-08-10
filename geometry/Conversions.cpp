@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "Conversions.h"
 #include "CollisionMesh.h"
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
@@ -74,7 +76,7 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLD
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Real depthDiscontinuity)
 {
 	if(!pc.IsStructured()) {
-		fprintf(stderr,"PointCloudToMesh: TODO: convert unstructured point clouds to meshes\n");
+				LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloudToMesh: TODO: convert unstructured point clouds to meshes\n");
 		return;
 	}
 	mesh.verts = pc.points;
@@ -150,9 +152,9 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution)
 	grid.bb.bmin = center - 0.5*size;
 	grid.bb.bmax = center + 0.5*size;
 	if(m*n*p > 100000000) {
-		fprintf(stderr,"FitGridToBB: Warning, creating a volume grid of resolution %g will create %d cells\n",resolution,m*n*p);
-		fprintf(stderr,"  Press enter to continue\n");
-		getchar();
+				LOG4CXX_ERROR(KrisLibrary::logger(),"FitGridToBB: Warning, creating a volume grid of resolution "<<resolution<<" will create "<<m*n*p);
+				LOG4CXX_ERROR(KrisLibrary::logger(),"  Press enter to continue\n");
+		if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	grid.Resize(m,n,p);
 }
@@ -194,7 +196,7 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 	Extrema(grid.bb,y,ymin,ymax);
 	Vector3 cellSize = grid.GetCellSize();
 	Real cellResolution = (cellSize.x + cellSize.y + cellSize.z)/3.0;
-	printf("Carving over range [%g,%g]x[%g,%g] with resolution %g\n",xmin,xmax,ymin,ymax,resolution);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Carving over range ["<<xmin<<","<<xmax<<"]x["<<ymin<<","<<ymax<<"] with resolution "<<resolution);
 	double truncationCellCount = 10;
 	Ray3D r;
 	Segment3D s;
@@ -224,12 +226,12 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 				nhit ++;
 				s.a = r.source;
 				s.b = pt + (truncationCellCount*resolution)*d;
-				//cout<<"source "<<r.source<<" direction "<<r.direction<<endl;
-				//cout<<"Hit point "<<pt<<endl;
+				//LOG4CXX_INFO(KrisLibrary::logger(),"source "<<r.source<<" direction "<<r.direction<<"\n");
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Hit point "<<pt<<"\n");
 				Meshing::GetSegmentCells(s,grid.value.m,grid.value.n,grid.value.p,grid.bb,cells);
-				//cout<<"segment "<<s.a<<" -> "<<s.b<<endl;
-				//cout<<"Bbox "<<grid.bb<<endl;
-				//printf("Segment up to %g depth hits %d cells\n",5*resolution,cells.size());
+				//LOG4CXX_INFO(KrisLibrary::logger(),"segment "<<s.a<<" -> "<<s.b<<"\n");
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Bbox "<<grid.bb<<"\n");
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Segment up to "<<5*resolution<<" depth hits "<<cells.size());
 				for(size_t i=0;i<cells.size();i++) {
 					//grid.GetCellCenter(cells[i].a,cells[i].b,cells[i].c,c);
 					grid.GetCell(cells[i].a,cells[i].b,cells[i].c,cell);
@@ -242,13 +244,13 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 					}
 					else {
 						s.eval((tmin + tmax)*0.5,c);
-						//printf("Intersection %g %g\n",tmin,tmax);
+						//LOG4CXX_INFO(KrisLibrary::logger(),"Intersection "<<tmin<<" "<<tmax);
 						weight = Min(tmax-tmin,cellResolution) / cellResolution;
 						//weight = 1.0;
 						v = grid.value(cells[i]);
 						if(!firstPass && Abs(v) < cellResolution)
 							v = grid.TrilinearInterpolate(c);
-						//printf("Interpolated value %g, cell value %g\n",v,grid.value(cells[i]));
+						//LOG4CXX_INFO(KrisLibrary::logger(),"Interpolated value "<<v<<", cell value "<<grid.value(cells[i]));
 					}
 					//distance from c to pt 
 					Real measured = pt.distance(c)*Sign(d.dot(pt-c));
@@ -262,13 +264,13 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 							occupancy(cells[i]) += 1;
 					}
 
-					//cout<<cell.bmin<<" -> "<<cell.bmax<<endl;
-					//printf("Cell %g %g %g, point %g %g %g, old distance %g new distance %g\n",c.x,c.y,c.z,pt.x,pt.y,pt.z,v,distance);
-					//printf("Weight %g\n",weight);
-					//getchar();
+					//LOG4CXX_INFO(KrisLibrary::logger(),cell.bmin<<" -> "<<cell.bmax<<"\n");
+					//LOG4CXX_INFO(KrisLibrary::logger(),"Cell "<<c.x<<" "<<c.y<<" "<<c.z<<", point "<<pt.x<<" "<<pt.y<<" "<<pt.z<<", old distance "<<v<<" new distance "<<distance);
+					//LOG4CXX_INFO(KrisLibrary::logger(),"Weight "<<weight);
+					//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 					//assert(s.distance(c) < cellResolution);
 					
-					//printf("Distance to segment: %g\n",s.distance(c));
+					//LOG4CXX_INFO(KrisLibrary::logger(),"Distance to segment: "<<s.distance(c));
 					if(v > 0) { //think we're outside, update if the ray gives a closer point
 						if(measured < -resolution) {
 							//previous ray says we're outside, but measurement is inside.  probably occluded.
@@ -289,7 +291,7 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 							grid.value(cells[i]) += (measured-v)/(1.0+occ);
 					}
 				}
-				//getchar();
+				//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 			}
 			else {
 				//carve through free space
@@ -309,7 +311,7 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 		}
 		u += resolution;
 	}
-	printf("%d / %d rays hit the mesh\n",nhit,ncast);
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<nhit<<" / "<<ncast);
 }
 
 void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
@@ -428,7 +430,7 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 			depth = grid.TrilinearInterpolate(mesh.verts[i]);
 		}
 	}
-	printf("Volume grid has %d / %d cells occupied\n",inside,grid.value.m*grid.value.n*grid.value.p);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Volume grid has "<<inside<<" / "<<grid.value.m*grid.value.n*grid.value.p);
 }
 
 void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh)

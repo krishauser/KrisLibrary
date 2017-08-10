@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "diffeq.h"
 #include "vector.h"
 using namespace std;
@@ -102,7 +104,7 @@ Real RKF(RealFunction2* f, Real a, Real b, Real alpha, Real tol, Real hmax, Real
 			h = b - t;
 		else if (h < hmin) {
 			FLAG = 0;
-			fprintf(stderr,"RKF: minimum h exceeded\n");
+						LOG4CXX_ERROR(KrisLibrary::logger(),"RKF: minimum h exceeded\n");
 			return w;
 		}
 	}

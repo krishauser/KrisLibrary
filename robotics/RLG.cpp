@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "RLG.h"
 #include "WorkspaceBound.h"
 #include <math/angle.h>
@@ -18,10 +20,10 @@ Real AngleClamp(Real x,Real a,Real b)
   Real da=AngleCCWDiff(a,x);
   Real db=AngleCCWDiff(x,b);
   if(da > AngleCCWDiff(a,b)) {
-    cout<<"Hmmm... it seems like q is between [a,b]"<<endl;
-    cout<<"ccw difference a-b "<<AngleCCWDiff(a,b)<<endl;
-    cout<<"ccw difference a-x "<<AngleCCWDiff(a,x)<<endl;
-    printf("%f in [%f,%f]\n",x,a,b);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Hmmm... it seems like q is between [a,b]"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"ccw difference a-b "<<AngleCCWDiff(a,b)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"ccw difference a-x "<<AngleCCWDiff(a,x)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),""<<x<<" in ["<<a<<","<<b);
   }
   Assert(da <= AngleCCWDiff(a,b));
   if(da > db) return b;
@@ -49,9 +51,9 @@ inline void FixAngleWarn(Real& q,Real qmin,Real qmax)
     if(FuzzyEquals(q,qmin)) q=qmin;
     else if(FuzzyEquals(q,qmax)) q=qmax;
     else {
-      cerr<<"RLG: violating "<<qmin<<" <= "<<q<<" <= "<<qmax<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"RLG: violating "<<qmin<<" <= "<<q<<" <= "<<qmax<<"\n");
       q = Clamp(q,qmin,qmax);
-      getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     //Assert(qmin <= q && q <= qmax);
   }
@@ -97,11 +99,11 @@ void SawtoothAngleEnvelope::setAngles(const AngleSet& angles)
   flip_y();
 
   /*
-  cout<<"Sawtooth ";
+  LOG4CXX_INFO(KrisLibrary::logger(),"Sawtooth ");
   for(size_t i=0;i<v.size();i++) {
-    cout<<v[i]<<", ";
+    LOG4CXX_INFO(KrisLibrary::logger(),v[i]<<", ");
   }
-  cout<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   */
 }
 
@@ -146,11 +148,11 @@ Real SawtoothAngleEnvelope::minimumInterval(Real a,Real b,Real* x)
   int max2PiInd=(int)v.size()-1;
   int first2Pi=-1;
   if(!FuzzyZero(v[0].x) || !FuzzyEquals(v.back().x,TwoPi)) {
-    cerr<<"SawtoothAngleEnvelope: Error in the upper envelope function?"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SawtoothAngleEnvelope: Error in the upper envelope function?"<<"\n");
     for(size_t i=0;i<v.size();i++)
-      cerr<<v[i]<<", ";
-    cerr<<endl;
-    getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),v[i]<<", ");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   Assert(FuzzyZero(v[0].x) && FuzzyEquals(v.back().x,TwoPi));
   for(size_t i=0;i<v.size();i++) {
@@ -170,11 +172,11 @@ Real SawtoothAngleEnvelope::minimumInterval(Real a,Real b,Real* x)
     }
   }
   if(first2Pi <= 0) {
-    cout<<"What?? strange set of sawtooth intervals, should be in [0,2pi]"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"What?? strange set of sawtooth intervals, should be in [0,2pi]"<<"\n");
     for(size_t i=0;i<v.size();i++) 
-      cout<<v[i]<<", ";
-    cout<<endl;
-    getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),v[i]<<", ");
+    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   Assert(first2Pi > 0);
   if(first2Pi != (int)v.size()-1)
@@ -337,7 +339,7 @@ void RLG::GetAnglesParent(int k,vector<AngleSet>& intervals) const
   T0_pk.mulPointInverse(Vector3(Zero),ptLocal);
   i = AngleBracket_3D_Ball(ptLocal,robot.links[k].w,blocal,bp.outerRadius+Epsilon);
 
-  //cout<<"Interval "<<k<<": "<<i.c<<" -> "<<i.d<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Interval "<<k<<": "<<i.c<<" -> "<<i.d<<"\n");
   intervals.push_back(i);
   */
 
@@ -449,20 +451,20 @@ Real Sample(const vector<AngleSet>& angles,Real qmin,Real qmax)
   for(size_t j=0;j<angles.size();j++) {
     /*
     if(angles[j].size() > 1) {
-      cout<<"Intersect "<<s<<" with "<<angles[j]<<endl; 
+      LOG4CXX_INFO(KrisLibrary::logger(),"Intersect "<<s<<" with "<<angles[j]<<"\n"); 
     }
     */
     s.Intersect(angles[j]);
     /*
     if(angles[j].size() > 1) {
-      cout<<"= "<<s<<endl; 
+      LOG4CXX_INFO(KrisLibrary::logger(),"= "<<s<<"\n"); 
     }
     */
     if(s.empty()) break;
   }
   if(s.empty()) {
     if(angles.size() == 1 && angles[0][0].isEmpty()) {
-      //cout<<"Setting automatic point interval "<<angles[0][0]<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Setting automatic point interval "<<angles[0][0]<<"\n");
       return FixAngle(angles[0][0].d,qmin,qmax);
     }
     else {
@@ -487,11 +489,11 @@ Real Sample(const vector<AngleSet>& angles,Real qmin,Real qmax)
       Real q;
       Real v = env.minimumInterval(qmin,qmax,&q);
       /*
-      cout<<"From desired angles in "<<qmin<<" "<<qmax<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"From desired angles in "<<qmin<<" "<<qmax<<"\n");
       for(size_t i=0;i<angles.size();i++)
-	cout<<angles[i]<<endl;
-      cout<<"Sampling "<<q<<endl;
-      cout<<"Not satisfying angles by "<<v<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),angles[i]<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Sampling "<<q<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Not satisfying angles by "<<v<<"\n");
       */
       return q;
     }
@@ -535,9 +537,9 @@ void RLG::SampleChild(int k)
   GetAnglesChild(k,a);
 
   /*
-    cout<<"Angle sets for "<<k<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Angle sets for "<<k<<"\n");
     for(size_t i=0;i<a.size();i++) {
-      cout<<a[i]<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),a[i]<<"\n");
     }
   */
 

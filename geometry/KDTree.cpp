@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "KDTree.h"
 #include <math/metric.h>
 #include <math/random.h>
@@ -419,12 +421,12 @@ void KDTree::_KClosestPoints2(const Vector& pt,int k,Real* dist,int* idx,int& ma
       }
     }
     /*
-    for(int i=0;i<depth;i++) cout<<" ";
-    cout<<"dist: ";
+    for(int i=0;i<depth;i++) LOG4CXX_INFO(KrisLibrary::logger()," ");
+    LOG4CXX_INFO(KrisLibrary::logger(),"dist: ");
     for(int i=0;i<k;i++)
-      cout<<dist[i]<<" ";
-    cout<<", max index "<<maxdist<<endl;
-    getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),dist[i]<<" ");
+    LOG4CXX_INFO(KrisLibrary::logger(),", max index "<<maxdist<<"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     */
     return;
   }
@@ -432,8 +434,8 @@ void KDTree::_KClosestPoints2(const Vector& pt,int k,Real* dist,int* idx,int& ma
   Real d = pt(splitDim)-splitVal;
   if(!weights.empty()) d*=weights(splitDim);
   /*
-  for(int i=0;i<depth;i++) cout<<" ";
-  cout<<"plane dist: "<<d<<endl;
+  for(int i=0;i<depth;i++) LOG4CXX_INFO(KrisLibrary::logger()," ");
+  LOG4CXX_INFO(KrisLibrary::logger(),"plane dist: "<<d<<"\n");
   */
   if(d >= Zero) { //probably on pos side, check that first
     pos->_KClosestPoints2(pt,k,dist,idx,maxdist,norm,weights);

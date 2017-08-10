@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "CollisionMesh.h"
 #include "PenetrationDepth.h"
 #include <math3d/clip.h>
@@ -274,12 +276,12 @@ Real CollisionMeshQuery::PenetrationDepth()
   if(penetration1->maxDepth <= 0 && penetration2->maxDepth <= 0) {
     Real d=Distance(1e-3,1e-2);
     if(d > 1e-3) {
-      cout<<"PenetrationDepth(): Error, the two objects aren't penetrating?!?!"<<endl;
-      cout<<"Distance "<<d<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"PenetrationDepth(): Error, the two objects aren't penetrating?!?!"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Distance "<<d<<"\n");
       Abort();
     }
-    cout<<"PenetrationDepth(): Warning, the approximate computation failed, returning "<<Max(-d,(Real)1e-5)<<endl;
-    //getchar();
+    LOG4CXX_WARN(KrisLibrary::logger(),"PenetrationDepth(): Warning, the approximate computation failed, returning "<<Max(-d,(Real)1e-5)<<"\n");
+    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     return Max(-d,(Real)1e-5);
   }
   if(penetration1->maxDepth <= 0) return penetration2->maxDepth;
@@ -382,7 +384,7 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
         p2.push_back(pl2);
       }
       else {
-        printf("Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
+        LOG4CXX_WARN(KrisLibrary::logger(),"Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
         continue;
       }
     }
@@ -402,7 +404,7 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
           p2.push_back(pl2);
         }
         else {
-          printf("Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
+          LOG4CXX_WARN(KrisLibrary::logger(),"Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
           continue;
         }
       }
@@ -424,7 +426,7 @@ Real CollisionMeshQuery::Distance_Cached() const
 Real CollisionMeshQuery::PenetrationDepth_Cached() const
 {
   if(penetration1->maxDepth <= 0 && penetration2->maxDepth <= 0) {
-    cout<<"PenetrationDepth_Cached(): Error, the two objects have no interior vertices!"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PenetrationDepth_Cached(): Error, the two objects have no interior vertices!"<<"\n");
     Abort();
   }
   if(penetration1->maxDepth <= 0) return penetration2->maxDepth;
@@ -500,7 +502,7 @@ void CollisionMeshQuery::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) 
   if(penetration1->maxDepth > 0) p1 = penetration1->deepestPoint;
   if(penetration2->maxDepth > 0) p2 = penetration2->deepestPoint;
   if(penetration1->maxDepth <= 0 && penetration2->maxDepth <= 0) {
-    cout<<"PenetrationPoints(): Warning, the two objects have no interior vertices!"<<endl;
+    LOG4CXX_WARN(KrisLibrary::logger(),"PenetrationPoints(): Warning, the two objects have no interior vertices!"<<"\n");
     //TODO : estimate penetration points/distance using collision pairs
     //closest points between m1 and m2
     Real closestDist = Inf, d;
@@ -526,8 +528,8 @@ void CollisionMeshQuery::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) 
     
     d1 = p2-p1;
     d1.inplaceNormalize();
-    cout<<"Returning closest points "<<p1<<", "<<p2<<", dir "<<d1<<endl;
-    //getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"Returning closest points "<<p1<<", "<<p2<<", dir "<<d1<<"\n");
+    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     return;
   }
   else {
@@ -1137,7 +1139,7 @@ struct ClosestPointCallback
     while(!q.empty()) {
       temp=*q.begin(); q.erase(q.begin());
       numBBsChecked++;
-      cout<<"Popped bound with min distance: "<<temp.minDist<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Popped bound with min distance: "<<temp.minDist<<"\n");
       int b=temp.index;
 
       bool prune = false;
@@ -1171,7 +1173,7 @@ struct ClosestPointCallback
 	DistanceLimitsBV(m.b[c1].d,p1,dbmin1,dbmax1);
 	DistanceLimitsBV(m.b[c2].d,p2,dbmin2,dbmax2);
 
-	cout<<"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2<<"\n");
 	Assert(dbmin1 <= dbmax1);
 	Assert(dbmin2 <= dbmax2);
 	if(dbmin1 < dmax) {
@@ -1180,7 +1182,7 @@ struct ClosestPointCallback
 	  VcV(temp.plocal,p1);
 	  q.insert(temp);
 	  if(dbmax1 < dmax) {
-	    cout<<"Max distance set to "<<dbmax1<<" on child 1"<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Max distance set to "<<dbmax1<<" on child 1"<<"\n");
 	    dmax = dbmax1;
 	    prune = true;
 	  }
@@ -1191,7 +1193,7 @@ struct ClosestPointCallback
 	  VcV(temp.plocal,p2);
 	  q.insert(temp);
 	  if(dbmax2 < dmax) {
-	    cout<<"Max distance set to "<<dbmax2<<" on child 2"<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Max distance set to "<<dbmax2<<" on child 2"<<"\n");
 	    dmax = dbmax2;
 	    prune = true;
 	  }
@@ -1202,7 +1204,7 @@ struct ClosestPointCallback
       set<ActivePair>::iterator i=q.upper_bound(temp);
       q.erase(i,q.end());
     }
-    cout<<numTrianglesChecked<<" triangles, "<<numBBsChecked<<" BBs checked"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),numTrianglesChecked<<" triangles, "<<numBBsChecked<<" BBs checked"<<"\n");
     */
   }
 
@@ -1246,7 +1248,7 @@ struct ClosestPointCallback
 	dbmax1=dbmax1+Two*normalWeight;
 	dbmax2=dbmax2+Two*normalWeight;
       }
-      //cout<<"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2<<"\n");
       bool reverse=false;
       if(dbmin2 == dbmin1) { //point is in the bboxes
 	reverse = (dbmax2 < dbmax1);
@@ -1290,8 +1292,8 @@ int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp)
   //TEST
   int regularTri = mesh.ClosestPoint(p,cp);
   if(!FuzzyEquals(cb.cp.distance(p),cp.distance(p),1e-3)) {
-    cerr<<"ClosestPoint error: "<<cb.cp.distance(p)<<" != "<<cp.distance(p)<<endl;
-    cerr<<"Triangle "<<cb.closestTri<<" vs "<<regularTri<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ClosestPoint error: "<<cb.cp.distance(p)<<" != "<<cp.distance(p)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<cb.closestTri<<" vs "<<regularTri<<"\n");
   }
   Assert(FuzzyEquals(cb.cp.distance(p),cp.distance(p),1e-3));
   */
@@ -1368,7 +1370,7 @@ bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g)
   case GeometricPrimitive3D::Empty:
     return false;
   default:
-    fprintf(stderr,"Collide: Collider for type %s not known\n",g.TypeName());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Collide: Collider for type "<<g.TypeName());
     return false;
   }
 }
@@ -1495,7 +1497,7 @@ void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector
   case GeometricPrimitive3D::Empty:
     return;
   default:
-    fprintf(stderr,"CollideAll: Collider for type %s not known\n",g.TypeName());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"CollideAll: Collider for type "<<g.TypeName());
   }
 }
 
@@ -1591,7 +1593,7 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
   case GeometricPrimitive3D::Empty:
     return;
   default:
-    fprintf(stderr,"NearbyTriangles: Collider for type %s not known\n",g.TypeName());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"NearbyTriangles: Collider for type "<<g.TypeName());
   }
 }
 
@@ -1795,7 +1797,7 @@ TriDistance(PQP_REAL R[3][3], PQP_REAL T[3], Tri *t1, Tri *t2,
     Segment3D s;
     bool res=a.intersects(b,s);
     if(!res) {
-      printf("Warning: PQP says triangles intersect, but I don't find an intersection\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: PQP says triangles intersect, but I don't find an intersection\n");
       Copy((a.a+a.b+a.c)/3.0,p);
       Copy((b.a+b.b+b.c)/3.0,q);
     }

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "KinodynamicSpace.h"
 #include "KinodynamicPath.h"
 #include "EdgePlannerHelpers.h"
@@ -39,19 +41,19 @@ bool RandomBiasSteeringFunction::Connect(const State& x,const State& xGoal,Kinod
   SmartPointer<Interpolator> pathtemp;
   SmartPointer<CSet> uspace = space->controlSpace->GetControlSet(x);
   if(!uspace) {
-    cout<<"RandomBiasSteeringFunction::Connect(): Warning, no control set at "<<x<<"?"<<endl;
+    LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, no control set at "<<x<<"?"<<"\n");
     return false;
   }
   for(int i=0;i<sampleCount;i++) {
     uspace->Sample(temp);
-    if(temp.empty()) { fprintf(stderr,"RandomBiasSteeringFunction::Connect(): Warning, control space does not have Sample() method implemented\n"); return false; }
+        if(temp.empty()) { LOG4CXX_ERROR(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, control space does not have Sample() method implemented\n"); return false; }
     if(!uspace->Contains(temp)) {
-      cout<<"RandomBiasSteeringFunction::Connect(): Warning, sampled infeasible control "<<temp<<"?"<<endl;
+      LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, sampled infeasible control "<<temp<<"?"<<"\n");
       continue;
     }
     pathtemp = space->controlSpace->Simulate(x,temp);
     if(!pathtemp) {
-      cout<<"RandomBiasSteeringFunction::Connect(): Warning, simulated path is null?"<<endl;
+      LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, simulated path is null?"<<"\n");
       continue;
     }
     Real dist = space->GetStateSpace()->Distance(pathtemp->End(),xGoal);
@@ -62,12 +64,12 @@ bool RandomBiasSteeringFunction::Connect(const State& x,const State& xGoal,Kinod
     }
   }
   if(bestpath == NULL) {
-    //printf("Failed to connect in time %g\n",timer.ElapsedTime());
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Failed to connect in time "<<timer.ElapsedTime());
     return false;
   }
   path = KinodynamicMilestonePath(u,bestpath);
   path.SimulateFromControls(space);
-  //printf("Connect in time %g\n",timer.ElapsedTime());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Connect in time "<<timer.ElapsedTime());
   return true;
 }
 
@@ -90,7 +92,7 @@ bool RandomBiasReverseSteeringFunction::Connect(const State& x,const State& xGoa
     SmartPointer<CSet> uspace = rspace->reverseControlSpace->GetControlSet(x);
     if(!uspace) continue; 
     uspace->Sample(temp);
-    if(temp.empty()) { fprintf(stderr,"Warning, control space does not have Sample() method implemented\n"); return false; }
+        if(temp.empty()) { LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, control space does not have Sample() method implemented\n"); return false; }
     if(!uspace->Contains(temp)) continue;
     pathtemp = rspace->reverseControlSpace->Simulate(x,temp);
     if(!pathtemp) continue;

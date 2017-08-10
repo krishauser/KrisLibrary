@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "primitives.h"
 #include <KrisLibrary/myfile.h>
 #include <iostream>
@@ -301,7 +303,7 @@ bool Matrix3::setInverse(const Matrix3& a)
     rowswap(_a,i1,j);
     rowswap(_b,i1,j);
     if (FuzzyZero(_a(j,j))){
-      //fprintf(stderr, "Taking inverse of singular Matrix3\n");
+            //LOG4CXX_ERROR(KrisLibrary::logger(), "Taking inverse of singular Matrix3\n");
       return false;
     }
     register Real div = Inv(_a(j,j));
@@ -617,7 +619,7 @@ bool Matrix4::setInverse(const Matrix4& a)
                icol=k;
              }
            } else if (ipiv[k] > 1) {
-	     printf("Error in gauss-jordan inversion\n");
+	     LOG4CXX_ERROR(KrisLibrary::logger(),"Error in gauss-jordan inversion\n");
 	     return false;
 	   }
          } 
@@ -630,7 +632,7 @@ bool Matrix4::setInverse(const Matrix4& a)
      indxr[i]=irow;
      indxc[i]=icol;
      if(data[icol][icol] == Zero) {
-       printf("Error in gauss-jordan inversion\n");
+       LOG4CXX_ERROR(KrisLibrary::logger(),"Error in gauss-jordan inversion\n");
        return false;
      }
      pivinv = One / data[icol][icol];

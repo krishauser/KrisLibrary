@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "LinearPath.h"
 #include "metric.h"
 #include <myfile.h>
@@ -36,10 +38,10 @@ void PiecewiseLinearPath::Eval(Real t,Vector& x)
   }
   Real dt = next->t-prev->t;
   if(dt <= Zero) {
-    cout<<"PiecewiseLinearPath: Invalid range of times: ["<<prev->t<<","<<next->t<<"]"<<endl;
-    cout<<"Size of path: "<<points.size()<<endl;
-    cout<<"Time range: "<<BeginTime()<<" "<<EndTime()<<endl;
-    cout<<"Query time: "<<t<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"PiecewiseLinearPath: Invalid range of times: ["<<prev->t<<","<<next->t<<"]"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Size of path: "<<points.size()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Time range: "<<BeginTime()<<" "<<EndTime()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Query time: "<<t<<"\n");
     Abort();
   }
   Real u = (t-prev->t)/dt;
@@ -69,7 +71,7 @@ void PiecewiseLinearPath::Deriv(Real t,Vector& dx)
   vector<ControlPoint>::iterator next=prev; next++;
   Real dt = next->t-prev->t;
   if(dt <= Zero) {
-    cout<<"PiecewiseLinearPath: Invalid range of times: ["<<prev->t<<","<<next->t<<"]"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"PiecewiseLinearPath: Invalid range of times: ["<<prev->t<<","<<next->t<<"]"<<"\n");
     Abort();
   }
   Difference(next->x,prev->x,dx);
@@ -126,9 +128,9 @@ void PiecewiseLinearPath::Concat(const PiecewiseLinearPath& p)
 {
   size_t offset = points.size();
   Real toffset = (offset==0?Zero:EndTime());
-  cout<<"Concat, offset index "<<offset<<endl;
-  cout<<"     offset time  "<<toffset<<endl;
-  cout<<"     new points "<<p.points.size()<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Concat, offset index "<<offset<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"     offset time  "<<toffset<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"     new points "<<p.points.size()<<"\n");
   points.resize(points.size()+p.points.size());
   for(size_t i=0;i<p.points.size();i++) {
     points[i+offset].t = p.points[i].t+toffset;

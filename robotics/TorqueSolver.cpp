@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "TorqueSolver.h"
 #include "NewtonEuler.h"
 #include <iostream>
@@ -140,8 +142,8 @@ void TorqueSolver::FillProblem()
   for(int i=0;i<nPassive;i++) {
     problem.p(i) = problem.q(i) = lhs(passive[i]);
     if(!IsFinite(lhs(passive[i]))) {
-      cout<<"Uh... lhs is not finite"<<endl;
-      cout<<"robot.q: "<<robot.q<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Uh... lhs is not finite"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"robot.q: "<<robot.q<<"\n");
     }
     Assert(IsFinite(lhs(passive[i])));
     Assert(problem.ConstraintType(i) == LinearProgram::Fixed);
@@ -245,21 +247,21 @@ bool TorqueSolver::Solve()
   LinearProgram::Result res=problem.Solve(f);
   switch(res) {
   case LinearProgram::Infeasible:
-    cout<<"TorqueSolve: the problem is infeasible!"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the problem is infeasible!"<<"\n");
     //problem.Print();
     return false;
   case LinearProgram::Unbounded:
-    cout<<"TorqueSolve: the problem is unbounded?!?!?"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the problem is unbounded?!?!?"<<"\n");
     {
-      cout<<"Writing to temp_lp.txt"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Writing to temp_lp.txt"<<"\n");
       ofstream out("temp_lp.txt");
       problem.lp.Print(out);
-      getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     Abort();
     return false;
   case LinearProgram::Error:
-    cout<<"TorqueSolve: faced some numerical error..."<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"TorqueSolve: faced some numerical error..."<<"\n");
     return false;
   case LinearProgram::Feasible:
     {
@@ -280,7 +282,7 @@ bool TorqueSolver::Solve()
     }
     return true;
   default:
-    cout<<"Shouldn't get here"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here"<<"\n");
     Abort();
     return false;
   }
@@ -295,23 +297,23 @@ bool TorqueSolver::InTorqueBounds()
   //TODO: a break in the objective?
   switch(res) {
   case LinearProgram::Infeasible:
-    cout<<"TorqueSolve: the LP is infeasible!"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the LP is infeasible!"<<"\n");
     //problem.Print();
     return false;
   case LinearProgram::Unbounded:
-    cout<<"TorqueSolve: the LP is unbounded?!?!?"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the LP is unbounded?!?!?"<<"\n");
     {
       //problem.Print(cout);
-      //cout<<NumContactPoints(contacts)<<" contacts"<<endl;
-      //getchar();
-      cout<<"Writing to temp_lp.txt"<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),NumContactPoints(contacts)<<" contacts"<<"\n");
+      //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Writing to temp_lp.txt"<<"\n");
       ofstream out("temp_lp.txt");
       problem.lp.Print(out);
     }
     //Abort();
     return false;
   case LinearProgram::Error:
-    cout<<"TorqueSolve: faced some numerical error..."<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"TorqueSolve: faced some numerical error..."<<"\n");
     return false;
   case LinearProgram::Feasible:
     {
@@ -330,11 +332,11 @@ bool TorqueSolver::InTorqueBounds()
 	  t(active[i])=temp(i)*robot.torqueMax(active[i]);
       }
       //if(temp.maxAbsElement() > 1)
-	//cout<<"Active torque saturations: "<<temp<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Active torque saturations: "<<temp<<"\n");
       return (temp.maxAbsElement() <= 1);
     }
   default:
-    cout<<"Shouldn't get here"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here"<<"\n");
     Abort();
     return false;
   }

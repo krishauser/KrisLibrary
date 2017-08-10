@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "OMPLInterface.h"
 #include <KrisLibrary/planning/EdgePlanner.h>
 #include <KrisLibrary/utils/stringutils.h>
@@ -262,7 +264,7 @@ void KrisLibraryOMPLPlanner::setup()
 {
   ob::ProblemDefinitionPtr pdef = this->getProblemDefinition();
   if(pdef == NULL) {
-    fprintf(stderr,"KrisLibraryOMPLPlanner::setup(): problem definition not set\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::setup(): problem definition not set\n");
     return;
   }
   cspace = new OMPLCSpace(pdef->getSpaceInformation());
@@ -279,7 +281,7 @@ void KrisLibraryOMPLPlanner::setup()
   //TODO: objective functions?
   planner = factory.Create(problem);
   if(!planner) {
-    fprintf(stderr,"KrisLibraryOMPLPlanner::setup(): there was a problem creating the planner!\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::setup(): there was a problem creating the planner!\n");
     return;
   }
   if(planner->IsOptimizing()) {
@@ -314,7 +316,7 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
 {
   if(!planner) {
     //may have had a previous clear() call
-    //fprintf(stderr,"KrisLibraryOMPLPlanner::solve(): Warning, setup() not called yet\n");
+        //LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::solve(): Warning, setup() not called yet\n");
     setup();
     if(!planner) 
       return ob::PlannerStatus(ob::PlannerStatus::UNKNOWN);
@@ -439,7 +441,7 @@ void CSpaceOMPLStateSpace::enforceBounds (ob::State *state) const
     vector<Real> q;
     this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
-      fprintf(stderr,"CSpaceOMPLStateSpace::enforceBounds: incorrect size of configuration?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"CSpaceOMPLStateSpace::enforceBounds: incorrect size of configuration?\n");
       return;
     }
     for(size_t i=0;i<q.size();i++)
@@ -454,7 +456,7 @@ bool CSpaceOMPLStateSpace::satisfiesBounds (const ob::State *state) const
     vector<Real> q;
     this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
-      fprintf(stderr,"CSpaceOMPLStateSpace::satisfiesBounds: incorrect size of configuration?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"CSpaceOMPLStateSpace::satisfiesBounds: incorrect size of configuration?\n");
       return true;
     }
     for(size_t i=0;i<q.size();i++)

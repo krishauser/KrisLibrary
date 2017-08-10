@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "TriMeshTopology.h"
 #include <set>
 #include <queue>
@@ -65,21 +67,21 @@ void TriMeshWithTopology::CalcTriNeighbors()
       if(t2.contains(t.b)) {
 	//edge ba
 	if(triNeighbors[i].c!=-1) {
-	  cerr<<"TriMeshTopology: mesh has two neighbors on the same edge!"<<endl;
-	  cerr<<"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].c<<" and "<<k<<" on edge a-b"<<endl;
-	  //cerr<<"Triangle "<<i<<": "<<tris[i]<<endl;
-	  //cerr<<"Neighbor 1: "<<tris[triNeighbors[i].c]<<endl;
-	  //cerr<<"Neighbor 2: "<<tris[k]<<endl;
-	  //getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"TriMeshTopology: mesh has two neighbors on the same edge!"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].c<<" and "<<k<<" on edge a-b"<<"\n");
+	  //LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<i<<": "<<tris[i]<<"\n");
+	  //LOG4CXX_ERROR(KrisLibrary::logger(),"Neighbor 1: "<<tris[triNeighbors[i].c]<<"\n");
+	  //LOG4CXX_ERROR(KrisLibrary::logger(),"Neighbor 2: "<<tris[k]<<"\n");
+	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	triNeighbors[i].c=k;
       }
       if(t2.contains(t.c)) {
 	//edge ac
 	if(triNeighbors[i].b!=-1) {
-	  cerr<<"TriMeshTopology: mesh has two neighbors on the same edge!"<<endl;
-	  cerr<<"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].b<<" and "<<k<<" on edge a-c"<<endl;
-	  //getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"TriMeshTopology: mesh has two neighbors on the same edge!"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].b<<" and "<<k<<" on edge a-c"<<"\n");
+	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	triNeighbors[i].b=k;
       }
@@ -93,9 +95,9 @@ void TriMeshWithTopology::CalcTriNeighbors()
       if(t2.contains(t.c)) {
 	//edge bc
 	if(triNeighbors[i].a!=-1) {
-	  cerr<<"TriMeshTopology: mesh has two neighbors on the same edge!"<<endl;
-	  cerr<<"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].a<<" and "<<k<<" on edge b-c"<<endl;
-	  //getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"TriMeshTopology: mesh has two neighbors on the same edge!"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].a<<" and "<<k<<" on edge b-c"<<"\n");
+	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	triNeighbors[i].a=k;
       }
@@ -149,11 +151,11 @@ void TriMeshWithTopology::SplitEdge(int tri,int e,const Vector3& newPt)
   tris[tri].getCompliment(e,b,c);
   int ind1,ind2;
   if(!tris[adj].contains(b,ind1)) {
-    cout<<"Internal inconsistency!"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Internal inconsistency!"<<"\n");
     abort();
   }
   if(!tris[adj].contains(c,ind2)) {
-    cout<<"Internal inconsistency!"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Internal inconsistency!"<<"\n");
     abort();
   }
   int ea=3-ind1-ind2;

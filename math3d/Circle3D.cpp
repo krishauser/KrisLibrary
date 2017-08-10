@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "Circle3D.h"
 #include "geometry3d.h"
 #include "misc.h"
@@ -81,7 +83,7 @@ Real Circle3D::boundaryDistance(const Point3D& v) const
 
 bool Circle3D::intersects(const Circle3D& c) const
 {
-  fprintf(stderr,"Circle3D::intersects(Circle3D) Not done yet\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Circle3D::intersects(Circle3D) Not done yet\n");
   abort();
   return false;
 }
@@ -139,7 +141,7 @@ bool Circle3D::intersects(const Plane3D& p) const
     break;
   case 2: return true;
   default:
-    fprintf(stderr,"Circle3D::intersects: Shouldn't get here\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Circle3D::intersects: Shouldn't get here\n");
     abort();
   }
   return false;

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "UnboundedPolytope2D.h"
 #include "ConvexHull2D.h"
 #include <math/misc.h>
@@ -126,14 +128,14 @@ Real UnboundedPolytope2D::ClosestPoint(const Vector2& x,Vector2& cp) const
 	  }
 	}
 	else if(res == 0) {  //uh.. no intersections
-	  fprintf(stderr,"No intersections between entering plane and active plane\n");
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"No intersections between entering plane and active plane\n");
 	  return -Inf;
 	}
 	else {  //planes are identical -- no change
 	}
       }
       if(furthestIndex == -1) {
-	fprintf(stderr,"Uh... adding plane with equivalent distance to x\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Uh... adding plane with equivalent distance to x\n");
 	Abort();
       }
       //calculate the new cp

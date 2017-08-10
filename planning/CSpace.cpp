@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "CSpace.h"
 #include "CSpaceHelpers.h"
 #include "EdgePlanner.h"
@@ -170,7 +172,7 @@ Optimization::NonlinearProgram* Join(const vector<SmartPointer<Optimization::Non
   CompositeVectorFieldFunction* c = new CompositeVectorFieldFunction;
   CompositeVectorFieldFunction* d = new CompositeVectorFieldFunction;
   for(size_t i=0;i<nlps.size();i++) {
-    if(nlps[i]->f != NULL) fprintf(stderr,"Join(NonlinearProgram): Warning, NLP %d has an objective function?\n",(int)i);
+        if(nlps[i]->f != NULL) LOG4CXX_ERROR(KrisLibrary::logger(),"Join(NonlinearProgram): Warning, NLP "<<(int)i);
     if(nlps[i]->c != NULL) c->functions.push_back(nlps[i]->c);
     if(nlps[i]->d != NULL) {
       if(!nlps[i]->inequalityLess)

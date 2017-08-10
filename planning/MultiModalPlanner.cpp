@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "MultiModalPlanner.h"
 #include <utils/IntTriple.h>
 #include <graph/Operations.h>
@@ -41,7 +43,7 @@ void MultiModalPRM::SetStart(const Config& q,int mode)
   index.m1 = -1;
   index.m2 = mode;
   index.count = 0;
-  printf("Adding virtual trans (%d,%d)#%d\n",index.m1,index.m2,index.count);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Adding virtual trans ("<<index.m1<<","<<index.m2<<")#"<<index.count);
   int n=(int)ccIndex.size();
   ccs.AddNode();
   ccIndex[index] = n;
@@ -61,7 +63,7 @@ void MultiModalPRM::SetGoal(const Config& q,int mode)
   index.m1 = mode;
   index.m2 = -1;
   index.count = 0;
-  printf("Adding virtual trans (%d,%d)#%d\n",index.m1,index.m2,index.count);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Adding virtual trans ("<<index.m1<<","<<index.m2<<")#"<<index.count);
   int n=(int)ccIndex.size();
   ccs.AddNode();
   ccIndex[index] = n;
@@ -85,7 +87,7 @@ void MultiModalPRM::SetGoalMode(int mode)
 
 void MultiModalPRM::ExpandAll()
 {
-  //printf("MultiModalPRM Expand iteration...\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"MultiModalPRM Expand iteration...\n");
   for(size_t i=0;i<planningGraph.nodes.size();i++) {
     PlanningGraph::Iterator e;
     for(planningGraph.Begin(i,e);!e.end();++e) {
@@ -102,7 +104,7 @@ void MultiModalPRM::ExpandAll()
   for(size_t i=0;i<planningGraph.nodes.size();i++) {
     ExpandMode(i);
   }
-  //printf("Done.\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Done.\n");
 }
 
 MultiModalPRM::TransitionIndex MultiModalPRM::NodeToTransitionIndex(int mode,int roadmapIndex) const
@@ -224,7 +226,7 @@ void MultiModalPRM::ConnectTransitions(const TransitionIndex& index1,const Trans
   i2 = ccIndex.find(index2);
   Assert(i1 != ccIndex.end());
   Assert(i2 != ccIndex.end());
-  //printf("Adding edge between connected components (%d,%d)#%d and (%d,%d)#%d\n",index1.m1,index1.m2,index1.count,index2.m1,index2.m2,index2.count);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Adding edge between connected components ("<<index1.m1<<","<<index1.m2<<")#"<<index1.count<<" and ("<<index2.m1<<","<<index2.m2<<")#"<<index2.count);
   ccs.AddEdge(i1->second,i2->second);
 }
 
@@ -326,14 +328,14 @@ void MultiModalPRM::AddTransition(int m1,int m2,const Config& q)
   index.m1 = m1;
   index.m2 = m2;
   index.count = (int)trans->transitions.size()-1;
-  //printf("Adding transition (%d,%d)#%d\n",m1,m2,index.count);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Adding transition ("<<m1<<","<<m2<<")#"<<index.count);
   int n=(int)ccIndex.size();
   ccs.AddNode();
   ccIndex[index] = n;
 
   /*
   if(useSBL) {
-    //printf("Mode %d has %d seeds, mode %d has %d seeds\n",m1,planningGraph.nodes[m1].sbl->roadmap.nodes.size(),m2,planningGraph.nodes[m2].sbl->roadmap.nodes.size());
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Mode "<<m1<<" has "<<planningGraph.nodes[m1].sbl->roadmap.nodes.size()<<" seeds, mode "<<m2<<" has "<<planningGraph.nodes[m2].sbl->roadmap.nodes.size());
     //add PRT edges
     PlanningGraph::Iterator e;      
     if(m1 == startMode && startRoadmapIndex >= 0) 
@@ -368,16 +370,16 @@ void MultiModalPRM::AddTransition(int m1,int m2,const Config& q)
     }
   }
   else */ {
-    //printf("Maintaining CCs of transition graph... \n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Maintaining CCs of transition graph... \n");
     planningGraph.nodes[m1].planner->ConnectHint(pindex);
     planningGraph.nodes[m2].planner->ConnectHint(nindex);
     vector<TransitionIndex> transitions;
     vector<int> roadmapIndices;
-    //printf("pindex %d, nindex %d\n",pindex,nindex);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"pindex "<<pindex<<", nindex "<<nindex);
     GetTransitionNodes(m1,transitions,roadmapIndices);
-    //printf("m1=%d has %d transitions\n",m1,transitions.size());
+    //LOG4CXX_INFO(KrisLibrary::logger(),"m1="<<m1<<" has "<<transitions.size());
     for(size_t i=0;i<transitions.size();i++) {
-      //printf("testing m1 [%d,%d]#%d = %d\n",transitions[i].m1,transitions[i].m2,transitions[i].count,roadmapIndices[i]);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"testing m1 ["<<transitions[i].m1<<","<<transitions[i].m2<<"]#"<<transitions[i].count<<" = "<<roadmapIndices[i]);
       Assert(roadmapIndices[i] < planningGraph.nodes[m1].planner->NumMilestones());
       if(roadmapIndices[i] == pindex) continue;
       if(planningGraph.nodes[m1].planner->IsConnected(pindex,roadmapIndices[i]) &&
@@ -386,9 +388,9 @@ void MultiModalPRM::AddTransition(int m1,int m2,const Config& q)
       }
     }
     GetTransitionNodes(m2,transitions,roadmapIndices);
-    //printf("m2=%d has %d transitions\n",m2,transitions.size());
+    //LOG4CXX_INFO(KrisLibrary::logger(),"m2="<<m2<<" has "<<transitions.size());
     for(size_t i=0;i<transitions.size();i++) {
-      //printf("testing m2 [%d,%d]#%d = %d\n",transitions[i].m1,transitions[i].m2,transitions[i].count,roadmapIndices[i]);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"testing m2 ["<<transitions[i].m1<<","<<transitions[i].m2<<"]#"<<transitions[i].count<<" = "<<roadmapIndices[i]);
       Assert(roadmapIndices[i] < planningGraph.nodes[m2].planner->NumMilestones());
       if(roadmapIndices[i] == nindex) continue;
       if(planningGraph.nodes[m2].planner->IsConnected(nindex,roadmapIndices[i]) &&
@@ -503,7 +505,7 @@ void IncrementalMMPRM_Search::Init()
 bool IncrementalMMPRM_Search::ExpandMore()
 {
   if(fringe.empty()) {
-    if(kDebugSearch) printf("Fringe is now empty -- returning all modes\n");
+    if(kDebugSearch) LOG4CXX_INFO(KrisLibrary::logger(),"Fringe is now empty -- returning all modes\n");
     fill(outputModes.begin(),outputModes.end(),true);
     return true;
   }
@@ -512,7 +514,7 @@ bool IncrementalMMPRM_Search::ExpandMore()
   if(prev < 0 || !mmprm.planningGraph.FindEdge(prev,n)->transitions.empty()) {
     reachedModes[n]=true;
     if(n == mmprm.goalMode || outputModes[n]) {
-      if(kDebugSearch) printf("Found path: ");
+      if(kDebugSearch) LOG4CXX_INFO(KrisLibrary::logger(),"Found path: ");
       list<int> path;
       Graph::GetAncestorPath(spp.p,n,-1,path);
       //add to output modes
@@ -520,17 +522,17 @@ bool IncrementalMMPRM_Search::ExpandMore()
       for(list<int>::const_iterator i=path.begin();i!=path.end();i++) {
 	if(!outputModes[*i]) addedNew = true;
 	outputModes[*i]=true;
-	if(kDebugSearch) printf("%d ",*i);
+	if(kDebugSearch) LOG4CXX_INFO(KrisLibrary::logger(),""<<*i);
       }
-      if(kDebugSearch) printf("\n");
-      if(kDebugSearch && !addedNew) printf("Warning: Incremental-MMPRM didn't add a new mode to the output modes (%d is output and fringe)\n",n);
+      if(kDebugSearch) LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+      if(kDebugSearch && !addedNew) LOG4CXX_WARN(KrisLibrary::logger(),"Warning: Incremental-MMPRM didn't add a new mode to the output modes ("<<n);
       //clip out the active path from the search graph
       for(list<int>::const_iterator i=path.begin();i!=path.end();i++) {
 	//freeze all distances derived from children of the path
 	SearchGraph::Iterator e;
 	vector<int> toDelete;
 	for(searchGraph.Begin(*i,e);!e.end();++e) {
-	  //printf("Edge (%d,%d)\n",e.source(),e.target());
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Edge ("<<e.source()<<","<<e.target());
 	  if(outputModes[e.source()]  && outputModes[e.target()]) continue;
 	  if(e.source() == *i) {
 	    if(spp.p[e.target()] == *i) {
@@ -548,8 +550,7 @@ bool IncrementalMMPRM_Search::ExpandMore()
 	}
 	//freeze the parent
 	for(size_t k=0;k<toDelete.size();k++) {
-	  //printf("Deleting %d %d,freezing parent\n",*i,toDelete[k]);
-	  searchGraph.DeleteEdge(*i,toDelete[k]);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Deleting "<<freezing parent\n"<<" "<<*i	  searchGraph.DeleteEdge(*i,toDelete[k]);
 	}
 	//cut out all edges along the path
 	if(i!=path.begin()) { //remove edge
@@ -557,7 +558,7 @@ bool IncrementalMMPRM_Search::ExpandMore()
 	  list<int>::const_iterator p=i; --p;
 	  searchGraph.DeleteEdge(*p,*i);
 	  spp.DeleteUpdate_Undirected(*p,*i,w);
-	  //printf("Deleting %d %d and redirecting\n",*i,*p);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Deleting "<<*i<<" "<<*p);
 	}
       }
 
@@ -565,16 +566,16 @@ bool IncrementalMMPRM_Search::ExpandMore()
       for(list<int>::const_iterator i=path.begin();i!=path.end();i++) {
 	reachedModes[*i] = false;
 	if(spp.p[*i] >= 0) {
-	  //printf("Reactivating %d, parent %d\n",*i,spp.p[*i]);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Reactivating "<<*i<<", parent "<<spp.p[*i]);
 	  UpdateFringe(*i);
 	}
       }
 	
       if(kDebugSearch) {
-	printf("Fringe: ");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Fringe: ");
 	for(Fringe::const_iterator i=fringe.begin();i!=fringe.end();i++)
-	  printf("%d ",i->second);
-	printf("\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),""<<i->second);
+	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
       }
       return true;
     }
@@ -582,7 +583,7 @@ bool IncrementalMMPRM_Search::ExpandMore()
       int oldFringe = fringe.size();
       ExpandAdjacent(n);
       int newFringe = fringe.size();
-      if(kDebugSearch) printf("Fringe from size %d -> %d\n",oldFringe,newFringe);
+      if(kDebugSearch) LOG4CXX_INFO(KrisLibrary::logger(),"Fringe from size "<<oldFringe<<" -> "<<newFringe);
     }
   }
   else {
@@ -629,7 +630,7 @@ void IncrementalMMPRM_Search::ExpandAdjacent(int n)
       }
     }
   }
-  //printf("Added %d/%d adjacencies to node %d\n",numAdded,numEdges,n);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Added "<<numAdded<<"/"<<numEdges<<" adjacencies to node "<<n);
 }
 
 double IncrementalMMPRM_Search::EdgeLength(int s,int t) 
@@ -674,7 +675,7 @@ void IncrementalMMPRM_Search::UpdatePriority(int n)
 void IncrementalMMPRM_Search::AddEdge(int s,int t,MultiModalPRM::TransitionInfo* e)
 {
   if(searchGraph.FindEdge(s,t)) {
-    printf("Warning: I-MMPRM_Search::AddEdge: edge already exists\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning: I-MMPRM_Search::AddEdge: edge already exists\n");
     UpdateEdgeLength(s,t);
     return;
   }
@@ -745,7 +746,7 @@ void IncrementalMMPRM_Explicit::PlanMore()
     RefineMore();
     if(remainingRefineSamples == 0) {
       lastRefineSet = search.outputModes;
-      //printf("Failed to find path -- going back to expand\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Failed to find path -- going back to expand\n");
       expandPhaseCount++;
     }
   }
@@ -834,8 +835,7 @@ void IncrementalMMPRM_Explicit::RefineMore()
     for(size_t i=0;i<search.outputModes.size();i++) 
     if(search.outputModes[i])
     numSamples.collect(mmprm.planningGraph.nodes[i].sampleCount);
-    cout<<"Num samples per mode: "; numSamples.Print(cout); cout<<endl;
-    getchar();
+    LOG4CXX_INFO(KrisLibrary::logger()(),"Num samples per mode: "); numSamples.Print(    if(KrisLibrary::logger()()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     */
   }
   else {  //uniform refinement

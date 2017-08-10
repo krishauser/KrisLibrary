@@ -1,6 +1,8 @@
 #ifndef DISPLACEMENT_PLANNER_H
 #define DISPLACEMENT_PLANNER_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 #include <KrisLibrary/utils/Subset.h>
 #include <KrisLibrary/structs/IndexedPriorityQueue.h>
@@ -75,7 +77,7 @@ public:
  *   limits.push_back(limitN);  numIters.push_back(100);
  *   vector<int> assignment;
  *   if(planner.Plan(limits,numIters,bestPlan,assignment))
- *      printf("Success\n");
+ *      LOG4CXX_INFO(KrisLibrary::logger(),"Success\n");
  *
  * Plan will keep going until all iterations are exhausted.  It will use the given
  * limit until the goal is reached, then it will use the existing cost to goal

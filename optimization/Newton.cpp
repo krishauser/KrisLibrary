@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "Newton.h"
 #include <utils.h>
 #include <math/infnan.h>
@@ -78,11 +80,10 @@ Real NewtonRoot::MaxDistance(const Vector& x)
 
 bool NewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
 {
-  if(verbose) { cout<<"NewtonRoot::GlobalSolve(): "; cout.flush(); }
-  //Vector xinit;
+  if(verbose) { LOG4CXX_INFO(KrisLibrary::logger(),"NewtonRoot::GlobalSolve(): "); }  //Vector xinit;
   //xinit.copy(x);
   Real initDist = MaxDistance(x);
-  if(verbose) cout<<"initial distance "<<initDist<<". ";
+  if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"initial distance "<<initDist<<". ");
   ConvergenceResult res;
   if(sparse)
     res=Solve_Sparse(iters);
@@ -93,45 +94,45 @@ bool NewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
 
   switch(res) {
   case ConvergenceX:
-    if(verbose) cout<<"Reached convergence on x in "<<iters<<" iters... ";
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Reached convergence on x in "<<iters<<" iters... ");
     if(endDist <= tolf) {
-      if(verbose) cout<<"satisfies constraint."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"satisfies constraint."<<"\n");
       return true;
     }
     else {
-      if(verbose) cout<<"does not satisfy tolerance, distance "<<endDist<<"."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"does not satisfy tolerance, distance "<<endDist<<"."<<"\n");
       return false;
     }
     break;
 
   case LocalMinimum:
-    if(verbose) cout<<"Reached local minimum in "<<iters<<" iters... ";
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Reached local minimum in "<<iters<<" iters... ");
     if(endDist <= tolf) {
-      if(verbose) cout<<"satisfies constraint."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"satisfies constraint."<<"\n");
       return true;
     }
     else {
-      if(verbose) cout<<"stuck at distance "<<endDist<<"."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"stuck at distance "<<endDist<<"."<<"\n");
       return false;
     }
 
   case ConvergenceF:
-    if(verbose) cout<<"Reached convergence on f in "<<iters<<" iters, new distance "<<endDist<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Reached convergence on f in "<<iters<<" iters, new distance "<<endDist<<"\n");
     Assert(endDist <= tolf);
     return true;
 
   case MaxItersReached:
     if(endDist < initDist) {
-      if(verbose) cout<<"Max iters reached, distance was decreased to "<<endDist<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Max iters reached, distance was decreased to "<<endDist<<"\n");
     }
     else {
-      //if(verbose) cout<<"Max iters reached, looks like divergence.  Reverting to initial."<<endl;
-      if(verbose) cout<<"Max iters reached, looks like divergence."<<endl;
+      //if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Max iters reached, looks like divergence.  Reverting to initial."<<"\n");
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Max iters reached, looks like divergence."<<"\n");
       //x.copy(xinit);
     }
     return false;
   default:
-    if(verbose) cout<<"Error"<<endl;
+    if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"Error"<<"\n");
     return false;
   }
 }
@@ -147,9 +148,9 @@ bool NewtonRoot::SolveUnderconstrainedLS(const Matrix& A,const Vector& b,Vector&
   }
   else {
     svd.resize(A.m,A.n);
-    if(verbose>=1 && A.m*A.n>10000) cout<<"Calculating SVD..."<<endl;
+    if(verbose>=1 && A.m*A.n>10000) LOG4CXX_INFO(KrisLibrary::logger(),"Calculating SVD..."<<"\n");
     if(svd.set(A)) {
-      if(verbose>=1 && A.m*A.n>10000) cout<<"done"<<endl;
+      if(verbose>=1 && A.m*A.n>10000) LOG4CXX_INFO(KrisLibrary::logger(),"done"<<"\n");
       svd.dampedBackSub(b,lambda,x);
       //svd.epsilon = lambda;
       //svd.backSub(vtemp,p);
@@ -169,12 +170,12 @@ bool NewtonRoot::SolveUnderconstrainedLS(const SparseMatrix& A,const Vector& b,V
   lsqr.verbose=0;
   if(lsqr.Solve(A,b)) {
     if(!IsFinite(lsqr.x)) {
-      cerr<<"NewtonRoot::SolveUnderconstrainedLS: Warning, LSQR returned a non-finite solution"<<endl;
-      cerr<<VectorPrinter(lsqr.x,VectorPrinter::AsciiShade)<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"NewtonRoot::SolveUnderconstrainedLS: Warning, LSQR returned a non-finite solution"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(lsqr.x,VectorPrinter::AsciiShade)<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       return false;
     }
-    //cout<<"NewtonRoot::SolveUnderconstrainedLS: LSQR residual is "<<lsqr.residualNorm<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"NewtonRoot::SolveUnderconstrainedLS: LSQR residual is "<<lsqr.residualNorm<<"\n");
     x=lsqr.x;
     return true;
   }
@@ -251,8 +252,8 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
   Real stpmax= stepMax*Max(x.norm(),(Real)x.n);
   int maxIters = iters;
   for (iters=0;iters<maxIters;iters++) { 
-    if(verbose >= 2) cout<<"Iteration "<<iters<<", x = "<<x<<endl;
-    if(verbose >= 2) cout<<"   errors"<<fx<<endl;
+    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Iteration "<<iters<<", x = "<<x<<"\n");
+    if(verbose >= 2) LOG4CXX_ERROR(KrisLibrary::logger(),"   errors"<<fx<<"\n");
     func->Jacobian(x,fJx);
     fJx.mulTranspose(fx,g);
     xold.copy(x);
@@ -271,7 +272,7 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       MatrixEquation eq(fJx,fx);
       if(!eq.LeastSquares_Cholesky(p)) {
         if(verbose >= 2) {
-          printf("NewtonRoot::Solve: Unable to compute either pseudoinverse or Cholesky least-squares\n");
+          LOG4CXX_INFO(KrisLibrary::logger(),"NewtonRoot::Solve: Unable to compute either pseudoinverse or Cholesky least-squares\n");
         }
         return ConvergenceError;
       }
@@ -279,26 +280,26 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
     p.inplaceNegative();
     //TEST: make length of step decrease with larger error?
     p *= 1.0 / (1.0 + fx.norm()/fx.n);
-    //printf("Step size: %g\n",1.0 / (1.0 + fx.norm());
-    if(verbose >= 2) cout<<"  Descent direction "<<p<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Step size: "<<1.0 / (1.0 + fx.norm());
+    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Descent direction "<<p<<"\n");
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
     if(verbose >= 2) {
       if(g.dot(p) > 0) {
-	cout<<"  Error in slope and descent directions? Check jacobian"<<endl;
-	cout<<"  g: "<<g<<endl;
-	cout<<"  p: "<<p<<endl;
-	cout<<"  Error: "<<fx<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"  Error in slope and descent directions? Check jacobian"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"  g: "<<g<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"  p: "<<p<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"  Error: "<<fx<<"\n");
 	MatrixPrinter printer(fJx);
-	cout<<"  Jacobian: "<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"  Jacobian: "<<"\n");
 	printer.Print(cout,4);
       }
     }
     check = LineMinimization(g,p,&f); //lnsrch returns new x and f. It also calculates fx at the new x when it calls Merit()
-    //printf("New value of f after lnsrch: %f\n",f);
-    //printf("New value of fx after lnsrch: "); cout<<VectorPrinter(fx)<<endl;
-    //printf("New value of x after lnsrch: "); cout<<VectorPrinter(x)<<endl;
-    //if(c) { if(!c->Satisfies(x)) cout<<"Warning: line searched x doesnt satisfy contact constraints"<<endl; }
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of f after lnsrch: "<<f);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of fx after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of x after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+    //if(c) { if(!c->Satisfies(x)) LOG4CXX_WARN(KrisLibrary::logger(),"Warning: line searched x doesnt satisfy contact constraints"<<"\n"); }
     if (fx.maxAbsElement() < tolf) {
       Real fxmax=fx.maxAbsElement();
       Assert(MaxDistance(x) == fxmax);
@@ -313,14 +314,14 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       }
       if(test < tolmin) return LocalMinimum;
       else {
-        //cout<<"Hmm.... check is returned on iter "<<iters<<", but test is not < tolmin"<<endl; 
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Hmm.... check is returned on iter "<<iters<<", but test is not < tolmin"<<"\n"); 
 	/*
-	cout<<"Converging on x!"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Converging on x!"<<"\n");
 	OutputASCIIShade(cout,g); cout<<endl;
 	OutputASCIIShade(cout,p); cout<<endl;
         return ConvergenceX;
 	*/
-	if(verbose >= 1) cout<<"  Check is returned but test "<<test<<" is not < tolmin"<<endl;
+	if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"  Check is returned but test "<<test<<" is not < tolmin"<<"\n");
 	return ConvergenceX;
       }
     }
@@ -330,7 +331,7 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       if (temp > test) test=temp; 
     }
     if (test < tolx) {
-      if(verbose >= 1) cout<<"  Convergence on X, difference "<<test<<endl;
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"  Convergence on X, difference "<<test<<"\n");
       return ConvergenceX;
     }
   } 
@@ -383,17 +384,17 @@ ConvergenceResult NewtonRoot::Solve_Sparse(int& iters)
     }
 
     if(!SolveUnderconstrainedLS(A,fx,p)) {
-      printf("NewtonRoot::Solve: Unable to compute pseudoinverse of sparse matrix\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"NewtonRoot::Solve: Unable to compute pseudoinverse of sparse matrix\n");
       return ConvergenceError;
     }
     p.inplaceNegative();
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
     check = LineMinimization(g,p,&f); //lnsrch returns new x and f. It also calculates fx at the new x when it calls Merit()
-    //printf("New value of f after lnsrch: %f\n",f);
-    //printf("New value of fx after lnsrch: "); cout<<VectorPrinter(fx)<<endl;
-    //printf("New value of x after lnsrch: "); cout<<VectorPrinter(x)<<endl;
-    //if(c) { if(!c->Satisfies(x)) cout<<"Warning: line searched x doesnt satisfy contact constraints"<<endl; }
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of f after lnsrch: "<<f);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of fx after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of x after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+    //if(c) { if(!c->Satisfies(x)) LOG4CXX_WARN(KrisLibrary::logger(),"Warning: line searched x doesnt satisfy contact constraints"<<"\n"); }
     if (fx.maxAbsElement() < tolf) {
       Real fxmax=fx.maxAbsElement();
       Assert(MaxDistance(x) == fxmax);
@@ -408,9 +409,9 @@ ConvergenceResult NewtonRoot::Solve_Sparse(int& iters)
       }
       if(test < tolmin) return LocalMinimum;
       else {
-        //cout<<"Hmm.... check is returned on iter "<<iters<<", but test is not < tolmin"<<endl; 
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Hmm.... check is returned on iter "<<iters<<", but test is not < tolmin"<<"\n"); 
 	/*
-	cout<<"Converging on x!"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Converging on x!"<<"\n");
 	OutputASCIIShade(cout,g); cout<<endl;
 	OutputASCIIShade(cout,p); cout<<endl;
         return ConvergenceX;
@@ -455,17 +456,17 @@ bool NewtonRoot::LineMinimization(const Vector& g, const Vector& p, Real *f)
 { 
   if(debug && !IsFinite(p)) {
     if(verbose) {
-      cerr<<"NewtonRoot::LineMinimization: Error, p is not finite!"<<endl;
-      cerr<<"p="<<VectorPrinter(p,VectorPrinter::AsciiShade)<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"NewtonRoot::LineMinimization: Error, p is not finite!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"p="<<VectorPrinter(p,VectorPrinter::AsciiShade)<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     return false;
   }
   if(debug && !IsFinite(g)) {
     if(verbose) {
-      cerr<<"NewtonRoot::LineMinimization: Error, g is not finite!"<<endl;
-      cerr<<"g="<<VectorPrinter(g,VectorPrinter::AsciiShade)<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"NewtonRoot::LineMinimization: Error, g is not finite!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"g="<<VectorPrinter(g,VectorPrinter::AsciiShade)<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     return false;
   }
@@ -476,7 +477,7 @@ bool NewtonRoot::LineMinimization(const Vector& g, const Vector& p, Real *f)
   if (slope >= 0.0) {
     /*if(slope > 0.001) */{
       if(verbose)
-	printf("NewtonRoot::LineMinimization: Opposing slope and descent directions\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"NewtonRoot::LineMinimization: Opposing slope and descent directions\n");
       return false;
     }
     //  else slope = Abs(slope);
@@ -501,21 +502,21 @@ bool NewtonRoot::LineMinimization(const Vector& g, const Vector& p, Real *f)
     *f=Merit();
     if (alam < alamin) { //Convergence on  x. For zero finding, the calling program should verify the convergence. 
       //x.copy(xold);
-      //printf("Resulting step size %g\n",alam);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Resulting step size "<<alam);
       return true;
     }
     else if (*f <= fold+ALF*alam*slope) {
-      //printf("Resulting step size %g\n",alam);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Resulting step size "<<alam);
       return false; //Sufficient function decrease. 
     }
     else if(!IsFinite(*f)) {
-      cerr<<"NewtonRoot::LineMinimization: f(x) is infinite or NaN... backtracking"<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"NewtonRoot::LineMinimization: f(x) is infinite or NaN... backtracking"<<"\n");
       /*
-      cerr<<"x0="<<VectorPrinter(xold,VectorPrinter::AsciiShade)<<endl;
-      cerr<<"p="<<VectorPrinter(p,VectorPrinter::AsciiShade)<<endl;
-      cerr<<"g="<<VectorPrinter(g,VectorPrinter::AsciiShade)<<endl;
-      cerr<<"lambda="<<alam<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"x0="<<VectorPrinter(xold,VectorPrinter::AsciiShade)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"p="<<VectorPrinter(p,VectorPrinter::AsciiShade)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"g="<<VectorPrinter(g,VectorPrinter::AsciiShade)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"lambda="<<alam<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       */
       *f = fold;
       tmplam = 0.5*alam;
@@ -536,15 +537,15 @@ bool NewtonRoot::LineMinimization(const Vector& g, const Vector& p, Real *f)
 	  else tmplam=-slope/(b+Sqrt(disc));
 	}
 	if(IsNaN(tmplam)) {
-	  cerr<<"NewtonRoot::LineMinimization: templam is NaN??"<<endl;
-	  cerr<<"f="<<*f<<endl;
-	  cerr<<"fold="<<fold<<endl;
-	  cerr<<"a="<<a<<endl;
-	  cerr<<"b="<<b<<endl;
-	  cerr<<"rhs1="<<rhs1<<endl;
-	  cerr<<"hrs2="<<rhs2<<endl;
-	  cerr<<"slope="<<slope<<endl;
-	  getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"NewtonRoot::LineMinimization: templam is NaN??"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"f="<<*f<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"fold="<<fold<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"a="<<a<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"b="<<b<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"rhs1="<<rhs1<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"hrs2="<<rhs2<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"slope="<<slope<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  tmplam = 0.5*alam;
 	}
 	if (tmplam > 0.5*alam) 
@@ -568,7 +569,7 @@ bool ConstrainedNewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
     return NewtonRoot::GlobalSolve(iters,r);
   }
 
-  if(verbose) { cout<<"ConstrainedNewtonRoot::GlobalSolve(): "; cout.flush(); }
+  if(verbose) { LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedNewtonRoot::GlobalSolve(): ");   }
   Vector xinit;
   xinit.copy(x);
   ConvergenceResult res;
@@ -592,57 +593,57 @@ bool ConstrainedNewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
   initDist = MaxDistance(xinit);
   switch(res) {
   case ConvergenceX:
-    if(verbose) cout<<"Reached convergence on x... ";
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Reached convergence on x... ");
     if(endDist <= tolf) {
       if(endMargin < tolc) {
-	if(verbose) cout<<"satisfies f but not c: "<<endMargin<<" < "<<tolc<<endl;
+	if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"satisfies f but not c: "<<endMargin<<" < "<<tolc<<"\n");
 	return false;
       }
-      if(verbose) cout<<"satisfies all constraints."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"satisfies all constraints."<<"\n");
       return true;
     }
     else {
-      if(verbose) cout<<"does not satisfy tolerance, distance "<<endDist<<", margin "<<endMargin<<"."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"does not satisfy tolerance, distance "<<endDist<<", margin "<<endMargin<<"."<<"\n");
       return false;
     }
     break;
 
   case LocalMinimum:
-    if(verbose) cout<<"Reached local minimum... ";
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Reached local minimum... ");
     if(endDist <= tolf) {
       if(endMargin < tolc) {
-	if(verbose) cout<<"satisfies f but not c: "<<endMargin<<" < "<<tolc<<endl;
+	if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"satisfies f but not c: "<<endMargin<<" < "<<tolc<<"\n");
 	return false;
       }
-      if(verbose) cout<<"satisfies all constraints."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"satisfies all constraints."<<"\n");
       return true;
     }
     else {
-      if(verbose) cout<<"stuck at distance "<<endDist<<"."<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"stuck at distance "<<endDist<<"."<<"\n");
       return false;
     }
   case ConvergenceF:
     if(endMargin < tolc) {
-      if(verbose) cout<<"Reached convergence on f, but not margin "<<endMargin<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Reached convergence on f, but not margin "<<endMargin<<"\n");
       return false;
     }
-    if(verbose) cout<<"Reached convergence on f, new distance "<<endDist<<" margin "<<endMargin<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Reached convergence on f, new distance "<<endDist<<" margin "<<endMargin<<"\n");
     Assert(endDist <= tolf);
     return true;
 
   case MaxItersReached:
     initDist = MaxDistance(xinit);
     if(endDist < initDist) {
-      if(verbose) cout<<"Max iters reached, distance was decreased to "<<endDist<<endl;
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Max iters reached, distance was decreased to "<<endDist<<"\n");
     }
     else {
-      //if(verbose) cout<<"Max iters reached, looks like divergence.  Reverting to initial."<<endl;
-      if(verbose) cout<<"Max iters reached, distance increased (may have reduced inequality margin)."<<endl;
+      //if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Max iters reached, looks like divergence.  Reverting to initial."<<"\n");
+      if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Max iters reached, distance increased (may have reduced inequality margin)."<<"\n");
       //x.copy(xinit);
     }
     return false;
   default:
-    if(verbose) cout<<"Error"<<endl;
+    if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"Error"<<"\n");
     return false;
   }
   return false;
@@ -652,15 +653,15 @@ bool ConstrainedNewtonRoot::GlobalSolve(int& iters,ConvergenceResult* r)
 //inequality constraints while maintaining equality
 ConvergenceResult ConstrainedNewtonRoot::SolveConstrained(int& iters)
 {
-  cerr<<"ConstrainedNewtonRoot::SolveConstrained() is deprecated, use SolveConstrained2()"<<endl;
-  getchar();
+  LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedNewtonRoot::SolveConstrained() is deprecated, use SolveConstrained2()"<<"\n");
+  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   Assert(c!=NULL);
 
   g.resize(x.n);
   int maxIters=iters;
   ConvergenceResult res;
   if(!NewtonRoot::GlobalSolve(iters,&res)) {
-    if(verbose) cout<<"SolveConstrained(): Failed on initial equality solve"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"SolveConstrained(): Failed on initial equality solve"<<"\n");
     return res;
   }
   Vector xold2;
@@ -673,14 +674,14 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained(int& iters)
     if(margin >= tolc) {
       return res;
 
-      //cout<<"Maximizing margin "<<margin<<" at "<<c->Label(index)<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Maximizing margin "<<margin<<" at "<<c->Label(index)<<"\n");
       //take step
       c->Jacobian_i(x,index,g);
       //project onto tangent space of func
       func->PreEval(x);
       func->Jacobian(x,fJx);
       if(!svd.set(fJx)) {
-	if(verbose) cout<<"SolveConstrained(): error setting SVD of equality jacobian"<<endl;
+	if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"SolveConstrained(): error setting SVD of equality jacobian"<<"\n");
 	return ConvergenceError;
       }
       svd.nullspaceComponent(g,p);
@@ -700,19 +701,19 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained(int& iters)
       Real tmargin;
       xold2.copy(x);
       for(int lsiters=0;;lsiters++) {
-	//cout<<"line search iteration "<<lsiters<<", step length "<<t<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"line search iteration "<<lsiters<<", step length "<<t<<"\n");
 	if(t < tolx) {
-	  //cout<<"No progress in SolveConstrained() after "<<iters<<" iters, looks like a local minimum"<<endl;
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"No progress in SolveConstrained() after "<<iters<<" iters, looks like a local minimum"<<"\n");
 	  return LocalMinimum;
 	}
 	x.copy(xold2); 
 	x.madd(g,t/gnorm);
 	if(bmin.n!=0) AABBClamp(x,bmin,bmax);
 
-	//cout<<"Step has distance "<<MaxDistance(x)<<" from eq"<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Step has distance "<<MaxDistance(x)<<" from eq"<<"\n");
 	int solveIters=maxIters-iters;
 	if(NewtonRoot::GlobalSolve(solveIters,&res) || res==ConvergenceX) {
-	  //cout<<"Used "<<solveIters<<" iters of "<<maxIters-iters<<endl;
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Used "<<solveIters<<" iters of "<<maxIters-iters<<"\n");
 	  iters += solveIters;
 	  c->PreEval(x);
 	  tmargin = c->Eval_i(x,index);
@@ -723,11 +724,11 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained(int& iters)
 	else {
 	  if(verbose) {
 	    switch(res) {
-	    case LocalMinimum: cout<<"LocalMinimum "; break;
-	    case ConvergenceError: cout<<"Error "; break;
+	    case LocalMinimum: LOG4CXX_INFO(KrisLibrary::logger(),"LocalMinimum "); break;
+	    case ConvergenceError: LOG4CXX_ERROR(KrisLibrary::logger(),"Error "); break;
 	    default: break;
 	    }
-	    cout<<"Equality solve failed, using "<<solveIters<<" iters of "<<maxIters-iters<<" to solve distance "<<MaxDistance(x)<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Equality solve failed, using "<<solveIters<<" iters of "<<maxIters-iters<<" to solve distance "<<MaxDistance(x)<<"\n");
 	  }
 	  iters += solveIters/4+1;
 	  if(maxIters-iters <= 0) return MaxItersReached;
@@ -776,9 +777,9 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
 {
   if(debug && !IsFinite(x)) { 
     if(verbose) {
-      cerr<<"ERROR! Initial x is not finite!"<<endl;
-      cerr<<VectorPrinter(x)<<endl;
-      getchar(); 
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR! Initial x is not finite!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar(); 
     }
     return ConvergenceError; 
   }
@@ -809,18 +810,18 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
   for (iters=0;iters<maxIters;iters++) {
     //debug
     if(debug && !IsFinite(fx)) {
-      if(verbose) cerr<<"f(x) is not finite!"<<endl;
+      if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"f(x) is not finite!"<<"\n");
       if(verbose >= 2) {
-	cerr<<VectorPrinter(fx)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
     if(debug && !IsFinite(cx)) {
-      if(verbose) cerr<<"c(x) is not finite!"<<endl;
+      if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"c(x) is not finite!"<<"\n");
       if(verbose >= 2) {
-	cerr<<VectorPrinter(cx)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(cx)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -840,13 +841,13 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
     if(verbose >= 1) {
       int index;
       Real d=cx.minElement(&index);
-      cout<<"Equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<"\n");
     }
     if(verbose >= 3 && !activeSetC.empty()) {
-      cout<<"Active set: {";
+      LOG4CXX_INFO(KrisLibrary::logger(),"Active set: {");
       for(size_t i=0;i<activeSetC.size();i++)
-	cout<<c->Label(activeSetC[i])<<",";
-      cout<<"}"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),c->Label(activeSetC[i])<<",");
+      LOG4CXX_INFO(KrisLibrary::logger(),"}"<<"\n");
     }
 
     //TODO: use a simplex-like method to find a search direction that optionally uses some constraints?
@@ -862,9 +863,9 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
     func->Jacobian(x,fJx);
     if(debug && !IsFinite(fJx)) {
       if(verbose) {
-	cerr<<"Jacobian of equality is not finite!"<<endl;
-	cerr<<VectorPrinter(x)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Jacobian of equality is not finite!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -873,10 +874,10 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
       c->Jacobian_i(x,activeSetC[i],Ai);
       if(debug && !IsFinite(Ai)) {
 	if(verbose) {
-	  cerr<<"Jacobian "<<i<<" of inequality is not finite!"<<endl;
-	  cerr<<VectorPrinter(Ai)<<endl;
-	  cerr<<VectorPrinter(x)<<endl;
-	  getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Jacobian "<<i<<" of inequality is not finite!"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(Ai)<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	return ConvergenceError;
       }
@@ -897,10 +898,10 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
 	}
 	if(!activeSetBound.empty()) {
 	  if(verbose >= 2) {
-	    cout<<"Active bounds: {";
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Active bounds: {");
 	    for(size_t i=0;i<activeSetBound.size();i++)
-	      cout<<activeSetBound[i]<<",";
-	    cout<<"}"<<endl;
+	      LOG4CXX_INFO(KrisLibrary::logger(),activeSetBound[i]<<",");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"}"<<"\n");
 	  }
 	  //remove columns from A matrix
 	  RemoveColumns(A,activeSetBound);
@@ -911,7 +912,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
 	    AddElements(p,activeSetBound,Zero);
 	  }
 	  else {
-	    if(verbose) cout<<"Unable to solve pseudoinverse of bound-constrained problem, just setting entries of dirs to 0"<<endl;
+	    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to solve pseudoinverse of bound-constrained problem, just setting entries of dirs to 0"<<"\n");
 	    solvedProperly=false;
 	    p.n = p.n + (int)activeSetBound.size();
 	    //SetElements(g,activeSetBound,Zero);
@@ -925,10 +926,10 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
       xtemp.add(x,p);
       vtemp.resize(fn);
       (*func)(xtemp,vtemp);
-      cout<<"desired f: "<<VectorPrinter(vtemp,VectorPrinter::AsciiShade)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"desired f: "<<VectorPrinter(vtemp,VectorPrinter::AsciiShade)<<"\n");
       vtemp.resize(cn);
       (*c)(xtemp,vtemp);
-      cout<<"desired c min: "<<vtemp.minElement()<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"desired c min: "<<vtemp.minElement()<<"\n");
 
       //A*p = J(x)*p = rhs = f(x)
       vtemp.resize(A.m);
@@ -936,41 +937,41 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
       vtemp -= rhs;
       vtemp.inplaceNegative();
       Vector temp; temp.setRef(vtemp,fn);
-      cout<<"linear c min: "<<temp.minElement()<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"linear c min: "<<temp.minElement()<<"\n");
       */
     }
     else if(fx.maxAbsElement() > -cx.minElement()) {  //seems more important to solve equality constraints
       if(verbose) {
-	cerr<<"Unable to solve pseudoinverse of equalities+inequalities, trying unconstrained"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to solve pseudoinverse of equalities+inequalities, trying unconstrained"<<"\n");
       }
       if(verbose >= 2) {
 	MatrixPrinter mp(A);
 	if(A.n > 10) mp.mode = MatrixPrinter::AsciiShade;
-	cerr<<mp<<endl;
-	cerr<<VectorPrinter(x)<<endl;
-	//cerr<<"New dims: "<<fn<<" x "<<A.n<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),mp<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+	//LOG4CXX_ERROR(KrisLibrary::logger(),"New dims: "<<fn<<" x "<<A.n<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       A.m = fn;
       rhs.n = fn;
       if(verbose >= 2) {
-	cerr<<"New matrix: "<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"New matrix: "<<"\n");
 	MatrixPrinter mp(A);
 	if(A.n > 10) mp.mode = MatrixPrinter::AsciiShade;
-	cerr<<mp<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),mp<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       A.mulTranspose(rhs,g);
       if(SolveUnderconstrainedLS(A,rhs,p)) {
       }
       else {
-	if(verbose) cerr<<"Unable to solve pseudoinverse!"<<endl;
+	if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to solve pseudoinverse!"<<"\n");
 	if(verbose >= 2) {
 	  MatrixPrinter mp(A);
 	  if(A.n > 10) mp.mode = MatrixPrinter::AsciiShade;
-	  cerr<<mp<<endl;
-	  cerr<<"Press a key to continue"<<endl;
-	  getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),mp<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press a key to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	p=g;
 	//return ConvergenceError;
@@ -978,7 +979,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
     }
     else {  //seems more important to solve inequality constraints
       if(verbose) {
-	cerr<<"Unable to solve pseudoinverse of equalities, trying inequality"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to solve pseudoinverse of equalities, trying inequality"<<"\n");
       }
       for(size_t i=0;i<activeSetC.size();i++) {
 	for(int j=0;j<A.n;j++)
@@ -988,23 +989,23 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
       A.m=(int)activeSetC.size();
       rhs.n=(int)activeSetC.size();
       if(verbose >= 2) {
-	cerr<<"New matrix: "<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"New matrix: "<<"\n");
 	MatrixPrinter mp(A);
 	if(A.n > 10) mp.mode = MatrixPrinter::AsciiShade;
-	cerr<<mp<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),mp<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       A.mulTranspose(rhs,g);
       if(SolveUnderconstrainedLS(A,rhs,p)) {
       }
       else {
-	if(verbose) cerr<<"Unable to solve pseudoinverse!"<<endl;
+	if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to solve pseudoinverse!"<<"\n");
 	if(verbose >= 2) {
 	  MatrixPrinter mp(A);
 	  if(A.n > 10) mp.mode = MatrixPrinter::AsciiShade;
-	  cerr<<mp<<endl;
-	  cerr<<"Press a key to continue"<<endl;
-	  getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),mp<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press a key to continue"<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	p=g;
 	//return ConvergenceError;
@@ -1012,32 +1013,32 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
     }
     if(g.dot(p) > Zero) {
       if(verbose) {
-	cerr<<"Error, gradient and search direction are opposing..."<<endl;
-	cerr<<"g: "<<VectorPrinter(g)<<endl;
-	cerr<<"p: "<<VectorPrinter(p)<<endl;
-	cerr<<"g dot p: "<<g.dot(p)<<endl;
-	cerr<<"Using gradient direction..."<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error, gradient and search direction are opposing..."<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"g: "<<VectorPrinter(g)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"p: "<<VectorPrinter(p)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"g dot p: "<<g.dot(p)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Using gradient direction..."<<"\n");
       }
       p=g;
       //return ConvergenceError;
     }
     p.inplaceNegative();
-    if(verbose>=2) cout<<"Line search direction: "<<p<<endl;
+    if(verbose>=2) LOG4CXX_INFO(KrisLibrary::logger(),"Line search direction: "<<p<<"\n");
 
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
     f = Merit();
     check = LineMinimization(g,p,&f);
-    //printf("New value of f after lnsrch: %f\n",f);
-    //printf("New value of fx after lnsrch: "); cout<<VectorPrinter(fx)<<endl;
-    //printf("New value of x after lnsrch: "); cout<<VectorPrinter(x)<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of f after lnsrch: "<<f);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of fx after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of x after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
 
     //Note: fx updated by last call to merit function
     if(debug && !IsFinite(x)) { 
       if(verbose) {
-	cerr<<"ERROR! after LineMinimization, x is not finite!"<<endl;
-	cerr<<VectorPrinter(x,VectorPrinter::AsciiShade)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR! after LineMinimization, x is not finite!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x,VectorPrinter::AsciiShade)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -1056,8 +1057,8 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2(int& iters)
       if(test < tolmin) return LocalMinimum;
       else {
         if(verbose) {
-	  cout<<"ConstrainedNewtonRoot(): Hmm.... check is returned, but test is not < tolmin"<<endl; 
-	  cout<<"Gradient: "<<g<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedNewtonRoot(): Hmm.... check is returned, but test is not < tolmin"<<"\n"); 
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Gradient: "<<g<<"\n");
 	}
         return ConvergenceX;
       }
@@ -1080,9 +1081,9 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
 {
   if(debug && !IsFinite(x)) { 
     if(verbose) {
-      cerr<<"ERROR! Initial x is not finite!"<<endl;
-      cerr<<VectorPrinter(x)<<endl;
-      getchar(); 
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR! Initial x is not finite!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar(); 
     }
     return ConvergenceError; 
   }
@@ -1126,18 +1127,18 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
   for (iters=0;iters<maxIters;iters++) {
     //debug
     if(debug && !IsFinite(fx)) {
-      if(verbose) cerr<<"f(x) is not finite!"<<endl;
+      if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"f(x) is not finite!"<<"\n");
       if(verbose >= 2) {
-	cerr<<VectorPrinter(fx)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
     if(debug && !IsFinite(cx)) {
-      if(verbose) cerr<<"c(x) is not finite!"<<endl;
+      if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"c(x) is not finite!"<<"\n");
       if(verbose >= 2) {
-	cerr<<VectorPrinter(cx)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(cx)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -1156,13 +1157,13 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
     if(verbose) {
       int index;
       Real d=cx.minElement(&index);
-      cout<<"Equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<"\n");
     }
     if(verbose >= 3 && !activeSetC.empty()) {
-      cout<<"Active set: {";
+      LOG4CXX_INFO(KrisLibrary::logger(),"Active set: {");
       for(size_t i=0;i<activeSetC.size();i++)
-	cout<<c->Label(activeSetC[i])<<",";
-      cout<<"}"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),c->Label(activeSetC[i])<<",");
+      LOG4CXX_INFO(KrisLibrary::logger(),"}"<<"\n");
     }
 
     //TODO: use a simplex-like method to find a search direction that optionally uses some constraints?
@@ -1175,14 +1176,13 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
     rhs.copySubVector(0,fx);
     for(size_t i=0;i<activeSetC.size();i++)
       rhs(fn+(int)i) = cx(activeSetC[i])-kInequalityAdjustment-tolf;
-    if(verbose) cout<<"Evaluating jacobian..."; cout.flush();
-    seq->Jacobian_Sparse(x,Jeq);
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Evaluating jacobian...");     seq->Jacobian_Sparse(x,Jeq);
     A.copySubMatrix(0,0,Jeq);
     if(debug && !IsFinite(Jeq)) {
       if(verbose) {
-	cerr<<"Jacobian of equality is not finite!"<<endl;
-	cerr<<VectorPrinter(x)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Jacobian of equality is not finite!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -1192,24 +1192,24 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
       A.copyRow(fn+i,Ai);
       if(debug && !IsFinite(Ai)) {
 	if(verbose) {
-	  cerr<<"Jacobian "<<i<<" of inequality is not finite!"<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Jacobian "<<i<<" of inequality is not finite!"<<"\n");
 	  Vector temp;
 	  Ai.get(temp);
-	  cerr<<VectorPrinter(temp)<<endl;
-	  cerr<<VectorPrinter(x)<<endl;
-	  getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(temp)<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	return ConvergenceError;
       }
     }
-    if(verbose) cout<<"Done."<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Done."<<"\n");
 
     if(!activeSetBound.empty()) {
       if(verbose >= 2) {
-	cout<<"Active bounds: {";
+	LOG4CXX_INFO(KrisLibrary::logger(),"Active bounds: {");
 	for(size_t i=0;i<activeSetBound.size();i++)
-	  cout<<activeSetBound[i]<<",";
-	cout<<"}"<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),activeSetBound[i]<<",");
+	LOG4CXX_INFO(KrisLibrary::logger(),"}"<<"\n");
       }
     }
     //for bound constraints D(x), A is +/- 1, but since D(x)=0 it doesn't add into g
@@ -1229,18 +1229,18 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
     }
     else {
       if(verbose)
-	cerr<<"ConstrainedNewtonRoot: Unable to solve pseudoinverse of equalities+inequalities, returning error"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedNewtonRoot: Unable to solve pseudoinverse of equalities+inequalities, returning error"<<"\n");
       p.n = p.n + (int)activeSetBound.size();
       SetElements(p,activeSetBound,Zero);
       return ConvergenceError;
     }
     if(g.dot(p) <= Zero) {
       if(verbose) {
-	cerr<<"Error, gradient and search direction are opposing..."<<endl;
-	cerr<<"g: "<<VectorPrinter(g)<<endl;
-	cerr<<"p: "<<VectorPrinter(p)<<endl;
-	cerr<<"g dot p: "<<g.dot(p)<<endl;
-	cerr<<"Using gradient direction..."<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error, gradient and search direction are opposing..."<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"g: "<<VectorPrinter(g)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"p: "<<VectorPrinter(p)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"g dot p: "<<g.dot(p)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Using gradient direction..."<<"\n");
       }
       p=g;
       //return ConvergenceError;
@@ -1251,16 +1251,16 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
     f = Merit();
     check = LineMinimization(g,p,&f);
-    //printf("New value of f after lnsrch: %f\n",f);
-    //printf("New value of fx after lnsrch: "); cout<<VectorPrinter(fx)<<endl;
-    //printf("New value of x after lnsrch: "); cout<<VectorPrinter(x)<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of f after lnsrch: "<<f);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of fx after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of x after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
 
     //Note: fx updated by last call to merit function
     if(debug && !IsFinite(x)) { 
       if(verbose) {
-	cerr<<"ERROR! after LineMinimization, x is not finite!"<<endl;
-	cerr<<VectorPrinter(x,VectorPrinter::AsciiShade)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR! after LineMinimization, x is not finite!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x,VectorPrinter::AsciiShade)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -1278,7 +1278,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained2_Sparse(int& iters)
       }
       if(test < tolmin) return LocalMinimum;
       else {
-        if(verbose) cout<<"ConstrainedNewtonRoot(): Hmm.... check is returned, but test is not < tolmin"<<endl; 
+        if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedNewtonRoot(): Hmm.... check is returned, but test is not < tolmin"<<"\n"); 
         return ConvergenceX;
       }
     }
@@ -1300,9 +1300,9 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
 {
   if(debug && !IsFinite(x)) { 
     if(verbose) {
-      cerr<<"ERROR! Initial x is not finite!"<<endl;
-      cerr<<VectorPrinter(x)<<endl;
-      getchar(); 
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR! Initial x is not finite!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar(); 
     }
     return ConvergenceError; 
   }
@@ -1354,18 +1354,18 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
   for (iters=0;iters<maxIters;iters++) {
     //debug
     if(debug && !IsFinite(fx)) {
-      if(verbose) cerr<<"f(x) is not finite!"<<endl;
+      if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"f(x) is not finite!"<<"\n");
       if(verbose >= 2) {
-	cerr<<VectorPrinter(fx)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
     if(debug && !IsFinite(cx)) {
-      if(verbose) cerr<<"c(x) is not finite!"<<endl;
+      if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"c(x) is not finite!"<<"\n");
       if(verbose >= 2) {
-	cerr<<VectorPrinter(cx)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(cx)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -1373,7 +1373,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
     if(verbose) {
       int index;
       Real d=cx.minElement(&index);
-      cout<<"Equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<"\n");
     }
 
     //setup the problem
@@ -1381,8 +1381,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
     //C(x) = 0  => dC/dx(x0)*(x-x0) + C(x0) = 0 => JC*dx = -C(x0)
     //D(x) > 0  => dD/dx(x0)*(x-x0) + D(x0) > 0 => -JD*dx < D(x0)
     //bmin <= x0+dx <= bmax => bmin-x0 <= dx <= bmax-x0
-    if(verbose) cout<<"Evaluating jacobians..."; cout.flush();
-    seq->Jacobian_Sparse(x,Aeq);
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Evaluating jacobians...");     seq->Jacobian_Sparse(x,Aeq);
     beq.setNegative(fx);
     sineq->Jacobian_Sparse(x,Aineq);
     Aineq.inplaceNegative();
@@ -1393,22 +1392,22 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
     lp.SetSimpleForm(Aeq,beq,Aineq,bineq);
     lp.l.sub(bmin,x);
     lp.u.sub(bmax,x);
-    if(verbose) cout<<"Done."<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Done."<<"\n");
     Assert(lp.IsValid());
 
     p.resize(x.n); p.setZero();
     /*
-    cout<<"********** Zero Vector: ***********"<<endl;
-    cout<<"L-inf norm: "<<lp.Norm(p)<<endl;
-    cout<<"Equality error: "<<lp.EqualityError(p)<<endl;
-    cout<<"Inequality error: "<<lp.InequalityMargin(p)<<endl;
-    cout<<"************************************"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"********** Zero Vector: ***********"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"L-inf norm: "<<lp.Norm(p)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Equality error: "<<lp.EqualityError(p)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Inequality error: "<<lp.InequalityMargin(p)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"************************************"<<"\n");
     */
 
     lp.Assemble();
     LinearProgram::Result res=lp.Solve(p);
     if(res == LinearProgram::Infeasible || res == LinearProgram::Error) {
-      if(verbose) cout<<"LP failed, solving minimum error problem..."<<endl;
+      if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"LP failed, solving minimum error problem..."<<"\n");
       //solve minimum error problem
       //min{p,z} |Jc*p+c0|+|z|+|p| (|.| denotes the 1-norm)
       //s.t. -Jd*p - z < d0
@@ -1446,11 +1445,11 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
       temp.setZero();
       for(int i=0;i<cn;i++)
 	if(cx(i) < kInequalityAdjustment) temp(x.n+i) = kInequalityAdjustment-cx(i);
-      cout<<"********** Zero Vector: ***********"<<endl;
-      cout<<"L1 norm: "<<lp2.Norm(temp)<<endl;
-      cout<<"Equality error: "<<lp2.EqualityError(temp)<<endl;
-      cout<<"Inequality error: "<<lp2.InequalityMargin(temp)<<endl;
-      cout<<"************************************"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"********** Zero Vector: ***********"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"L1 norm: "<<lp2.Norm(temp)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Equality error: "<<lp2.EqualityError(temp)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Inequality error: "<<lp2.InequalityMargin(temp)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"************************************"<<"\n");
       */
       /*
       lp2.Assemble();
@@ -1458,7 +1457,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
     */
       res = LinearProgram::Infeasible;
       if(res == LinearProgram::Infeasible || res == LinearProgram::Error) {
-	if(verbose) cout<<"Minimum error problem failed, solving LS..."<<endl;
+	if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"Minimum error problem failed, solving LS..."<<"\n");
 	//try doing a LS solve step
 	SparseMatrix mat;
 	Vector rhs;
@@ -1477,20 +1476,20 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
 	  }
 	}
 	if(SolveUnderconstrainedLS(mat,rhs,p)) {
-	  cout<<"Solved using least-squares solution..."<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Solved using least-squares solution..."<<"\n");
 	}
 	else {
-	  if(verbose) cerr<<"Unable to solve for a feasible step!"<<endl;
+	  if(verbose) LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to solve for a feasible step!"<<"\n");
 	  return ConvergenceError;
 	}
       }
       /*
       else {
-	cout<<"********* Min-norm solution 2: **********"<<endl;
-	cout<<"L1 norm of shift: "<<lp2.Norm(temp)<<endl;
-	cout<<"Equality error: "<<lp2.EqualityError(temp)<<endl;
-	cout<<"Inequality error: "<<lp2.InequalityMargin(temp)<<endl;
-	cout<<"************************************"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"********* Min-norm solution 2: **********"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"L1 norm of shift: "<<lp2.Norm(temp)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Equality error: "<<lp2.EqualityError(temp)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Inequality error: "<<lp2.InequalityMargin(temp)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"************************************"<<"\n");
 	//get just the top n elements
 	temp.getSubVectorCopy(0,p);
       }
@@ -1499,21 +1498,21 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
     Assert(res != LinearProgram::Unbounded);
 
     /*
-    cout<<"********* Min-norm solution: ************"<<endl;
-    cout<<"L-inf norm of shift: "<<lp.Norm(p)<<endl;
-    cout<<"Equality error: "<<lp.EqualityError(p)<<endl;
-    cout<<"Inequality error: "<<lp.InequalityMargin(p)<<endl;
-    cout<<"************************************"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"********* Min-norm solution: ************"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"L-inf norm of shift: "<<lp.Norm(p)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Equality error: "<<lp.EqualityError(p)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Inequality error: "<<lp.InequalityMargin(p)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"************************************"<<"\n");
     */
 
-    cout<<"Length of shift: "<<p.norm()<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Length of shift: "<<p.norm()<<"\n");
     xold = x;
     x += p;
     (*func)(x,fx);
     (*c)(x,cx);
     int index;
     Real d=cx.minElement(&index);
-    cout<<"Shifted equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Shifted equality error "<<fx.maxAbsElement()<<", Inequality margin: "<<d<<" at "<<c->Label(index)<<"\n");
     x = xold;
     (*func)(x,fx);
     (*c)(x,cx);
@@ -1521,18 +1520,18 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
     //fake a gradient direction
     g.setNegative(p);
     f = Merit();
-    if(verbose) printf("Merit value before lnsrch: %f\n",f);
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Merit value before lnsrch: "<<f);
     check = LineMinimization(g,p,&f);
-    if(verbose) printf("Merit value after lnsrch: %f\n",f);
-    //printf("New value of fx after lnsrch: "); cout<<VectorPrinter(fx)<<endl;
-    //printf("New value of x after lnsrch: "); cout<<VectorPrinter(x)<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"Merit value after lnsrch: "<<f);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of fx after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(fx)<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New value of x after lnsrch: "); LOG4CXX_INFO(KrisLibrary::logger(),VectorPrinter(x)<<"\n");
 
     //Note: fx updated by last call to merit function
     if(debug && !IsFinite(x)) { 
       if(verbose) {
-	cerr<<"ERROR! after LineMinimization, x is not finite!"<<endl;
-	cerr<<VectorPrinter(x,VectorPrinter::AsciiShade)<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR! after LineMinimization, x is not finite!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),VectorPrinter(x,VectorPrinter::AsciiShade)<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
       }
       return ConvergenceError;
     }
@@ -1550,7 +1549,7 @@ ConvergenceResult ConstrainedNewtonRoot::SolveConstrained_SLP(int& iters)
       }
       if(test < tolmin) return LocalMinimum;
       else {
-        if(verbose) cout<<"ConstrainedNewtonRoot(): Hmm.... check is returned, but test is not < tolmin"<<endl; 
+        if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedNewtonRoot(): Hmm.... check is returned, but test is not < tolmin"<<"\n"); 
         return ConvergenceX;
       }
     }

@@ -1,6 +1,8 @@
 #ifndef UTILS_CONTEXT_STACK_H
 #define UTILS_CONTEXT_STACK_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include <string>
 #include <list>
 

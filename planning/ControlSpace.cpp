@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "ControlSpace.h"
 #include "CSetHelpers.h"
 #include "EdgePlanner.h"
@@ -184,7 +186,7 @@ void IntegratedControlSpace::Derivative(const State& x, const ControlInput& u,St
 {
   if(myDynamics) myDynamics(x,u,dx);
   else {
-    fprintf(stderr,"IntegratedControlSpace: no dynamics function provided\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"IntegratedControlSpace: no dynamics function provided\n");
     dx.resize(x.n);
     dx.set(0.0);
   }

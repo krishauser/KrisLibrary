@@ -1,6 +1,8 @@
 #ifndef MATH_SPARSE_VECTOR_TEMPLATE_H
 #define MATH_SPARSE_VECTOR_TEMPLATE_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "VectorTemplate.h"
 #include <KrisLibrary/structs/SparseArray.h>
 
