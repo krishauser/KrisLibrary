@@ -1356,14 +1356,14 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
 	if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
 	  elements2.push_back(i);
 	  if(elements2.size() >= maxContacts) {
-	    printf("%d contacts time %g\n",maxContacts,timer.ElapsedTime());
+	    printf("%d contacts time %g\n",(int)maxContacts,timer.ElapsedTime());
 
 	    //printf("Collision in time %g\n",timer.ElapsedTime());
 	    return true;
 	  }
 	}
       }
-      printf("%d contacts time %g\n",maxContacts,timer.ElapsedTime());	    
+      printf("%d contacts time %g\n",(int)maxContacts,timer.ElapsedTime());	    
       // printf("No collision in time %g\n",timer.ElapsedTime());
       return !elements2.empty();
 
@@ -1448,6 +1448,7 @@ bool Collides(vector<AnyCollisionGeometry3D>& group,Real margin,AnyCollisionGeom
 }
 
 
+
 bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D& geom)
 {
   InitCollisionData();
@@ -1482,6 +1483,200 @@ bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D& geom,
   return false;
 }
 
+
+
+Real Distance(const GeometricPrimitive3D& a,const RigidTransform& Ta,AnyCollisionGeometry3D& b,
+        int& elem2,Real upperBound=Inf)
+{
+  if(a.type == GeometricPrimitive3D::Empty) return Inf;
+  Assert(b.CollisionDataInitialized());
+  GeometricPrimitive3D aw=a;
+  aw.Transform(Ta);
+  switch(b.type) {
+  case AnyCollisionGeometry3D::Primitive:
+    {
+      GeometricPrimitive3D bw=b.AsPrimitive();
+      bw.Transform(b.GetTransform());
+      elem2=0;
+      return aw.Distance(bw)-b.margin;
+    }
+  case AnyCollisionGeometry3D::ImplicitSurface:
+    fprintf(stderr,"Unable to do primitive/implicit surface distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::TriangleMesh:
+    fprintf(stderr,"Unable to do primitive/triangle mesh distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::PointCloud:
+    fprintf(stderr,"Unable to do primitive/point cloud distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::Group:
+    {
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      Real dmin = upperBound+b.margin;
+      for(size_t i=0;i<bitems.size();i++) {
+        int e2;
+        Real d = Distance(a,Ta,bitems[i],e2,dmin);
+        if(d < dmin) {
+          elem2 = (int)i;
+          dmin = d;
+        }
+      }
+      return dmin-b.margin;
+    }
+  default:
+    FatalError("Invalid type");
+  }
+  return Inf;
+}
+
+
+Real Distance(const Meshing::VolumeGrid& a,const RigidTransform& Ta,AnyCollisionGeometry3D& b,
+        int& elem1,int& elem2,Real upperBound=Inf)
+{
+  switch(b.type) {
+  case AnyCollisionGeometry3D::Primitive:
+    fprintf(stderr,"Unable to do implicit surface/primitive distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::ImplicitSurface:
+    fprintf(stderr,"Unable to do implicit surface/implicit surface distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::TriangleMesh:
+    fprintf(stderr,"Unable to do implicit surface/triangle mesh distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::PointCloud:
+    fprintf(stderr,"Unable to do implicit surface/point cloud distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::Group:
+    {
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      Real dmin = upperBound+b.margin;
+      for(size_t i=0;i<bitems.size();i++) {
+        int e1,e2;
+        Real d = Distance(a,Ta,bitems[i],e1,e2,dmin);
+        if(d < dmin) {
+          elem1 = e1;
+          elem2 = (int)i;
+          dmin = d;
+        }
+      }
+      return dmin-b.margin;
+    }
+  default:
+    FatalError("Invalid type");
+  }
+  return Inf;
+}
+
+Real Distance(const CollisionMesh& a,AnyCollisionGeometry3D& b,
+  int& elem1,int& elem2,Real upperBound=Inf)
+{
+  switch(b.type) {
+  case AnyCollisionGeometry3D::Primitive:
+    fprintf(stderr,"Unable to do triangle mesh/primitive distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::ImplicitSurface:
+    fprintf(stderr,"Unable to do triangle mesh/implicit surface distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::TriangleMesh:
+    {
+      CollisionMeshQuery q(a,b.TriangleMeshCollisionData());
+      Real d=q.Distance(0.0,0.01,upperBound);
+      q.ClosestPair(elem1,elem2);
+      return d-b.margin;
+    }
+  case AnyCollisionGeometry3D::PointCloud:
+    fprintf(stderr,"Unable to do triangle mesh/point cloud distance yet\n");
+    break;
+  case AnyCollisionGeometry3D::Group:
+    {
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      Real dmin = upperBound+b.margin;
+      for(size_t i=0;i<bitems.size();i++) {
+        int e1,e2;
+        Real d = Distance(a,bitems[i],e1,e2,dmin);
+        if(d < dmin) {
+          elem1 = e1;
+          elem2 = (int)i;
+          dmin = d;
+        }
+      }
+      return dmin-b.margin;
+    }
+  default:
+    FatalError("Invalid type");
+  }
+  return Inf;
+}
+
+
+Real Distance(const CollisionPointCloud& a,AnyCollisionGeometry3D& b,int& elem1,int& elem2,Real upperBound=Inf)
+{
+  switch(b.type) {
+  case AnyCollisionGeometry3D::Primitive:
+    {
+      GeometricPrimitive3D bw=b.AsPrimitive();
+      bw.Transform(b.GetTransform());
+      elem2 = 0;
+      fprintf(stderr,"Unable to do point cloud/primitive distance yet\n");
+      return Inf;
+      //return ::Distance(bw,a,elem1) - (margin+b.margin);
+    }
+  case AnyCollisionGeometry3D::TriangleMesh:
+    {
+      fprintf(stderr,"Unable to do point cloud/triangle mesh distance yet\n");
+      //return ::Distance(a,b.TriangleMeshCollisionData(),elem1,elem2) - (margin+b.margin);
+      return Inf;
+    }
+  case AnyCollisionGeometry3D::PointCloud:
+    {
+      fprintf(stderr,"Unable to do point cloud/point cloud distance yet\n");
+      //return ::Distance(a,b.PointCloudCollisionData(),elem1,elem2) - (margin+b.margin);
+      return Inf;
+    }
+  case AnyCollisionGeometry3D::ImplicitSurface:
+    {
+      fprintf(stderr,"Unable to do point cloud/implicit surface distance yet\n");
+      return Inf;
+    }
+    return false;
+  case AnyCollisionGeometry3D::Group:
+    {
+      vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
+      Real dmin = upperBound+b.margin;
+      for(size_t i=0;i<bitems.size();i++) {
+        int e1,e2;
+        Real d = Distance(a,bitems[i],e1,e2,dmin);
+        if(d < dmin) {
+          elem1 = e1;
+          elem2 = (int)i;
+          dmin = d;
+        }
+      }
+      return dmin-b.margin;
+    }
+  default:
+    FatalError("Invalid type");
+  }
+  return Inf;
+}
+
+Real Distance(vector<AnyCollisionGeometry3D>& group,AnyCollisionGeometry3D& b,
+        int elem1,int elem2,Real upperBound=Inf)
+{
+  Real dmin = upperBound;
+  for(size_t i=0;i<group.size();i++) {
+    int e1,e2;
+    Real d=group[i].Distance(b,e1,e2,dmin);
+    if(d < dmin) {
+      elem1 = int(i);
+      elem2 = e2;
+      dmin = d;
+    }
+  }
+  return dmin;
+}
+
+
 Real AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D& geom)
 {
   InitCollisionData();
@@ -1490,11 +1685,25 @@ Real AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D& geom)
   return Distance(geom,elem1,elem2);
 }
 
-Real AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D& geom,int& elem1,int& elem2)
+Real AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D& geom,int& elem1,int& elem2,Real upperBound)
 {
   InitCollisionData();
   geom.InitCollisionData();
-  FatalError("Distance not implemented yet\n");
+  switch(type) {
+  case Primitive:
+    elem1 = 0;
+    return ::Distance(AsPrimitive(),GetTransform(),geom,elem2,upperBound+margin)-margin;
+  case ImplicitSurface:
+    return ::Distance(AsImplicitSurface(),GetTransform(),geom,elem1,elem2,upperBound+margin)-margin;
+  case TriangleMesh:
+    return ::Distance(TriangleMeshCollisionData(),geom,elem1,elem2,upperBound+margin)-margin;
+  case PointCloud:
+    return ::Distance(PointCloudCollisionData(),geom,elem1,elem2,upperBound+margin)-margin;
+  case Group:
+    return ::Distance(GroupCollisionData(),geom,elem1,elem2,upperBound+margin)-margin;
+  default:
+    FatalError("Invalid type");
+  }
   return Inf;
 }
 
