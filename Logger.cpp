@@ -102,7 +102,7 @@ namespace KrisLibrary{
 
 	void loggerWait(){
 
-		if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::getError())){
+		if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::getDebug())){
 			getchar();	
 		} 
 	}
