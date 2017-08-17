@@ -81,10 +81,9 @@ inline
 void
 Mprintg(const PQP_REAL M[3][3])
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"%g %g %g\n%g %g %g\n%g %g %g\n",
-	 M[0][0], M[0][1], M[0][2],
-	 M[1][0], M[1][1], M[1][2],
-	 M[2][0], M[2][1], M[2][2]);
+  LOG4CXX_INFO(KrisLibrary::logger(),""<<M[0][0]<<" "<<M[0][1] <<" "<<M[0][2] <<"\n"<<
+    M[1][0]<<" "<<M[1][1] <<" "<<M[1][2] <<"\n"<<
+    M[2][0]<<" "<<M[2][1] <<" "<<M[2][2] <<"\n");
 }
 
 
@@ -102,10 +101,9 @@ inline
 void
 Mprint(const PQP_REAL M[3][3])
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"%g %g %g\n%g %g %g\n%g %g %g\n",
-	 M[0][0], M[0][1], M[0][2],
-	 M[1][0], M[1][1], M[1][2],
-	 M[2][0], M[2][1], M[2][2]);
+  LOG4CXX_INFO(KrisLibrary::logger(),""<<M[0][0]<<" "<<M[0][1] <<" "<<M[0][2] <<"\n"<<
+    M[1][0]<<" "<<M[1][1] <<" "<<M[1][2] <<"\n"<<
+    M[2][0]<<" "<<M[2][1] <<" "<<M[2][2] <<"\n");
 }
 
 inline

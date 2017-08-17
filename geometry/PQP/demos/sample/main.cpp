@@ -147,10 +147,7 @@ main()
   int i;
   for(i=0; i<cres.NumPairs(); i++)
   {
-    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n",
-           i,
-           cres.Id1(i),
-           cres.Id2(i));
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact "<< i<<": tri "<<cres.Id1(i)<<" and tri "<<cres.Id2(i)<<"\n");
   }
 #endif
 
@@ -169,10 +166,7 @@ main()
 #if LISTS
   for(i=0; i<cres.NumPairs(); i++)
   {
-    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n", 
-           i, 
-           cres.Id1(i), 
-           cres.Id2(i));
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact "<< i<<": tri "<<cres.Id1(i)<<" and tri "<<cres.Id2(i)<<"\n");
   }
 #endif
   
@@ -202,10 +196,7 @@ main()
 #if LISTS
   for(i=0; i<cres.NumPairs(); i++)
   {
-    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n", 
-           i, 
-           cres.Id1(i), 
-           cres.Id2(i));
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact "<< i<<": tri "<<cres.Id1(i)<<" and tri "<<cres.Id2(i)<<"\n");
   }
 #endif
 
@@ -262,10 +253,7 @@ main()
 #if LISTS
   for(i=0; i<cres.NumPairs(); i++)
   {
-    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact %4d: tri %4d and tri %4d\n", 
-           i, 
-           cres.Id1(i), 
-           cres.Id2(i));
+    LOG4CXX_INFO(KrisLibrary::logger(),"\t contact "<< i<<": tri "<<cres.Id1(i)<<" and tri "<<cres.Id2(i)<<"\n");
   }
 #endif
 
