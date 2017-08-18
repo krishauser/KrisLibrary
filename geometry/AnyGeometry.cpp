@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "AnyGeometry.h"
 #include <math3d/geometry3d.h>
 #include <meshing/VolumeGrid.h>
@@ -206,7 +208,7 @@ bool AnyGeometry3D::Load(const char* fn)
   else if(0==strcmp(ext,"geom")) {
     ifstream in(fn,ios::in);
     if(!in) {
-      fprintf(stderr,"AnyGeometry3D::Load: File %s could not be opened\n",fn);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
       return false;
     }
     if(!Load(in)) return false;
@@ -216,7 +218,7 @@ bool AnyGeometry3D::Load(const char* fn)
   else {
     ifstream in(fn,ios::in);
     if(!in) {
-      fprintf(stderr,"AnyGeometry3D::Load: File %s could not be opened\n",fn);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
       return false;
     }
     if(!Load(in)) return false;
@@ -276,7 +278,7 @@ bool AnyGeometry3D::Load(istream& in)
       return true;
     }
     else {
-      fprintf(stderr,"Failed to load Primitive type\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Failed to load Primitive type\n");
       return false;
     }
   }
@@ -297,11 +299,11 @@ bool AnyGeometry3D::Load(istream& in)
     in >> this->AsImplicitSurface();
   }
   else if(typestr == "Group") {
-    fprintf(stderr,"AnyGeometry::Load(): TODO: groups\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): TODO: groups\n");
     return false;
   }
   else {
-    fprintf(stderr,"AnyGeometry::Load(): Unknown type %s\n",typestr.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr.c_str());
   }
   if(!in) return false;
   return true;
@@ -324,7 +326,7 @@ bool AnyGeometry3D::Save(ostream& out) const
     out<<this->AsImplicitSurface()<<endl;
     break;
   case Group:
-    fprintf(stderr,"AnyGeometry::Save(): TODO: groups\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Save(): TODO: groups\n");
     return false;
   }
   return true;
@@ -710,7 +712,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp)
       return d;
     }
   case ImplicitSurface:
-    fprintf(stderr,"TODO: closest point from implicit surface to point\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: closest point from implicit surface to point\n");
     return Inf;
   case TriangleMesh:
     {
@@ -1003,7 +1005,7 @@ bool withinDistance_PC_AnyGeom(void* obj)
   RigidTransform Tident; Tident.R.setIdentity(); Tident.t = pw;
   vector<int> temp;
   if(Collides(point_primitive,Tident,gWithinDistanceMargin,*gWithinDistanceGeom,temp,*gWithinDistanceElements1,gWithinDistanceMaxContacts)) {
-    printf("Colliding point %g %g %g distance %g\n",pw.x,pw.y,pw.z,gWithinDistanceGeom->Distance(pw));
+    LOG4CXX_INFO(KrisLibrary::logger(),"Colliding point "<<pw.x<<" "<<pw.y<<" "<<pw.z<<" distance "<<gWithinDistanceGeom->Distance(pw));
     gWithinDistanceElements2->push_back(p-&gWithinDistancePC->points[0]);
     if(gWithinDistanceElements1->size() >= gWithinDistanceMaxContacts) 
       return false;
@@ -1331,7 +1333,7 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
       bbbexpanded.origin -= margin*(bbb.xbasis+bbb.ybasis+bbb.zbasis);
       //quick reject test
       if(!abb.intersectsApprox(bbbexpanded)) {
-	printf("0 contacts (quick reject) time %g\n",timer.ElapsedTime());
+	LOG4CXX_INFO(KrisLibrary::logger(),"0 contacts (quick reject) time "<<timer.ElapsedTime());
 	return false;
       }
       RigidTransform Tw_a;
@@ -1356,15 +1358,15 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
 	if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
 	  elements2.push_back(i);
 	  if(elements2.size() >= maxContacts) {
-	    printf("%d contacts time %g\n",(int)maxContacts,timer.ElapsedTime());
+	    LOG4CXX_INFO(KrisLibrary::logger(),""<<maxContacts<<" contacts time "<<timer.ElapsedTime());
 
-	    //printf("Collision in time %g\n",timer.ElapsedTime());
+	    //LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
 	    return true;
 	  }
 	}
       }
-      printf("%d contacts time %g\n",(int)maxContacts,timer.ElapsedTime());	    
-      // printf("No collision in time %g\n",timer.ElapsedTime());
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<maxContacts<<" contacts time "<<timer.ElapsedTime());	    
+      // LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
       return !elements2.empty();
 
       /*
@@ -1384,16 +1386,16 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
 	  if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
 	    elements2.push_back(i);
 	    if(elements2.size() >= maxContacts) {
-	      printf("Collision in time %g\n",timer.ElapsedTime());
+	      LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
 	      return true;
 	    }
 	  }
 	}
-	printf("No collision in time %g\n",timer.ElapsedTime());
+	LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
 	return false;
       }
       else {
-	printf("Box testing\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Box testing\n");
 	gWithinDistanceMargin = margin;
 	gWithinDistancePC = &a;
 	gWithinDistanceGeom = &b;
@@ -1401,8 +1403,8 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
 	gWithinDistanceElements2 = &elements2;
 	gWithinDistanceMaxContacts = maxContacts;
 	bool collisionFree = a.grid.IndexQuery(imin,imax,withinDistance_PC_AnyGeom);
-	if(collisionFree) printf("No collision in time %g\n",timer.ElapsedTime());
-	else printf("Collision in time %g\n",timer.ElapsedTime());
+	if(collisionFree) LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
+	else LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
 	return !collisionFree;
       }
       */

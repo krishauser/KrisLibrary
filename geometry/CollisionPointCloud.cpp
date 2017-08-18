@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "CollisionPointCloud.h"
 #include <Timer.h>
 
@@ -61,12 +63,12 @@ void CollisionPointCloud::InitCollisions()
       validptcount++;
     }
   }
-  printf("CollisionPointCloud::InitCollisions: %d valid points, res %g, time %gs\n",validptcount,res,timer.ElapsedTime());
+  LOG4CXX_INFO(KrisLibrary::logger(),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
   //print stats
   int nmax = 0;
   for(GridSubdivision::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
     nmax = Max(nmax,(int)i->second.size());
-  printf("  %d nonempty grid buckets, max size %d, avg %g\n",grid.buckets.size(),nmax,Real(points.size())/grid.buckets.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
   timer.Reset();
 
   //initialize the octree, 10 points per cell, res is minimum cell size
@@ -75,10 +77,10 @@ void CollisionPointCloud::InitCollisions()
     if(IsFinite(points[i].x))
       octree->Add(points[i],(int)i);
   }
-  printf("  octree initialized in time %gs, %d nodes, depth %d\n",timer.ElapsedTime(),octree->Size(),octree->MaxDepth());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
   //TEST: should we fit to points
   octree->FitToPoints();
-  printf("  octree fit to points in time %gs\n",timer.ElapsedTime());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  octree fit to points in time "<<timer.ElapsedTime());
   /*
   //TEST: method 2.  Turns out to be much slower
   timer.Reset();
@@ -87,7 +89,7 @@ void CollisionPointCloud::InitCollisions()
   for(size_t i=0;i<points.size();i++)
     octree->Add(points[i],(int)i);
   octree->Collapse(10);
-  printf("  octree 2 initialized in time %gs, %d nodes\n",timer.ElapsedTime(),octree->Size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  octree 2 initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size());
   */
 }
 
@@ -226,7 +228,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
   pc.grid.PointToIndex(Vector(3,gbb.bmax),imax);
   int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
   if(numCells > (int)pc.points.size()) {
-    printf("Testing all points\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing all points\n");
     //test all points, linearly
     for(size_t i=0;i<pc.points.size();i++)
       if(glocal.Distance(pc.points[i]) <= tol) {
@@ -235,7 +237,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
       }
   }
   else {
-    printf("Testing points in BoxQuery\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing points in BoxQuery\n");
     gNearbyTestThreshold = tol;
     gNearbyTestResults.resize(0);
     gNearbyTestObject = &glocal;

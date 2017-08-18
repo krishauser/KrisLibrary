@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "Octree.h"
 #include <math3d/Sphere3D.h>
 #include <math3d/Box3D.h>
@@ -353,7 +355,7 @@ void OctreePointSet::Add(const Vector3& pt,int id)
   OctreeNode* node = Lookup(pt);
   if(node == NULL) FatalError("OctreePointSet: adding point outside range");
   int nindex = Index(*node);
-  //printf("Lookup time %g\n",timer.ElapsedTime());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Lookup time "<<timer.ElapsedTime());
   //timer.Reset();
   Assert(nindex >= 0 && nindex<(int)nodes.size());
   if(nindex >= (int)indexLists.size()) {
@@ -369,8 +371,8 @@ void OctreePointSet::Add(const Vector3& pt,int id)
       bbox.expand(points[indexLists[nindex][i]]);
       if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
 	Split(nindex);
-	//printf("Split time %g\n",timer.ElapsedTime());
-	//getchar();
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Split time "<<timer.ElapsedTime());
+	//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	break;
       }
     }

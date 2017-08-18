@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "GeometryAppearance.h"
 #include "GLTexture1D.h"
 #include "GLTexture2D.h"
@@ -50,7 +52,7 @@ namespace GLDraw {
       tex.setLuminance(img.data,n);
       break;
     default:
-      fprintf(stderr,"Texture image doesn't match a supported GL format\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format\n");
       break;
     }
   }
@@ -88,7 +90,7 @@ namespace GLDraw {
       tex.setLuminance(img.data,img.w,img.h);
       break;
     default:
-      fprintf(stderr,"Texture image doesn't match a supported GL format\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format\n");
       break;
     }
   }
@@ -193,10 +195,10 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
     }
   }
   else if(geom.type == Geometry::AnyCollisionGeometry3D::ImplicitSurface) {
-    fprintf(stderr,"TODO: draw implicit surface\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw implicit surface\n");
   }
   else if(geom.type == Geometry::AnyCollisionGeometry3D::Primitive) {
-    fprintf(stderr,"TODO: draw expanded primitive\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw expanded primitive\n");
     draw(geom.AsPrimitive());
   }
   else if(geom.type == Geometry::AnyCollisionGeometry3D::Group) {
@@ -236,12 +238,12 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   faceColor=rhs.faceColor;
   if(!rhs.vertexColors.empty() && !vertexColors.empty()) {
     if(rhs.vertexColors.size() != vertexColors.size())
-      printf("GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-vertex colors?\n"); 
+      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-vertex colors?\n"); 
     Refresh();
   }
   if(!rhs.faceColors.empty() && !faceColors.empty()) {
     if(rhs.faceColors.size() != faceColors.size())
-      printf("GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-face colors?\n"); 
+      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-face colors?\n"); 
     Refresh();
   }
   vertexColors=rhs.vertexColors;
@@ -251,7 +253,7 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   texWrap=rhs.texWrap;
   if(!rhs.texcoords.empty() && !texcoords.empty()) {
     if(rhs.texcoords.size() != texcoords.size())
-      printf("GeometryAppearance::CopyMaterial(): Warning, erroneous size of texture coordinates?\n"); 
+      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of texture coordinates?\n"); 
     Refresh();
   }
   texcoords=rhs.texcoords;
@@ -412,10 +414,10 @@ void GeometryAppearance::DrawGL()
     if(verts) {
       //compile the vertex display list
       if(!vertexDisplayList) {
-	//printf("Compiling vertex display list %d...\n",verts->size());
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Compiling vertex display list "<<verts->size());
 	vertexDisplayList.beginCompile();
 	if(!vertexColors.empty() && vertexColors.size() != verts->size())
-	  fprintf(stderr,"GeometryAppearance: warning, vertexColors wrong size\n");
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size\n");
 	if(vertexColors.size()==verts->size()) {
 	  glBegin(GL_POINTS);
 	  for(size_t i=0;i<verts->size();i++) {
@@ -534,12 +536,12 @@ void GeometryAppearance::DrawGL()
       if(geom->type == AnyGeometry3D::TriangleMesh) 
 	trimesh = &geom->AsTriangleMesh();
 
-      //printf("Compiling face display list %d...\n",trimesh->tris.size());
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling face display list "<<trimesh->tris.size());
 
       //draw the mesh
       if(trimesh) {
 	if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
-	  fprintf(stderr,"GeometryAppearance: warning, texcoords wrong size: %d vs %d\n",(int)texcoords.size(),(int)trimesh->verts.size());
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, texcoords wrong size: "<<(int)texcoords.size()<<" vs "<<(int)trimesh->verts.size());
 	if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
 	  if(vertexColors.size() != trimesh->verts.size()) {
 	    DrawGLTris(*trimesh);

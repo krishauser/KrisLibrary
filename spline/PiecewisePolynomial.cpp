@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "PiecewisePolynomial.h"
 #include <KrisLibrary/myfile.h>
 #include <math.h>
@@ -149,7 +151,7 @@ void PiecewisePolynomial::Concat(const PiecewisePolynomial& traj,bool relative)
   else {
     assert(traj.StartTime() >= EndTime());
     if(traj.StartTime() > EndTime()) {
-      //printf("Adding constant with len %g.\n",traj.StartTime()-EndTime());
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Adding constant with len "<<traj.StartTime()-EndTime());
       //add a constant segment of the trajectory
       segments.push_back(Poly(End()));
       timeShift.push_back(0);
@@ -482,7 +484,7 @@ PiecewisePolynomial Linear(double a,double b,double ta,double tb)
   assert(tb >= ta);
   if(tb == ta) {
     if(a != b) {
-      fprintf(stderr,"Linear path wants instantaneous jump from %g to %g at time %g\n",a,b,ta);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Linear path wants instantaneous jump from "<<a<<" to "<<b<<" at time "<<ta);
     }
     assert(a==b);
     return Constant(a,ta,tb);

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "GridSubdivision.h"
 #include "Grid.h"
 #include <stdio.h>
@@ -439,7 +441,7 @@ bool GridSubdivision::IndexQuery(const Index& imin,const Index& imax,QueryCallba
   for(size_t k=0;k<imin.size();k++)
     numBuckets *= (imax[k]-imin[k]+1);
   if(numBuckets >= (int)buckets.size()) {
-    printf("GridSubdivision: All-bucket iterating\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"GridSubdivision: All-bucket iterating\n");
     for(HashTable::const_iterator i=buckets.begin();i!=buckets.end();i++) {
       bool test = true;
       for(size_t k=0;k<imin.size();k++)
@@ -453,7 +455,7 @@ bool GridSubdivision::IndexQuery(const Index& imin,const Index& imax,QueryCallba
     }
   }
   else {
-    printf("GridSubdivision: Range iterating\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"GridSubdivision: Range iterating\n");
     Index i=imin;
     for(;;) {
       HashTable::const_iterator item = buckets.find(i);

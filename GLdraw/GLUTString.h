@@ -2,6 +2,8 @@
 #define GLDRAW_GLUT_STRING_H
 
 #if defined (__APPLE__) || defined (MACOSX)
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>

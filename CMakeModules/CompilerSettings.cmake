@@ -17,6 +17,12 @@ IF (CMAKE_COMPILER_IS_GNUCC)
   ADD_DEFINITIONS(-fPIC)
 ENDIF()
 
+IF(MSVC)
+	SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} /MT")
+	SET (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} /MT")
+ENDIF()
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 
 # Set full rpath http://www.paraview.org/Wiki/CMake_RPATH_handling
 # (good to have and required with ROS)

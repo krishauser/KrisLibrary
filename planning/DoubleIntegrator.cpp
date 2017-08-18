@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "DoubleIntegrator.h"
 #include "InterpolatorHelpers.h"
 #include "ParabolicRamp.h"
@@ -149,7 +151,7 @@ DoubleIntegratorKinodynamicSpace::DoubleIntegratorKinodynamicSpace(SmartPointer<
 {
   BoxSet* abset = dynamic_cast<BoxSet*>(&*uset);
   if(!abset) {
-    printf("DoubleIntegratorKinodynamicSpace: No steering function available; accelerations are not box-bounded\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"DoubleIntegratorKinodynamicSpace: No steering function available; accelerations are not box-bounded\n");
   }
   else {
     //create steering function

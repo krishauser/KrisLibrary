@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "CSetHelpers.h"
 #include "CSet.h"
 #include "EdgePlanner.h"
@@ -196,7 +198,7 @@ bool FiniteSet::Project(Config& x)
 int FiniteSet::NumDimensions() const
 {
   if(items.empty()) {
-    fprintf(stderr,"FiniteSet::NumDimensions(): no items, returning -1\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"FiniteSet::NumDimensions(): no items, returning -1\n");
     return -1;
   }
   return items[0].n;

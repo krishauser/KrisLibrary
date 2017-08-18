@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "OptimalMotionPlanner.h"
 #include "PointLocation.h"
 #include "GeneralizedAStar.h"
@@ -49,7 +51,7 @@ class EdgeDistance
     assert(e->Space() != NULL);
     Real res = e->Space()->Distance(e->Start(),e->End());
     if(res <= 0) {
-      printf("PRMStarPlanner: Warning, edge has nonpositive length %g\n",res);
+      LOG4CXX_WARN(KrisLibrary::logger(),"PRMStarPlanner: Warning, edge has nonpositive length "<<res);
       return Epsilon;
     }
     return res;
@@ -70,7 +72,7 @@ class DiscountedEdgeDistance
       res *= factor;
     }
     if(res <= 0) {
-      printf("PRMStarPlanner: Warning, edge has nonpositive length %g\n",res);
+      LOG4CXX_WARN(KrisLibrary::logger(),"PRMStarPlanner: Warning, edge has nonpositive length "<<res);
       return Epsilon;
     }
     return res;
@@ -140,7 +142,7 @@ void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
 void PRMStarPlanner::PlanMore()
 {
   if(start < 0 || goal < 0) {
-    fprintf(stderr,"PRMStarPlanner::PlanMore(): Init() must be called before planning\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PRMStarPlanner::PlanMore(): Init() must be called before planning\n");
     return;
   }
   numPlanSteps ++;
@@ -175,8 +177,7 @@ void PRMStarPlanner::PlanMore()
     GenerateConfig(x);
 #if ELLIPSOID_PRUNING
     if((space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]))*fudgeFactor >= goalDist) {
-      //printf("Ellipsoid pruned, distance %g\n",space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]));
-      return;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Ellipsoid pruned, distance "<<space->Distance(roadmap.nodes[start]      return;
     }
 #endif
     //KNN call has a bit of duplication with connectByRadius, below
@@ -372,8 +373,8 @@ void PRMStarPlanner::PlanMore()
 	Real cm = spp.d[m];
 	Real cn_lb = (useSppLB ? sppLB.d[n] : spp.d[n]);
 	Real cm_lb = (useSppLB ? sppLB.d[m] : spp.d[m]);
-	//printf ("%g %g %g %g\n",cn,cm,cn_lb,cm_lb);
-	if((cn_lb + d)*fudgeFactor < cm)
+	//LOG4CXX_INFO(KrisLibrary::logger()  ,""<<cn<<" "<<cm<<" "<<cn_lb<<" "<<cm_lb);
+  if((cn_lb + d)*fudgeFactor < cm)
 	  doCheck = true;
 	else if((cm_lb + d)*fudgeFactor < cn)
 	  doCheck = true;
@@ -437,7 +438,7 @@ void PRMStarPlanner::PlanMore()
       }
     }
     /*else {
-      if(n==goal) printf("Candidate neighbor to goal rejected due to cost: %g+%g > %g (fudge factor %g)\n",spp.d[m],d,spp.d[n],fudgeFactor);
+      if(n==goal) LOG4CXX_INFO(KrisLibrary::logger(),"Candidate neighbor to goal rejected due to cost: "<<spp.d[m]<<"+"<<d<<" > "<<spp.d[n]<<" (fudge factor "<<fudgeFactor);
     }
     */
   }
@@ -446,12 +447,12 @@ void PRMStarPlanner::PlanMore()
     if(sppLB.d[goal]*fudgeFactor < goalDist) {
       //found an improved path to the goal! do checking
       timer.Reset();
-      //printf("Candidate improvement to cost %g\n",spp.d[goal]);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Candidate improvement to cost "<<spp.d[goal]);
       if(CheckPath(start,goal)) {
-	//printf("Found an improved path to goal with cost %g (before it was %g)\n",spp.d[goal],goalDist);
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Found an improved path to goal with cost "<<spp.d[goal]<<" (before it was "<<goalDist);
       }
       //else
-	//printf("Failed CheckPath, going back to old distance, d=%g\n",spp.d[goal]);
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Failed CheckPath, going back to old distance, d="<<spp.d[goal]);
       tLazy += timer.ElapsedTime();
     }
   }
@@ -632,9 +633,9 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
   }
   if(IsInf(spp.d[b])) return false;
   if(!Graph::GetAncestorPath(spp.p,b,a,nodes)) {
-    printf("PRMStarPlanner: Unable to find path from %d to %d\n",a,b);
+    LOG4CXX_INFO(KrisLibrary::logger(),"PRMStarPlanner: Unable to find path from "<<a<<" to "<<b);
     //debugging:
-    printf("node,distance,parent,edge weight,edge feasible\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"node,distance,parent,edge weight,edge feasible\n");
     for(int i=0;i<20;i++) {
       Real w = 0;
       int feas = 0;
@@ -644,7 +645,7 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
 	w=(*e)->Space()->Distance((*e)->Start(),(*e)->End());
 	feas = (*e)->IsVisible();
       }
-      printf("%d,%g,%d,%g,%d\n",b,spp.d[b],spp.p[b],w,feas);
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<b<<","<<spp.d[b]<<","<<spp.p[b]<<","<<w<<","<<feas);
       b = spp.p[b];
       if(b < 0) break;
     }
@@ -762,9 +763,9 @@ bool PRMStarPlanner::CheckPath(int a,int b)
   bool useSppGoal = false;
 #endif
   Assert(a==start);
-  //printf("Done with planning step\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Done with planning step\n");
   while(!IsInf(sppLB.d[b])) {
-    //printf("Lazy collision checking, existing cost %g, potential %g\n",goalDist,spp.d[b]);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Lazy collision checking, existing cost "<<goalDist<<", potential "<<spp.d[b]);
     vector<int> npath;
     if(!Graph::GetAncestorPath(sppLB.p,goal,start,npath)) {
       //shouldn't happen: may have disconnected goal?
@@ -813,7 +814,7 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       if(edgeInfeasible) {
 	tLazyCheck += timer.ElapsedTime();
 	//delete edge from lazy roadmap
-	//printf("Deleting edge %d %d...\n",npath[i],npath[i+1]);
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Deleting edge "<<npath[i]<<" "<<npath[i+1]);
 	LBroadmap.DeleteEdge(temp.s,temp.t);
 
 	//update shortest paths

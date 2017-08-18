@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "RigidRobot2DCSpace.h"
 #include "CSpaceHelpers.h"
 #include "EdgePlannerHelpers.h"

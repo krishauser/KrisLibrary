@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "KinodynamicOptimizer.h"
 #include <KrisLibrary/math/random.h>
 #include <KrisLibrary/math/function.h>
@@ -33,7 +35,7 @@ void KinodynamicLocalOptimizer::Init(const KinodynamicMilestonePath& path,CSet* 
   if(bestPath.edges.empty()) bestPath.MakeEdges(space);
   ComputeCosts();
   goalSet = _goalSet;
-  printf("Initial cost %g\n",bestPathCost);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Initial cost "<<bestPathCost);
 }
 
 void KinodynamicLocalOptimizer::Init(const State& xinit,CSet* goalSet)
@@ -52,7 +54,7 @@ bool KinodynamicLocalOptimizer::Plan(int maxIters)
     for(size_t i=0;i<methodAvailable.size();i++) {
       if(!methodAvailable[i]) continue;
       Real rate = methodCosts[i] / methodRewards[i];
-      printf("Method %d cost %g reward %g, rate %g\n",i,methodCosts[i],methodRewards[i],rate);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Method "<<i<<" cost "<<methodCosts[i]<<" reward "<<methodRewards[i]<<", rate "<<rate);
       if(rate < bestRate) {
         bestRate = rate;
         bestMethod = (int)i;
@@ -80,7 +82,7 @@ bool KinodynamicLocalOptimizer::Plan(int maxIters)
     }
     Real t = timer.ElapsedTime();
     Real delta = (changed ? oldPathCost - bestPathCost : 0);
-    if(delta < 0) fprintf(stderr,"Method %d got worse solution than before? %g -> %g\n",bestMethod,oldPathCost,bestPathCost);
+        if(delta < 0) LOG4CXX_ERROR(KrisLibrary::logger(),"Method "<<bestMethod<<" got worse solution than before? "<<oldPathCost<<" -> "<<bestPathCost);
     oldPathCost = bestPathCost;
     int n = methodCounts[bestMethod] + 1;
     methodCosts[bestMethod] = methodCosts[bestMethod] + 1.0/Real(n)*(t-methodCosts[bestMethod]);
@@ -131,7 +133,7 @@ bool KinodynamicLocalOptimizer::DoShortcut()
 
 bool KinodynamicLocalOptimizer::DoRandomDescent(Real perturbationSize)
 {
-  printf("Trying random descent\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Trying random descent\n");
   tempPath.milestones.resize(bestPath.milestones.size());
   tempPath.milestones[0] = bestPath.milestones[0];
   tempPath.controls.resize(bestPath.controls.size());
@@ -174,7 +176,7 @@ bool KinodynamicLocalOptimizer::DoRandomDescent(Real perturbationSize)
         numControlSampleFailures ++;
     }
     if(numSamples==0) {
-      printf("Unable to sample a good path adjustment, %d sample control, %d feasible milestone, %d goal failures\n", numControlSampleFailures,numFeasibleMilestoneFailures,numGoalFailures);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Unable to sample a good path adjustment, "<< numControlSampleFailures<<" sample control, "<<numFeasibleMilestoneFailures<<" feasible milestone, "<<numGoalFailures);
       return false;
     }
   }
@@ -364,16 +366,16 @@ public:
   virtual Real Eval(const Vector& u)
   {
     if(goalSet && !goalSet->Contains(temp.End())) {
-      printf("Left goal region\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Left goal region\n");
       return 0.0;
     }
     for(size_t i=0;i<temp.controls.size();i++)
       if(!space->IsValidControl(temp.milestones[i],temp.controls[i])) {
-        printf("Control %d left valid set\n",i);
+        LOG4CXX_INFO(KrisLibrary::logger(),"Control "<<i);
         return 0.0;
       }
     if(!temp.IsFeasible()) {
-      printf("Edge became infeasible\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Edge became infeasible\n");
       return 0.0;
     }
     return 1.0;
@@ -475,7 +477,7 @@ public:
 bool KinodynamicLocalOptimizer::DoDDP()
 {
   int n = space->GetStateSpace()->NumDimensions();
-  printf("Trying DDP\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Trying DDP\n");
   Matrix Ak;
   Vector bk;
   //Real ck;
@@ -501,7 +503,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     Ak.mul(bestPath.milestones[i+1],costGradX);
     costGradX *= 2;
     costGradX += bk;
-    cout<<"Cost gradient w.r.t. x: "<<costGradX<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Cost gradient w.r.t. x: "<<costGradX<<"\n");
 
     SimulateFunction fi(space,bestPath.milestones[i]);
     fi.PreEval(bestPath.controls[i]);
@@ -524,7 +526,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     temp2.mulTransposeA(fugrad,temp);
     d2J += temp2;
 
-    cout<<d2J<<endl<<"* du + "<<dJ<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),d2J<<"\n"<<"* du + "<<dJ<<"\n");
 
     //damping helps singular matrices
     for(int j=0;j<d2J.n;j++)
@@ -534,7 +536,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     LDLDecomposition<Real> ldl;
     ldl.set(d2J);
     if(!ldl.backSub(dJ,du[i])) {
-      fprintf(stderr,"KinodynamicLocalOptimizer: Hessian matrix of control %d is degenerate, moving along gradient instead\n",i);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicLocalOptimizer: Hessian matrix of control "<< i<<" is degenerate, moving along gradient instead\n");
       du[i] = dJ;
     }
     du[i].inplaceNegative();
@@ -542,7 +544,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     if(du[i].norm() > optimizer->trustRegionSize)
       du[i] *= optimizer->trustRegionSize / du[i].norm();
       */
-    cout<<"Du "<<i<<": "<<du[i]<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Du "<<i<<": "<<du[i]<<"\n");
     //now that u[i] moves to u[i] + du[i], compute 2nd order approximation to the cost as a function of x[i].  Store in Ak, bk 
     Vector xnext;
     Vector u = bestPath.controls[i]+du[i];
@@ -604,7 +606,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
   Stack(dx,dxall);
   Stack(duall,dxall,dux);
   ConvergenceResult res = optimizer->SolveStepCustom(dux);
-  printf("New trust region size %g, %d points of interest\n",optimizer->trustRegionSize,optimizer->points.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"New trust region size "<<optimizer->trustRegionSize<<", "<<optimizer->points.size());
   if(res != ConvergenceError) {
     PathFeasibilityFunction* pf = dynamic_cast<PathFeasibilityFunction*>(&*optimizer->constraintFunc);
     pf->PreEval(optimizer->x);
@@ -618,7 +620,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
 
 bool KinodynamicLocalOptimizer::DoGradientDescent()
 {
-  printf("Trying gradient descent\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Trying gradient descent\n");
   //similar to ilqg except only first order
   vector<Matrix> fxgrad,fugrad;
   vector<Vector> gxgrad,gugrad;
@@ -676,7 +678,7 @@ bool KinodynamicLocalOptimizer::DoGradientDescent()
   Stack(duall,dxall,dux);
   duall.inplaceNegative();
   ConvergenceResult res = optimizer->SolveStepCustom(dux);
-  printf("New trust region size %g, %d points of interest\n",optimizer->trustRegionSize,optimizer->points.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"New trust region size "<<optimizer->trustRegionSize<<", "<<optimizer->points.size());
   if(res != ConvergenceError) {
     PathFeasibilityFunction* pf = dynamic_cast<PathFeasibilityFunction*>(&*optimizer->constraintFunc);
     pf->PreEval(optimizer->x);
@@ -724,7 +726,7 @@ bool KinodynamicLocalOptimizer::DoGradientDescent()
     }
 
     if(successful) {
-      printf("Stepped to path with cost %g\n",objective->PathCost(tempPath));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Stepped to path with cost "<<objective->PathCost(tempPath));
       bestPath = tempPath;
       bestPathCost = objective->PathCost(bestPath);
       hadSuccessfulStep = true;
@@ -747,7 +749,7 @@ bool KinodynamicLocalOptimizer::DoGradientDescent()
   }
   if(hadSuccessfulStep) {
     ComputeCosts();
-    printf("Cost is %g\n",bestPathCost);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Cost is "<<bestPathCost);
     return true;
   }
   return false;

@@ -1,6 +1,8 @@
 #ifndef FIXED_SIZE_HEAP_H
 #define FIXED_SIZE_HEAP_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include <vector>
 #include <iostream>
 #include <KrisLibrary/errors.h>
@@ -114,12 +116,12 @@ public:
     int level=1;
     for(int i=1;i<=size();i++) {
       if(i == (1<<level)) {
-	std::cout<<std::endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
         level++;
       }
-      std::cout<<"("<<h[i].x<<","<<h[i].p<<")"<<" ";
+      LOG4CXX_INFO(KrisLibrary::logger(),"("<<h[i].x<<","<<h[i].p<<")"<<" ");
     }
-    std::cout<<std::endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   }
   
 private:

@@ -1,6 +1,8 @@
 #ifndef PLANNING_OBJECTIVES_H
 #define PLANNING_OBJECTIVES_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include <KrisLibrary/planning/CSpace.h>
 #include <KrisLibrary/planning/ControlSpace.h>
 #include <KrisLibrary/math/matrix.h>
