@@ -231,7 +231,7 @@ bool Triangle2D::intersects(const Plane2D& p) const
 
 bool Triangle2D::intersects(const Plane2D& P, Segment2D& S) const
 {
-  Real d[2]; const Point2D* p[3] = {&a,&b,&c};
+  Real d[3]; const Point2D* p[3] = {&a,&b,&c};
   for(int i=0;i<3;i++) d[i]=P.distance(*p[i]);
   //insertion sort
   for(int i=1;i<3;i++) {
