@@ -50,9 +50,10 @@ macro(CHECK_INCLUDE_FILE_CXX INCLUDE VARIABLE)
     endif()
     if(${ARGC} EQUAL 3)
       set(CMAKE_CXX_FLAGS_SAVE ${CMAKE_CXX_FLAGS})
-      string(APPEND CMAKE_CXX_FLAGS " ${ARGV2}")
+      list(APPEND CMAKE_CXX_FLAGS " ${ARGV2}")
     endif()
 
+  MESSAGE("COMPILING WITH FLAGS " ${CMAKE_CXX_FLAGS})
 	try_compile(${VARIABLE}
       ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/CheckIncludeFile.cxx
@@ -63,7 +64,6 @@ macro(CHECK_INCLUDE_FILE_CXX INCLUDE VARIABLE)
       OUTPUT_VARIABLE OUTPUT)
 
     if(${ARGC} EQUAL 3)
-		message("argc = 3 in checkincludefile-cxx")
       set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_SAVE})
     endif()
   
