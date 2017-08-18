@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "CSpaceAnalysis.h"
 #include <math/matrix.h>
 #include <math/LAPACKInterface.h>
@@ -102,7 +104,7 @@ void KGoodNeighbors(int query_index,const vector<Config>& pts,int k,CSpace* cspa
       if(cosAngle < 0) continue;  //more than 180 degrees
       //if(d > factor*(dij+d0j)) {
       Real y=Pow(cosAngle,d/d0j);
-      //printf("Cos angle %g, distance factor %g, result %g\n",cosAngle,d/d0j,y);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Cos angle "<<cosAngle<<", distance factor "<<d/d0j<<", result "<<y);
       if(y > factor) {
 	include = false;
 	break;
@@ -145,7 +147,7 @@ void AnalyzeSamples(CSpace* cspace,CSpaceAnalysis::SetCharacteristics& s)
   }
 
   if(dist.back() > s.sampleRadius) {
-    cerr<<"Warning, neighborhood sampler does not correspond with distance metric: "<<dist.back()<<" > "<<s.sampleRadius<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, neighborhood sampler does not correspond with distance metric: "<<dist.back()<<" > "<<s.sampleRadius<<"\n");
     Real dimCenterInverse=0;
     for(size_t i=0;i<s.points.size();i++) 
       dimCenterInverse += Log(dist.back()/dist[i]);
@@ -186,7 +188,7 @@ THIS CODE ESTIMATES THE DIMENSION OF AN ENTIRE SET OF POINTS
   }
   dimInverse /= Real(s.points.size()*(k-1));
 
-  cerr<<"Intrinsic dims, centered: "<<1.0/dimCenterInverse<<", averaged: "<<1.0/dimInverse<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Intrinsic dims, centered: "<<1.0/dimCenterInverse<<", averaged: "<<1.0/dimInverse<<"\n");
   s.intrinsicDims = 1.0/dimInverse;
   */
 
@@ -240,7 +242,7 @@ void CSpaceAnalysis::AnalyzeNeighborhood(CSpace* cspace,const Config& x,Real rad
   for(size_t i=0;i<space.points.size();i++) 
     if(isFeasible[i]) spaceToFeasible[i] = nf++;
 
-  cout<<"Computing K-nearest neighbors, k="<<k<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Computing K-nearest neighbors, k="<<k<<"\n");
   vector<int> knn;
   vector<Real> dist;
   for(size_t i=0;i<space.points.size();i++) {
@@ -255,7 +257,7 @@ void CSpaceAnalysis::AnalyzeNeighborhood(CSpace* cspace,const Config& x,Real rad
       laplacian(iindex,jindex) = 1.0/dist[j];
     }
   }
-  cout<<"Done."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done."<<"\n");
 
   //make symmetric
   for(int i=0;i<laplacian.m;i++) {
@@ -290,11 +292,11 @@ void CSpaceAnalysis::AnalyzeNeighborhood(CSpace* cspace,const Config& x,Real rad
 */
   Vector lambda;
   Matrix Q;
-  cout<<"Computing eigenvectors..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Computing eigenvectors..."<<"\n");
   bool res=LAPACKInterface::Eigenvectors_Symmetric(laplacian,lambda,Q);
   Assert(res == true);
-  cout<<"Done"<<endl;
-  //cout<<"Eigenvalues: "<<lambda<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done"<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Eigenvalues: "<<lambda<<"\n");
   Assert(FuzzyEquals(lambda(0),Zero,1e-4));
   int col = 1;
   //while(FuzzyEquals(lambda(col),1e-4))

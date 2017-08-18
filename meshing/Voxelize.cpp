@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "Voxelize.h"
 #include "Rasterize.h"
 #include "ClosestPoint.h"
@@ -160,10 +162,10 @@ Real GridCellDensity(const AABB3D& cell,const Plane3D& p)
   Real R = Sqrt(3.0);
   Real d = planeNormal.dot(ptOnPlane);
   if(d < -R || d > R) {
-    cerr<<"Warning, numerical error in GridCellDensity"<<endl;
-    cerr<<"   point "<<ptOnPlane<<endl;
-    cerr<<"   d="<<d<<", R="<<R<<endl;
-    getchar();
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, numerical error in GridCellDensity"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"   point "<<ptOnPlane<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"   d="<<d<<", R="<<R<<"\n");
+    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     if(d < -R) return 0;
     else return 1;
   }
@@ -190,7 +192,7 @@ void GetTriangleBuckets(const TriMesh& m,const AABB3D& bb,Array3D<list<int> >& t
     query.expand(tri.c);
     bool q=QueryGrid(triangles,bb,query,lo,hi);
     if(!q) continue;
-    //getchar();
+    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     IntTriple index=lo;
     while(index.a <= hi.a) {
       while(index.b <= hi.b) {
@@ -647,16 +649,16 @@ void GetTriangleCells2(const Triangle3D& torig,int m,int n,int p,const AABB3D& b
     testSet.insert(testCells[i]);
   for(size_t i=0;i<testCells.size();i++) {
     if(!cellSet.count(testCells[i])) {
-      cout<<"Triangle "<<a<<" "<<b<<" "<<c<<endl;
-      cerr<<"GetTriangleCells2 incorrect: doesnt contain "<<testCells[i]<<endl;
-      getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<a<<" "<<b<<" "<<c<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"GetTriangleCells2 incorrect: doesnt contain "<<testCells[i]<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
   }
   for(size_t i=0;i<cells.size();i++) {
     if(!testSet.count(cells[i])) {
-      cout<<"Triangle "<<a<<" "<<b<<" "<<c<<endl;
-      cerr<<"GetTriangleCells2 incorrect: contains additional "<<cells[i]<<endl;
-      getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<a<<" "<<b<<" "<<c<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"GetTriangleCells2 incorrect: contains additional "<<cells[i]<<"\n");
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
   }
   */
@@ -683,7 +685,7 @@ void SurfaceOccupancyGrid(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb)
     query.expand(tri.c);
     bool q=QueryGrid(occupied,bb,query,lo,hi);
     if(!q) continue;
-    //getchar();
+    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     VolumeGridIterator<bool> it(occupied,bb);
     it.setRange(lo,hi);
     for(;!it.isDone();++it) {
@@ -1185,7 +1187,7 @@ struct TriangleClosestPointData
     Real distance = dir.norm();
     //check orientation at edge
     if(FuzzyZero(distance)) {  //right at the apex
-      cout<<"Closest point is right at the apex of vertex "<<vertex<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Closest point is right at the apex of vertex "<<vertex<<"\n");
       //average the adjacent normals
       Vector3 aveNormal(Zero);
       for(size_t i=0;i<mesh.incidentTris[vertex].size();i++) {
@@ -1196,7 +1198,7 @@ struct TriangleClosestPointData
       if(FuzzyZero(nnorm)) { //norm is zero?!
 	dir.setZero();
 	signedDistance = distance;
-	cout<<"Uhh... average normal is zero??"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Uhh... average normal is zero??"<<"\n");
       }
       else {
 	aveNormal /= nnorm;
@@ -1204,7 +1206,7 @@ struct TriangleClosestPointData
 	dir = aveNormal*sign;
 	signedDistance = sign*distance;
       }
-      getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     else {
       //find the triangle that's the most perpendicular to the point
@@ -1237,7 +1239,7 @@ struct TriangleClosestPointData
     Vector3 normal = mesh.TriangleNormal(triangleIndex);
 
     if(adjIndex < 0) {
-      printf("No adjacent triangle on edge\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"No adjacent triangle on edge\n");
       //query sign by triangle normal
       Real sign = Sign(dot(normal,dir));
       signedDistance = sign*distance;
@@ -1255,13 +1257,13 @@ struct TriangleClosestPointData
     
     //check orientation at edge
     if(FuzzyZero(distance)) {  //right at the apex
-      printf("Cell center right on edge\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Cell center right on edge\n");
       //average the adjacent normals
       Vector3 aveNormal = normal + adjNormal;
       Real nnorm = aveNormal.norm();
       if(FuzzyZero(nnorm)) { //norm is zero?!
-	cerr<<"Warning: closest point is right at the edge, and the normal of an edge is zero!"<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: closest point is right at the edge, and the normal of an edge is zero!"<<"\n");
+	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	dir.setZero();
 	signedDistance = 0;
       }
@@ -1380,7 +1382,7 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
 
   IntTriple index,lo,hi;
   //fill in initial surface distances, get surface set
-  cout<<"Filling initial surfaces"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Filling initial surfaces"<<"\n");
   distance.set(Inf);
   set<IntTriple> surfaceSet;
   Triangle3D tri;
@@ -1434,7 +1436,7 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
     }
   }
 
-  //cout<<"Converting surface cells"<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Converting surface cells"<<"\n");
   //convert surface set to vector
   surfaceCells.resize(surfaceSet.size());
   int i=0;
@@ -1442,7 +1444,7 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
     surfaceCells[i]=*it;
   }
 
-  cout<<"FMM iterations"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM iterations"<<"\n");
   Vector3 cellSize = (bb.bmax-bb.bmin);
   cellSize.x /= M;
   cellSize.y /= N;
@@ -1519,9 +1521,9 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
     for(int j=0;j<status.n;j++)
       for(int k=0;k<status.p;k++)
 	Assert(status(i,j,k)==Accepted);
-  //printf("Overall time: %g\n",overallTimer.ElapsedTime());
-  //printf("Overall: %g, heap pop: %g, heap update: %g, cp: %g, overhead %g\n",overallTimer.ElapsedTime(),heapPopTime,heapUpdateTime,closestPointTime,overheadTime);
-  //printf("%d iterations, %d cp calls, %d heap updates, max heap size %d\n",numIters,numCPCalls,numHeapUpdates,maxHeapSize);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall time: "<<overallTimer.ElapsedTime());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall: "<<overallTimer.ElapsedTime()<<", heap pop: "<<heapPopTime<<", heap update: "<<heapUpdateTime<<", cp: "<<closestPointTime<<", overhead "<<overheadTime);
+  //LOG4CXX_INFO(KrisLibrary::logger(),""<<numIters<<" iterations, "<<numCPCalls<<" cp calls, "<<numHeapUpdates<<" heap updates, max heap size "<<maxHeapSize);
 }
 
 void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells)
@@ -1565,7 +1567,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
 
   IntTriple index,lo,hi;
   //fill in initial surface distances, get surface set
-  cout<<"Filling initial surfaces"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Filling initial surfaces"<<"\n");
   distance.set(Inf);
   set<IntTriple> surfaceSet;
   Triangle3D tri;
@@ -1620,7 +1622,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
     }
   }
 
-  //cout<<"Converting surface cells"<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Converting surface cells"<<"\n");
   //convert surface set to vector
   surfaceCells.resize(surfaceSet.size());
   int i=0;
@@ -1628,7 +1630,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
     surfaceCells[i]=*it;
   }
 
-  cout<<"FMM iterations"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM iterations"<<"\n");
   Vector3 cellSize = (bb.bmax-bb.bmin);
   cellSize.x /= M;
   cellSize.y /= N;
@@ -1687,11 +1689,11 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
       //closestPointTime = timer.ElapsedTime();
 
       if(cp.signedDistance < 0 && !exterior(index)) {
-	//printf("Warning, exterior exploration led to negative signed distance?\n");
+	//LOG4CXX_WARN(KrisLibrary::logger(),"Warning, exterior exploration led to negative signed distance?\n");
 	continue;
       }
       else if(cp.signedDistance > 0 && interior(index)) {
-	//printf("Warning, interior exploration led to positive signed distance?\n");
+	//LOG4CXX_WARN(KrisLibrary::logger(),"Warning, interior exploration led to positive signed distance?\n");
 	continue;
       }
       if(Abs(cp.signedDistance) < Abs(distance(index.a,index.b,index.c))) {
@@ -1737,9 +1739,9 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
 	  }
 	}
       }
-  //printf("Overall time: %g\n",overallTimer.ElapsedTime());
-  //printf("Overall: %g, heap pop: %g, heap update: %g, cp: %g, overhead %g\n",overallTimer.ElapsedTime(),heapPopTime,heapUpdateTime,closestPointTime,overheadTime);
-  //printf("%d iterations, %d cp calls, %d heap updates, max heap size %d\n",numIters,numCPCalls,numHeapUpdates,maxHeapSize);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall time: "<<overallTimer.ElapsedTime());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall: "<<overallTimer.ElapsedTime()<<", heap pop: "<<heapPopTime<<", heap update: "<<heapUpdateTime<<", cp: "<<closestPointTime<<", overhead "<<overheadTime);
+  //LOG4CXX_INFO(KrisLibrary::logger(),""<<numIters<<" iterations, "<<numCPCalls<<" cp calls, "<<numHeapUpdates<<" heap updates, max heap size "<<maxHeapSize);
 }
 
 

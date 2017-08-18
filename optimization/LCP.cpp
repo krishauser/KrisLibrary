@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "LCP.h"
 #include <errors.h>
 #include <sstream>
@@ -63,13 +65,13 @@ bool LemkeLCP::Solve()
 
     int newLeaveIndex = PickPivot(newEnterIndex);
     if(newLeaveIndex < 0) {
-      if(verbose >= 1) cout<<"LemkeLCP: couldn't find a valid pivot variable for "<<VarName(nonbasic[newEnterIndex])<<" to enter"<<endl;
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"LemkeLCP: couldn't find a valid pivot variable for "<<VarName(nonbasic[newEnterIndex])<<" to enter"<<"\n");
       return false;
     }
     int newLeaveVar = basic[newLeaveIndex];
-    if(verbose >= 2) cout<<"Picked pivot "<<VarName(newLeaveVar)<<endl;
+    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Picked pivot "<<VarName(newLeaveVar)<<"\n");
     if(!Pivot(newEnterIndex,newLeaveIndex)) {
-      if(verbose >= 1) cout<<"LemkeLCP: couldn't pivot variables "<<VarName(nonbasic[newEnterIndex])<<" to enter, "<<VarName(basic[newLeaveIndex])<<" to leave"<<endl;
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"LemkeLCP: couldn't pivot variables "<<VarName(nonbasic[newEnterIndex])<<" to enter, "<<VarName(basic[newLeaveIndex])<<" to leave"<<"\n");
       return false;
     }
     if(verbose >= 3) Print(cout);
@@ -79,7 +81,7 @@ bool LemkeLCP::Solve()
     }
     lastLeftVar = newLeaveVar;
   }
-  if(verbose >= 1) cout<<"LemkeLCP: error, maximum of "<<dictionary.m<<" iterations reached"<<endl;
+  if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"LemkeLCP: error, maximum of "<<dictionary.m<<" iterations reached"<<"\n");
   return false;
 }
 
@@ -112,7 +114,7 @@ int LemkeLCP::InitialPivot()
       imin=i;
     }
     else if(dictionary(i,0) == min) {
-      if(verbose >= 1) cerr<<"LemkeLCP: Warning, degeneracy!"<<endl;
+      if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"LemkeLCP: Warning, degeneracy!"<<"\n");
     }
   }
   if(min > 0) return -1;
@@ -169,7 +171,7 @@ int LemkeLCP::PickPivot(int E) const
 	maxL = L;
       }
       else if(sum == max) {
-	if(verbose >= 1) cerr<<"LemkeLCP: Warning, degeneracy"<<endl;
+	if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"LemkeLCP: Warning, degeneracy"<<"\n");
       }
     }
   }
@@ -178,7 +180,7 @@ int LemkeLCP::PickPivot(int E) const
 
 bool LemkeLCP::Pivot(int E,int L)
 {
-  if(verbose >= 2) cout<<"LemkeLCP: Pivoting "<<VarName(nonbasic[E])<<", "<<VarName(basic[L])<<endl;
+  if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"LemkeLCP: Pivoting "<<VarName(nonbasic[E])<<", "<<VarName(basic[L])<<"\n");
   Assert(nonbasic[E] != constant);
   Assert(basic[L] != constant);
   //nonbasic variable indexed by E (enter) gets moved to the
@@ -192,7 +194,7 @@ bool LemkeLCP::Pivot(int E,int L)
   //           = sum_{j!=E} d[i,j]*nonbasic[j] + d[i,E]/d[L,E]*basic[L]-sum_{j!=E} d[L,j]*d[i,E]/d[L,E]*nonbasic[j]
   //           = sum_{j!=E} (d[i,j] - d[L,j]*d[i,E]/d[L,E])*nonbasic[j] + d[i,E]/d[L,E]*basic[L]
   if(Abs(dictionary(L,E)) == Zero) return false;
-  if(FuzzyZero(dictionary(L,E))) { cout<<"LemkeLCP: pivot element is very small! "<<dictionary(L,E)<<endl; }
+  if(FuzzyZero(dictionary(L,E))) { LOG4CXX_INFO(KrisLibrary::logger(),"LemkeLCP: pivot element is very small! "<<dictionary(L,E)<<"\n"); }
   //replace all rows referencing the Eing variable with the new 
   double denom=1.0/dictionary(L,E);
   for(int i=0;i<dictionary.m;i++) {
@@ -205,7 +207,7 @@ bool LemkeLCP::Pivot(int E,int L)
 	  dictionary(i,j) = scale;
       }
       if(!(dictionary(i,0) >= 0)) {
-	cout<<"LemkeLCP: possible numerical error: "<<dictionary(i,0)<<" < 0"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LemkeLCP: possible numerical error: "<<dictionary(i,0)<<" < 0"<<"\n");
 	Assert(FuzzyZero(dictionary(i,0)));
 	dictionary(i,0) = 0;
       }

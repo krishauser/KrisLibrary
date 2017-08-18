@@ -3,11 +3,16 @@
 
 #include <algorithm>
 #include <functional>
+
 #if ((defined (__GNUC__) && (__GNUC__ > 2)) && !defined(__APPLE__))
 #include <ext/algorithm>
+#if __cplusplus <= 199711L
+//CPLUSPLUS 11 or greater
 namespace std {
   using __gnu_cxx::copy_n;
 }
+#endif 
+
 #endif
 #include <assert.h>
 

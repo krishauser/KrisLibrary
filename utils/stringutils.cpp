@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "stringutils.h"
 #include "utils.h"
 #include <string.h>
@@ -521,7 +523,7 @@ void ToWideChar(const char* str, WCHAR* buf, int maxBuf)
 	int res = MultiByteToWideChar(CP_ACP, 0, str, -1, buf,maxBuf);
 	if(res == 0)
 	{
-	  fprintf(stderr,"Couldnt' convert the string to wide characters\n");
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Couldnt' convert the string to wide characters\n");
 	  abort();
 	}
 }

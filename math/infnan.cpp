@@ -1,7 +1,8 @@
-#include "infnan.h"
-#include "math.h"
+
 #include <stdio.h>
 #include <math.h>
+#include "infnan.h"
+#include "math.h"
 
 namespace Math {
 
@@ -24,7 +25,7 @@ int IsFinite(double x)
 #ifdef _MSC_VER
   return _finite(x);
 #elif HAVE_DECL_ISFINITE
-  return isfinite(x);
+  return std::isfinite(x);
 #elif HAVE_DECL_FINITE
   return finite(x);
 #elif HAVE_IEEE_COMPARISONS
@@ -84,7 +85,7 @@ int IsFinite(float x)
 #elif HAVE_DECL_FINITE
   return finitef(x);
 #elif HAVE_DECL_ISFINITE
-  return isfinite(x);
+  return std::isfinite(x);
 #elif HAVE_IEEE_COMPARISONS
   float y=x-x;
   return (y==y?1:0);

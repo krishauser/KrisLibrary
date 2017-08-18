@@ -1,6 +1,8 @@
 #ifndef ANY_MOTION_PLANNER_H
 #define ANY_MOTION_PLANNER_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 
 class TiXmlElement;
@@ -176,9 +178,9 @@ class MotionPlanningProblem
  * MilestonePath path;
  * string res = planner->Plan(path,cond);
  * if(path.edges.empty())  //failed
- *   printf("Planning failed\n");
+ *   LOG4CXX_INFO(KrisLibrary::logger(),"Planning failed\n");
  * else
- *   printf("Planning succeeded, path has length %g\n",path.Length());
+ *   LOG4CXX_INFO(KrisLibrary::logger(),"Planning succeeded, path has length "<<path.Length());
  *
  * //clean up the planner
  * delete planner;

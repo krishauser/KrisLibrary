@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "PointLocation.h"
 #include <math/random.h>
 #include <set>
@@ -280,7 +282,7 @@ void KDTreePointLocation::OnAppend()
   tree->Insert(points.back(),id);
   /*
   if(points.size() % 100 == 0)
-    printf("K-D Tree size %d, depth %d\n",tree.TreeSize(),tree.MaxDepth());
+    LOG4CXX_INFO(KrisLibrary::logger(),"K-D Tree size "<<tree.TreeSize()<<", depth "<<tree.MaxDepth());
   */
 }
 

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "LogisticModel.h"
 #include "DistributionCollector.h"
 #include <optimization/Minimization.h>
@@ -167,24 +169,26 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
   opt.tolf = tol;
   opt.tolgrad = tol;
 
-  printf("Testing logit gradient...\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing logit gradient...\n");
   Real atol=1e-2;
   Real rtol=1e-2;
   bool test=TestGradient(&f,opt.x,1e-3,atol,rtol);
   if(!test) {
-    printf("Testing failed!\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing failed!\n");
     Abort();
   }
   else {
-    printf("Done.\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Done.\n");
   }
   
   ConvergenceResult r=opt.SolveQuasiNewton_Ident(numIters);
   Assert(r == ConvergenceX || r == ConvergenceF || r == MaxItersReached);
-  if(r == ConvergenceX || r == ConvergenceF)
-    cout<<"Quasi-Newton method converged in "<<numIters<<" iterations"<<endl;
-  else
-    cout<<"Maximum iterations reached"<<endl;
+  if(r == ConvergenceX || r == ConvergenceF){
+    LOG4CXX_INFO(KrisLibrary::logger(),"Quasi-Newton method converged in "<<numIters<<" iterations"<<"\n");
+  }
+  else{
+    LOG4CXX_INFO(KrisLibrary::logger(),"Maximum iterations reached"<<"\n");
+  }
 
   coeffs.clear();
   coeffs = opt.x;
@@ -209,7 +213,7 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
       for(int j=0;j<dlog.n;j++)
 	informationMatrix(i,j) += dv(i)*dv(j)*p*(1.0-p);
   }
-  //cout<<"InformationMatrix"<<endl<<MatrixPrinter(informationMatrix,MatrixPrinter::AsciiShade)<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"InformationMatrix"<<"\n"<<MatrixPrinter(informationMatrix,MatrixPrinter::AsciiShade)<<"\n");
 
   LDLDecomposition<Real> ldl;
   ldl.set(informationMatrix);
@@ -220,10 +224,10 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
       break;
     }
   if(singular) {
-    cerr<<"Information matrix is singular, using SVD..."<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Information matrix is singular, using SVD..."<<"\n");
     RobustSVD<Real> svd;
     if(!svd.set(informationMatrix)) {
-      cerr<<"Error inverting information matrix..."<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error inverting information matrix..."<<"\n");
       ldl.getInverse(covariance);
     }
     else {
@@ -235,27 +239,27 @@ void LogisticModel::MaximumLikelihood(const vector<Vector>& x,const vector<bool>
   else ldl.getInverse(covariance);
   for(int i=0;i<covariance.m;i++) {
     if(covariance(i,i) < 0) {
-      cerr<<"Warning, covariance matrix has negative on diagonal!"<<endl;
-      cerr<<covariance(i,i)<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, covariance matrix has negative on diagonal!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),covariance(i,i)<<"\n");
     }
     if(!IsFinite(covariance(i,i))) {
-      cerr<<"Warning, covariance matrix has inf/nan on diagonal!"<<endl;
-      cerr<<covariance(i,i)<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, covariance matrix has inf/nan on diagonal!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),covariance(i,i)<<"\n");
     }
   }
 
-  cout<<"Resulting log-likelihood: "<<-f(opt.x)<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Resulting log-likelihood: "<<-f(opt.x)<<"\n");
 
   DistributionCollector error;
   for(size_t i=0;i<x.size();i++) {
     if(res[i]) error << 1-Evaluate(x[i]);
     else error << Evaluate(x[i]);
   }
-  cout<<"Actual error min "<<error.xmin<<", max "<<error.xmax<<", mean "<<error.mean()<<" mse "<<error.sumsquared/error.n<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Actual error min "<<error.xmin<<", max "<<error.xmax<<", mean "<<error.mean()<<" mse "<<error.sumsquared/error.n<<"\n");
   /*
-  cout<<"Results: "<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Results: "<<"\n");
   for(size_t i=0;i<x.size();i++) {
-    cout<<"Actual value "<<res[i]<<", evaluated "<<Evaluate(x[i])<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Actual value "<<res[i]<<", evaluated "<<Evaluate(x[i])<<"\n");
   }
   */
 }

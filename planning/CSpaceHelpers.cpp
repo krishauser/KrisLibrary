@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "CSpaceHelpers.h"
 #include "CSetHelpers.h"
 #include "EdgePlanner.h"
@@ -501,7 +503,7 @@ void MultiCSpace::Properties(PropertyMap& map)
     if(!cmap.get("metric",m) || m=="euclidean") {
     }
     else {
-      printf("MultiCSpace: component %d (dim %d) not euclidean?\n",i,components[i]->NumDimensions());
+      LOG4CXX_INFO(KrisLibrary::logger(),"MultiCSpace: component "<<i<<" (dim "<<components[i]->NumDimensions());
       euclidean = false;
     }
     vector<double> cmin,cmax;
@@ -530,7 +532,7 @@ void MultiCSpace::Properties(PropertyMap& map)
     map.setArray("metricWeights",vector<double>(temp));
   }
   else
-    printf("No weighting?\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"No weighting?\n");
   if(!cspaceminimum.empty()) {
     Vector temp;
     Join(cspaceminimum,temp);
@@ -692,7 +694,7 @@ void OptimizeTestingOrder(const vector<AdaptiveCSpace::PredicateStats>& stats,co
     Graph::TopologicalSortCallback<int> callback;
     G.DFS(callback);
     if(callback.hasCycle) {
-      fprintf(stderr,"motionplanning: WARNING: Test dependency order has cycles... breaking arbitrarily\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"motionplanning: WARNING: Test dependency order has cycles... breaking arbitrarily\n");
     }
     //revise priorities from bottom up based off of children
     //a parent node's priority is the minimum of (cost of this + cost of best child) / (1-probability of this*probability of best child)
@@ -714,7 +716,7 @@ void OptimizeTestingOrder(const vector<AdaptiveCSpace::PredicateStats>& stats,co
         for(G.Begin(*i,e);!e.end();e++) {
           int j=e.target();
           if(G.InDegree(j) > 1) //has more than one dependency
-            fprintf(stderr,"motionplanning: WARNING: Constraint %d has multiple dependencies including %d, can't really optimize yet\n",j,*i);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"motionplanning: WARNING: Constraint "<< j <<" has multiple dependencied including "<< *i<<", can't really optimize yet\n");          
           double priority = (depcosts[*i]+depcosts[j])/(1.0-depprobs[*i]*depprobs[j]);
           if(priority < bestPriority || best < 0) {
             best = j;
@@ -763,29 +765,29 @@ void OptimizeTestingOrder(const vector<AdaptiveCSpace::PredicateStats>& stats,co
   }
   /*
   //Debugging
-  printf("Costs:");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Costs:");
   for(size_t i=0;i<stats.size();i++) 
-    printf(" %g",stats[i].cost);
-  printf("\n");
-  printf("Probabilities:");
+    LOG4CXX_INFO(KrisLibrary::logger()," "<<stats[i].cost);
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Probabilities:");
   for(size_t i=0;i<stats.size();i++) 
-    printf(" %g",stats[i].probability);
-  printf("\n");
-  printf("Dependencies:");
+    LOG4CXX_INFO(KrisLibrary::logger()," "<<stats[i].probability);
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Dependencies:");
   for(size_t i=0;i<deps.size();i++)  {
-    printf(" [");
+    LOG4CXX_INFO(KrisLibrary::logger()," [");
     for(size_t j=0;j<deps[i].size();j++) {
-      if(j > 0) printf(",");
-      printf("%d",deps[i][j]);
+      if(j > 0) LOG4CXX_INFO(KrisLibrary::logger(),",");
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<deps[i][j]);
     }
-    printf("]");
+    LOG4CXX_INFO(KrisLibrary::logger(),"]");
   }
-  printf("\n");
-  printf("Order:");
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Order:");
   for(size_t i=0;i<order.size();i++) 
-    printf(" %d",order[i]);
-  printf("\n");
-  //getchar();
+    LOG4CXX_INFO(KrisLibrary::logger()," "<<order[i]);
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   */
 }
 
@@ -912,8 +914,8 @@ EdgePlanner* AdaptiveCSpace::PathChecker(const Config& a,const Config& b)
 
 EdgePlanner* AdaptiveCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
-  if(!visibleTestDeps[obstacle].empty()) fprintf(stderr,"AdaptiveCSpace: Warning, single-obstacle path checker has dependent visibility tests\n");
-  else if(!feasibleTestDeps[obstacle].empty()) fprintf(stderr,"AdaptiveCSpace: Warning, single-obstacle path checker has dependent feasibility tests\n");
+    if(!visibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent visibility tests\n");}
+    else if(!feasibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent feasibility tests\n");}
   return PathChecker_NoDeps(a,b,obstacle);
 }
 
@@ -930,8 +932,8 @@ void AdaptiveCSpace::SetupAdaptiveInfo()
   constraintMap.clear();
   for(size_t i=0;i<constraints.size();i++) {
     if(constraintMap.count(constraintNames[i])!= 0) {
-      printf("AdaptiveCSpace: warning, constraint name %s is duplicated!\n",constraintNames[i].c_str());
-      printf("  named dependencies may not work correctly\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"AdaptiveCSpace: warning, constraint name "<<constraintNames[i].c_str());
+      LOG4CXX_INFO(KrisLibrary::logger(),"  named dependencies may not work correctly\n");
     }
     constraintMap[constraintNames[i]] = (int)i;
   }
@@ -963,7 +965,7 @@ bool AdaptiveCSpace::AddFeasibleDependency(int cindex,int dindex)
   if(feasibleTestDeps.empty())
     feasibleTestDeps.resize(constraints.size());
   if(dindex <= cindex) {
-    fprintf(stderr,"AdaptiveCSpace: Warning, added dependency of feasibility test %d on %d out of order\n",cindex,dindex);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, added dependency of feasibility test "<<cindex<<" on "<<dindex);
   }
   feasibleTestDeps[cindex].push_back(dindex);
   return true;

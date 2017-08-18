@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "Kinematics.h"
 using namespace std;
 
@@ -42,7 +44,7 @@ Real MaxJointDistance(const RobotKinematics3D& robot,int link1,int link2)
 {
   int p = robot.LCA(link1,link2);
   if(p < 0) {
-    fprintf(stderr,"MaxJointDistance Error: joints don't have a common parent?\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"MaxJointDistance Error: joints don't have a common parent?\n");
     Abort();
     return Inf;
   }

@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "fileutils.h"
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -179,7 +181,7 @@ bool ListDirectory(const char* path,std::vector<std::string>& files)
   StringCchLength(path, MAX_PATH, &length_of_arg);
 
   if (length_of_arg > (MAX_PATH - 3)) {
-    fprintf(stderr,"Directory path %s is too long.\n",path);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Directory path "<<path);
     return false;
   }
 
@@ -211,7 +213,7 @@ bool ListDirectory(const char* path,std::vector<std::string>& files)
    dwError = GetLastError();
    if (dwError != ERROR_NO_MORE_FILES) 
    {
-     fprintf(stderr,"Error while reading files from %s\n",path);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Error while reading files from "<<path);
      return false;
    }
 

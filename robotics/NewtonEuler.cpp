@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "NewtonEuler.h"
 #include <math/random.h>
 #include <math/CholeskyDecomposition.h>
@@ -256,7 +258,7 @@ void NewtonEulerSolver::CalcTorques(const Vector& ddq,Vector& t)
     jointWrenches[n].f = fcm;
     jointWrenches[n].m = mcm + cross(cmLocal,fcm);
 
-    //cout<<"Wrench "<<n<<": "<<jointWrenches[n].m<<", "<<jointWrenches[n].f<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Wrench "<<n<<": "<<jointWrenches[n].m<<", "<<jointWrenches[n].f<<"\n");
     if(robot.links[n].type == RobotLink3D::Revolute)
       t(n) = dot(jointWrenches[n].m,robot.links[n].T_World.R*robot.links[n].w);
     else
@@ -278,8 +280,8 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
   //calculated at center of mass!
   vector<SpatialVector> velDepAccels(robot.links.size());
   for(size_t n=0;n<robot.links.size();n++) {
-    //cout<<"Velocity n: "<<velocities[n].v<<", "<<velocities[n].w<<endl;
-    //cout<<" Vel at com: "<<velocities[n].v + cross(velocities[n].w,robot.links[n].T_World.R*robot.links[n].com)<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Velocity n: "<<velocities[n].v<<", "<<velocities[n].w<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger()," Vel at com: "<<velocities[n].v + cross(velocities[n].w,robot.links[n].T_World.R*robot.links[n].com)<<"\n");
     robot.links[n].GetWorldInertia(Iworld);
     inertiaMatrices[n].setMassMatrix(robot.links[n].mass,Iworld);
     Vector3 gyroscopicForce = cross(velocities[n].w,Iworld*velocities[n].w);
@@ -309,7 +311,7 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
       velDepAccels[n].set(v,w);
     }
     biasingForces[n].set(-externalWrenches[n].f,gyroscopicForce-externalWrenches[n].m);
-    //cout<<"Velocity dependent accel: "<<velDepAccels[n]<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Velocity dependent accel: "<<velDepAccels[n]<<"\n");
   }
   //go backward down the list
   SpatialMatrix cToP,pToC,IaaI,temp,temp2;
@@ -349,7 +351,7 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
 	  cToP.madd(bf_Ivda,biasingForces[n]);
 	  continue;
 	}
-	fprintf(stderr,"NewtonEulerSolver: Warning, axis-wise inertia on link %d is invalid; %g\n",n,aIa);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"NewtonEulerSolver: Warning, axis-wise inertia on link "<<n<<" is invalid; "<<aIa);
 	aIa = Epsilon;
       }
       //add this child's contribution to the revised inertia matrix
@@ -369,9 +371,9 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
       vtemp += bf_Ivda;
       cToP.madd(vtemp,biasingForces[n]);
     }
-    //cout<<"Revised inertia matrix "<<n<<": "<<endl<<MatrixPrinter(inertiaMatrices[n])<<endl;
-    //cout<<"Revised biasing force "<<n<<": "<<endl<<VectorPrinter(biasingForces[n])<<endl;
-    //getchar();
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Revised inertia matrix "<<n<<": "<<"\n"<<MatrixPrinter(inertiaMatrices[n])<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Revised biasing force "<<n<<": "<<"\n"<<VectorPrinter(biasingForces[n])<<"\n");
+    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
   }
   //go down the heirarchy, computing accelerations along the way
   //joint force is X[cm->origin]*(I*a+bf)
@@ -407,7 +409,7 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
 	accelerations[n].w.setZero();
 	continue;
       }
-      fprintf(stderr,"NewtonEulerSolver: Warning, axis-wise inertia on link %d is invalid; %g\n",n,aIa);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"NewtonEulerSolver: Warning, axis-wise inertia on link "<<n<<" is invalid; "<<aIa);
       aIa = Epsilon;
     }
     Assert(aIa > 0.0);
@@ -425,7 +427,7 @@ void NewtonEulerSolver::CalcAccel(const Vector& t,Vector& ddq)
     vtemp += pAccel;
     //vtemp is now the acceleration about the center of mass
     vtemp.get(accelerations[n].v,accelerations[n].w);
-    //cout<<"CM acceleration: "<<vn.v<<", "<<vn.w<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"CM acceleration: "<<vn.v<<", "<<vn.w<<"\n");
   }
 
   for(size_t n=0;n<robot.links.size();n++) {
@@ -496,7 +498,7 @@ void NewtonEulerSolver::MulKineticEnergyMatrix(const Matrix& A,Matrix& BA)
 
 void NewtonEulerSolver::SelfTest()
 {
-  cout<<"NewtonEulerSolver::SelfTest() first testing basic stuff."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() first testing basic stuff."<<"\n");
   {
     Real h=1e-3,tol=1e-2;
     //let Jp = jacobian of position/orientation, col j=dp/dqj
@@ -525,14 +527,14 @@ void NewtonEulerSolver::SelfTest()
 	H5.getColRef(i,temp); Hi.copyRow(4,temp);
 	H6.getColRef(i,temp); Hi.copyRow(5,temp);
 	if(!J1.isEqual(Hi,tol*Max(Hi.maxAbsElement(),1.0))) {
-	  cerr<<"Error computing hessian!"<<endl;
-	  cerr<<"dp"<<m<<"/dq"<<i<<":"<<endl;
-	  cerr<<MatrixPrinter(Hi,MatrixPrinter::AsciiShade)<<endl;
-	  cerr<<"diff"<<endl;
-	  cerr<<MatrixPrinter(J1,MatrixPrinter::AsciiShade)<<endl;
-	  cerr<<"Error: "<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Error computing hessian!"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"dp"<<m<<"/dq"<<i<<":"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(Hi,MatrixPrinter::AsciiShade)<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"diff"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(J1,MatrixPrinter::AsciiShade)<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<"\n");
 	  J1 -= Hi;
-	  cerr<<MatrixPrinter(J1,MatrixPrinter::AsciiShade)<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(J1,MatrixPrinter::AsciiShade)<<"\n");
 	  Abort();
 	}
 	robot.q(i) = oldq;
@@ -556,14 +558,14 @@ void NewtonEulerSolver::SelfTest()
       B1 -= B0;
       B1 *= 1.0/h;
       if(!B1.isEqual(dB,tol*Max(dB.maxAbsElement(),1.0))) {
-	cerr<<"Error computing kinetic energy matrix derivative!"<<endl;
-	cerr<<"dB/dq"<<i<<":"<<endl;
-	cerr<<MatrixPrinter(dB,MatrixPrinter::AsciiShade)<<endl;
-	cerr<<"dB diff"<<endl;
-	cerr<<MatrixPrinter(B1,MatrixPrinter::AsciiShade)<<endl;
-	cerr<<"Error: "<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error computing kinetic energy matrix derivative!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"dB/dq"<<i<<":"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(dB,MatrixPrinter::AsciiShade)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"dB diff"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(B1,MatrixPrinter::AsciiShade)<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<"\n");
 	B1 -= dB;
-	cerr<<MatrixPrinter(B1,MatrixPrinter::AsciiShade)<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(B1,MatrixPrinter::AsciiShade)<<"\n");
 	Abort();
       }
     }
@@ -580,7 +582,7 @@ void NewtonEulerSolver::SelfTest()
     Assert(v.isEqual(velocities[i].v,1e-3));
     Assert(w.isEqual(velocities[i].w,1e-3));
   }
-  cout<<"NewtonEulerSolver::SelfTest() Passed velocity test."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() Passed velocity test."<<"\n");
 
   //check acceleration computation
   Vector ddq(robot.links.size());
@@ -616,29 +618,29 @@ void NewtonEulerSolver::SelfTest()
   Real tol=1e-3;
   for(size_t i=0;i<adiff.size();i++) {
     if(!adiff[i].v.isEqual(accelerations[i].v,tol*Max(1.0,accelerations[i].v.maxAbsElement()))) {
-      cout<<"Error computing linear acceleration at link "<<i<<": "<<accelerations[i].v<<" vs. "<<adiff[i].v<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error computing linear acceleration at link "<<i<<": "<<accelerations[i].v<<" vs. "<<adiff[i].v<<"\n");
       int p=robot.parents[i];
       if(p != -1) {
-	cout<<"Linear velocity is "<<oldVels[i].v<<", angular "<<oldVels[i].w<<endl;
-	cout<<"Parent's linear is "<<oldVels[p].v<<", angular "<<oldVels[p].w<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Linear velocity is "<<oldVels[i].v<<", angular "<<oldVels[i].w<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Parent's linear is "<<oldVels[p].v<<", angular "<<oldVels[p].w<<"\n");
       }
-      getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     if(!adiff[i].w.isEqual(accelerations[i].w,tol*Max(1.0,accelerations[i].w.maxAbsElement()))) {
-      cout<<"Error computing angular acceleration at link "<<i<<": "<<accelerations[i].w<<" vs. "<<adiff[i].w<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error computing angular acceleration at link "<<i<<": "<<accelerations[i].w<<" vs. "<<adiff[i].w<<"\n");
       int p=robot.parents[i];
       if(p != -1) {
-	cout<<"Linear velocity is "<<oldVels[i].v<<", angular "<<oldVels[i].w<<endl;
-	cout<<"Parent's linear is "<<oldVels[p].v<<", angular "<<oldVels[p].w<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Linear velocity is "<<oldVels[i].v<<", angular "<<oldVels[i].w<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Parent's linear is "<<oldVels[p].v<<", angular "<<oldVels[p].w<<"\n");
       }
-      getchar();
+      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
   }
   robot.q=oldq;
   robot.dq=oldDq;
   robot.UpdateFrames();
   velocities=oldVels;
-  cout<<"NewtonEulerSolver::SelfTest() Passed acceleration test."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() Passed acceleration test."<<"\n");
 
   //check coriolis forces (set ddq = G = 0)
   SetGravityWrenches(Vector3(Zero));
@@ -648,15 +650,15 @@ void NewtonEulerSolver::SelfTest()
   robot.UpdateDynamics();
   robot.GetCoriolisForces(C);
   if(!t.isEqual(C,1e-3)) {
-    cerr<<"Coriolis forces computed traditionally do not match with"<<endl
-	<<"newton-euler!"<<endl;
-    cerr<<"N-E: "<<VectorPrinter(t)<<endl;
-    cerr<<"Traditional: "<<VectorPrinter(C)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Coriolis forces computed traditionally do not match with"<<"\n"
+      <<"newton-euler!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"N-E: "<<VectorPrinter(t)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Traditional: "<<VectorPrinter(C)<<"\n");
     t -= C;
-    cerr<<"Error: "<<VectorPrinter(t)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<VectorPrinter(t)<<"\n");
     Abort();
   }
-  cout<<"NewtonEulerSolver::SelfTest() Passed coriolis force test."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() Passed coriolis force test."<<"\n");
 
   //check forward dynamics
   ddq.setZero();
@@ -667,36 +669,36 @@ void NewtonEulerSolver::SelfTest()
   for(int i=0;i<ddq.n;i++) {
     ddq(i) = 1.0;
     CalcTorques(ddq,t);
-    //cout<<"Torques: "<<t<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Torques: "<<t<<"\n");
     CalcAccel(t,ddqtest);
     if(!ddq.isEqual(ddqtest,1e-4)) {
-      cerr<<"Forward dynamics is not an exact inverse of inverse dynamics!"<<endl;
-      cerr<<"Desired ddq: "<<ddq<<endl;
-      cerr<<"Resulting: "<<ddqtest<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Forward dynamics is not an exact inverse of inverse dynamics!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Desired ddq: "<<ddq<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Resulting: "<<ddqtest<<"\n");
       ddqtest -= ddq;
-      cerr<<"Error: "<<ddqtest<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<ddqtest<<"\n");
       Abort();
     }
   }
-  cout<<"NewtonEulerSolver::SelfTest() Passed forward dynamics test."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() Passed forward dynamics test."<<"\n");
 
   //check kinetic energy computations
   Matrix B,Btrue,Btemp;
   CalcKineticEnergyMatrix(B);
   robot.GetKineticEnergyMatrix(Btrue);
   if(!B.isEqual(Btrue,1e-3)) {
-    cerr<<"Kinetic energy matrix computed with newton-euler doesn't"<<endl
-	<<"match that of traditional method!"<<endl;
-    cerr<<"N-E:"<<endl;
-    cerr<<MatrixPrinter(B,MatrixPrinter::AsciiShade)<<endl;
-    cerr<<"Traditional:"<<endl;
-    cerr<<MatrixPrinter(Btrue,MatrixPrinter::AsciiShade)<<endl;
-    cerr<<"Error: "<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Kinetic energy matrix computed with newton-euler doesn't"<<"\n"
+      <<"match that of traditional method!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"N-E:"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(B,MatrixPrinter::AsciiShade)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Traditional:"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(Btrue,MatrixPrinter::AsciiShade)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<"\n");
     Btemp.sub(Btrue,B);
-    cerr<<MatrixPrinter(Btemp,MatrixPrinter::AsciiShade)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(Btemp,MatrixPrinter::AsciiShade)<<"\n");
     Abort();
   }
-  cout<<"NewtonEulerSolver::SelfTest() Passed kinetic energy matrix test."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() Passed kinetic energy matrix test."<<"\n");
 
   //check inverse kinetic energy computations
   Matrix Binv;
@@ -704,21 +706,21 @@ void NewtonEulerSolver::SelfTest()
   Btemp.mul(Btrue,Binv);
   for(int i=0;i<ddq.n;i++) Btemp(i,i)-=1.0;
   if(!Btemp.isZero(1e-3)) {
-    cerr<<"Inverse kinetic energy matrix computed with newton-euler"<<endl
-	<<"doesn't match that of traditional method!"<<endl;
-    cerr<<"N-E:"<<endl;
-    cerr<<MatrixPrinter(Binv,MatrixPrinter::AsciiShade)<<endl;
-    cerr<<"Traditional:"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Inverse kinetic energy matrix computed with newton-euler"<<"\n"
+	<<"doesn't match that of traditional method!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"N-E:"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(Binv,MatrixPrinter::AsciiShade)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Traditional:"<<"\n");
     Matrix BinvTrue;
     CholeskyDecomposition<Real> chol(Btrue);
     chol.getInverse(BinvTrue);
-    cerr<<MatrixPrinter(BinvTrue,MatrixPrinter::AsciiShade)<<endl;
-    cerr<<"Error: "<<endl;
-    cerr<<MatrixPrinter(Btemp,MatrixPrinter::AsciiShade)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(BinvTrue,MatrixPrinter::AsciiShade)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(Btemp,MatrixPrinter::AsciiShade)<<"\n");
     Abort();
   }
-  cout<<"NewtonEulerSolver::SelfTest() Passed kinetic energy inverse test."<<endl;
-  cout<<"NewtonEulerSolver::SelfTest() Done!"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() Passed kinetic energy inverse test."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"NewtonEulerSolver::SelfTest() Done!"<<"\n");
 }
 
 void NewtonEulerSolver::CalcKineticEnergyMatrixInverse(Matrix& Binv)

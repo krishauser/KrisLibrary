@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "AABB.h"
 #include <utils/AnyValue.h>
 
@@ -29,11 +31,11 @@ int AABBLineSearch(const Vector& x0,const Vector& dx,const Vector& bmin,const Ve
       res = i;
     }
     if(!(x0(i)+t*dx(i) <= bmax(i))) {
-      printf("Error: %d: %g+%g*%g=%g <= %g?\n",i,x0(i),t,dx(i),x0(i)+t*dx(i),bmax(i));
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<i<<": "<<x0(i)<<"+"<<t<<"*"<<dx(i)<<"="<<x0(i)+t*dx(i)<<" <= "<<bmax(i));
     }
     Assert(x0(i)+t*dx(i) <= bmax(i));
     if(!(x0(i)+t*dx(i) >= bmin(i))) {
-      printf("Error: %d: %g+%g*%g=%g >= %g?\n",i,x0(i),t,dx(i),x0(i)+t*dx(i),bmin(i));
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error: "<<i<<": "<<x0(i)<<"+"<<t<<"*"<<dx(i)<<"="<<x0(i)+t*dx(i)<<" >= "<<bmin(i));
     }
     Assert(x0(i)+t*dx(i) >= bmin(i));
   }

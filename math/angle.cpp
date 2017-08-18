@@ -1,3 +1,5 @@
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include "angle.h"
 #include "misc.h"
 #include "utils.h"
@@ -77,14 +79,14 @@ void AngleInterval::setIntersection(const AngleInterval& i1, const AngleInterval
   else
     setEmpty();
   if(!i1.contains(*this)) {
-    printf("Error in i1\n");
-    printf("Intersect %f->%f with %f->%f\n",i1.c,i1.d,i2.c,i2.d);
-    printf("Result: %f->%f\n",c,d);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in i1\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Intersect "<<i1.c<<"->"<<i1.d<<" with "<<i2.c<<"->"<<i2.d);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result: "<<c<<"->"<<d);
   }
   if(!i2.contains(*this)) {
-    printf("Error in i2\n");
-    printf("Intersect %f->%f with %f->%f\n",i1.c,i1.d,i2.c,i2.d);
-    printf("Result: %f->%f\n",c,d);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in i2\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Intersect "<<i1.c<<"->"<<i1.d<<" with "<<i2.c<<"->"<<i2.d);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result: "<<c<<"->"<<d);
   }
   Assert(i1.contains(*this));
   Assert(i2.contains(*this));
@@ -234,11 +236,11 @@ void TransformCosSin_Cos(Real a,Real b,Real& c,Real& d)
   }
   Real x=0.5;
   if(!FuzzyEquals(c*Cos(x+d),a*Cos(x)+b*Sin(x))) {
-    printf("Error in TransformCosSin\n");
-    printf("a: %f, b: %f\n",a,b);
-    printf("c: %f, d: %f\n",c,d);
-    printf("f(x): %f\n",a*Cos(x)+b*Sin(x));
-    printf("g(x): %f\n",c*Cos(x+d));
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in TransformCosSin\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"a: "<<a<<", b: "<<b);
+    LOG4CXX_INFO(KrisLibrary::logger(),"c: "<<c<<", d: "<<d);
+    LOG4CXX_INFO(KrisLibrary::logger(),"f(x): "<<a*Cos(x)+b*Sin(x));
+    LOG4CXX_INFO(KrisLibrary::logger(),"g(x): "<<c*Cos(x+d));
   }
   Assert(FuzzyEquals(c*Cos(x+d),a*Cos(x)+b*Sin(x)));
 }
@@ -255,11 +257,11 @@ void TransformCosSin_Sin(Real a,Real b,Real& c,Real& d)
   }
   Real x=0.5;
   if(!FuzzyEquals(c*Sin(x+d),a*Cos(x)+b*Sin(x))) {
-    printf("Error in TransformCosSin\n");
-    printf("a: %f, b: %f\n",a,b);
-    printf("c: %f, d: %f\n",c,d);
-    printf("f(x): %f\n",a*Cos(x)+b*Sin(x));
-    printf("g(x): %f\n",c*Sin(x+d));
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in TransformCosSin\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"a: "<<a<<", b: "<<b);
+    LOG4CXX_INFO(KrisLibrary::logger(),"c: "<<c<<", d: "<<d);
+    LOG4CXX_INFO(KrisLibrary::logger(),"f(x): "<<a*Cos(x)+b*Sin(x));
+    LOG4CXX_INFO(KrisLibrary::logger(),"g(x): "<<c*Sin(x+d));
   }
   Assert(FuzzyEquals(c*Sin(x+d),a*Cos(x)+b*Sin(x)));
 }
