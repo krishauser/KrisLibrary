@@ -1971,7 +1971,7 @@ bool ParabolicRampND::SolveMinTimeLinear(const Vector& amax,const Vector& vmax)
     if(vmax[i]==0 || amax[i]==0) {
       if(!FuzzyEquals(x0[i],x1[i],CheckEpsilonX)) {
 	if(gVerbose >= 1) {
-	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, X0 != X1 (%g != %g)\n",i,vmax[i],amax[i],x0[i],x1[i]);
+	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, X0 != X1 (%g != %g)\n",(int)i,vmax[i],amax[i],x0[i],x1[i]);
 	  abort();
 	}
 	return false;
@@ -2078,14 +2078,14 @@ bool ParabolicRampND::SolveMinTime(const Vector& amax,const Vector& vmax)
     if(vmax[i]==0 || amax[i]==0) {
       if(!FuzzyEquals(x0[i],x1[i],CheckEpsilonX)) {
 	if(gVerbose >= 1) {
-	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, X0 != X1 (%g != %g)\n",i,vmax[i],amax[i],x0[i],x1[i]);
+	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, X0 != X1 (%g != %g)\n",(int)i,vmax[i],amax[i],x0[i],x1[i]);
 	  abort();
 	}
 	return false;
       }
       if(!FuzzyEquals(dx0[i],dx1[i],CheckEpsilonV)) {
 	if(gVerbose >= 1) {
-	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, DX0 != DX1 (%g != %g)\n",i,vmax[i],amax[i],dx0[i],dx1[i]);
+	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, DX0 != DX1 (%g != %g)\n",(int)i,vmax[i],amax[i],dx0[i],dx1[i]);
 	  abort();
 	}
 	return false;
@@ -2109,7 +2109,7 @@ bool ParabolicRampND::SolveMinTime(const Vector& amax,const Vector& vmax)
       }
       if(!ramps[i].SolveMinAccel(endTime,vmax[i])) {
 	if(gVerbose >= 1)
-	  PARABOLIC_RAMP_PERROR("Failed solving min accel for joint %d\n",i);
+	  PARABOLIC_RAMP_PERROR("Failed solving min accel for joint %d\n",(int)i);
 	if(gVerbose >= 2) {
 	  ramps[i].SolveMinTime(amax[i],vmax[i]);
 	  PARABOLIC_RAMP_PERROR("its min time is %g\n",ramps[i].ttotal);
@@ -2206,14 +2206,14 @@ bool ParabolicRampND::SolveMinAccelLinear(const Vector& vmax,Real time)
     if(vmax[i]==0) {
       if(!FuzzyEquals(x0[i],x1[i],CheckEpsilonX)) {
 	if(gVerbose >= 1) {
-	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, X0 != X1 (%g != %g)\n",i,vmax[i],x0[i],x1[i]);
+	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, X0 != X1 (%g != %g)\n",(int)i,vmax[i],x0[i],x1[i]);
 	  abort();
 	}
 	return false;
       }
       if(!FuzzyEquals(dx0[i],dx1[i],CheckEpsilonV)) {
 	if(gVerbose >= 1) {
-	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, DX0 != DX1 (%g != %g)\n",i,vmax[i],dx0[i],dx1[i]);
+	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, DX0 != DX1 (%g != %g)\n",(int)i,vmax[i],dx0[i],dx1[i]);
 	  abort();
 	}
 	return false;
@@ -2437,27 +2437,27 @@ bool ParabolicRampND::IsValid() const
   }
   for(size_t i=0;i<ramps.size();i++) {
     if(!ramps[i].IsValid()) {
-      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d is invalid\n",i);
+      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d is invalid\n",(int)i);
       return false;
     }
     if(!FuzzyEquals(ramps[i].ttotal,endTime,CheckEpsilonT)) {
-      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different end time %g != %g\n",i,ramps[i].ttotal,endTime);
+      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different end time %g != %g\n",(int)i,ramps[i].ttotal,endTime);
       return false;
     }
     if(!FuzzyEquals(ramps[i].x0,x0[i],CheckEpsilonX)) {
-      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different x0 %g != %g\n",i,ramps[i].x0,x0[i]);
+      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different x0 %g != %g\n",(int)i,ramps[i].x0,x0[i]);
       return false;
     }
     if(!FuzzyEquals(ramps[i].x1,x1[i],CheckEpsilonX)) {
-      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different x1 %g != %g\n",i,ramps[i].x1,x1[i]);
+      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different x1 %g != %g\n",(int)i,ramps[i].x1,x1[i]);
       return false;
     }
     if(!FuzzyEquals(ramps[i].dx0,dx0[i],CheckEpsilonV)) {
-      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different dx0 %g != %g\n",i,ramps[i].dx0,dx0[i]);
+      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different dx0 %g != %g\n",(int)i,ramps[i].dx0,dx0[i]);
       return false;
     }
     if(!FuzzyEquals(ramps[i].dx1,dx1[i],CheckEpsilonV)) {
-      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different dx1 %g != %g\n",i,ramps[i].dx1,dx1[i]);
+      if(gVerbose >= 1) PARABOLIC_RAMP_PERROR("ParabolicRampND::IsValid(): element %d has different dx1 %g != %g\n",(int)i,ramps[i].dx1,dx1[i]);
       return false;
     }
   }
@@ -2717,7 +2717,7 @@ bool SolveMinAccelBounded(Real x0,Real v0,Real x1,Real v1,Real endTime,Real vmax
 	if(gVerbose >= 1) 
 	  PARABOLIC_RAMP_PERROR("SolveMinAccelBounded: Warning, path exceeds bounds?\n");
 	if(gVerbose >= 2) 
-	  PARABOLIC_RAMP_PERROR("  ramp[%d] bounds %g %g, limits %g %g\n",i,bmin,bmax,xmin,xmax);
+	  PARABOLIC_RAMP_PERROR("  ramp[%d] bounds %g %g, limits %g %g\n",(int)i,bmin,bmax,xmin,xmax);
 	if(gErrorGetchar) DoGetchar();
 	return false;
       }
@@ -2786,14 +2786,14 @@ Real SolveMinTimeBounded(const Vector& x0,const Vector& v0,const Vector& x1,cons
     if(vmax[i]==0 || amax[i]==0) {
       if(!FuzzyEquals(x0[i],x1[i],CheckEpsilonX)) {
 	if(gVerbose >= 1) {
-	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, X0 != X1 (%g != %g)\n",i,vmax[i],amax[i],x0[i],x1[i]);
+	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, X0 != X1 (%g != %g)\n",(int)i,vmax[i],amax[i],x0[i],x1[i]);
 	  abort();
 	}
 	return -1;
       }
       if(!FuzzyEquals(v0[i],v1[i],CheckEpsilonV)) {
 	if(gVerbose >= 1) {
-	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, DX0 != DX1 (%g != %g)\n",i,vmax[i],amax[i],v0[i],v1[i]);
+	  PARABOLIC_RAMP_PERROR("index %d vmax = %g, amax = %g, DX0 != DX1 (%g != %g)\n",(int)i,vmax[i],amax[i],v0[i],v1[i]);
 	  abort();
 	}
 	return -1;
@@ -2804,14 +2804,14 @@ Real SolveMinTimeBounded(const Vector& x0,const Vector& v0,const Vector& x1,cons
     }
     if(!ramps[i][0].SolveMinTime(amax[i],vmax[i])) {
       if(gVerbose >= 1) 
-	PARABOLIC_RAMP_PERROR("Ramp index %d failed: vmax = %g, amax = %g, (%g,%g) -> (%g,%g)\n",i,vmax[i],amax[i],x0[i],v0[i],x1[i],v1[i]);
+	PARABOLIC_RAMP_PERROR("Ramp index %d failed: vmax = %g, amax = %g, (%g,%g) -> (%g,%g)\n",(int)i,vmax[i],amax[i],x0[i],v0[i],x1[i],v1[i]);
       return -1;
     }
     Real bmin,bmax;
     ramps[i][0].Bounds(bmin,bmax);
     if(bmin < xmin[i] || bmax > xmax[i]) {
       if(gVerbose >= 1) 
-	PARABOLIC_RAMP_PERROR("Ramp %d exceeds bounds: [%g,%g] not in [%g,%g]\n",i,bmin,bmax,xmin[i],xmax[i]);  
+	PARABOLIC_RAMP_PERROR("Ramp %d exceeds bounds: [%g,%g] not in [%g,%g]\n",(int)i,bmin,bmax,xmin[i],xmax[i]);  
       return -1;
     }
     if(ramps[i][0].ttotal > endTime) endTime = ramps[i][0].ttotal;
@@ -2856,7 +2856,7 @@ Real SolveMinTimeBounded(const Vector& x0,const Vector& v0,const Vector& x1,cons
       bmax = Min(bmax+EpsilonX,xmax[i]);
       if(!SolveMinAccelBounded(x0[i],v0[i],x1[i],v1[i],endTime,vmax[i],bmin,bmax,ramps[i])) {
 	if(gVerbose >= 1) 
-	  PARABOLIC_RAMP_PERROR("Failed solving bounded min accel for joint %d\n",i);
+	  PARABOLIC_RAMP_PERROR("Failed solving bounded min accel for joint %d\n",(int)i);
 	return -1;
       }
       //now check accel/velocity bounds

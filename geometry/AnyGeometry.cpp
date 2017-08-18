@@ -386,7 +386,7 @@ AABB3D AnyGeometry3D::GetAABB() const
     AsPointCloud().GetAABB(bb.bmin,bb.bmax);
     return bb;
   case ImplicitSurface:
-    AsImplicitSurface().bb;
+    return AsImplicitSurface().bb;
     break;
   case Group:
     {
@@ -706,7 +706,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp)
       vector<double> params = AsPrimitive().ClosestPointParameters(pt);
       cplocal = AsPrimitive().ParametersToPoint(params);
       Real d = cplocal.distance(ptlocal);
-      if(d <= margin) { cp == pt; return 0; }
+      if(d <= margin) { cp = pt; return 0; }
       //TODO shift toward cplocal by margin
       cp = GetTransform()*cplocal;
       return d;

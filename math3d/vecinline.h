@@ -285,7 +285,7 @@ inline void vec4_plane_project(vec4_t x, const vec4_t a, const vec4_t b)
 {
 	vec4_t n;
 	vec3_equal(n, b);
-	n[4] = Zero;
+	n[3] = Zero;
 	vec4_multiply(x, n, vec4_dot(a,b)/vec3_dot(b,b));
 	vec4_sub(x, a, x);
 }
