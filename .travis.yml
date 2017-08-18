@@ -11,11 +11,10 @@ addons:
   apt:
     packages:
     - cmake
-    - libboost-system-dev
-    - libboost-thread-dev
     - freeglut3
     - freeglut3-dev
     - libxmu-dev
     - libxi-dev
     - libglpk-dev
+    - log4cxx-dev
 
