@@ -14,9 +14,11 @@ CSet::CSet()
 :test()
 {}
 
-CSet::CSet(PREDICATE_FUNCTION_PTR f)
-:test(ptr_fun(f))
-{}
+#if __cplusplus > 199711L
+  CSet::CSet(PREDICATE_FUNCTION_PTR f)
+  :test(ptr_fun(f))
+  {}
+#endif //C++11
 
 CSet::CSet(CPredicate _test)
 :test(_test)
