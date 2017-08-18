@@ -4,6 +4,8 @@ language: cpp
 compiler:
   - clang
   - gcc
+# Ubuntu 14.04+ is required
+dist: trusty
 # Build steps
 script:
   - cmake . && make
