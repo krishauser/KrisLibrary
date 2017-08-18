@@ -28,7 +28,7 @@ namespace KrisLibrary{
 	       		rootLogger->addAppender(defaultAppender);
 	       		rootLogger->setLevel(log4cxx::Level::getInfo());
 	       		logName = "root";
-				printf("configured default\n");
+				printf("KrisLibrary::logger(): configured as default\n");
 				//log4cxx::BasicConfigurator::configure();
 			}
 
@@ -38,7 +38,7 @@ namespace KrisLibrary{
 	       	log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
 	       	rootLogger->addAppender(defaultAppender);
 	       	rootLogger->setLevel(log4cxx::Level::getInfo());
-			printf("configured default\n");
+			printf("KrisLibrary::logger(): configured as default\n");
 			logName = "root";
 			//log4cxx::BasicConfigurator::configure();
 		}
@@ -52,16 +52,16 @@ namespace KrisLibrary{
 		if(rootLoggerDefined){
 			//we have read the file or at least set a root logger previously
 			try{
-				printf("trying to find logger %s\n", s);
+				printf("KrisLibrary::logger(): trying to find logger %s\n", s);
 				myLogger = log4cxx::Logger::getLogger(s);
 				if(myLogger->getAllAppenders().empty()){
-					printf("Logger %s has no appenders. Returning root logger.\n", s);
+					printf("  Logger %s has no appenders. Returning root logger.\n", s);
 					return rootLogger;
 				}
 			}
 			catch(...){
 				//logger i
-				printf("Logger %s is not defined. Returning root logger.\n", s);
+				printf("  Logger %s is not defined. Returning root logger.\n", s);
 				return rootLogger;
 			}
 		}else{
@@ -76,7 +76,7 @@ namespace KrisLibrary{
 				    log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
 				    myLogger->addAppender(defaultAppender);
 				    myLogger->setLevel(log4cxx::Level::getInfo());
-					printf("configured default\n");
+					printf("KrisLibrary::logger(): configured as default\n");
 					//log4cxx::BasicConfigurator::configure();
 				}
 
@@ -85,7 +85,7 @@ namespace KrisLibrary{
 			catch(...){
 				//catches null logger errors
 				myLogger = log4cxx::Logger::getRootLogger();
-				printf("Hit error. Setting up default logger\n");
+				printf("KrisLibrary::logger(): Hit error. Setting up default logger\n");
 				log4cxx::LayoutPtr defaultLayout   = new log4cxx::PatternLayout("%m %n");
 	       		log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
 	       		rootLogger->addAppender(defaultAppender);
