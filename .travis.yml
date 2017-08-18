@@ -18,5 +18,5 @@ addons:
     - libxmu-dev
     - libxi-dev
     - libglpk-dev
-    - liblog4cxx-dev
+    - liblog4cxx10-dev
 
