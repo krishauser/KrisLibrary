@@ -10,15 +10,13 @@
 #include <sstream>
 using namespace std;
 
-#if HAVE_BOOST
 CSet::CSet()
 :test()
 {}
-#else
-CSet::CSet()
-:test(NULL)
+
+CSet::CSet(PREDICATE_FUNCTION_PTR f)
+:test(ptr_fun(f))
 {}
-#endif //HAVE_BOOST
 
 CSet::CSet(CPredicate _test)
 :test(_test)
@@ -26,7 +24,6 @@ CSet::CSet(CPredicate _test)
 
 bool CSet::Contains(const Config& x)
 {
-  if(!test) return true;
   return test(x);
 }
 
