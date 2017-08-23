@@ -2,9 +2,7 @@
 #define PLANNING_CSET_H
 
 #include <KrisLibrary/math/vector.h>
-#if HAVE_BOOST
-#include <boost/function.hpp>
-#endif
+#include <functional>
 
 namespace Optimization {
   class NonlinearProgram;
@@ -15,18 +13,25 @@ typedef Vector Config;
 /** @ingroup MotionPlanning
  * @brief A subset of a CSpace, which establishes a constraint for a configuration
  * to be feasible. 
+ *
+ * You can either create a subclass of CSet for greatest functionality, or construct a
+ * CSet with a function pointer that returns whether a Config is in or out.
  */
 class CSet
 {
 public:
-  #if HAVE_BOOST
-  typedef boost::function1<bool,const Config&> CPredicate;
+  #if __cplusplus > 199711L
+  typedef std::function<bool(const Config&)> CPredicate;
+  typedef bool (*PREDICATE_FUNCTION_PTR) (const Config&);
   #else
   typedef bool (*CPredicate) (const Config&);
-  #endif //HAVE_BOOST
+  #endif //C++11
 
   CSet();
   CSet(CPredicate f);
+  #if __cplusplus > 199711L
+    CSet(PREDICATE_FUNCTION_PTR f);
+  #endif
   virtual ~CSet () {}
   ///Returns the number of dimensions this accepts (-1) for all dimensions
   virtual int NumDimensions() const { return -1; }

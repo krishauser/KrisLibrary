@@ -144,7 +144,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);
-  Real Distance(AnyCollisionGeometry3D& geom,int& elem1,int& elem2);
+  Real Distance(AnyCollisionGeometry3D& geom,int& elem1,int& elem2,Real upperBound=Inf);
   bool WithinDistance(AnyCollisionGeometry3D& geom,Real d);
   bool WithinDistance(AnyCollisionGeometry3D& geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   bool RayCast(const Ray3D& r,Real* distance=NULL,int* element=NULL);

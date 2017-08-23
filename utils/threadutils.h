@@ -26,6 +26,7 @@
 
 #if USE_CPP_THREADS
 #include <thread>
+#include <condition_variable>
 #include <mutex>
 #include <iostream>
 typedef std::thread Thread;

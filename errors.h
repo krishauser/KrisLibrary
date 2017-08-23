@@ -45,8 +45,9 @@ inline void RaiseErrorFmt(const char* func, const char* file, int line, const ch
     LOG4CXX_ERROR(KrisLibrary::logger(),"Error in "<< func<<" ("<<file<<":"<<line); 
   va_list args;
 	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-    LOG4CXX_ERROR(KrisLibrary::logger(),"\n");
+  char buf[1024];
+	vsnprintf(buf, 1024, fmt, args);
+    LOG4CXX_ERROR(KrisLibrary::logger(),buf);
   Abort();
 }
 
@@ -55,8 +56,9 @@ inline void RaiseErrorFmt(const char* fmt,...)
     LOG4CXX_ERROR(KrisLibrary::logger(),"Error (unknown function): ");
   va_list args;
 	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-    LOG4CXX_ERROR(KrisLibrary::logger(),"\n");
+	char buf[1024];
+  vsnprintf(buf, 1024, fmt, args);
+    LOG4CXX_ERROR(KrisLibrary::logger(),buf);
   Abort();
 }
 

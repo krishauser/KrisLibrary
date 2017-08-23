@@ -298,7 +298,7 @@ void Eigenvalues(const Matrix2& A,Complex& lambda1,Complex& lambda2)
   Real trace=A.trace();
   Real det=A.determinant();
   Complex temp2 = Sqr(trace) - 4.0*det;
-  Complex temp = Sqrt(temp);
+  Complex temp = Sqrt(temp2);
   lambda1 = 0.5*(Complex(trace) + temp);
   lambda2 = 0.5*(Complex(trace) - temp);
 }
