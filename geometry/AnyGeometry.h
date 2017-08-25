@@ -132,6 +132,9 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///initialized, this performs the potentially slower AnyGeometry3D::GetAABB
   ///call.
   Box3D GetBB() const;
+  ///Returns a tight bounding box around the data.  Slower than GetAABB 
+  ///but tighter.
+  AABB3D GetAABBTight() const; 
   ///Gets the active transform
   RigidTransform GetTransform() const;
   ///Sets the *active* transform without modifying the underlying geometry. 

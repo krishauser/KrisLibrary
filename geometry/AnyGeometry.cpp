@@ -534,6 +534,52 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   assert(!collisionData.empty());
 }
 
+AABB3D AnyCollisionGeometry3D::GetAABBTight() const
+{
+  switch(type) {
+  case Primitive:
+  case ImplicitSurface:
+    return GetAABB();
+    break;
+  case TriangleMesh:
+    {
+      const CollisionMesh& m = TriangleMeshCollisionData();
+      AABB3D bb;
+      bb.minimize();
+      for(size_t i=0;i<m.verts.size();i++)
+        bb.expand(m.currentTransform*m.verts[i]);
+      return bb;
+    }
+    break;
+  case PointCloud:
+    {
+      const CollisionPointCloud& pc = PointCloudCollisionData();
+      AABB3D bb;
+      bb.minimize();
+      for(size_t i=0;i<pc.points.size();i++)
+        bb.expand(pc.currentTransform*pc.points[i]);
+      return bb;
+    }
+    break;
+  case Group:
+    {
+      const vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
+      AABB3D bb;
+      bb.minimize();
+      for(size_t i=0;i<items.size();i++)
+  bb.setUnion(items[i].GetAABBTight());
+      if(margin != 0) {
+  bb.bmin -= Vector3(margin);
+  bb.bmax += Vector3(margin);
+      }
+      return bb;
+    }
+  }
+  AssertNotReached();
+  AABB3D bb;
+  return bb;
+}
+
 AABB3D AnyCollisionGeometry3D::GetAABB() const
 {
   if(collisionData.empty()) {
