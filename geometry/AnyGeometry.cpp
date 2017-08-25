@@ -299,8 +299,15 @@ bool AnyGeometry3D::Load(istream& in)
     in >> this->AsImplicitSurface();
   }
   else if(typestr == "Group") {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): TODO: groups\n");
-    return false;
+    int n;
+    in >> n;
+    if (!in || n < 0) return false;
+    vector<AnyGeometry3D> grp(n);
+    for(size_t i=0;i<grp.size();i++)
+      if(!grp[i].Load(in)) return false;
+    type = Group;
+    data = grp;
+    return true;
   }
   else {
         LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr.c_str());
@@ -326,8 +333,13 @@ bool AnyGeometry3D::Save(ostream& out) const
     out<<this->AsImplicitSurface()<<endl;
     break;
   case Group:
-        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Save(): TODO: groups\n");
-    return false;
+    {
+      const vector<AnyGeometry3D>& grp = this->AsGroup();
+      out<<grp.size()<<endl;
+      for(size_t i=0;i<grp.size();i++)
+        if(!grp[i].Save(out)) return false;
+      return true;
+    }
   }
   return true;
 }
