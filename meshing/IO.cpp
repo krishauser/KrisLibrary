@@ -20,8 +20,40 @@
 #include <assimp/aiPostProcess.h>     // Post processing flags
 #else
 #include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/Exporter.hpp>      // C++ importer interface
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
+
+///HACK BECAUSE ASSIMP DOESNT PROVIDE FUNCTIONALITY TO DELETE SCENES
+aiScene::aiScene()
+{
+    mFlags = 0;
+    mRootNode = NULL;
+    mNumMeshes = 0;
+    mMeshes = NULL;
+    mNumMaterials = 0;
+    mMaterials = NULL;
+    mNumAnimations = 0;
+    mAnimations = NULL;
+    mNumTextures = 0;
+    mTextures = NULL;
+    mNumLights = 0;
+    mLights = NULL;
+    mNumCameras = 0;
+    mCameras = NULL;
+    mPrivate = NULL;
+}
+aiScene::~aiScene() {
+  //NOTE: THIS MAY LEAK MEMORY
+  SafeDelete(mRootNode);
+  SafeArrayDelete(mMeshes);
+  SafeArrayDelete(mMaterials);
+  SafeArrayDelete(mAnimations);
+  SafeArrayDelete(mTextures);
+  SafeArrayDelete(mLights);
+  SafeArrayDelete(mCameras);
+}
+
 #endif //ASSIMP_MAJOR_VERSION
 using namespace Assimp;
 #endif //HAVE_ASSIMP
@@ -33,7 +65,6 @@ using namespace GLDraw;
 namespace Meshing {
 
 static string gTexturePath;
-bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app);
 
 ///Returns true if the extension is a file type that we can load from
 bool CanLoadTriMeshExt(const char* ext)
@@ -55,9 +86,15 @@ bool CanSaveTriMeshExt(const char* ext)
 {
   if(0==strcmp(ext,"tri")) return true;
   else if(0==strcmp(ext,"off")) return true;
+  else if(0==strcmp(ext,"obj")) return true;
   else {
 #if HAVE_ASSIMP
-    //TODO: check exporter
+    Assimp::Exporter exporter;
+    for(size_t i=0;i<exporter.GetExportFormatCount();i++) {
+      if(0 == strcmp(ext,exporter.GetExportFormatDescription(i)->fileExtension))
+        return true;
+    }
+    return false;
 #endif
   }
   return false;
@@ -109,8 +146,8 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
   }
   else {
     if(0==strcmp(ext,"obj")) {
-      FILE* f = fopen(fn,"r");
-      if(f && LoadOBJ(fn,f,tri,app)) return true;
+      if(LoadOBJ(fn,tri,app)) 
+        return true;
     }
     else if(0==strcmp(ext,"off")) {
       ifstream in(fn,ios::in);
@@ -157,12 +194,15 @@ bool Export(const char* fn,const TriMesh& tri)
     return true;
   }
   else if(0==strcmp(ext,"off")) {
-      ofstream out(fn,ios::out);
-      if(!out) return false;
-      return SaveOFF(out,tri);
-    }
+    ofstream out(fn,ios::out);
+    if(!out) return false;
+    return SaveOFF(out,tri);
+  }
+  else if(0==strcmp(ext,"obj")) {
+    return SaveOBJ(fn,tri);
+  }
   else {
-#if HAVE_ASSIMP && 0
+#if HAVE_ASSIMP 
     //right now SaveAssimp is not working yet...
     if(!SaveAssimp(fn,tri)) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
@@ -502,6 +542,39 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
   return true;
 }
 
+bool LoadOBJ(const char* fn,TriMesh& tri)
+{
+  GeometryAppearance app;
+  return LoadOBJ(fn,tri,app);
+}
+
+bool LoadOBJ(const char* fn,TriMesh& tri,GeometryAppearance& app)
+{
+  FILE* f=fopen(fn,"r");
+  if(!f) return false;
+  bool res = LoadOBJ(fn,f,tri,app);
+  fclose(f);
+  return res;
+}
+
+bool SaveOBJ(const char* fn,const TriMesh& tri)
+{
+  FILE* f=fopen(fn,"w");
+  if(!f) return false;
+  fprintf(f,"#Written by KrisLibrary TriMesh exporter. %d vertices and %d faces\n",(int)tri.verts.size(),(int)tri.tris.size());
+  for(size_t i=0;i<tri.verts.size();i++) 
+    fprintf(f,"v %f %f %f\n",tri.verts[i].x,tri.verts[i].y,tri.verts[i].z);
+  for(size_t i=0;i<tri.tris.size();i++) 
+    fprintf(f,"f %d %d %d\n",tri.tris[i].a+1,tri.tris[i].b+1,tri.tris[i].c+1);
+  fclose(f);
+  return true;
+}
+
+bool SaveOBJ(const char* fn,const TriMesh& tri,const GeometryAppearance& app)
+{
+  ///TODO: save vertex colors
+  return SaveOBJ(fn,tri);
+}
 
 
 #if HAVE_ASSIMP
@@ -512,7 +585,7 @@ bool LoadAssimp(const char* fn, TriMesh& mesh)
 	vector<TriMesh> models;
 	if(!LoadAssimp(fn,models)) return false;
 	mesh.Merge(models);
-	LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris");
 	return true;
 }
 
@@ -576,7 +649,7 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
 	    numTris += models[i].tris.size();
 	  }
 	}
-	LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris");
 	return true;
 }
 
@@ -638,12 +711,12 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
 
 bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,const Matrix4& Tparent,vector<TriMesh>& models,vector<GeometryAppearance>& apps)
 {
-  //LOG4CXX_INFO(KrisLibrary::logger(),node->mName.C_Str()<<" transform: "<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),node->mName.C_Str()<<" transform: ");
   Matrix4 T;
   Cast(node->mTransformation,T);
-  //LOG4CXX_INFO(KrisLibrary::logger(),T<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),T);
   T = Tparent * T;
-  //LOG4CXX_INFO(KrisLibrary::logger(),"final: "<<T<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"final: "<<T);
   //if(node->mNumMeshes != 0)
   //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 
@@ -669,9 +742,9 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
 	  T.mulPoint(Vector3((double)vert.x, (double)vert.y, (double)vert.z),models.back().verts[j]);
 	}
 	if(!models.back().IsValid()) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles."<<"\n");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results."<<"\n");
-	  //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue."<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
+	  //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
 	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	}
 	
@@ -725,27 +798,70 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
 
 bool SaveAssimp(const char* fn, const TriMesh& model)
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Assimp saving not defined yet"<<"\n");
-  return false;
+  aiScene scene;
+
+  scene.mRootNode = new aiNode();
+
+  scene.mMaterials = new aiMaterial*[ 1 ];
+  scene.mNumMaterials = 1;
+  scene.mMaterials[ 0 ] = new aiMaterial();
+
+  scene.mMeshes = new aiMesh*[ 1 ];
+  scene.mMeshes[ 0 ] = nullptr;
+  scene.mNumMeshes = 1;
+
+  scene.mMeshes[ 0 ] = new aiMesh();
+  scene.mMeshes[ 0 ]->mMaterialIndex = 0;
+
+  scene.mRootNode->mMeshes = new unsigned int[ 1 ];
+  scene.mRootNode->mMeshes[ 0 ] = 0;
+  scene.mRootNode->mNumMeshes = 1;
+
+  auto pMesh = scene.mMeshes[ 0 ];
+
+  pMesh->mVertices = new aiVector3D[ model.verts.size() ];
+  pMesh->mNumVertices = model.verts.size();
+
+  for ( size_t i=0;i<model.verts.size();i++) 
+    pMesh->mVertices[ i ] = aiVector3D( model.verts[i].x, model.verts[i].y, model.verts[i].z );
+
+  pMesh->mFaces = new aiFace[ model.tris.size() ];
+  pMesh->mNumFaces = model.tris.size();
+
+  for(size_t i=0;i<model.tris.size();i++) {
+    aiFace& face = pMesh->mFaces[i];
+    face.mIndices = new unsigned int[ 3 ];
+    face.mNumIndices = 3;
+
+    face.mIndices[ 0 ] = model.tris[i][ 0 ];
+    face.mIndices[ 1 ] = model.tris[i][ 1 ];
+    face.mIndices[ 2 ] = model.tris[i][ 2 ];
+  }
+
+  Assimp::Exporter exporter;
+  auto res = exporter.Export(&scene,FileExtension(fn),fn);
+  if(res != AI_SUCCESS)
+    LOG4CXX_WARN(KrisLibrary::logger(),"Assimp Exporter failed!");
+  return (res == AI_SUCCESS);
 }
 
 #else
 
 bool LoadAssimp(const char* fn, TriMesh& mesh)
 {
-	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!");
 	return false;
 }
 
 bool LoadAssimp(const char* fn, vector<TriMesh>& meshes)
 {
-	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!");
 	return false;
 }
 
 bool SaveAssimp(const char* fn, const TriMesh& mesh)
 {
-	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Exporter defined!"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Exporter defined!");
 	return false;
 }
 
