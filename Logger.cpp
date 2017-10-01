@@ -84,15 +84,15 @@ namespace KrisLibrary{
 			}
 			catch(...){
 				//catches null logger errors
-				myLogger = log4cxx::Logger::getRootLogger();
+				myLogger = rootLogger = log4cxx::Logger::getRootLogger();
 				printf("KrisLibrary::logger(): Hit error. Setting up default logger\n");
 				log4cxx::LayoutPtr defaultLayout   = new log4cxx::PatternLayout("%m %n");
 	       		log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
 	       		rootLogger->addAppender(defaultAppender);
 	       		rootLogger->setLevel(log4cxx::Level::getInfo());  // Log level set to INFO
 				//log4cxx::BasicConfigurator::configure();
+				rootLoggerDefined = true;
 			}
-			rootLoggerDefined = true;
 			return myLogger;
 		}
 	
