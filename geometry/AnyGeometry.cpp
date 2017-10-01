@@ -168,12 +168,12 @@ size_t AnyGeometry3D::NumElements() const
 
 bool AnyGeometry3D::CanLoadExt(const char* ext)
 {
-  return Meshing::CanLoadTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol") || 0==strcmp(ext,"geom");
+  return Meshing::CanLoadTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol") || 0==strcmp(ext,"geom") || 0==strcmp(ext,"group");
 }
 
 bool AnyGeometry3D::CanSaveExt(const char* ext)
 {
-  return Meshing::CanSaveTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol") || 0==strcmp(ext,"geom");
+  return Meshing::CanSaveTriMeshExt(ext) || 0==strcmp(ext,"pcd") || 0==strcmp(ext,"vol") || 0==strcmp(ext,"geom") || 0==strcmp(ext,"group");
 }
 
 bool AnyGeometry3D::Load(const char* fn)
@@ -238,10 +238,16 @@ bool AnyGeometry3D::Save(const char* fn) const
     if(Meshing::CanSaveTriMeshExt(ext)) {
       return Meshing::Export(fn,this->AsTriangleMesh());
     }
+    else {
+      LOG4CXX_WARN(KrisLibrary::logger(),"AnyGeometry3D::Save: Unknown mesh file extension "<<fn);
+    }
     break;
   case PointCloud:
     if(0==strcmp(ext,"pcd")) {
       return this->AsPointCloud().SavePCL(fn);
+    }
+    else {
+      LOG4CXX_WARN(KrisLibrary::logger(),"AnyGeometry3D::Save: Unknown point cloud file extension "<<fn);
     }
     break;
   case ImplicitSurface:
