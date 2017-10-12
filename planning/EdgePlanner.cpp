@@ -71,10 +71,12 @@ EdgePlanner* PiggybackEdgePlanner::ReverseCopy() const
 }
 
 
-void PiggybackEdgePlanner::Eval(Real u,Config& x)
+void PiggybackEdgePlanner::Eval(Real u,Config& x) const
 {
-  if(path) EdgeChecker::Eval(u,x);
-  else e->Eval(u,x);
+  if(path) 
+    EdgeChecker::Eval(u,x);
+  else 
+    e->Eval(u,x);
 }
 
 Real PiggybackEdgePlanner::Length() const
