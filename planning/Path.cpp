@@ -124,6 +124,7 @@ int MilestonePath::Reduce(int numIters)
       else {
 	delete e_ax1;
 	delete e_x2b;
+  delete e_x1x2;
       }
     }
     else {
