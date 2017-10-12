@@ -78,7 +78,7 @@ public:
   virtual bool Done() const { return e->Done(); }
   virtual bool Failed() const { return e->Failed(); }
 
-  virtual void Eval(Real u,Config& x);
+  virtual void Eval(Real u,Config& x) const;
   virtual Real Length() const;
   virtual const Config& Start() const;
   virtual const Config& End() const;
