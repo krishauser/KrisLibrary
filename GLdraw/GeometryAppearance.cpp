@@ -373,6 +373,9 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 	}
       }
     }
+    drawFaces = false;
+    drawVertices = true;
+    implicitSurfaceMesh = NULL;
     if(pc.IsStructured()) {
       //draw mesh rather than points
       drawFaces = true;
