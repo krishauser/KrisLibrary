@@ -99,6 +99,11 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Rea
 			Real z12 = p12.z;
 			Real z21 = p21.z;
 			Real z22 = p22.z;
+			//sometimes NANs are used
+			if(!IsFinite(z11)) z11=0;
+			if(!IsFinite(z12)) z12=0;
+			if(!IsFinite(z21)) z21=0;
+			if(!IsFinite(z22)) z22=0;
 			bool d1x = (Abs(z11 - z12) > depthDiscontinuity*Abs(z11+z12)) || (z11 == 0 || z12 == 0);
 			bool d1y = (Abs(z11 - z21) > depthDiscontinuity*Abs(z11+z21)) || (z11 == 0 || z21 == 0);
 			bool d2x = (Abs(z22 - z21) > depthDiscontinuity*Abs(z22+z21)) || (z22 == 0 || z21 == 0);
