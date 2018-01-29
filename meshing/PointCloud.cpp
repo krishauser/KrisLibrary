@@ -659,10 +659,12 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
     //convert real to hex to GLcolor
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
-      int col = (int)rgb[i];
+      unsigned int col = (unsigned int)rgb[i];
       Real r=((col&0xff0000)>>16) / 255.0;
       Real g=((col&0xff00)>>8) / 255.0;
       Real b=(col&0xff) / 255.0;
+      int w=GetStructuredWidth();
+      int h=GetStructuredHeight();
       out[i].set(r,g,b,1.0);
     }
     return true;
@@ -672,7 +674,7 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
     //following PCD, this is actuall A-RGB
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
-      int col = (int)rgb[i];
+      unsigned int col = (unsigned int)rgb[i];
       Real r = ((col&0xff0000)>>16) / 255.0;
       Real g = ((col&0xff00)>>8) / 255.0;
       Real b = (col&0xff) / 255.0;
