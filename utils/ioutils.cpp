@@ -127,6 +127,7 @@ void OutputQuotedString(std::ostream& out, const char* str)
     while(*c) {
       if(*c == '\"') out<<"\\\"";
       else out<<*c;
+      c++;
     }
     out<<'\"';
   }
