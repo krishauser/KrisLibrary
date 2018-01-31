@@ -22,7 +22,7 @@ IF(MSVC)
 	SET (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} /MT")
 ENDIF()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Set full rpath http://www.paraview.org/Wiki/CMake_RPATH_handling
 # (good to have and required with ROS)
