@@ -14,7 +14,7 @@ CSet::CSet()
 :test()
 {}
 
-#if __cplusplus > 199711L
+#if __cplusplus > 199711L  || _MSC_VER >= 1900
   CSet::CSet(PREDICATE_FUNCTION_PTR f)
   :test(ptr_fun(f))
   {}

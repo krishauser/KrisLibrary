@@ -20,7 +20,7 @@ typedef Vector Config;
 class CSet
 {
 public:
-  #if __cplusplus > 199711L
+  #if __cplusplus > 199711L || _MSC_VER >= 1900
   typedef std::function<bool(const Config&)> CPredicate;
   typedef bool (*PREDICATE_FUNCTION_PTR) (const Config&);
   #else
@@ -29,7 +29,7 @@ public:
 
   CSet();
   CSet(CPredicate f);
-  #if __cplusplus > 199711L
+  #if __cplusplus > 199711L || _MSC_VER >= 1900
     CSet(PREDICATE_FUNCTION_PTR f);
   #endif
   virtual ~CSet () {}
