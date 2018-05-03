@@ -531,10 +531,12 @@ void GeometryAppearance::DrawGL()
       const Meshing::TriMesh* trimesh = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface) 
 	trimesh = implicitSurfaceMesh;
-      if(geom->type == AnyGeometry3D::PointCloud) 
+      else if(geom->type == AnyGeometry3D::PointCloud) 
   trimesh = implicitSurfaceMesh;
-      if(geom->type == AnyGeometry3D::TriangleMesh) 
+      else if(geom->type == AnyGeometry3D::TriangleMesh) 
 	trimesh = &geom->AsTriangleMesh();
+      else if(geom->type == AnyGeometry3D::Primitive) 
+  draw(geom->AsPrimitive());
 
       //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling face display list "<<trimesh->tris.size());
 
