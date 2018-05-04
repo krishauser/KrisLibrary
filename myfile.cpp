@@ -189,7 +189,7 @@ void File::Close()
 {
     if(srctype == MODE_MYFILE && impl->file != INVALID_FILE_POINTER) FileClose(impl->file);
 	if(srctype == MODE_MYDATA && impl->datafile != NULL) free(impl->datafile);
-	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && impl->file > 0) SocketClose(impl->socket);
+	if((srctype == MODE_TCPSOCKET || srctype==MODE_UDPSOCKET) && impl->file != NULL) SocketClose(impl->socket);
 
 	srctype = MODE_NONE;
 	mode = 0;
