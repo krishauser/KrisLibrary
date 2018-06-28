@@ -59,6 +59,8 @@ struct Triangle3D
   void getAABB(AABB3D&) const;
   bool intersects(const AABB3D&) const;
 
+  Real distance(const Triangle3D& other,Vector3& P,Vector3& Q) const;
+
   bool Read(File& f);
   bool Write(File& f) const;
 
