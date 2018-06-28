@@ -73,10 +73,12 @@ class AnyGeometry3D
   bool Save(TiXmlElement* out) const;
   bool Empty() const;
   size_t NumElements() const;
+  GeometricPrimitive3D GetElement(int elem) const;
   AABB3D GetAABB() const;
   void Transform(const RigidTransform& T);
   void Transform(const Matrix4& mat);
   void Merge(const vector<AnyGeometry3D>& geoms);
+  bool Convert(Type restype,AnyGeometry3D& res,double param=0) const;
 
   Type type;
   ///The data, according to the type
@@ -120,6 +122,9 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   CollisionPointCloud& PointCloudCollisionData();
   RigidTransform& ImplicitSurfaceCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
+  ///Performs a type conversion, also copying the active transform.  May be a bit faster than
+  ///AnyGeometry3D.Convert for some conversions (TriangleMesh->VolumeGrid, specifically)
+  bool Convert(Type restype,AnyCollisionGeometry3D& res,double param=0);
   ///Returns an axis-aligned bounding box in the world coordinate frame
   ///containing the transformed geometry.  Note: if collision data is
   ///initialized, this returns a bound around the transformed bounding

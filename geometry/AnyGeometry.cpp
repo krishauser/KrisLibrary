@@ -1,6 +1,7 @@
 #include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "AnyGeometry.h"
+#include "Conversions.h"
 #include <math3d/geometry3d.h>
 #include <meshing/VolumeGrid.h>
 #include <meshing/Voxelize.h>
@@ -44,7 +45,7 @@ AnyGeometry3D::AnyGeometry3D(const vector<AnyGeometry3D>& group)
 {}
 
 AnyGeometry3D::AnyGeometry3D(const AnyGeometry3D& geom)
-  :type(geom.type),data(geom.data)
+  :type(geom.type),data(geom.data),appearanceData(geom.appearanceData)
 {}
 
 const GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() const { return *AnyCast_Raw<GeometricPrimitive3D>(&data); }
@@ -145,6 +146,159 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D>& geoms)
   }
 }
 
+bool AnyGeometry3D::Convert(Type restype,AnyGeometry3D& res,double param) const
+{
+  if(type == restype) {
+    res.type = type;
+    res.data = data;
+    res.appearanceData = appearanceData;
+    return true;
+  }
+  if(restype == Group) return false;
+  Assert(param >= 0);
+  switch(type) {
+    case Primitive:
+      switch(restype) {
+        case TriangleMesh:
+        {
+          if(param == 0) param = 16;
+          else {
+            AABB3D bb = GetAABB();
+            Real w = (bb.bmax-bb.bmin).maxAbsElement();
+            param = int(w/param);
+          }
+          Meshing::TriMesh mesh;
+          PrimitiveToMesh(AsPrimitive(),mesh,int(param));
+          res = AnyGeometry3D(mesh);
+          return true;
+        }
+        case PointCloud:
+        {
+          AnyGeometry3D mesh;
+          Convert(TriangleMesh,mesh,param);
+          Meshing::PointCloud3D pc;
+          MeshToPointCloud(mesh.AsTriangleMesh(),pc);
+          res = AnyGeometry3D(pc);
+          return true;
+        }
+        case ImplicitSurface:
+        {
+          if(param == 0) {
+            AABB3D bb = GetAABB();
+            Real w = (bb.bmax-bb.bmin).maxAbsElement();
+            param = w * 0.05;
+          }
+          Meshing::VolumeGrid grid;
+          PrimitiveToImplicitSurface(AsPrimitive(),grid,param);
+          res = AnyGeometry3D(grid);
+          return true;
+        }
+        default:
+          break;
+      }
+      break;
+    case PointCloud:
+      switch(restype) {
+        case TriangleMesh:
+        {
+          if(!AsPointCloud().IsStructured()) return false;
+          if(param == 0) param = Inf;
+          Meshing::TriMesh mesh;
+          PointCloudToMesh(AsPointCloud(),mesh,param);
+          res = AnyGeometry3D(mesh);
+          return true;
+        }
+        case ImplicitSurface:
+        {
+          return false;
+        }
+        default:
+          break;
+      }
+    case TriangleMesh:
+      switch(restype) {
+        case PointCloud:
+        {
+          if(param == 0) param = Inf;
+          Meshing::PointCloud3D pc;
+          MeshToPointCloud(AsTriangleMesh(),pc,param);
+          res = AnyGeometry3D(pc);
+          return true;
+        }
+        case ImplicitSurface:
+        {
+          if(param == 0) {
+            const Meshing::TriMesh& mesh = AsTriangleMesh();
+            if(mesh.tris.empty()) return false;
+            Real sumlengths = 0;
+            for(size_t i=0;i<mesh.tris.size();i++) {
+              sumlengths += mesh.verts[mesh.tris[i].a].distance(mesh.verts[mesh.tris[i].b]);
+              sumlengths += mesh.verts[mesh.tris[i].b].distance(mesh.verts[mesh.tris[i].c]);
+              sumlengths += mesh.verts[mesh.tris[i].c].distance(mesh.verts[mesh.tris[i].a]);
+            }
+            Real avglength = sumlengths / (3*mesh.tris.size());
+            param = avglength/2;
+            Vector3 bmin,bmax;
+            mesh.GetAABB(bmin,bmax);
+            param = Min(param,0.25*(bmax.x - bmin.x));
+            param = Min(param,0.25*(bmax.y - bmin.y));
+            param = Min(param,0.25*(bmax.z - bmin.z));
+            cout<<"Auto-determined grid resolution "<<param<<endl;
+          }
+          Meshing::VolumeGrid grid;
+          CollisionMesh mesh(AsTriangleMesh());
+          mesh.CalcTriNeighbors();
+          MeshToImplicitSurface_FMM(mesh,grid,param);
+          cout<<"FMM grid bounding box "<<grid.bb<<endl;
+          res = AnyGeometry3D(grid);
+          return true;
+        }
+        default:
+          break;
+      }
+      break;
+    case ImplicitSurface:
+      switch(restype) {
+        case PointCloud:
+        {
+          AnyGeometry3D mesh;
+          Convert(TriangleMesh,mesh,param);
+          Meshing::PointCloud3D pc;
+          MeshToPointCloud(mesh.AsTriangleMesh(),pc);
+          res = AnyGeometry3D(pc);
+          return true;
+        }
+        case TriangleMesh:
+        {
+          //TODO: use offset properly
+          const Meshing::VolumeGrid& grid = AsImplicitSurface();
+          //if(param != 0) grid.Add(param);
+          Meshing::TriMesh mesh;
+          ImplicitSurfaceToMesh(grid,mesh);
+          //if(param != 0) grid.Add(-param);
+          res = AnyGeometry3D(mesh);
+          return true;
+        }
+        default:
+          break;
+      }
+      break;
+    case Group:
+      {
+        const vector<AnyGeometry3D>& items = AsGroup();
+        vector<AnyGeometry3D> converted(items.size());
+        for(size_t i=0;i<items.size();i++) 
+          items[i].Convert(restype,converted[i],param);
+        res.Merge(items);
+        return true;
+      }
+      break;
+    default:
+      break;
+  }
+  return false;
+}
+
 size_t AnyGeometry3D::NumElements() const
 {
   switch(type) {
@@ -164,6 +318,44 @@ size_t AnyGeometry3D::NumElements() const
     return AsGroup().size();
   }
   return 0;
+}
+
+GeometricPrimitive3D AnyGeometry3D::GetElement(int elem) const
+{
+  if(elem < 0 || elem >= (int)NumElements()) FatalError("Invalid element index specified");
+  if(type == TriangleMesh) {
+    Math3D::Triangle3D tri;
+    AsTriangleMesh().GetTriangle(elem,tri);
+    return GeometricPrimitive3D(tri);
+  }
+  else if(type == PointCloud) {
+    return GeometricPrimitive3D(AsPointCloud().points[elem]);
+  }
+  else if(type == Primitive) {
+    return AsPrimitive();
+  }
+  else if(type == ImplicitSurface) {
+    const Meshing::VolumeGrid& grid = AsImplicitSurface();
+    IntTriple size = grid.value.size();
+    //elem = cell.a*size.b*size.c + cell.b*size.c + cell.c;
+    IntTriple cell;
+    cell.a = elem/(size.b*size.c);
+    cell.b = (elem/size.c)%size.b;
+    cell.c = elem%size.c;
+    AABB3D bb;
+    grid.GetCell(cell,bb);
+    return GeometricPrimitive3D(bb);
+  }
+  else if(type == Group) {
+    const vector<AnyGeometry3D>& items = AsGroup();
+    if(items[elem].type != Primitive)
+      FatalError("Can't retrieve single element of Group geometry as a GeometricPrimitive3D");
+    return items[elem].AsPrimitive();
+  }
+  else {
+    FatalError("Invalid type?");
+    return GeometricPrimitive3D();
+  }
 }
 
 bool AnyGeometry3D::CanLoadExt(const char* ext)
@@ -552,6 +744,48 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   assert(!collisionData.empty());
 }
 
+bool AnyCollisionGeometry3D::Convert(Type restype,AnyCollisionGeometry3D& res,double param)
+{
+  if(type == TriangleMesh && restype == ImplicitSurface) {
+    Assert(CollisionDataInitialized());
+    Assert(!TriangleMeshCollisionData().triNeighbors.empty());
+    if(param == 0) {
+      const Meshing::TriMesh& mesh = AsTriangleMesh();
+      if(mesh.tris.empty()) return false;
+      Real sumlengths = 0;
+      for(size_t i=0;i<mesh.tris.size();i++) {
+        sumlengths += mesh.verts[mesh.tris[i].a].distance(mesh.verts[mesh.tris[i].b]);
+        sumlengths += mesh.verts[mesh.tris[i].b].distance(mesh.verts[mesh.tris[i].c]);
+        sumlengths += mesh.verts[mesh.tris[i].c].distance(mesh.verts[mesh.tris[i].a]);
+      }
+      Real avglength = sumlengths / (3*mesh.tris.size());
+      param = avglength/2;
+      Vector3 bmin,bmax;
+      mesh.GetAABB(bmin,bmax);
+      param = Min(param,0.25*(bmax.x - bmin.x));
+      param = Min(param,0.25*(bmax.y - bmin.y));
+      param = Min(param,0.25*(bmax.z - bmin.z));
+      cout<<"Auto-determined grid resolution "<<param<<endl;
+    }
+    Meshing::VolumeGrid grid;
+    RigidTransform Torig,Tident; 
+    Tident.setIdentity();
+    CollisionMesh& mesh = TriangleMeshCollisionData();
+    mesh.GetTransform(Torig);
+    mesh.UpdateTransform(Tident);
+    MeshToImplicitSurface_FMM(mesh,grid,param);
+    //MeshToImplicitSurface_SpaceCarving(TriangleMeshCollisionData(),grid,param,40);
+    mesh.UpdateTransform(Torig);
+    res = AnyCollisionGeometry3D(grid);
+    cout<<"Grid bb "<<grid.bb<<endl;
+    res.SetTransform(GetTransform());
+    return true;
+  }
+  if(!AnyGeometry3D::Convert(restype,res,param)) return false;
+  res.SetTransform(GetTransform());
+  return true;
+}
+
 AABB3D AnyCollisionGeometry3D::GetAABBTight() const
 {
   switch(type) {
@@ -725,7 +959,12 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt)
   case Primitive:
     return Max(AsPrimitive().Distance(ptlocal)-margin,0.0);
   case ImplicitSurface:
-    return AsImplicitSurface().TrilinearInterpolate(ptlocal);
+    {
+      const Meshing::VolumeGrid& vg = AsImplicitSurface();
+      Vector3 ptclamped;
+      return vg.TrilinearInterpolate(ptlocal) + vg.bb.distance(ptlocal,ptclamped);
+    }
+    break;
   case TriangleMesh:
     {
       Vector3 cp;
@@ -776,7 +1015,18 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp)
       return d;
     }
   case ImplicitSurface:
-        LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: closest point from implicit surface to point\n");
+    {
+      const Meshing::VolumeGrid& vg = AsImplicitSurface();
+      Real sdf_value = vg.TrilinearInterpolate(ptlocal);
+      Vector3 pt_clamped;
+      Real d_bb = vg.bb.distance(ptlocal,pt_clamped);
+      Vector3 grad;
+      vg.Gradient(pt_clamped,grad);
+      grad.inplaceNormalize();
+      cplocal = pt_clamped - grad*(sdf_value - margin);
+      cp = GetTransform()*cplocal;
+      return sdf_value + d_bb - margin;
+    }
     return Inf;
   case TriangleMesh:
     {
@@ -809,6 +1059,38 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt,Vector3& cp)
 }
 
 
+Real Distance(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Vector3& gridclosest,Vector3& aclosest)
+{
+  if(a.type == GeometricPrimitive3D::Point) {
+    const Vector3& pt = *AnyCast_Raw<Vector3>(&a.data);
+    aclosest = pt;
+    Real sdf_value = grid.TrilinearInterpolate(pt);
+    Vector3 ptbb;
+    Real d = sdf_value + grid.bb.distance(pt,ptbb);
+    Vector3 grad;
+    grid.Gradient(ptbb,grad);
+    grad.inplaceNormalize();
+    gridclosest = ptbb - grad*sdf_value;
+    return d;
+  }
+  else if(a.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D* s=AnyCast_Raw<Sphere3D>(&a.data);
+    Real sdf_value = grid.TrilinearInterpolate(s->center);
+    Vector3 cpbb;
+    Real d = sdf_value + grid.bb.distance(s->center,cpbb) + s->radius;
+    Vector3 grad;
+    grid.Gradient(cpbb,grad);
+    grad.inplaceNormalize();
+    aclosest = s->center - Min(s->radius,d)*grad;
+    gridclosest = cpbb - grad*sdf_value;
+    return d;
+  }
+  else {
+    FatalError("Can't collide an implicit surface and a non-sphere primitive yet\n");
+    return 0;
+  }
+}
+
 
 bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real margin,
 	      vector<int>& gridelements,size_t maxContacts)
@@ -816,26 +1098,15 @@ bool Collides(const Meshing::VolumeGrid& grid,const GeometricPrimitive3D& a,Real
   if(a.type != GeometricPrimitive3D::Point && a.type != GeometricPrimitive3D::Sphere) {
     FatalError("Can't collide an implicit surface and a non-sphere primitive yet\n");
   }
-  if(a.type == GeometricPrimitive3D::Point) {
-    const Vector3& pt = *AnyCast_Raw<Vector3>(&a.data);
-    bool res = (grid.TrilinearInterpolate(pt) + a.Distance(grid.bb) <= margin);
-    if(res) {
-      gridelements.resize(1);
-      IntTriple cell;
-      grid.GetIndex(pt,cell);
-      gridelements[0] = cell.a*grid.value.n*grid.value.p + cell.b*grid.value.p + cell.c;
-    }
-    return res;
-  }
-  const Sphere3D* s=AnyCast_Raw<Sphere3D>(&a.data);
-  bool res = (grid.TrilinearInterpolate(s->center) + a.Distance(grid.bb) <= margin+s->radius);  
-  if(res) {
+  Vector3 gclosest,aclosest;
+  if(Distance(grid,a,gclosest,aclosest) <= margin) {
     gridelements.resize(1);
     IntTriple cell;
-    grid.GetIndex(s->center,cell);
+    grid.GetIndex(gclosest,cell);
     gridelements[0] = cell.a*grid.value.n*grid.value.p + cell.b*grid.value.p + cell.c;
+    return true;
   }
-  return res;
+  return false;
 }
 
 bool Collides(const GeometricPrimitive3D& a,const GeometricPrimitive3D& b,Real margin)
@@ -1397,7 +1668,7 @@ bool Collides(const CollisionPointCloud& a,Real margin,AnyCollisionGeometry3D& b
       bbbexpanded.origin -= margin*(bbb.xbasis+bbb.ybasis+bbb.zbasis);
       //quick reject test
       if(!abb.intersectsApprox(bbbexpanded)) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"0 contacts (quick reject) time "<<timer.ElapsedTime());
+	//LOG4CXX_INFO(KrisLibrary::logger(),"0 contacts (quick reject) time "<<timer.ElapsedTime());
 	return false;
       }
       RigidTransform Tw_a;
@@ -1550,7 +1821,6 @@ bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D& geom,
 }
 
 
-
 Real Distance(const GeometricPrimitive3D& a,const RigidTransform& Ta,AnyCollisionGeometry3D& b,
         int& elem2,Real upperBound=Inf)
 {
@@ -1567,14 +1837,23 @@ Real Distance(const GeometricPrimitive3D& a,const RigidTransform& Ta,AnyCollisio
       return aw.Distance(bw)-b.margin;
     }
   case AnyCollisionGeometry3D::ImplicitSurface:
-    fprintf(stderr,"Unable to do primitive/implicit surface distance yet\n");
+    {
+      const Meshing::VolumeGrid& grid=b.AsImplicitSurface();
+      Vector3 gclosest,aclosest;
+      Real d=Distance(grid,aw,gclosest,aclosest);
+      IntTriple cell;
+      grid.GetIndex(gclosest,cell);
+      elem2 = cell.a*grid.value.n*grid.value.p + cell.b*grid.value.p + cell.c;
+      return d-b.margin;
+    }
     break;
   case AnyCollisionGeometry3D::TriangleMesh:
     fprintf(stderr,"Unable to do primitive/triangle mesh distance yet\n");
     break;
   case AnyCollisionGeometry3D::PointCloud:
-    fprintf(stderr,"Unable to do primitive/point cloud distance yet\n");
-    break;
+    {
+      return Distance(b.PointCloudCollisionData(),aw,elem2,upperBound);
+    }
   case AnyCollisionGeometry3D::Group:
     {
       vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
@@ -1595,13 +1874,55 @@ Real Distance(const GeometricPrimitive3D& a,const RigidTransform& Ta,AnyCollisio
   return Inf;
 }
 
+Real Distance(const Meshing::VolumeGrid& grid,const RigidTransform& Tgrid,const CollisionPointCloud& pc,int& elem1,int& elem2,Real upperBound=Inf)
+{
+  //TODO: speed this up using the bounding volume heirarchy
+  RigidTransform Tba;
+  Tba.mulInverseA(Tgrid,pc.currentTransform);
+  AABB3D bbb = pc.bblocal;
+  bbb.inplaceTransform(Tba);
+  if(bbb.distance(grid.bb) > upperBound) return upperBound;
+  Vector3 v,vbb;
+  Real bbrad = grid.bb.bmin.distance(grid.bb.bmax)*0.5;
+  for(size_t i=0;i<pc.points.size();i++) {
+    Tba.mul(pc.points[i],v);
+    Real d = grid.bb.distance(v,vbb);
+    if(d-bbrad > upperBound) continue;
+    Real sdf_value = grid.TrilinearInterpolate(v);
+    if(d + sdf_value < upperBound) {
+      upperBound = d + sdf_value;
+      Vector3 ptbb;
+      Vector3 grad;
+      grid.Gradient(vbb,grad);
+      grad.inplaceNormalize();
+      Vector3 gridclosest = vbb - grad*sdf_value;
+      IntTriple cell;
+      grid.GetIndex(gridclosest,cell);
+      elem1 = cell.a*grid.value.n*grid.value.p + cell.b*grid.value.p + cell.c;
+      elem2 = (int)i;
+    }
+  }
+  return upperBound;
+}
 
 Real Distance(const Meshing::VolumeGrid& a,const RigidTransform& Ta,AnyCollisionGeometry3D& b,
         int& elem1,int& elem2,Real upperBound=Inf)
 {
   switch(b.type) {
   case AnyCollisionGeometry3D::Primitive:
-    fprintf(stderr,"Unable to do implicit surface/primitive distance yet\n");
+    {
+      RigidTransform Tba;
+      Tba.mulInverseA(Ta,b.currentTransform);
+      GeometricPrimitive3D blocal = b.AsPrimitive();
+      blocal.Transform(Tba);
+      Vector3 aclosest,bclosest;
+      Real d=Distance(a,blocal,aclosest,bclosest);
+      IntTriple cell;
+      const Meshing::VolumeGrid& grid = a;
+      grid.GetIndex(aclosest,cell);
+      elem2 = cell.a*grid.value.n*grid.value.p + cell.b*grid.value.p + cell.c;
+      return d-b.margin;
+    }
     break;
   case AnyCollisionGeometry3D::ImplicitSurface:
     fprintf(stderr,"Unable to do implicit surface/implicit surface distance yet\n");
@@ -1610,8 +1931,7 @@ Real Distance(const Meshing::VolumeGrid& a,const RigidTransform& Ta,AnyCollision
     fprintf(stderr,"Unable to do implicit surface/triangle mesh distance yet\n");
     break;
   case AnyCollisionGeometry3D::PointCloud:
-    fprintf(stderr,"Unable to do implicit surface/point cloud distance yet\n");
-    break;
+    return Distance(a,Ta,b.PointCloudCollisionData(),elem1,elem2,upperBound)-b.margin;
   case AnyCollisionGeometry3D::Group:
     {
       vector<AnyCollisionGeometry3D>& bitems = b.GroupCollisionData();
@@ -1701,8 +2021,7 @@ Real Distance(const CollisionPointCloud& a,AnyCollisionGeometry3D& b,int& elem1,
     }
   case AnyCollisionGeometry3D::ImplicitSurface:
     {
-      fprintf(stderr,"Unable to do point cloud/implicit surface distance yet\n");
-      return Inf;
+      return Distance(b.AsImplicitSurface(),b.GetTransform(),a,elem2,elem1,upperBound)-b.margin;
     }
     return false;
   case AnyCollisionGeometry3D::Group:
