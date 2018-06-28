@@ -53,6 +53,9 @@ struct VolumeGridIterator
  * 
  * Values are interpreted so they are defined over an entire cell,
  * *not* the vertices.
+ *
+ * Most methods just clamp their arguments to the domain rather than
+ * doing bounds checks.
  */
 class VolumeGrid
 {
@@ -82,6 +85,13 @@ class VolumeGrid
   void ResampleTrilinear(const VolumeGrid& grid);
   ///Resamples the given volume grid onto the current grid, taking averages over grid cells
   void ResampleAverage(const VolumeGrid& grid);
+  ///Returns the gradient estimated using forward differencing
+  void Gradient_ForwardDifference(const IntTriple& index,Vector3& grad) const;
+  ///Returns the gradient estimated using centered differencing
+  void Gradient_CenteredDifference(const IntTriple& index,Vector3& grad) const;
+  ///Returns the trilinear interpolated gradient.  If any element of pt is on a cell boundary the gradient estimated
+  ///using centered differencing
+  void Gradient(const Vector3& pt,Vector3& grad) const;
   void Add(const VolumeGrid& grid);
   void Subtract(const VolumeGrid& grid);
   void Multiply(const VolumeGrid& grid);

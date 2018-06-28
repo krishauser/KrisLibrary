@@ -158,7 +158,7 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
     if(i1[i]>=size[i]) i1[i]=size[i]-1;
     if(i2[i]<0) i2[i]=0;
     if(i2[i]>=size[i]) i2[i]=size[i]-1;
-  }  
+  } 
 
   //pick a minimal center value
   Real v111=value(i1);
@@ -323,6 +323,112 @@ Real VolumeGrid::Average(const AABB3D& range) const
   if(!ignoreZ) rangeVolume*=rangesize.z;
   Assert(sumVolume < rangeVolume + Epsilon);
   return sumValue / rangeVolume;
+}
+
+void VolumeGrid::Gradient_ForwardDifference(const IntTriple& _index,Vector3& grad) const
+{
+  IntTriple index = _index;
+  if(index.a < 0) index.a = 0;  if(index.a >= value.m) index.a = value.m-1;
+  if(index.b < 0) index.b = 0;  if(index.b >= value.n) index.b = value.n-1;
+  if(index.c < 0) index.c = 0;  if(index.c >= value.p) index.c = value.p-1;
+  Real cv = value(index);
+  Vector3 h = GetCellSize();
+  if(index.a+1 < value.m) grad.x = (value(index.a+1,index.b,index.c) - cv)/h.x;
+  else grad.x = (cv - value(index.a-1,index.b,index.c))/h.x;
+  if(index.b+1 < value.n) grad.y = (value(index.a,index.b+1,index.c) - cv)/h.y;
+  else grad.y = (cv - value(index.a,index.b-1,index.c))/h.y;
+  if(index.c+1 < value.p) grad.z = (value(index.a,index.b,index.c+1) - cv)/h.z;
+  else grad.z = (cv - value(index.a,index.b,index.c-1))/h.z;
+}
+
+void VolumeGrid::Gradient_CenteredDifference(const IntTriple& _index,Vector3& grad) const
+{
+  IntTriple index = _index;
+  if(index.a < 0) index.a = 0;  if(index.a >= value.m) index.a = value.m-1;
+  if(index.b < 0) index.b = 0;  if(index.b >= value.n) index.b = value.n-1;
+  if(index.c < 0) index.c = 0;  if(index.c >= value.p) index.c = value.p-1;
+  Vector3 h = GetCellSize();
+  Real n,p;
+  int shift;
+  shift=0;
+  if(index.a+1 < value.m) { n = value(index.a+1,index.b,index.c); shift++; }
+  else n = value(index);
+  if(index.a > 0) { p = value(index.a-1,index.b,index.c); shift++; }
+  else p = value(index);
+  grad.x = (n - p)/(shift*h.x);
+
+  shift=0;
+  if(index.b+1 < value.n) { n = value(index.a,index.b+1,index.c); shift++; }
+  else n = value(index);
+  if(index.b > 0) { p = value(index.a,index.b-1,index.c); shift++; }
+  else p = value(index);
+  grad.y = (n - p)/(shift*h.y);
+
+  shift=0;
+  if(index.c+1 < value.p) { n = value(index.a,index.b,index.c+1); shift++; }
+  else n = value(index);
+  if(index.c > 0) { p = value(index.a,index.b,index.c-1); shift++; }
+  else p = value(index);
+  grad.z = (n - p)/(shift*h.z);
+}
+
+void VolumeGrid::Gradient(const Vector3& pt,Vector3& grad) const
+{
+  IntTriple ind;
+  Vector3 params;
+  GetIndexAndParams(pt,ind,params);
+  Real u,v,w;
+  params.get(u,v,w);
+  int i1,j1,k1;
+  i1 = ind.a;
+  j1 = ind.b;
+  k1 = ind.c;
+
+  //get the alternate cell indices, interpolation parameters
+  //(u interpolates between i1,i2, etc)
+  int i2,j2,k2;
+  if(u > 0.5) { i2=i1+1; u = u-0.5; }
+  else { i2=i1; i1--; u = 0.5+u; }
+  if(v > 0.5) { j2=j1+1; v = v-0.5; }
+  else { j2=j1; j1--; v = 0.5+v; }
+  if(w > 0.5) { k2=k1+1; w = w-0.5; }
+  else { k2=k1; k1--; w = 0.5+w; }
+
+  if(i1 < 0) i1=0; if(i1 >= value.m) i1=value.m-1;
+  if(i2 < 0) i2=0; if(i2 >= value.m) i2=value.m-1;
+  if(j1 < 0) j1=0; if(j1 >= value.n) j1=value.n-1;
+  if(j2 < 0) j2=0; if(j2 >= value.n) j2=value.n-1;
+  if(k1 < 0) k1=0; if(k1 >= value.p) k1=value.p-1;
+  if(k2 < 0) k2=0; if(k2 >= value.p) k2=value.p-1;
+  Real v11 = (1-w)*value(i1,j1,k1) + w*value(i1,j1,k2);
+  Real v12 = (1-w)*value(i1,j2,k1) + w*value(i1,j2,k2);
+  Real v21 = (1-w)*value(i2,j1,k1) + w*value(i2,j1,k2);
+  Real v22 = (1-w)*value(i2,j2,k1) + w*value(i2,j2,k2);
+  Real w1 = (1-v)*v11+v*v12;
+  Real w2 = (1-v)*v21+v*v22;
+  //Real res = (1-u)*w1 + u*w2;
+  Vector3 h = GetCellSize();
+  //u = x/h.x+bx, v = y/h.y+by, w = z/h.z+bz
+  //res = (1-u)*w1(v,w) + u*w2(v,w)
+  if(u==0.5 || v==0.5 || v==0.5 || i1==i2 || j1==j2 || k1==k2) {
+    Gradient_CenteredDifference(ind,grad);
+  }
+  if(u != 0.5 && i1 != i2) 
+    grad.x = (w2 - w1)/h.x;
+  if(v != 0.5 && j1 != j2) {
+    Real dw1 = v12-v11;
+    Real dw2 = v22-v21;
+    grad.y = ((1-u)*dw1 + u*dw2)/h.y;
+  }
+  if(w != 0.5 && k1 != k2) {
+    Real dv11 = value(i1,j1,k2)-value(i1,j1,k1);
+    Real dv12 = value(i1,j2,k2)-value(i1,j2,k1);
+    Real dv21 = value(i2,j1,k2)-value(i2,j1,k1);
+    Real dv22 = value(i2,j2,k2)-value(i2,j2,k1);
+    Real dw1 = (1-v)*dv11+v*dv12;
+    Real dw2 = (1-v)*dv21+v*dv22;
+    grad.z = ((1-u)*dw1 + u*dw2)/h.y;
+  }
 }
 
 void VolumeGrid::ResampleTrilinear(const VolumeGrid& grid)
