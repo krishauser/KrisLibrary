@@ -81,6 +81,18 @@ class GeometricPrimitive3D
   Vector3 ParametersToPoint(const std::vector<double>& params) const;
   Vector3 ParametersToNormal(const std::vector<double>& params) const;
   bool RayCast(const Ray3D& ray,Vector3& pt) const;
+  static bool SupportsClosestPoints(Type a,Type b);
+  bool SupportsClosestPoints(Type b) const { return GeometricPrimitive3D::SupportsClosestPoints(type,b); }
+  Real ClosestPoints(const Vector3& pt,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Segment3D& s,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Triangle3D& t,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Polygon3D& p,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Sphere3D& s,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Ellipsoid3D& s,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Cylinder3D& s,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const AABB3D& s,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Box3D& s,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const GeometricPrimitive3D& g,Vector3& cp_me,Vector3& cp_other) const;
 
   Type type;
   AnyValue data;
