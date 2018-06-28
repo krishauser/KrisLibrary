@@ -163,23 +163,63 @@ bool distanceTest(void* obj)
 
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g)
 {
+  int cpoint;
+  return Distance(pc,g,cpoint);
+}
+
+Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& closestPoint,Real upperBound)
+{
   GeometricPrimitive3D glocal = g;
   RigidTransform Tinv;
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
-
-  /*
-  AABB3D gbb = glocal.GetAABB();
-  gDistanceTestValue = Inf;
-  gDistanceTestObject = &glocal;
-  pc.grid.BoxQuery(Vector(3,gbb.bmin),Vector(3,gbb.bmax),distanceTest);
-  return gDistanceTestValue;
-  */
-  //test all points, linearly
-  Real dmax = Inf;
-  for(size_t i=0;i<pc.points.size();i++)
-    dmax = Min(dmax,glocal.Distance(pc.points[i]));
-  return dmax;
+  closestPoint=-1;
+  if(!IsInf(upperBound) && glocal.Distance(pc.bblocal) > upperBound) {
+    return upperBound;
+  }
+  bool doBoundsTest= (g.type != GeometricPrimitive3D::Point && g.type != GeometricPrimitive3D::Sphere && g.type != GeometricPrimitive3D::AABB);
+  if(doBoundsTest) {
+    AABB3D gbb = glocal.GetAABB();
+    Sphere3D sbb;
+    sbb.center = 0.5*(gbb.bmin+gbb.bmax);
+    sbb.radius = sbb.center.distance(gbb.bmin);
+    /*
+    gDistanceTestValue = Inf;
+    gDistanceTestObject = &glocal;
+    pc.grid.BoxQuery(Vector(3,gbb.bmin),Vector(3,gbb.bmax),distanceTest);
+    return gDistanceTestValue;
+    */
+    Real radius0 = sbb.radius;
+    sbb.radius += upperBound;
+    //AABB3D bb0 = gbb;
+    //gbb.bmin -= Vector3(upperBound);
+    //gbb.bmax += Vector3(upperBound);
+    //test all points, linearly
+    Real dmax = upperBound;
+    for(size_t i=0;i<pc.points.size();i++) {
+      if(sbb.contains(pc.points[i])) {
+        Real d = glocal.Distance(pc.points[i]);
+        if(d < dmax) {
+          closestPoint = (int)i;
+          dmax = d;
+          sbb.radius = radius0 + dmax;
+        }
+      }
+    }
+    return dmax;
+  }
+  else {
+    Real dmax = upperBound;
+    //bounds testing not worth it
+    for(size_t i=0;i<pc.points.size();i++) {
+      Real d = glocal.Distance(pc.points[i]);
+      if(d < dmax) {
+        closestPoint = (int)i;
+        dmax = d;
+      }
+    }
+    return dmax;
+  }
 }
 
 static Real gNearbyTestThreshold = 0;
