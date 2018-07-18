@@ -136,7 +136,9 @@ OctreeNode* Octree::Lookup(OctreeNode& root,const Vector3& point,int maxDepth)
     n = &nodes[n->childIndices[c]];
     maxDepth--;
   }
-  Assert(n->bb.contains(point));
+  if(!n->bb.contains(point))
+    //this can occur if the bounding boxes are shrunk
+    return NULL;
   return n;
 }
 
