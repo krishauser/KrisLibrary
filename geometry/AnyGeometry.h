@@ -8,15 +8,17 @@ class TiXmlElement;
 
 //forward declarations
 namespace Meshing { class VolumeGrid; class PointCloud3D; }
-namespace Geometry { class CollisionPointCloud; }
+namespace Geometry { class CollisionPointCloud; class CollisionImplicitSurface; }
 namespace Math3D { class GeometricPrimitive3D; }
 namespace GLDraw { class GeometryAppearance; }
 
 namespace Geometry {
 
-
   using namespace Math3D;
   using namespace std;
+
+class AnyDistanceQuerySettings;
+class AnyDistanceQueryResult;
 
 /** @brief A class that stores any kind of geometry we've defined.
  *
@@ -115,12 +117,12 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   const RigidTransform& PrimitiveCollisionData() const;
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
-  const RigidTransform& ImplicitSurfaceCollisionData() const;
+  const CollisionImplicitSurface& ImplicitSurfaceCollisionData() const;
   const vector<AnyCollisionGeometry3D>& GroupCollisionData() const;
   RigidTransform& PrimitiveCollisionData();
   CollisionMesh& TriangleMeshCollisionData();
   CollisionPointCloud& PointCloudCollisionData();
-  RigidTransform& ImplicitSurfaceCollisionData();
+  CollisionImplicitSurface& ImplicitSurfaceCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
   ///Performs a type conversion, also copying the active transform.  May be a bit faster than
   ///AnyGeometry3D.Convert for some conversions (TriangleMesh->VolumeGrid, specifically)
@@ -147,12 +149,12 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///modify the geometry using Transform(), ReinitCollisions() should be
   ///called.
   void SetTransform(const RigidTransform& T);
-  Real Distance(const Vector3& pt);
-  Real Distance(const Vector3& pt,Vector3& cp);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);
-  Real Distance(AnyCollisionGeometry3D& geom,int& elem1,int& elem2,Real upperBound=Inf);
+  Real Distance(const Vector3& pt);
+  AnyDistanceQueryResult Distance(const Vector3& pt,const AnyDistanceQuerySettings& settings);
+  AnyDistanceQueryResult Distance(AnyCollisionGeometry3D& geom,const AnyDistanceQuerySettings& settings);
   bool WithinDistance(AnyCollisionGeometry3D& geom,Real d);
   bool WithinDistance(AnyCollisionGeometry3D& geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   bool RayCast(const Ray3D& r,Real* distance=NULL,int* element=NULL);
@@ -161,7 +163,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
    * - Primitive: null
    * - TriangleMesh: CollisionMesh
    * - PointCloud: CollisionPointCloud
-   * - VolumeGrid: null
+   * - VolumeGrid: CollisionImplicitSurface
    * - Group: vector<AnyCollisionGeometry3D>
    */
   AnyValue collisionData;
@@ -208,6 +210,35 @@ class AnyCollisionQuery
   std::vector<int> elements1,elements2; 
   std::vector<Vector3> points1,points2;
 };
+
+class AnyDistanceQuerySettings
+{
+public:
+  AnyDistanceQuerySettings();
+  ///Allowable relative and absolute errors
+  Real relErr,absErr;
+  ///An upper bound on the distance, and if the two objects are farther than this distance the computation may break
+  Real upperBound;
+};
+
+class AnyDistanceQueryResult
+{
+public:
+  AnyDistanceQueryResult();
+  ///flags indicating which elements are filled out
+  bool hasPenetration,hasElements,hasClosestPoints,hasDirections;
+  ///The distance, with negative values indicating penetration if hasPenetration=true. Otherwise, 0 indicates penetration.
+  Real d;
+  ///The elements defining the closest points on the geometries
+  int elem1,elem2;
+  ///The closest points on the two geometries, in world coordinates
+  Vector3 cp1,cp2;
+  ///The direction from geometry 1 to geometry 2, and the distance from geometry 2 to geometry 1, in world coordinates
+  Vector3 dir1,dir2;
+  ///If the item is a group, this vector will recursively define the sub-elements
+  vector<int> group_elem1,group_elem2;
+};
+
 
 } //namespace Geometry
 

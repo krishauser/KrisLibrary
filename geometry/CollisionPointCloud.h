@@ -52,6 +52,11 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
 ///cells within distance tol of the bounding box of g.
 void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Real tol,std::vector<int>& points,size_t maxContacts=INT_MAX);
 
+///Returns true if the point clouds are within margin distance of one another.
+///points1 and points2 return one or more pairs of close-by points.
+///maxContacts controls how many pairs are computed.
+bool Collides(const CollisionPointCloud& pc1,const CollisionPointCloud& pc2,Real margin,std::vector<int>& points1,std::vector<int>& points2,size_t maxContacts=1);
+
 ///Casts a ray at the point cloud (where each point is fattened by radius rad).
 ///Returns index of the first point hit (-1 if none) and the colliding point
 ///in pt. 
