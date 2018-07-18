@@ -40,6 +40,8 @@ class Octree
   int Index(const OctreeNode& n) const { return &n - &nodes[0]; }
   ///Returns the node for a given index
   const OctreeNode& Node(int index) const { return nodes[index]; }
+  ///Returns the node for a given index
+  OctreeNode& Node(int index) { return nodes[index]; }
   ///Returns the maximum depth of the tree
   int MaxDepth() const;
   ///splits the Octree uniformly to the given depth d
