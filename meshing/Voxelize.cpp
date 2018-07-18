@@ -1185,7 +1185,7 @@ struct TrimeshFeature
 
 struct TriangleClosestPointData
 {
-  //given the closest point is the given vertex, sets the dir member and
+  //given the closest point to queryPoint is the given vertex, sets the dir member and
   //signedDistance
   void SetVertexDistance(const TriMeshWithTopology& mesh,int vertex,
                          const Vector3& queryPoint)
@@ -1215,7 +1215,7 @@ struct TriangleClosestPointData
     feature.feature = TrimeshFeature::V;
     //check orientation at edge
     if(FuzzyZero(distance)) {  //right at the apex
-      LOG4CXX_WARN(KrisLibrary::logger(),"Voxelize.cpp: Closest point is right at the apex of vertex "<<vertex);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Voxelize.cpp: Closest point is right at the apex of vertex "<<vertex);
       //average the adjacent normals
       Vector3 aveNormal(Zero);
       for(size_t i=0;i<mesh.incidentTris[vertex].size();i++) {
@@ -1265,19 +1265,19 @@ struct TriangleClosestPointData
       Assert(maxAngleIndex >= 0);
       Real sign = Sign(dot(mesh.TriangleNormal(maxAngleIndex),dir));
       if(sign == 0) {
-        LOG4CXX_WARN(KrisLibrary::logger(),"Sign is 0 on vertex "<<vertex);
-        LOG4CXX_WARN(KrisLibrary::logger(),"Point "<<queryPoint<<", closest point "<<closestPoint);
+        LOG4CXX_WARN(KrisLibrary::logger(),"Voxelize.cpp: Sign is 0 on vertex "<<vertex);
+        LOG4CXX_WARN(KrisLibrary::logger(),"  Point "<<queryPoint<<", closest point "<<closestPoint);
         for(size_t i=0;i<mesh.incidentTris[vertex].size();i++)  {
           int t=mesh.incidentTris[vertex][i];
-          LOG4CXX_WARN(KrisLibrary::logger(),"Triangle normal "<<mesh.TriangleNormal(t)<<", dot product "<<dot(mesh.TriangleNormal(t),dir));
+          LOG4CXX_WARN(KrisLibrary::logger(),"  Triangle normal "<<mesh.TriangleNormal(t)<<", dot product "<<dot(mesh.TriangleNormal(t),dir));
           sign = 1.0;
         }
       }
       dir /= distance;
       dir *= sign;
       signedDistance = sign*distance;
+      assert(signedDistance != 0);
     }
-    assert(signedDistance != 0);
   }
 
   //given the closest point is triangleIndex on the given edge, sets
@@ -1340,12 +1340,12 @@ struct TriangleClosestPointData
     
     //check orientation at edge
     if(FuzzyZero(distance)) {  //right at the apex
-      LOG4CXX_INFO(KrisLibrary::logger(),"Cell center right on edge");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Voxelize.cpp: Vertex exactly on edge");
       //average the adjacent normals
       Vector3 aveNormal = normal + adjNormal;
       Real nnorm = aveNormal.norm();
       if(FuzzyZero(nnorm)) { //norm is zero?!
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: closest point is right at the edge, and the normal of an edge is zero!");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Voxelize.cpp: Warning: closest point is right at the edge, and the normal of an edge is zero!");
         if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
         dir.setZero();
         signedDistance = 0;
@@ -1393,9 +1393,8 @@ struct TriangleClosestPointData
       dir /= distance;
       dir *= sign;
       signedDistance = sign*distance;
+      assert(signedDistance != 0);
     }
-    assert(signedDistance != 0);
-
   }
 
   void SetFaceDistance(const TriMeshWithTopology& mesh,int triangleIndex,
