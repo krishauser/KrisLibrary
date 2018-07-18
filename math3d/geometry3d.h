@@ -82,17 +82,24 @@ class GeometricPrimitive3D
   Vector3 ParametersToNormal(const std::vector<double>& params) const;
   bool RayCast(const Ray3D& ray,Vector3& pt) const;
   static bool SupportsClosestPoints(Type a,Type b);
+  ///The ClosestPoints function returns the distance value d (negative meaning penetration)
+  ///and the closest point on this (cp).  The normalized direction to the closest point on
+  ///the other geometry is also given (direction) so that the closest point on the other
+  ///object is cp + d*direction.  If the objects are touching, direction will indicate
+  ///the normal by which this can move so that the penetration derivative is maximized
+  ///(i.e., the negative distance gradient).  If direction = 0 then there's a singularity
+  ///or the direction cannot be calculated.
   bool SupportsClosestPoints(Type b) const { return GeometricPrimitive3D::SupportsClosestPoints(type,b); }
-  Real ClosestPoints(const Vector3& pt,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const Segment3D& s,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const Triangle3D& t,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const Polygon3D& p,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const Sphere3D& s,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const Ellipsoid3D& s,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const Cylinder3D& s,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const AABB3D& s,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const Box3D& s,Vector3& cp_me,Vector3& cp_other) const;
-  Real ClosestPoints(const GeometricPrimitive3D& g,Vector3& cp_me,Vector3& cp_other) const;
+  Real ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const Segment3D& s,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const Triangle3D& t,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const Polygon3D& p,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const Sphere3D& s,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const Ellipsoid3D& s,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const Cylinder3D& s,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const AABB3D& s,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const Box3D& s,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(const GeometricPrimitive3D& g,Vector3& cp,Vector3& direction) const;
 
   Type type;
   AnyValue data;
