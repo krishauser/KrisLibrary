@@ -140,9 +140,10 @@ void PrimitiveToMesh(const GeometricPrimitive3D& primitive,Meshing::TriMesh& mes
 	Meshing::MakeTriMesh(primitive,mesh,numDivs);
 }
 
-void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution)
+void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0.5)
 {
 	Vector3 size=bb.bmax-bb.bmin;
+	size += expansion*2*resolution;
 	int m = (int)Ceil(size.x/resolution)+2;
 	int n = (int)Ceil(size.y/resolution)+2;
 	int p = (int)Ceil(size.z/resolution)+2;
@@ -338,9 +339,7 @@ void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
 void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution)
 {
 	AABB3D aabb;
-	Box3D b;
-	GetBB(mesh,b);
-	b.getAABB(aabb);
+	mesh.GetAABB(aabb.bmin,aabb.bmax);
 	FitGridToBB(aabb,grid,resolution);
 	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
 	vector<IntTriple> surfaceCells;
@@ -350,9 +349,7 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
 void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews)
 {
 	AABB3D aabb;
-	Box3D b;
-	GetBB(mesh,b);
-	b.getAABB(aabb);
+	mesh.GetAABB(aabb.bmin,aabb.bmax);
 	FitGridToBB(aabb,grid,resolution);
 	Array3D<Real> occupancy(grid.value.m,grid.value.n,grid.value.p);
 	double defaultValue = -aabb.size().maxAbsElement();
