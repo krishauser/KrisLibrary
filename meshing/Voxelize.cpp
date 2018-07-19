@@ -1685,6 +1685,15 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
           if(k+1<P) exterior(i,j,k+1)=true;
         }
       } 
+  int noccupied = 0, ninterior = 0, nexterior = 0;
+  for(int i=0;i<M;i++)
+    for(int j=0;j<N;j++)
+      for(int k=0;k<P;k++) {
+        if(occupied(i,j,k)) noccupied ++;
+        if(interior(i,j,k)) ninterior ++;
+        if(exterior(i,j,k)) nexterior ++;
+      }
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM starting with "<<noccupied<<" surface, "<<ninterior<<" interior, "<<nexterior<<" exterior cells");
 
   TrimeshFeature nullFeature; nullFeature.index = -1;
   nullFeature.feature = TrimeshFeature::F;
@@ -1705,7 +1714,6 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
     query.expand(tri.b);
     query.expand(tri.c);
     bool q=QueryGrid(distance,bb,query,lo,hi);
-    if(!q) continue;
     /*
     index=lo;
     while(index.a <= hi.a) {
