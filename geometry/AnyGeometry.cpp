@@ -294,7 +294,10 @@ bool AnyGeometry3D::Convert(Type restype,AnyGeometry3D& res,double param) const
       switch(restype) {
         case TriangleMesh:
         {
-          if(!AsPointCloud().IsStructured()) return false;
+          if(!AsPointCloud().IsStructured()) {
+            LOG4CXX_WARN(KrisLibrary::logger(),"AnyGeometry3D::Convert: Point cloud is not structured, cannot convert to triangle mesh");
+            return false;
+          }
           if(param == 0) param = Inf;
           Meshing::TriMesh mesh;
           PointCloudToMesh(AsPointCloud(),mesh,param);
