@@ -23,15 +23,15 @@ public:
 			FreeImage_Initialise();
 			initialized = true;
 			int res;
-			printf("Initializing FreeImage...\n");
+			LOG4CXX_INFO(KrisLibrary::logger(),"Initializing FreeImage...");
 			res = FreeImage_SetPluginEnabled(FIF_BMP,1);
-			printf("  BMP enable: %d\n",res);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  BMP enabled: "<<res);
 			res = FreeImage_SetPluginEnabled(FIF_PNG,1);
-			printf("  PNG enable: %d\n",res);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  PNG enabled: "<<res);
 			res = FreeImage_SetPluginEnabled(FIF_JPEG,1);
-			printf("  JPEG enable: %d\n",res);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  JPEG enabled: "<<res);
 			res = FreeImage_SetPluginEnabled(FIF_TIFF,1);
-			printf("  TIFF enable: %d\n",res);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  TIFF enabled: "<<res);
 		}
 	}
 	~FreeImageInitializer() { if(initialized) FreeImage_DeInitialise(); }
@@ -114,13 +114,25 @@ bool ImportImage(const char* fn, Image& img)
 {
 #if HAVE_FREE_IMAGE
 	_free_image_initializer.initialize();
-	FIBITMAP* fimg = FreeImage_Load(FIF_UNKNOWN,fn);
+	FREE_IMAGE_FORMAT fif_type = FIF_UNKNOWN;
+	const char* ext = FileExtension(fn);
+	if(ext != NULL) {
+		if(0==strcmp(ext,"png")) 
+			fif_type = FIF_PNG;
+		else if(0==strcmp(ext,"jpg") || 0==strcmp(ext,"jpeg")) 
+			fif_type = FIF_JPEG;
+		else if(0==strcmp(ext,"bmp")) 
+			fif_type = FIF_BMP;
+		else if(0==strcmp(ext,"tif") || 0==strcmp(ext,"tiff")) 
+			fif_type = FIF_TIFF;
+	}
+	FIBITMAP* fimg = FreeImage_Load(fif_type,fn);
 	if(fimg != NULL) {
 		FreeImageBitmapToImage(fimg,img);
 		FreeImage_Unload(fimg);
 		return true;
 	}
-	printf("FreeImage_Load result is NULL\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Load result is NULL");
 #else 
 	const char* ext = FileExtension(fn);
 	if(!ext) {
