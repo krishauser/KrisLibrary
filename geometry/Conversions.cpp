@@ -103,10 +103,10 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Rea
 			Real z12 = p12.z;
 			Real z21 = p21.z;
 			Real z22 = p22.z;
-			bool d1x = (Abs(z11 - z12) > depthDiscontinuity*Abs(z11+z12)) || (z11 == 0 || z12 == 0);
-			bool d1y = (Abs(z11 - z21) > depthDiscontinuity*Abs(z11+z21)) || (z11 == 0 || z21 == 0);
-			bool d2x = (Abs(z22 - z21) > depthDiscontinuity*Abs(z22+z21)) || (z22 == 0 || z21 == 0);
-			bool d2y = (Abs(z22 - z12) > depthDiscontinuity*Abs(z22+z12)) || (z22 == 0 || z12 == 0);
+			bool d1x = (Abs(z11 - z12) > depthDiscontinuity*Abs(z11+z12)) || (z11 == 0 || z12 == 0 || IsNaN(z11) || IsNaN(z12));
+			bool d1y = (Abs(z11 - z21) > depthDiscontinuity*Abs(z11+z21)) || (z11 == 0 || z21 == 0 || IsNaN(z11) || IsNaN(z21));
+			bool d2x = (Abs(z22 - z21) > depthDiscontinuity*Abs(z22+z21)) || (z22 == 0 || z21 == 0 || IsNaN(z22) || IsNaN(z12));
+			bool d2y = (Abs(z22 - z12) > depthDiscontinuity*Abs(z22+z12)) || (z22 == 0 || z12 == 0 || IsNaN(z22) || IsNaN(z21));
 			bool dupperleft = (d1x || d1y);
 			bool dupperright = (d1x || d2y);
 			bool dlowerleft = (d2x || d1y);
@@ -343,6 +343,7 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
 	FitGridToBB(aabb,grid,resolution);
 	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
 	vector<IntTriple> surfaceCells;
+	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
 	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
 }
 
