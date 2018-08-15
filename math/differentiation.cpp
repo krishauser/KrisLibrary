@@ -191,7 +191,7 @@ void GradientCenteredDifferenceAdaptive(ScalarFieldFunction& f,Vector& x,Real h0
 {
   Assert(g.n == x.n);
   for(int i=0;i<x.n;i++) {
-    ScalarFieldProjectionFunction fi(&f,x,i);
+    ScalarFieldProjectionFunction fi(f,x,i);
     g(i) = dfCenteredDifferenceAdaptive(fi,0,h0,tol);
   }
 }

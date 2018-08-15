@@ -10,20 +10,20 @@
 using namespace std;
 
 
-KinodynamicSpace::KinodynamicSpace(const SmartPointer<CSpace>& xspace,const SmartPointer<ControlSpace>& uspace)
+KinodynamicSpace::KinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const std::shared_ptr<ControlSpace>& uspace)
 :stateSpace(xspace),controlSpace(uspace)
 {}
 
 
-IntegratedKinodynamicSpace::IntegratedKinodynamicSpace(const SmartPointer<CSpace>& xspace,IntegratedControlSpace* _controlSpace)
+IntegratedKinodynamicSpace::IntegratedKinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const std::shared_ptr<IntegratedControlSpace>& _controlSpace)
 :KinodynamicSpace(xspace,_controlSpace),controlSpace(_controlSpace)
 {}
 
-EdgePlanner* IntegratedKinodynamicSpace::TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path)
+EdgePlannerPtr IntegratedKinodynamicSpace::TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path)
 {
   Real udt = u(0);
   int numSteps = int(controlSpace->dt / udt);
-  return new EpsilonEdgeChecker(GetStateSpace(),path,path->Length()/numSteps);
+  return make_shared<EpsilonEdgeChecker>(GetStateSpace().get(),path,path->Length()/numSteps);
 }
 
 RandomBiasSteeringFunction::RandomBiasSteeringFunction(KinodynamicSpace* _space,int _sampleCount)
@@ -37,9 +37,9 @@ bool RandomBiasSteeringFunction::Connect(const State& x,const State& xGoal,Kinod
   ControlInput temp;
   
   ControlInput u;
-  SmartPointer<Interpolator> bestpath;
-  SmartPointer<Interpolator> pathtemp;
-  SmartPointer<CSet> uspace = space->controlSpace->GetControlSet(x);
+  InterpolatorPtr bestpath;
+  InterpolatorPtr pathtemp;
+  std::shared_ptr<CSet> uspace = space->controlSpace->GetControlSet(x);
   if(!uspace) {
     LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, no control set at "<<x<<"?"<<"\n");
     return false;
@@ -86,10 +86,10 @@ bool RandomBiasReverseSteeringFunction::Connect(const State& x,const State& xGoa
   if(!rspace) return false;
 
   ControlInput u;
-  SmartPointer<Interpolator> bestpath;
-  SmartPointer<Interpolator> pathtemp;
+  InterpolatorPtr bestpath;
+  InterpolatorPtr pathtemp;
   for(int i=0;i<sampleCount;i++) {
-    SmartPointer<CSet> uspace = rspace->reverseControlSpace->GetControlSet(x);
+    std::shared_ptr<CSet> uspace = rspace->reverseControlSpace->GetControlSet(x);
     if(!uspace) continue; 
     uspace->Sample(temp);
         if(temp.empty()) { LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, control space does not have Sample() method implemented\n"); return false; }
@@ -105,13 +105,13 @@ bool RandomBiasReverseSteeringFunction::Connect(const State& x,const State& xGoa
   }
   if(bestpath == NULL) return false;
   path = KinodynamicMilestonePath(u,bestpath);
-  path.MakePaths(rspace->reverseControlSpace);
+  path.MakePaths(rspace->reverseControlSpace.get());
   return true;
 }
 
 KinodynamicSpace::~KinodynamicSpace() {}
 
-EdgePlanner* KinodynamicSpace::TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path)
+EdgePlannerPtr KinodynamicSpace::TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path)
 {
   if(dynamic_cast<const LinearInterpolator*>(&*path) != NULL)
     return GetStateSpace()->PathChecker(path->Start(),path->Start());
@@ -119,52 +119,48 @@ EdgePlanner* KinodynamicSpace::TrajectoryChecker(const ControlInput& u,const Sma
     return GetStateSpace()->PathChecker(path->Start(),path->Start());
   else if(dynamic_cast<const PiecewiseLinearInterpolator*>(&*path) != NULL) {
     const PiecewiseLinearInterpolator* interp = dynamic_cast<const PiecewiseLinearInterpolator*>(&*path);
-    vector<SmartPointer<EdgePlanner> > epath(interp->configs.size()-1);
+    vector<EdgePlannerPtr> epath(interp->configs.size()-1);
     for(size_t i=0;i+1<interp->configs.size();i++)
       epath[i] = GetStateSpace()->PathChecker(interp->configs[i],interp->configs[i+1]);
-    return new PathEdgeChecker(GetStateSpace(),epath);
+    return make_shared<PathEdgeChecker>(GetStateSpace().get(),epath);
   }
   else if(dynamic_cast<const PiecewiseLinearCSpaceInterpolator*>(&*path) != NULL) {
     const PiecewiseLinearCSpaceInterpolator* interp = dynamic_cast<const PiecewiseLinearCSpaceInterpolator*>(&*path);
-    vector<SmartPointer<EdgePlanner> > epath(interp->configs.size()-1);
+    vector<EdgePlannerPtr > epath(interp->configs.size()-1);
     for(size_t i=0;i+1<interp->configs.size();i++)
       epath[i] = GetStateSpace()->PathChecker(interp->configs[i],interp->configs[i+1]);
-    return new PathEdgeChecker(GetStateSpace(),epath);
+    return make_shared<PathEdgeChecker>(GetStateSpace().get(),epath);
   }
   else FatalError("KinodynamicSpace::TrajectoryChecker: being asked to produce a trajectory checker for a non-piecewise linear path.  Subclass needs to overload this");
   return NULL;
 }
 
-EdgePlanner* KinodynamicSpace::TrajectoryChecker(const KinodynamicMilestonePath& path)
+EdgePlannerPtr KinodynamicSpace::TrajectoryChecker(const KinodynamicMilestonePath& path)
 {
-  vector<SmartPointer<EdgePlanner> > individualCheckers(path.paths.size());
+  vector<EdgePlannerPtr> individualCheckers(path.paths.size());
   for(size_t i=0;i<path.paths.size();i++)
     individualCheckers[i] = TrajectoryChecker(path.controls[i],path.paths[i]);
-  return new PathEdgeChecker(GetStateSpace(),individualCheckers);
+  return make_shared<PathEdgeChecker>(GetStateSpace().get(),individualCheckers);
 }
 
 bool KinodynamicSpace::NextState(const State& x0,const ControlInput& u,State& x)
 {
-  SmartPointer<Interpolator> p = controlSpace->Simulate(x0,u);
+  InterpolatorPtr p(controlSpace->Simulate(x0,u));
   x = p->End();
   if(!GetStateSpace()->IsFeasible(x)) return false;
-  EdgePlanner* e=TrajectoryChecker(u,p);
-  bool res=e->IsVisible();
-  delete e;
-  return res;
+  EdgePlannerPtr e=TrajectoryChecker(u,p);
+  return e->IsVisible();
 }
 
 bool KinodynamicSpace::PreviousState(const State& x1,const ControlInput& u,State& x0)
 {
   ReversibleControlSpace* rspace = dynamic_cast<ReversibleControlSpace*>(&(*controlSpace));
   if(!rspace) return false;
-  SmartPointer<Interpolator> p = rspace->reverseControlSpace->Simulate(x1,u);
+  InterpolatorPtr p(rspace->reverseControlSpace->Simulate(x1,u));
   x0 = p->End();
   if(!GetStateSpace()->IsFeasible(x0)) return false;
-  EdgePlanner* e=TrajectoryChecker(u,p);
-  bool res=e->IsVisible();
-  delete e;
-  return res;
+  EdgePlannerPtr e=TrajectoryChecker(u,p);
+  return e->IsVisible();
 }
 
 void KinodynamicSpace::Properties(PropertyMap& map) const
@@ -179,29 +175,29 @@ void KinodynamicSpace::Properties(PropertyMap& map) const
 
 
 
-KinematicCSpaceAdaptor::KinematicCSpaceAdaptor(const SmartPointer<CSpace>& base,Real maxNeighborhoodRadius)
-:KinodynamicSpace(base,new KinematicControlSpace(base,maxNeighborhoodRadius))
+KinematicCSpaceAdaptor::KinematicCSpaceAdaptor(const std::shared_ptr<CSpace>& base,Real maxNeighborhoodRadius)
+:KinodynamicSpace(base,make_shared<KinematicControlSpace>(base,maxNeighborhoodRadius))
 {}
 
 
 
 
-KinodynamicSteeringCSpaceAdaptor::KinodynamicSteeringCSpaceAdaptor(const SmartPointer<KinodynamicSpace>& _kinodynamicSpace)
-:PiggybackCSpace(_kinodynamicSpace->GetStateSpace()),kinodynamicSpace(_kinodynamicSpace)
+KinodynamicSteeringCSpaceAdaptor::KinodynamicSteeringCSpaceAdaptor(const std::shared_ptr<KinodynamicSpace>& _kinodynamicSpace)
+:PiggybackCSpace(_kinodynamicSpace->GetStateSpace().get()),kinodynamicSpace(_kinodynamicSpace)
 {
   steeringFunction = kinodynamicSpace->GetControlSpace()->GetSteeringFunction();
   Assert(steeringFunction != NULL);
   Assert(steeringFunction->IsExact());
 }
 
-EdgePlanner* KinodynamicSteeringCSpaceAdaptor::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr KinodynamicSteeringCSpaceAdaptor::PathChecker(const Config& a,const Config& b)
 {
   KinodynamicMilestonePath path;
-  if(!steeringFunction->Connect(a,b,path)) return new FalseEdgeChecker(this,a,b);
+  if(!steeringFunction->Connect(a,b,path)) return make_shared<FalseEdgeChecker>(this,a,b);
   return kinodynamicSpace->TrajectoryChecker(path);
 }
 
-EdgePlanner* KinodynamicSteeringCSpaceAdaptor::PathChecker(const Config& a,const Config& b,int constraint)
+EdgePlannerPtr KinodynamicSteeringCSpaceAdaptor::PathChecker(const Config& a,const Config& b,int constraint)
 {
   FatalError("Can't do single obstacle path checker for a KinodynamicSteeringCSpaceAdaptor yet");
   return NULL;

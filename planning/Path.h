@@ -4,7 +4,6 @@
 #include "CSpace.h"
 #include "EdgePlanner.h"
 #include <list>
-using namespace std;
 
 /** @ingroup MotionPlanning
  * @brief A sequence of locally planned paths between milestones
@@ -36,7 +35,7 @@ public:
   /// Adds the path onto the end of this one
   void Concat(const MilestonePath& path);
   /// Create the path that connects the milestones in the given workspace
-  void CreateEdgesFromMilestones(CSpace* space,const vector<Config>& milestones);
+  void CreateEdgesFromMilestones(CSpace* space,const std::vector<Config>& milestones);
   /// Checks the feasibility of all edges, returns true if they all succeed
   bool InitializeEdgePlans();
   /// Checks the feasibility of all milestones and edges, returns true if so
@@ -61,13 +60,13 @@ public:
   /// Discretizes only the given edge.  Returns the number of new segments.
   int DiscretizeEdge(int e,Real h);
   /// Discretizes the given edge with the specified interpolation.
-  void DiscretizeEdge(int e,const vector<Real>& u);
+  void DiscretizeEdge(int e,const std::vector<Real>& u);
   /// Loads the intermediate milestones, and creates the edges from the given space
-  bool Load(istream& in,CSpace* space);
+  bool Load(std::istream& in,CSpace* space);
   /// Saves the intermediate milestones
-  bool Save(ostream& out);
+  bool Save(std::ostream& out);
 
-  vector<SmartPointer<EdgePlanner> > edges;
+  std::vector<EdgePlannerPtr> edges;
 };
 
 #endif

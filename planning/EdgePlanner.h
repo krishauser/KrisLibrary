@@ -3,7 +3,7 @@
 
 #include "CSpace.h"
 #include "Interpolator.h"
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 #include <list>
 #include <queue>
 
@@ -24,7 +24,7 @@
  * interpolation.
  *
  * NOTE: Sharing pointers between edge planners is dangerous; the only 
- * pointer that can be copied is the configuration space!  Use SmartPointers
+ * pointer that can be copied is the configuration space!  Use shared_ptr's
  * if data must be shared among instances.
  *
  * There is a difference between one-shot and incremental EdgePlanners.  One-shot EdgePlanners
@@ -53,8 +53,8 @@ public:
   virtual ~EdgePlanner() {}
   virtual bool IsVisible() =0;
   virtual CSpace* Space() const =0;
-  virtual EdgePlanner* Copy() const=0;
-  virtual EdgePlanner* ReverseCopy() const=0;
+  virtual std::shared_ptr<EdgePlanner> Copy() const=0;
+  virtual std::shared_ptr<EdgePlanner> ReverseCopy() const=0;
 
   //for incremental planners
   virtual bool IsIncremental() const { return false; } 
@@ -64,6 +64,8 @@ public:
   virtual bool Failed() const { abort(); return false; }
 };
 
+typedef std::shared_ptr<EdgePlanner> EdgePlannerPtr;
+
 /** @ingroup MotionPlanning
  * @brief An EdgePlanner that just checks a given interpolator or straight line
  * path between two configurations.
@@ -71,7 +73,7 @@ public:
 class EdgeChecker : public EdgePlanner
 {
 public:
-  EdgeChecker(CSpace* space,const SmartPointer<Interpolator>& path);
+  EdgeChecker(CSpace* space,const InterpolatorPtr& path);
   EdgeChecker(CSpace* space,const Config& a,const Config& b);
   virtual ~EdgeChecker() {}
   virtual void Eval(Real u,Config& x) const { path->Eval(u,x); }
@@ -81,8 +83,10 @@ public:
   virtual CSpace* Space() const { return space; }
 
   CSpace* space;
-  SmartPointer<Interpolator> path;
+  InterpolatorPtr path;
 };
+
+typedef std::shared_ptr<EdgeChecker> EdgeCheckerPtr;
 
 
 /** @ingroup MotionPlanning
@@ -91,11 +95,11 @@ public:
 class EpsilonEdgeChecker : public EdgeChecker
 {
 public:
-  EpsilonEdgeChecker(CSpace* space,const SmartPointer<Interpolator>& path,Real epsilon);
+  EpsilonEdgeChecker(CSpace* space,const InterpolatorPtr& path,Real epsilon);
   EpsilonEdgeChecker(CSpace* space,const Config& a,const Config& b,Real epsilon);
   virtual bool IsVisible();
-  virtual EdgePlanner* Copy() const;
-  virtual EdgePlanner* ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const;
+  virtual EdgePlannerPtr ReverseCopy() const;
   virtual bool IsIncremental() const { return true; } 
   virtual Real Priority() const;
   virtual bool Plan();
@@ -119,11 +123,11 @@ protected:
 class ObstacleDistanceEdgeChecker : public EdgeChecker
 {
 public:
-  ObstacleDistanceEdgeChecker(CSpace* space,const SmartPointer<Interpolator>& path);
+  ObstacleDistanceEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   ObstacleDistanceEdgeChecker(CSpace* space,const Config& a, const Config& b);
   virtual bool IsVisible();
-  virtual EdgePlanner* Copy() const;
-  virtual EdgePlanner* ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const;
+  virtual EdgePlannerPtr ReverseCopy() const;
 
   bool CheckVisibility(Real ua,Real ub,const Config& a,const Config& b,Real da,Real db);
 };
@@ -147,8 +151,8 @@ public:
   virtual const Config& Start() const;
   virtual const Config& End() const;
   virtual CSpace* Space() const { return space; }
-  virtual EdgePlanner* Copy() const;
-  virtual EdgePlanner* ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const;
+  virtual EdgePlannerPtr ReverseCopy() const;
   virtual bool IsIncremental() const { return true; } 
   virtual Real Priority() const;
   virtual bool Plan();
@@ -181,11 +185,10 @@ protected:
 
 
 ///helper, returns non-NULL if the edge is visible
-inline EdgePlanner* IsVisible(CSpace* w,const Config& a,const Config& b)
+inline EdgePlannerPtr IsVisible(CSpace* w,const Config& a,const Config& b)
 {
-  EdgePlanner* e=w->LocalPlanner(a,b);
+  EdgePlannerPtr e=w->LocalPlanner(a,b);
   if(e->IsVisible()) return e;
-  delete e;
   return NULL;
 }
 

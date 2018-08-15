@@ -40,7 +40,7 @@ public:
   virtual ~ObstacleDisplacementCSpace() {}
 
   //these should be implemented by the subclass
-  virtual CSpace* DisplacementSpace(int obstacle) const { return NULL; }
+  virtual std::shared_ptr<CSpace> DisplacementSpace(int obstacle) const { return NULL; }
   virtual bool IsFeasible(const Config& q,int obstacle,const Vector& d)=0;
   virtual bool IsFeasibleAll(const Config& q,int obstacle) { return false; }
   virtual bool IsVisibleAll(const Config& a,const Config& b,int obstacle) { return false; }
@@ -58,7 +58,7 @@ public:
   void InitZeroDisplacements();
 
   std::vector<Vector> obstacleDisplacements;
-  std::vector<SmartPointer<CSpace> > displacementSpaces;
+  std::vector<std::shared_ptr<CSpace> > displacementSpaces;
 };
 
 /** @brief A planner that minimizes the the displacement cost of violated
@@ -101,14 +101,14 @@ class DisplacementPlanner
     Subset feasible;
     Subset infeasible;
   };
-  typedef vector<TestResult> TestResults;
+  typedef std::vector<TestResult> TestResults;
 
   struct Milestone {
     Config q;
     TestResults tests;
   };
   struct Edge {
-    SmartPointer<EdgePlanner> e;
+    EdgePlannerPtr e;
     TestResults tests;
   };
   typedef Graph::UndirectedGraph<Milestone,Edge> Roadmap;
@@ -116,7 +116,7 @@ class DisplacementPlanner
   struct PathSearchNode
   {
     int vertex;
-    vector<int> assignment;
+    std::vector<int> assignment;
     double pathLength,totalCost;
     PathSearchNode* parent;
   };
@@ -125,48 +125,48 @@ class DisplacementPlanner
   void Init(const Config& start,const Config& goal);
   ///Performs bottom-up planning according to a given set of parameters
   ///(see publication)
-  bool Plan(int numIters,int numExpandsPerDisp,int numLocalOptimize,Real expandLimitStep,vector<int>& bestPath,vector<int>& bestDisplacements);
+  bool Plan(int numIters,int numExpandsPerDisp,int numLocalOptimize,Real expandLimitStep,std::vector<int>& bestPath,std::vector<int>& bestDisplacements);
   ///Performs one iteration of planning given a limit on the solution cost
-  void Expand(Real maxTotalCost,vector<int>& newNodes);
+  void Expand(Real maxTotalCost,std::vector<int>& newNodes);
   ///Picks an obstacle to sample and samples a displacement, returns -1 if
   ///failed
   int AddNewDisplacement(Real maxTotalCost = Inf);
   ///Picks an obstacle to sample, and a maximum cost bound for the
   ///displacement, based on the current roadmap.
   ///Default implementation picks whether to explore or refine current paths.
-  virtual pair<int,Real> PickObstacleToSample(Real maxTotalCost);
+  virtual std::pair<int,Real> PickObstacleToSample(Real maxTotalCost);
   ///The explore strategy finds a node that is not expanded and finds
   ///the obstacles that might enable the node to be expanded
-  virtual pair<int,Real> PickExploreObstacle(Real maxTotalCost);
+  virtual std::pair<int,Real> PickExploreObstacle(Real maxTotalCost);
   ///The goal explore strategy looks for candidate edges into the goal and
   ///picks among obstacles overlapping those edges
-  virtual pair<int,Real> PickGoalExploreObstacle(Real maxTotalCost);
+  virtual std::pair<int,Real> PickGoalExploreObstacle(Real maxTotalCost);
   ///The refine strategy picks among obstacles that must be moved along
   ///current paths (over the whole roadmap)
-  virtual pair<int,Real> PickRefineObstacle(Real maxTotalCost);
+  virtual std::pair<int,Real> PickRefineObstacle(Real maxTotalCost);
   ///The refine strategy picks among obstacles that must be moved along
   ///the current path to the goal
-  virtual pair<int,Real> PickGoalRefineObstacle(Real maxTotalCost);
+  virtual std::pair<int,Real> PickGoalRefineObstacle(Real maxTotalCost);
   ///Returns true if this node is an unexplored candidate
   bool IsCandidateForExploration(int i) const;
   ///Outputs the graph with the given explanation limit
   void BuildRoadmap(Real maxExplanationCost,RoadmapPlanner& prm);
 
   //helpers
-  double Cost(const vector<int>& assignment) const;
+  double Cost(const std::vector<int>& assignment) const;
 
   int AddNode(const Config& q,int parent=-1);
   void AddEdge(int i,int j);
   void AddEdge(int i,int j,const TestResults& tests);
   int CheckImmovableAndAddNode(const Config& q,int parent=-1);
   int ExtendEdge(int i,const Config& q);  //returns index of q
-  void KNN(const Config& q,int k,vector<int>& neighbors,vector<Real>& distances);
-  void KNN(const Config& q,Real maxTotalCost,int k,vector<int>& neighbors,vector<Real>& distances);
+  void KNN(const Config& q,int k,std::vector<int>& neighbors,std::vector<Real>& distances);
+  void KNN(const Config& q,Real maxTotalCost,int k,std::vector<int>& neighbors,std::vector<Real>& distances);
   bool UpdateCoversIn(int nstart,Real maxTotalCost);
   void UpdateCoversOut(int nstart,Real maxTotalCost);
-  SmartPointer<PathSearchNode> UpdateEdge(int i,int j,PathSearchNode* ni,Real maxTotalCost);
+  std::shared_ptr<PathSearchNode> UpdateEdge(int i,int j,PathSearchNode* ni,Real maxTotalCost);
   bool CheckUpstreamConstraints(PathSearchNode* n,int constraint,int sample);
-  void PropagateDownstream(PathSearchNode* n,vector<SmartPointer<PathSearchNode> >& nodes,Real maxTotalCost);
+  void PropagateDownstream(PathSearchNode* n,std::vector<std::shared_ptr<PathSearchNode> >& nodes,Real maxTotalCost);
   bool FindMinimumAssignment(PathSearchNode* n,Real maxTotalCost);
   bool CheckNodeConstraint(Milestone& v,int constraint,int sample);
   bool CheckEdgeConstraint(Edge& e,int constraint,int sample);
@@ -179,11 +179,11 @@ class DisplacementPlanner
   bool Dominates(PathSearchNode* a,PathSearchNode* b);
   //returns true if all of the displacements of setting b are at least as
   //costly as the corresponding displacements of assignment a
-  bool ParetoDominates(const vector<int>& a,const vector<int>& b) const;
+  bool ParetoDominates(const std::vector<int>& a,const std::vector<int>& b) const;
 
   ///For a given graph node, returns the list of obstacles that would improve
   ///the optimal path to that node if it were removed.
-  void LocalImprovementCandidates(int i,vector<int>& obstacles);
+  void LocalImprovementCandidates(int i,std::vector<int>& obstacles);
   ///Generates a new displacement sample that has the potential to improve paths
   ///to nodes that currently collide with the given obstacle.  The displacement
   ///with lowest cost is picked out of the best of numTries attempts
@@ -230,7 +230,7 @@ class DisplacementPlanner
   //minimize pathCostWeight*length(path) + sum of displacement costs
   //if initialDisplacementCosts is nonempty and displacement i is nonzero,
   //it incurs an extra cost of initialDisplacementCosts[i].
-  vector<Real> initialDisplacementCosts;
+  std::vector<Real> initialDisplacementCosts;
   Real pathCostWeight; 
 
   //settings for RRT* like expansion
@@ -251,17 +251,17 @@ class DisplacementPlanner
   int obstacleSampleCount,obstacleDescendIters;
 
   Roadmap roadmap;
-  vector<vector<Vector> > displacementSamples;
-  vector<vector<Real> > displacementSampleCosts;
-  vector<vector<int> > displacementSampleOrders;
+  std::vector<std::vector<Vector> > displacementSamples;
+  std::vector<std::vector<Real> > displacementSampleCosts;
+  std::vector<std::vector<int> > displacementSampleOrders;
 
   struct DynamicShortestPathNode
   {
     //store either a single cover (in case of greedy search)
     //or multiple pareto-optimal covers (in case of optimal search)
-    vector<SmartPointer<PathSearchNode> > covers;
+    std::vector<std::shared_ptr<PathSearchNode> > covers;
   };
-  vector<DynamicShortestPathNode> pathCovers;
+  std::vector<DynamicShortestPathNode> pathCovers;
 
   //planning statistics
   int numExpands,numRefinementAttempts,numRefinementSuccesses,numExplorationAttempts,

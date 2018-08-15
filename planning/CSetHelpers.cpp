@@ -111,7 +111,7 @@ Optimization::NonlinearProgram* NeighborhoodSet::Numeric()
 }
 
 
-SubspaceSet::SubspaceSet(const SmartPointer<CSet>& _base,int _imin,int _imax)
+SubspaceSet::SubspaceSet(const shared_ptr<CSet>& _base,int _imin,int _imax)
 :base(_base),imin(_imin),imax(_imax)
 {}
 
@@ -159,10 +159,8 @@ int VisibilitySet::NumDimensions() const
 
 bool VisibilitySet::Contains(const Config& x)
 { 
-  EdgePlanner* e=space->LocalPlanner(x,center);
-  bool res=e->IsVisible();
-  delete e;
-  return res;
+  EdgePlannerPtr e=space->LocalPlanner(x,center);
+  return e->IsVisible();
 }
 
 
@@ -215,14 +213,14 @@ Optimization::NonlinearProgram* FiniteSet::Numeric()
 }
 
 
-UnionSet::UnionSet(const SmartPointer<CSet>& a,const SmartPointer<CSet>& b)
+UnionSet::UnionSet(const shared_ptr<CSet>& a,const shared_ptr<CSet>& b)
 {
   items.resize(2);
   items[0] = a;
   items[1] = b;
 }
 
-UnionSet::UnionSet(const std::vector<SmartPointer<CSet> >& _items)
+UnionSet::UnionSet(const std::vector<shared_ptr<CSet> >& _items)
 :items(_items)
 {}
 
@@ -263,14 +261,14 @@ void UnionSet::Sample(Config& x)
 }
 
 
-IntersectionSet::IntersectionSet(const SmartPointer<CSet>& a,const SmartPointer<CSet>& b)
+IntersectionSet::IntersectionSet(const shared_ptr<CSet>& a,const shared_ptr<CSet>& b)
 {
   items.resize(2);
   items[0] = a;
   items[1] = b;
 }
 
-IntersectionSet::IntersectionSet(const std::vector<SmartPointer<CSet> >& _items)
+IntersectionSet::IntersectionSet(const std::vector<shared_ptr<CSet> >& _items)
 :items(_items)
 {}
 

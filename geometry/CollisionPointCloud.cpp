@@ -72,7 +72,7 @@ void CollisionPointCloud::InitCollisions()
   timer.Reset();
 
   //initialize the octree, 10 points per cell, res is minimum cell size
-  octree = new OctreePointSet(bblocal,10,res);
+  octree = make_shared<OctreePointSet>(bblocal,10,res);
   for(size_t i=0;i<points.size();i++) {
     if(IsFinite(points[i].x))
       octree->Add(points[i],(int)i);

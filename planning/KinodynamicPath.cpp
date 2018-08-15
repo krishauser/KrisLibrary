@@ -9,7 +9,7 @@ using namespace std;
 KinodynamicMilestonePath::KinodynamicMilestonePath()
 {}
 
-KinodynamicMilestonePath::KinodynamicMilestonePath(const ControlInput& u,const SmartPointer<Interpolator>& path)
+KinodynamicMilestonePath::KinodynamicMilestonePath(const ControlInput& u,const std::shared_ptr<Interpolator>& path)
 {
   milestones.resize(2);
   controls.resize(1);
@@ -53,7 +53,7 @@ void KinodynamicMilestonePath::MakePaths(ControlSpace* space)
 
 void KinodynamicMilestonePath::MakePaths(KinodynamicSpace* space)
 {
-  MakePaths(space->controlSpace);
+  MakePaths(space->controlSpace.get());
 }
 
 void KinodynamicMilestonePath::MakeEdges(KinodynamicSpace* space)
@@ -84,17 +84,17 @@ bool KinodynamicMilestonePath::IsFeasible()
 void KinodynamicMilestonePath::Append(const ControlInput& u,KinodynamicSpace* space)
 {
   Assert(!milestones.empty());
-  Interpolator* path = space->Simulate(milestones.back(),u);
+  InterpolatorPtr path(space->Simulate(milestones.back(),u));
   Append(u,path,space);
 }
 
-void KinodynamicMilestonePath::Append(const ControlInput& u,const SmartPointer<Interpolator>& path,KinodynamicSpace* space)
+void KinodynamicMilestonePath::Append(const ControlInput& u,const std::shared_ptr<Interpolator>& path,KinodynamicSpace* space)
 {
-  EdgePlanner* e=space->TrajectoryChecker(u,path);
+  EdgePlannerPtr e(space->TrajectoryChecker(u,path));
   Append(u,path,e);
 }
 
-void KinodynamicMilestonePath::Append(const ControlInput& u,const SmartPointer<Interpolator>& path,const SmartPointer<EdgePlanner>& e)
+void KinodynamicMilestonePath::Append(const ControlInput& u,const std::shared_ptr<Interpolator>& path,const std::shared_ptr<EdgePlanner>& e)
 {
   if(!milestones.empty()) {
     if(path->Start() != milestones.back()) {
@@ -276,14 +276,14 @@ void KinodynamicMilestonePath::Splice(Real u1,Real u2,const KinodynamicMilestone
     spath.milestones[1] = path.Start();
     spath.controls.push_back(controls[e1]);
     spath.controls[0] *= s1;  ///assume it the control scales
-    spath.paths.push_back( new TimeRemappedInterpolator(paths[e1],0,s1));
+    spath.paths.push_back( make_shared<TimeRemappedInterpolator>(paths[e1],0,s1));
   }
   spath.Concat(path);
   if(e2 < (int)paths.size() && s2 > 0) {
     spath.milestones.push_back(milestones[e2+1]);
     spath.controls.push_back(controls[e2]);
     spath.controls.back()[0] *= (1.0-s2);  ///assume it the control scales
-    spath.paths.push_back( new TimeRemappedInterpolator(paths[e2],s2,1));
+    spath.paths.push_back( make_shared<TimeRemappedInterpolator>(paths[e2],s2,1));
   }
   if(!edges.empty() && space) spath.MakeEdges(space);
   Splice2(e1,e2+1,spath);
@@ -361,7 +361,7 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
   }
   KinodynamicSpace* space = dynamic_cast<KinodynamicSpace*>(Space());
   Assert(space != NULL);
-  SmartPointer<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
+  std::shared_ptr<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
 
   //binary search
   TimeIndexCmp cmp(timeIndex);
@@ -388,7 +388,7 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
 	space->controlSpace->GetControlSet(before.milestones.back())->Sample(zeroControl);
 	zeroControl.setZero();
 	zeroControl(timeIndex) = t - End()(timeIndex);
-  extension = KinodynamicMilestonePath(zeroControl,space->Simulate(End(),zeroControl));
+  extension = KinodynamicMilestonePath(zeroControl,InterpolatorPtr(space->Simulate(End(),zeroControl)));
       }
       before.Concat(extension);
       
@@ -433,11 +433,11 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
     after.milestones.front() = q;
     //assume controls(timeIndex) is dt?
     before.controls.back()(timeIndex) *= u;
-    before.paths.back() = new TimeRemappedInterpolator(paths[index],0,u);
+    before.paths.back().reset(new TimeRemappedInterpolator(paths[index],0,u));
     if(!edges.empty()) before.edges.back() = space->TrajectoryChecker(before.controls.back(),before.paths.back());
 
     before.controls.front()(timeIndex) *= (1.0-u);
-    before.paths.front() = new TimeRemappedInterpolator(paths[index],u,1);
+    before.paths.front().reset(new TimeRemappedInterpolator(paths[index],u,1));
     if(!edges.empty()) before.edges.front() = space->TrajectoryChecker(after.controls.front(),after.paths.front());
 
     //sanity check

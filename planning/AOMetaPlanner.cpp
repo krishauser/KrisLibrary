@@ -10,7 +10,7 @@ using namespace std;
 class CostGoal : public CSet
 {
 public:
-  CostGoal(CSet* _baseGoal,const SmartPointer<ObjectiveFunctionalBase>& _objective,Real _costMax)
+  CostGoal(CSet* _baseGoal,const std::shared_ptr<ObjectiveFunctionalBase>& _objective,Real _costMax)
   :baseGoal(_baseGoal),objective(_objective),costMax(_costMax)
   {}
 
@@ -44,19 +44,19 @@ public:
     return true;
   }
   CSet* baseGoal;
-  SmartPointer<ObjectiveFunctionalBase> objective;
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
   Real costMax;
 };
 
 
-CostSpaceRRTPlanner::CostSpaceRRTPlanner(const SmartPointer<KinodynamicSpace>& _baseSpace,const SmartPointer<ObjectiveFunctionalBase>& _objective,Real costMax)
-:LazyRRTKinodynamicPlanner(NULL),baseSpace(_baseSpace),costSpace(new StateCostKinodynamicSpace(_baseSpace,_objective,costMax)),objective(_objective),costGoalSet(NULL),
+CostSpaceRRTPlanner::CostSpaceRRTPlanner(const std::shared_ptr<KinodynamicSpace>& _baseSpace,const std::shared_ptr<ObjectiveFunctionalBase>& _objective,Real costMax)
+:LazyRRTKinodynamicPlanner(NULL),baseSpace(_baseSpace),costSpace(make_shared<StateCostKinodynamicSpace>(_baseSpace,_objective,costMax)),objective(_objective),costGoalSet(NULL),
  costSpaceDistanceWeight(1),lazy(false),bestPathCost(Inf),
  prunableNodeSampleCount(0),nodeSampleCount(0),
  numPrunedNodes(0)
 {
-  RRTKinodynamicPlanner::space = costSpace;
-  RRTKinodynamicPlanner::tree.space = costSpace;
+  RRTKinodynamicPlanner::space = costSpace.get();
+  RRTKinodynamicPlanner::tree.space = costSpace.get();
   if(IsInf(costMax)) EnableCostSpaceBias(false);
   else {
     bestPathCost = costMax;
@@ -67,10 +67,10 @@ CostSpaceRRTPlanner::CostSpaceRRTPlanner(const SmartPointer<KinodynamicSpace>& _
 
 void CostSpaceRRTPlanner::Init(const State& xinit,CSet* goalSet)
 {
-  costGoalSet = new CostGoal(goalSet,objective,bestPathCost);
+  costGoalSet = make_shared<CostGoal>(goalSet,objective,bestPathCost);
   Vector cx0;
   StateCostControlSpace::Join(xinit,0.0,cx0);
-  RRTKinodynamicPlanner::Init(cx0,costGoalSet);
+  RRTKinodynamicPlanner::Init(cx0,costGoalSet.get());
 }
 
 bool CostSpaceRRTPlanner::Done() const
@@ -161,9 +161,9 @@ bool CostSpaceRRTPlanner::GetPath(KinodynamicMilestonePath& path)
   path.paths.resize(cpath.paths.size());
   for(size_t i=0;i<cpath.paths.size();i++) {
     if(dynamic_cast<MultiInterpolator*>(&*cpath.paths[i]) != NULL)
-      path.paths[i] = dynamic_cast<MultiInterpolator*>(&*cpath.paths[i])->components[0];
+      path.paths[i] = dynamic_cast<MultiInterpolator*>(cpath.paths[i].get())->components[0];
     else
-      path.paths[i] = new SubsetInterpolator(cpath.paths[i],0,path.milestones[0].n);
+      path.paths[i].reset(new SubsetInterpolator(cpath.paths[i],0,path.milestones[0].n));
   }
   return true;
 }
@@ -182,30 +182,30 @@ RRTKinodynamicPlanner::Node* CostSpaceRRTPlanner::ExtendToward(const State& xdes
   Real cn = StateCostControlSpace::Cost(*n);
   if(!IsInf(bestPathCost)) {
     if(cn > bestPathCost) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Closest node is prunable\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Closest node is prunable");
       prunableNodeSampleCount+=1;
       return NULL;
     }
     if(heuristic && cn + heuristic(*n) > bestPathCost) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Closest node is prunable w/ heuristic\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Closest node is prunable w/ heuristic");
       prunableNodeSampleCount+=1;
       return NULL;
     }
   }
   Real d = space->GetStateSpace()->Distance(*n,xdest);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Source "<<*n<<" dest "<<xdest<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Distance to closest "<<d<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Source "<<*n<<" dest "<<xdest<<"");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Distance to closest "<<d<<"");
   Vector temp = xdest;
   if(d > delta)  {
     space->GetStateSpace()->Interpolate(*n,xdest,delta/d,temp);
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Interpolated point "<<temp<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Interpolated point "<<temp<<"");
   }
 
   KinodynamicMilestonePath path;
   if(!PickControl(*n,temp,path)) {
     pickControlTime += timer.ElapsedTime();
     numInfeasibleControls++;
-    //LOG4CXX_INFO(KrisLibrary::logger(),"PickControl failed\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"PickControl failed");
     return NULL;
   }
   pickControlTime += timer.ElapsedTime();
@@ -213,14 +213,14 @@ RRTKinodynamicPlanner::Node* CostSpaceRRTPlanner::ExtendToward(const State& xdes
   Assert(path.Start().n == space->GetStateSpace()->NumDimensions());
   Assert(path.End().n == space->GetStateSpace()->NumDimensions());
   if(FilterExtension(n,path)) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Extension filtered\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Extension filtered");
     numFilteredExtensions++;
     return NULL;
   }
   if(!space->GetStateSpace()->IsFeasible(path.End())) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible");
     visibleTime += timer.ElapsedTime();
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Infeasible endpoint\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Infeasible endpoint");
     numInfeasibleEndpoints++;
     return NULL;
   }
@@ -228,7 +228,7 @@ RRTKinodynamicPlanner::Node* CostSpaceRRTPlanner::ExtendToward(const State& xdes
   Assert(path.Start().n == space->GetStateSpace()->NumDimensions());
   Assert(path.End().n == space->GetStateSpace()->NumDimensions());
 
-  SmartPointer<EdgePlanner> e = space->TrajectoryChecker(path);
+  EdgePlannerPtr e(space->TrajectoryChecker(path));
   Assert(e->Start().n == space->GetStateSpace()->NumDimensions());
   Assert(e->End().n == space->GetStateSpace()->NumDimensions());
   if(lazy || e->IsVisible()) {
@@ -238,7 +238,7 @@ RRTKinodynamicPlanner::Node* CostSpaceRRTPlanner::ExtendToward(const State& xdes
   }
   else {
     visibleTime += timer.ElapsedTime();
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge is not visible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge is not visible");
     return NULL;
   }
 }
@@ -251,7 +251,7 @@ bool CostSpaceRRTPlanner::Plan(int maxIters)
     bool prune = false;
     Node* n=RRTKinodynamicPlanner::Extend();
     if(n && goalSet && goalSet->Contains(*n)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Got a new node in goal\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Got a new node in goal");
       //new goal node found
       Real cn = TerminalCost(*n);
       numGoalsSampled++;
@@ -293,7 +293,7 @@ bool CostSpaceRRTPlanner::Plan(int maxIters)
     }
     if(prune || (prunableNodeSampleCount > 10 && prunableNodeSampleCount*100 > nodeSampleCount)) {
       //prune the tree
-      LOG4CXX_INFO(KrisLibrary::logger(),"Pruning the RRT tree\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Pruning the RRT tree");
       PruneTree();
       nodeSampleCount = prunableNodeSampleCount = 0;
     }
@@ -313,7 +313,7 @@ struct PruneCallback : public Graph::CallbackBase<CostSpaceRRTPlanner::Node*>
     }
     else if(planner->heuristic && cn + planner->heuristic(*n) > planner->bestPathCost) {
       if(find(prevent.begin(),prevent.end(),n) != prevent.end()) {
-        LOG4CXX_WARN(KrisLibrary::logger(),"CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node\n");
+        LOG4CXX_WARN(KrisLibrary::logger(),"CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node");
         return;
       }
       deleteNodes.push_back(n);
@@ -388,14 +388,14 @@ void CostSpaceRRTPlanner::GetStats(PropertyMap& stats) const
 
 
 
-CostSpaceESTPlanner::CostSpaceESTPlanner(const SmartPointer<KinodynamicSpace>& _baseSpace,const SmartPointer<ObjectiveFunctionalBase>& _objective,Real costMax)
-:ESTKinodynamicPlanner(NULL),baseSpace(_baseSpace),costSpace(new StateCostKinodynamicSpace(_baseSpace,_objective,costMax)),objective(_objective),costGoalSet(NULL),
+CostSpaceESTPlanner::CostSpaceESTPlanner(const std::shared_ptr<KinodynamicSpace>& _baseSpace,const std::shared_ptr<ObjectiveFunctionalBase>& _objective,Real costMax)
+:ESTKinodynamicPlanner(NULL),baseSpace(_baseSpace),costSpace(make_shared<StateCostKinodynamicSpace>(_baseSpace,_objective,costMax)),objective(_objective),costGoalSet(NULL),
  costSpaceResolution(0.1),bestPathCost(Inf),
  prunableNodeSampleCount(0),nodeSampleCount(0),
  numGoalsSampled(0),numPrunedNodes(0)
 {
-  ESTKinodynamicPlanner::space = costSpace;
-  ESTKinodynamicPlanner::tree.space = costSpace;
+  ESTKinodynamicPlanner::space = costSpace.get();
+  ESTKinodynamicPlanner::tree.space = costSpace.get();
   if(IsInf(costMax)) EnableCostSpaceBias(false);
   else {
     bestPathCost = costMax;
@@ -406,10 +406,10 @@ CostSpaceESTPlanner::CostSpaceESTPlanner(const SmartPointer<KinodynamicSpace>& _
 
 void CostSpaceESTPlanner::Init(const State& xinit,CSet* goalSet)
 {
-  costGoalSet = new CostGoal(goalSet,objective,bestPathCost);
+  costGoalSet = make_shared<CostGoal>(goalSet,objective,bestPathCost);
   Vector cx0;
   StateCostControlSpace::Join(xinit,0.0,cx0);
-  ESTKinodynamicPlanner::Init(cx0,costGoalSet);
+  ESTKinodynamicPlanner::Init(cx0,costGoalSet.get());
 }
 
 void CostSpaceESTPlanner::EnableCostSpaceBias(bool enabled)
@@ -422,7 +422,7 @@ void CostSpaceESTPlanner::EnableCostSpaceBias(bool enabled)
     if(mde) h = mde->h;
     else h.resize(nbase,0.1);
     if(h.n > nbase) h.n = nbase;
-    densityEstimator = new MultiGridDensityEstimator(nbase,3,h);
+    densityEstimator = make_shared<MultiGridDensityEstimator>(nbase,3,h);
   }
   else {
     SetCostMax(bestPathCost);
@@ -432,7 +432,7 @@ void CostSpaceESTPlanner::EnableCostSpaceBias(bool enabled)
     if(mde) h.copySubVector(0,mde->h);
     else h.set(0.1);
     h(nsc-1) = costSpaceResolution;
-    densityEstimator = new MultiGridDensityEstimator(nsc,3,h);
+    densityEstimator = make_shared<MultiGridDensityEstimator>(nsc,3,h);
   }
   RebuildDensityEstimator();
 }
@@ -498,7 +498,7 @@ bool CostSpaceESTPlanner::GetPath(KinodynamicMilestonePath& path)
     if(mi != NULL)
       path.paths[i] = mi->components[0];
     else
-      path.paths[i] = new SubsetInterpolator(cpath.paths[i],0,path.milestones[0].n);
+      path.paths[i].reset(new SubsetInterpolator(cpath.paths[i],0,path.milestones[0].n));
   }
   return true;
 }
@@ -539,7 +539,7 @@ bool CostSpaceESTPlanner::Plan(int maxIters)
     }
     if(prune || (prunableNodeSampleCount > 10 && prunableNodeSampleCount*10 > nodeSampleCount)) {
       //prune the tree
-      LOG4CXX_INFO(KrisLibrary::logger(),"Pruning the EST tree\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Pruning the EST tree");
       PruneTree();
       nodeSampleCount = prunableNodeSampleCount = 0;
     }
@@ -559,7 +559,7 @@ struct PruneCallback2 : public Graph::CallbackBase<CostSpaceESTPlanner::Node*>
     }
     else if(planner->heuristic && cn + planner->heuristic(*n) > planner->bestPathCost) {
       if(find(prevent.begin(),prevent.end(),n) != prevent.end()) {
-        LOG4CXX_WARN(KrisLibrary::logger(),"CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node\n");
+        LOG4CXX_WARN(KrisLibrary::logger(),"CostSpaceRRTPlanner: Warning, heuristic function is not admissible, trying to prune path to goal node");
         return;
       }
       deleteNodes.push_back(n);

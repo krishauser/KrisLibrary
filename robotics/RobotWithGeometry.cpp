@@ -116,7 +116,7 @@ const RobotWithGeometry& RobotWithGeometry::operator = (const RobotDynamics3D& r
 
 bool RobotWithGeometry::LoadGeometry(int i,const char* file)
 {
-  geometry[i] = new CollisionGeometry;
+  geometry[i].reset(new CollisionGeometry);
   if(!geometry[i]->Load(file)) return false;
   return true;
 }

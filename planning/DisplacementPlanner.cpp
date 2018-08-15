@@ -63,13 +63,13 @@ bool IsVisibleAll(ObstacleDisplacementCSpace* cspace,const Config& a,const Confi
 bool IsVisible(ObstacleDisplacementCSpace* cspace,const Config& a,const Config& b,int obstacle,const Vector& displacement)
 {
   cspace->SetDisplacement(obstacle,displacement);
-  SmartPointer<EdgePlanner> e = cspace->PathChecker(a,b,obstacle);
+  shared_ptr<EdgePlanner> e = cspace->PathChecker(a,b,obstacle);
   return e->IsVisible();
 }
 
 bool IsVisible(ObstacleDisplacementCSpace* cspace,const Config& a,const Config& b,int obstacle)
 {
-  SmartPointer<EdgePlanner> e = cspace->PathChecker(a,b,obstacle);
+  shared_ptr<EdgePlanner> e = cspace->PathChecker(a,b,obstacle);
   return e->IsVisible();
 }
 
@@ -79,7 +79,7 @@ ObstacleDisplacementCSpace::ObstacleDisplacementCSpace()
 bool ObstacleDisplacementCSpace::IsDisplaceable(int obstacle) const
 {
   if(displacementSpaces.empty()) {
-    SmartPointer<CSpace> Di = DisplacementSpace(obstacle); 
+    shared_ptr<CSpace> Di = DisplacementSpace(obstacle); 
     return Di != NULL;
   }
   else return displacementSpaces[obstacle]!=NULL;
@@ -186,7 +186,7 @@ bool DisplacementPlanner::SanityCheck(bool checkOneCoverGreedy)
       }
       //check for cycles
       set<PathSearchNode*> visited;
-      PathSearchNode* n=pathCovers[i].covers[j];
+      PathSearchNode* n=pathCovers[i].covers[j].get();
       while(n != NULL) {
 	if(visited.count(n) != 0) {
 	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Cycle in search tree starting at node "<<i);
@@ -276,7 +276,7 @@ bool DisplacementPlanner::Plan(int numIters,int numExpandsPerDisp,int numLocalOp
     Expand(maxExplanationCost,newnodes);
     if(OptimalPathTo(1) != n) {
       if(OptimalCost(1) < bestCost) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Got a new path, optimizing\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Got a new path, optimizing");
 	if(numLocalOptimize>0) {
 	  RefineGoalPathAndDisplacements(numLocalOptimize,0.5,1.0);
 	  ShortcutGoalPath(1,5);
@@ -303,11 +303,11 @@ int DisplacementPlanner::AddNewDisplacement(Real maxTotalCost)
 {
   pair<int,Real> des = PickObstacleToSample(maxTotalCost);
   if(des.first < 0) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"DisplacementPlanner::AddNewDisplacement: No obstacle needs sampling\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"DisplacementPlanner::AddNewDisplacement: No obstacle needs sampling");
     return -1;
   }
   if(!space->displacementSpaces[des.first]) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"DisplacementPlanner::AddNewDisplacement: Obstacle picker returned immovable obstacle\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"DisplacementPlanner::AddNewDisplacement: Obstacle picker returned immovable obstacle");
     return -1;    
   }
   if(GenerateDisplacementSample(des.first,des.second,maxTotalCost,obstacleSampleCount))
@@ -328,35 +328,35 @@ pair<int,Real> DisplacementPlanner::PickObstacleToSample(Real maxTotalCost)
   pair<int,Real> res;
   if(!pathCovers[1].covers.empty()) { //goal has been reached
     if(Rand() < 0.5) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, refining goal path\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, refining goal path");
       res = PickGoalRefineObstacle(maxTotalCost);
       if(res.first >= 0) return res;
     }
     if(Rand() < 0.2) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, refining new candidate goal paths\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, refining new candidate goal paths");
       res = PickGoalExploreObstacle(maxTotalCost);
       if(res.first >= 0) return res;
     }
     if(Rand()<0.9) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, exploring\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, exploring");
       res = PickExploreObstacle(maxTotalCost);
       if(res.first >= 0) return res;
     }
-    LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, refining overall\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Goal reached, refining overall");
     return PickRefineObstacle(maxTotalCost);
   }
   if(Rand() < 0.2) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"  Goal not reached, refining goal path\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Goal not reached, refining goal path");
     res = PickGoalExploreObstacle(maxTotalCost);
     if(res.first >= 0) return res;
   }
   //goal has not been reached
   if(Rand() < 0.9) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"  Goal not reached, exploring\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Goal not reached, exploring");
     res=PickExploreObstacle(maxTotalCost);
     if(res.first >= 0) return res;
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"  Goal not reached, refining\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"  Goal not reached, refining");
   return PickRefineObstacle(maxTotalCost);
 }
 
@@ -419,7 +419,7 @@ pair<int,Real> DisplacementPlanner::PickExploreObstacle(Real maxTotalCost)
 	LOG4CXX_INFO(KrisLibrary::logger(),"Root improvement candidates: ");
 	for(size_t j=0;j<candidatelist.size();j++)
 	  LOG4CXX_INFO(KrisLibrary::logger(),""<<candidatelist[j]);
-	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"");
       }
       //LOG4CXX_INFO(KrisLibrary::logger(),"boundary node "<<i<<" feasible, has "<<candidatelist.size());
       for(size_t j=0;j<candidatelist.size();j++) {
@@ -449,7 +449,7 @@ pair<int,Real> DisplacementPlanner::PickExploreObstacle(Real maxTotalCost)
 	    count_candidate[obs] ++;
 	  }
 	  else {
-	    //LOG4CXX_INFO(KrisLibrary::logger(),"A node "<< but no parent is reachable\n"<<" has an infeasibility at obstacle "<<i	  
+	    //LOG4CXX_INFO(KrisLibrary::logger(),"A node "<< but no parent is reachable\n"<<" has an infeasibility at obstacle "<<i);
     }
 	}
       }
@@ -585,7 +585,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
   if(potential_changes.empty() && pathCovers[0].covers.empty())
     potential_changes.push_back(0);
   if(potential_changes.empty()) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Obstacle "<<obstacle<<" potential displacement was irrelevant for all nodes"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Obstacle "<<obstacle<<" potential displacement was irrelevant for all nodes");
     return false;
   }
 
@@ -598,7 +598,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
   Real bestSampleScore = -Inf;
   Vector bestSample;
 
-  CSpace* dspace = space->displacementSpaces[obstacle];
+  auto dspace = space->displacementSpaces[obstacle];
   Vector sample;
   for(int iters=0;iters<numTries;iters++) {
     dspace->SampleNeighborhood(displacementSamples[obstacle][0],maxRad,sample);
@@ -608,7 +608,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
       continue;
     }
     if(!dspace->IsFeasible(sample)) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"Warning, D-space's SampleNeighborhood failed to return a feasible sample\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning, D-space's SampleNeighborhood failed to return a feasible sample");
       continue;
     }
 
@@ -660,7 +660,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
   }
 
   Assert(dspace->Distance(bestSample,displacementSamples[obstacle][0]) <= maxRad);
-  LOG4CXX_INFO(KrisLibrary::logger(),"Adding displacement sample to obstacle "<<obstacle<<", dist "<<dspace->Distance(bestSample,displacementSamples[obstacle][0])<<", bound "<<maxRad<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Adding displacement sample to obstacle "<<obstacle<<", dist "<<dspace->Distance(bestSample,displacementSamples[obstacle][0])<<", bound "<<maxRad);
   //add the displacement sample
   AddDisplacementSampleRaw(obstacle,bestSample);
 
@@ -675,7 +675,7 @@ bool DisplacementPlanner::GenerateDisplacementSample(int obstacle, Real maxDispC
 
 bool DisplacementPlanner::AddDisplacementSample(int obstacle,const Vector& disp)
 {
-  CSpace* dspace = space->displacementSpaces[obstacle];
+  auto dspace = space->displacementSpaces[obstacle];
   Real cost = dspace->Distance(disp,displacementSamples[obstacle][0]);
   if(!initialDisplacementCosts.empty())
     cost += initialDisplacementCosts[obstacle];
@@ -702,7 +702,7 @@ bool DisplacementPlanner::AddDisplacementSample(int obstacle,const Vector& disp)
     }
   }
   if(potential_changes.empty()) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Obstacle "<<obstacle<<" potential displacement "<<disp<<" was infeasible for all nodes"<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Obstacle "<<obstacle<<" potential displacement "<<disp<<" was infeasible for all nodes");
     return false;
   }
 
@@ -740,20 +740,20 @@ bool DisplacementPlanner::AddDisplacementSample(int obstacle,const Vector& disp)
     int node=potential_changes[i];
     bool changed=false;
     for(size_t j=0;j<pathCovers[node].covers.size();j++)
-      if(CheckUpstreamConstraints(pathCovers[node].covers[j],obstacle,newSampleIndex)) {
-	changed = true;
-	if(!updateAll) {
-	  if(pathCovers[node].covers[j]->parent) 
-	    UpdateEdge(pathCovers[node].covers[j]->parent->vertex,pathCovers[node].covers[j]->vertex,pathCovers[node].covers[j]->parent,Inf);
-	  else
-	    FindMinimumAssignment(pathCovers[node].covers[j],Inf);
-	}
+      if(CheckUpstreamConstraints(pathCovers[node].covers[j].get(),obstacle,newSampleIndex)) {
+        changed = true;
+        if(!updateAll) {
+          if(pathCovers[node].covers[j]->parent) 
+            UpdateEdge(pathCovers[node].covers[j]->parent->vertex,pathCovers[node].covers[j]->vertex,pathCovers[node].covers[j]->parent,Inf);
+          else
+            FindMinimumAssignment(pathCovers[node].covers[j].get(),Inf);
+        }
       }
     if(!updateAll) {
       if(!changed) 
-	if(UpdateCoversIn(node,Inf)) changed=true;
+        if(UpdateCoversIn(node,Inf)) changed=true;
       if(changed) {
-	UpdateCoversOut(node,Inf);
+        UpdateCoversOut(node,Inf);
       }
     }
     //else
@@ -837,7 +837,7 @@ bool DisplacementPlanner::RefineGoalDisplacements(int numIters,Real perturbRadiu
 	}
       }
       if(!feasible) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Displacement sample "<<i); LOG4CXX_INFO(KrisLibrary::logger(),temp<<" vert infeasible"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Displacement sample "<<i); LOG4CXX_INFO(KrisLibrary::logger(),temp<<" vert infeasible");
 	continue;
       }
       for(size_t v=0;v+1<path.size();v++) {
@@ -850,7 +850,7 @@ bool DisplacementPlanner::RefineGoalDisplacements(int numIters,Real perturbRadiu
 	}
       }
       if(!feasible) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Displacement sample "<<i); LOG4CXX_INFO(KrisLibrary::logger(),temp<<" edge infeasible"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Displacement sample "<<i); LOG4CXX_INFO(KrisLibrary::logger(),temp<<" edge infeasible");
 	continue;
       }
       optima[i] = temp;
@@ -936,7 +936,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
       }
       //made the start or goal infeasible
       if(activeVertices[0] || activeVertices.back()) {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Displacement sample "<<i); LOG4CXX_INFO(KrisLibrary::logger(),temp<<" made start/goal infeasible"<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Displacement sample "<<i); LOG4CXX_INFO(KrisLibrary::logger(),temp<<" made start/goal infeasible");
 	continue;
       }
       for(size_t v=0;v+1<path.size();v++) {
@@ -1053,7 +1053,7 @@ bool DisplacementPlanner::RefineGoalPathAndDisplacements(int numIters,Real pertu
 	//LOG4CXX_INFO(KrisLibrary::logger(),"Obs "<<i);
 	continue;
       }
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Path successfully changed\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Path successfully changed");
       //we are done.  now, store this in the current optimization variable
       for(size_t v=0;v<path.size();v++)
 	if(activeVertices[v])
@@ -1329,7 +1329,7 @@ void DisplacementPlanner::Expand(Real maxExplanationCost,vector<int>& newNodes)
     for(size_t i=0;i<newNodes.size();i++) {
       if(!roadmap.HasEdge(newNodes[i],1)) continue;
       for(size_t j=0;j<pathCovers[newNodes[i]].covers.size();j++) {
-	UpdateEdge(newNodes[i],1,pathCovers[newNodes[i]].covers[j],maxExplanationCost);
+	UpdateEdge(newNodes[i],1,pathCovers[newNodes[i]].covers[j].get(),maxExplanationCost);
       }
     }
   }
@@ -1354,7 +1354,7 @@ void DisplacementPlanner::BuildRoadmap(Real maxTotalCost,RoadmapPlanner& prm)
   for(size_t i=0;i<roadmap.nodes.size();i++) {
     copy.nodes[i].setRef(roadmap.nodes[i].q);
     for(Roadmap::EdgeListIterator e=roadmap.edges[i].begin();e!=roadmap.edges[i].end();e++) {
-      SmartPointer<EdgePlanner>* ecopy = copy.FindEdge(i,e->first);
+      shared_ptr<EdgePlanner>* ecopy = copy.FindEdge(i,e->first);
       Assert(ecopy != NULL);
       *ecopy = e->second->e;
     }
@@ -1682,13 +1682,13 @@ bool DisplacementPlanner::Revisited(PathSearchNode* n)
   }
 }
 
-SmartPointer<DisplacementPlanner::PathSearchNode> DisplacementPlanner::UpdateEdge(int s,int t,PathSearchNode* ns,Real maxTotalCost)
+shared_ptr<DisplacementPlanner::PathSearchNode> DisplacementPlanner::UpdateEdge(int s,int t,PathSearchNode* ns,Real maxTotalCost)
 {
   Assert(ns->vertex==s);
   if(DEBUG) 
     Assert(roadmap.FindEdge(s,t) != NULL);
   //create new candidate child node
-  SmartPointer<PathSearchNode> c=new PathSearchNode;
+  shared_ptr<PathSearchNode> c(new PathSearchNode);
   c->vertex = t;
   c->parent = ns;
   c->assignment = ns->assignment;
@@ -1696,23 +1696,26 @@ SmartPointer<DisplacementPlanner::PathSearchNode> DisplacementPlanner::UpdateEdg
   c->pathLength = ns->pathLength + dst;
   c->totalCost = ns->totalCost + dst*pathCostWeight;
   //adjust its assignment (propagating upstream)
-  if(!FindMinimumAssignment(c,maxTotalCost)) {
+  if(!FindMinimumAssignment(c.get(),maxTotalCost)) {
     //LOG4CXX_INFO(KrisLibrary::logger(),"Unable to find feasible assignment "<<s<<"->"<<t<<" under cost "<<maxTotalCost);
-    //LOG4CXX_INFO(KrisLibrary::logger(),"  no edge update "<< fail assignment\n"<<"->"<<s    return NULL;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"  no edge update "<< fail assignment\n"<<"->"<<s);
+    return NULL;
   }
   c->totalCost = Cost(c->assignment) + c->pathLength*pathCostWeight;
 
   //check for revisited states
-  bool revisited = Revisited(c);
+  bool revisited = Revisited(c.get());
   if(revisited) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"  no edge update "<< revisited\n"<<"->"<<s    return NULL;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"  no edge update "<< revisited\n"<<"->"<<s);
+    return NULL;
   }
   //if(t==1) 
   //LOG4CXX_INFO(KrisLibrary::logger(),"New path to goal has displacement cost "<<Cost(c->assignment)<<", total "<<c->totalCost);
 
   //allow intermediate between greedy and optimal
   if((int)pathCovers[t].covers.size()+1>updatePathsMax) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"  no edge update "<< too many paths\n"<<"->"<<s    return NULL;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"  no edge update "<< too many paths\n"<<"->"<<s;
+    return NULL;
   }
 
   //add to the covers at t
@@ -1720,14 +1723,14 @@ SmartPointer<DisplacementPlanner::PathSearchNode> DisplacementPlanner::UpdateEdg
   return c;
 }
 
-void DisplacementPlanner::PropagateDownstream(PathSearchNode* n,vector<SmartPointer<PathSearchNode> >& nodes,Real maxTotalCost)
+void DisplacementPlanner::PropagateDownstream(PathSearchNode* n,vector<shared_ptr<PathSearchNode> >& nodes,Real maxTotalCost)
 {
   Roadmap::Iterator e;
   int s=n->vertex;
   nodes.resize(0);
   for(roadmap.Begin(s,e);!e.end();e++) {
     int t=e.target();
-    SmartPointer<PathSearchNode> newNode = UpdateEdge(s,t,n,maxTotalCost);
+    shared_ptr<PathSearchNode> newNode = UpdateEdge(s,t,n,maxTotalCost);
     if(DEBUG) Assert(SanityCheck());
 
     if(newNode) {
@@ -1840,17 +1843,17 @@ void DisplacementPlanner::PruneSearchNode(PathSearchNode* n,IndexedPriorityQueue
     int t=e.target();
     for(size_t j=0;j<pathCovers[t].covers.size();j++) 
       if(pathCovers[t].covers[j]->parent == n) 
-	PruneSearchNode(pathCovers[t].covers[j],q);
+	PruneSearchNode(pathCovers[t].covers[j].get(),q);
   }
   if(q) {
     IndexedPriorityQueue<PathSearchNode*,Real>::iterator it=q->find(n);
     if(it != q->end()) {
       q->erase(it);
-      //LOG4CXX_INFO(KrisLibrary::logger(),"  ...in heap\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  ...in heap");
     }
   }
   for(size_t j=0;j<pathCovers[v].covers.size();j++)
-    if(pathCovers[v].covers[j]==n) {
+    if(pathCovers[v].covers[j].get()==n) {
       n->parent = NULL;
       pathCovers[v].covers.erase(pathCovers[v].covers.begin()+j);
     }
@@ -1861,20 +1864,20 @@ void DisplacementPlanner::PruneSearchNode(PathSearchNode* n,IndexedPriorityQueue
 bool DisplacementPlanner::UpdateCoversIn(int n,Real maxTotalCost)
 {
   if(n == 0) {
-    SmartPointer<PathSearchNode> c = new PathSearchNode;
+    shared_ptr<PathSearchNode> c(new PathSearchNode);
     c->vertex = n;
     c->assignment.resize(displacementSamples.size(),0);
     c->pathLength = 0;
     c->totalCost = 0;
     c->parent = NULL;
-    if(!FindMinimumAssignment(c,maxTotalCost)) {
+    if(!FindMinimumAssignment(c.get(),maxTotalCost)) {
       return false;
     }
     c->totalCost = Cost(c->assignment);
     //test if it's revisited -- if so, no update needed
-    if(Revisited(c)) return false;
+    if(Revisited(c.get())) return false;
     for(size_t i=0;i<pathCovers[n].covers.size();i++) 
-      PruneSearchNode(pathCovers[n].covers[i]);
+      PruneSearchNode(pathCovers[n].covers[i].get());
     pathCovers[n].covers.resize(1);
     pathCovers[n].covers[0] = c;
     if(DEBUG) Assert(SanityCheck(true));
@@ -1888,9 +1891,9 @@ bool DisplacementPlanner::UpdateCoversIn(int n,Real maxTotalCost)
     for(roadmap.Begin(n,e);!e.end();e++) {
       int t=e.target();
       if(t==1) continue;
-      vector<SmartPointer<PathSearchNode> > newNodes;
+      vector<shared_ptr<PathSearchNode> > newNodes;
       for(size_t i=0;i<pathCovers[t].covers.size();i++) {
-	SmartPointer<PathSearchNode> c=UpdateEdge(t,n,pathCovers[t].covers[i],maxTotalCost);
+	shared_ptr<PathSearchNode> c=UpdateEdge(t,n,pathCovers[t].covers[i].get(),maxTotalCost);
 	if(c) {
 	  newNodes.push_back(c);
 	  //do pruning
@@ -1898,10 +1901,10 @@ bool DisplacementPlanner::UpdateCoversIn(int n,Real maxTotalCost)
 	  while(changed) {
 	    changed = false;
 	    for(size_t i=0;i<pathCovers[n].covers.size();i++) {
-	      if(c == pathCovers[n].covers[i]) continue;
-	      if(Dominates(c,pathCovers[n].covers[i])) {
+	      if(c.get() == pathCovers[n].covers[i].get()) continue;
+	      if(Dominates(c.get(),pathCovers[n].covers[i].get())) {
 		changed = true;
-		PruneSearchNode(pathCovers[n].covers[i]);
+		PruneSearchNode(pathCovers[n].covers[i].get());
 		break;
 	      }
 	    }
@@ -1923,9 +1926,9 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
   for(size_t i=0;i<pathCovers[nstart].covers.size();i++) {
     Real c=pathCovers[nstart].covers[i]->totalCost;
     if(c<=maxTotalCost)
-      q.insert(pathCovers[nstart].covers[i],c);
+      q.insert(pathCovers[nstart].covers[i].get(),c);
   }
-  vector<SmartPointer<PathSearchNode> > newNodes;
+  vector<shared_ptr<PathSearchNode> > newNodes;
 
   vector<Real> oldCosts;
   vector<int> changedNodes;
@@ -1935,7 +1938,7 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
       oldCosts[i] = OptimalCost(i);
     }
   }
-  //LOG4CXX_INFO(KrisLibrary::logger(),"UpdateCoversOut\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"UpdateCoversOut");
   while(!q.empty()) {
     numUpdateCoversIterations++;
     PathSearchNode* n = q.top().second;   q.pop();
@@ -1956,18 +1959,18 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
       while(changed) {
 	changed = false;
 	for(size_t j=0;j<pathCovers[v].covers.size();j++) {
-	  if(pathCovers[v].covers[j] == newNodes[i]) continue;
-	  if(Dominates(newNodes[i],pathCovers[v].covers[j])) {
+	  if(pathCovers[v].covers[j].get() == newNodes[i].get()) continue;
+	  if(Dominates(newNodes[i].get(),pathCovers[v].covers[j].get())) {
 	    changed = true;
 	    //LOG4CXX_INFO(KrisLibrary::logger(),"  Erasing node "<<v<<" cover "<<j<<", cost "<<pathCovers[v].covers[j]->totalCost<<"->"<<newNodes[i]->totalCost);
-	    PruneSearchNode(pathCovers[v].covers[j],&q);
+	    PruneSearchNode(pathCovers[v].covers[j].get(),&q);
 	  }
 	}
       }
 
       //add new node to queue
       if(c<=maxTotalCost)
-	q.insert(newNodes[i],c);
+	q.insert(newNodes[i].get(),c);
       //else
       //LOG4CXX_INFO(KrisLibrary::logger(),"  Skipping node "<<newNodes[i]->vertex);
     }
@@ -1981,7 +1984,7 @@ void DisplacementPlanner::UpdateCoversOut(int nstart,Real maxTotalCost)
       LOG4CXX_INFO(KrisLibrary::logger(),"  Changed: ");
       for(vector<int>::iterator i=changedNodes.begin();i!=changedNodes.end();i++)
 	LOG4CXX_INFO(KrisLibrary::logger(),""<<*i);
-      LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"");
     }
     for(size_t i=0;i<roadmap.nodes.size();i++) {
       if(oldCosts[i] <= maxTotalCost) {
@@ -2023,7 +2026,7 @@ DisplacementPlanner::PathSearchNode* DisplacementPlanner::OptimalPathTo(int n)
     Real c=pathCovers[n].covers[i]->totalCost;
     if(c < bestCost) {
       bestCost = c;
-      best = pathCovers[n].covers[i];
+      best = pathCovers[n].covers[i].get();
     }
   }
   return best;

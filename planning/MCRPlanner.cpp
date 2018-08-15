@@ -40,9 +40,8 @@ Subset Violations(CSpace* space,const Config& a,const Config& b)
 {
   vector<bool> vis(space->NumConstraints());
   for(size_t i=0;i<vis.size();i++) {
-    EdgePlanner* e=space->PathChecker(a,b,i);
+    EdgePlannerPtr e=space->PathChecker(a,b,i);
     vis[i] = !e->IsVisible();
-    delete e;
   }
   return Subset(vis);
 }
@@ -515,12 +514,10 @@ bool MCRPlanner::ExceedsCostLimit(const Config& a,const Config& b,Real limit,Sub
 {
   int n=(int)space->NumConstraints();
   /*
-  EdgePlanner* e=space->LocalPlanner(a,b);
+  EdgePlannerPtr e=space->LocalPlanner(a,b);
   if(!e->IsVisible()) {
-    delete e;
     return true;
   }
-  delete e;
   violations.maxItem = n;
   return false;
   */
@@ -528,9 +525,8 @@ bool MCRPlanner::ExceedsCostLimit(const Config& a,const Config& b,Real limit,Sub
   vector<bool> vis(n);
   Real vcount = 0;
   for(int i=0;i<n;i++) {
-    EdgePlanner* e=space->PathChecker(a,b,i);
+    EdgePlannerPtr e=space->PathChecker(a,b,i);
     vis[i] = !e->IsVisible();
-    delete e;
     if(vis[i]) {
       if(obstacleWeights.empty()) vcount += 1.0;
       else vcount += obstacleWeights[i];

@@ -178,10 +178,6 @@ struct LessEdgePriority
   {
     return a.e->Priority() < b.e->Priority();
   }
-  bool operator() (EdgePlanner* a,EdgePlanner* b) const
-  {
-    return a->Priority() < b->Priority();
-  }
 };
 
 bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeInfo>& outputPath)
@@ -193,7 +189,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
   Assert(g->HasNode(ng));
   Assert(outputPath.empty());
   //start -> ns -> ng -> goal
-  SmartPointer<EdgePlanner> bridge = space->LocalPlanner(*ns,*ng);  //edge from ns to ng
+  EdgePlannerPtr bridge = space->LocalPlanner(*ns,*ng);  //edge from ns to ng
 
   priority_queue<EdgeInfo,vector<EdgeInfo>,LessEdgePriority> q;
 
@@ -247,7 +243,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
     Config *a,*b;
     BisectionEpsilonEdgeChecker* bisectionEdge;
     try {
-      bisectionEdge=dynamic_cast<BisectionEpsilonEdgeChecker*>((EdgePlanner*)temp.e);
+      bisectionEdge=dynamic_cast<BisectionEpsilonEdgeChecker*>(temp.e);
     }
     catch(exception& e) {
       FatalError("SBLPlanner is unable to cast edge planner to BisectionEpsilonEdgeChecker - turn off USE_PLAN_EXTENSIONS in SBLTree.cpp");

@@ -3,7 +3,7 @@
 using namespace Optimization;
 
 
-NonlinearProgram::NonlinearProgram(const SmartPointer<ScalarFieldFunction>& _f,const SmartPointer<VectorFieldFunction>& _c,const SmartPointer<VectorFieldFunction>& _d)
+NonlinearProgram::NonlinearProgram(const std::shared_ptr<ScalarFieldFunction>& _f,const std::shared_ptr<VectorFieldFunction>& _c,const std::shared_ptr<VectorFieldFunction>& _d)
   :f(_f),c(_c),d(_d),minimize(true),inequalityLess(true)
 {
 }

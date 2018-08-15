@@ -398,7 +398,7 @@ bool LoadOBJMaterial(const char* path,const char* file,GeometryAppearance& app)
   if(sf.entries.count("map_Kd") != 0) {
     string textureMap = sf.entries["map_Kd"][0].AsString();
     string fullpath = string(path)+textureMap;
-    app.tex2D = new Image;
+    app.tex2D.reset(new Image);
     if(!ImportImage(fullpath.c_str(),*app.tex2D)) {
       app.tex2D = NULL;
       LOG4CXX_INFO(KrisLibrary::logger(),"Unable to load image file "<<fullpath.c_str());
@@ -699,7 +699,7 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
     //string filename = gTexturePath+str.C_str();
     string filename = gTexturePath+string(str.data);
-    SmartPointer<Image> img = new Image;
+    shared_ptr<Image> img(new Image);
     if(ImportImage(filename.c_str(),*img)) {
       app.tex2D = img;
     }

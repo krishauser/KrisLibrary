@@ -321,7 +321,7 @@ bool ResourceLibrary::Load(TiXmlElement* root)
       res = false;
     }
     else {
-      SmartPointer<ResourceBase> resource=knownTypes[element->Value()][0]->Make();
+      shared_ptr<ResourceBase> resource(knownTypes[element->Value()][0]->Make());
       if(element->Attribute("name")!=NULL)
 	resource->name = element->Attribute("name");
       if(element->Attribute("file")!=NULL) {
@@ -361,7 +361,7 @@ bool ResourceLibrary::LoadJSON(istream& s)
 
 bool ResourceLibrary::Load(AnyCollection& c)
 {
-  vector<SmartPointer<AnyCollection> > subitems;
+  vector<shared_ptr<AnyCollection> > subitems;
   c.enumerate(subitems);
   for(size_t i=0;i<subitems.size();i++) {
     AnyCollection& c=(*subitems[i]);
@@ -374,7 +374,7 @@ bool ResourceLibrary::Load(AnyCollection& c)
       LOG4CXX_INFO(KrisLibrary::logger(),"ResourceLibrary::Load: Item "<<i<<" type "<<type.c_str());
       return false;
     }
-    SmartPointer<ResourceBase> res = knownTypes[type][0]->Make();
+    shared_ptr<ResourceBase> res(knownTypes[type][0]->Make());
     c["name"].as<string>(res->name);
     if(c["file"].as<string>(res->fileName)) {
       if(!res->Load()) {
@@ -410,7 +410,7 @@ bool ResourceLibrary::LazyLoadXml(const std::string& fn)
 	resource->name = element->Attribute("name");
       if(element->Attribute("file") != NULL) {
 	resource->fileName = element->Attribute("file");
-	Add(resource);
+	Add(ResourcePtr(resource));
       }
       else {
 	if(!resource->Load(element)) {
@@ -419,7 +419,7 @@ bool ResourceLibrary::LazyLoadXml(const std::string& fn)
 	  res = false;
 	}
 	else 
-	  Add(resource);
+	  Add(ResourcePtr(resource));
       }
     }
     element = element->NextSiblingElement();
@@ -441,7 +441,7 @@ bool ResourceLibrary::LazyLoadJSON(std::istream& s)
 
 bool ResourceLibrary::LazyLoad(AnyCollection& c)
 {
-  vector<SmartPointer<AnyCollection> > subitems;
+  vector<shared_ptr<AnyCollection> > subitems;
   c.enumerate(subitems);
   for(size_t i=0;i<subitems.size();i++) {
     AnyCollection& c=*subitems[i];
@@ -454,7 +454,7 @@ bool ResourceLibrary::LazyLoad(AnyCollection& c)
       LOG4CXX_INFO(KrisLibrary::logger(),"ResourceLibrary::LazyLoad: Item "<<i<<" type "<<type.c_str());
       return false;
     }
-    SmartPointer<ResourceBase> res = knownTypes[type][0]->Make();
+    shared_ptr<ResourceBase> res(knownTypes[type][0]->Make());
     c["name"].as<string>(res->name);
     if(c["file"].as<string>(res->fileName)) {
       //lazy load
@@ -477,7 +477,7 @@ ResourcePtr ResourceLibrary::LoadItem(const string& fn)
     return NULL;
   }
   for(size_t j=0;j<i->second.size();j++) {
-    ResourcePtr r = i->second[j]->Make();
+    ResourcePtr r(i->second[j]->Make());
     if(r->Load(fn)) {
       r->name = GetFileName(fn);
       StripExtension(r->name);
@@ -581,7 +581,7 @@ bool ResourceLibrary::LazyLoadAll(const string& dir)
       continue;
     }
     for(size_t j=0;j<it->second.size();j++) {
-      ResourcePtr r = it->second[j]->Make();
+      ResourcePtr r(it->second[j]->Make());
       r->name = GetFileName(fn);
       StripExtension(r->name);
       Add(r);

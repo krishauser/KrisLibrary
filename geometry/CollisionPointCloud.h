@@ -3,8 +3,8 @@
 
 #include <KrisLibrary/meshing/PointCloud.h>
 #include <KrisLibrary/math3d/geometry3d.h>
-#include <KrisLibrary/utils/SmartPointer.h>
-#include <limits.h>
+#include <memory>
+#include <limits>
 #include "GridSubdivision.h"
 #include "Octree.h"
 
@@ -31,7 +31,7 @@ class CollisionPointCloud : public Meshing::PointCloud3D
   RigidTransform currentTransform;
   Real gridResolution; ///< default value is 0, which auto-determines from point cloud
   GridSubdivision grid;
-  SmartPointer<OctreePointSet> octree;
+  shared_ptr<OctreePointSet> octree;
 };
 
 ///Returns the orientd bounding box of the point cloud
@@ -50,7 +50,7 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
 ///Computes the set of points in the pc that are within tol distance of the
 ///primitive g.  O(min(n,c)) running time, where c is the number of grid
 ///cells within distance tol of the bounding box of g.
-void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Real tol,std::vector<int>& points,size_t maxContacts=INT_MAX);
+void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Real tol,std::vector<int>& points,size_t maxContacts=std::numeric_limits<size_t>::max());
 
 ///Returns true if the point clouds are within margin distance of one another.
 ///points1 and points2 return one or more pairs of close-by points.

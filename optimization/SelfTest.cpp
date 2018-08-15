@@ -99,13 +99,13 @@ namespace Optimization {
     A.setIdentity(); A *= -Two;
     b.setZero();
     c=10;
-    ComponentVectorFieldFunction* C = new ComponentVectorFieldFunction();
-    C->functions.push_back(new QuadraticScalarFieldFunction(A,b,c));
+    shared_ptr<ComponentVectorFieldFunction> C(new ComponentVectorFieldFunction());
+    C->functions.push_back(make_shared<QuadraticScalarFieldFunction>(A,b,c));
 
     Vector p(2);
     p(0) = -1; p(1) = 0;
     Real q=0;
-    LinearScalarFieldFunction* f = new LinearScalarFieldFunction(p,q);
+    shared_ptr<LinearScalarFieldFunction> f(new LinearScalarFieldFunction(p,q));
 
     NonlinearProgram nlp(f,C);
     nlp.minimize = true;
@@ -134,14 +134,14 @@ namespace Optimization {
     QuadraticScalarFieldFunction* c1 = new QuadraticScalarFieldFunction(A,b,c); 
     Vector j(2);  j(0) = 0; j(1) = 1;
     LinearScalarFieldFunction* d1 = new LinearScalarFieldFunction(j,-0.5);  //y greater than 0.5
-    ComponentVectorFieldFunction* C = new ComponentVectorFieldFunction;
-    ComponentVectorFieldFunction* D = new ComponentVectorFieldFunction;
-    C->functions.resize(1); C->functions[0] = c1;
-    D->functions.resize(1); D->functions[0] = d1;
+    shared_ptr<ComponentVectorFieldFunction> C (new ComponentVectorFieldFunction);
+    shared_ptr<ComponentVectorFieldFunction> D (new ComponentVectorFieldFunction);
+    C->functions.resize(1); C->functions[0].reset(c1);
+    D->functions.resize(1); D->functions[0].reset(d1);
 
     Vector p(2);
     p(0) = -1; p(1) = 0;
-    LinearScalarFieldFunction* f = new LinearScalarFieldFunction(p,0);
+    shared_ptr<LinearScalarFieldFunction> f(new LinearScalarFieldFunction(p,0));
 
     NonlinearProgram nlp(f,C,D);
     nlp.minimize = true;

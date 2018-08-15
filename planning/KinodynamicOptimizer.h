@@ -6,7 +6,7 @@
 class KinodynamicLocalOptimizer : public KinodynamicPlannerBase
 {
 public:
-  KinodynamicLocalOptimizer(KinodynamicSpace* s,SmartPointer<ObjectiveFunctionalBase> objective);
+  KinodynamicLocalOptimizer(KinodynamicSpace* s,std::shared_ptr<ObjectiveFunctionalBase> objective);
   virtual ~KinodynamicLocalOptimizer();
   void Init(const KinodynamicMilestonePath& path,CSet* goalSet);
   virtual void Init(const State& xinit,CSet* goalSet);
@@ -21,7 +21,7 @@ public:
 
   enum { Shortcut, RandomDescent, GradientDescent, DDP };
 
-  SmartPointer<ObjectiveFunctionalBase> objective;
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
   KinodynamicMilestonePath bestPath;
   Real bestPathCost;
   std::vector<double> cumulativeCosts;

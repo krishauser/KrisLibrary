@@ -1,7 +1,7 @@
 #ifndef GL_TEXTURE_OBJECT
 #define GL_TEXTURE_OBJECT
 
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 
 namespace GLDraw {
 
@@ -25,7 +25,7 @@ public:
 	bool isNull() const;
 
 private:
-	SmartPointer<unsigned int> glName;
+	std::shared_ptr<unsigned int> glName;
 };
 
 } //namespace GLDraw

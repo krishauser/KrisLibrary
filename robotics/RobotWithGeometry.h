@@ -4,7 +4,7 @@
 #include "RobotDynamics3D.h"
 #include <KrisLibrary/structs/array2d.h>
 #include <KrisLibrary/geometry/AnyGeometry.h>
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 
 /** @ingroup Robot
  * @brief The base class for a robot definition. 
@@ -70,7 +70,7 @@ public:
   virtual void DrawGL();
   virtual void DrawLinkGL(int i);
 
-  std::vector<SmartPointer<CollisionGeometry> > geometry;
+  std::vector<std::shared_ptr<CollisionGeometry> > geometry;
   ///matrix(i,j) of collisions between bodies, i < j (upper triangular)
   Array2D<CollisionQuery*> selfCollisions;
   std::vector<CollisionQuery*> envCollisions;

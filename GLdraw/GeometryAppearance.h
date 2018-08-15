@@ -1,13 +1,13 @@
 #ifndef GLDRAW_GEOMETRY_APPEARANCE_H
 #define GLDRAW_GEOMETRY_APPEARANCE_H
 
-#include <KrisLibrary/utils/SmartPointer.h>
 #include <KrisLibrary/math3d/primitives.h>
 #include <KrisLibrary/meshing/TriMesh.h>
 #include "GLColor.h"
 #include "GLTextureObject.h"
 #include "GLDisplayList.h"
 #include <KrisLibrary/image/image.h>
+#include <memory>
 
 namespace Geometry {
   //forward declaration
@@ -74,7 +74,7 @@ class GeometryAppearance
   ///Optional: per-element colors
   std::vector<GLColor> vertexColors,faceColors;
   ///Optional: set to non-null if you want to texture the object
-  SmartPointer<Image> tex1D,tex2D;
+  std::shared_ptr<Image> tex1D,tex2D;
   ///If true, the texture will wrap.  Default false
   bool texWrap; 
   ///Optional: per-element texture mapping coordinates (up to 2D)
@@ -85,7 +85,7 @@ class GeometryAppearance
   std::vector<Math3D::Vector4> texgen;
 
   ///Temporary: Mesh computed for implicit surfaces
-  SmartPointer<Meshing::TriMesh> implicitSurfaceMesh;
+  std::shared_ptr<Meshing::TriMesh> implicitSurfaceMesh;
   ///Temporary: The display lists and texture lists for vertices and faces
   GLDisplayList vertexDisplayList,faceDisplayList;
   GLTextureObject textureObject;

@@ -691,7 +691,7 @@ void RobotIKFunction::Clear()
 
 void RobotIKFunction::UseIK(const IKGoal& g)
 {
-  functions.push_back(new IKGoalFunction(robot,g,activeDofs));
+  functions.push_back(make_shared<IKGoalFunction>(robot,g,activeDofs));
 
 #if TEST_DIFFERENTIATION
   Vector x;
@@ -716,7 +716,7 @@ void RobotIKFunction::UseIK(const vector<IKGoal>& ik)
   }
   functions.reserve(functions.size()+ik.size());
   for(size_t i=0;i<ik.size();i++)
-    functions.push_back(new IKGoalFunction(robot,ik[i],activeDofs));
+    functions.push_back(make_shared<IKGoalFunction>(robot,ik[i],activeDofs));
   Assert(NumDimensions() > 0);
 
 #if TEST_DIFFERENTIATION
@@ -736,7 +736,7 @@ void RobotIKFunction::UseIK(const vector<IKGoal>& ik)
 
 void RobotIKFunction::UseCOM(const Vector2& comGoal)
 {
-  functions.push_back(new RobotCOMFunction(robot,comGoal,activeDofs));
+  functions.push_back(make_shared<RobotCOMFunction>(robot,comGoal,activeDofs));
 }
 
 void RobotIKFunction::GetState(Vector& x) const

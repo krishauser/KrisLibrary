@@ -11,7 +11,7 @@
 class PRTPlanner
 {
  public:
-  typedef Graph::Tree<Config,SmartPointer<EdgePlanner> > Node;
+  typedef Graph::Tree<Config,EdgePlanner> Node;
   struct Tree
   {
     Node* root;

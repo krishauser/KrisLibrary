@@ -17,8 +17,8 @@ public:
   virtual std::string ObstacleName(int obstacle);
   virtual bool IsFeasible(const Config& x);
   virtual bool IsFeasible(const Config& x,int obstacle);
-  virtual EdgePlanner* PathChecker(const SmartPointer<Interpolator>& path);
-  virtual EdgePlanner* PathChecker(const SmartPointer<Interpolator>& path,int obstacle);
+  virtual EdgePlannerPtr PathChecker(const InterpolatorPtr& path);
+  virtual EdgePlannerPtr PathChecker(const InterpolatorPtr& path,int obstacle);
   virtual void Properties(PropertyMap&) const;
 
   std::vector<Geometry::AnyCollisionGeometry3D> obstacles;

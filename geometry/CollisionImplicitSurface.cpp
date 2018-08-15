@@ -282,8 +282,9 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
   */
 }
 
-Real DistanceLowerBound(const CollisionImplicitSurface& s,const OctreeNode& n,const Matrix4& Mpc_s)
+Real DistanceLowerBound(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,int nindex,const Matrix4& Mpc_s)
 {
+  const OctreeNode& n = pc.octree->Node(nindex);
   if(n.bb.bmin.x > n.bb.bmax.x) {
     //empty
     return Inf;
@@ -297,12 +298,17 @@ Real DistanceLowerBound(const CollisionImplicitSurface& s,const OctreeNode& n,co
   */
   //method2: put everything in a sphere, assume the value of the baseGrid is an SDF
   Vector3 c=(n.bb.bmin+n.bb.bmax)*0.5;
+  Vector3 dims = n.bb.bmax-n.bb.bmin;
+  Real rad = dims.norm()*0.5;
+  /*
+  const Vector3& c = pc.octree->Ball(nindex).center;
+  Real rad = pc.octree->Ball(nindex).radius;
+  */
+
   Vector3 clocal;
   Mpc_s.mulPoint(c,clocal);
   Real dc = s.baseGrid.TrilinearInterpolate(clocal);
   Real d_bb = s.baseGrid.bb.distance(clocal);
-  Vector3 dims = n.bb.bmax-n.bb.bmin;
-  Real rad = dims.norm()*0.5;
   return d_bb + dc - rad - BOUNDING_VOLUME_FUZZ;
 }
 
@@ -368,8 +374,7 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
     */
   }
 
-  const OctreeNode& n = pc.octree->Node(0);
-  Real d = DistanceLowerBound(s,n,Mpc_s);
+  Real d = DistanceLowerBound(s,pc,0,Mpc_s);
   if(d < upperBound) 
     heap.push(0,d);
   
@@ -418,7 +423,7 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
     else {
       numBBsChecked += 8;
       for(int c=0;c<8;c++) {
-        Real d = DistanceLowerBound(s,pc.octree->Node(n.childIndices[c]),Mpc_s);
+        Real d = DistanceLowerBound(s,pc,n.childIndices[c],Mpc_s);
         if(d < mindist) {
           heap.push(n.childIndices[c],d);
         }

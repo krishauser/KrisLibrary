@@ -247,8 +247,8 @@ void Compose_VF_VF_Function::Jacobian_j(const Vector& x,int j,Vector& Jj)
 
 
 
-ScalarFieldDirectionalFunction::ScalarFieldDirectionalFunction(ScalarFieldFunction* _f,const Vector& _x,const Vector& _n,bool ref)
-  :f(_f)
+ScalarFieldDirectionalFunction::ScalarFieldDirectionalFunction(ScalarFieldFunction& _f,const Vector& _x,const Vector& _n,bool ref)
+  :f(&_f)
 {
   if(ref) {
     x.setRef(_x);
@@ -289,8 +289,8 @@ Real ScalarFieldDirectionalFunction::Deriv2(Real t)
   return f->DirectionalDeriv2(tmp,n);
 }
 
-ScalarFieldProjectionFunction::ScalarFieldProjectionFunction(ScalarFieldFunction* _f,const Vector& _x,int _i)
-  :f(_f),i(_i)
+ScalarFieldProjectionFunction::ScalarFieldProjectionFunction(ScalarFieldFunction& _f,const Vector& _x,int _i)
+  :f(&_f),i(_i)
 {
   tmp = _x;
   xi0= _x(_i);
@@ -330,8 +330,8 @@ Real ScalarFieldProjectionFunction::Deriv2(Real t)
 
 
 
-VectorFieldProjectionFunction::VectorFieldProjectionFunction(VectorFieldFunction* _f,int _i)
-  :f(_f),i(_i)
+VectorFieldProjectionFunction::VectorFieldProjectionFunction(VectorFieldFunction& _f,int _i)
+  :f(&_f),i(_i)
 {}
 
 std::string VectorFieldProjectionFunction::Label() const
@@ -428,13 +428,13 @@ void ComponentVectorFieldFunction::DirectionalDeriv(const Vector& x,const Vector
 CompositeVectorFieldFunction::CompositeVectorFieldFunction()
 {}
 
-CompositeVectorFieldFunction::CompositeVectorFieldFunction(SmartPointer<VectorFieldFunction> f1,SmartPointer<VectorFieldFunction>& f2)
+CompositeVectorFieldFunction::CompositeVectorFieldFunction(std::shared_ptr<VectorFieldFunction> f1,std::shared_ptr<VectorFieldFunction>& f2)
 {
   functions.resize(2);
   functions[0] = f1;
   functions[1] = f2;
 }
-CompositeVectorFieldFunction::CompositeVectorFieldFunction(const std::vector<SmartPointer<VectorFieldFunction> >& fs)
+CompositeVectorFieldFunction::CompositeVectorFieldFunction(const std::vector<std::shared_ptr<VectorFieldFunction> >& fs)
 :functions(fs)
 {}
 

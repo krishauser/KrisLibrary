@@ -16,8 +16,8 @@ public:
   void DrawRobotGL(const Config& q) const;
   void DrawGL(const Config& q) const;
 
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
   virtual void Properties(PropertyMap&);
 
   Real visibilityEpsilon;

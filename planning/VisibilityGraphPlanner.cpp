@@ -66,7 +66,7 @@ int VisibilityGraphPlanner::TestAndConnectVertex(const Vertex& v)
   if(!space->IsFeasible(v.q)) return -1;
   int index=vertexGraph.AddNode(v);
   for(int i=0;i<index;i++) {
-    SmartPointer<EdgePlanner> e = IsVisible(space,vertexGraph.nodes[i].q,v.q);
+    EdgePlannerPtr e = IsVisible(space,vertexGraph.nodes[i].q,v.q);
     if(e) {
       vertexGraph.AddEdge(i,index,e);
     }
@@ -74,7 +74,7 @@ int VisibilityGraphPlanner::TestAndConnectVertex(const Vertex& v)
   return index;
 }
 
-double LengthWeightFunc(const SmartPointer<EdgePlanner>& e,int s,int t)
+double LengthWeightFunc(const EdgePlannerPtr& e,int s,int t)
 {
   Assert(e);
   return e->Length();
@@ -109,7 +109,7 @@ bool VisibilityGraphPlanner::Plan(const Config& a,const Config& b,MilestonePath&
   tempGraph.DeleteIncomingEdges(vgoal);
 
   //test straight line
-  EdgePlanner* e = IsVisible(space,tempGraph.nodes[vstart].q,tempGraph.nodes[vgoal].q);
+  EdgePlannerPtr e = IsVisible(space,tempGraph.nodes[vstart].q,tempGraph.nodes[vgoal].q);
   if(e) {
     path.edges.resize(1);
     path.edges[0] = e;
@@ -117,18 +117,18 @@ bool VisibilityGraphPlanner::Plan(const Config& a,const Config& b,MilestonePath&
   }
   //connect vstart
   for(int i=0;i<vstart;i++) {
-    SmartPointer<EdgePlanner> e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vstart].q);
+    EdgePlannerPtr e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vstart].q);
     if(e)
       tempGraph.AddEdge(i,vstart,e);
   }
   //connect vgoal
   for(int i=0;i<vstart;i++) {
-    SmartPointer<EdgePlanner> e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vgoal].q);
+    EdgePlannerPtr e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vgoal].q);
     if(e)
       tempGraph.AddEdge(i,vgoal,e);
   }
   //search
-  Graph::ShortestPathProblem<Vertex,Arc> spp(tempGraph);
+  Graph::ShortestPathProblem<Vertex,EdgePlannerPtr> spp(tempGraph);
   spp.InitializeSource(vstart);
   spp.FindPath_Undirected(vgoal,LengthWeightFunc);
   list<int> nodes;
@@ -137,7 +137,7 @@ bool VisibilityGraphPlanner::Plan(const Config& a,const Config& b,MilestonePath&
   path.edges.clear();
   for(list<int>::const_iterator i=nodes.begin();i!=--nodes.end();++i) {
     list<int>::const_iterator n=i; ++n;
-    SmartPointer<EdgePlanner>* e=tempGraph.FindEdge(*i,*n);
+    EdgePlannerPtr* e=tempGraph.FindEdge(*i,*n);
     Assert(e != NULL);
     if(*i < *n) {
       path.edges.push_back((*e)->Copy());
@@ -169,24 +169,24 @@ Real VisibilityGraphPlanner::Distance(const Config& a,const Config& b)
   tempGraph.DeleteIncomingEdges(vgoal);
 
   //test straight line
-  EdgePlanner* e = IsVisible(space,tempGraph.nodes[vstart].q,tempGraph.nodes[vgoal].q);
+  EdgePlannerPtr e = IsVisible(space,tempGraph.nodes[vstart].q,tempGraph.nodes[vgoal].q);
   if(e) {
     return LengthWeightFunc(e,vstart,vgoal);
   }
   //connect vstart
   for(int i=0;i<vstart;i++) {
-    SmartPointer<EdgePlanner> e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vstart].q);
+    EdgePlannerPtr e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vstart].q);
     if(e)
       tempGraph.AddEdge(i,vstart,e);
   }
   //connect vgoal
   for(int i=0;i<vstart;i++) {
-    SmartPointer<EdgePlanner> e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vgoal].q);
+    EdgePlannerPtr e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vgoal].q);
     if(e)
       tempGraph.AddEdge(i,vgoal,e);
   }
   //search
-  Graph::ShortestPathProblem<Vertex,Arc> spp(tempGraph);
+  Graph::ShortestPathProblem<Vertex,EdgePlannerPtr> spp(tempGraph);
   spp.InitializeSource(vstart);
   spp.FindPath_Undirected(vgoal,LengthWeightFunc);
   return spp.d[vgoal];
@@ -210,12 +210,12 @@ void VisibilityGraphPlanner::AllDistances(const Config& a,vector<Real>& distance
 
   //connect vstart
   for(int i=0;i<vstart;i++) {
-    SmartPointer<EdgePlanner> e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vstart].q);
+    EdgePlannerPtr e = IsVisible(space,tempGraph.nodes[i].q,tempGraph.nodes[vstart].q);
     if(e)
       tempGraph.AddEdge(i,vstart,e);
   }
   //search
-  Graph::ShortestPathProblem<Vertex,Arc> spp(tempGraph);
+  Graph::ShortestPathProblem<Vertex,EdgePlannerPtr> spp(tempGraph);
   spp.InitializeSource(vstart);
   spp.FindAllPaths_Undirected(LengthWeightFunc);
   distances = spp.d;

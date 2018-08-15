@@ -77,7 +77,7 @@ struct GeneralizedAStar
   /// testGoalOnGeneration=false
   inline C GoalCost() const { if(goal != NULL) return goal->g; return zero; }
   /// Returns path of states to the goal
-  inline const vector<S>& GoalPath() const { return path; }
+  inline const std::vector<S>& GoalPath() const { return path; }
 
   ///The following must be overloaded by the subclass
   virtual bool IsGoal(const S& s) =0;

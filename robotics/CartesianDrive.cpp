@@ -179,7 +179,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
   function.activeDofs = tempActiveDofs;
   for(size_t i=0;i<tempGoals.size();i++) {
     //function.UseIK(goal);
-    IKGoalFunction* goalfunc = new IKGoalFunction(*robot,tempGoals[i],function.activeDofs);
+    auto goalfunc = make_shared<IKGoalFunction>(*robot,tempGoals[i],function.activeDofs);
     if(IsFinite(positionTolerance) && IsFinite(rotationTolerance)) {
       goalfunc->rotationScale = positionTolerance/(positionTolerance+rotationTolerance);
       goalfunc->positionScale = rotationTolerance/(positionTolerance+rotationTolerance);

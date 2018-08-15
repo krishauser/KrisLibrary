@@ -107,8 +107,8 @@ void InequalityConstraint::LineSearch(const Vector& x0,const Vector& dx,Real& u)
 
 void InequalityConstraint::LineSearch_i(const Vector& x0,const Vector& dx,Real& u,int i)
 {
-  VectorFieldProjectionFunction p(this,i);
-  ScalarFieldDirectionalFunction g(&p,x0,dx);
+  VectorFieldProjectionFunction p(*this,i);
+  ScalarFieldDirectionalFunction g(p,x0,dx);
   LinearFunction ofs(Zero,-kLineSearchToleranceF*Half-1e-5);
   AddFunction f(&g,&ofs);
   Real umin=Zero;
@@ -173,12 +173,12 @@ bool InequalityConstraint::Push(Vector& x,Real d)
 
 bool InequalityConstraint::Push_i(Vector& x,int i,Real d)
 {
-  VectorFieldProjectionFunction p(this,i);
-  LinearFunction add_d(One,-d-kPushDTolerance*Half);
-  ComposeScalarFieldFunction fd(&add_d,&p);
+  std::shared_ptr<ScalarFieldFunction> p(new VectorFieldProjectionFunction(*this,i));
+  std::shared_ptr<RealFunction> add_d(new LinearFunction(One,-d-kPushDTolerance*Half));
+  ComposeScalarFieldFunction fd(add_d,p);
   int iters=kPushMaxIters;
   ConvergenceResult res=Root_Newton(fd,x,x,iters,kPushXTolerance,kPushDTolerance*Half);
-  Real dtrue = p(x);
+  Real dtrue = (*p)(x);
   if(res == ConvergenceF) {
     if(dtrue < d) {
       LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... Root_Newton worked, but didn't give a valid result!"<<"\n");

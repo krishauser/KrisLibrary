@@ -22,27 +22,27 @@
 class KinodynamicSpace
 {
 public:
-  KinodynamicSpace(const SmartPointer<CSpace>& xspace,const SmartPointer<ControlSpace>& uspace);
+  KinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const std::shared_ptr<ControlSpace>& uspace);
   virtual ~KinodynamicSpace();
 
-  SmartPointer<ControlSpace> GetControlSpace() const { return controlSpace; }
-  SmartPointer<CSpace> GetStateSpace() const { return stateSpace; }
-  SmartPointer<CSet> GetControlSet(const Config& x) { return controlSpace->GetControlSet(x); }
+  std::shared_ptr<ControlSpace> GetControlSpace() const { return controlSpace; }
+  std::shared_ptr<CSpace> GetStateSpace() const { return stateSpace; }
+  std::shared_ptr<CSet> GetControlSet(const Config& x) { return controlSpace->GetControlSet(x); }
 
-  virtual EdgePlanner* PathChecker(const SmartPointer<Interpolator>& path) { FatalError("Visibility not checked using LocalPlanner for kinodynamic planning, use TrajectoryChecker instead"); return NULL; }
+  virtual EdgePlannerPtr PathChecker(const InterpolatorPtr& path) { FatalError("Visibility not checked using LocalPlanner for kinodynamic planning, use TrajectoryChecker instead"); return NULL; }
 
   ///Return an edge planner that checks the simulation trace p for feasibility
   ///Typically, just return the state space's PathChecker
-  virtual EdgePlanner* TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path);
+  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path);
 
   ///Return an edge planner that checks the path for feasibility.
-  virtual EdgePlanner* TrajectoryChecker(const KinodynamicMilestonePath& path);
+  virtual EdgePlannerPtr TrajectoryChecker(const KinodynamicMilestonePath& path);
 
   bool IsValidControl(const State& x,const ControlInput& u) { return controlSpace->IsValidControl(x,u); }
 
   ///Executes the simulation function f(x0,u) and records its trace in the result.
   ///The trace is an interpolator between x0 and the successor state
-  Interpolator* Simulate(const State& x0, const ControlInput& u) { return controlSpace->Simulate(x0,u); }
+  InterpolatorPtr Simulate(const State& x0, const ControlInput& u) { return controlSpace->Simulate(x0,u); }
 
   ///Executes the simulation function x1 = f(x0,u)
   void Successor(const State& x0, const ControlInput& u,State& x1) { controlSpace->Successor(x0,u,x1); }
@@ -60,8 +60,8 @@ public:
   ///Marks this as being a dynamic problem
   virtual void Properties(PropertyMap& props) const;
 
-  SmartPointer<CSpace> stateSpace;
-  SmartPointer<ControlSpace> controlSpace;
+  std::shared_ptr<CSpace> stateSpace;
+  std::shared_ptr<ControlSpace> controlSpace;
 };
 
 /** @ingroup MotionPlanning
@@ -92,11 +92,10 @@ public:
 class IntegratedKinodynamicSpace : public KinodynamicSpace
 {
 public:
-  ///Note: the object pointed to here is now owned by this object.
-  IntegratedKinodynamicSpace(const SmartPointer<CSpace>& xspace,IntegratedControlSpace* controlSpace);
-  virtual EdgePlanner* TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path);
+  IntegratedKinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const std::shared_ptr<IntegratedControlSpace>& controlSpace);
+  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path);
 
-  IntegratedControlSpace* controlSpace;
+  std::shared_ptr<IntegratedControlSpace> controlSpace;
 };
 
 /** @ingroup MotionPlanning
@@ -144,7 +143,7 @@ public:
 class KinematicCSpaceAdaptor : public KinodynamicSpace
 {
  public:
-  KinematicCSpaceAdaptor(const SmartPointer<CSpace>& base,Real maxNeighborhoodRadius=0.1);
+  KinematicCSpaceAdaptor(const std::shared_ptr<CSpace>& base,Real maxNeighborhoodRadius=0.1);
   virtual ~KinematicCSpaceAdaptor() {}
 
   CSpace* base;
@@ -159,16 +158,16 @@ class KinematicCSpaceAdaptor : public KinodynamicSpace
 class KinodynamicSteeringCSpaceAdaptor : public PiggybackCSpace
 {
 public:
-  KinodynamicSteeringCSpaceAdaptor(const SmartPointer<KinodynamicSpace>& kinodynamicSpace);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int constraint);
+  KinodynamicSteeringCSpaceAdaptor(const std::shared_ptr<KinodynamicSpace>& kinodynamicSpace);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int constraint);
 
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
   virtual void Properties(PropertyMap& map);
 
-  SmartPointer<KinodynamicSpace> kinodynamicSpace;
-  SmartPointer<SteeringFunction> steeringFunction;
+  std::shared_ptr<KinodynamicSpace> kinodynamicSpace;
+  std::shared_ptr<SteeringFunction> steeringFunction;
 };
 
 #endif

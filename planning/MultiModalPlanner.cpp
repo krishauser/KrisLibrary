@@ -26,7 +26,7 @@ void MultiModalPRM::InitializeExplicit(ExplicitMMCSpace* cspace)
   CopyStructure(cspace->modeGraph,planningGraph);
   for(size_t i=0;i<cspace->modeGraph.nodes.size();i++) {
     planningGraph.nodes[i].sampleCount = 0;
-    planningGraph.nodes[i].planner = plannerFactory.Create(cspace->GetModeCSpace(i));
+    planningGraph.nodes[i].planner.reset(plannerFactory.Create(cspace->GetModeCSpace(i)));
     //planningGraph.nodes[i].sbl->maxExtendDistance = 0.5;
   }
   for(list<TransitionInfo>::iterator i=planningGraph.edgeData.begin();i!=planningGraph.edgeData.end();i++)
@@ -275,7 +275,7 @@ void MultiModalPRM::ExpandMode(int mode,int numSamples)
     }
   }
   else */ {
-    MotionPlannerInterface* planner = planningGraph.nodes[mode].planner;
+    auto planner = planningGraph.nodes[mode].planner;
     planner->PlanMore(numSamples);
     //look at adjacent modes, and update transition ccs if necessary
     //get all transition nodes in roadmap

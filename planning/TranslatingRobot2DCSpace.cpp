@@ -63,15 +63,15 @@ void TranslatingRobot2DCSpace::DrawGL(const Config& x) const
 }
 
 
-EdgePlanner* TranslatingRobot2DCSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr TranslatingRobot2DCSpace::PathChecker(const Config& a,const Config& b)
 {
-  return new EpsilonEdgeChecker(this,a,b,visibilityEpsilon);
+  return make_shared<EpsilonEdgeChecker>(this,a,b,visibilityEpsilon);
 }
 
 
-EdgePlanner* TranslatingRobot2DCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+EdgePlannerPtr TranslatingRobot2DCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
-  CSpace* space = new SubsetConstraintCSpace(this,obstacle);
-  return new EdgePlannerWithCSpaceContainer(space,new EpsilonEdgeChecker(space,a,b,visibilityEpsilon));
+  auto space = make_shared<SubsetConstraintCSpace>(this,obstacle);
+  return make_shared<EdgePlannerWithCSpaceContainer>(space,make_shared<EpsilonEdgeChecker>(space.get(),a,b,visibilityEpsilon));
 }
 

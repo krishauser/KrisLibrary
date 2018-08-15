@@ -591,7 +591,7 @@ const string* SocketServerTransport::DoRead()
     if(clientsock != INVALID_SOCKET) {
       LOG4CXX_INFO(KrisLibrary::logger(),"Accepted new client on "<<addr.c_str());
       SetNodelay(clientsock);
-      clientsockets.push_back(new File);
+      clientsockets.push_back(std::unique_ptr<File>(new File));
       clientsockets.back()->OpenTCPSocket(clientsock);
     }
   }
@@ -618,7 +618,7 @@ const string* SocketServerTransport::DoRead()
     //close the client
     LOG4CXX_INFO(KrisLibrary::logger(),"SocketServerTransport: Lost client "<<currentclient);
     clientsockets[currentclient] = NULL;
-    clientsockets[currentclient] = clientsockets.back();
+    clientsockets[currentclient].reset(clientsockets.back().release());
     clientsockets.resize(clientsockets.size()-1);
     if(clientsockets.empty()) {
       currentclient = -1;
@@ -640,7 +640,7 @@ bool SocketServerTransport::DoWrite(const char* str,int length)
     if(clientsock != INVALID_SOCKET) {
       LOG4CXX_INFO(KrisLibrary::logger(),"Accepted new client on "<<addr.c_str());
       SetNodelay(clientsock);
-      clientsockets.push_back(new File);
+      clientsockets.push_back(std::unique_ptr<File>(new File));
       clientsockets.back()->OpenTCPSocket(clientsock);
     }
   }
@@ -654,7 +654,7 @@ bool SocketServerTransport::DoWrite(const char* str,int length)
       LOG4CXX_INFO(KrisLibrary::logger(),"SocketServerTransport: Lost client "<<(int)i);
       //close the client
       clientsockets[i] = NULL;
-      clientsockets[i] = clientsockets.back();
+      clientsockets[i].reset(clientsockets.back().release());
       clientsockets.resize(clientsockets.size()-1);
       i--;
     }

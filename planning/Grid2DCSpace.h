@@ -2,6 +2,7 @@
 #define GRID_2D_CSPACE_H
 
 #include "CSpace.h"
+#include "Interpolator.h"
 #include <KrisLibrary/math3d/Circle2D.h>
 #include <KrisLibrary/math3d/Triangle2D.h>
 #include <KrisLibrary/math3d/AABB2D.h>
@@ -24,7 +25,7 @@ public:
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual bool IsFeasible(const Config& x);
-  virtual EdgePlanner* PathChecker(const SmartPointer<Interpolator>& b);
+  virtual EdgePlannerPtr PathChecker(const InterpolatorPtr& b);
   virtual Real Distance(const Config& x, const Config& y);
 
   bool euclideanSpace;

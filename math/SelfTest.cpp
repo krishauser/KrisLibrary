@@ -390,7 +390,7 @@ void TestDifferentiation(VectorFieldFunction& f,Vector& x,Real h,Real eps)
   Matrix Hcalc(n,n),Hdiff(n,n);
   for(int i=0;i<nd;i++) {
     f.Hessian_i(x,i,Hcalc);
-    VectorFieldProjectionFunction fi(&f,i);
+    VectorFieldProjectionFunction fi(f,i);
     HessianCenteredDifference_Grad(fi,x,h,Hdiff); Assert(xold == x);
     Hdiff -= Hcalc;
     Real err = Hdiff.maxAbsElement(&a,&b);

@@ -119,15 +119,16 @@ struct LogarithmicBarrierFunction : public ScalarFieldFunction
 struct InequalityBarrierNLP : public NonlinearProgram
 {
   InequalityBarrierNLP(NonlinearProgram& nlp,Real alpha=One)
-    :NonlinearProgram(&f_alpha,nlp.c),f_alpha(nlp.f,nlp.d,alpha)
+    :NonlinearProgram(NULL,nlp.c),f_alpha(new LogarithmicBarrierFunction(nlp.f.get(),nlp.d.get(),alpha))
   {
+    this->f = f_alpha;
     Assert(nlp.minimize==true);
     Assert(nlp.inequalityLess==false);
   }
 
-  void SetBarrierScale(Real alpha) { f_alpha.alpha=alpha; }
+  void SetBarrierScale(Real alpha) { f_alpha->alpha=alpha; }
 
-  LogarithmicBarrierFunction f_alpha;
+  std::shared_ptr<LogarithmicBarrierFunction> f_alpha;
 };
 
 } //namespace Optimization
@@ -165,8 +166,8 @@ void NewtonSolver::Init()
     if(!bmin.empty()) {
       Assert(bmin.n == x.n);
       Assert(bmax.n == x.n);
-      barrierProblem->f_alpha.bmin.setRef(bmin);
-      barrierProblem->f_alpha.bmin.setRef(bmax);
+      barrierProblem->f_alpha->bmin.setRef(bmin);
+      barrierProblem->f_alpha->bmin.setRef(bmax);
     }
 
     /*
@@ -185,8 +186,8 @@ void NewtonSolver::Init()
     problem = barrierProblem;
     Assert(bmin.n == x.n);
     Assert(bmax.n == x.n);
-    barrierProblem->f_alpha.bmin.setRef(bmin);
-    barrierProblem->f_alpha.bmin.setRef(bmax);    
+    barrierProblem->f_alpha->bmin.setRef(bmin);
+    barrierProblem->f_alpha->bmin.setRef(bmax);    
   }
   else
     problem = &origProblem;
@@ -315,7 +316,7 @@ ConvergenceResult NewtonSolver::Solve(int& iters)
     }
 
     if(problem == barrierProblem) {
-      barrierProblem->f_alpha.alpha *= alphaScale;
+      barrierProblem->f_alpha->alpha *= alphaScale;
     }
   }
   return MaxItersReached;
@@ -384,17 +385,15 @@ Real NewtonSolver::Merit(const Vector& x,const Vector& a) const
   //eval |c(x)|^2
   Real dist2=Zero;
   int j=0;
-  VectorFieldFunction*c = problem->c;
-  VectorFieldFunction*d = problem->d;
-  if(c) {
-    int neq=c->NumDimensions();
+  if(problem->c) {
+    int neq=problem->c->NumDimensions();
     Vector ctemp(neq);
-    c->Eval(x,ctemp);
+    problem->c->Eval(x,ctemp);
     for(int i=0;i<neq;i++)
       dist2 += Sqr(ctemp(i));
     j += neq;
   }
-  Assert(d == NULL);
+  Assert(problem->d == NULL);
   merit += dist2;
   return merit;
 }

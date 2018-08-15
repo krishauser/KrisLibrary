@@ -2,16 +2,16 @@
 #define UTILS_ASYNC_IO
 
 #include <log4cxx/logger.h>
-#include <KrisLibrary/Logger.h>
-#include <KrisLibrary/myfile.h>
 #include <string>
 #include <vector>
 #include <list>
+#include <memory>
+#include <string.h>
+#include <KrisLibrary/Logger.h>
+#include <KrisLibrary/myfile.h>
 #include <KrisLibrary/Timer.h>
 #include <KrisLibrary/errors.h>
-#include <string.h>
 #include <KrisLibrary/math/math.h>
-#include "SmartPointer.h"
 #include "threadutils.h"
 
 /** @brief Asynchronous reader with queue.
@@ -236,7 +236,7 @@ class SocketServerTransport : public TransportBase
   int serversocket;
   int maxclients;
   Mutex mutex;
-  std::vector<SmartPointer<File> > clientsockets;
+  std::vector<std::unique_ptr<File> > clientsockets;
   int currentclient;
   std::string buf;
 };
@@ -267,7 +267,7 @@ class SyncPipe : public AsyncPipeQueue
   inline bool WriteReady() { return initialized && transport->WriteReady(); }
   inline bool ReadReady() { return initialized && transport->ReadReady(); }
 
-  SmartPointer<TransportBase> transport;
+  std::unique_ptr<TransportBase> transport;
 
   bool initialized;
   Timer timer;
@@ -289,12 +289,12 @@ class AsyncReaderThread : public AsyncReaderQueue
   AsyncReaderThread(double timeout=Math::Inf);
   virtual ~AsyncReaderThread();
   virtual void Reset();
-    virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread\n"); }
+  virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
 
-  SmartPointer<TransportBase> transport;
+  std::unique_ptr<TransportBase> transport;
 
   bool initialized;
   Thread thread;
@@ -318,7 +318,7 @@ class AsyncPipeThread : public AsyncPipeQueue
   AsyncPipeThread(double timeout=Math::Inf);
   virtual ~AsyncPipeThread();
   virtual void Reset();
-    virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread\n"); }
+    virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
@@ -326,7 +326,7 @@ class AsyncPipeThread : public AsyncPipeQueue
   inline bool WriteReady() { return initialized && transport->WriteReady(); }
   inline bool ReadReady() { return initialized && transport->ReadReady(); }
 
-  SmartPointer<TransportBase> transport;
+  std::unique_ptr<TransportBase> transport;
 
   bool initialized;
   Thread workerThread;
@@ -351,9 +351,9 @@ class SocketReadWorker : public AsyncReaderThread
     :AsyncReaderThread(timeout)
   {
     if(asServer)
-      transport = new SocketServerTransport(addr);
+      transport.reset(new SocketServerTransport(addr));
     else
-      transport = new SocketClientTransport(addr);
+      transport.reset(new SocketClientTransport(addr));
   }
 };
 
@@ -371,15 +371,15 @@ class SocketPipeWorker : public AsyncPipeThread
     :AsyncPipeThread(timeout)
   {
     if(asServer)
-      transport = new SocketServerTransport(addr);
+      transport.reset(new SocketServerTransport(addr));
     else
-      transport = new SocketClientTransport(addr);
+      transport.reset(new SocketClientTransport(addr));
   }
 
   SocketPipeWorker(const char* addr,SOCKET socket,double timeout=Math::Inf)
     :AsyncPipeThread(timeout)
   {
-    transport = new SocketClientTransport(addr,socket);
+    transport.reset(new SocketClientTransport(addr,socket));
   }
 };
 

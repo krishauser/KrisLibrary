@@ -4,10 +4,10 @@
 #include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "AnyValue.h"
-#include "SmartPointer.h"
 #include <KrisLibrary/errors.h>
 #include <vector>
 #include <map>
+#include <memory>
 #include "stl_tr1.h"
 
 /** @brief Any primitive value (bool, char, unsigned char, int,
@@ -74,6 +74,8 @@ END_TR1_NAMESPACE
 class AnyCollection
 {
  public:
+  typedef std::shared_ptr<AnyCollection> AnyCollectionPtr;
+
   AnyCollection();
   AnyCollection(AnyValue value);
   template <class T>
@@ -123,12 +125,12 @@ class AnyCollection
   //clears to an empty type
   void clear();
   //accessors
-  SmartPointer<AnyCollection> find(int i) const;
-  SmartPointer<AnyCollection> find(const char* str) const;
-  SmartPointer<AnyCollection> find(AnyKeyable key) const;
-  SmartPointer<AnyCollection> insert(int i);
-  SmartPointer<AnyCollection> insert(const char* str);
-  SmartPointer<AnyCollection> insert(AnyKeyable key);
+  AnyCollectionPtr find(int i) const;
+  AnyCollectionPtr find(const char* str) const;
+  AnyCollectionPtr find(AnyKeyable key) const;
+  AnyCollectionPtr insert(int i);
+  AnyCollectionPtr insert(const char* str);
+  AnyCollectionPtr insert(AnyKeyable key);
   AnyCollection& operator[](int i);
   const AnyCollection& operator[](int i) const;
   AnyCollection& operator[](const char* str);
@@ -171,9 +173,9 @@ class AnyCollection
   ///either ".K" where K is a map key reference or "[K]" where K can be an
   ///integer string, as long as this is an array type.  Otherwise array
   ///references of the form "[K]" are treated as string keys into a map.
-  SmartPointer<AnyCollection> lookup(const std::string& reference,bool insert=false,char delim='.',char lbracket='[',char rbracket=']');
-  SmartPointer<AnyCollection> lookup(const std::vector<std::string>& path,bool insert=false);
-  SmartPointer<AnyCollection> lookup(const std::vector<AnyKeyable>& path,bool insert=false);
+  AnyCollectionPtr lookup(const std::string& reference,bool insert=false,char delim='.',char lbracket='[',char rbracket=']');
+  AnyCollectionPtr lookup(const std::vector<std::string>& path,bool insert=false);
+  AnyCollectionPtr lookup(const std::vector<AnyKeyable>& path,bool insert=false);
   ///parse a reference string into a path
   static bool parse_reference(const std::string& reference,std::vector<std::string>& path,char delim='.',char lbracket='[',char rbracket=']');
   ///converts a string path to a key path matching the array/map structure of
@@ -185,7 +187,7 @@ class AnyCollection
   ///form [K1:K2] are treated as slices and [K1,K2,...,Kn] are multiple
   ///references.  Constructs a new AnyCollection containing nested references
   ///to the items
-  SmartPointer<AnyCollection> slice(const std::string& reference,const char* delims=".[]:,");
+  AnyCollectionPtr slice(const std::string& reference,const char* delims=".[]:,");
 
   ///Adds all elements referenced by the given paths into a sub-collection,
   ///copying the nesting structure of this item.
@@ -198,7 +200,7 @@ class AnyCollection
   bool subcollection(const std::vector<std::string>& paths,AnyCollection& subset,const char* delims=".[]:,");
 
   ///if this is a collection, returns the list of sub-collections
-  void enumerate(std::vector<SmartPointer<AnyCollection> >& collections) const;
+  void enumerate(std::vector<AnyCollectionPtr >& collections) const;
   ///returns an enumerated list of keys contained within
   void enumerate_keys(std::vector<AnyKeyable>& elements) const;
   ///returns an enumerated list of primitive values contained within
@@ -233,8 +235,8 @@ class AnyCollection
  private:
   enum Type { None, Value, Array, Map };
   typedef AnyValue ValueType;
-  typedef std::vector<SmartPointer<AnyCollection> > ArrayType;
-  typedef UNORDERED_MAP_TEMPLATE<AnyKeyable,SmartPointer<AnyCollection> > MapType;
+  typedef std::vector<AnyCollectionPtr > ArrayType;
+  typedef UNORDERED_MAP_TEMPLATE<AnyKeyable,AnyCollectionPtr > MapType;
 
   Type type;
   ValueType value;
@@ -335,7 +337,7 @@ AnyCollection& AnyCollection::operator = (const std::vector<T>& _array)
   type = Array;
   array.resize(_array.size());
   for(size_t i=0;i<array.size();i++)
-    array[i] = new AnyCollection(_array[i]);
+    array[i] = std::make_shared<AnyCollection>(_array[i]);
   return *this;
 }
 
@@ -344,7 +346,7 @@ AnyCollection& AnyCollection::operator = (const std::map<T,T2>& _map)
 {
   type = Map;
   for(typename std::map<T,T2>::const_iterator i=_map.begin();i!=_map.end();i++)
-    map[i->first] = new AnyCollection(i->second);
+    map[i->first] = std::make_shared<AnyCollection>(i->second);
   return *this;
 }
 
@@ -353,7 +355,7 @@ AnyCollection& AnyCollection::operator = (const UNORDERED_MAP_TEMPLATE<T,T2>& _m
 {
   type = Map;
   for(typename UNORDERED_MAP_TEMPLATE<T,T2>::const_iterator i=_map.begin();i!=_map.end();i++)
-    map[i->first] = new AnyCollection(i->second);
+    map[i->first] = std::make_shared<AnyCollection>(i->second);
   return *this;
 }
 

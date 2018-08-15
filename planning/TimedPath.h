@@ -23,8 +23,8 @@ public:
 
   void SetConstant(const Config& q,CSpace* space);
   void Set(const MilestonePath& path,int timeIndex=-1);
-  void Set(const SmartPointer<EdgePlanner>& e,int timeIndex=-1);
-  void Append(const SmartPointer<EdgePlanner>& e,int timeIndex=-1);
+  void Set(const EdgePlannerPtr& e,int timeIndex=-1);
+  void Append(const EdgePlannerPtr& e,int timeIndex=-1);
   void AppendDelay(Real t);
   void Clear();
   void Concat(const TimedMilestonePath& path);
@@ -32,8 +32,8 @@ public:
   int Eval2(Real t,Config& q) const;
   void Split(Real time,TimedMilestonePath& before,TimedMilestonePath& after) const;
 
-  vector<SmartPointer<EdgePlanner> > edges;
-  vector<Real> durations;
+  std::vector<EdgePlannerPtr> edges;
+  std::vector<Real> durations;
 };
 
 #endif

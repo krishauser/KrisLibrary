@@ -731,6 +731,24 @@ void VolumeOccupancyGrid_FloodFill(const TriMesh& m,Array3D<bool>& occupied,AABB
       for(int k=0;k<surface.p;k++) 
         if(surface(i,j,k)) occupied(i,j,k) = seedOccupied;
 
+  bool grow = true;
+  Array3D<bool> buffer;
+  if(grow) {
+    //try to grow to fill some gaps
+    for(int i=0;i<surface.m;i++) 
+      for(int j=0;j<surface.n;j++) 
+        for(int k=0;k<surface.p;k++)
+          if(surface(i,j,k)) {
+            if(i > 1) occupied(i-1,j,k) = seedOccupied;
+            if(i+2<surface.m) occupied(i+1,j,k) = seedOccupied;
+            if(j > 1) occupied(i,j-1,k) = seedOccupied;
+            if(j+2<surface.n) occupied(i,j+1,k) = seedOccupied;
+            if(k > 1) occupied(i,j,k-1) = seedOccupied;
+            if(k+2<surface.p) occupied(i,j,k+1) = seedOccupied;
+          }
+    buffer = occupied;
+  }
+
   list<IntTriple> queue;
   queue.push_back(seed);
   while(!queue.empty()) {
@@ -775,11 +793,33 @@ void VolumeOccupancyGrid_FloodFill(const TriMesh& m,Array3D<bool>& occupied,AABB
     index.c++;
   }
 
-  if(!seedOccupied) {  //need to set surface cells
+  if(grow) { //erode
+    if(!seedOccupied) {
+      for(int i=0;i<surface.m;i++) 
+        for(int j=0;j<surface.n;j++) 
+          for(int k=0;k<surface.p;k++)
+            if(buffer(i,j,k) == seedOccupied) occupied(i,j,k) = true;
+    }
+    surface = occupied;
     for(int i=0;i<surface.m;i++) 
       for(int j=0;j<surface.n;j++) 
         for(int k=0;k<surface.p;k++) 
-          if(surface(i,j,k)) occupied(i,j,k) = true;
+          if(surface(i,j,k) == seedOccupied) {
+            if(i > 0) occupied(i-1,j,k) = seedOccupied;
+            if(i+1<surface.m) occupied(i+1,j,k) = seedOccupied;
+            if(j > 0) occupied(i,j-1,k) = seedOccupied;
+            if(j+1<surface.n) occupied(i,j+1,k) = seedOccupied;
+            if(k > 0) occupied(i,j,k-1) = seedOccupied;
+            if(k+1<surface.p) occupied(i,j,k+1) = seedOccupied;
+          }
+  }
+  else {
+    if(!seedOccupied) {  //need to set surface cells
+      for(int i=0;i<surface.m;i++) 
+        for(int j=0;j<surface.n;j++) 
+          for(int k=0;k<surface.p;k++) 
+            if(surface(i,j,k)) occupied(i,j,k) = true;
+    }
   }
 }
 
@@ -1182,6 +1222,9 @@ struct TrimeshFeature
   int index;
   int feature;
 };
+
+//inline std::pair<int,int> to_pair(const TrimeshFeature& f) { return std::make_pair(f.index,f.feature); }
+inline int to_pair(const TrimeshFeature& f) { return f.index; }
 
 struct TriangleClosestPointData
 {
@@ -1637,10 +1680,57 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
       }
     }
   }
+  //sanity check
   for(int i=0;i<status.m;i++)
     for(int j=0;j<status.n;j++)
       for(int k=0;k<status.p;k++)
         Assert(status(i,j,k)==Accepted);
+
+  //try to fix flipped triangles by looking at the boundary
+  //set<pair<int,int> > flipped;
+  set<int> flipped;
+  for(int i=0;i<status.m;i++)
+    for(int j=0;j<status.n;j++) {
+      if(distance(i,j,0) < 0)
+        flipped.insert(to_pair(closestFeature(i,j,0)));
+      if(distance(i,j,status.p-1) < 0)
+        flipped.insert(to_pair(closestFeature(i,j,status.p-1)));
+    }
+  for(int i=0;i<status.m;i++)
+    for(int k=0;k<status.p;k++) {
+      if(distance(i,0,k) < 0)
+        flipped.insert(to_pair(closestFeature(i,0,k)));
+      if(distance(i,status.n-1,k) < 0)
+        flipped.insert(to_pair(closestFeature(i,status.n-1,k)));
+    }
+  for(int j=0;j<status.n;j++) 
+    for(int k=0;k<status.p;k++) {
+      if(distance(0,j,k) < 0)
+        flipped.insert(to_pair(closestFeature(0,j,k)));
+      if(distance(status.m-1,j,k) < 0)
+        flipped.insert(to_pair(closestFeature(status.m-1,j,k)));
+    }
+  if(flipped.size() > 0) {
+    printf("FMM flipped triangles: ");
+    for(auto i=flipped.begin();i!=flipped.end();i++)
+      printf("%d ",*i);
+      //printf("%d ",i->first);
+    printf("\n");
+    /*
+    int numflipped = 0;
+    for(int i=0;i<status.m;i++)
+      for(int j=0;j<status.n;j++) 
+        for(int k=0;k<status.p;k++) {
+          if(flipped.count(to_pair(closestFeature(i,j,k)))) {
+            distance(i,j,k) *= -1;
+            gradient(i,j,k).inplaceNormalize();
+            numflipped ++;
+          }
+        }
+    printf("  flipped %d cells\n",numflipped);
+    */
+  }
+
   //LOG4CXX_INFO(KrisLibrary::logger(),"Overall time: "<<overallTimer.ElapsedTime());
   //LOG4CXX_INFO(KrisLibrary::logger(),"Overall: "<<overallTimer.ElapsedTime()<<", heap pop: "<<heapPopTime<<", heap update: "<<heapUpdateTime<<", cp: "<<closestPointTime<<", overhead "<<overheadTime);
   //LOG4CXX_INFO(KrisLibrary::logger(),""<<numIters<<" iterations, "<<numCPCalls<<" cp calls, "<<numHeapUpdates<<" heap updates, max heap size "<<maxHeapSize);
@@ -1862,7 +1952,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
   int numInside = 0;
   for(int i=0;i<status.m;i++)
     for(int j=0;j<status.n;j++)
-      for(int k=0;k<status.p;k++)
+      for(int k=0;k<status.p;k++) 
         if(distance(i,j,k) <=0) numInside++;
   LOG4CXX_INFO(KrisLibrary::logger(),"FMM found "<<numInside<<" interior and "<<M*N*P - numInside<<" exterior cells");
 }

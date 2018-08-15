@@ -147,7 +147,7 @@ class QuadraticObjective : public IntegratorObjectiveFunctional
   virtual Real TerminalCost(const Vector& qend);
   virtual Real DifferentialCost(const State& x,const ControlInput& u);
   
-  SmartPointer<Interpolator> desiredPath;
+  InterpolatorPtr desiredPath;
   Math::Matrix stateCostMatrix,controlCostMatrix;
   Math::Matrix terminalCostMatrix;
 };
@@ -163,7 +163,7 @@ class CompositeObjective : public ObjectiveFunctionalBase
   ~CompositeObjective();
 
   ///Adds a new component.  Note: this takes ownership of the pointer.
-  void Add(const SmartPointer<ObjectiveFunctionalBase>& obj,Real weight=1.0);
+  void Add(const std::shared_ptr<ObjectiveFunctionalBase>& obj,Real weight=1.0);
 
   virtual const char* TypeString() { return "composite"; }
   virtual std::string Description();
@@ -173,7 +173,7 @@ class CompositeObjective : public ObjectiveFunctionalBase
   virtual bool PathInvariant() const;
 
   Real norm;
-  std::vector<SmartPointer<ObjectiveFunctionalBase> > components;
+  std::vector<std::shared_ptr<ObjectiveFunctionalBase> > components;
   std::vector<Real> weights;
 };
 

@@ -46,7 +46,7 @@
 class EdgeDistance
 {
  public:
-  Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
+  Real operator () (const EdgePlannerPtr& e,int s,int t)
   {
     assert(e->Space() != NULL);
     Real res = e->Space()->Distance(e->Start(),e->End());
@@ -63,7 +63,7 @@ class DiscountedEdgeDistance
  public:
   Real factor;
   DiscountedEdgeDistance(Real _factor):factor(_factor) {}
-  Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
+  Real operator () (const EdgePlannerPtr& e,int s,int t)
   {
     assert(e->Space() != NULL);
     Real res = e->Space()->Distance(e->Start(),e->End());
@@ -242,7 +242,7 @@ void PRMStarPlanner::PlanMore()
     timer.Reset();
 
     //connect to the closest node
-    SmartPointer<EdgePlanner> e = space->LocalPlanner(x,roadmap.nodes[nn]);
+    EdgePlannerPtr e = space->LocalPlanner(x,roadmap.nodes[nn]);
     bool efeasible = false;
     if(!lazy || d > lazyCheckThreshold) {
       numEdgeChecks++;
@@ -331,7 +331,7 @@ void PRMStarPlanner::PlanMore()
       m=AddMilestone(x);  
     }
 
-    SmartPointer<EdgePlanner> e;
+    EdgePlannerPtr e;
     //don't connect points that aren't potentially optimal
     bool doConnect = !rrg;
     if(rrg) {
@@ -401,7 +401,7 @@ void PRMStarPlanner::PlanMore()
 	      //precheck edge to m
 	      numEdgeChecks++;
 	      numEdgePrechecks ++;
-	      SmartPointer<EdgePlanner>* e = LBroadmap.FindEdge(p,m);
+	      EdgePlannerPtr* e = LBroadmap.FindEdge(p,m);
 	      if(!(*e)->IsVisible()) {
 		LBroadmap.DeleteEdge(p,m);
 		timer.Reset();
@@ -486,7 +486,7 @@ int PRMStarPlanner::AddMilestone(const Config& x)
   return m;
 }
 
-void PRMStarPlanner::ConnectEdge(int i,int j,const SmartPointer<EdgePlanner>& e)
+void PRMStarPlanner::ConnectEdge(int i,int j,const EdgePlannerPtr& e)
 {
   bool useSpp = (rrg || lazy);
   bool useSppLB = (lazy || (rrg && suboptimalityFactor > 0));
@@ -508,7 +508,7 @@ void PRMStarPlanner::ConnectEdge(int i,int j,const SmartPointer<EdgePlanner>& e)
   tShortestPaths += timer.ElapsedTime();
 }
 
-void PRMStarPlanner::ConnectEdgeLazy(int i,int j,const SmartPointer<EdgePlanner>& e)
+void PRMStarPlanner::ConnectEdgeLazy(int i,int j,const EdgePlannerPtr& e)
 {
   Assert(i >= 0 && j >= 0 && i < (int)roadmap.nodes.size() && j < (int)roadmap.nodes.size());
   bool useSppLB = (lazy || (rrg && suboptimalityFactor > 0));
@@ -640,7 +640,7 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
       Real w = 0;
       int feas = 0;
       if(spp.p[b] >= 0) {
-	SmartPointer<EdgePlanner>* e=roadmap.FindEdge(b,spp.p[b]);
+	EdgePlannerPtr* e=roadmap.FindEdge(b,spp.p[b]);
 	Assert(e != NULL);
 	w=(*e)->Space()->Distance((*e)->Start(),(*e)->End());
 	feas = (*e)->IsVisible();
@@ -655,7 +655,7 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
     Assert(spp.d[nodes[i+1]] > spp.d[nodes[i]]);
   path.edges.resize(0);
   for(size_t i=0;i+1<nodes.size();i++) {
-    SmartPointer<EdgePlanner>* e=roadmap.FindEdge(nodes[i],nodes[i+1]);
+    EdgePlannerPtr* e=roadmap.FindEdge(nodes[i],nodes[i+1]);
     Assert(e != NULL);
     if((*e)->Start() == roadmap.nodes[nodes[i]])
       path.edges.push_back(*e);
@@ -676,7 +676,7 @@ struct RoadmapEdgeInfo
   //Real Priority() const { return -distanceFromEndpoint; }
   int s,t;
   Real distanceFromEndpoint;
-  SmartPointer<EdgePlanner> e;
+  EdgePlannerPtr e;
 };
 
 struct LessEdgePriority
@@ -700,7 +700,7 @@ public:
   virtual void Successors(const int& s,vector<int>& successors,vector<double>& cost) {
     successors.resize(0);
     cost.resize(0);
-    Graph::UndirectedEdgeIterator<SmartPointer<EdgePlanner> > e;
+    Graph::UndirectedEdgeIterator<EdgePlannerPtr > e;
     vector<pair<int,int> > todelete;
     for(planner->LBroadmap.Begin(s,e);!e.end();e++) {
       int t = e.target();

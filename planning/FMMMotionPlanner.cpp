@@ -3,6 +3,7 @@
 #include "FMMMotionPlanner.h"
 #include <utils/indexing.h>
 #include <Timer.h>
+using namespace std;
 
 ///binding for fMM
 static CSpace* currentFMMSpace = NULL;

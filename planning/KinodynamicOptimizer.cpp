@@ -10,7 +10,7 @@
 #include <KrisLibrary/Timer.h>
 using namespace std;
 
-KinodynamicLocalOptimizer::KinodynamicLocalOptimizer(KinodynamicSpace* s,SmartPointer<ObjectiveFunctionalBase> _objective)
+KinodynamicLocalOptimizer::KinodynamicLocalOptimizer(KinodynamicSpace* s,std::shared_ptr<ObjectiveFunctionalBase> _objective)
 :KinodynamicPlannerBase(s),objective(_objective),bestPathCost(Inf)
 {
   const static int numMethods = 4;
@@ -18,7 +18,7 @@ KinodynamicLocalOptimizer::KinodynamicLocalOptimizer(KinodynamicSpace* s,SmartPo
   methodCounts.resize(numMethods,1);
   methodCosts.resize(numMethods,0.0);
   methodRewards.resize(numMethods,1.0);
-  SmartPointer<SteeringFunction> sf = s->GetControlSpace()->GetSteeringFunction();
+  std::shared_ptr<SteeringFunction> sf = s->GetControlSpace()->GetSteeringFunction();
   methodAvailable[Shortcut] = (sf != NULL && sf->IsExact());
   methodAvailable[RandomDescent] = false;
   methodAvailable[GradientDescent] = false;
@@ -97,13 +97,13 @@ void KinodynamicLocalOptimizer::ComputeCosts()
   cumulativeCosts.resize(bestPath.milestones.size());
   cumulativeCosts[0] = 0;
   for(size_t i=0;i<bestPath.paths.size();i++)
-    cumulativeCosts[i+1] = cumulativeCosts[i] + objective->IncrementalCost(bestPath.controls[i],bestPath.paths[i]);
+    cumulativeCosts[i+1] = cumulativeCosts[i] + objective->IncrementalCost(bestPath.controls[i],bestPath.paths[i].get());
   bestPathCost = cumulativeCosts.back()+objective->TerminalCost(bestPath.milestones.back());
 }
 
 bool KinodynamicLocalOptimizer::DoShortcut() 
 {
-  SmartPointer<SteeringFunction> sf = space->GetControlSpace()->GetSteeringFunction();
+  std::shared_ptr<SteeringFunction> sf = space->GetControlSpace()->GetSteeringFunction();
   if(!sf) return false;
   Real u1 = Rand()*bestPath.ParamEnd();
   Real u2 = Rand()*bestPath.ParamEnd();
@@ -138,7 +138,7 @@ bool KinodynamicLocalOptimizer::DoRandomDescent(Real perturbationSize)
   tempPath.milestones[0] = bestPath.milestones[0];
   tempPath.controls.resize(bestPath.controls.size());
   tempPath.paths.resize(bestPath.controls.size());
-  SmartPointer<CSpace> stateSpace = space->GetStateSpace();
+  std::shared_ptr<CSpace> stateSpace = space->GetStateSpace();
   int numSamples = Max(100,10*(int)tempPath.controls.size());
   int numControlSampleFailures = 0;
   int numGoalFailures = 0;
@@ -146,7 +146,7 @@ bool KinodynamicLocalOptimizer::DoRandomDescent(Real perturbationSize)
   for(size_t i=0;i<tempPath.controls.size();i++) {
     Real r = perturbationSize*Sqr(Real(i+1)/Real(tempPath.controls.size()));
     tempPath.controls[i].resize(bestPath.controls[i].size());
-    SmartPointer<CSet> uset = space->GetControlSet(tempPath.milestones[i]);
+    std::shared_ptr<CSet> uset = space->GetControlSet(tempPath.milestones[i]);
     while(numSamples > 0) {
       numSamples--;
       //perturb control
@@ -270,8 +270,8 @@ public:
   {
   }
   virtual Real Eval(const ControlInput& u) {
-    SmartPointer<Interpolator> i = kspace->Simulate(x,u);
-    return obj->IncrementalCost(u,i);
+    InterpolatorPtr i = kspace->Simulate(x,u);
+    return obj->IncrementalCost(u,i.get());
   }
   virtual void Gradient(const ControlInput& u,Vector& grad) {
     Vector temp=u;
@@ -294,8 +294,8 @@ public:
   {
   }
   virtual Real Eval(const State& x) {
-    SmartPointer<Interpolator> i = kspace->Simulate(x,u);
-    return obj->IncrementalCost(u,i);
+    InterpolatorPtr i = kspace->Simulate(x,u);
+    return obj->IncrementalCost(u,i.get());
   }
   virtual void Gradient(const State& x,Vector& grad) {
     Vector temp=x;
@@ -481,7 +481,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
   Matrix Ak;
   Vector bk;
   //Real ck;
-  TerminalCostFunction term(objective);
+  TerminalCostFunction term(objective.get());
   term.PreEval(bestPath.milestones.back());
   //ck = term.Eval(bestPath.milestones.back());
   term.Gradient(bestPath.milestones.back(),bk);
@@ -509,7 +509,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     fi.PreEval(bestPath.controls[i]);
     fi.Jacobian(bestPath.controls[i],fugrad);
     AllHessiansCenteredDifferences(fi,bestPath.controls[i],1e-3,fuhess);
-    IncrementalCostFunction gi(space,objective,bestPath.milestones[i]);
+    IncrementalCostFunction gi(space,objective.get(),bestPath.milestones[i]);
     gi.PreEval(bestPath.controls[i]);
     gi.Gradient(bestPath.controls[i],gugrad);
     gi.Hessian(bestPath.controls[i],guhess);
@@ -564,7 +564,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     fui.PreEval(bestPath.milestones[i]);
     fui.Jacobian(bestPath.milestones[i],fxgrad);
     AllHessiansCenteredDifferences(fui,bestPath.milestones[i],1e-3,fxhess);
-    IncrementalCostFunctionX gui(space,objective,u);
+    IncrementalCostFunctionX gui(space,objective.get(),u);
     gui.PreEval(bestPath.milestones[i]);
     gui.Gradient(bestPath.milestones[i],gxgrad);
     gui.Hessian(bestPath.milestones[i],gxhess);
@@ -636,14 +636,14 @@ bool KinodynamicLocalOptimizer::DoGradientDescent()
     SimulateFunctionX fui(space,bestPath.controls[i]);
     fui.PreEval(bestPath.milestones[i]);
     fui.Jacobian(bestPath.milestones[i],fxgrad[i]);
-    IncrementalCostFunction gi(space,objective,bestPath.milestones[i]);
+    IncrementalCostFunction gi(space,objective.get(),bestPath.milestones[i]);
     gi.PreEval(bestPath.controls[i]);
     gi.Gradient(bestPath.controls[i],gugrad[i]);
-    IncrementalCostFunctionX gui(space,objective,bestPath.controls[i]);
+    IncrementalCostFunctionX gui(space,objective.get(),bestPath.controls[i]);
     gui.PreEval(bestPath.milestones[i]);
     gui.Gradient(bestPath.milestones[i],gxgrad[i]);
   }
-  TerminalCostFunction term(objective);
+  TerminalCostFunction term(objective.get());
   term.PreEval(bestPath.milestones.back());
   term.Gradient(bestPath.milestones.back(),terminalxgrad);
   //compute overall cost functional gradients with respect to x and u, backwards recursion

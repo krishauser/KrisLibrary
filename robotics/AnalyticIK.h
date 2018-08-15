@@ -3,7 +3,7 @@
 
 #include "RobotKinematics3D.h"
 #include "IK.h"
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 #include <vector>
 #include <map>
 
@@ -61,7 +61,7 @@ class AnalyticIKMap
 		   int index,RobotKinematics3D& robot) const;
 
   /// Map of (base,ee) pairs to solvers
-  std::map<std::pair<int,int>,SmartPointer<AnalyticalIKSolver> > solvers;
+  std::map<std::pair<int,int>,std::shared_ptr<AnalyticalIKSolver> > solvers;
 };
 
 #endif

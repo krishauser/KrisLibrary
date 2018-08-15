@@ -14,7 +14,7 @@ using namespace std;
 class EdgeDistance
 {
  public:
-  Real operator () (const SmartPointer<EdgePlanner>& e,int s,int t)
+  Real operator () (const EdgePlannerPtr& e,int s,int t)
   {
     if(!e) return 1.0;
     Real res = e->Length();
@@ -59,7 +59,7 @@ struct ClosestMilestoneCallback : public Node::Callback
 RoadmapPlanner::RoadmapPlanner(CSpace* s)
   :space(s)
 {
-  pointLocator = new NaivePointLocation(roadmap.nodes,s);
+  pointLocator = make_shared<NaivePointLocation>(roadmap.nodes,s);
 }
 
 RoadmapPlanner::~RoadmapPlanner()
@@ -94,15 +94,15 @@ int RoadmapPlanner::TestAndAddMilestone(const Config& x)
   return AddMilestone(x);
 }
 
-void RoadmapPlanner::ConnectEdge(int i,int j,const SmartPointer<EdgePlanner>& e)
+void RoadmapPlanner::ConnectEdge(int i,int j,const EdgePlannerPtr& e)
 {
   ccs.AddEdge(i,j);
   roadmap.AddEdge(i,j,e);
 }
 
-SmartPointer<EdgePlanner> RoadmapPlanner::TestAndConnectEdge(int i,int j)
+EdgePlannerPtr RoadmapPlanner::TestAndConnectEdge(int i,int j)
 {
-  SmartPointer<EdgePlanner> e=space->LocalPlanner(roadmap.nodes[i],roadmap.nodes[j]);
+  EdgePlannerPtr e=space->LocalPlanner(roadmap.nodes[i],roadmap.nodes[j]);
   if(e->IsVisible()) {
     ConnectEdge(i,j,e);
     return e;
@@ -204,7 +204,7 @@ void RoadmapPlanner::CreatePath(int i,int j,MilestonePath& path)
   //Graph::PathIntCallback callback(roadmap.nodes.size(),j);
   //roadmap._BFS(i,callback);
   EdgeDistance distanceWeightFunc;
-  Graph::ShortestPathProblem<Config,SmartPointer<EdgePlanner> > spp(roadmap);
+  Graph::ShortestPathProblem<Config,EdgePlannerPtr > spp(roadmap);
   spp.InitializeSource(i);
   spp.FindPath_Undirected(j,distanceWeightFunc);
   if(IsInf(spp.d[j])) {
@@ -228,7 +228,7 @@ void RoadmapPlanner::CreatePath(int i,int j,MilestonePath& path)
   path.edges.reserve(nodes.size());
   for(list<int>::const_iterator p=nodes.begin();p!=--nodes.end();++p) {
     list<int>::const_iterator n=p; ++n;
-    SmartPointer<EdgePlanner>* e=roadmap.FindEdge(*p,*n);
+    EdgePlannerPtr* e=roadmap.FindEdge(*p,*n);
     Assert(e);
     if(*e == NULL) {
       //edge data not stored
@@ -329,20 +329,19 @@ void TreeRoadmapPlanner::ConnectToNeighbors(Node* n)
   }
 }
 
-EdgePlanner* TreeRoadmapPlanner::TryConnect(Node* a,Node* b)
+EdgePlannerPtr TreeRoadmapPlanner::TryConnect(Node* a,Node* b)
 {
   Assert(a->connectedComponent != b->connectedComponent);
-  EdgePlanner* e=space->LocalPlanner(a->x,b->x);
+  EdgePlannerPtr e=space->LocalPlanner(a->x,b->x);
   if(e->IsVisible()) {
     if(a->connectedComponent < b->connectedComponent) AttachChild(a,b,e);
     else AttachChild(b,a,e);
     return e;
   }
-  delete e;
   return NULL;
 }
 
-void TreeRoadmapPlanner::AttachChild(Node* p, Node* c, EdgePlanner* e)
+void TreeRoadmapPlanner::AttachChild(Node* p, Node* c, const EdgePlannerPtr& e)
 {
   Assert(p->connectedComponent != c->connectedComponent);
   if(e) Assert(e->Start() == p->x && e->End() == c->x);
@@ -464,7 +463,7 @@ TreeRoadmapPlanner::Node* TreeRoadmapPlanner::ClosestMilestoneInSubtree(Node* no
 
 TreeRoadmapPlanner::Node* TreeRoadmapPlanner::Extend(Node* n,const Config& x)
 {    //connect closest to n
-  EdgePlanner* e=space->LocalPlanner(n->x,x);
+  EdgePlannerPtr e=space->LocalPlanner(n->x,x);
   Assert(e->Start() == n->x);
   Assert(e->End() == x);
   Node* c=AddMilestone(x);
@@ -480,7 +479,7 @@ TreeRoadmapPlanner::Node* TreeRoadmapPlanner::TryExtend(Node* n,const Config& x)
 {
   if(space->IsFeasible(x)) {
     //connect closest to n
-    EdgePlanner* e=space->LocalPlanner(n->x,x);
+    EdgePlannerPtr e=space->LocalPlanner(n->x,x);
     if(e->IsVisible()) {
       Node* c=AddMilestone(x);
       n->addChild(c);
@@ -489,9 +488,6 @@ TreeRoadmapPlanner::Node* TreeRoadmapPlanner::TryExtend(Node* n,const Config& x)
       //AddMilestone adds a connected component
       connectedComponents.resize(connectedComponents.size()-1);
       return c;
-    }
-    else {
-      delete e;
     }
   }
   return NULL;
@@ -678,7 +674,7 @@ void BidirectionalRRTPlanner::CreatePath(MilestonePath& p) const
   p.edges.reserve(path.size());
   for(list<Node*>::const_iterator i=path.begin();i!=path.end();i++) {
     Node* n = *i;
-    SmartPointer<EdgePlanner> e=n->edgeFromParent();
+    EdgePlannerPtr e=n->edgeFromParent();
     if(e->Start() == n->x) {
       p.edges.push_back(e->ReverseCopy());
     }

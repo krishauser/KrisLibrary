@@ -24,7 +24,7 @@ class FMMMotionPlanner
 
   Vector ToGrid(const Vector& q) const;
   Vector FromGrid(const Vector& q) const;
-  Vector FromGrid(const vector<int>& pt) const;
+  Vector FromGrid(const std::vector<int>& pt) const;
 
   CSpace* space;
   Vector bmin,bmax;

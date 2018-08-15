@@ -4,7 +4,6 @@
 #include <KrisLibrary/graph/Tree.h>
 #include <KrisLibrary/graph/UndirectedGraph.h>
 #include <KrisLibrary/graph/ConnectedComponents.h>
-#include <KrisLibrary/utils/SmartPointer.h>
 #include <vector>
 #include <list>
 #include "CSpace.h"
@@ -12,6 +11,7 @@
 #include "Path.h"
 
 class PointLocationBase;
+
 
 /** @defgroup MotionPlanning
  * @brief Classes to assist in motion planning.
@@ -23,7 +23,7 @@ class PointLocationBase;
 class RoadmapPlanner
 {
 public:
-  typedef Graph::UndirectedGraph<Config,SmartPointer<EdgePlanner> > Roadmap;
+  typedef Graph::UndirectedGraph<Config,EdgePlannerPtr> Roadmap;
 
   RoadmapPlanner(CSpace*);
   virtual ~RoadmapPlanner();
@@ -32,10 +32,10 @@ public:
   virtual void GenerateConfig(Config& x);
   virtual int AddMilestone(const Config& x);
   virtual int TestAndAddMilestone(const Config& x);
-  virtual void ConnectEdge(int i,int j,const SmartPointer<EdgePlanner>& e);
-  virtual SmartPointer<EdgePlanner> TestAndConnectEdge(int i,int j);
+  virtual void ConnectEdge(int i,int j,const EdgePlannerPtr& e);
+  virtual EdgePlannerPtr TestAndConnectEdge(int i,int j);
   virtual bool HasEdge(int i,int j) { return roadmap.FindEdge(i,j)!=NULL; }
-  virtual SmartPointer<EdgePlanner> GetEdge(int i,int j) { return *roadmap.FindEdge(i,j); }
+  virtual EdgePlannerPtr GetEdge(int i,int j) { return *roadmap.FindEdge(i,j); }
   virtual bool AreConnected(int i,int j) { return ccs.SameComponent(i,j); }
   virtual bool AreConnected(int i,int j) const { return ccs.SameComponent(i,j); }
   virtual void ConnectToNeighbors(int i,Real connectionThreshold,bool ccReject=true);
@@ -46,7 +46,7 @@ public:
   CSpace* space;
   Roadmap roadmap;
   Graph::ConnectedComponents ccs;
-  SmartPointer<PointLocationBase> pointLocator;
+  std::shared_ptr<PointLocationBase> pointLocator;
 };
 
 
@@ -67,7 +67,7 @@ public:
     int connectedComponent;
   };
   
-  typedef Graph::TreeNode<Milestone,SmartPointer<EdgePlanner> > Node;
+  typedef Graph::TreeNode<Milestone,EdgePlannerPtr > Node;
   
   TreeRoadmapPlanner(CSpace*);
   virtual ~TreeRoadmapPlanner();
@@ -79,7 +79,7 @@ public:
   virtual Node* Extend(); 
   virtual void Cleanup();
   virtual void ConnectToNeighbors(Node*);
-  virtual EdgePlanner* TryConnect(Node*,Node*);
+  virtual EdgePlannerPtr TryConnect(Node*,Node*);
   virtual void DeleteSubtree(Node* n);
   //helpers
   //default implementation is O(n) search
@@ -88,7 +88,7 @@ public:
   virtual Node* ClosestMilestoneInSubtree(Node* node,const Config& x);
   Node* Extend(Node* n,const Config& x);
   Node* TryExtend(Node* n,const Config& x);
-  void AttachChild(Node* p, Node* c, EdgePlanner* e);   //c will become a child of p
+  void AttachChild(Node* p, Node* c, const EdgePlannerPtr& e);   //c will become a child of p
   Node* SplitEdge(Node* p,Node* n,Real u);
   void CreatePath(Node* a, Node* b, MilestonePath& path);
   

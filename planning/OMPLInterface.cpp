@@ -110,9 +110,8 @@ OMPLCSpace::OMPLCSpace( const ob::SpaceInformationPtr& si)
     Config a,b;
     FromOMPL(stemp1,a);
     FromOMPL(stemp2,b);
-    EdgePlanner* e= LocalPlanner(a,b);
+    EdgePlannerPtr e= LocalPlanner(a,b);
     assert(visible == e->IsVisible());
-    delete e;
   }
   */
 }
@@ -228,7 +227,7 @@ public:
   :EpsilonEdgeChecker(space,x,y,resolution),omplspace(space)
   {
   }
-  OMPLEdgePlanner(OMPLCSpace* space,const SmartPointer<Interpolator>& path,Real resolution)
+  OMPLEdgePlanner(OMPLCSpace* space,const std::shared_ptr<Interpolator>& path,Real resolution)
   :EpsilonEdgeChecker(space,path,resolution),omplspace(space)
   {
   }
@@ -239,14 +238,14 @@ public:
     this->dist = 0;
     return !this->foundInfeasible;
   }
-  virtual EdgePlanner* Copy() const { return new OMPLEdgePlanner(omplspace,path,epsilon); }
-  virtual EdgePlanner* ReverseCopy() { return new OMPLEdgePlanner(omplspace,new ReverseInterpolator(path),epsilon); }
+  virtual EdgePlannerPtr Copy() const { return make_shared<OMPLEdgePlanner>(omplspace,path,epsilon); }
+  virtual EdgePlannerPtr ReverseCopy() { return make_shared<OMPLEdgePlanner>(omplspace,make_shared<ReverseInterpolator>(path),epsilon); }
   OMPLCSpace* omplspace;
 };
 
-EdgePlanner* OMPLCSpace::PathChecker(const Config& x, const Config& y)
+EdgePlannerPtr OMPLCSpace::PathChecker(const Config& x, const Config& y)
 {
-  return new OMPLEdgePlanner(this,x,y,resolution);
+  return make_shared<OMPLEdgePlanner>(this,x,y,resolution);
 }
 
 
@@ -526,9 +525,8 @@ CSpaceOMPLMotionValidator::CSpaceOMPLMotionValidator(CSpaceOMPLSpaceInformation*
 
 bool CSpaceOMPLMotionValidator::checkMotion (const ob::State *s1, const ob::State *s2) const
 {
-  EdgePlanner* e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
+  EdgePlannerPtr e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
   if(e->IsVisible()) {
-    delete e;
     return true;
   }
   return false;
@@ -536,9 +534,8 @@ bool CSpaceOMPLMotionValidator::checkMotion (const ob::State *s1, const ob::Stat
 
 bool CSpaceOMPLMotionValidator::checkMotion (const ob::State *s1, const ob::State *s2, std::pair< ob::State *, double > &lastValid) const
 {
-  EdgePlanner* e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
+  EdgePlannerPtr e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
   if(e) {
-    delete e;
     return true;
   }
   lastValid.first = si_->cloneState(s1);

@@ -7,11 +7,11 @@
 class TrueEdgeChecker : public EdgeChecker
 {
 public:
-  TrueEdgeChecker(CSpace* space,const SmartPointer<Interpolator>& path);
+  TrueEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   TrueEdgeChecker(CSpace* space,const Config& a,const Config& b);
   virtual bool IsVisible() { return true; }
-  virtual EdgePlanner* Copy() const { return new TrueEdgeChecker(space,path); }
-  virtual EdgePlanner* ReverseCopy() const { return new TrueEdgeChecker(space,new ReverseInterpolator(path)); }
+  virtual EdgePlannerPtr Copy() const { return std::make_shared<TrueEdgeChecker>(space,path); }
+  virtual EdgePlannerPtr ReverseCopy() const { return std::make_shared<TrueEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
 
   virtual bool IsIncremental() const { return true; } 
   virtual Real Priority() const { return 0; }
@@ -24,11 +24,11 @@ public:
 class FalseEdgeChecker : public EdgeChecker
 {
 public:
-  FalseEdgeChecker(CSpace* space,const SmartPointer<Interpolator>& path);
+  FalseEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   FalseEdgeChecker(CSpace* space,const Config& a,const Config& b);
   virtual bool IsVisible() { return false; }
-  virtual EdgePlanner* Copy() const { return new FalseEdgeChecker(space,path); }
-  virtual EdgePlanner* ReverseCopy() const { return new FalseEdgeChecker(space,new ReverseInterpolator(path)); }
+  virtual EdgePlannerPtr Copy() const { return std::make_shared<FalseEdgeChecker>(space,path); }
+  virtual EdgePlannerPtr ReverseCopy() const { return std::make_shared<FalseEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
 
   virtual bool IsIncremental() const { return true; } 
   virtual Real Priority() const { return 0; }
@@ -41,11 +41,11 @@ public:
 class EndpointEdgeChecker : public EdgeChecker
 {
 public:
-  EndpointEdgeChecker(CSpace* space,const SmartPointer<Interpolator>& path);
+  EndpointEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   EndpointEdgeChecker(CSpace* space,const Config& a,const Config& b);
   virtual bool IsVisible();
-  virtual EdgePlanner* Copy() const { return new EndpointEdgeChecker(space,path); }
-  virtual EdgePlanner* ReverseCopy() const { return new EndpointEdgeChecker(space,new ReverseInterpolator(path)); }
+  virtual EdgePlannerPtr Copy() const { return std::make_shared<EndpointEdgeChecker>(space,path); }
+  virtual EdgePlannerPtr ReverseCopy() const { return std::make_shared<EndpointEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
 };
 
 
@@ -62,15 +62,15 @@ class PiggybackEdgePlanner : public EdgeChecker
 {
 public:
   ///Initialize normally
-  PiggybackEdgePlanner(SmartPointer<EdgePlanner> e);
+  PiggybackEdgePlanner(EdgePlannerPtr e);
   ///Initialize in override mode
-  PiggybackEdgePlanner(CSpace* space,const SmartPointer<Interpolator>& path,SmartPointer<EdgePlanner> e);
+  PiggybackEdgePlanner(CSpace* space,const InterpolatorPtr& path,EdgePlannerPtr e);
   ///Initialize in override mode
-  PiggybackEdgePlanner(CSpace* space,const Config& a,const Config& b,SmartPointer<EdgePlanner> e);
+  PiggybackEdgePlanner(CSpace* space,const Config& a,const Config& b,EdgePlannerPtr e);
   virtual ~PiggybackEdgePlanner() {}
   virtual bool IsVisible() { return e->IsVisible(); }
-  virtual EdgePlanner* Copy() const;
-  virtual EdgePlanner* ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const;
+  virtual EdgePlannerPtr ReverseCopy() const;
 
   virtual bool IsIncremental() const { return e->IsIncremental(); } 
   virtual Real Priority() const { return e->Priority(); }
@@ -84,7 +84,7 @@ public:
   virtual const Config& End() const;
   virtual CSpace* Space() const;
 
-  SmartPointer<EdgePlanner> e;
+  EdgePlannerPtr e;
 };
 
 /** @ingroup MotionPlanning
@@ -93,15 +93,15 @@ public:
 class PathEdgeChecker : public EdgePlanner
 {
 public:
-  PathEdgeChecker(CSpace* space,const std::vector<SmartPointer<EdgePlanner> >& path);
+  PathEdgeChecker(CSpace* space,const std::vector<EdgePlannerPtr> & path);
   virtual void Eval(Real u,Config& x) const;
   virtual Real Length() const;
   virtual const Config& Start() const;
   virtual const Config& End() const;  
   virtual bool IsVisible();
   virtual CSpace* Space() const { return space; }
-  virtual EdgePlanner* Copy() const;
-  virtual EdgePlanner* ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const;
+  virtual EdgePlannerPtr ReverseCopy() const;
   virtual bool IsIncremental() const { return true; } 
   virtual Real Priority() const;
   virtual bool Plan();
@@ -110,7 +110,7 @@ public:
 
   //TODO: queue them
   CSpace* space;
-  std::vector<SmartPointer<EdgePlanner> > path;
+  std::vector<EdgePlannerPtr > path;
   size_t progress;
   bool foundInfeasible;
 };
@@ -121,7 +121,7 @@ public:
 class MultiEdgePlanner : public PiggybackEdgePlanner
 {
 public:
-  MultiEdgePlanner(CSpace* space,const SmartPointer<Interpolator>& path,const std::vector<SmartPointer<EdgePlanner> >& components);
+  MultiEdgePlanner(CSpace* space,const InterpolatorPtr& path,const std::vector<EdgePlannerPtr >& components);
 };
 
 /** @ingroup MotionPlanning
@@ -134,16 +134,16 @@ public:
 class IncrementalizedEdgePlanner : public PiggybackEdgePlanner
 {
 public:
-  IncrementalizedEdgePlanner(const SmartPointer<EdgePlanner>& e);
+  IncrementalizedEdgePlanner(const EdgePlannerPtr& e);
   virtual bool IsIncremental() const { return true; } 
   virtual Real Priority() const;
   virtual bool Plan();
   virtual bool Done() const;
   virtual bool Failed() const;
-  virtual EdgePlanner* Copy() const;
-  virtual EdgePlanner* ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const;
+  virtual EdgePlannerPtr ReverseCopy() const;
   
-  SmartPointer<EdgePlanner> e;
+  EdgePlannerPtr e;
   bool checked,visible;
 };
 
@@ -157,12 +157,12 @@ public:
 class EdgePlannerWithCSpaceContainer : public PiggybackEdgePlanner
 {
 public:
-  EdgePlannerWithCSpaceContainer(const SmartPointer<CSpace>& space,const SmartPointer<EdgePlanner>& e);
+  EdgePlannerWithCSpaceContainer(const std::shared_ptr<CSpace>& space,const EdgePlannerPtr& e);
   virtual ~EdgePlannerWithCSpaceContainer() { }
-  virtual EdgePlanner* Copy() const;
-  virtual EdgePlanner* ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const;
+  virtual EdgePlannerPtr ReverseCopy() const;
 
-  SmartPointer<CSpace> spacePtr;
+  std::shared_ptr<CSpace> spacePtr;
 };
 
 

@@ -314,7 +314,7 @@ void AnyCollection::resize(size_t n)
   array.resize(n,NULL);
   for(size_t i=0;i<n;i++) {
     if(!array[i])
-      array[i] = new AnyCollection;
+      array[i].reset(new AnyCollection);
   }
 }
 
@@ -325,14 +325,14 @@ void AnyCollection::clear()
   map.clear();
 }
 
-SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<std::string>& path,bool doinsert)
+std::shared_ptr<AnyCollection> AnyCollection::lookup(const std::vector<std::string>& path,bool doinsert)
 {
   if(path.empty()) {
-    SmartPointer<AnyCollection> res = new AnyCollection;
+    std::shared_ptr<AnyCollection> res(new AnyCollection);
     res->shallow_copy(*this);
     return res;
   }
-  SmartPointer<AnyCollection> entry;
+  std::shared_ptr<AnyCollection> entry;
   if(type == Array) {
     int index;
     if(!LexicalCast(path[0],index)) {
@@ -385,7 +385,7 @@ SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<std::string>
   }
 
   for(size_t i=1;i<path.size();i++) {
-    SmartPointer<AnyCollection> child;
+    std::shared_ptr<AnyCollection> child;
     if(entry->type == Array) {
       int index;
       if(!LexicalCast(path[i],index)) {
@@ -436,14 +436,14 @@ SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<std::string>
   return entry;
 }
 
-SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<AnyKeyable>& path,bool doinsert)
+std::shared_ptr<AnyCollection> AnyCollection::lookup(const std::vector<AnyKeyable>& path,bool doinsert)
 {
   if(path.empty()) {
-    SmartPointer<AnyCollection> res = new AnyCollection;
+    std::shared_ptr<AnyCollection> res(new AnyCollection);
     res->shallow_copy(*this);
     return res;
   }
-  SmartPointer<AnyCollection> entry;
+  std::shared_ptr<AnyCollection> entry;
   if(doinsert) entry = insert(path[0]);
   else entry = find(path[0]);
   if(!entry) {
@@ -570,7 +570,7 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
 {
   key_path.resize(path.size());
   if(path.empty()) return true;
-  SmartPointer<AnyCollection> entry;
+  std::shared_ptr<AnyCollection> entry;
   if(type == Array) {
     int index;
     if(!LexicalCast(path[0],index)) {
@@ -598,7 +598,7 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
   else return false;
 
   for(size_t i=1;i<path.size();i++) {
-    SmartPointer<AnyCollection> child;
+    std::shared_ptr<AnyCollection> child;
     if(type == Array) {
       int index;
       if(!LexicalCast(path[i],index)) {
@@ -627,7 +627,7 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
   return true;
 }
 
-SmartPointer<AnyCollection> AnyCollection::lookup(const std::string& reference,bool insert,char delim,char lbracket,char rbracket)
+std::shared_ptr<AnyCollection> AnyCollection::lookup(const std::string& reference,bool insert,char delim,char lbracket,char rbracket)
 {
   std::vector<std::string> path;
   if(!parse_reference(reference,path,delim,lbracket,rbracket)) {
@@ -637,11 +637,11 @@ SmartPointer<AnyCollection> AnyCollection::lookup(const std::string& reference,b
   return lookup(path,insert);
 }
 
-SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,const char* delims)
+std::shared_ptr<AnyCollection> AnyCollection::slice(const std::string& reference,const char* delims)
 {
-  SmartPointer<AnyCollection> res;
+  std::shared_ptr<AnyCollection> res;
   if(reference.empty()) {
-    res = new AnyCollection;
+    res.reset(new AnyCollection);
     res->shallow_copy(*this);
     return res;
   }
@@ -662,7 +662,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	pos = (int)i;
       }
     std::string key = reference.substr(1,pos-1);
-    SmartPointer<AnyCollection> res=find(key);
+    std::shared_ptr<AnyCollection> res=find(key);
     if(res) return res->slice(reference.substr(pos,reference.length()-pos),delims);
     return NULL;
   }
@@ -690,20 +690,20 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	int index;
 	std::stringstream ss(key);
 	ss>>index;
-	SmartPointer<AnyCollection> res=find(index);
+	std::shared_ptr<AnyCollection> res=find(index);
 	if(res) return res->slice(reference.substr(pos+1,reference.length()-pos-1),delims);
 	return NULL;
       }
       else {
 	//lookup 
-	SmartPointer<AnyCollection> res=find(key);
+	std::shared_ptr<AnyCollection> res=find(key);
 	if(res) return res->slice(reference.substr(pos+1,reference.length()-pos-1),delims);
 	return NULL;
       }
     }
     else {
       //complex key
-      res = new AnyCollection;
+      res.reset(new AnyCollection);
       //TODO split keys into subsets
       std::string slice1,slice2;
       std::vector<std::string> elements;
@@ -798,7 +798,7 @@ bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyColle
 	else
 	  key_path[j] = AnyKeyable(path[j]);
       }
-      SmartPointer<AnyCollection> item = lookup(key_path);
+      std::shared_ptr<AnyCollection> item = lookup(key_path);
       if(!item) {
 		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::subcollection(): invalid item "<<paths[i].c_str());
 	return false;
@@ -809,7 +809,7 @@ bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyColle
   return true;
 }
 
-SmartPointer<AnyCollection> AnyCollection::find(int i) const
+std::shared_ptr<AnyCollection> AnyCollection::find(int i) const
 {
   if(type == Array) {
     if(i < 0 || i >= (int)array.size()) return NULL;
@@ -822,13 +822,13 @@ SmartPointer<AnyCollection> AnyCollection::find(int i) const
   return NULL;
 }
 
-SmartPointer<AnyCollection> AnyCollection::find(const char* str) const
+std::shared_ptr<AnyCollection> AnyCollection::find(const char* str) const
 {
   if(type != Map) return NULL;
   return find(AnyKeyable(std::string(str)));
 }
 
-SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
+std::shared_ptr<AnyCollection> AnyCollection::find(AnyKeyable key) const
 {
   if(type == Array) {
     if(key.value.hastype<int>())
@@ -846,7 +846,7 @@ SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
   return NULL;
 }
 
-SmartPointer<AnyCollection> AnyCollection::insert(int index)
+std::shared_ptr<AnyCollection> AnyCollection::insert(int index)
 {
   if(type == None) {
     if(index==0) { // first array reference
@@ -863,7 +863,7 @@ SmartPointer<AnyCollection> AnyCollection::insert(int index)
       size_t start = array.size();
       array.resize(index+1);
       for(int i=start;i<(int)array.size();i++)
-	array[i] = new AnyCollection();
+	array[i].reset(new AnyCollection());
     }
     else if(index > (int)array.size()) {
       //convert to a map
@@ -873,7 +873,7 @@ SmartPointer<AnyCollection> AnyCollection::insert(int index)
       for(size_t i=0;i<array.size();i++)
 	map[(int)i] = array[i];
       array.clear();
-      map[index] = new AnyCollection();
+      map[index].reset(new AnyCollection());
       return map[index];
     }
     return array[index];
@@ -886,12 +886,12 @@ SmartPointer<AnyCollection> AnyCollection::insert(int index)
   return NULL;
 }
 
-SmartPointer<AnyCollection> AnyCollection::insert(const char* str)
+std::shared_ptr<AnyCollection> AnyCollection::insert(const char* str)
 {
   return insert(AnyKeyable(std::string(str)));
 }
 
-SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
+std::shared_ptr<AnyCollection> AnyCollection::insert(AnyKeyable key)
 {
   if(type == None) {
     //if the key is an integer, try turning it into an array
@@ -929,14 +929,14 @@ SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
       size_t start = array.size();
       array.resize(index+1);
       for(size_t i=start;i<array.size();i++)
-	array[i] = new AnyCollection();
+        array[i].reset(new AnyCollection());
     }
     return array[index];
   }
   else if(type == Map) {
     MapType::iterator i=map.find(key);
     if(i == map.end()) {
-      map[key] = new AnyCollection;
+      map[key].reset(new AnyCollection());
       return map[key];
     }
     return i->second;
@@ -963,7 +963,7 @@ AnyCollection& AnyCollection::operator[](int index)
       size_t start = array.size();
       array.resize(index+1);
       for(size_t i=start;i<array.size();i++)
-	array[i] = new AnyCollection();
+	array[i].reset(new AnyCollection());
     }
     return *array[index];
   }
@@ -1030,14 +1030,14 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
       size_t start = array.size();
       array.resize(index+1);
       for(int i=start;i<(int)array.size();i++)
-	array[i] = new AnyCollection();
+	array[i].reset(new AnyCollection());
     }
     return *array[index];
   }
   else if(type == Map) {
     MapType::iterator i=map.find(key);
     if(i == map.end()) {
-      map[key] = new AnyCollection;
+      map[key].reset(new AnyCollection());
       return *map[key];
     }
     return *i->second;
@@ -1097,13 +1097,13 @@ void AnyCollection::deep_copy(const AnyCollection& rhs)
   else if(type == Array) {
     array.resize(rhs.array.size());
     for(size_t i=0;i<rhs.array.size();i++) {
-      array[i] = new AnyCollection;
+      array[i].reset(new AnyCollection);
       array[i]->deep_copy(*rhs.array[i]);
     }
   }
   else if(type == Map) {
     for(MapType::const_iterator i=rhs.map.begin();i!=rhs.map.end();i++) {
-      map[i->first] = new AnyCollection;
+      map[i->first].reset(new AnyCollection);
       map[i->first]->deep_copy(*i->second);
     }
   }
@@ -1173,7 +1173,7 @@ size_t AnyCollection::depth() const
   return -1;
 }
 
-void AnyCollection::enumerate(std::vector<SmartPointer<AnyCollection> >& collections) const
+void AnyCollection::enumerate(std::vector<std::shared_ptr<AnyCollection> >& collections) const
 {
   collections.resize(0);
   if(type == Array) {
@@ -1302,7 +1302,7 @@ void AnyCollection::deepmerge(const AnyCollection& other)
       array.clear();
       type = Map;
       for(MapType::const_iterator i=other.map.begin();i!=other.map.end();i++) {
-	SmartPointer<AnyCollection>& lhs = map[i->first];
+	std::shared_ptr<AnyCollection>& lhs = map[i->first];
 	if(i->second->collection() && lhs->collection())
 	  lhs->deepmerge(*i->second);
 	else
@@ -1323,7 +1323,7 @@ void AnyCollection::deepmerge(const AnyCollection& other)
   else {
     if(other.type == Array) {
       for(size_t i=0;i<other.array.size();i++) {
-	SmartPointer<AnyCollection>& lhs = map[(int)i];
+	std::shared_ptr<AnyCollection>& lhs = map[(int)i];
 	if(other.array[i]->collection() && lhs->collection())
 	  lhs->deepmerge(*other.array[i]);
 	else
@@ -1332,7 +1332,7 @@ void AnyCollection::deepmerge(const AnyCollection& other)
     }
     else {
       for(MapType::const_iterator i=other.map.begin();i!=other.map.end();i++) {
-	SmartPointer<AnyCollection>& lhs = map[i->first];
+	std::shared_ptr<AnyCollection>& lhs = map[i->first];
 	if(i->second->collection() && lhs->collection())
 	  lhs->deepmerge(*i->second);
 	else
@@ -1397,8 +1397,7 @@ bool AnyCollection::read(std::istream& in)
       return true;
     }
     //read list
-    SmartPointer<AnyCollection> value;
-    value = new AnyCollection();
+    std::shared_ptr<AnyCollection> value(new AnyCollection());
     if(!value->read(in)) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): failed on array item "<<(int)array.size());
       return false;
@@ -1410,7 +1409,7 @@ bool AnyCollection::read(std::istream& in)
 	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): List not separated by commas"<<"\n");
 	return false;
       }
-      value = new AnyCollection();
+      value.reset(new AnyCollection());
       if(!value->read(in)) {
 		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): failed on array item "<<(int)array.size());
 	return false;
@@ -1436,7 +1435,7 @@ bool AnyCollection::read(std::istream& in)
     }
     //read list
     AnyKeyable key;
-    SmartPointer<AnyCollection> value;
+    std::shared_ptr<AnyCollection> value;
     while(true) {
       if(!ReadValue(key.value,in,":")) {
 		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): failed on map item "<<(int)map.size());
@@ -1450,7 +1449,7 @@ bool AnyCollection::read(std::istream& in)
 	return false;
       }
       in.get();
-      value = new AnyCollection();
+      value.reset(new AnyCollection());
       if(!value->read(in)) {
 	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): couldn't read map value for key ");
 	WriteValue(key.value,std::cerr);
