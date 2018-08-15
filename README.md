@@ -1,38 +1,48 @@
 KrisLibrary
 ===========
 
-Basic math, geometry, and robotics, and other routines used in projects
+Basic C++ math, geometry, robotics, and other routines used in projects
 from Kris Hauser's lab.
 
 Authors:
-- Kris Hauser (hauserk@indiana.edu)
+- Kris Hauser (kris.hauser@duke.edu)
 
 
 ********************************************************************
 * Building
 ********************************************************************
-Copy Makefile.config.tmpl to Makefile.config.  Pre-configured config
-files for your system may be available in Makefile.config.[system].
 
-Edit paths and optional packages in Makefile.config.
-- GLUT / GLUI: almost always needed.  Configure the GLUT and GLUI paths
-  to point to the right places on your system. To disable, set HAVE_GLUT
-  and/or HAVE_GLUI to 0. 
-- GLPK: needed for optimization and contact mechanics.  To disable, set
-  HAVE_GLPK to 0.
-- Tinyxml: needed for Xml resource loading.  To disable, set HAVE_TINYXML to 0.
+Requirements
+- C++11: support needed in your compiler
+- CMake: needed to configure and build KrisLibrary
+- Log4CXX: needed for the logging functionality
+- OpenGL
+
+Optional
+- GLUT / GLUI: for OpenGL visualization
+- GLPK: needed for optimization and contact mechanics.  
+- Tinyxml: needed for Xml resource loading.  
 - GSL (disabled by default): needed only if you plan to use the special
   functions in math/misc.h.
-- Assimp (disabled by default): needed only for "exotic" triangle mesh
-  loading.  To enable, set HAVE_ASSIMP to 1 and set the appropriate ASSIMP 
-  path.
+- Assimp (disabled by default): needed only for extra triangle mesh
+  file format loading.
 - BLAS/LAPACK (disabled by default): needed only for the experimental
-  BLAS and LAPACK interfaces through CLAPACK.  To enable, set HAVE_BLAS and
-  HAVE_LAPACK to 1, and set the appropriate CLAPACK_DIR path.
+  BLAS and LAPACK interfaces through CLAPACK.  
+- FreeImage: needed for extra image file format loading (JPG,PNG,TIF,GIF, etc)
 
-Build the library using 'make'.  Documentation may also be built using
-'make docs'.
+To build, run:
 
+   cmake . 
+   make
+
+or for debug information, run
+
+   cmake . -DCMAKE_BUILD_TYPE=debug
+   make
+
+If you observe any packages not identified in the first step, run "cmake-gui ."
+to potentially set the appropriate paths manually.  Let us know if you have
+trouble on your system.
 
 
 ********************************************************************
@@ -52,19 +62,17 @@ Build the library using 'make'.  Documentation may also be built using
   . statistics - basic statistics routines
   . robotics - robot kinematics, dynamics, and contact mechanics
   . planning - motion planning
-  . splines - splines
+  . spline - splines
 
 ********************************************************************
 * Known "cruft"
 ********************************************************************
 - myfile should be renamed.
 - the 2D libs in math3d are not quite as complete as the 3D libs
-- GLdraw should be renamed.
 - optimization/LCP is a poor quality implementation.
 - optimization/MinNormProblem does not have access to a good quadratic
   programming solver.
-- camera/clip is named the same as math3d/clip, and is a less powerful
-  reimplementation of math3d/Polyhedron3D.
+
 
 ********************************************************************
 * Contribution guidelines
@@ -126,10 +134,11 @@ member variables are always lowercase.
 
 Global Formatting:
 
-Non-inlined functions always capitalized.  Inlined functions may be
+Non-inlined functions are always capitalized.  Inlined functions may be
 lowercase (usually reserved for very primitive operations, like dot products).
 Macros are either all caps or capitalized.
 Variables are lowercase.
+
 
 ****************************************************************************
 
@@ -137,7 +146,8 @@ Serialization
 
 Whenever possible, objects should be able to be loaded from/saved to disk
 using the << and >> operators of the standard iostream objects.  For
-binary I/O, classes should implement Load(File&) and Save(File&) methods.
+binary I/O, you can implement the WriteFile(object,File&) and
+ReadFile(object,File&) methods.
 
 ****************************************************************************
 
