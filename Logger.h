@@ -31,7 +31,7 @@ extern void loggerWait();
 
 /** @brief If logger is enabled for debug level, this will cause a getchar() to be called.
  */
-extern void loggerWait(log4cxx:LoggerPtr logger);
+extern void loggerWait(log4cxx::LoggerPtr logger);
 
 ///Use this inside a cpp file to define a fast logger 
 #define DEFINE_LOGGER(name) \
