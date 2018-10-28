@@ -448,6 +448,7 @@ bool Triangle3D::intersects(const Triangle3D& T, Segment3D& S) const
   Plane3D p;
   getPlane(p);
   if(p.normal.isZero()) return false;  //degenerate -- TODO: handle triangles that are just segments
+  if(!IsFinite(p.normal.x)) return false; //degenerate
   if(!T.intersects(p,S)) return false;
 
   //now limit S to the boundaries of this triangle
