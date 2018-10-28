@@ -30,6 +30,7 @@ using namespace std;
  * - id: if present, the id of the scan
  *
  * Standard properties (adopted from PCL) include:
+ * - normal_x, normal_y, normal_z: the outward normal estimated at a point
  * - rgb: integer representation of the 8-bit RGB value of a color. 0x00ff0000
  *   is red, 0x0000ff00 is green, 0x000000ff is blue.
  * - rgba: integer representation of the 8-bit ARGB value of a color with
@@ -59,8 +60,8 @@ class PointCloud3D
   void SetStructured(int w,int h);
   Vector3 GetOrigin() const;
   void SetOrigin(const Vector3& origin);
-  RigidTransform GetViewport() const;
-  void SetViewport(const RigidTransform& T);
+  RigidTransform GetViewpoint() const;
+  void SetViewpoint(const RigidTransform& T);
   int PropertyIndex(const string& name) const;
   bool HasProperty(const string& name) const { return PropertyIndex(name) >= 0; }
   bool GetProperty(const string& name,vector<Real>& items) const;

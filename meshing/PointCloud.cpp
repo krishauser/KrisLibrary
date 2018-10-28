@@ -460,9 +460,9 @@ void PointCloud3D::SetStructured(int w,int h)
 
 Vector3 PointCloud3D::GetOrigin() const
 {
-  string viewport;
-  if(!settings.get("viewport",viewport)) return Vector3(0.0);
-  stringstream ss(viewport);
+  string viewpoint;
+  if(!settings.get("viewpoint",viewpoint)) return Vector3(0.0);
+  stringstream ss(viewpoint);
   Vector3 o;
   ss>>o;
   return o;
@@ -470,44 +470,44 @@ Vector3 PointCloud3D::GetOrigin() const
 
 void PointCloud3D::SetOrigin(const Vector3& origin)
 {
-  string viewport;
-  if(!settings.get("viewport",viewport)) {
+  string viewpoint;
+  if(!settings.get("viewpoint",viewpoint)) {
     stringstream ss;
     ss<<origin<<" 1 0 0 0";
-    settings.set("viewport",ss.str());
+    settings.set("viewpoint",ss.str());
     return;
   }
-  stringstream ss(viewport);
+  stringstream ss(viewpoint);
   Vector3 o;
   Vector4 q;
   ss>>o>>q;
   stringstream ss2;
   ss2<<origin<<" "<<q;
-  settings.set("viewport",ss2.str());
+  settings.set("viewpoint",ss2.str());
 }
 
-RigidTransform PointCloud3D::GetViewport() const
+RigidTransform PointCloud3D::GetViewpoint() const
 {
   RigidTransform T;
-  string viewport;
-  if(!settings.get("viewport",viewport)) {
+  string viewpoint;
+  if(!settings.get("viewpoint",viewpoint)) {
     T.setIdentity();
     return T;
   }
-  stringstream ss(viewport);
+  stringstream ss(viewpoint);
   QuaternionRotation q;
   ss>>T.t>>q;
   q.getMatrix(T.R);
   return T;
 }
 
-void PointCloud3D::SetViewport(const RigidTransform& T)
+void PointCloud3D::SetViewpoint(const RigidTransform& T)
 {
   QuaternionRotation q;
   q.setMatrix(T.R);
   stringstream ss;
   ss<<T.t<<" "<<q;
-  settings.set("viewport",ss.str());
+  settings.set("viewpoint",ss.str());
 }
 
 void PointCloud3D::GetAABB(Vector3& bmin,Vector3& bmax) const
@@ -722,10 +722,12 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
     //convert real to hex to GLcolor
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
-      int col = (int)rgb[i];
+      unsigned int col = (unsigned int)rgb[i];
       Real r=((col&0xff0000)>>16) / 255.0;
       Real g=((col&0xff00)>>8) / 255.0;
       Real b=(col&0xff) / 255.0;
+      int w=GetStructuredWidth();
+      int h=GetStructuredHeight();
       out[i].set(r,g,b,1.0);
     }
     return true;
@@ -735,7 +737,7 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
     //following PCD, this is actuall A-RGB
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
-      int col = (int)rgb[i];
+      unsigned int col = (unsigned int)rgb[i];
       Real r = ((col&0xff0000)>>16) / 255.0;
       Real g = ((col&0xff00)>>8) / 255.0;
       Real b = (col&0xff) / 255.0;
