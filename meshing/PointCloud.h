@@ -59,8 +59,8 @@ class PointCloud3D
   void SetStructured(int w,int h);
   Vector3 GetOrigin() const;
   void SetOrigin(const Vector3& origin);
-  RigidTransform GetViewport() const;
-  void SetViewport(const RigidTransform& T);
+  RigidTransform GetViewpoint() const;
+  void SetViewpoint(const RigidTransform& T);
   int PropertyIndex(const string& name) const;
   bool HasProperty(const string& name) const { return PropertyIndex(name) >= 0; }
   bool GetProperty(const string& name,vector<Real>& items) const;
