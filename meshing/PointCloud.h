@@ -30,6 +30,7 @@ using namespace std;
  * - id: if present, the id of the scan
  *
  * Standard properties (adopted from PCL) include:
+ * - normal_x, normal_y, normal_z: the outward normal estimated at a point
  * - rgb: integer representation of the 8-bit RGB value of a color. 0x00ff0000
  *   is red, 0x0000ff00 is green, 0x000000ff is blue.
  * - rgba: integer representation of the 8-bit ARGB value of a color with
