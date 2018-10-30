@@ -1277,7 +1277,8 @@ struct TriangleClosestPointData
         dir = aveNormal*sign;
         signedDistance = sign*distance;
       }
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      //printf("Warning getchar?\n");
+      //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
     }
     else {
       //find the triangle that's the most perpendicular to the point
