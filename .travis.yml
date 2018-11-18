@@ -19,4 +19,5 @@ addons:
     - libxi-dev
     - libglpk-dev
     - liblog4cxx10-dev
+    - libglew-dev
 
