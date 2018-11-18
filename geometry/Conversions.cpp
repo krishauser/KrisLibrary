@@ -10,6 +10,7 @@
 #include <KrisLibrary/meshing/Voxelize.h>
 #include <KrisLibrary/math3d/random.h>
 #include <KrisLibrary/math3d/basis.h>
+#include <KrisLibrary/Timer.h>
 
 namespace Geometry {
 	
@@ -62,6 +63,7 @@ void MeshToPointCloud(const Meshing::TriMesh& mesh,Meshing::PointCloud3D& pc,Rea
 
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& appearance,Real depthDiscontinuity)
 {
+	Timer timer;
 	PointCloudToMesh(pc,mesh,depthDiscontinuity);
 	vector<Vector4> colors;
 	if(pc.GetColors(colors)) {
@@ -108,10 +110,10 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Rea
 			if(!IsFinite(z12)) z12=0;
 			if(!IsFinite(z21)) z21=0;
 			if(!IsFinite(z22)) z22=0;
-			bool d1x = (Abs(z11 - z12) > depthDiscontinuity*Abs(z11+z12)) || (z11 == 0 || z12 == 0);
-			bool d1y = (Abs(z11 - z21) > depthDiscontinuity*Abs(z11+z21)) || (z11 == 0 || z21 == 0);
-			bool d2x = (Abs(z22 - z21) > depthDiscontinuity*Abs(z22+z21)) || (z22 == 0 || z21 == 0);
-			bool d2y = (Abs(z22 - z12) > depthDiscontinuity*Abs(z22+z12)) || (z22 == 0 || z12 == 0);
+			bool d1x = (z11 == 0 || z12 == 0) || (Abs(z11 - z12) > depthDiscontinuity*Abs(z11+z12));
+			bool d1y = (z11 == 0 || z21 == 0) || (Abs(z11 - z21) > depthDiscontinuity*Abs(z11+z21));
+			bool d2x = (z22 == 0 || z21 == 0) || (Abs(z22 - z21) > depthDiscontinuity*Abs(z22+z21));
+			bool d2y = (z22 == 0 || z12 == 0) || (Abs(z22 - z12) > depthDiscontinuity*Abs(z22+z12));
 			bool dupperleft = (d1x || d1y);
 			bool dupperright = (d1x || d2y);
 			bool dlowerleft = (d2x || d1y);
@@ -455,7 +457,7 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
 	//make correction for grid cell centers
 	center_bb.bmin += celldims*0.5;
 	center_bb.bmax -= celldims*0.5;
-    MarchingCubes(grid.value,0,center_bb,mesh);
+    MarchingCubes(grid.value,0.0,center_bb,mesh);
 }
 
 } //namespace Geometry
