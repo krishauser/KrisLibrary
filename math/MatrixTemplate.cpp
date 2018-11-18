@@ -49,6 +49,14 @@ base(0),istride(0),m(0),jstride(0),n(0)
 }
 
 template <class T>
+MatrixTemplate<T>::MatrixTemplate(MyT&& a)
+:vals(a.vals),capacity(a.capacity),allocated(a.allocated),
+base(a.base),istride(a.istride),m(a.m),jstride(a.jstride),n(a.n)
+{
+  a.vals = NULL;
+}
+
+template <class T>
 MatrixTemplate<T>::MatrixTemplate(int _m, int _n)
 :vals(NULL),capacity(0),allocated(false),
 base(0),istride(0),m(0),jstride(0),n(0)
@@ -228,12 +236,26 @@ void MatrixTemplate<T>::resizePersist(int _m, int _n, T initval)
 
 
 template <class T>
-const MatrixTemplate<T>& MatrixTemplate<T>::operator = (const MyT& a)
+MatrixTemplate<T>& MatrixTemplate<T>::operator = (const MyT& a)
 {
   if(this == &a) return *this;
   if(m!=a.m || n!=a.n) resize(a.m,a.n);
   gen_array2d_equal(MYGENARGS,GENARGS(a),m,n);
   return *this;
+}
+
+template <class T>
+MatrixTemplate<T>& MatrixTemplate<T>::operator =(MyT&& a)
+{
+  vals = a.vals;
+  capacity = a.capacity;
+  allocated = a.allocated;
+  base = a.base;
+  istride = a.istride;
+  m = a.m;
+  jstride = a.jstride;
+  n = a.n;
+  a.vals = NULL;
 }
 
 

@@ -71,6 +71,7 @@ public:
 
   MatrixTemplate();
   MatrixTemplate(const MyT&);
+  MatrixTemplate(MyT&&);
   MatrixTemplate(int m, int n);
   MatrixTemplate(int m, int n, T initval);
   MatrixTemplate(int m, int n, const T* vals);
@@ -93,7 +94,8 @@ public:
   void resizePersist(int m, int n, T initval);
   void clear();
 
-  const MyT& operator = (const MyT&);
+  MyT& operator = (const MyT&);
+  MyT& operator = (MyT&&);
   bool operator == (const MyT&) const;
   inline bool operator != (const MyT& a) const { return !operator==(a); }
   inline const T& operator() (int,int) const;

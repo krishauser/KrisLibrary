@@ -70,6 +70,14 @@ base(0),stride(0),n(0)
   copy(_vals);
 }
 
+template <class T>
+VectorTemplate<T>::VectorTemplate(MyT&& _vals)
+:vals(NULL),capacity(0),allocated(false),
+base(0),stride(0),n(0)
+{
+  operator = (_vals);
+}
+
 
 template <class T>
 VectorTemplate<T>::~VectorTemplate()
@@ -188,11 +196,23 @@ VectorTemplate<T>::operator std::vector<T> () const
 }
 
 template <class T>
-const VectorTemplate<T>& VectorTemplate<T>::operator = (const MyT& a)
+VectorTemplate<T>& VectorTemplate<T>::operator = (const MyT& a)
 {
   if(this == &a) return *this;
   if(n!=a.n) resize(a.n);
   gen_array_equal(getStart(),stride, a.getStart(),a.stride, n);
+  return *this;
+}
+
+template <class T>
+VectorTemplate<T>& VectorTemplate<T>::operator = (MyT&& v)
+{
+  ::swap(vals,v.vals);
+  ::swap(capacity,v.capacity);
+  ::swap(allocated,v.allocated);
+  ::swap(base,v.base);
+  ::swap(stride,v.stride);
+  ::swap(n,v.n);
   return *this;
 }
 

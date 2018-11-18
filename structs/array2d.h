@@ -2,10 +2,10 @@
 #define ARRAY2D_H
 
 #include <KrisLibrary/myfile.h>
-#include <iostream>
 #include <KrisLibrary/errors.h>
 #include <KrisLibrary/utils/IntPair.h>
 #include <KrisLibrary/utils/indexing.h>
+#include <iosfwd>
 
 /** @brief A two-dimensional m x n array.
  *
@@ -34,13 +34,15 @@ public:
   Array2D(int m,int n);
   Array2D(int m,int n,const T& initVal);
   Array2D(const Array2D<T>& rhs);
+  Array2D(Array2D<T>&& rhs);
   ~Array2D();
   
   inline T& operator()(int i,int j) { Assert(i>=0&&i<m); Assert(j>=0&&j<n); return items[i*n+j]; }
   inline const T& operator()(int i,int j) const { Assert(i>=0&&i<m); Assert(j>=0&&j<n); return items[i*n+j]; }
   inline T& operator()(const IntPair& t) { return operator()(t.a,t.b); }
   inline const T& operator()(const IntPair& t) const { return operator()(t.a,t.b); }
-  const Array2D<T>& operator =(const Array2D<T>& rhs);
+  Array2D<T>& operator =(const Array2D<T>& rhs);
+  Array2D<T>& operator =(Array2D<T>&& rhs);
   
   bool Read(File& f);
   bool Write(File& f) const;
@@ -80,7 +82,7 @@ public:
     inline void incFirst(int skip=1) { it.incFirst(skip); }
     inline void incSecond(int skip=1) { it.incSecond(skip); }
     inline T& operator*() { return array->getData()[*it]; }
-    const iterator& operator = (const iterator& rhs);
+    iterator& operator = (const iterator& rhs);
     inline bool operator == (const iterator& rhs) const { return array==rhs.array && it == rhs.it; }
     inline bool operator != (const iterator& rhs) const { return !operator==(rhs); }
     inline bool operator < (const iterator& rhs) const { return it<rhs.it; }
@@ -139,16 +141,36 @@ Array2D<T>::Array2D(const Array2D<T>& rhs)
 }
 
 template <class T>
+Array2D<T>::Array2D(Array2D<T>&& rhs)
+:m(rhs.m),n(rhs.n),items(rhs.items),capacity(rhs.capacity)
+{
+  //prevent deletion
+  rhs.items = 0;
+}
+
+template <class T>
 Array2D<T>::~Array2D()
 {
 	clear();
 }
 
 template <class T>
-const Array2D<T>& Array2D<T>::operator =(const Array2D<T>& rhs)
+Array2D<T>& Array2D<T>::operator =(const Array2D<T>& rhs)
 {
 	set(rhs);
 	return *this;
+}
+
+template <class T>
+Array2D<T>& Array2D<T>::operator =(Array2D<T>&& rhs)
+{
+  m = rhs.m;
+  n = rhs.n;
+  items = rhs.items;
+  capacity = rhs.capacity;
+  //prevent deletion
+  rhs.items = 0;
+  return *this;
 }
 
 template <class T>
@@ -331,7 +353,7 @@ Array2D<T>::iterator::iterator(const iterator& rhs)
 }
 
 template <class T>
-const typename Array2D<T>::iterator& Array2D<T>::iterator::operator = (const iterator& rhs)
+typename Array2D<T>::iterator& Array2D<T>::iterator::operator = (const iterator& rhs)
 {
   it = rhs.it;
   array = rhs.array;
