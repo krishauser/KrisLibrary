@@ -80,6 +80,9 @@ class SparseVolumeGrid
   void GetBlockRange(const AABB3D& range,IntTriple& blockMin,IntTriple& blockMax) const;
   ///Retrieves the block given an index, or NULL if the block doesn't exist
   Block* BlockPtr(const IntTriple& blockIndex) const;
+  ///If block exists at the given index, returns BlockPtr().  Otherwise, calls MakeBlock() on it and returns the pointer.
+  ///Faster than "MakeBlock(b); return BlockPtr(b);".
+  Block* GetMakeBlock(const IntTriple& blockIndex);
   ///Creates an empty block (filled with the default value) at the given hash index.  Returns true if a new block was made, false
   ///if the block already existed
   bool MakeBlock(const IntTriple& blockIndex);

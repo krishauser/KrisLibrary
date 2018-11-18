@@ -241,6 +241,29 @@ void SparseVolumeGrid::GetBlockRange(const AABB3D& range,IntTriple& hashMin,IntT
   GetBlock(range.bmax,hashMax);
 }
 
+SparseVolumeGrid::Block* SparseVolumeGrid::GetMakeBlock(const IntTriple& blockIndex)
+{
+  void* res = hash.Get(blockIndex);
+  if (res != NULL) return reinterpret_cast<Block*>(res);
+  Block* newblock = new Block();
+  newblock->id = blockIDCounter++;
+  newblock->index = blockIndex;
+  //TODO: copy the channel names? or just save some memory
+  //newblock->grid.channelNames = channelNames.size();
+  newblock->grid.channelNames.clear();
+  newblock->grid.channels.resize(channelNames.size());
+  newblock->grid.Resize(blockSize.a,blockSize.b,blockSize.c);
+  Vector3 bmin,bmax;
+  hash.IndexBucketBounds(blockIndex,bmin,bmax);
+  for(size_t i=0;i<channelNames.size();i++) {
+    newblock->grid.channels[i].value.set(defaultValue[i]);
+    newblock->grid.channels[i].bb.bmin = bmin;
+    newblock->grid.channels[i].bb.bmax = bmax;
+  }
+  hash.Set(blockIndex,newblock);
+  return newblock;
+}
+
 bool SparseVolumeGrid::MakeBlock(const IntTriple& hashIndex)
 {
   void* res = hash.Get(hashIndex);
