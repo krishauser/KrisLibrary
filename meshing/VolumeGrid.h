@@ -7,7 +7,6 @@
 #include <KrisLibrary/math3d/AABB3D.h>
 #include <KrisLibrary/math3d/primitives.h>
 #include <KrisLibrary/utils/indexing.h>
-#include <iosfwd>
 
 namespace Meshing {
 
@@ -43,7 +42,7 @@ struct VolumeGridIterator
 };
 
 /** @ingroup Meshing
- * @brief A 3D array over a 3D volume, containing Real values.
+ * @brief A 3D array over an axis-aligned 3D volume, containing Real values.
  *
  * GetIndex returns the cell containing a 3D point.
  * GetIndexAndParams returns the cell containing a 3D point, and its
@@ -57,14 +56,19 @@ struct VolumeGridIterator
  * Most methods just clamp their arguments to the domain rather than
  * doing bounds checks.
  */
-class VolumeGrid
+template <class T>
+class VolumeGridTemplate
 {
  public:
+  typedef VolumeGridTemplate<T> MyT;
+
   bool IsEmpty() const { return value.empty(); }
   void Resize(int m,int n,int p) { value.resize(m,n,p); }
   void ResizeByResolution(const Vector3& res);
-  void MakeSimilar(const VolumeGrid& grid);
-  bool IsSimilar(const VolumeGrid& grid) const;
+  template <class T2>
+  void MakeSimilar(const VolumeGridTemplate<T2>& grid);
+  template <class T2>
+  bool IsSimilar(const VolumeGridTemplate<T2>& grid) const;
   void GetCell(int i,int j,int k,AABB3D& cell) const;
   void GetCellCenter(int i,int j,int k,Vector3& center) const;
   Vector3 GetCellSize() const;
@@ -74,17 +78,21 @@ class VolumeGrid
   inline void GetCell(const IntTriple& index,AABB3D& cell) const { GetCell(index.a,index.b,index.c,cell); }
   inline void GetCenter(const IntTriple& index,Vector3& center) const { GetCellCenter(index.a,index.b,index.c,center); }
   inline void GetIndex(const Vector3& pt,IntTriple& index) const { GetIndex(pt,index.a,index.b,index.c); }
+  inline void SetValue(int i,int j,int k,const T& v) { value(i,j,k)=v; }
+  inline void SetValue(const Vector3& pt,const T& v) { int i,j,k; GetIndex(pt,i,j,k); value(i,j,k)=v; }
+  inline T GetValue(int i,int j,int k) const { return value(i,j,k); }
+  inline T GetValue(const Vector3& pt) const { int i,j,k; GetIndex(pt,i,j,k); return value(i,j,k); }
 
   ///Computes the trilinear interpolation of the field at pt, assuming values are sampled exactly at cell centers
-  Real TrilinearInterpolate(const Vector3& pt) const;
+  T TrilinearInterpolate(const Vector3& pt) const;
   ///Used only for fast marching method, really.
-  Real MinimumFreeInterpolate(const Vector3& pt) const;
+  T MinimumFreeInterpolate(const Vector3& pt) const;
   ///Average value of the range.  Each cell's value is weighted by the volume overlap with range
-  Real Average(const AABB3D& range) const;
+  T Average(const AABB3D& range) const;
   ///Resamples the given volume grid onto the current grid, taking trilinear interpolation at cell centers
-  void ResampleTrilinear(const VolumeGrid& grid);
+  void ResampleTrilinear(const MyT& grid);
   ///Resamples the given volume grid onto the current grid, taking averages over grid cells
-  void ResampleAverage(const VolumeGrid& grid);
+  void ResampleAverage(const MyT& grid);
   ///Returns the gradient estimated using forward differencing
   void Gradient_ForwardDifference(const IntTriple& index,Vector3& grad) const;
   ///Returns the gradient estimated using centered differencing
@@ -92,26 +100,56 @@ class VolumeGrid
   ///Returns the trilinear interpolated gradient.  If any element of pt is on a cell boundary the gradient estimated
   ///using centered differencing
   void Gradient(const Vector3& pt,Vector3& grad) const;
-  void Add(const VolumeGrid& grid);
-  void Subtract(const VolumeGrid& grid);
-  void Multiply(const VolumeGrid& grid);
-  void Max(const VolumeGrid& grid);
-  void Min(const VolumeGrid& grid);
-  void Add(Real val);
-  void Multiply(Real val);
-  void Max(Real val);
-  void Min(Real val);
+  void Add(const MyT& grid);
+  void Subtract(const MyT& grid);
+  void Multiply(const MyT& grid);
+  void Max(const MyT& grid);
+  void Min(const MyT& grid);
+  void Add(T val);
+  void Multiply(T val);
+  void Max(T val);
+  void Min(T val);
 
-  typedef VolumeGridIterator<Real> iterator;
+  typedef VolumeGridIterator<T> iterator;
   iterator getIterator() const { return iterator(value,bb); }
 
-  Array3D<Real> value;
+  Array3D<T> value;
   AABB3D bb;
 };
 
-std::istream& operator >> (std::istream& in,VolumeGrid& grid);
-std::ostream& operator << (std::ostream& out,const VolumeGrid& grid);
+typedef VolumeGridTemplate<Real> VolumeGrid;
 
+template <class T>
+std::istream& operator >> (std::istream& in,VolumeGridTemplate<T>& grid)
+{
+  in>>grid.bb.bmin>>grid.bb.bmax;
+  in>>grid.value;
+  return in;
+}
+
+template <class T>
+std::ostream& operator << (std::ostream& out,const VolumeGridTemplate<T>& grid)
+{
+  out<<grid.bb.bmin<<"    "<<grid.bb.bmax<<std::endl;
+  out<<grid.value<<std::endl;
+  return out;
+}
+
+
+template <class T>
+template <class T2>
+void VolumeGridTemplate<T>::MakeSimilar(const VolumeGridTemplate<T2>& grid)
+{
+  bb=grid.bb;
+  value.resize(grid.value.m,grid.value.n,grid.value.p);
+}
+
+template <class T>
+template <class T2>
+bool VolumeGridTemplate<T>::IsSimilar(const VolumeGridTemplate<T2>& grid) const
+{
+  return (grid.value.m == value.m && grid.value.n == value.n && grid.value.p == value.p) && (bb.bmin == grid.bb.bmin && bb.bmax == grid.bb.bmax);
+}
 
 template <class T>
 VolumeGridIterator<T>::VolumeGridIterator(const Array3D<T>& _cells,const AABB3D& _bb)
@@ -160,27 +198,6 @@ void VolumeGridIterator<T>::operator ++()
       cellCorner.x+=cellSize.x;
     }
   }
-  /*
-  if(index != it.getElement()) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"VolumeGridIterator: Internal error!"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Index "<<index<<", iterator element "<<it.getElement()<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Low = "<<lo<<", high = "<<hi<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Array3d iterator element "<<it.it.getElement()<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Array3D size "<<cells.size()<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Array3d range base "<<it.range.base<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"  size "<<it.range.isize<<" "<<it.range.jsize<<" "<<it.range.ksize<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"  stride "<<it.range.istride<<" "<<it.range.jstride<<" "<<it.range.kstride<<"\n");
-  }
-  if(index.c + cells.p*(index.b + cells.n*index.a) != *it.it) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"VolumeGridIterator: Internal error!"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Offset into array: "<<index.c + cells.p*(index.b + cells.n*index.a)<<", stripe iterator "<<*it.it<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"iterator element "<<it.it.getElement()<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Array3D size "<<cells.size()<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Array3d range base "<<it.range.base<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"  size "<<it.range.isize<<" "<<it.range.jsize<<" "<<it.range.ksize<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"  stride "<<it.range.istride<<" "<<it.range.jstride<<" "<<it.range.kstride<<"\n");
-  }
-  */
   Assert(index == it.getElement());
 }
 
