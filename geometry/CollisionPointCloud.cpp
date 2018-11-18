@@ -56,9 +56,8 @@ void CollisionPointCloud::InitCollisions()
   int validptcount = 0;
   for(size_t i=0;i<points.size();i++) {
     if(IsFinite(points[i].x)) {
-      Vector p(3,points[i]);
-      GridSubdivision::Index ind;
-      grid.PointToIndex(p,ind);
+      GridSubdivision3D::Index ind;
+      grid.PointToIndex(points[i],ind);
       grid.Insert(ind,&points[i]);
       validptcount++;
     }
@@ -66,7 +65,7 @@ void CollisionPointCloud::InitCollisions()
   LOG4CXX_INFO(KrisLibrary::logger(),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
   //print stats
   int nmax = 0;
-  for(GridSubdivision::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
+  for(GridSubdivision3D::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
     nmax = Max(nmax,(int)i->second.size());
   LOG4CXX_INFO(KrisLibrary::logger(),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
   timer.Reset();
@@ -134,8 +133,8 @@ bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,
   /*
   //grid enumeration method
   GridSubdivision::Index imin,imax;
-  pc.grid.PointToIndex(Vector(3,gbb.bmin),imin);
-  pc.grid.PointToIndex(Vector(3,gbb.bmax),imax);
+  pc.grid.PointToIndex(gbb.bmin,imin);
+  pc.grid.PointToIndex(gbb.bmax,imax);
   int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
   if(numCells > (int)pc.points.size()) {
     //test all points, linearly
@@ -186,7 +185,7 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
     /*
     gDistanceTestValue = Inf;
     gDistanceTestObject = &glocal;
-    pc.grid.BoxQuery(Vector(3,gbb.bmin),Vector(3,gbb.bmax),distanceTest);
+    pc.grid.BoxQuery(gbb.bmin,gbb.bmax,distanceTest);
     return gDistanceTestValue;
     */
     Real radius0 = sbb.radius;
@@ -263,9 +262,9 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
 
   /*
   //grid enumeration method
-  GridSubdivision::Index imin,imax;
-  pc.grid.PointToIndex(Vector(3,gbb.bmin),imin);
-  pc.grid.PointToIndex(Vector(3,gbb.bmax),imax);
+  GridSubdivision3D::Index imin,imax;
+  pc.grid.PointToIndex(gbb.bmin,imin);
+  pc.grid.PointToIndex(gbb.bmax,imax);
   int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
   if(numCells > (int)pc.points.size()) {
     LOG4CXX_INFO(KrisLibrary::logger(),"Testing all points\n");
@@ -282,7 +281,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
     gNearbyTestResults.resize(0);
     gNearbyTestObject = &glocal;
     gNearbyTestBranch = maxContacts;
-    pc.grid.BoxQuery(Vector(3,gbb.bmin),Vector(3,gbb.bmax),nearbyTest);
+    pc.grid.BoxQuery(gbb.bmin,gbb.bmax,nearbyTest);
     pointIds.resize(gNearbyTestResults.size());
     for(size_t i=0;i<points.size();i++)
       pointIds[i] = gNearbyTestResults[i] - &pc.points[0];

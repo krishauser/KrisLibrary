@@ -30,7 +30,7 @@ class CollisionPointCloud : public Meshing::PointCloud3D
   ///The transformation of the point cloud in space 
   RigidTransform currentTransform;
   Real gridResolution; ///< default value is 0, which auto-determines from point cloud
-  GridSubdivision grid;
+  GridSubdivision3D grid;
   shared_ptr<OctreePointSet> octree;
 };
 

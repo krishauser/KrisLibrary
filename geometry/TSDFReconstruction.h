@@ -64,6 +64,8 @@ public:
   void GetColor(const Vector3& point,float* color) const;
   ///Clears the TSDF at a given point
   void ClearPoint(const Vector3& p,Real dist=0,Real weight=1.0);
+  ///Clears the TSDF in a given box
+  void ClearBox(const Vector3& bmin,const Vector3& bmax,Real weight=1.0);
   ///Estimates memory usage, in bytes
   size_t MemoryUsage() const;
   
@@ -126,6 +128,8 @@ public:
   void GetColor(const Vector3& point,float* color) const;
   ///Clears the TSDF at a given point
   void ClearPoint(const Vector3& p,Real dist=0,Real weight=1.0);
+  ///Clears the TSDF in a given box
+  void ClearBox(const Vector3& bmin,const Vector3& bmax,Real weight=1.0);
   ///Estimates memory usage, in bytes
   size_t MemoryUsage() const;
   

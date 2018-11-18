@@ -23,7 +23,7 @@ void TSDFMarchingCubes(const Array3D<T>& input,T isoLevel,T truncationDistance,c
 } //namespace Meshing
 
 ICPParameters::ICPParameters()
-:maxIters(50),subsample(47),pointToPlane(true),colorWeight(0.01),percentileOutliers(0.2),rmseThreshold(1e-3),rmseChangeThreshold(1e-6),
+:maxIters(10),subsample(47),pointToPlane(true),colorWeight(0.01),percentileOutliers(0.2),rmseThreshold(1e-3),rmseChangeThreshold(1e-6),
 numIters(0),stderr(6,0.0),rmseDistance(0),rmseColor(0),numInliers(0)
 {
   Tcamera.setIdentity();
@@ -399,26 +399,66 @@ void DenseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const PointClou
 
 void DenseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh)
 {
+  AABB3D roi = tsdf.bb;
+  ExtractMesh(roi,mesh);
+}
+
+void DenseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app)
+{
+  AABB3D roi = tsdf.bb;
+  ExtractMesh(roi,mesh,app);
+}
+
+void DenseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh)
+{
   if(currentMeshID == scanID) {
     printf("USING CACHED MESH???\n");
     mesh = currentMesh;
     return;
   }
-  //make correction for grid cell centers
-  AABB3D center_bb = tsdf.bb;
-  Vector3 celldims = tsdf.GetCellSize();
-  center_bb.bmin += celldims*0.5;
-  center_bb.bmax -= celldims*0.5;
-  TSDFMarchingCubes(tsdf.value,float(0.0),float(truncationDistance),center_bb,mesh);
+  IntTriple imin,imax;
+  tsdf.GetIndex(roi.bmin,imin);
+  tsdf.GetIndex(roi.bmax,imax);
+  int amin = Max(0,imin.a);
+  int amax = Min(tsdf.value.m,imax.a+1);
+  int bmin = Max(0,imin.b);
+  int bmax = Min(tsdf.value.n,imax.b+1);
+  int cmin = Max(0,imin.c);
+  int cmax = Min(tsdf.value.p,imax.c+1);
+  int size = (amax-amin)*(bmax-bmin)*(cmax-cmin);
+  if(size*4 > tsdf.value.m*tsdf.value.n*tsdf.value.p) {
+    //big enough ROI just to take entire mesh
+    //make correction for grid cell centers
+    AABB3D center_bb = tsdf.bb;
+    Vector3 celldims = tsdf.GetCellSize();
+    center_bb.bmin += celldims*0.5;
+    center_bb.bmax -= celldims*0.5;
+    TSDFMarchingCubes(tsdf.value,float(0.0),float(truncationDistance),center_bb,mesh);
+  }
+  else {
+    //extract the ROI
+    Array3D<float> subvolume(amax-amin,bmax-bmin,cmax-cmin);
+    auto range = Range3Indices(amin,amax,bmin,bmax,cmin,cmax);
+    for(auto i=tsdf.value.begin(range),j=subvolume.begin();i!=tsdf.value.end(range);++i) 
+      *j = *i;
+    AABB3D center_bb;
+    tsdf.GetCenter(IntTriple(amin,bmin,cmin),center_bb.bmin);
+    tsdf.GetCenter(IntTriple(amax,bmax,cmax),center_bb.bmax);
+    Vector3 celldims = tsdf.GetCellSize();
+    center_bb.bmin += celldims*0.5;
+    center_bb.bmax -= celldims*0.5;
+    TSDFMarchingCubes(subvolume,float(0.0),float(truncationDistance),center_bb,mesh);
+  }
+
   if(REGISTER_RASTERIZE) {
     currentMesh = mesh;
     currentMeshID = scanID;
   }
 }
 
-void DenseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app)
+void DenseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app)
 {
-  ExtractMesh(mesh);
+  ExtractMesh(roi,mesh);
   if(colored) {
     app.vertexColors.resize(mesh.verts.size());
     //correct for values defined at cell centers
@@ -533,20 +573,24 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
   double setupTime = timer.ElapsedTime();
   double pointTime = 0.0;
   double cellTime = 0.0;
+  size_t origNumBlocks = tsdf.hash.buckets.size();
 
-  map<IntTriple,vector<int> > blocks;
+  //map<IntTriple,vector<int> > blocks;
+  vector<SparseVolumeGrid::Block*> blocks;
+  vector<vector<int> > blockpoints;
+  blocks.reserve(tsdf.blockIDCounter*3/2);
+  blockpoints.reserve(tsdf.blockIDCounter*3/2);
+  blocks.resize(tsdf.blockIDCounter,NULL);
+  blockpoints.resize(tsdf.blockIDCounter);
   for(size_t i=0;i<pc.points.size();i++) {
-    if(DEBUG) timer.Reset();
     const Vector3& p = pc.points[i];
     if(p.z == 0 || !IsFinite(p.z)) continue;
     numValidPoints ++;
     Vector3 pw = Tcamera*p;
     IntTriple b;
-    set<IntTriple> iblocks;
     tsdf.GetBlock(pw,b);
-    tsdf.MakeBlock(b);
-    blocks[b].push_back(i);
-    iblocks.insert(b);
+    set<IntTriple> bindex;
+    bindex.insert(b);
 
     Real zmin = p.z - truncationDistance;
     Real zmax = p.z + truncationDistance;
@@ -559,18 +603,35 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
     s.b.z = zmax;
     s.a = Tcamera*s.a;
     s.b = Tcamera*s.b;
-    for(int j=0;j<=4;j++) {
-      Real u = j*0.25;
+    int n=4;
+    Real dt = 1.0/n;
+    for(int j=0;j<=n;j++) {
+      if(j*2==n) continue;
+      Real u = j*dt;
       tsdf.GetBlock((1-u)*s.a + u*s.b, b);
-      if(iblocks.count(b)==0) {
-        tsdf.MakeBlock(b);
-        blocks[b].push_back(i);
-        iblocks.insert(b);
+      bindex.insert(b);
+    }
+    for(auto b : bindex) {
+      SparseVolumeGrid::Block* bptr;
+      if(tsdf.MakeBlock(b)) {
+        bptr = tsdf.BlockPtr(b);
+        blocks.resize(bptr->id+1);
+        blockpoints.resize(bptr->id+1);
+        blockpoints.reserve(100);
       }
+      else
+        bptr = tsdf.BlockPtr(b);
+      blocks[bptr->id] = bptr;
+      blockpoints[bptr->id].push_back(i);
     }
   }
-  for(auto bindex : blocks) {
-    SparseVolumeGrid::Block* b = tsdf.BlockPtr(bindex.first);
+  if(DEBUG)
+    pointTime += timer.ElapsedTime();
+  printf("Block identification time %g, created %d blocks\n",pointTime,(int)(tsdf.hash.buckets.size()-origNumBlocks));
+  for(size_t j=0;j<blocks.size();j++) {
+    if(!blocks[j]) continue;
+    if(DEBUG) timer.Reset();
+    SparseVolumeGrid::Block* b = blocks[j];
     Assert(b != NULL);
     Assert(b->grid.channels.size() == tsdf.channelNames.size());
     blockLastTouched[b->id] = scanID;
@@ -585,7 +646,7 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
     center1 = b->grid.GetCellSize();
     center0 = b->grid.channels[0].bb.bmin + 0.5*center1;
     
-    for(auto i : bindex.second) {
+    for(auto i : blockpoints[j]) {
       const Vector3& p = pc.points[i];
       Real zmin = p.z - truncationDistance;
       Real zmax = p.z + truncationDistance;
@@ -645,15 +706,16 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
       }
       numChanged += (int)cells.size();
       /*
-      cout<<"Block "<<bindex.first<<endl;
-      for(auto c : cells)
-        cout<<"  "<<c<<endl;
-      if(cells.empty()) {
-        cout<<"( no cells )"<<endl;
-        cout<<"  bbox "<<b->grid.channels[0].bb<<endl;
+      if(i == pc.points.size()/3) {
+        cout<<"Block "<<bindex.first<<endl;
+        for(auto c : cells)
+          cout<<"  "<<c<<endl;
+        if(cells.empty()) {
+          cout<<"( no cells )"<<endl;
+          cout<<"  bbox "<<b->grid.channels[0].bb<<endl;
+        }
+        getchar();
       }
-      getchar();
-      break;
       */
       for(auto c : cells) {
         if(c.a >= weightGrid.m) continue;
@@ -701,8 +763,10 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
         age = scanFloat;
         weight += wscale*sweight;
       }
-      if(DEBUG) 
+      if(DEBUG) {
         cellTime += timer.ElapsedTime();
+        timer.Reset();
+      }
     }
   }
   if(DEBUG) {
@@ -906,8 +970,14 @@ void SparseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransf
   }
 }
 
-
 void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh)
+{
+  AABB3D roi;
+  roi.maximize();
+  ExtractMesh(roi,mesh);
+}
+
+void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh)
 {
   mesh.tris.resize(0);
   mesh.verts.resize(0);
@@ -917,6 +987,7 @@ void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh)
   Array3D<float> expandedBlock(m+1,n+1,p+1);
   for(auto b : tsdf.hash.buckets) {
     VolumeGridTemplate<float>& depth = reinterpret_cast<SparseVolumeGrid::Block*>(b.second)->grid.channels[0];
+    if(!depth.bb.intersects(roi)) continue;
     AABB3D center_bb = depth.bb;
     Vector3 celldims = depth.GetCellSize();
     center_bb.bmin += celldims*0.5;
@@ -927,7 +998,7 @@ void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh)
       *j = *i;
 
     //now work on the seams:
-    IntTuple c;
+    IntTriple c;
     void* ptr;
     c = b.first;
     c[0] += 1;
@@ -1017,8 +1088,15 @@ void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh)
 
 void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app)
 {
+  AABB3D roi;
+  roi.maximize();
+  ExtractMesh(roi,mesh,app);
+}
+
+void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app)
+{
   //TODO: do this faster without repeated block lookup
-  ExtractMesh(mesh);
+  ExtractMesh(roi,mesh);
   if(colored) {
     app.vertexColors.resize(mesh.verts.size());
     //correct for values defined at cell centers
@@ -1048,5 +1126,7 @@ size_t SparseTSDFReconstruction::MemoryUsage() const
   SparseVolumeGrid::Block* b = reinterpret_cast<SparseVolumeGrid::Block*>(i->second);
   size_t blocksize = b->grid.channels[0].value.m*b->grid.channels[0].value.n*b->grid.channels[0].value.p;
   blocksize *= b->grid.channels.size();
+  blocksize += sizeof(int)*4; //other fields in Block
+  blocksize += sizeof(int)*4; //index in GridSubdivision
   return blocksize*tsdf.hash.buckets.size();
 }

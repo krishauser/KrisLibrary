@@ -21,7 +21,7 @@ inline int floordiv(int x,int N) {
 }
 
 SparseVolumeGrid::SparseVolumeGrid(Real blockRes)
-:hash(3,blockRes),blockIDCounter(0),blockSize(8,8,8),defaultValue(1,0.0)
+:hash(blockRes),blockIDCounter(0),blockSize(8,8,8),defaultValue(1,0.0)
 {
   channelNames.push_back("value");
   cellRes.x = blockRes / blockSize.a;
@@ -30,7 +30,7 @@ SparseVolumeGrid::SparseVolumeGrid(Real blockRes)
 }
 
 SparseVolumeGrid::SparseVolumeGrid(const Vector3& blockRes)
-:hash(Vector(3,blockRes)),blockIDCounter(0),blockSize(8,8,8),defaultValue(1,0.0)
+:hash(blockRes),blockIDCounter(0),blockSize(8,8,8),defaultValue(1,0.0)
 {
   channelNames.push_back("value");
   cellRes.x = blockRes.x / blockSize.a;
@@ -46,8 +46,8 @@ SparseVolumeGrid::~SparseVolumeGrid()
 
 void SparseVolumeGrid::Clear()
 {
-  for(GridHash::HashTable::iterator i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    delete reinterpret_cast<Block*>(i->second);
+  for(auto i:hash.buckets)
+    delete reinterpret_cast<Block*>(i.second);
   hash.buckets.clear();
 }
 
@@ -58,8 +58,8 @@ int SparseVolumeGrid::AddChannel(const std::string& name)
   defaultValue.resize(oldDefault.n+1);
   defaultValue.copySubVector(0,oldDefault);
   defaultValue[oldDefault.n] = oldDefault[oldDefault.n-1];
-  for(GridHash::HashTable::iterator i=hash.buckets.begin();i!=hash.buckets.end();i++) {
-    Block* b = reinterpret_cast<Block*>(i->second);
+  for(auto i:hash.buckets) {
+    Block* b = reinterpret_cast<Block*>(i.second);
     //TODO: copy the channel names? or just save some memory
     b->grid.channels.resize(b->grid.channels.size()+1);
     b->grid.channels.back().MakeSimilar(b->grid.channels[0]);
@@ -85,7 +85,7 @@ void SparseVolumeGrid::SetBlockSize(const IntTriple& _blockSize)
 
 void SparseVolumeGrid::SetBlockRes(const Vector3& blockRes)
 {
-  hash.SetResolution(Vector(3,blockRes));
+  hash.SetResolution(blockRes);
   cellRes.x = blockRes.x / blockSize.a;
   cellRes.y = blockRes.y / blockSize.b;
   cellRes.z = blockRes.z / blockSize.c;
@@ -93,8 +93,7 @@ void SparseVolumeGrid::SetBlockRes(const Vector3& blockRes)
 
 Vector3 SparseVolumeGrid::GetBlockRes() const
 {
-  Vector r = hash.GetResolution();
-  return Vector3(r[0],r[1],r[2]);
+  return hash.GetResolution();
 }
 
 void SparseVolumeGrid::MakeSimilar(const SparseVolumeGrid& grid)
@@ -151,8 +150,7 @@ void SparseVolumeGrid::GetIndexRange(const AABB3D& range,IntTriple& imin,IntTrip
 
 SparseVolumeGrid::Block* SparseVolumeGrid::BlockPtr(const IntTriple& blockIndex) const
 {
-  IntTuple hind(blockIndex.a,blockIndex.b,blockIndex.c);
-  return reinterpret_cast<Block*>(hash.Get(hind));
+  return reinterpret_cast<Block*>(hash.Get(blockIndex));
 }
 
 void SparseVolumeGrid::SetValue(int i,int j,int k,Real value,int channel)
@@ -234,9 +232,7 @@ void SparseVolumeGrid::GetBlock(int i,int j,int k,IntTriple& hashIndex) const
 
 void SparseVolumeGrid::GetBlock(const Vector3& pt,IntTriple& hashIndex) const
 {
-  IntTuple hashTuple;
-  hash.PointToIndex(Vector(3,pt),hashTuple);
-  hashIndex.set(hashTuple[0],hashTuple[1],hashTuple[2]);
+  hash.PointToIndex(pt,hashIndex);
 }
 
 void SparseVolumeGrid::GetBlockRange(const AABB3D& range,IntTriple& hashMin,IntTriple& hashMax) const
@@ -247,8 +243,7 @@ void SparseVolumeGrid::GetBlockRange(const AABB3D& range,IntTriple& hashMin,IntT
 
 bool SparseVolumeGrid::MakeBlock(const IntTriple& hashIndex)
 {
-  IntTuple hind(hashIndex.a,hashIndex.b,hashIndex.c);
-  void* res = hash.Get(hind);
+  void* res = hash.Get(hashIndex);
   if (res != NULL) return false;
   Block* newblock = new Block();
   newblock->id = blockIDCounter++;
@@ -258,25 +253,24 @@ bool SparseVolumeGrid::MakeBlock(const IntTriple& hashIndex)
   newblock->grid.channelNames.clear();
   newblock->grid.channels.resize(channelNames.size());
   newblock->grid.Resize(blockSize.a,blockSize.b,blockSize.c);
-  Vector bmin,bmax;
-  hash.IndexBucketBounds(hind,bmin,bmax);
+  Vector3 bmin,bmax;
+  hash.IndexBucketBounds(hashIndex,bmin,bmax);
   for(size_t i=0;i<channelNames.size();i++) {
     newblock->grid.channels[i].value.set(defaultValue[i]);
-    newblock->grid.channels[i].bb.bmin.set(bmin[0],bmin[1],bmin[2]);
-    newblock->grid.channels[i].bb.bmax.set(bmax[0],bmax[1],bmax[2]);
+    newblock->grid.channels[i].bb.bmin = bmin;
+    newblock->grid.channels[i].bb.bmax = bmax;
   }
-  hash.Set(hind,newblock);
+  hash.Set(hashIndex,newblock);
   return true;
 }
 
 bool SparseVolumeGrid::EraseBlock(const IntTriple& hashIndex)
 {
-  IntTuple hind(hashIndex.a,hashIndex.b,hashIndex.c);
-  void* res = hash.Get(hind);
+  void* res = hash.Get(hashIndex);
   if (res == NULL) return false;
   Block* b = reinterpret_cast<Block*>(res);
   delete b;
-  hash.Erase(hind);
+  hash.Erase(hashIndex);
   return true;
 }
 
@@ -291,7 +285,7 @@ void SparseVolumeGrid::AddBlocks(const SparseVolumeGrid& grid)
 void SparseVolumeGrid::GetSamples(VolumeGrid& range,int channel) const
 {
   IntTriple bmin,bmax;
-  IntTuple hind(3);
+  IntTriple hind;
   GetBlockRange(range.bb,bmin,bmax);
   for(int i=bmin.a;i<=bmax.a;i++)
     for(int j=bmin.b;j<=bmax.b;j++)
@@ -325,7 +319,7 @@ void SparseVolumeGrid::GetSamples(VolumeGrid& range,int channel) const
 void SparseVolumeGrid::SetSamples(const VolumeGrid& range,int channel)
 {
   IntTriple bmin,bmax;
-  IntTuple hind(3);
+  IntTriple hind;
   GetBlockRange(range.bb,bmin,bmax);
   for(int i=bmin.a;i<=bmax.a;i++)
     for(int j=bmin.b;j<=bmax.b;j++)
@@ -338,7 +332,7 @@ void SparseVolumeGrid::SetSamples(const VolumeGrid& range,int channel)
         int kmax = ::Min(range.value.p,kmin+blockSize.c);
         Range3Indices rind(i,i+blockSize.a,j,j+blockSize.b,k,k+blockSize.c);
         hind.set(i,j,k);
-        MakeBlock(IntTriple(i,j,k));
+        MakeBlock(hind);
         Block* b = reinterpret_cast<Block*>(hash.Get(hind));
         for(int p=imin;p<imax;p++)
           for(int q=jmin;q<jmax;q++)
@@ -473,7 +467,7 @@ void SparseVolumeGrid::ExtractMesh(float isosurface,Meshing::TriMesh& mesh)
       *j = *i;
 
     //now work on the seams:
-    IntTuple c;
+    IntTriple c;
     void* ptr;
     c = b->first;
     c[0] += 1;

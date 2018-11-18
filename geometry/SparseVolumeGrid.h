@@ -126,7 +126,7 @@ class SparseVolumeGrid
   ///Generates a mesh for the level set at the given level set (usually 0), using the marching cubes algorithm
   void ExtractMesh(float isosurface,Meshing::TriMesh& mesh);
 
-  GridHash hash;
+  GridHash3D hash;
   int blockIDCounter;
   IntTriple blockSize;
   std::vector<std::string> channelNames;
