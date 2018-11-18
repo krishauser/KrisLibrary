@@ -38,8 +38,8 @@ class Array3D
   Array3D(Array3D<T>&& rhs);
   ~Array3D();
   
-  inline T& operator()(int i,int j,int k) { Assert(i>=0&&i<m); Assert(j>=0&&j<n); Assert(k>=0&&k<p); return items[i*n*p+j*p+k]; }
-  inline const T& operator()(int i,int j,int k) const { Assert(i>=0&&i<m); Assert(j>=0&&j<n); return items[i*n*p+j*p+k]; }
+  inline T& operator()(int i,int j,int k) { Assert(i>=0&&i<m); return items[(i*n+j)*p+k]; }
+  inline const T& operator()(int i,int j,int k) const { return items[(i*n+j)*p+k]; }
   inline T& operator()(const IntTriple& t) { return operator()(t.a,t.b,t.c); }
   inline const T& operator()(const IntTriple& t) const { return operator()(t.a,t.b,t.c); }
   Array3D<T>& operator =(const Array3D<T>& rhs);
@@ -85,7 +85,7 @@ class Array3D
     inline void incThird(int skip=1) { it.incThird(skip); }
     inline T& operator*() { return array->getData()[*it]; }
     const iterator& operator = (const iterator& rhs);
-    inline bool operator == (const iterator& rhs) const { return array==rhs.array && it == rhs.it; }
+    inline bool operator == (const iterator& rhs) const { return it == rhs.it && array==rhs.array; }
     inline bool operator != (const iterator& rhs) const { return !operator==(rhs); }
     inline bool operator < (const iterator& rhs) const { return it<rhs.it; }
     IntTriple getElement() const {

@@ -83,7 +83,7 @@ public:
     inline void incSecond(int skip=1) { it.incSecond(skip); }
     inline T& operator*() { return array->getData()[*it]; }
     iterator& operator = (const iterator& rhs);
-    inline bool operator == (const iterator& rhs) const { return array==rhs.array && it == rhs.it; }
+    inline bool operator == (const iterator& rhs) const { return it == rhs.it && array==rhs.array; }
     inline bool operator != (const iterator& rhs) const { return !operator==(rhs); }
     inline bool operator < (const iterator& rhs) const { return it<rhs.it; }
     IntPair getElement() const {
