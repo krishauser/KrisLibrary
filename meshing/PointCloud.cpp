@@ -2,11 +2,12 @@
 #include <KrisLibrary/Logger.h>
 #include "PointCloud.h"
 #include <iostream>
-#include <math3d/AABB3D.h>
-#include <math3d/rotation.h>
-#include <utils/SimpleParser.h>
-#include <utils/stringutils.h>
-#include <utils/ioutils.h>
+#include <KrisLibrary/math3d/AABB3D.h>
+#include <KrisLibrary/math3d/rotation.h>
+#include <KrisLibrary/utils/SimpleParser.h>
+#include <KrisLibrary/utils/stringutils.h>
+#include <KrisLibrary/utils/ioutils.h>
+#include <KrisLibrary/Timer.h>
 #include <errors.h>
 #include <sstream>
 #include <fstream>
@@ -14,6 +15,7 @@
 #include <string.h>
 
 using namespace Meshing;
+const static Real one_over_255 = 1.0/255.0;
 
 string IntToStr(int i)
 {
@@ -436,6 +438,50 @@ bool PointCloud3D::SavePCL(ostream& out) const
   return true;
 }
 
+void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const std::vector<float>& depths,const std::vector<unsigned int>& rgb,float invalidDepth)
+{
+  SetStructured(w,h);
+  Real xscale = Tan(wfov/2)*(2.0/w);
+  Real yscale = Tan(hfov/2)*(2.0/h);
+  Assert(depths.size()==points.size());
+  Real xc = Real(w)/2;
+  Real yc = Real(h)/2;
+  int k=0;
+  Real fi=0,fj=0;
+  for(int j=0;j<h;j++,fj+=1.0) {
+    fi = 0;
+    for(int i=0;i<w;i++,k++,fi+=1.0) {
+      if(depths[k] == invalidDepth)
+        points[k].setZero();
+      else {
+        Real x = (fi-xc)*xscale;
+        Real y = (fj-yc)*yscale;
+        points[k].x = depths[k]*x;
+        points[k].y = depths[k]*y;
+        points[k].z = depths[k];
+      }
+    }
+  }
+  if(!rgb.empty()) {
+    Assert(rgb.size()==depths.size());
+    propertyNames.resize(1);
+    propertyNames[0] = "rgb";
+    properties.resize(points.size());
+    for(size_t i=0;i<points.size();i++) {
+      properties[i].resize(1);
+      properties[i][0] = Real(rgb[i]);
+    }
+  }
+}
+
+void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,float depthscale,const std::vector<unsigned short>& depths,const std::vector<unsigned int>& rgb,unsigned short invalidDepth)
+{
+  vector<float> fdepth(depths.size());
+  for(size_t i=0;i<depths.size();i++)
+    fdepth[i] = depths[i]*depthscale;
+  FromDepthImage(w,h,wfov,hfov,fdepth,rgb,invalidDepth*depthscale);
+}
+
 bool PointCloud3D::IsStructured() const
 {
   return GetStructuredWidth() >= 1 && GetStructuredHeight() > 1;
@@ -717,17 +763,16 @@ bool PointCloud3D::PackColorChannels(const char* fmt)
 
 bool PointCloud3D::GetColors(vector<Vector4>& out) const
 {
+  Timer timer;
   vector<Real> rgb;
   if(GetProperty("rgb",rgb)) {
     //convert real to hex to GLcolor
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
       unsigned int col = (unsigned int)rgb[i];
-      Real r=((col&0xff0000)>>16) / 255.0;
-      Real g=((col&0xff00)>>8) / 255.0;
-      Real b=(col&0xff) / 255.0;
-      int w=GetStructuredWidth();
-      int h=GetStructuredHeight();
+      Real r=((col&0xff0000)>>16) *one_over_255;
+      Real g=((col&0xff00)>>8) *one_over_255;
+      Real b=(col&0xff) *one_over_255;
       out[i].set(r,g,b,1.0);
     }
     return true;
@@ -738,10 +783,10 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
       unsigned int col = (unsigned int)rgb[i];
-      Real r = ((col&0xff0000)>>16) / 255.0;
-      Real g = ((col&0xff00)>>8) / 255.0;
-      Real b = (col&0xff) / 255.0;
-      Real a = ((col&0xff000000)>>24) / 255.0;
+      Real r = ((col&0xff0000)>>16) *one_over_255;
+      Real g = ((col&0xff00)>>8) *one_over_255;
+      Real b = (col&0xff) *one_over_255;
+      Real a = ((col&0xff000000)>>24) *one_over_255;
       out[i].set(r,g,b,a);
     }
     return true;
@@ -755,7 +800,7 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
   else if(GetProperty("c",rgb)) {
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) 
-      out[i].set(1,1,1,rgb[i]/255.0);
+      out[i].set(1,1,1,rgb[i]*one_over_255);
     return true;
   }
   return false;
@@ -773,9 +818,9 @@ bool PointCloud3D::GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vec
     fill(a.begin(),a.end(),1.0);
     for(size_t i=0;i<rgb.size();i++) {
       int col = (int)rgb[i];
-      r[i]=((col&0xff0000)>>16) / 255.0;
-      g[i]=((col&0xff00)>>8) / 255.0;
-      b[i]=(col&0xff) / 255.0;
+      r[i]=((col&0xff0000)>>16) *one_over_255;
+      g[i]=((col&0xff00)>>8) *one_over_255;
+      b[i]=(col&0xff) *one_over_255;
     }
     return true;
   }
@@ -788,10 +833,10 @@ bool PointCloud3D::GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vec
     a.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
       int col = (int)rgb[i];
-      r[i] = ((col&0xff0000)>>16) / 255.0;
-      g[i] = ((col&0xff00)>>8) / 255.0;
-      b[i] = (col&0xff) / 255.0;
-      a[i] = ((col&0xff000000)>>24) / 255.0;
+      r[i] = ((col&0xff0000)>>16) * one_over_255;
+      g[i] = ((col&0xff00)>>8) * one_over_255;
+      b[i] = (col&0xff) * one_over_255;
+      a[i] = ((col&0xff000000)>>24) * one_over_255;
     }
     return true;
   }
@@ -808,7 +853,7 @@ bool PointCloud3D::GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vec
     b.resize(rgb.size(),1.0);
     a.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) 
-      a[i] = rgb[i]/255.0;
+      a[i] = rgb[i]*one_over_255;
     return true;
   }
   return false;
@@ -863,8 +908,8 @@ void PointCloud3D::SetColors(const vector<Vector4>& rgba,bool includeAlpha)
     for(size_t i=0;i<rgba.size();i++) {
       rgba[i].get(r,g,b,a);
       int col = ((int(r*255.0) & 0xff) << 16) |
-  ((int(g*255.0) & 0xff) << 8) |
-  (int(b*255.0) & 0xff);
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
       packed[i] = Real(col);
     }
     SetProperty("rgb",packed);
@@ -875,9 +920,9 @@ void PointCloud3D::SetColors(const vector<Vector4>& rgba,bool includeAlpha)
     for(size_t i=0;i<rgba.size();i++) {
       rgba[i].get(r,g,b,a);
       int col = ((int(a*255.0) & 0xff) << 24) |
-  ((int(r*255.0) & 0xff) << 16) |
-  ((int(g*255.0) & 0xff) << 8) |
-  (int(b*255.0) & 0xff);
+        ((int(r*255.0) & 0xff) << 16) |
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
       packed[i] = Real(col);
     }
     SetProperty("rgba",packed);
