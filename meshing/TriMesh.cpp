@@ -78,8 +78,8 @@ bool TriMesh::IsValid() const
   for(size_t i=0;i<tris.size();i++) {
     for(int k=0;k<3;k++) {
       if(tris[i][k] < 0 || tris[i][k] >= numverts) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Invalid triangle "<<i<<" vertex "<<k<<": "<<tris[i][k]);
-	res=false;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Invalid triangle "<<i<<" vertex "<<k<<": "<<tris[i][k]);
+    res=false;
       }
     }
     if(tris[i].a == tris[i].b || 
@@ -139,9 +139,9 @@ int TriMesh::RayCast(const Ray3D& r,Vector3& pt) const
     GetTriangle(i,tri);
     if(tri.rayIntersects(r,&d,&uv.x,&uv.y)) {
       if(d < dmin) {
-	tmin = (int)i;
-	dmin = d;
-	pt = tri.planeCoordsToPoint(uv);
+    tmin = (int)i;
+    dmin = d;
+    pt = tri.planeCoordsToPoint(uv);
       }
     }
   }
@@ -238,9 +238,22 @@ void TriMesh::Merge(const vector<TriMesh>& files)
   tris.resize(numtris);
   for(size_t i=0;i<files.size();i++) {
     copy(files[i].verts.begin(),files[i].verts.end(),
-	 verts.begin()+vertoffsets[i]);
-	std::transform(files[i].tris.begin(),files[i].tris.end(),
-	 tris.begin()+trioffsets[i],AddTriOffset(vertoffsets[i]));
+     verts.begin()+vertoffsets[i]);
+    std::transform(files[i].tris.begin(),files[i].tris.end(),
+     tris.begin()+trioffsets[i],AddTriOffset(vertoffsets[i]));
+  }
+}
+
+void TriMesh::MergeWith(const TriMesh& mesh)
+{
+  size_t vertoffset = verts.size();
+  size_t trioffset = tris.size();
+  verts.insert(verts.end(),mesh.verts.begin(),mesh.verts.end());
+  tris.insert(tris.end(),mesh.tris.begin(),mesh.tris.end());
+  for(size_t t=trioffset;t<tris.size();t++) {
+    tris[t].a += vertoffset;
+    tris[t].b += vertoffset;
+    tris[t].c += vertoffset;
   }
 }
 
@@ -253,9 +266,9 @@ void TriMesh::RemoveUnusedVerts()
     for(int k=0;k<3;k++) {
       int v=tris[i][k];
       if(vertexMap[v]==-1) {
-	vertexMap[v]=numVerts;
-	newVerts[numVerts]=verts[v];
-	numVerts++;
+    vertexMap[v]=numVerts;
+    newVerts[numVerts]=verts[v];
+    numVerts++;
       }
       tris[i][k]=vertexMap[v];
     }
@@ -362,14 +375,14 @@ bool LoadMultipleTriMeshes(const char* fn,TriMesh& tri)
   */
   FILE* f = fopen(fn, "r");
   if (!f) {
-	  LOG4CXX_INFO(KrisLibrary::logger(), "Couldn't open tri file " << fn << "\n");
-	  return false;
+      LOG4CXX_INFO(KrisLibrary::logger(), "Couldn't open tri file " << fn << "\n");
+      return false;
   }
   vector<TriMesh> models;
   bool res;
   do {
     models.push_back(TriMesh());
-	res = LoadTriMesh(f, models[models.size() - 1]);
+    res = LoadTriMesh(f, models[models.size() - 1]);
     //in >> models[models.size()-1];
   //} while(in);
   } while (res);
