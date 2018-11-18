@@ -160,7 +160,7 @@ void GLUTNavigationProgram::DoFreeDrag(int dx,int dy,int button)
     else  DragRotate(dx,dy);
     break;
   case GLUT_RIGHT_BUTTON:
-    DragZoom(dx,dy);
+    DragTruck(dx,dy);
     break;
   case GLUT_MIDDLE_BUTTON:
     DragPan(dx,dy);
@@ -175,7 +175,7 @@ void GLUTNavigationProgram::DoCtrlDrag(int dx,int dy,int button)
     DragPan(dx,dy);
     break;
   case GLUT_RIGHT_BUTTON:
-    DragTruck(dx,dy);
+    DragZoom(dx,dy);
     break;
   default:
     return;
@@ -214,7 +214,8 @@ void GLUTNavigationProgram::DragZoom(int dx,int dy)
 void GLUTNavigationProgram::DragTruck(int dx,int dy)
 {
   Vector3 v = viewport.zDir();
-  camera.tgt.madd(v,Real(dy)/viewport.scale/**camera.dist*/);
+  //camera.tgt.madd(v,Real(dy)/viewport.scale/**camera.dist*/);
+  camera.dist *= (1+float(dy)*0.01);
   SHOW_VIEW_TARGET(0.5);
 }
 
