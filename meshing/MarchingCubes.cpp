@@ -10,7 +10,9 @@
 
 namespace Meshing {
 
-int MCEdgeTable[256] = {
+#define DEBUG 0
+
+extern const int MCEdgeTable[256] = {
 	0x0  , 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
 	0x190, 0x99 , 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -45,7 +47,7 @@ int MCEdgeTable[256] = {
 	0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
 };
 
-int MCTriTable[256][16] = {
+extern const int MCTriTable[256][16] = {
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 	{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 	{0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -353,7 +355,8 @@ void EvaluateCube(Real (*f)(Real,Real,Real),const Vector3& x,const Vector3& dx,R
   v = x + MulCubeOffset(dx,7);  vals[7] = f(v.x,v.y,v.z);
 }
 
-void EvaluateCube(const Array3D<Real>& a,int i,int j,int k,Real vals[8])
+template <class T>
+void EvaluateCube(const Array3D<T>& a,int i,int j,int k,T vals[8])
 {
   vals[0] = a(i  ,j  ,k  );
   vals[1] = a(i+1,j  ,k  );
@@ -461,11 +464,11 @@ void MarchingCubes(ScalarFieldFunction& input,Real isoLevel,const AABB3D& bb,con
 	}
 
 	//get the mapping from tri vertices to mesh vertices
-	for(int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
+	for(const int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
 	  vertMap[*t] = (int)m.verts.size();
 	  m.verts.push_back(verts[*t]);
 	}
-	for(int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
+	for(const int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
 	  tri.a = vertMap[*t];
 	  tri.b = vertMap[*(t+1)];
 	  tri.c = vertMap[*(t+2)];
@@ -578,11 +581,11 @@ void MarchingCubes(Real (*input)(Real,Real,Real),Real isoLevel,const AABB3D& bb,
 	}
 
 	//get the mapping from tri vertices to mesh vertices
-	for(int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
+	for(const int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
 	  vertMap[*t] = (int)m.verts.size();
 	  m.verts.push_back(verts[*t]);
 	}
-	for(int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
+	for(const int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
 	  tri.a = vertMap[*t];
 	  tri.b = vertMap[*(t+1)];
 	  tri.c = vertMap[*(t+2)];
@@ -606,14 +609,14 @@ void MarchingCubes(Real (*input)(Real,Real,Real),Real isoLevel,const AABB3D& bb,
   //TODO: merge vertices
 }
 
-
-void MarchingCubes(const Array3D<Real>& input,Real isoLevel,const AABB3D& bb,TriMesh& m)
+template <class T>
+void MarchingCubes(const Array3D<T>& input,T isoLevel,const AABB3D& bb,TriMesh& m)
 {
   m.verts.resize(0);
   m.tris.resize(0);
   m.verts.reserve(input.m*input.n);
   m.tris.reserve(input.m*input.n);
-  Real vals[8];
+  T vals[8];
   Vector3 verts[12];
   int vertMap[12];
   Vector3 x;
@@ -695,11 +698,11 @@ void MarchingCubes(const Array3D<Real>& input,Real isoLevel,const AABB3D& bb,Tri
 	}
 
 	//get the mapping from tri vertices to mesh vertices
-	for(int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
+	for(const int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
 	  vertMap[*t] = (int)m.verts.size();
 	  m.verts.push_back(verts[*t]);
 	}
-	for(int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
+	for(const int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
 	  tri.a = vertMap[*t];
 	  tri.b = vertMap[*(t+1)];
 	  tri.c = vertMap[*(t+2)];
@@ -709,6 +712,139 @@ void MarchingCubes(const Array3D<Real>& input,Real isoLevel,const AABB3D& bb,Tri
     }
   }
 
+  //TODO: merge vertices
+}
+
+template <class T>
+void TSDFMarchingCubes(const Array3D<T>& input,T isoLevel,T truncationDistance,const AABB3D& bb,TriMesh& m)
+{
+  m.verts.resize(0);
+  m.tris.resize(0);
+  m.verts.reserve(input.m*input.n);
+  m.tris.reserve(input.m*input.n);
+  T vals[8];
+  Vector3 verts[12];
+  int vertMap[12];
+  Vector3 x;
+  Vector3 dh(bb.bmax-bb.bmin);
+  dh.x /= Real(input.m-1);
+  dh.y /= Real(input.n-1);
+  dh.z /= Real(input.p-1);
+
+  int numInternal=0,numEmpty=0,numOccupied=0;
+  IntTriple tri;
+  x = bb.bmin;
+  for (int i=0;i<input.m-1;i++,x.x += dh.x) {
+    x.y = bb.bmin.y;
+    for (int j=0;j<input.n-1;j++,x.y += dh.y) {
+      x.z = bb.bmin.z;
+      for (int k=0;k<input.p-1;k++,x.z += dh.z) {
+        EvaluateCube(input,i,j,k,vals);
+        
+        int cubeIndex = 0;
+        if (vals[0] < isoLevel) cubeIndex |= 1;
+        if (vals[1] < isoLevel) cubeIndex |= 2;
+        if (vals[2] < isoLevel) cubeIndex |= 4;
+        if (vals[3] < isoLevel) cubeIndex |= 8;
+        if (vals[4] < isoLevel) cubeIndex |= 16;
+        if (vals[5] < isoLevel) cubeIndex |= 32;
+        if (vals[6] < isoLevel) cubeIndex |= 64;
+        if (vals[7] < isoLevel) cubeIndex |= 128;
+
+        if (MCEdgeTable[cubeIndex] == 0) {
+          numEmpty ++;
+          continue;
+        }
+
+        //CHANGE TO STANDARD MC
+        //if there's a negative value next to the truncation distance, this is an internal edge
+        bool internal = false;
+        for(int c=0;c<8;c++)
+          if(vals[c] >= truncationDistance) {
+            internal=true;
+            break;
+          }
+        if(internal) {
+          numInternal ++;
+          continue;
+        }
+        numOccupied ++;
+
+        if (MCEdgeTable[cubeIndex] & 1) {
+          Real u=SegmentCrossing(vals[0], vals[1], isoLevel);
+          verts[0] = EvalCubeEdge(x,dh,u,0,1);
+        }
+        if (MCEdgeTable[cubeIndex] & 2) {
+          Real u=SegmentCrossing(vals[1], vals[2], isoLevel);
+          verts[1] = EvalCubeEdge(x,dh,u,1,2);
+        }
+        if (MCEdgeTable[cubeIndex] & 4) {
+          Real u=SegmentCrossing(vals[2], vals[3], isoLevel);
+          verts[2] = EvalCubeEdge(x,dh,u,2,3);
+        }
+        if (MCEdgeTable[cubeIndex] & 8) {
+          Real u=SegmentCrossing(vals[3], vals[0], isoLevel);
+          verts[3] = EvalCubeEdge(x,dh,u,3,0);
+        }
+        if (MCEdgeTable[cubeIndex] & 16) {
+          Real u=SegmentCrossing(vals[4], vals[5], isoLevel);
+          verts[4] = EvalCubeEdge(x,dh,u,4,5);
+        }
+        if (MCEdgeTable[cubeIndex] & 32) {
+          Real u=SegmentCrossing(vals[5], vals[6], isoLevel);
+          verts[5] = EvalCubeEdge(x,dh,u,5,6);
+        }
+        if (MCEdgeTable[cubeIndex] & 64) {
+          Real u=SegmentCrossing(vals[6], vals[7], isoLevel);
+          verts[6] = EvalCubeEdge(x,dh,u,6,7);
+        }
+        if (MCEdgeTable[cubeIndex] & 128) {
+          Real u=SegmentCrossing(vals[7], vals[4], isoLevel);
+          verts[7] = EvalCubeEdge(x,dh,u,7,4);
+        }
+        if (MCEdgeTable[cubeIndex] & 256) {
+          Real u=SegmentCrossing(vals[0], vals[4], isoLevel);
+          verts[8] = EvalCubeEdge(x,dh,u,0,4);
+        }
+        if (MCEdgeTable[cubeIndex] & 512) {
+          Real u=SegmentCrossing(vals[1], vals[5], isoLevel);
+          verts[9] = EvalCubeEdge(x,dh,u,1,5);
+        }
+        if (MCEdgeTable[cubeIndex] & 1024) {
+          Real u=SegmentCrossing(vals[2], vals[6], isoLevel);
+          verts[10] = EvalCubeEdge(x,dh,u,2,6);
+        }
+        if (MCEdgeTable[cubeIndex] & 2048) {
+          Real u=SegmentCrossing(vals[3], vals[7], isoLevel);
+          verts[11] = EvalCubeEdge(x,dh,u,3,7);
+        }
+
+        //get the mapping from tri vertices to mesh vertices
+        for(const int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
+          vertMap[*t] = (int)m.verts.size();
+          m.verts.push_back(verts[*t]);
+        }
+        for(const int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
+          tri.a = vertMap[*t];
+          tri.b = vertMap[*(t+1)];
+          tri.c = vertMap[*(t+2)];
+          m.tris.push_back(tri);
+        }
+      }
+    }
+  }
+  if(DEBUG) {
+    printf("%d empty, %d internal, %d occupied\n",numEmpty,numInternal,numOccupied);
+    if(numOccupied==0) {
+      printf("Truncation distance? %f\n",float(truncationDistance));
+      T vmin=Inf,vmax=-Inf;
+      for(auto i=input.begin();i!=input.end();++i) {
+          vmin = Min(vmin,*i);
+          vmax = Max(vmax,*i);
+      }
+      printf("Range %f %f\n",float(vmin),float(vmax));
+    }
+  }
   //TODO: merge vertices
 }
 
@@ -789,16 +925,28 @@ void CubeToMesh(const Real origvals[8],Real isoLevel,const AABB3D& bb,TriMesh& m
   }
 
   //get the mapping from tri vertices to mesh vertices
-  for(int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
+  for(const int* t=MCTriTable[cubeIndex];*t!=-1; t++) {
     vertMap[*t] = (int)m.verts.size();
     m.verts.push_back(verts[*t]);
   }
-  for(int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
+  for(const int* t=MCTriTable[cubeIndex];*t!=-1; t+=3) {
     tri.a = vertMap[*t];
     tri.b = vertMap[*(t+1)];
     tri.c = vertMap[*(t+2)];
     m.tris.push_back(tri);
   }
 }
+
+//forward evaluations
+template void MarchingCubes<char>(const Array3D<char>& input,char isoLevel,const AABB3D& bb,TriMesh& m);
+template void MarchingCubes<int>(const Array3D<int>& input,int isoLevel,const AABB3D& bb,TriMesh& m);
+template void MarchingCubes<float>(const Array3D<float>& input,float isoLevel,const AABB3D& bb,TriMesh& m);
+template void MarchingCubes<double>(const Array3D<double>& input,double isoLevel,const AABB3D& bb,TriMesh& m);
+
+template void TSDFMarchingCubes<char>(const Array3D<char>& input,char isoLevel,char truncationValue,const AABB3D& bb,TriMesh& m);
+template void TSDFMarchingCubes<int>(const Array3D<int>& input,int isoLevel,int truncationValue,const AABB3D& bb,TriMesh& m);
+template void TSDFMarchingCubes<float>(const Array3D<float>& input,float isoLevel,float truncationValue,const AABB3D& bb,TriMesh& m);
+template void TSDFMarchingCubes<double>(const Array3D<double>& input,double isoLevel,double truncationValue,const AABB3D& bb,TriMesh& m);
+
 
 } //namespace Meshing
