@@ -137,9 +137,7 @@ AnyGeometry3D::AnyGeometry3D(const vector<AnyGeometry3D>& group)
   :type(Group),data(group)
 {}
 
-AnyGeometry3D::AnyGeometry3D(const AnyGeometry3D& geom)
-  :type(geom.type),data(geom.data),appearanceData(geom.appearanceData)
-{}
+
 
 const GeometricPrimitive3D& AnyGeometry3D::AsPrimitive() const { return *AnyCast_Raw<GeometricPrimitive3D>(&data); }
 const Meshing::TriMesh& AnyGeometry3D::AsTriangleMesh() const { return *AnyCast_Raw<Meshing::TriMesh>(&data); }
@@ -755,8 +753,16 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyGeometry3D& geom)
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom)
-  :AnyGeometry3D(geom),margin(geom.margin),currentTransform(geom.currentTransform)
 {
+  *this = geom;
+}
+
+AnyCollisionGeometry3D& AnyCollisionGeometry3D::operator =(const AnyCollisionGeometry3D& geom)
+{
+  AnyGeometry3D::operator = (geom);
+  margin = geom.margin;
+  currentTransform = geom.currentTransform;
+
   if(!geom.collisionData.empty()) {
     switch(type) {
     case Primitive:
@@ -790,6 +796,7 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geo
       break;
     }
   }
+  return *this;
 }
 
   const RigidTransform& AnyCollisionGeometry3D::PrimitiveCollisionData() const { return currentTransform; }

@@ -7,7 +7,7 @@
 class TiXmlElement;
 
 //forward declarations
-namespace Meshing { class VolumeGrid; class PointCloud3D; }
+namespace Meshing { template <class T> class VolumeGridTemplate; typedef VolumeGridTemplate<Real> VolumeGrid; class PointCloud3D; }
 namespace Geometry { class CollisionPointCloud; class CollisionImplicitSurface; }
 namespace Math3D { class GeometricPrimitive3D; }
 namespace GLDraw { class GeometryAppearance; }
@@ -50,7 +50,10 @@ class AnyGeometry3D
   AnyGeometry3D(const Meshing::PointCloud3D& pc);
   AnyGeometry3D(const Meshing::VolumeGrid& grid);
   AnyGeometry3D(const vector<AnyGeometry3D>& items);
-  AnyGeometry3D(const AnyGeometry3D& geom);
+  AnyGeometry3D(const AnyGeometry3D& geom) = default;
+  AnyGeometry3D(AnyGeometry3D&& geom) = default;
+  AnyGeometry3D& operator = (const AnyGeometry3D& rhs) = default;
+  AnyGeometry3D& operator = (AnyGeometry3D&& rhs) = default;
   static const char* TypeName(Type type);
   const char* TypeName() const { return AnyGeometry3D::TypeName(type); }
   const GeometricPrimitive3D& AsPrimitive() const;
@@ -103,6 +106,9 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   AnyCollisionGeometry3D(const AnyGeometry3D& geom);
   AnyCollisionGeometry3D(const vector<AnyGeometry3D>& group);
   AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom);
+  AnyCollisionGeometry3D(AnyCollisionGeometry3D&& geom) = default;
+  AnyCollisionGeometry3D& operator = (const AnyCollisionGeometry3D& rhs);
+  AnyCollisionGeometry3D& operator = (AnyCollisionGeometry3D&& rhs) = default;
   ///If the collision detection data structure isn't initialized yet,
   ///this initializes it.  Constructors DO NOT call this, meaning that
   ///upon construction the XCollisionData functions must not be called.
