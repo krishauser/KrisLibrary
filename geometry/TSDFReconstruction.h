@@ -6,6 +6,7 @@
 #include <KrisLibrary/meshing/PointCloud.h>
 #include <KrisLibrary/meshing/TriMesh.h>
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
+#include <KrisLibrary/utils/threadutils.h>
 #include <map>
 
 namespace Geometry {
@@ -107,6 +108,7 @@ class SparseTSDFReconstruction
 {
 public:
   SparseTSDFReconstruction(const Vector3& cellSize,Real truncationDistance=0.1);
+  ~SparseTSDFReconstruction();
   /** @brief Performs registration between the point cloud and the TSDF
    * 
    * - pc: the point cloud, in camera coordinates
@@ -132,6 +134,9 @@ public:
   void ClearBox(const Vector3& bmin,const Vector3& bmax,Real weight=1.0);
   ///Estimates memory usage, in bytes
   size_t MemoryUsage() const;
+
+  void StartThreads();
+  void StopThreads();
   
   ///The max truncation distance (default 0.1)
   Real truncationDistance;  
@@ -143,12 +148,19 @@ public:
   bool colored;
   ///These indices are added from a PointCloud's attributes to the auxilary volume grid (default empty)
   std::vector<int> auxiliaryAttributes;
-  ///Indices into ths sparse tsdf's channels
-  int depthChannel,weightChannel,ageChannel,rgbChannel,surfaceWeightChannel,auxiliaryChannelStart;
+  ///Number of threads to use (default 1)
+  int numThreads;
 
   SparseVolumeGrid tsdf;
+  //Indices into ths sparse tsdf's channels (automatically set up on first scan)
+  int depthChannel,weightChannel,ageChannel,rgbChannel,surfaceWeightChannel,auxiliaryChannelStart;
   int scanID;
   std::map<int,int> blockLastTouched;
+
+  //for multithreading
+  std::vector<Thread> threads;
+  std::vector<void*> threadData;
+  Mutex lock;
 };
 
 } //namespace Geometry
