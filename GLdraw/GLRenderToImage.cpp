@@ -5,16 +5,20 @@
 #include <memory.h>
 #if HAVE_GLEW
 #include <GL/glew.h>
+#else
+#include "GL.h"
 #endif //HAVE_GLEW
 using namespace std;
 using namespace GLDraw;
 
-#ifndef GL_BGRA
-#ifndef GL_BGRA_EXT
-#error "GL_BGRA is not defined on your system?"
-#endif //GL_BGRA_EXT
-#define GL_BGRA GL_BGRA_EXT
-#endif //GL_BGRA
+#if HAVE_GLEW
+  #ifndef GL_BGRA
+  #ifndef GL_BGRA_EXT
+  #error "GL_BGRA is not defined on your system?"
+  #endif //GL_BGRA_EXT
+  #define GL_BGRA GL_BGRA_EXT
+  #endif //GL_BGRA
+#endif // HAVE_GLEW
 
 
 GLRenderToImage::GLRenderToImage()
@@ -35,6 +39,7 @@ GLRenderToImage::~GLRenderToImage()
 
 bool GLRenderToImage::Setup(int w,int h)
 {
+#if HAVE_GLEW
   if(!GLEW_EXT_framebuffer_object) {
     GLenum err = glewInit();
     if (err != GLEW_OK)
@@ -104,6 +109,9 @@ bool GLRenderToImage::Setup(int w,int h)
     return false;
   }
   return true;
+#else
+  return false;
+#endif //HAVE_GLEW
 }
 
 void GLRenderToImage::Begin(const Camera::Viewport& vp)
