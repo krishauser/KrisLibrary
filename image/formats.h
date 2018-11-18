@@ -90,12 +90,65 @@ void x1r5g5b5_set (unsigned char* bits, const COLOROPTYPE col)
 void a8_get (const unsigned char* bits, COLOROPTYPE col)
 {
 	col[0] = *bits;
+	col[1] = col[2] = col[0];
 }
 
 void a8_set (unsigned char* bits, const COLOROPTYPE col)
 {
 	*bits     = col[0];
 }
+
+
+const static float one_over_255 = 1.0/255.0;
+
+void frgb_get (const unsigned char* bits, COLOROPTYPE col)
+{
+	const float* fbits = (const float*)bits;
+	col[0] = (unsigned int)(fbits[0]*255.0);
+	col[1] = (unsigned int)(fbits[1]*255.0);
+	col[2] = (unsigned int)(fbits[2]*255.0);
+}
+
+void frgb_set (unsigned char* bits, const COLOROPTYPE col)
+{
+	float* fbits = (float*)bits;
+	fbits[0] = float(col[0])*one_over_255;
+	fbits[1] = float(col[1])*one_over_255;
+	fbits[2] = float(col[2])*one_over_255;
+}
+
+void frgba_get (const unsigned char* bits, COLOROPTYPE col)
+{
+	const float* fbits = (const float*)bits;
+	col[0] = (unsigned int)(fbits[0]*255.0);
+	col[1] = (unsigned int)(fbits[1]*255.0);
+	col[2] = (unsigned int)(fbits[2]*255.0);
+	col[3] = (unsigned int)(fbits[3]*255.0);
+}
+
+void frgba_set (unsigned char* bits, const COLOROPTYPE col)
+{
+	float* fbits = (float*)bits;
+	fbits[0] = float(col[0])*one_over_255;
+	fbits[1] = float(col[1])*one_over_255;
+	fbits[2] = float(col[2])*one_over_255;
+	fbits[3] = float(col[3])*one_over_255;
+}
+
+
+void fa_get (const unsigned char* bits, COLOROPTYPE col)
+{
+	const float* fbits = (const float*)bits;
+	col[0] = (unsigned int)(fbits[0]*255.0);
+	col[1] = col[2] = col[0];
+}
+
+void fa_set (unsigned char* bits, const COLOROPTYPE col)
+{
+	float* fbits = (float*)bits;
+	fbits[0] = float(col[0])*one_over_255;
+}
+
 
 inline void zero_color(COLOROPTYPE x)
 {

@@ -2,9 +2,9 @@
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/myfile.h>
 #include <KrisLibrary/utils.h>
+#include <KrisLibrary/errors.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include <utils.h>
 #include <memory.h>
 #include <math.h>
@@ -33,8 +33,14 @@ PIXELGETPROC pixel_get_proc(Image::PixelFormat format)
 		return x1r5g5b5_get;
 	case Image::A8:
 		return a8_get;
+	case Image::FloatRGB:
+		return frgb_get;
+	case Image::FloatRGBA:
+		return frgba_get;
+	case Image::FloatA:
+		return fa_get;
 	default:
-		abort();
+		FatalError("Unknown Image pixel format");
 	}
 	return NULL;
 }
@@ -53,8 +59,14 @@ PIXELSETPROC pixel_set_proc(Image::PixelFormat format)
 		return x1r5g5b5_set;
 	case Image::A8:
 		return a8_set;
+	case Image::FloatRGB:
+		return frgb_set;
+	case Image::FloatRGBA:
+		return frgba_set;
+	case Image::FloatA:
+		return fa_set;
 	default:
-		abort();
+		FatalError("Unknown Image pixel format");
 	}
 	return NULL;
 }
