@@ -19,6 +19,10 @@ struct IndexHash
 
 /** @ingroup Geometry
  * @brief A grid containing objects (referenced by void pointers)
+ *
+ * The map from a point x to an index is floor(x./h) where ./ indicates
+ * element-wise division, and h is the resolution parameter defined on
+ * construction (see Grid).
  */
 class GridHash
 {
@@ -32,10 +36,18 @@ public:
   GridHash(const Vector& h);
   size_t GetBucketCount() const {  return buckets.bucket_count(); }
   void SetBucketCount(size_t n) {  buckets.rehash(n); }
+  Vector GetResolution() const;
+  ///Changes the resolution after construction -- need to have all buckets empty
+  void SetResolution(const Vector& h);
+  ///Changes the resolution after construction -- need to have all buckets empty
+  void SetResolution(Real h);
+  ///Sets the data at a given index
   void Set(const Index& i,void* data);
-  ///Important: this method just removes the item from the hash, but does not delete it
-  void* Erase(const Index& i); 
+  ///Retrieves the data at a given index
   void* Get(const Index& i) const;
+  ///Important: this method just removes the item from the hash, but does not delete its memory
+  void* Erase(const Index& i); 
+  ///Returns true if the hash contains the given index
   bool Contains(const Index& i);
   void Clear();
   void Enumerate(std::vector<Value>& items) const;

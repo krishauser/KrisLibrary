@@ -1,5 +1,6 @@
 #include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
+#include <KrisLibrary/errors.h>
 #include "GridSubdivision.h"
 #include "Grid.h"
 #include <stdio.h>
@@ -36,6 +37,25 @@ GridHash::GridHash(const Vector& _h)
   :hinv(_h.n)
 {
   for(int i=0;i<hinv.n;i++) hinv[i] = 1.0/_h[i];
+}
+
+Vector GridHash::GetResolution() const
+{
+  Vector h(hinv.n);
+  for(int i=0;i<hinv.n;i++) h[i] = 1.0/hinv[i];
+  return h;
+}
+
+void GridHash::SetResolution(const Vector& h)
+{
+  Assert(buckets.empty());
+  hinv.resize(h.n);
+  for(int i=0;i<hinv.n;i++) hinv[i] = 1.0/h[i];
+}
+
+void GridHash::SetResolution(Real h)
+{
+  for(int i=0;i<hinv.n;i++) hinv[i] = 1.0/h;
 }
 
 void GridHash::Set(const Index& i,void* data)
@@ -105,8 +125,9 @@ void GridHash::IndexBucketBounds(const Index& i,Vector& bmin,Vector& bmax) const
   bmin.resize(hinv.n);
   bmax.resize(hinv.n);
   for(int k=0;k<hinv.n;k++) {
-    bmin(k) = hinv(k)*(Real)i[k];
-    bmax(k) = bmin(k) + 1.0/hinv(k);
+    Real hk = 1.0/hinv(k);
+    bmin(k) = (Real)i[k]*hk;
+    bmax(k) = bmin(k) + hk;
   }
 }
 
