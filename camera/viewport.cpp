@@ -15,9 +15,19 @@ Viewport::Viewport()
 {
 }
 
-void Viewport::setLensAngle(float rads)
+void Viewport::setFOV(float rads)
 {
 	scale = 0.5*Inv(Tan(rads*0.5));
+}
+
+float Viewport::getFOV() const
+{
+    return Atan(1.0/(2.0*scale))*2;
+}
+
+float Viewport::getHFOV() const
+{
+    return Atan(1.0/(2.0*scale)*float(h)/float(w))*2;
 }
 
 void Viewport::setPerspective(bool persp)
