@@ -15,8 +15,8 @@ extern "C"
 using namespace Optimization;
 using namespace std;
 
-#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 40
-#error "Require GLPK 4.40 or above"
+#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 20
+#error "Require GLPK 4.20 or above"
 #endif
 
 const static Real kZeroTol = 1e-6;
@@ -245,7 +245,9 @@ public:
   {
     LOG4CXX_INFO(KrisLibrary::logger(),"Interrupt called during GLPK solve... possible infinite loop\n");
     glp_prob* lp=glpk->lp;
+#if GLP_MAJOR_VERSION > 4 || (GLP_MAJOR_VERSION == 4 && GLP_MINOR_VERSION >= 40)
     glp_write_lp(lp,NULL,"temp_lp.txt");
+#endif
     throw(std::runtime_error("Interrupt called during GLPK solve"));
     //exit(-1);
   }
