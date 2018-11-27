@@ -1,3 +1,5 @@
+#if HAVE_LOG4CXX
+
 #include <log4cxx/logger.h>
 #include <log4cxx/basicconfigurator.h>
 #include <log4cxx/xml/domconfigurator.h>
@@ -7,8 +9,6 @@
 #include <log4cxx/consoleappender.h>
 #include "Logger.h"
 #include <stdio.h>
-
-#if HAVE_LOG4CXX
 
 namespace KrisLibrary {
 
