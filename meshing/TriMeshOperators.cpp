@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "TriMeshOperators.h"
 #include <math/SVDecomposition.h>
@@ -293,12 +292,12 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
       if(!duplicate)
 	ni.push_back(n[mesh.incidentTris[i][j]]);
     }
-    //LOG4CXX_INFO(KrisLibrary::logger(),"ApproximateShrink "<<i<<" "<<ni.size()<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"ApproximateShrink "<<i<<" "<<ni.size());
     if(ni.empty()) continue;
     else if(ni.size() == 1) {
       //shift inward
       mesh.verts[i] -= amount*ni[0];
-      //LOG4CXX_INFO(KrisLibrary::logger(),"  "<<ni[0]<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  "<<ni[0]);
     }
     else if(ni.size() == 2) {
       //shift inward, solve analytically
@@ -320,8 +319,8 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	  Vector3 navg = (ni[0]+ni[1])/2.0;
 	  mesh.verts[i] -= navg*amount;
 	}
-	//LOG4CXX_INFO(KrisLibrary::logger(),"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]<<"\n");
-	//LOG4CXX_INFO(KrisLibrary::logger(),"  coeffs "<<coeffs[0]<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  "<<coeffs[0]*ni[0] + coeffs[1]*ni[1]);
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  coeffs "<<coeffs[0]);
       }
     }
     else if(ni.size()==3) {
@@ -332,7 +331,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	Vector3 navg = (ni[0]+ni[1]+ni[2])/3.0;
 	mesh.verts[i] -= navg*amount;
       }
-      //LOG4CXX_INFO(KrisLibrary::logger(),"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount)<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  "<<Mat3Solve(ni[0],ni[1],ni[2],amount));
     }
     else {
       //simple method: loop through all triples and pick the deepest
@@ -351,7 +350,7 @@ int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
 	}
       }
       while(!NextCombination(triple,ni.size()));
-      //LOG4CXX_INFO(KrisLibrary::logger(),"  Deepest is "<<deepest<<" with depth "<<maxdepth<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  Deepest is "<<deepest<<" with depth "<<maxdepth);
       if(deepest.normSquared() > threshold*threshold) {
 	Vector3 navg = ni[0];
 	for(size_t j=1;j<ni.size();j++)

@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Objective.h"
 #include "KinodynamicPath.h"

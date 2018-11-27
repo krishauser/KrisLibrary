@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "UnboundedPolytope2D.h"
 #include "ConvexHull2D.h"

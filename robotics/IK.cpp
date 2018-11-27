@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "IK.h"
 #include "Rotation.h"
@@ -106,9 +105,9 @@ void IKGoal::SetFromPoints(const vector<Vector3>& loc,const vector<Vector3>& wor
       SetFixedRotation(R);
 	  /*
 	  LOG4CXX_ERROR(KrisLibrary::logger(), "Fitting error " << res << "\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Local point rot to common coords: "<<Tloc.R<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Local point rot to common coords: "<<Tloc.R);
 	  LOG4CXX_INFO(KrisLibrary::logger(), "Local point translation to common coords: " << Tloc.t << "\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"World point rot to common coords: "<<Twor.R<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"World point rot to common coords: "<<Twor.R);
 	  LOG4CXX_INFO(KrisLibrary::logger(), "World point translation to common coords: " << Twor.t << "\n");
 	  LOG4CXX_INFO(KrisLibrary::logger(), "\n");
 	  LOG4CXX_INFO(KrisLibrary::logger(), "Points in common coordinates:" << "\n");
@@ -121,7 +120,7 @@ void IKGoal::SetFromPoints(const vector<Vector3>& loc,const vector<Vector3>& wor
 	  LOG4CXX_INFO(KrisLibrary::logger(), "\n");
 	  LOG4CXX_INFO(KrisLibrary::logger(), "Mapping: " << "\n");
       for(size_t i=0;i<loc.size();i++) {
-	LOG4CXX_INFO(KrisLibrary::logger(),loc[i]<<" -> "<< R*(loc[i]-localPosition) + endPosition <<" = "<<wor[i]<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),loc[i]<<" -> "<< R*(loc[i]-localPosition) + endPosition <<" = "<<wor[i]);
       }
 	  */
       if(Abs(cov.z) < tol) {

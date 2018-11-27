@@ -1,7 +1,6 @@
 #ifndef GRAPH_UNDIRECTED_GRAPH_H
 #define GRAPH_UNDIRECTED_GRAPH_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Graph.h"
 #include "Callback.h"

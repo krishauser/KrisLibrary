@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "KDTree.h"
 #include <math/metric.h>
@@ -425,8 +424,8 @@ void KDTree::_KClosestPoints2(const Vector& pt,int k,Real* dist,int* idx,int& ma
     LOG4CXX_INFO(KrisLibrary::logger(),"dist: ");
     for(int i=0;i<k;i++)
       LOG4CXX_INFO(KrisLibrary::logger(),dist[i]<<" ");
-    LOG4CXX_INFO(KrisLibrary::logger(),", max index "<<maxdist<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),", max index "<<maxdist);
+    KrisLibrary::loggerWait();
     */
     return;
   }
@@ -435,7 +434,7 @@ void KDTree::_KClosestPoints2(const Vector& pt,int k,Real* dist,int* idx,int& ma
   if(!weights.empty()) d*=weights(splitDim);
   /*
   for(int i=0;i<depth;i++) LOG4CXX_INFO(KrisLibrary::logger()," ");
-  LOG4CXX_INFO(KrisLibrary::logger(),"plane dist: "<<d<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"plane dist: "<<d);
   */
   if(d >= Zero) { //probably on pos side, check that first
     pos->_KClosestPoints2(pt,k,dist,idx,maxdist,norm,weights);

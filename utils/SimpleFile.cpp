@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "SimpleFile.h"
 #include "stringutils.h"
@@ -153,7 +152,7 @@ bool SimpleFile::CheckType(const string& name,int type,const char* errorString)
   for(size_t i=0;i<items.size();i++) {
     if(!items[i].CanCast(type)) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile("<<title<<"): Wrong entry type in "<<name.c_str()<<".  Need "<<type<<", have "<<items[i].type);
-      LOG4CXX_ERROR(KrisLibrary::logger(),"   Item "<<i<<": "<<items[i]<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"   Item "<<i<<": "<<items[i]);
       return false;
     }
   }

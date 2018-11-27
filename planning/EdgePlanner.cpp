@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "EdgePlanner.h"
 #include "EdgePlannerHelpers.h"
@@ -247,7 +246,7 @@ bool ObstacleDistanceEdgeChecker::CheckVisibility(Real ua,Real ub,const Config& 
     return false;
   }
   if(dmin < Epsilon) {
-    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, da or db is close to zero"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, da or db is close to zero");
     return false;
   }
   Real r = space->Distance(a,b);
@@ -322,11 +321,11 @@ bool BisectionEpsilonEdgePlanner::IsVisible()
 
 void BisectionEpsilonEdgePlanner::Eval(Real u,Config& x) const
 {
-  //if(!Done()) LOG4CXX_WARN(KrisLibrary::logger(),"Warning, edge planner not done!"<<"\n");
+  //if(!Done()) LOG4CXX_WARN(KrisLibrary::logger(),"Warning, edge planner not done!");
   if(IsNaN(u) || u < 0 || u > 1) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Uh... evaluating path outside of [0,1] range"<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"u="<<u<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"Uh... evaluating path outside of [0,1] range");
+    LOG4CXX_INFO(KrisLibrary::logger(),"u="<<u);
+    KrisLibrary::loggerWait();
   }
   Assert(u >= Zero && u <= One);
   Real dt = One/(Real)(path.size()-1);
@@ -335,7 +334,7 @@ void BisectionEpsilonEdgePlanner::Eval(Real u,Config& x) const
   while(t+dt < u) {
     t+=dt;
     i++;
-    if(i == path.end()) { LOG4CXX_INFO(KrisLibrary::logger(),"End of path, u="<<u<<"\n"); x=path.back(); return; }
+    if(i == path.end()) { LOG4CXX_INFO(KrisLibrary::logger(),"End of path, u="<<u); x=path.back(); return; }
   }
   Assert(t<=u);
   if(t==u) { x=*i; }
@@ -359,14 +358,14 @@ EdgePlannerPtr BisectionEpsilonEdgePlanner::Copy() const
     shared_ptr<BisectionEpsilonEdgePlanner> p(new BisectionEpsilonEdgePlanner(space,epsilon));
     p->path = path;
     if(!Done()) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: making a copy of a bisection edge planner that is not done!"<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: making a copy of a bisection edge planner that is not done!");
       Segment s;
       s.prev = p->path.begin();
       s.length = space->Distance(path.front(),path.back());
       p->q.push(s);
       Assert(!p->Done());
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue..."<<"\n");
-      //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue...");
+      //KrisLibrary::loggerWait();
     }
     return p;
   }
@@ -401,8 +400,8 @@ bool BisectionEpsilonEdgePlanner::Plan()
      Real(q.size())*epsilon > 4.0*space->Distance(Start(),End())) {
     s.length = Inf;
     q.push(s);
-    LOG4CXX_INFO(KrisLibrary::logger(),"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting."<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Original length "<<space->Distance(Start(),End())<<", epsilon "<<epsilon<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"BisectionEpsilonEdgePlanner: Over 4 times as many iterations as needed, quitting.");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Original length "<<space->Distance(Start(),End())<<", epsilon "<<epsilon);
     return false;
   }
   //insert the split segments back in the queue
@@ -410,10 +409,10 @@ bool BisectionEpsilonEdgePlanner::Plan()
   Real l2=space->Distance(x,*b);
   if(l1 > 0.9*s.length || l2 > 0.9*s.length) {
     //LOG4CXX_INFO(KrisLibrary::logger(),"Midpoint exceeded 0.9x segment distance: "<<l1<<", "<<l2<<" > 0.9*"<<s.length);
-    //LOG4CXX_INFO(KrisLibrary::logger(),"a = "<<*a<<"\n");
-    //LOG4CXX_INFO(KrisLibrary::logger(),"b = "<<*b<<"\n");
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Midpoint "<<x<<"\n");
-    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //LOG4CXX_INFO(KrisLibrary::logger(),"a = "<<*a);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"b = "<<*b);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Midpoint "<<x);
+    //KrisLibrary::loggerWait();
     s.length = Inf;
     q.push(s);
     return false;

@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "BoundedLSQRSolver.h"
 #include <math/AABB.h>
@@ -38,10 +37,10 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
   }
   Assert(IsFinite(x));
 
-  //LOG4CXX_INFO(KrisLibrary::logger(),"A: "<<A<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"X: "<<x<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"L: "<<l<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"U: "<<u<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A: "<<A);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"X: "<<x);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"L: "<<l);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"U: "<<u);
   std::vector<int> activeSet;
   std::vector<int> activeIndex(x.n,-1);
   Matrix Aact(A.m,A.n);
@@ -72,7 +71,7 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
   vtemp -= b;
   Real lastResidual=vtemp.norm();
   if(verbose >= 2) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Active set 0"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Active set 0");
     for(size_t i=0;i<activeSet.size();i++) LOG4CXX_INFO(KrisLibrary::logger(),activeSet[i]<<", ");
     LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   }
@@ -101,12 +100,12 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
     for(size_t i=0;i<activeSet.size();i++) 
       dx[activeSet[i]] = xtemp[i]-x[activeSet[i]];
     if(!IsFinite(xtemp)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"A: "<<Aact<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"B: "<<bact<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Desired pos "<<xtemp<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"A: "<<Aact);
+      LOG4CXX_INFO(KrisLibrary::logger(),"B: "<<bact);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Desired pos "<<xtemp);
       Matrix AtA;
       AtA.mulTransposeA(Aact,Aact);
-      LOG4CXX_INFO(KrisLibrary::logger(),"AtA: "<<AtA<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"AtA: "<<AtA);
       FatalError("Invalid solution to least squares problem");
     }
     Real alpha=1.0;
@@ -181,8 +180,8 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
 	}
 	else {
 	  if(x(i) != l(i)) {
-	    LOG4CXX_ERROR(KrisLibrary::logger(),"Error: non-active variable is not on the bound?"<<"\n");
-	    LOG4CXX_INFO(KrisLibrary::logger(),x(i)<<" != "<<l(i)<<" or "<<u(i)<<"\n");
+	    LOG4CXX_ERROR(KrisLibrary::logger(),"Error: non-active variable is not on the bound?");
+	    LOG4CXX_INFO(KrisLibrary::logger(),x(i)<<" != "<<l(i)<<" or "<<u(i));
 	  }
 	  Assert(x(i) == l(i));
 	  if(w(i) > maxDissatisfied) {
@@ -193,7 +192,7 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
       }
     }
     if(maxDissatisfiedIndex < 0) {
-      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged after "<<iters<<" iterations"<<"\n");
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged after "<<iters<<" iterations");
       if(verbose >= 2) {
 	LOG4CXX_INFO(KrisLibrary::logger(),"Type: ");
 	for(size_t i=0;i<activeIndex.size();i++)
@@ -204,7 +203,7 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
 	  }
 	  else {LOG4CXX_INFO(KrisLibrary::logger(),"F, ");}
 	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"Gradient: "<<w<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gradient: "<<w);
       }
       return LinearProgram::Feasible;
     }
@@ -222,7 +221,7 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
     }
     if(recomputeW) {
       if(verbose >= 2) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Active set "<<iters+1<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Active set "<<iters+1);
 	for(size_t i=0;i<activeSet.size();i++) LOG4CXX_INFO(KrisLibrary::logger(),activeSet[i]<<", ");
 	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
       }
@@ -230,25 +229,25 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
       vtemp -= b;
       Real newResidual = vtemp.norm();
       if(verbose >= 1) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Difference between old and current residual: "<<newResidual<<" vs "<<lastResidual<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"Delta x: "<<dx.norm()*alpha<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Difference between old and current residual: "<<newResidual<<" vs "<<lastResidual);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Delta x: "<<dx.norm()*alpha);
       }
       if(iters > 0) {
 	if(FuzzyEquals(newResidual,lastResidual,fTol)) {
-	  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged on f"<<"\n");
+	  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged on f");
 	  return LinearProgram::Feasible;
 	}
 	lastResidual = newResidual;
 	if(dx.norm()*alpha < xTol) {
-	  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged on x"<<"\n");
+	  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged on x");
 	  return LinearProgram::Feasible;
 	}
       }
     }
   }
   if(verbose >= 1) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Ran out of iterations, current x: "<<x<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Remaining gradient: "<<w<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Ran out of iterations, current x: "<<x);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Remaining gradient: "<<w);
   }
   return LinearProgram::Error;
 }

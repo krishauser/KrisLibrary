@@ -2,7 +2,6 @@
  * Based on the algorithm & look-up tables by Paul Bourke        [http://astronomy.swin.edu.au/~pbourke/modelling/polygonise/]
  */
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "MarchingCubes.h"
 #include <math3d/interpolate.h>

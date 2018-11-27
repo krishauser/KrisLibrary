@@ -1,7 +1,6 @@
 #ifndef FAST_FIND_HEAP_H
 #define FAST_FIND_HEAP_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <vector>
 #include <map>

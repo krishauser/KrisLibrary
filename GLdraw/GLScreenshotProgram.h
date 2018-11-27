@@ -1,7 +1,6 @@
 #ifndef GL_SCREENSHOT_PROGRAM_H
 #define GL_SCREENSHOT_PROGRAM_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "GLScreenshot.h"
 #include <KrisLibrary/utils/stringutils.h>

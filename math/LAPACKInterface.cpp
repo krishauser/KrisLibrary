@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "LAPACKInterface.h"
 #include "complex.h"
@@ -478,61 +477,61 @@ using namespace std;
 
 bool LAPACKInterface::Solve(const fMatrix& A,const fVector& b,fVector& x)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::Solve(const dMatrix& A,const dVector& b,dVector& x)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::LeastSquares(const fMatrix& A,const fVector& b,fVector& x)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::LeastSquares(const dMatrix& A,const dVector& b,dVector& x)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::Eigenvalues_Symmetric(const fMatrix& A,fVector& lambda)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::Eigenvalues_Symmetric(const dMatrix& A,dVector& lambda)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::Eigenvectors_Symmetric(const fMatrix& A,fVector& lambda,fMatrix& Q)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::Eigenvectors_Symmetric(const dMatrix& A,dVector& lambda,dMatrix& Q)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::SVD(const fMatrix& A,fMatrix& U,fVector& W,fMatrix& Vt)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 
 bool LAPACKInterface::SVD(const dMatrix& A,dMatrix& U,dVector& W,dMatrix& Vt)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, LAPACK not defined");
   return false;
 }
 

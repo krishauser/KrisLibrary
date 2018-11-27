@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "OLS.h"
 #include <math/linalgebra.h>
@@ -108,12 +107,12 @@ bool LeastSquares1D::SolvePerpendicular()
   }
   Real den = (x.n*xmean*ymean - dot(x,y));
   if(FuzzyZero(den)) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, denominator is close to zero"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, denominator is close to zero");
   }
   Real B = (syy - sxx) / den;
   a = -B + Sqrt(Sqr(B)+1);
   b = ymean - xmean*b;
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, don't know how to calculate std errors for perpendicular least-squares"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, don't know how to calculate std errors for perpendicular least-squares");
   stda = stdb = 0;
   corrCoeff = 1;
   return true;
@@ -147,8 +146,8 @@ bool LeastSquares(const Matrix& data,const Vector& outcome,
   ldl.set(A);
   ldl.backSub(b,c);
   /*  {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Cholesky didn't succeed!"<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Matrix: "<<"\n"<<MatrixPrinter(A)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Cholesky didn't succeed!");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Matrix: "<<MatrixPrinter(A)<<"\n");
     return false;
   }
   */

@@ -1,7 +1,6 @@
 #ifndef TORQUE_SOLVER_H
 #define TORQUE_SOLVER_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "RobotDynamics3D.h"
 #include "Contact.h"

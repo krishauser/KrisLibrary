@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "KinodynamicSpace.h"
 #include "KinodynamicPath.h"
@@ -41,19 +40,19 @@ bool RandomBiasSteeringFunction::Connect(const State& x,const State& xGoal,Kinod
   InterpolatorPtr pathtemp;
   std::shared_ptr<CSet> uspace = space->controlSpace->GetControlSet(x);
   if(!uspace) {
-    LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, no control set at "<<x<<"?"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, no control set at "<<x<<"?");
     return false;
   }
   for(int i=0;i<sampleCount;i++) {
     uspace->Sample(temp);
         if(temp.empty()) { LOG4CXX_ERROR(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, control space does not have Sample() method implemented\n"); return false; }
     if(!uspace->Contains(temp)) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, sampled infeasible control "<<temp<<"?"<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, sampled infeasible control "<<temp<<"?");
       continue;
     }
     pathtemp = space->controlSpace->Simulate(x,temp);
     if(!pathtemp) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, simulated path is null?"<<"\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"RandomBiasSteeringFunction::Connect(): Warning, simulated path is null?");
       continue;
     }
     Real dist = space->GetStateSpace()->Distance(pathtemp->End(),xGoal);

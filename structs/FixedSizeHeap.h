@@ -1,7 +1,6 @@
 #ifndef FIXED_SIZE_HEAP_H
 #define FIXED_SIZE_HEAP_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <vector>
 #include <iostream>

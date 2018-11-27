@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Geodesic.h"
 using namespace Meshing;
@@ -12,17 +11,17 @@ Real TriangulateDistance(Real bx,Real da,Real db,const Vector2& c)
   Real B=Sqr(Sqr(da)-Sqr(db));
   if(A < B) {
     /*
-    LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles do not intersect"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"bx="<<bx<<", A="<<A<<", B="<<B<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"da="<<da<<", db="<<db<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"a="<<a<<", b="<<b<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles do not intersect");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"bx="<<bx<<", A="<<A<<", B="<<B);
+    LOG4CXX_INFO(KrisLibrary::logger(),"da="<<da<<", db="<<db);
+    LOG4CXX_INFO(KrisLibrary::logger(),"a="<<a<<", b="<<b);
     */
     Real x;
     if(da+db <= bx) x=Half*(da+bx-db);
     else if(db+bx <= da) x=Half*(da+bx+db);
     else if(da+bx <= db) x=Half*(-da+bx-db);
     else {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles don't intersect, and numerical error?"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles don't intersect, and numerical error?");
       Real s11 = bx+db-da;
       Real s00 = bx-db+da;
       Real s10 = bx+db-da;
@@ -64,17 +63,17 @@ Real TriangulateDistance(const Vector3& a,const Vector3& b,Real da,Real db,const
   Real B=Sqr(Sqr(da)-Sqr(db));
   if(A < B) {
     /*
-    LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles do not intersect"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"bx="<<bx<<", A="<<A<<", B="<<B<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"da="<<da<<", db="<<db<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"a="<<a<<", b="<<b<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles do not intersect");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"bx="<<bx<<", A="<<A<<", B="<<B);
+    LOG4CXX_INFO(KrisLibrary::logger(),"da="<<da<<", db="<<db);
+    LOG4CXX_INFO(KrisLibrary::logger(),"a="<<a<<", b="<<b);
     */
     Real x;
     if(da+db <= bx) x=Half*(da+bx-db);
     else if(db+bx <= da) x=Half*(da+bx+db);
     else if(da+bx <= db) x=Half*(-da+bx-db);
     else {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles don't intersect, and numerical error?"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TriangulateDistance: circles don't intersect, and numerical error?");
       Real s11 = bx+db-da;
       Real s00 = bx-db+da;
       Real s10 = bx+db-da;
@@ -110,7 +109,7 @@ Real WeightedTriangulateDistance(const Vector3& a,const Vector3& b,Real da,Real 
     else if(db+bx <= da) x=Half*(da+bx+db);
     else if(da+bx <= db) x=Half*(-da+bx-db);
     else {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"WeightedTriangulateDistance: circles don't intersect, and numerical error?"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"WeightedTriangulateDistance: circles don't intersect, and numerical error?");
       Real s11 = bx+db-da;
       Real s00 = bx-db+da;
       Real s10 = bx+db-da;
@@ -203,7 +202,7 @@ void ApproximateGeodesic::ComputeVirtualEdges()
     if(obtuse < 0) continue;
 
     int o=mesh.tris[i][obtuse];
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Obtuse vertex "<<o<<" on tri "<<i<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Obtuse vertex "<<o<<" on tri "<<i);
     int a1,a2;
     mesh.tris[i].getCompliment(obtuse,a1,a2);
     Vector3 bound1,bound2;   //boundk^T*x >= boundk^T*o
@@ -220,7 +219,7 @@ void ApproximateGeodesic::ComputeVirtualEdges()
     Vector2 a1p(xb.dot(mesh.verts[a1]),yb.dot(mesh.verts[a1]));
     Vector2 a2p(xb.dot(mesh.verts[a2]),yb.dot(mesh.verts[a2]));
     Vector2 supp;
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Vertex folded out to "<<op<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Vertex folded out to "<<op);
     //rotate the "spoke" a2 about a1 until a supporting vertex is found
     int spoke=a2;
     Vector2 spokePos=a2p;
@@ -238,8 +237,8 @@ void ApproximateGeodesic::ComputeVirtualEdges()
       Vector2 supp = UnfoldTriangle(mesh,neighbor,nedge,spokePos,a1p);  //a1-spoke needs to be reversed
       if(supp.dot(b1p) > op.dot(b1p)) {
 	//move spoke to support?
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Linking to "<<o<<" with vertex "<<support<<", "<<numHops<<" hops"<<"\n");
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Folded out to "<<supp<<" with basis "<<xb<<", "<<yb<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Linking to "<<o<<" with vertex "<<support<<", "<<numHops<<" hops");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Folded out to "<<supp<<" with basis "<<xb<<", "<<yb);
 	incomingVirtualEdges[support].push_back(i);
 	virtualEdges[i].vertex1=support;
 	virtualEdges[i].planePos1=supp;
@@ -271,8 +270,8 @@ void ApproximateGeodesic::ComputeVirtualEdges()
       Vector2 supp = UnfoldTriangle(mesh,neighbor,nedge,a2p,spokePos);  //a1-spoke needs to be reversed
       if(supp.dot(b2p) > op.dot(b2p)) {
 	//move spoke to support?
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Linking to "<<o<<" with vertex "<<support<<", "<<numHops<<" hops"<<"\n");
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Folded out to "<<supp<<" with basis "<<xb<<", "<<yb<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Linking to "<<o<<" with vertex "<<support<<", "<<numHops<<" hops");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Folded out to "<<supp<<" with basis "<<xb<<", "<<yb);
 	incomingVirtualEdges[support].push_back(i);
 	virtualEdges[i].vertex2=support;
 	virtualEdges[i].planePos2=supp;
@@ -421,7 +420,7 @@ void ApproximateGeodesic::SolveFromVertex(int v)
   }
   for(size_t i=0;i<vertColor.size();i++) {
     if(vertColor[i] != 2)
-      LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't propagate to vertex"<<i<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't propagate to vertex"<<i);
   }
 }
 
@@ -465,7 +464,7 @@ Real ApproximateGeodesic::Distance(int tri,const Vector3& pt) const
   Assert(c>=0&&c<(int)vertCosts.size());
   /*
   if(vertColor[a]==0 || vertColor[b]==0 || vertColor[c]==0) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Mesh was not connected to triangle "<<tri<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Mesh was not connected to triangle "<<tri);
     return Inf;
   }
   */

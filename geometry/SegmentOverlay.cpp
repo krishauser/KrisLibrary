@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "SegmentOverlay.h"
 #include "primitives.h"
@@ -73,7 +72,7 @@ int SegmentOverlay::StatusCmp::operator()(int a,int b) const
     assert(!epsLower);
     assert(a==-1);
     int res=PtSegCmp(p,(*S)[b],tol);
-    //LOG4CXX_INFO(KrisLibrary::logger(),"  Final res: "<<res<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"  Final res: "<<res);
     return res;
   }
   const Segment2D &u=(*S)[a], &v=(*S)[b];
@@ -90,7 +89,7 @@ int SegmentOverlay::StatusCmp::operator()(int a,int b) const
 	    a = (SweepLineOrder(p,u.a) ? &u.a :&u.b);
 	    b = (SweepLineOrder(p,v.a) ? &v.a :&v.b);
 	    int res=OrientCmp(p,*b,*a);
-      //LOG4CXX_INFO(KrisLibrary::logger(),res<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),res);
       return res;
     }
     //don't ever return 0 -- which one is oriented about the intersection pt?
@@ -101,11 +100,11 @@ int SegmentOverlay::StatusCmp::operator()(int a,int b) const
     a = (SweepLineOrder(p2,u.a) ? &u.a :&u.b);
     b = (SweepLineOrder(p2,v.a) ? &v.a :&v.b);
     int res=OrientCmp(p2,*b,*a);
-    //LOG4CXX_INFO(KrisLibrary::logger(),res<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),res);
     return res;
   }
-  else if(ux < vx) { /*LOG4CXX_INFO(KrisLibrary::logger(),-1<<"\n"); */return -1; }
-  else { /*LOG4CXX_INFO(KrisLibrary::logger(),1<<"\n"); */ return 1; }
+  else if(ux < vx) { /*LOG4CXX_INFO(KrisLibrary::logger(),-1); */return -1; }
+  else { /*LOG4CXX_INFO(KrisLibrary::logger(),1); */ return 1; }
 }
 
 
@@ -151,7 +150,7 @@ void SegmentOverlay::HandleEvent(const Event& e)
   const vector<int>& U=e.U;
   StatusTree::iterator begin,end,i,next;
   if(verbose >= 1) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Handling "<<p<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Handling "<<p);
     LOG4CXX_INFO(KrisLibrary::logger(),"  Status is ");
     for(i=status.begin();i!=status.end();i++)
       LOG4CXX_INFO(KrisLibrary::logger(),*i<<" ");
@@ -176,7 +175,7 @@ void SegmentOverlay::HandleEvent(const Event& e)
   }
 
   if(verbose >= 2)
-    LOG4CXX_INFO(KrisLibrary::logger(),"  |L|,|U|,|C| = "<<L.size()<<" "<<U.size()<<" "<<C.size()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"  |L|,|U|,|C| = "<<L.size()<<" "<<U.size()<<" "<<C.size());
   if(L.size()+U.size()+C.size() > 1) {
     size_t index=output.size();
     output.resize(output.size()+1);
@@ -214,14 +213,14 @@ void SegmentOverlay::HandleEvent(const Event& e)
     int l,r,sl,sr;
     //get the leftmost and rightmost segments in U union C
     GetLeftmostRightmost(U,C,l,r);
-    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Leftmost, rightmost are "<<l<<", "<<r<<"\n");
+    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Leftmost, rightmost are "<<l<<", "<<r);
 
     if(StatusLowerNeighbor(l,sl)) {
-      if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Lower neighbor "<<sl<<"\n");
+      if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Lower neighbor "<<sl);
       FindNewEvent(sl,l,p);
     }
     if(StatusUpperNeighbor(r,sr)) {
-      if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Upper neighbor "<<sr<<"\n");
+      if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Upper neighbor "<<sr);
       FindNewEvent(r,sr,p);
     }
   }
@@ -232,7 +231,7 @@ void SegmentOverlay::FindNewEvent(int sl,int sr,const Vector2& p)
   Vector2 x;
   if(S[sl].intersects(S[sr],x)) {
     if(SweepLineOrder(p,x)) {  //x comes after p in the ordering
-      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"New intersection at "<<x<<"\n");
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"New intersection at "<<x);
       //insert x as a new event
       Event e;
       e.p=x;

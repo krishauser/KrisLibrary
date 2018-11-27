@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "AsyncIO.h"
 #include "socketutils.h"
@@ -502,7 +501,7 @@ const string* SocketClientTransport::DoRead()
 {
   ScopedLock lock(mutex);
   if(!ReadIntPrependedString(socket,buf)) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"SocketClientTransport: Error reading string on "<<addr<<"..."<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SocketClientTransport: Error reading string on "<<addr<<"...");
     return NULL;
   }
   return &buf;
@@ -510,7 +509,7 @@ const string* SocketClientTransport::DoRead()
 
 bool SocketClientTransport::Start()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"SocketClientTransport: Creating socket on "<<addr<<"..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"SocketClientTransport: Creating socket on "<<addr<<"...");
   bool opened = false;
   if(socket.IsOpen()) opened = true;
   while(!opened) {
@@ -534,7 +533,7 @@ bool SocketClientTransport::Stop()
 {
   ScopedLock lock(mutex);
   if(socket.IsOpen()) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"SocketClientTransport: Closing "<<addr<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"SocketClientTransport: Closing "<<addr);
     socket.Close();
   }
   return true;

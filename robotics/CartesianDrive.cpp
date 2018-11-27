@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "CartesianDrive.h"
 #include "IKFunctions.h"
@@ -116,10 +115,10 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       desiredTransforms[i].R = increment * driveTransforms[i].R;
     }
     /*
-    LOG4CXX_INFO(KrisLibrary::logger(),"Desired transform for link "<<links[i]<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),desiredTransforms[i]<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger()," current transform"<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),originalTransforms[i]<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Desired transform for link "<<links[i]);
+    LOG4CXX_INFO(KrisLibrary::logger(),desiredTransforms[i]);
+    LOG4CXX_INFO(KrisLibrary::logger()," current transform");
+    LOG4CXX_INFO(KrisLibrary::logger(),originalTransforms[i]);
     */
   }
 
@@ -205,8 +204,8 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     LOG4CXX_INFO(KrisLibrary::logger(),""<<tempActiveDofs.mapping[i]);
   }
   LOG4CXX_INFO(KrisLibrary::logger(),"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"Active dof state "<<x0<<"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"IK goal residual "<<err0<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Active dof state "<<x0);
+  LOG4CXX_INFO(KrisLibrary::logger(),"IK goal residual "<<err0);
   */
 
   Real quality0 = err0.normSquared();
@@ -254,7 +253,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       //test constraints
       Vector3 perr(0.0),rerr(0.0);
       tempGoals[i].GetError(robot->links[links[i]].T_World,perr,rerr);
-      //LOG4CXX_ERROR(KrisLibrary::logger(),"Position error link "<<links[i]<<": "<<perr<<", rotation error: "<<rerr<<"\n");
+      //LOG4CXX_ERROR(KrisLibrary::logger(),"Position error link "<<links[i]<<": "<<perr<<", rotation error: "<<rerr);
       if(perr.norm() > positionTolerance || rerr.norm() > rotationTolerance) {
         res = false;
         LOG4CXX_ERROR(KrisLibrary::logger(),"CartesianDriveSolver: Position error: "<<perr.norm()<<", rotation error: "<<rerr.norm()<<" not under tolerances "<<positionTolerance<<", "<<rotationTolerance);
@@ -285,7 +284,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     for(size_t i=0;i<links.size();i++) {
       achievedTransforms[i].R = robot->links[links[i]].T_World.R;
       achievedTransforms[i].t = robot->links[links[i]].T_World*endEffectorOffsets[i];
-      //LOG4CXX_INFO(KrisLibrary::logger(),"  Solved limb transform: "<<achievedTransforms[i].t<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"  Solved limb transform: "<<achievedTransforms[i].t);
       
       //adjust drive transform along screw to minimize distance to the achieved transform      
       if(IsFiniteV(driveVel[i])) {
@@ -293,7 +292,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 	Vector3 axis = driveVel[i] / Max(driveVel[i].length(),Epsilon);
 	Real ut = driveVel[i].length();
 	Real tdistance = trel.dot(axis);
-	//LOG4CXX_INFO(KrisLibrary::logger(),"  translation vector"<<trel<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"  translation vector"<<trel);
 	//LOG4CXX_INFO(KrisLibrary::logger(),"  Translation amount: "<<tdistance);
 	tdistance = Clamp(tdistance,0.0,dt*driveVel[i].length());
 	numerator += ut*tdistance;

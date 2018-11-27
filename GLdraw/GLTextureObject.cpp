@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "GLTextureObject.h"
 #include "GL.h"
@@ -32,7 +31,7 @@ void GLTextureObject::generate()
     glGenTextures(1, glName.get());
   }
   else
-    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, GLTextureObject.generate() called on a non-null object"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, GLTextureObject.generate() called on a non-null object");
 }
 
 void GLTextureObject::cleanup()

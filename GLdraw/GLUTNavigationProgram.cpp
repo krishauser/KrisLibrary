@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "GLUTNavigationProgram.h"
 #include "GL.h"
@@ -369,120 +368,120 @@ GLUTNavigationProgram::GLUTNavigationProgram()
 
 bool GLUTNavigationProgram::Initialize()
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
   return true;
 }
 
 void GLUTNavigationProgram::Handle_Display()
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::Handle_Reshape(int w,int h)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::Handle_Keypress(unsigned char key,int x,int y)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::BeginDrag(int x,int y,int button,int modifiers)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::EndDrag(int x,int y,int button,int modifiers)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DoDrag(int dx,int dy,int button,int modifiers)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DoFreeDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DoCtrlDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DoAltDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DoShiftDrag(int dx,int dy,int button)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 
 void GLUTNavigationProgram::DragPan(int dx,int dy)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DragRotate(int dx,int dy)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DragZoom(int dx,int dy)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DragTruck(int dx,int dy)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 
 void GLUTNavigationProgram::Handle_Click(int button,int state,int x,int y)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::Handle_Drag(int x,int y)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::Handle_Idle()
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::DisplayCameraTarget()
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::Set2DMode(bool mode)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::CenterCameraOn(const AABB3D& aabb)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::WriteDisplaySettings(ostream& out) const
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTNavigationProgram::ReadDisplaySettings(istream& in)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 

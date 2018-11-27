@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "VectorTemplate.h"
 #include "fastarray.h"
@@ -92,9 +91,9 @@ void VectorTemplate<T>::resize(int _n)
   if(size() != _n) {
     if(allocated) {
       if(!isCompact()) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base);
+	LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride);
+	LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n);
       }
       Assert(isCompact());
     }
@@ -131,9 +130,9 @@ void VectorTemplate<T>::resizePersist(int _n)
   if(size() != _n) {
     if(allocated) {
       if(!isCompact()) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base);
+	LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride);
+	LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n);
       }
       Assert(isCompact());
     }
@@ -502,19 +501,19 @@ template <class T>
 bool VectorTemplate<T>::isValid() const
 {
   if(base < 0) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): Base is negative"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): Base is negative");
     return false;
   }
   if(n > 0) {
     if(base + stride*(n-1) >= capacity) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): max element exceeds bounds"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base);
+      LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride);
+      LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n);
+      LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): max element exceeds bounds");
       return false;
     }
     if(stride < 0) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): stride is negative"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): stride is negative");
     }
   }
   return true;
@@ -789,14 +788,14 @@ template<> Complex VectorTemplate<Complex>::dotSelf() const
 
 template<> Complex VectorTemplate<Complex>::minElement(int* index) const
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete");
   AssertNotReached();
   return Zero;
 }
 
 template<> Complex VectorTemplate<Complex>::maxElement(int* index) const
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete");
   AssertNotReached();
   return Zero;
 }

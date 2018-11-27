@@ -1,7 +1,6 @@
 #ifndef ARRAY_ND
 #define ARRAY_ND
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "array2d.h"
 #include "array3d.h"

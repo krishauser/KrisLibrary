@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "AnyCollection.h"
 #include "stringutils.h"
@@ -89,7 +88,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       //check for invalid values
       for(size_t i=0;i<str.length();i++) {
 	if(!(isalnum(str[i])||str[i]=='_')) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"ReadValue: Invalid basic data type \""<<str<<"\""<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"ReadValue: Invalid basic data type \""<<str<<"\"");
 	  return false;
 	}
       }
@@ -306,7 +305,7 @@ void AnyCollection::resize(size_t n)
     FatalError("AnyCollection::resize(): Cannot resize value without clearing first\n");
   }
   if(type == Map) {
-    LOG4CXX_INFO(KrisLibrary::logger(),*this<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),*this);
     //TODO: check to see if there are integer entries
     FatalError("AnyCollection::resize(): Cannot resize map without clearing first\n");
   }
@@ -1406,7 +1405,7 @@ bool AnyCollection::read(std::istream& in)
     EatWhitespace(in);
     while(in.peek() != ']') {
       if(in.get() != ',') {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): List not separated by commas"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): List not separated by commas");
 	return false;
       }
       value.reset(new AnyCollection());
@@ -1461,7 +1460,7 @@ bool AnyCollection::read(std::istream& in)
       char c = in.get();
       if(c == '}') return true;
       if(c != ',') {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): Map entries not separated by commas"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): Map entries not separated by commas");
 	return false;
       }
     }
@@ -1470,14 +1469,14 @@ bool AnyCollection::read(std::istream& in)
     //could be part of a list or map
     type = Value;
     if(!ReadValue(value,in,",]}")) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read() Unable to read primitive value"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read() Unable to read primitive value");
       return false;
     }
     if(value.empty()) //read a null
       type = None;
     return true;
   }
-  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read() failed for some reason..."<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read() failed for some reason...");
   return false;
 }
 
@@ -1519,10 +1518,10 @@ void AnyCollection::write(std::ostream& out,int indent) const
     out<<"[";
     for(size_t i=0;i<array.size();i++) {
       if(i!=0) out<<", ";
-      if(!write_inline)	out<<"\n"<<std::string(indent+2,' ');
+      if(!write_inline)	out<<std::string(indent+2,' ');
       array[i]->write(out,indent+2);
     }
-    if(!write_inline)	out<<"\n"<<std::string(indent,' ');
+    if(!write_inline)	out<<std::string(indent,' ');
     out<<"]";
   }
   else {
@@ -1531,12 +1530,12 @@ void AnyCollection::write(std::ostream& out,int indent) const
     out<<"{";
     for(MapType::const_iterator i=map.begin();i!=map.end();i++) {
       if(i!=map.begin()) out<<", ";
-      if(!write_inline) out<<"\n"<<std::string(indent+2,' ');
+      if(!write_inline) out<<std::string(indent+2,' ');
       WriteValue(i->first.value,out);
       out<<": ";
       i->second->write(out,indent+2);
     }
-    if(!write_inline) out<<"\n"<<std::string(indent,' ');
+    if(!write_inline) out<<std::string(indent,' ');
     out<<"}";
   }
 }

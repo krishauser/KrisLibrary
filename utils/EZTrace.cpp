@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "EZTrace.h"
 #include <errors.h>
@@ -15,18 +14,18 @@ EZTrace::EZTrace()
 
 EZTrace::~EZTrace()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Destroying EZTrace object..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Destroying EZTrace object...");
   Assert(curTrace != NULL);
   Assert(curTrace == &myTrace);
   if(dumpTrace) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"********* Program execution trace: **********"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"********* Program execution trace: **********");
     curTrace->DumpTrace(cout);
-    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************");
   }
   if(dumpStats) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"********** Function call stats: *************"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"********** Function call stats: *************");
     curTrace->DumpStats(cout);
-    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************");
   }
   curTrace = NULL;
 }

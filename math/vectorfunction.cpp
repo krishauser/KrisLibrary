@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "vectorfunction.h"
 #include "metric.h"
@@ -197,7 +196,7 @@ void Compose_SF_VF_Function::Hessian(const Vector& x,Matrix& H)
 
 Real Compose_SF_VF_Function::Hessian_ij(const Vector& x,int i,int j)
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Hessian_ij: this is totally inefficient!!!"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Hessian_ij: this is totally inefficient!!!");
   AssertNotReached();
   return 0;
 }
@@ -540,7 +539,7 @@ int CompositeVectorFieldFunction::GetFunction(int& i) const
       i -= nd;
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't ever get here!  i="<<iorig<<" must be out of range 0->"<<NumDimensions()<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't ever get here!  i="<<iorig<<" must be out of range 0->"<<NumDimensions());
   AssertNotReached();
   return -1;
 }

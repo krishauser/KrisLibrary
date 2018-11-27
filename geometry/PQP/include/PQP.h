@@ -41,8 +41,6 @@
 #ifndef PQP_H
 #define PQP_H
 
-#include <log4cxx/logger.h>
-#include <KrisLibrary/Logger.h>
 #include "PQP_Compile.h"   
 #include "PQP_Internal.h"                             
                         

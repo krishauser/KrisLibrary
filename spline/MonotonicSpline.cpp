@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "MonotonicSpline.h"
 #include <math/misc.h>
@@ -110,8 +109,8 @@ Real MonotonicSpline::TtoU(Real time) const
     }
     u[0] += offset;
     u[1] += offset;
-    //LOG4CXX_INFO(KrisLibrary::logger(),"finding u for t(u)="<<time<<" approximated by "<<umid<<"\n");
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Roots to "<<coeffs[2]<<"x^2+"<<coeffs[1]<<"x+"<<coeffs[0]-time<<": "<<u0<<", "<<u1<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"finding u for t(u)="<<time<<" approximated by "<<umid);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Roots to "<<coeffs[2]<<"x^2+"<<coeffs[1]<<"x+"<<coeffs[0]-time<<": "<<u0<<", "<<u1);
     if(res == 0) {
       LOG4CXX_INFO(KrisLibrary::logger(),"No roots to equation "<<coeffs[2]<<"x^2+"<<coeffs[1]<<"x+"<<coeffs[0]<<"=time "<<time);
       LOG4CXX_INFO(KrisLibrary::logger(),"offset and normalized: x^2+"<<b/a<<"x+"<<c/a);
@@ -140,7 +139,7 @@ Real MonotonicSpline::TtoU(Real time) const
 	LOG4CXX_INFO(KrisLibrary::logger(),""<<coeffs[2]<<"u^2+"<<coeffs[1]<<"u+"<<coeffs[0]<<"="<<time);
 	LOG4CXX_INFO(KrisLibrary::logger(),"u="<<u[best]<<" in ["<<basis.knots[k]<<","<<basis.knots[k+1]);
 	LOG4CXX_INFO(KrisLibrary::logger(),"umid = "<<umid);
-	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	KrisLibrary::loggerWait();
       }
       */
       return umid;

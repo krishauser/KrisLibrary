@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "PolytopeProjection.h"
 #include <iostream>
@@ -61,7 +60,7 @@ void PolytopeProjection2D::Expand()
     points.clear();
     return;
   }
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Initial points "<<initPts[0]<<", "<<initPts[1]<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Initial points "<<initPts[0]<<", "<<initPts[1]);
   points.push_back(initPts[0]);
   points.push_back(initPts[1]);
   PointIterator i1=points.begin();
@@ -74,8 +73,8 @@ void PolytopeProjection2D::Expand()
 void PolytopeProjection2D::ExpandEdge(PointIterator i,int depth)
 {
   if(depth > maxDepth) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"ExpandEdge iters exceeding "<<maxDepth<<", quitting iteration"<<"\n");
-    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //LOG4CXX_INFO(KrisLibrary::logger(),"ExpandEdge iters exceeding "<<maxDepth<<", quitting iteration");
+    //KrisLibrary::loggerWait();
     return;
   }
   //get the next point in the list
@@ -92,20 +91,20 @@ void PolytopeProjection2D::ExpandEdge(PointIterator i,int depth)
 	return;
       }
       else {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Expanding between rays "<<*i<<" and "<<*j<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Expanding between rays "<<*i<<" and "<<*j);
 	n.set(-*i-*j);
 	n.inplaceNormalize();
 	PointRay2D x;
 	if(!f.EvalExtremum(n,x)) return;
 	
 	if(x.isRay) {
-	  LOG4CXX_INFO(KrisLibrary::logger(),"It's a ray... "<<x<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"It's a ray... "<<x);
 	  PointIterator k=points.insert(j,x);
 	  ExpandEdge(i,depth+1);
 	  ExpandEdge(k,depth+1);
 	}
 	else {
-	  LOG4CXX_INFO(KrisLibrary::logger(),"It's a point... "<<x<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"It's a point... "<<x);
 	  PointIterator k=points.insert(j,x);
 	  ExpandEdge(i,depth+1);
 	  ExpandEdge(k,depth+1);
@@ -129,7 +128,7 @@ void PolytopeProjection2D::ExpandEdge(PointIterator i,int depth)
   PointRay2D x;
   if(!f.EvalExtremum(n,x)) return;
 
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Extremum in direction "<<n<<": "<<x<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Extremum in direction "<<n<<": "<<x);
   
   //if x doesn't lie on the edge, insert a point between i and j
   if(x.isRay) {
@@ -248,10 +247,10 @@ bool LPSolvePointCallback::EvalExtremum(const Vector2& dir, PointRay2D& x)
 	x.y = unboundedSolver.xopt(vary);
 	x.isRay = true;
 	x.inplaceNormalize();
-	LOG4CXX_INFO(KrisLibrary::logger(),"Polytope projection unbounded in direction "<<dir<<", ray "<<x<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Polytope projection unbounded in direction "<<dir<<", ray "<<x);
       }
       else {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't solve for unbounded direction! "<<dir<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't solve for unbounded direction! "<<dir);
 	return false;
       }
     }

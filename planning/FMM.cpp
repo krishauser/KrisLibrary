@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "FMM.h"
 #include <structs/FixedSizeHeap.h>
@@ -52,7 +51,7 @@ Real best_diag_distanceN(const Vector& d)
   Real det = dsumsq - n*(dsqsum-1.0);
   if(det < 0.0) {
         //LOG4CXX_ERROR(KrisLibrary::logger(),"Negative determinant: "<<det);
-    //LOG4CXX_ERROR(KrisLibrary::logger(),"D: "<<d<<"\n");
+    //LOG4CXX_ERROR(KrisLibrary::logger(),"D: "<<d);
     return d.minElement()+1.0;
   }
   Real sqdet = Sqrt(det);
@@ -921,7 +920,7 @@ vector<Vector> GradientDescent(const ArrayND<Real>& field,const Vector& start)
       }
     }
     if(IsInf(t)) {
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Terminated search at "<<pt<<", gradient is zero"<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Terminated search at "<<pt<<", gradient is zero");
       return path;
     }
     Vector next = pt-grad*t;
@@ -949,17 +948,17 @@ vector<Vector> GradientDescent(const ArrayND<Real>& field,const Vector& start)
       }
       if(best < 0) {
 	/*
-	LOG4CXX_INFO(KrisLibrary::logger(),"Terminated, next point "<<next<<" has cost "<<EvalMultilinear(field,next)<<", increase from "<<EvalMultilinear(field,pt)<<" at "<<pt<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"Gradient: "<<grad<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Terminated, next point "<<next<<" has cost "<<EvalMultilinear(field,next)<<", increase from "<<EvalMultilinear(field,pt)<<" at "<<pt);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gradient: "<<grad);
 	LOG4CXX_INFO(KrisLibrary::logger(),"inf dirs: ");
 	for(size_t i=0;i<infDirs.size();i++)
 	  LOG4CXX_INFO(KrisLibrary::logger(),infDirs[i]<<" ");
 	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"Adjacent cell values: "<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Adjacent cell values: ");
 	for(size_t i=0;i<gridpts.size();i++) {
 	  for(size_t k=0;k<gridpts[i].size();k++)
 	    LOG4CXX_INFO(KrisLibrary::logger(),gridpts[i][k]<<" ");
-	  LOG4CXX_INFO(KrisLibrary::logger(),": "<<field[gridpts[i]]<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),": "<<field[gridpts[i]]);
 	}
 	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
 	*/

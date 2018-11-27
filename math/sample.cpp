@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "math.h"
 #include "sample.h"
@@ -67,7 +66,7 @@ void RandomAllocate(vector<int>& num,size_t total)
       }
     }
     if(j==num.size() && i < total) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"RandomAllocate: should not reach end of list, sample "<<i<<" of "<<total<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"RandomAllocate: should not reach end of list, sample "<<i<<" of "<<total);
       return;
     }
   }
@@ -107,7 +106,7 @@ void RandomAllocate(vector<int>& num,size_t total,const vector<Real>& weights)
       }
     }
     if(j==num.size() && i < total) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"RandomAllocate: should not reach end of list, sample "<<i<<" of "<<total<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"RandomAllocate: should not reach end of list, sample "<<i<<" of "<<total);
       return;
     }
   }
@@ -125,14 +124,14 @@ Real Sample(const ClosedIntervalSet& s)
   Real max=0;
   for(size_t i=0;i<s.size();i++) {
     if(s[i].b < s[i].a) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Sample(ClosedInterval): interval "<<i<<" is invalid!"<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),"["<<s[i].a<<","<<s[i].b<<"]"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Sample(ClosedInterval): interval "<<i<<" is invalid!");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"["<<s[i].a<<","<<s[i].b<<"]");
       Abort();
     }
     max += s[i].b-s[i].a;
   }
   if(IsInf(max)) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Sample(ClosedInterval): interval has infinite size! aborting"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Sample(ClosedInterval): interval has infinite size! aborting");
     Abort();
   }
   if(max==0) {  //a bunch of single points
@@ -144,7 +143,7 @@ Real Sample(const ClosedIntervalSet& s)
     u -= (s[i].b-s[i].a);
     if(u < 0) return s[i].b+u;
   }
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Shouldn't get here!"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Shouldn't get here!");
   AssertNotReached();
   return 0;
 }

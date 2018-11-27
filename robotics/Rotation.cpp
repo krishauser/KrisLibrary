@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Rotation.h"
 #include <math/misc.h>
@@ -14,13 +13,13 @@ Real TraceToTheta(Real trace)
   Real s=(trace - One)*Half;
   if(s >= One) {
     if(s > One+Epsilon) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"TraceToTheta(): Warning- trace of matrix is greater than 1"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TraceToTheta(): Warning- trace of matrix is greater than 1");
     }
     return Zero;
   }
   else if(s <= -One) {
     if(s < -One-Epsilon) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"TraceToTheta(): Warning- trace of matrix is less than 1"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TraceToTheta(): Warning- trace of matrix is less than 1");
     }
     return Pi;
   }
@@ -95,7 +94,7 @@ void DirectionCosines::getMomentJacobian(Matrix& J) const
     return;
   }
   if(FuzzyEquals(theta,Pi)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Discontinuity: theta is pi"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Discontinuity: theta is pi");
     J.resize(3,9,Zero);
     J(0,0) = Pi*0.25/Sqrt((a(0)+One)*Half);
     J(1,4) = Pi*0.25/Sqrt((b(1)+One)*Half);
@@ -151,9 +150,9 @@ void DirectionCosines::getQuaternionJacobian(Matrix& J) const
     J(3,1) = scale; J(3,4) = -scale;
   }
   else {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Close to pi rotations not done yet"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Close to pi rotations not done yet");
     J.setZero();
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    KrisLibrary::loggerWait();
   }
 }
 
@@ -218,8 +217,8 @@ void GetMinimalRotation(const Vector3& x,const Vector3& y,Matrix3& R)
     Real cosAngle = dot(x,y);
     if(cosAngle > 1.0 || cosAngle < -1.0) {
       if(!FuzzyEquals(cosAngle,1.0) && !FuzzyEquals(cosAngle,-1.0)) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"GetMinimalRotation: Warning: vectors aren't normalized?"<<"\n");
-	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"GetMinimalRotation: Warning: vectors aren't normalized?");
+	KrisLibrary::loggerWait();
       }
       aa.angle=Acos(Clamp(cosAngle,-1.0,1.0));
     } 
@@ -382,9 +381,9 @@ void QuaternionDerivative(const Matrix3& R,const Vector3& z,Quaternion& dq)
     dq.z += v.z*scale;
   }
   else {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Close to pi rotations not done yet"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Close to pi rotations not done yet");
     dq.setZero();
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    KrisLibrary::loggerWait();
   }
 }
 
@@ -436,19 +435,19 @@ Real MatrixAbsoluteAngle(const Matrix3& R)
 {
   Real s=(R.trace() - One)*Half;
   if(!IsFinite(s)) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"MatrixAbsoluteAngle(): Warning- trace of matrix is not finite!"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),R<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MatrixAbsoluteAngle(): Warning- trace of matrix is not finite!");
+    LOG4CXX_ERROR(KrisLibrary::logger(),R);
     Abort();
   }
   if(s >= One) {
     if(s > One+Epsilon) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"MatrixAbsoluteAngle(): Warning- trace of matrix is greater than 3"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MatrixAbsoluteAngle(): Warning- trace of matrix is greater than 3");
     }
     return Zero;
   }
   else if(s <= -One) {
     if(s < -One-Epsilon) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"MatrixAbsoluteAngle(): Warning- trace of matrix is less than -1"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MatrixAbsoluteAngle(): Warning- trace of matrix is less than -1");
     }
     return Pi;
   }

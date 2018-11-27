@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "image.h"
 #include <stdlib.h>
@@ -123,7 +122,7 @@ bool ImportImageTGA(const char* fn, Image& image)
 			image.format = Image::A8R8G8B8;
 			break;
 		default:
-		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.bpp<<" bit targas"<<"\n");
+		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.bpp<<" bit targas");
 		  return false;
 		}
 	}
@@ -141,25 +140,25 @@ bool ImportImageTGA(const char* fn, Image& image)
 			image.format = Image::A8R8G8B8;
 			break;
 		default:
-		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.color_map_bpp<<" bit color-mapped targas"<<"\n");
+		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.color_map_bpp<<" bit color-mapped targas");
 		  return false;
 		}
 	}
 	else
 	{
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read that format targa"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read that format targa");
 	  return false;
 	}
 
 	
 	if(image.pixelBPP() != header.bpp)
 	{
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid bpp in targa file"<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid bpp in targa file");
 	  return false;
 	}
 
 //	if(header.image_descriptor != 0)
-//		LOG4CXX_ERROR(KrisLibrary::logger(),"odd image descriptor, "<<hex<<header.image_descriptor<<"\n");
+//		LOG4CXX_ERROR(KrisLibrary::logger(),"odd image descriptor, "<<hex<<header.image_descriptor);
 
 	//skip over image identification
 	if(header.size_image_identification!= 0)
@@ -185,7 +184,7 @@ bool ImportImageTGA(const char* fn, Image& image)
 	{
 		if(fread(image.data, 1, image.num_bytes, f) != image.num_bytes)
 		{
-		  LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading image, "<<image.num_bytes<<" bytes"<<"\n");
+		  LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading image, "<<image.num_bytes<<" bytes");
 		  return false;
 		}
 	}

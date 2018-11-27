@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Polygon2D.h"
 #include "geometry2d.h"
@@ -398,7 +397,7 @@ int ConvexPolygon2D::planeIntersections(const Plane2D& p,int& e1,int& e2,Real& u
 	e2=i;
       }
       else {
-	LOG4CXX_INFO(KrisLibrary::logger(),"More than 1 intersection???"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"More than 1 intersection???");
 	abort();
       }
       num++;

@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "SelfTest.h"
 #include "Minimization.h"
@@ -41,26 +40,26 @@ namespace Optimization {
     temp.resize(A.n);
     LSQRInterface lsqr;
     if(!lsqr.Solve(A,b)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Failed LSQR solve!"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"A="<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(mA)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"b="<<VectorPrinter(b)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failed LSQR solve!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"A=");
+      LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(mA));
+      LOG4CXX_INFO(KrisLibrary::logger(),"b="<<VectorPrinter(b));
       return;
     }
     x=lsqr.x;
     MatrixEquation eq(mA,b);
     if(!eq.LeastSquares_Cholesky(temp)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Failed cholesky solve!"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"A="<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(mA)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"b="<<VectorPrinter(b)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failed cholesky solve!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"A=");
+      LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(mA));
+      LOG4CXX_INFO(KrisLibrary::logger(),"b="<<VectorPrinter(b));
       return;
     }
 
     if(!x.isEqual(temp,1e-3)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Results differ!"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: "<<VectorPrinter(x)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Cholesky: "<<VectorPrinter(temp)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Results differ!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: "<<VectorPrinter(x));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Cholesky: "<<VectorPrinter(temp));
     }
   }
 
@@ -74,7 +73,7 @@ namespace Optimization {
       RandomSparseMatrix(A,nnz,1);
       RandomVector(b,1);
       
-      LOG4CXX_INFO(KrisLibrary::logger(),"Overconstrained test"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Overconstrained test");
       TestLSQR(A,b);
     }
 
@@ -85,14 +84,14 @@ namespace Optimization {
       RandomSparseMatrix(A,nnz,1);
       RandomVector(b,1);
       
-      LOG4CXX_INFO(KrisLibrary::logger(),"Underconstrained test"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Underconstrained test");
       TestLSQR(A,b);
     }
   }
 
   void NewtonEqualitySelfTest()
   {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Testing equality-constrained Newton solver..."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing equality-constrained Newton solver...");
     Matrix A(2,2);
     Vector b(2);
     Real c;
@@ -117,14 +116,14 @@ namespace Optimization {
     newton.Init();
     int iters=100;
     ConvergenceResult res=newton.Solve(iters);
-    LOG4CXX_INFO(KrisLibrary::logger(),"Result "<<res<<" iters "<<iters<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<VectorPrinter(newton.x)<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"done."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result "<<res<<" iters "<<iters);
+    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<VectorPrinter(newton.x));
+    LOG4CXX_INFO(KrisLibrary::logger(),"done.");
   }
 
   void NewtonInequalitySelfTest()
   {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Testing inequality-constrained Newton solver..."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing inequality-constrained Newton solver...");
     Matrix A(2,2);
     Vector b(2);
     Real c;
@@ -153,9 +152,9 @@ namespace Optimization {
     newton.Init();
     int iters=100;
     ConvergenceResult res=newton.Solve(iters);
-    LOG4CXX_INFO(KrisLibrary::logger(),"Result "<<res<<" iters "<<iters<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<VectorPrinter(newton.x)<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"done."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result "<<res<<" iters "<<iters);
+    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<VectorPrinter(newton.x));
+    LOG4CXX_INFO(KrisLibrary::logger(),"done.");
   }
 
   void LCPSelfTest() {
@@ -171,14 +170,14 @@ namespace Optimization {
       LemkeLCP lcp(A,b);
       lcp.verbose = 3;
       if(!lcp.Solve()) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"LCP didn't solve!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LCP didn't solve!");
 	Abort();
       }
       Vector w,z;
       lcp.GetW(w);
       lcp.GetZ(z);
-      LOG4CXX_INFO(KrisLibrary::logger(),"W: "<<VectorPrinter(w)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Z: "<<VectorPrinter(z)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"W: "<<VectorPrinter(w));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Z: "<<VectorPrinter(z));
     }
     {
       A(0,0) = -1; A(0,1) = -1; A(0,2) = 0;
@@ -190,14 +189,14 @@ namespace Optimization {
       LemkeLCP lcp(A,b);
       lcp.verbose = 3;
       if(!lcp.Solve()) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"LCP didn't solve!"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LCP didn't solve!");
 	Abort();
       }
       Vector w,z;
       lcp.GetW(w);
       lcp.GetZ(z);
-      LOG4CXX_INFO(KrisLibrary::logger(),"W: "<<VectorPrinter(w)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Z: "<<VectorPrinter(z)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"W: "<<VectorPrinter(w));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Z: "<<VectorPrinter(z));
     }
   }
 
@@ -224,7 +223,7 @@ namespace Optimization {
     Assert(res == ConvergenceF || res == ConvergenceX);
 
     //bound-constrained problems up to 20 dimensions
-    LOG4CXX_INFO(KrisLibrary::logger(),"Testing bound-constrained problems..."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing bound-constrained problems...");
     solver.verbose = 0;
     for(int n=2;n<20;n++) {  //setup bound constraints
       //pick a minimum norm problem -- min ||x - x0||

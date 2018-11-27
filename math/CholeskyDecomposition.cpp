@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "CholeskyDecomposition.h"
 #include "backsubstitute.h"
@@ -109,7 +108,7 @@ bool CholeskyDecomposition<T>::setPerturbed(const MatrixT& A,T& lambda)
   }
 
   if(lambda == Zero) return true;
-  LOG4CXX_INFO(KrisLibrary::logger(),"Lambda is "<<lambda<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Lambda is "<<lambda);
 
   for(i=0; i<n; i++) {
     temp = A(i,i);

@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "SVDecomposition.h"
 #include "misc.h"
@@ -398,9 +397,9 @@ void SVDecomposition<T>::nullspaceComponent(const VectorT& x,VectorT& xNull) con
       if(W(j) < epsilon) continue;
       Real UUij = U.dotCol(j,Ui); 
       if(!FuzzyEquals(UUij,Delta(i,j))) {
-	LOG4CXX_INFO(KrisLibrary::logger(),i<<" "<<j<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"Ack, UUij = "<<UUij<<" != "<<Delta(i,j)<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),W(i)<<" "<<W(j)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),i<<" "<<j);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Ack, UUij = "<<UUij<<" != "<<Delta(i,j));
+	LOG4CXX_INFO(KrisLibrary::logger(),W(i)<<" "<<W(j));
       }
       Assert(FuzzyEquals(UUij,Delta(i,j)));
     }
@@ -427,7 +426,7 @@ void SVDecomposition<T>::nullspaceComponent(const VectorT& x,VectorT& xNull) con
   xNull2.inplaceNegative();
 
   xNull2-=xNull;
-  LOG4CXX_INFO(KrisLibrary::logger(),"Difference between 2 approaches: "<<xNull2<<"\n");;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Difference between 2 approaches: "<<xNull2);;
   Assert(xNull2.maxAbsElement() < 1e-5);
   */
 }
@@ -566,9 +565,9 @@ template<> bool RobustSVD<double>::set(const MatrixT& A)
   if(svd.set(Atemp)) 
     return true;
 
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't set SVD of conditioned matrix "<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't set SVD of conditioned matrix ");
   //OutputASCIIShade(cout,Atemp); cout<<endl;
-  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //KrisLibrary::loggerWait();
 
   QRDecomposition<double> QR;
   if(QR.set(Atemp)) {
@@ -585,7 +584,7 @@ template<> bool RobustSVD<double>::set(const MatrixT& A)
     Rsvd.svd.W.setRef(svd.W);
     Rsvd.svd.V.setRef(svd.V);
     if(Rsvd.setConditioned(R)) { 
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Robust svd of QR decomposed matrix succeeded!"<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Robust svd of QR decomposed matrix succeeded!");
       //A' = Q.R = Q.U.W.Vt.Post => U' = Q.U, Post'' = Post.Post'
       MatrixT Q;
       QR.getQ(Q);
@@ -598,9 +597,9 @@ template<> bool RobustSVD<double>::set(const MatrixT& A)
 	getInverse(temp);
 	temp2.mul(A,temp);
 	for(int i=0;i<A.m;i++) if(temp2(i,i) != 0) temp2(i,i) -= 1;
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Robust SVD Error "<<temp2.maxAbsElement()<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Robust SVD Error "<<temp2.maxAbsElement());
       }
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      KrisLibrary::loggerWait();
       */
       return true;
     }
@@ -738,7 +737,7 @@ void RobustSVD<T>::calcConditioning(const MatrixT& A)
   Pre.resize(A.m);
   Post.resize(A.n);
   if(preMultiply && postMultiply) {
-    LOG4CXX_WARN(KrisLibrary::logger(),"RobustSVD: Warning, using both pre/postmultiply aren't done yet"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"RobustSVD: Warning, using both pre/postmultiply aren't done yet");
     for(int i=0;i<A.m;i++) {
       Pre(i) = 0;
       for(int j=0;j<A.n;j++) 
@@ -766,7 +765,7 @@ void RobustSVD<T>::calcConditioning(const MatrixT& A)
     }
   }
   else {
-    //LOG4CXX_WARN(KrisLibrary::logger(),"RobustSVD: Warning, neither pre nor postmultiply are set"<<"\n");
+    //LOG4CXX_WARN(KrisLibrary::logger(),"RobustSVD: Warning, neither pre nor postmultiply are set");
     Pre.set(One);
     Post.set(One);
   }

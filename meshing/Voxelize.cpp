@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Voxelize.h"
 #include "Rasterize.h"
@@ -165,7 +164,7 @@ Real GridCellDensity(const AABB3D& cell,const Plane3D& p)
     LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, numerical error in GridCellDensity");
     LOG4CXX_ERROR(KrisLibrary::logger(),"   point "<<ptOnPlane);
     LOG4CXX_ERROR(KrisLibrary::logger(),"   d="<<d<<", R="<<R);
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    KrisLibrary::loggerWait();
     if(d < -R) return 0;
     else return 1;
   }
@@ -192,7 +191,7 @@ void GetTriangleBuckets(const TriMesh& m,const AABB3D& bb,Array3D<list<int> >& t
     query.expand(tri.c);
     bool q=QueryGrid(triangles,bb,query,lo,hi);
     if(!q) continue;
-    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //KrisLibrary::loggerWait();
     IntTriple index=lo;
     while(index.a <= hi.a) {
       while(index.b <= hi.b) {
@@ -651,14 +650,14 @@ void GetTriangleCells2(const Triangle3D& torig,int m,int n,int p,const AABB3D& b
     if(!cellSet.count(testCells[i])) {
       LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<a<<" "<<b<<" "<<c);
       LOG4CXX_ERROR(KrisLibrary::logger(),"GetTriangleCells2 incorrect: doesnt contain "<<testCells[i]);
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      KrisLibrary::loggerWait();
     }
   }
   for(size_t i=0;i<cells.size();i++) {
     if(!testSet.count(cells[i])) {
       LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<a<<" "<<b<<" "<<c);
       LOG4CXX_ERROR(KrisLibrary::logger(),"GetTriangleCells2 incorrect: contains additional "<<cells[i]);
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      KrisLibrary::loggerWait();
     }
   }
   */
@@ -685,7 +684,7 @@ void SurfaceOccupancyGrid(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb)
     query.expand(tri.c);
     bool q=QueryGrid(occupied,bb,query,lo,hi);
     if(!q) continue;
-    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //KrisLibrary::loggerWait();
     VolumeGridIterator<bool> it(occupied,bb);
     it.setRange(lo,hi);
     for(;!it.isDone();++it) {
@@ -1278,7 +1277,7 @@ struct TriangleClosestPointData
         signedDistance = sign*distance;
       }
       //printf("Warning getchar?\n");
-      //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      //KrisLibrary::loggerWait();
     }
     else {
       //find the triangle that's the most perpendicular to the point
@@ -1390,7 +1389,7 @@ struct TriangleClosestPointData
       Real nnorm = aveNormal.norm();
       if(FuzzyZero(nnorm)) { //norm is zero?!
         LOG4CXX_ERROR(KrisLibrary::logger(),"Voxelize.cpp: Warning: closest point is right at the edge, and the normal of an edge is zero!");
-        if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+        KrisLibrary::loggerWait();
         dir.setZero();
         signedDistance = 0;
       }

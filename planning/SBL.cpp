@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "SBL.h"
 #include <math/random.h>
@@ -29,10 +28,10 @@ void SBLPlanner::Init(const Config& qStart,const Config& qGoal)
   tGoal = new SBLTreeWithIndex(space);
   tStart->Init(qStart);
   tGoal->Init(qGoal);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"SBL: Distance "<<space->Distance(qStart,qGoal)<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"SBL: Distance "<<space->Distance(*tStart,*tGoal)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBL: Distance "<<space->Distance(qStart,qGoal));
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBL: Distance "<<space->Distance(*tStart,*tGoal));
   if(CheckPath(tStart->root,tGoal->root)) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPlanner::Init(): Start and goal connected!"<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPlanner::Init(): Start and goal connected!");
   }
 }
 
@@ -103,7 +102,7 @@ void SBLPlannerWithGrid::Init(const Config& qStart,const Config& qGoal)
     g->A.Randomize(qStart.n,qStart.n,gridDivision);
   }
   if(CheckPath(s->root,g->root)) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPlanner::Init(): Start and goal connected!"<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPlanner::Init(): Start and goal connected!");
   }
 }
 
@@ -191,7 +190,7 @@ int SBLPRT::ExpandTree(int t)
   pair<int,Node*> con=PickConnection(t,n);
   int tg = con.first;
   Node* ng = con.second;
-  if(tg < 0 && ng == NULL) { LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, picked a nonexistent connection"<<"\n"); return -1; }
+  if(tg < 0 && ng == NULL) { LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, picked a nonexistent connection"); return -1; }
 
   MilestonePath* p=roadmap.FindEdge(t,tg);
   Assert(p != NULL);
@@ -199,7 +198,7 @@ int SBLPRT::ExpandTree(int t)
   
   list<EdgeInfo> outputPath;
   if(SBLTree::CheckPath(roadmap.nodes[t],n,roadmap.nodes[tg],ng,outputPath)) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Connecting nodes "<<t<<" to "<<tg<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Connecting nodes "<<t<<" to "<<tg);
     CreateMilestonePath(outputPath,*p);
     ccs.AddEdge(t,tg);
     return tg;
@@ -281,7 +280,7 @@ void SBLPRT::CreatePath(int i,int j,MilestonePath& path)
   roadmap.NewTraversal();
   roadmap._BFS(i,callback);
   if(!callback.found) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"SBLPRT::CreatePath: Warning, a path doesn't exist between nodes "<<i<<" and "<<j<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SBLPRT::CreatePath: Warning, a path doesn't exist between nodes "<<i<<" and "<<j);
     return;
   }
 

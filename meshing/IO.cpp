@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "IO.h"
 #include <locale.h>
@@ -718,7 +717,7 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
   T = Tparent * T;
   //LOG4CXX_INFO(KrisLibrary::logger(),"final: "<<T);
   //if(node->mNumMeshes != 0)
-  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //KrisLibrary::loggerWait();
 
 
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
@@ -745,7 +744,7 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
 	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
 	  LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
 	  //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
-	  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  //KrisLibrary::loggerWait();
 	}
 	
       } else {

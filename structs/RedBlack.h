@@ -1,7 +1,6 @@
 #ifndef REDBLACK_H
 #define REDBLACK_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <iostream>
 #include <assert.h>

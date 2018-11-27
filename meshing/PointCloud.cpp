@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "PointCloud.h"
 #include <iostream>
@@ -402,29 +401,29 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<" x y z";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" "<<propertyNames[i];
-  out<<"\n";
+  out;
   out<<"TYPE";
   if(addxyz)
     out<<" F F F";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" F";
-  out<<"\n";
+  out;
 
   if(!properties.empty())
-    out<<"POINTS "<<properties.size()<<"\n";
+    out<<"POINTS "<<properties.size();
   else 
-    out<<"POINTS "<<points.size()<<"\n";
+    out<<"POINTS "<<points.size();
 
   for(map<string,string>::const_iterator i=settings.begin();i!=settings.end();i++) {
     if(i->first == "pcd_version" || i->first == "file") continue;
     string key = i->first;
     Uppercase(key);
-    out<<key<<" "<<i->second<<"\n";
+    out<<key<<" "<<i->second;
   }
-  out<<"DATA ascii"<<"\n";  
+  out<<"DATA ascii";  
   if(propertyNames.empty()) {
     for(size_t i=0;i<points.size();i++) 
-      out<<points[i]<<"\n";
+      out<<points[i];
   }
   else {
     for(size_t i=0;i<properties.size();i++) {
@@ -432,7 +431,7 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<points[i]<<" ";
       for(int j=0;j<properties[i].n;j++)
     out<<properties[i][j]<<" ";
-      out<<"\n";
+      out;
     }
   }
   return true;

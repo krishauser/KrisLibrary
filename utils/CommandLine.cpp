@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "CommandLine.h"
 #include <assert.h>
@@ -105,26 +104,26 @@ bool CommandBase::ProcessLine()
 {
 	assert(line != NULL);
 	if(line->size() < NumArgs()) {
-		LOG4CXX_INFO(KrisLibrary::logger(),"Not enough arguments to "<<Name()<<"\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Not enough arguments to "<<Name());
 		return false;
 	}
 	int args_remaining = (int)line->size();
 	int j;
 	for(j=0; j<NumArgs(); j++,args_remaining--) {
 		if(!SetArg(j,(*line)[j])) {
-			LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading argument "<<GetArgName(j)<<"="<<(*line)[j]<<" to "<<Name()<<"\n");
+			LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading argument "<<GetArgName(j)<<"="<<(*line)[j]<<" to "<<Name());
 			return false;
 		}
 	}
 	int num_inputs = args_remaining - NumOutputs();
 	if(MaxInputs() >= 0) {
 		if(num_inputs > MaxInputs()) {
-			LOG4CXX_INFO(KrisLibrary::logger(), "The number of max inputs to -" <<Name()<<" was exceeded."<<"\n");
+			LOG4CXX_INFO(KrisLibrary::logger(), "The number of max inputs to -" <<Name()<<" was exceeded.");
 			return false;
 		}
 	}
 	if(num_inputs < MinInputs()) {
-		LOG4CXX_INFO(KrisLibrary::logger(), "Not enough inputs given to -" <<Name()<<"\n");
+		LOG4CXX_INFO(KrisLibrary::logger(), "Not enough inputs given to -" <<Name());
 		return false;
 	}
 	inputs.resize(num_inputs);
@@ -163,10 +162,10 @@ void PrintUsage(const char* appName)
 
 void PrintCommands(CommandBase* commands [], int num_commands)
 {
-	LOG4CXX_INFO(KrisLibrary::logger(), "COMMANDS:"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(), "COMMANDS:");
 	for(int i=0; i<num_commands; i++)
 		commands[i]->PrintDescription(cout);
-	LOG4CXX_INFO(KrisLibrary::logger(),"For more information, type -help commandname"<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"For more information, type -help commandname");
 }
 
 struct CommandHelp : public CommandBase
@@ -187,7 +186,7 @@ struct CommandHelp : public CommandBase
 			}
 		}
 		if(!found_command) {
-			LOG4CXX_INFO(KrisLibrary::logger(),"Unknown command given to help :"<<item_name<<"\n");
+			LOG4CXX_INFO(KrisLibrary::logger(),"Unknown command given to help :"<<item_name);
 			return -1;
 		}
 		return 0;
@@ -258,7 +257,7 @@ int Reader(CommandBase* commands [], int num_commands, int argc, const char** ar
 	}
 	if(command_count == 0) {
 		if(inputs.size() > 0)
-			LOG4CXX_INFO(KrisLibrary::logger(),"Some stray elements were given on the command line"<<"\n");
+			LOG4CXX_INFO(KrisLibrary::logger(),"Some stray elements were given on the command line");
 		PrintCommands(commands, num_commands);
 	}
 	else {

@@ -38,8 +38,6 @@
 
 \**************************************************************************/
 
-#include <log4cxx/logger.h>
-#include <KrisLibrary/Logger.h>
 #include "Tri.h"
 #include "BV.h"
 #include <map>

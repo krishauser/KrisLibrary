@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "TorqueSolver.h"
 #include "NewtonEuler.h"
@@ -142,8 +141,8 @@ void TorqueSolver::FillProblem()
   for(int i=0;i<nPassive;i++) {
     problem.p(i) = problem.q(i) = lhs(passive[i]);
     if(!IsFinite(lhs(passive[i]))) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Uh... lhs is not finite"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"robot.q: "<<robot.q<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Uh... lhs is not finite");
+      LOG4CXX_INFO(KrisLibrary::logger(),"robot.q: "<<robot.q);
     }
     Assert(IsFinite(lhs(passive[i])));
     Assert(problem.ConstraintType(i) == LinearProgram::Fixed);
@@ -247,21 +246,21 @@ bool TorqueSolver::Solve()
   LinearProgram::Result res=problem.Solve(f);
   switch(res) {
   case LinearProgram::Infeasible:
-    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the problem is infeasible!"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the problem is infeasible!");
     //problem.Print();
     return false;
   case LinearProgram::Unbounded:
-    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the problem is unbounded?!?!?"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the problem is unbounded?!?!?");
     {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Writing to temp_lp.txt"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Writing to temp_lp.txt");
       ofstream out("temp_lp.txt");
       problem.lp.Print(out);
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      KrisLibrary::loggerWait();
     }
     Abort();
     return false;
   case LinearProgram::Error:
-    LOG4CXX_ERROR(KrisLibrary::logger(),"TorqueSolve: faced some numerical error..."<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"TorqueSolve: faced some numerical error...");
     return false;
   case LinearProgram::Feasible:
     {
@@ -282,7 +281,7 @@ bool TorqueSolver::Solve()
     }
     return true;
   default:
-    LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here");
     Abort();
     return false;
   }
@@ -297,23 +296,23 @@ bool TorqueSolver::InTorqueBounds()
   //TODO: a break in the objective?
   switch(res) {
   case LinearProgram::Infeasible:
-    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the LP is infeasible!"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the LP is infeasible!");
     //problem.Print();
     return false;
   case LinearProgram::Unbounded:
-    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the LP is unbounded?!?!?"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"TorqueSolve: the LP is unbounded?!?!?");
     {
       //problem.Print(cout);
-      //LOG4CXX_INFO(KrisLibrary::logger(),NumContactPoints(contacts)<<" contacts"<<"\n");
-      //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
-      LOG4CXX_INFO(KrisLibrary::logger(),"Writing to temp_lp.txt"<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),NumContactPoints(contacts)<<" contacts");
+      //KrisLibrary::loggerWait();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Writing to temp_lp.txt");
       ofstream out("temp_lp.txt");
       problem.lp.Print(out);
     }
     //Abort();
     return false;
   case LinearProgram::Error:
-    LOG4CXX_ERROR(KrisLibrary::logger(),"TorqueSolve: faced some numerical error..."<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"TorqueSolve: faced some numerical error...");
     return false;
   case LinearProgram::Feasible:
     {
@@ -332,11 +331,11 @@ bool TorqueSolver::InTorqueBounds()
 	  t(active[i])=temp(i)*robot.torqueMax(active[i]);
       }
       //if(temp.maxAbsElement() > 1)
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Active torque saturations: "<<temp<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Active torque saturations: "<<temp);
       return (temp.maxAbsElement() <= 1);
     }
   default:
-    LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here"<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here");
     Abort();
     return false;
   }

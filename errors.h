@@ -1,7 +1,6 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -25,7 +24,7 @@ void Abort();
 
 inline void __Assert(const char * file, int line, const char * e)
 {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Assertion \""<<e<<"\" failed: file \""<<file<<"\", line "<<line);
+    LOG4CXX_FATAL(KrisLibrary::logger(),"Assertion \""<<e<<"\" failed: file \""<<file<<"\", line "<<line);
   Abort();
 }
 
@@ -47,7 +46,7 @@ inline void RaiseErrorFmt(const char* func, const char* file, int line, const ch
 	va_start(args, fmt);
   char buf[1024];
 	vsnprintf(buf, 1024, fmt, args);
-    LOG4CXX_ERROR(KrisLibrary::logger(),buf);
+    LOG4CXX_FATAL(KrisLibrary::logger(),buf);
   Abort();
 }
 
@@ -58,14 +57,14 @@ inline void RaiseErrorFmt(const char* fmt,...)
 	va_start(args, fmt);
 	char buf[1024];
   vsnprintf(buf, 1024, fmt, args);
-    LOG4CXX_ERROR(KrisLibrary::logger(),buf);
+    LOG4CXX_FATAL(KrisLibrary::logger(),buf);
   Abort();
 }
 
 
 inline void RaiseError(const char* func, const char* file, int line, const char* text)
 {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in "<< func<<" ("<<file<<":"<<line<<"): "<<text); 
+    LOG4CXX_FATAL(KrisLibrary::logger(),"Error in "<< func<<" ("<<file<<":"<<line<<"): "<<text); 
   Abort();
 }
 

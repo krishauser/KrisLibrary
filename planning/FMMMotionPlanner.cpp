@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "FMMMotionPlanner.h"
 #include <utils/indexing.h>
@@ -162,7 +161,7 @@ bool FMMMotionPlanner::SolveFMM()
   bool feasible = true;
   for(size_t i=0;i<pathCheck.edges.size();i++) {
     if(!pathCheck.edges[i]->IsVisible()) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Path check failed on edge "<<pathCheck.edges[i]->Start()<<" -> "<<pathCheck.edges[i]->End()<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Path check failed on edge "<<pathCheck.edges[i]->Start()<<" -> "<<pathCheck.edges[i]->End());
       feasible = false;
       break;
     }

@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "PropertyMap.h"
 #include <errors.h>
@@ -86,12 +85,12 @@ bool PropertyMap::LoadJSON(istream& in)
     }
     EatWhitespace(in);
     if(in.peek() != ':') {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Map missing a colon-separator between key-value pair "<<key<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Map missing a colon-separator between key-value pair "<<key);
       return false;
     }
     in.get();
     if(!ReadString(in,value,",}")) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: couldn't read value for key "<<key<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: couldn't read value for key "<<key);
       return false;
     }
     (*this)[key] = value;
@@ -99,7 +98,7 @@ bool PropertyMap::LoadJSON(istream& in)
     int c = in.get();
     if(c == '}') return true;
     if(c != ',') {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Map entries not separated by commas, character "<<char(c)<<" item "<<size()<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Map entries not separated by commas, character "<<char(c)<<" item "<<size());
       return false;
     }
   }

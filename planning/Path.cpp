@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Path.h"
 #include <math/random.h>
@@ -116,7 +115,7 @@ int MilestonePath::Reduce(int numIters)
       EdgePlannerPtr e_x2b=space->LocalPlanner(x2,b);
       if(e_ax1->IsVisible() && e_x2b->IsVisible()) {
 	numsplices++;
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Visible subsegment "<<i1<<"->"<<i2<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Visible subsegment "<<i1<<"->"<<i2);
 	//replace edges a->a',...,b'->b with a->x1,x1->x2,x2->b
 	edges.erase(edges.begin()+i1,edges.begin()+i2+1);
 
@@ -161,7 +160,7 @@ int MilestonePath::DiscretizeEdge(int i,Real h)
     if(e2->IsVisible()) 
       replacement.edges.push_back(e2);
     else {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, reparameterized edge "<<i<<" is infeasible"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, reparameterized edge "<<i<<" is infeasible");
       replacement.edges.push_back(e2);
     }
     u += du;
@@ -187,7 +186,7 @@ void MilestonePath::DiscretizeEdge(int i,const vector<Real>& u)
     if(e2->IsVisible()) 
       replacement.edges.push_back(e2);
     else {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, reparameterized edge "<<i<<" is infeasible"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, reparameterized edge "<<i<<" is infeasible");
       replacement.edges.push_back(e2);
     }
     x1 = x2;

@@ -1,7 +1,6 @@
 #ifndef ANY_MOTION_PLANNER_H
 #define ANY_MOTION_PLANNER_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 

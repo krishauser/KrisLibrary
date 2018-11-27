@@ -1,7 +1,6 @@
 #ifndef RESOURCE_LIBRARY_H
 #define RESOURCE_LIBRARY_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "AnyCollection.h"
 #include <memory>

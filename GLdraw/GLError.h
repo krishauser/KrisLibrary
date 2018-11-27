@@ -1,7 +1,6 @@
 #ifndef GLDRAW_GL_ERROR_H
 #define GLDRAW_GL_ERROR_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "GL.h"
 

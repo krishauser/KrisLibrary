@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "KinodynamicPath.h"
 #include "KinodynamicSpace.h"
@@ -98,9 +97,9 @@ void KinodynamicMilestonePath::Append(const ControlInput& u,const std::shared_pt
 {
   if(!milestones.empty()) {
     if(path->Start() != milestones.back()) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"KinodynamicMilestonePath::Append: incorrect starting point"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),path->Start()<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),milestones.back()<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"KinodynamicMilestonePath::Append: incorrect starting point");
+      LOG4CXX_INFO(KrisLibrary::logger(),path->Start());
+      LOG4CXX_INFO(KrisLibrary::logger(),milestones.back());
     }
   }
   Assert(path->Start() == milestones.back());
@@ -144,28 +143,28 @@ bool KinodynamicMilestonePath::IsValid() const
   for(size_t i=0;i<paths.size();i++) {
     if(paths[i]->Start() != milestones[i]) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: path "<<i);
-      LOG4CXX_ERROR(KrisLibrary::logger(),paths[i]->Start()<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i]<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),paths[i]->Start());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i]);
       return false;
     }
     if(paths[i]->End() != milestones[i+1]) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: path "<<i);
-      LOG4CXX_ERROR(KrisLibrary::logger(),paths[i]->End()<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i+1]<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),paths[i]->End());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i+1]);
       return false;
     }
   }
   for(size_t i=0;i<edges.size();i++) {
     if(edges[i]->Start() != milestones[i]) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: edge planner "<<i);
-      LOG4CXX_ERROR(KrisLibrary::logger(),edges[i]->Start()<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i]<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),edges[i]->Start());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i]);
       return false;
     }
     if(edges[i]->End() != milestones[i+1]) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: edge planner "<<i);
-      LOG4CXX_ERROR(KrisLibrary::logger(),edges[i]->End()<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i+1]<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),edges[i]->End());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i+1]);
       return false;
     }
   }
@@ -351,7 +350,7 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
   if(t <= milestones.front()(timeIndex) || edges.empty()) {
     if(t < milestones.front()(timeIndex)) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, can't properly split before the beginning of a path\n");
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      KrisLibrary::loggerWait();
     }
     before.Clear();
     before.milestones.resize(1);

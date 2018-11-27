@@ -1,7 +1,6 @@
 #ifndef DISPLACEMENT_PLANNER_H
 #define DISPLACEMENT_PLANNER_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 #include <KrisLibrary/utils/Subset.h>

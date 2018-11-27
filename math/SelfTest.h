@@ -1,7 +1,6 @@
 #ifndef MATH_SELF_TEST_H
 #define MATH_SELF_TEST_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "math.h"
 #include "vector.h"

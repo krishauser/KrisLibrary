@@ -1,7 +1,7 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "MonotoneChain.h"
 #include <iostream>
+#include <sstream>
 using namespace Geometry;
 using namespace std;
 
@@ -31,11 +31,12 @@ Real XMonotoneChain::eval(Real x) const
       return eval_y(v[i],v[i+1],x);
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here"<<"\n");
+  LOG4CXX_FATAL(KrisLibrary::logger(),"Shouldn't get here");
+  stringstream ss;
   for(size_t i=0;i<v.size();i++)
-    LOG4CXX_INFO(KrisLibrary::logger(),v[i]<<", ");
-  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"x is "<<x<<"\n");
+    ss<<v[i]<<", ";
+  LOG4CXX_FATAL(KrisLibrary::logger(),ss.str());
+  LOG4CXX_FATAL(KrisLibrary::logger(),"x is "<<x);
   abort();
   return 0;
 }
@@ -43,14 +44,14 @@ Real XMonotoneChain::eval(Real x) const
 bool XMonotoneChain::isValid() const
 {
   for(size_t i=0;i+1<v.size();i++) {
-    if(IsNaN(v[i].x) || IsNaN(v[i].y)) { LOG4CXX_INFO(KrisLibrary::logger(),"NaN!"<<"\n"); return false; }
+    if(IsNaN(v[i].x) || IsNaN(v[i].y)) { LOG4CXX_INFO(KrisLibrary::logger(),"NaN!"); return false; }
     if(!Lexical2DOrder(v[i],v[i+1])) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Not in lexical order!"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),v[i]<<" -> "<<v[i+1]<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Not in lexical order!");
+      LOG4CXX_INFO(KrisLibrary::logger(),v[i]<<" -> "<<v[i+1]);
       return false;
     }
   }
-  if(IsNaN(v.back().x) || IsNaN(v.back().y)) { LOG4CXX_INFO(KrisLibrary::logger(),"NaN!"<<"\n"); return false; }
+  if(IsNaN(v.back().x) || IsNaN(v.back().y)) { LOG4CXX_INFO(KrisLibrary::logger(),"NaN!"); return false; }
   return true;
 }
 
@@ -93,8 +94,8 @@ void XMonotoneChain::upperEnvelope(const XMonotoneChain& e)
 if(z.empty()) z.push_back(x); \
 else if(!z.back().isEqual(x,Epsilon)) { \
   if(!Lexical2DOrder(z.back(),x)) { \
-    LOG4CXX_INFO(KrisLibrary::logger(),"Out of order addition to z"<<"\n"); \
-    LOG4CXX_INFO(KrisLibrary::logger(),z.back()<<", "<<x<<"\n"); \
+    LOG4CXX_FATAL(KrisLibrary::logger(),"Out of order addition to z"); \
+    LOG4CXX_FATAL(KrisLibrary::logger(),z.back()<<", "<<x); \
   } \
   assert(Lexical2DOrder(z.back(),x)); \
   z.push_back(x); \
@@ -149,9 +150,9 @@ else if(!z.back().isEqual(x,Epsilon)) { \
 	  ADDPOINT(p);
 	}
 	else {
-	  LOG4CXX_INFO(KrisLibrary::logger(),"intersection point "<<p<<" violates the order: "<<"\n");
-	  LOG4CXX_INFO(KrisLibrary::logger(),s1.a<<" -> "<<s1.b<<"\n");
-	  LOG4CXX_INFO(KrisLibrary::logger(),s2.a<<" -> "<<s2.b<<"\n");
+	  LOG4CXX_FATAL(KrisLibrary::logger(),"intersection point "<<p<<" violates the order: ");
+	  LOG4CXX_FATAL(KrisLibrary::logger(),s1.a<<" -> "<<s1.b);
+	  LOG4CXX_FATAL(KrisLibrary::logger(),s2.a<<" -> "<<s2.b);
 	  abort();
 	}
       }
@@ -220,16 +221,16 @@ else if(!z.back().isEqual(x,Epsilon)) { \
     if(x >= v.front().x && x <= v.back().x) {
       y1=f.eval(x); y2=eval(x);
       if(!(y1+0.001 >= y2)) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MonotoneChain.upperEnvelope()!"<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),y1<<" < "<<y2<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MonotoneChain.upperEnvelope()!");
+	LOG4CXX_INFO(KrisLibrary::logger(),y1<<" < "<<y2);
       }
       assert(y1+0.001 >= y2);
     }
     if(x >= w.front().x && x <= w.back().x) {
       y1=f.eval(x); y2=e.eval(x);
       if(!(y1+0.001 >= y2)) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MonotoneChain.upperEnvelope()!"<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),y1<<" < "<<y2<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MonotoneChain.upperEnvelope()!");
+	LOG4CXX_INFO(KrisLibrary::logger(),y1<<" < "<<y2);
       }
       assert(y1+0.001 >= y2);
     }
@@ -272,6 +273,5 @@ void XMonotoneChain::SelfTest()
   for(size_t i=0;i<c1.v.size();i++) {
     LOG4CXX_INFO(KrisLibrary::logger(),c1.v[i]<<", ");
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  KrisLibrary::loggerWait();
 }

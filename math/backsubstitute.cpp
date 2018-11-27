@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "backsubstitute.h"
 #include "complex.h"
@@ -26,7 +25,7 @@ bool UBackSubstitute(const MatrixTemplate<T>& a, const VectorTemplate<T>& b, Vec
 			sum-=a(i,j)*x[j];
 		if(aii == 0) {
 		  if(!FuzzyZero(sum,(T)kBackSubZeroTolerance)) {
-		    //LOG4CXX_ERROR(KrisLibrary::logger(),"UBackSubstitute: dividing by zero: "<<sum<<"/"<<aii<<"\n");
+		    //LOG4CXX_ERROR(KrisLibrary::logger(),"UBackSubstitute: dividing by zero: "<<sum<<"/"<<aii);
 		    return false;
 		  }
 		  x[i]=0;
@@ -54,8 +53,8 @@ bool LBackSubstitute(const MatrixTemplate<T>& a, const VectorTemplate<T>& b, Vec
 			sum-=a(i,j)*x[j];
 		if(aii == 0) {
 		  if(!FuzzyZero(sum,(T)kBackSubZeroTolerance)) {
-		    //LOG4CXX_ERROR(KrisLibrary::logger(),"LBackSubstitute: dividing by zero: "<<sum<<"/"<<aii<<"\n");
-		    //LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(a)<<"\n");
+		    //LOG4CXX_ERROR(KrisLibrary::logger(),"LBackSubstitute: dividing by zero: "<<sum<<"/"<<aii);
+		    //LOG4CXX_ERROR(KrisLibrary::logger(),MatrixPrinter(a));
 		    return false;
 		  }
 		  x[i]=0;
@@ -83,7 +82,7 @@ bool LtBackSubstitute(const MatrixTemplate<T>& a, const VectorTemplate<T>& b, Ve
 			sum-=a(j,i)*x[j];
 		if(aii == 0) {
 		  if(!FuzzyZero(sum,(T)kBackSubZeroTolerance)) {
-		    //LOG4CXX_ERROR(KrisLibrary::logger(),"LtBackSubstitute: dividing by zero: "<<sum<<"/"<<aii<<"\n");
+		    //LOG4CXX_ERROR(KrisLibrary::logger(),"LtBackSubstitute: dividing by zero: "<<sum<<"/"<<aii);
 		    return false;
 		  }
 		  x[i]=0;

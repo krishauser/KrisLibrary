@@ -1,7 +1,6 @@
 #ifndef GRAPH_PATH_H
 #define GRAPH_PATH_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <vector>
 #include <list>

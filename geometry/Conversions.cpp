@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Conversions.h"
 #include "CollisionMesh.h"
@@ -163,8 +162,8 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real
 	grid.bb.bmax = center + 0.5*size;
 	if(m*n*p > 100000000) {
 				LOG4CXX_ERROR(KrisLibrary::logger(),"FitGridToBB: Warning, creating a volume grid of resolution "<<resolution<<" will create "<<m*n*p);
-				LOG4CXX_ERROR(KrisLibrary::logger(),"  Press enter to continue\n");
-		if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+				LOG4CXX_ERROR(KrisLibrary::logger(),"  Press enter to continue");
+		KrisLibrary::loggerWait();
 	}
 	grid.Resize(m,n,p);
 }
@@ -237,11 +236,11 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 				nhit ++;
 				s.a = r.source;
 				s.b = pt + (truncationCellCount*resolution)*d;
-				//LOG4CXX_INFO(KrisLibrary::logger(),"source "<<r.source<<" direction "<<r.direction<<"\n");
-				//LOG4CXX_INFO(KrisLibrary::logger(),"Hit point "<<pt<<"\n");
+				//LOG4CXX_INFO(KrisLibrary::logger(),"source "<<r.source<<" direction "<<r.direction);
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Hit point "<<pt);
 				Meshing::GetSegmentCells(s,grid.value.m,grid.value.n,grid.value.p,grid.bb,cells);
-				//LOG4CXX_INFO(KrisLibrary::logger(),"segment "<<s.a<<" -> "<<s.b<<"\n");
-				//LOG4CXX_INFO(KrisLibrary::logger(),"Bbox "<<grid.bb<<"\n");
+				//LOG4CXX_INFO(KrisLibrary::logger(),"segment "<<s.a<<" -> "<<s.b);
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Bbox "<<grid.bb);
 				//LOG4CXX_INFO(KrisLibrary::logger(),"Segment up to "<<5*resolution<<" depth hits "<<cells.size());
 				for(size_t i=0;i<cells.size();i++) {
 					//grid.GetCellCenter(cells[i].a,cells[i].b,cells[i].c,c);
@@ -275,10 +274,10 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 							occupancy(cells[i]) += 1;
 					}
 
-					//LOG4CXX_INFO(KrisLibrary::logger(),cell.bmin<<" -> "<<cell.bmax<<"\n");
+					//LOG4CXX_INFO(KrisLibrary::logger(),cell.bmin<<" -> "<<cell.bmax);
 					//LOG4CXX_INFO(KrisLibrary::logger(),"Cell "<<c.x<<" "<<c.y<<" "<<c.z<<", point "<<pt.x<<" "<<pt.y<<" "<<pt.z<<", old distance "<<v<<" new distance "<<distance);
 					//LOG4CXX_INFO(KrisLibrary::logger(),"Weight "<<weight);
-					//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+					//KrisLibrary::loggerWait();
 					//assert(s.distance(c) < cellResolution);
 					
 					//LOG4CXX_INFO(KrisLibrary::logger(),"Distance to segment: "<<s.distance(c));
@@ -308,7 +307,7 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 					}
 					*/
 				}
-				//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+				//KrisLibrary::loggerWait();
 			}
 			else {
 				//carve through free space

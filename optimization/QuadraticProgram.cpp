@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "QuadraticProgram.h"
 #include "LinearProgram.h"
@@ -34,10 +33,10 @@ Real SumOfSquaredEquality(const Matrix& A,const Vector& b,const Vector& x)
 
 void QuadraticProgram::Print(ostream& out) const
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"min 1/2 x^T A x + x^T b with A="<<"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(Pobj)<<"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"and b="<<VectorPrinter(qobj)<<"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"s.t."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"min 1/2 x^T A x + x^T b with A=");
+  LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(Pobj));
+  LOG4CXX_INFO(KrisLibrary::logger(),"and b="<<VectorPrinter(qobj));
+  LOG4CXX_INFO(KrisLibrary::logger(),"s.t.");
   LinearConstraints::Print(out);
 }
 

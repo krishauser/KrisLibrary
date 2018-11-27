@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 #include "PointLocation.h"
@@ -558,7 +557,7 @@ TreeRoadmapPlanner::Node* PerturbationTreePlanner::AddMilestone(const Config& x)
 void PerturbationTreePlanner::GenerateConfig(Config& x)
 {
   if(milestones.empty()) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"PerturbationTreePlanner::GenerateConfig(): No nodes to choose from!"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PerturbationTreePlanner::GenerateConfig(): No nodes to choose from!");
     space->Sample(x);
   }
   else {
@@ -682,7 +681,7 @@ void BidirectionalRRTPlanner::CreatePath(MilestonePath& p) const
       p.edges.push_back(e);
     }
     else {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Hmm... edge doesn't have node as its start or its goal!"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Hmm... edge doesn't have node as its start or its goal!");
       Abort();
     }
   }

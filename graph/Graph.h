@@ -1,7 +1,6 @@
 #ifndef GRAPH_GRAPH_H
 #define GRAPH_GRAPH_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Callback.h"
 #include "Node.h"

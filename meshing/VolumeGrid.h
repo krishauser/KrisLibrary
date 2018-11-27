@@ -1,7 +1,6 @@
 #ifndef VOLUME_GRID_H
 #define VOLUME_GRID_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/structs/array3d.h>
 #include <KrisLibrary/math3d/AABB3D.h>

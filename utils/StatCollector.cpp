@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "StatCollector.h"
 #include <limits>
@@ -272,9 +271,9 @@ void SaveRecurse(ostream& out,const string& name,const StatDatabase::Data& data,
 
 bool LoadRecurse(istream& in,string& name,StatDatabase::Data& data,int indent)
 {
-  if(!InputQuotedString(in,name)) { LOG4CXX_INFO(KrisLibrary::logger(),"Failed to load name"<<"\n"); return false; }
+  if(!InputQuotedString(in,name)) { LOG4CXX_INFO(KrisLibrary::logger(),"Failed to load name"); return false; }
   in>>data.count;
-  if(!data.value.Load(in))  { LOG4CXX_INFO(KrisLibrary::logger(),"Failed to load value for "<<name<<"\n"); return false; }
+  if(!data.value.Load(in))  { LOG4CXX_INFO(KrisLibrary::logger(),"Failed to load value for "<<name); return false; }
 
   EatWhitespace(in);
   int c = in.get();
@@ -310,7 +309,7 @@ bool StatDatabase::Load(istream& in)
   string temp;
   if(LoadRecurse(in,temp,root,0)) {
     if(temp != "StatDatabase") {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"StatDatabase::Load(): Warning, root is not set to \"StatDatabase\""<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"StatDatabase::Load(): Warning, root is not set to \"StatDatabase\"");
     }
     return true;
   }

@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "PrimitiveValue.h"
 #include <iostream>
@@ -221,7 +220,7 @@ istream& operator >> (istream& in,PrimitiveValue& v)
   int c=in.peek();
   if(c=='\"') {
     if(!InputQuotedString(in,v.sValue)) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading a quoted string"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading a quoted string");
       in.setstate(ios::badbit);
       return in;
     }
@@ -236,7 +235,7 @@ istream& operator >> (istream& in,PrimitiveValue& v)
       c=in.peek();
       if(in.eof()) break;
       else if(!in) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"End of file read while reading a value"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"End of file read while reading a value");
 	in.setstate(ios::badbit);
 	return in;
       }

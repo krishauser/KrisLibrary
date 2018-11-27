@@ -1,7 +1,6 @@
 #ifndef UTILS_ASYNC_IO
 #define UTILS_ASYNC_IO
 
-#include <log4cxx/logger.h>
 #include <string>
 #include <vector>
 #include <list>

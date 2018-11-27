@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "VolumeGrid.h"
 #include <iostream>
@@ -247,15 +246,15 @@ T VolumeGridTemplate<T>::MinimumFreeInterpolate(const Vector3& pt) const
   Real vmax = ::Max(::Max(::Max(v111,v112),::Max(v121,v122)),
 		    ::Max(::Max(v211,v212),::Max(v221,v222)));
   if(val < vmin-Epsilon || val > vmax+Epsilon) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MinimumFreeInterpolate!"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Params "<<u<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Tetrahedron Params "<<up<<" "<<back<<" "<<across<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MinimumFreeInterpolate!");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Params "<<u);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Tetrahedron Params "<<up<<" "<<back<<" "<<across);
+    KrisLibrary::loggerWait();
   }
   Assert(centerValue >= vmin-Epsilon && centerValue <= vmax+Epsilon);
   Assert(faceCenterValue >= vmin-Epsilon && faceCenterValue <= vmax+Epsilon);

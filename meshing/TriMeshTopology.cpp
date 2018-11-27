@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "TriMeshTopology.h"
 #include <set>
@@ -107,7 +106,7 @@ void TriMeshWithTopology::CalcTriNeighbors()
     LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: mesh has "<<numDuplicateNeighbors<<" triangles with duplicate neighbors!");
     LOG4CXX_WARN(KrisLibrary::logger(),"  Triangle range "<<duplicateNeighborMin<<" to "<<duplicateNeighborMax);
     LOG4CXX_WARN(KrisLibrary::logger(),"  May see strange results for some triangle mesh operations");
-    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //KrisLibrary::loggerWait();
   }
 }
 

@@ -28,7 +28,6 @@
  * 
  ***************************************************************************/
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "ParabolicRamp.h"
 #include "ParabolicRampConfig.h"
@@ -48,7 +47,7 @@ static bool gMinAccelQuiet = false;
 //a flag used to stop SolveMinTime2 from complaining during internal testing
 static bool gMinTime2Quiet = false;
 
-void DoGetchar() { LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue...\n"); if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar(); }
+void DoGetchar() { LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue...\n"); KrisLibrary::loggerWait(); }
 
 //solves the quadratic formula and returns the number of roots found
 int quadratic(Real a, Real b, Real c, Real& x1, Real& x2)
@@ -482,7 +481,7 @@ Real PPRamp::Accel(Real t) const
 bool PPRamp::SolveMinTime(Real amax)
 {
   Real tpn = CalcTotalTime(amax), tnp = CalcTotalTime(-amax);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Time for parabola +-: "<<tpn<<", parabola -+: "<<tnp<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Time for parabola +-: "<<tpn<<", parabola -+: "<<tnp);
   if(tpn >= 0) {
     if(tnp >= 0 && tnp < tpn) {
       a = -amax;
@@ -618,7 +617,7 @@ bool PPRamp::SolveMinAccel(Real endTime)
   Real switch1,switch2;
   Real apn = CalcMinAccel(endTime,1.0,switch1);
   Real anp = CalcMinAccel(endTime,-1.0,switch2);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Accel for parabola +-: "<<apn<<", parabola -+: "<<anp<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Accel for parabola +-: "<<apn<<", parabola -+: "<<anp);
   if(apn >= 0) {
     if(anp >= 0 && anp < apn)  a = -anp;
     else a = apn;
@@ -1075,8 +1074,8 @@ Real PLPRamp::CalcMinAccel(Real endTime,Real v) const
   //Real t2mt1 = 0.5*(Sqr(dx1) + Sqr(dx0))/(v*a) - v/a + (x1 - x0)/v;
   Real t2mt1 = (y2-y1)/v;
   Real vold = v;
-  //LOG4CXX_INFO(KrisLibrary::logger(),"EndTime "<<endTime<<", v "<<v<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"a = "<<a<<", t1="<<t1<<", t2mt1="<<t2mt1<<", t2mT="<<t2mT<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"EndTime "<<endTime<<", v "<<v);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"a = "<<a<<", t1="<<t1<<", t2mt1="<<t2mt1<<", t2mT="<<t2mT);
   if(t1 < 0 || t2mT > 0 || t2mt1 < 0) return Inf;
   if(!IsFinite(t1) || !IsFinite(t2mT)) return Inf;
   */
@@ -1121,7 +1120,7 @@ bool PLPRamp::SolveMinTime2(Real amax,Real vmax,Real timeLowerBound)
   Real t2 = CalcTotalTime(-amax,vmax);
   Real t3 = CalcTotalTime(amax,-vmax);
   Real t4 = CalcTotalTime(-amax,-vmax);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Time for PLP ++-: "<<t1<<", -++: "<<t2<<", +--: "<<t3<<", --+: "<<t4<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Time for PLP ++-: "<<t1<<", -++: "<<t2<<", +--: "<<t3<<", --+: "<<t4);
   ttotal = Inf;
   if(t1 >= timeLowerBound && t1 < ttotal) {
     a = amax;
@@ -1403,8 +1402,8 @@ bool ParabolicRamp1D::SolveMinAccel(Real endTime,Real vmax)
   bool plpres = false;
   if(!IsInf(vmax))
     plpres = plp.SolveMinAccel(endTime,vmax);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"PP a: "<<pp.a<<", max vel "<<pp.MaxVelocity()<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"PLP a: "<<plp.a<<", vel "<<plp.v<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PP a: "<<pp.a<<", max vel "<<pp.MaxVelocity());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PLP a: "<<plp.a<<", vel "<<plp.v);
   a1 = Inf;
   if(pres && FuzzyEquals(endTime,p.ttotal,EpsilonT) && Abs(p.MaxVelocity()) <= vmax) {
     if(FuzzyEquals(p.Evaluate(endTime),x1,EpsilonX) && FuzzyEquals(p.Derivative(endTime),dx1,EpsilonV)) {
@@ -1534,9 +1533,9 @@ bool ParabolicRamp1D::SolveMinTime(Real amax,Real vmax)
   bool plpres = false;
   if(!IsInf(vmax))
     plpres = plp.SolveMinTime(amax,vmax);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"P time: "<<p.ttotal<<", accel "<<p.a<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"PP time: "<<pp.ttotal<<", max vel "<<pp.MaxVelocity()<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"PLP time: "<<plp.ttotal<<", vel "<<plp.v<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"P time: "<<p.ttotal<<", accel "<<p.a);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PP time: "<<pp.ttotal<<", max vel "<<pp.MaxVelocity());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PLP time: "<<plp.ttotal<<", vel "<<plp.v);
   ttotal = Inf;
   if(pres && Abs(p.a) <= amax+EpsilonA && p.ttotal < ttotal) {
     if(Abs(p.a) <= amax) {
@@ -1596,7 +1595,7 @@ bool ParabolicRamp1D::SolveMinTime(Real amax,Real vmax)
     return false;
   }
   a2 = -a1;
-  //LOG4CXX_INFO(KrisLibrary::logger(),"switch time 1: "<<tswitch1<<", 2: "<<tswitch2<<", total "<<ttotal<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"switch time 1: "<<tswitch1<<", 2: "<<tswitch2<<", total "<<ttotal);
   if(gValidityCheckLevel >= 2) {
     if(!IsValid()) {
       if(gVerbose >= 1) {
@@ -1626,9 +1625,9 @@ bool ParabolicRamp1D::SolveMinTime2(Real amax,Real vmax,Real tLowerBound)
   bool plpres = false;
   if(!IsInf(vmax))
     plpres = plp.SolveMinTime2(amax,vmax,tLowerBound);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"P time: "<<p.ttotal<<", accel "<<p.a<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"PP time: "<<pp.ttotal<<", max vel "<<pp.MaxVelocity()<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"PLP time: "<<plp.ttotal<<", vel "<<plp.v<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"P time: "<<p.ttotal<<", accel "<<p.a);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PP time: "<<pp.ttotal<<", max vel "<<pp.MaxVelocity());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PLP time: "<<plp.ttotal<<", vel "<<plp.v);
   ttotal = Inf;
   if(pres && Abs(p.a) <= amax+EpsilonA && p.ttotal < ttotal && p.ttotal >= tLowerBound) {
     if(Abs(p.a) <= amax) {
@@ -1693,7 +1692,7 @@ bool ParabolicRamp1D::SolveMinTime2(Real amax,Real vmax,Real tLowerBound)
     return false;
   }
   a2 = -a1;
-  //LOG4CXX_INFO(KrisLibrary::logger(),"switch time 1: "<<tswitch1<<", 2: "<<tswitch2<<", total "<<ttotal<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"switch time 1: "<<tswitch1<<", 2: "<<tswitch2<<", total "<<ttotal);
   if(gValidityCheckLevel >= 2) {
     if(!IsValid()) {
       if(gVerbose >= 1) {

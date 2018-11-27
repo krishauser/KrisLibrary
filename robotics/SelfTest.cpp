@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <math/random.h>
 #include <math/VectorPrinter.h>
@@ -84,7 +83,7 @@ struct RotationAxisFunction : public VectorFunction
 
 void TestRotationDiff()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Testing rotation angle differentiation..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing rotation angle differentiation...");
   RotationAngleFunction rf;
   QuaternionRotation r;
   int numTests=100;
@@ -93,14 +92,14 @@ void TestRotationDiff()
     RandRotation(r);
     r.getMatrix(rf.R);
     Real t=0;
-    LOG4CXX_INFO(KrisLibrary::logger(),"Initial matrix angle: "<<rf(t)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Initial matrix angle: "<<rf(t));
     AngleAxisRotation aa; r.getAngleAxis(aa);
-    LOG4CXX_INFO(KrisLibrary::logger(),"Difference between matrix angle and rotation angle: "<<Acos(Clamp(rf.z.dot(aa.axis),-1,1))<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Difference between matrix angle and rotation angle: "<<Acos(Clamp(rf.z.dot(aa.axis),-1,1)));
     if(!TestDeriv(&rf,t,0.001,0.001,1e-2)) {
     }
   }
 
-  LOG4CXX_INFO(KrisLibrary::logger(),"Testing moment rotation differentiation..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing moment rotation differentiation...");
   RotationAxisFunction f;
   for(int i=0;i<numTests;i++) {
     SampleSphere(One,f.a);
@@ -118,7 +117,7 @@ void TestRotations()
 {
   TestRotationDiff();
 
-  LOG4CXX_INFO(KrisLibrary::logger(),"Testing moment rotations..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing moment rotations...");
   Real tol=1e-3;
   Matrix3 Rm,Ra;
   MomentRotation m,m2;
@@ -147,20 +146,20 @@ void TestRotations()
   Assert(Rx.isEqual(RxR,tol));
 
   //singularities
-  LOG4CXX_INFO(KrisLibrary::logger(),"Testing singularities"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing singularities");
   SampleSphere(Pi,m);
   Assert(FuzzyEquals(m.norm(),Pi,tol));
   m.getMatrix(Rm);
   m2.setMatrix(Rm);
   if(!FuzzyEquals(Abs(m.dot(m2)),Pi*Pi,Sqrt(tol))) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in singularity!"<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Rotation "<<m<<" => "<<m2<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Matrix "<<"\n"<<Rm<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in singularity!");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Rotation "<<m<<" => "<<m2);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Matrix "<<Rm<<"\n");
     abort();
   }
 
   //euler angles
-  LOG4CXX_INFO(KrisLibrary::logger(),"Testing Euler angles"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing Euler angles");
   EulerAngleRotation e,e2;
   SampleCube(4,e);
   e.getMatrixXYZ(Rm);
@@ -214,19 +213,19 @@ void TestRLG() {
   JointStructure jschain(chain);
   jschain.Init();
   jschain.SolveRootBounds();
-  LOG4CXX_INFO(KrisLibrary::logger(),"Initial bounds:"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Initial bounds:");
   for(int i=0;i<n;i++) {
     const WorkspaceBound& b=jschain.bounds[i];
-    LOG4CXX_INFO(KrisLibrary::logger(),i<<" is "<<b<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),i<<" is "<<b);
   }
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  KrisLibrary::loggerWait();
   jschain.IntersectWorkspaceBounds(ikgoal);
-  LOG4CXX_INFO(KrisLibrary::logger(),"Bounds:"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Bounds:");
   for(int i=0;i<n;i++) {
     const WorkspaceBound& b=jschain.bounds[i];
-    LOG4CXX_INFO(KrisLibrary::logger(),i<<" is "<<b<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),i<<" is "<<b);
   }
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  KrisLibrary::loggerWait();
 
   vector<IKGoal> ik;
   ik.push_back(ikgoal);
@@ -243,13 +242,13 @@ void TestRLG() {
     chain.links[n-1].GetLocalTransform(chain.q(n-1),Tloc);
     chain.links[n-1].T_World = Tn*Tloc;
 
-    LOG4CXX_INFO(KrisLibrary::logger(),"Q is "<<VectorPrinter(chain.q)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Q is "<<VectorPrinter(chain.q));
     if(!chain.InJointLimits(chain.q)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Chain out of joint limits!"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Chain out of joint limits!");
       abort();
     }
     for(int k=0;k<chain.q.n;k++) {
-      LOG4CXX_INFO(KrisLibrary::logger(),k<<": "<<chain.links[k].T_World.t<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),k<<": "<<chain.links[k].T_World.t);
       Frame3D tp;
       Frame3D tloc,tk;
       if(chain.parents[k]!=-1) {
@@ -262,9 +261,9 @@ void TestRLG() {
     }
     Vector3 p;
     chain.GetWorldPosition(ikgoal.localPosition,ikgoal.link,p);
-    LOG4CXX_INFO(KrisLibrary::logger(),n<<": "<<p<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Goal distance "<<p.distance(ikgoal.endPosition)<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),n<<": "<<p);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Goal distance "<<p.distance(ikgoal.endPosition));
+    KrisLibrary::loggerWait();
   }
 }
 

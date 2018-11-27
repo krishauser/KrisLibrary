@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Arrangement1D.h"
 #include <errors.h>
@@ -212,10 +211,10 @@ Arrangement1D::SortedIntervals::iterator Arrangement1D::LocateInterval(Real x)
   SortedIntervals::iterator i=intervals.upper_bound(x);
   --i;
   if(i->second.interval.first > x || x >= i->second.interval.second) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D: LocateInterval failed"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D: LocateInterval failed");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")");
     i=intervals.upper_bound(x);
-    LOG4CXX_ERROR(KrisLibrary::logger(),"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")");
   }
   Assert(i->second.interval.first <= x && x < i->second.interval.second);
   return i;
@@ -229,10 +228,10 @@ Arrangement1D::SortedIntervals::const_iterator Arrangement1D::LocateInterval(Rea
   SortedIntervals::const_iterator i=intervals.upper_bound(x);
   --i;
   if(i->second.interval.first > x || x >= i->second.interval.second) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D: LocateInterval failed"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D: LocateInterval failed");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")");
     i=intervals.upper_bound(x);
-    LOG4CXX_ERROR(KrisLibrary::logger(),"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"upper bounded interval = ["<<i->second.interval.first<<", "<<i->second.interval.second<<")");
   }
   Assert(i->second.interval.first <= x && x < i->second.interval.second);
   return i;
@@ -241,8 +240,8 @@ Arrangement1D::SortedIntervals::const_iterator Arrangement1D::LocateInterval(Rea
 void Arrangement1D::Split(SortedIntervals::iterator interval,Real x)
 {
   if(x <= interval->second.interval.first || x >= interval->second.interval.second) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D::Split(): interval doesn't contain x"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<interval->second.interval.first<<", "<<interval->second.interval.second<<")"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Arrangement1D::Split(): interval doesn't contain x");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"x = "<<x<<", interval = ["<<interval->second.interval.first<<", "<<interval->second.interval.second<<")");
   }
   Assert(x > interval->second.interval.first && x < interval->second.interval.second);
   Real right = interval->second.interval.second;

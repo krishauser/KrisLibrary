@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "ResourceLibrary.h"
 #include "AnyCollection.h"
@@ -238,7 +237,7 @@ bool ResourceLibrary::Save(TiXmlElement* root)
       }
       else {
 	if(!i->second[j]->Save()) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::SaveXml(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::SaveXml(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName);
 	  res=false;
 	  delete c;
 	}
@@ -280,12 +279,12 @@ bool ResourceLibrary::Save(AnyCollection& c)
 	c[k]["name"] = i->second[j]->name;
 	c[k]["file"] = i->second[j]->fileName;
 	if(!i->second[j]->Save()) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to "<<i->second[j]->fileName);
 	  return false;
 	}
       }
       else {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to AnyCollection or file"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary::Save(): "<<i->second[j]->name<<" failed to save to AnyCollection or file");
 	return false;
       }
     }
@@ -539,7 +538,7 @@ bool ResourceLibrary::LoadAll(const string& dir)
       swap(knownTypes,sublib.knownTypes);
       swap(loaders,sublib.loaders);
       if(!sublib.LoadAll(filepath)) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load sub-directory "<<filepath<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load sub-directory "<<filepath);
 	res = false;
       }
       for(Map::iterator j=sublib.itemsByName.begin();j!=sublib.itemsByName.end();j++) {
@@ -553,7 +552,7 @@ bool ResourceLibrary::LoadAll(const string& dir)
     }
     else {
       if(LoadItem(filepath) == NULL) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load file "<<filepath<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load file "<<filepath);
 	res = false;
       }
     }
@@ -576,7 +575,7 @@ bool ResourceLibrary::LazyLoadAll(const string& dir)
     string ext=FileExtension(fn);
     Map::iterator it=loaders.find(ext);
     if(it == loaders.end()) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load file "<<fn<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load file "<<fn);
       res = false;
       continue;
     }

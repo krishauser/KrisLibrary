@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "CSpaceHelpers.h"
 #include "CSetHelpers.h"
@@ -787,7 +786,7 @@ void OptimizeTestingOrder(const vector<AdaptiveCSpace::PredicateStats>& stats,co
   for(size_t i=0;i<order.size();i++) 
     LOG4CXX_INFO(KrisLibrary::logger()," "<<order[i]);
   LOG4CXX_INFO(KrisLibrary::logger(),"\n");
-  //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  //KrisLibrary::loggerWait();
   */
 }
 

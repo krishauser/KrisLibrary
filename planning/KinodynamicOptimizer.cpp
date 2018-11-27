@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "KinodynamicOptimizer.h"
 #include <KrisLibrary/math/random.h>
@@ -503,7 +502,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     Ak.mul(bestPath.milestones[i+1],costGradX);
     costGradX *= 2;
     costGradX += bk;
-    LOG4CXX_INFO(KrisLibrary::logger(),"Cost gradient w.r.t. x: "<<costGradX<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Cost gradient w.r.t. x: "<<costGradX);
 
     SimulateFunction fi(space,bestPath.milestones[i]);
     fi.PreEval(bestPath.controls[i]);
@@ -526,7 +525,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     temp2.mulTransposeA(fugrad,temp);
     d2J += temp2;
 
-    LOG4CXX_INFO(KrisLibrary::logger(),d2J<<"\n"<<"* du + "<<dJ<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),d2J<<"* du + "<<dJ<<"\n");
 
     //damping helps singular matrices
     for(int j=0;j<d2J.n;j++)
@@ -544,7 +543,7 @@ bool KinodynamicLocalOptimizer::DoDDP()
     if(du[i].norm() > optimizer->trustRegionSize)
       du[i] *= optimizer->trustRegionSize / du[i].norm();
       */
-    LOG4CXX_INFO(KrisLibrary::logger(),"Du "<<i<<": "<<du[i]<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Du "<<i<<": "<<du[i]);
     //now that u[i] moves to u[i] + du[i], compute 2nd order approximation to the cost as a function of x[i].  Store in Ak, bk 
     Vector xnext;
     Vector u = bestPath.controls[i]+du[i];

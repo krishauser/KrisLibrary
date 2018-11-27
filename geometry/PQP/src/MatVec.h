@@ -41,10 +41,8 @@
 #ifndef PQP_MATVEC_H
 #define PQP_MATVEC_H
 
-#include <log4cxx/logger.h>
-#include <KrisLibrary/Logger.h>
 #include <math.h>
-#include <stdio.h>
+#include <KrisLibrary/Logger.h>
 #include "PQP_Compile.h"
 
 #ifndef M_PI
@@ -867,7 +865,7 @@ Meigen(PQP_REAL vout[3][3], PQP_REAL dout[3], PQP_REAL a[3][3])
 	}
     }
 
-    LOG4CXX_ERROR(KrisLibrary::logger(), "eigen: too many iterations in Jacobi transform.\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(), "eigen: too many iterations in Jacobi transform.");
 
   return;
 }

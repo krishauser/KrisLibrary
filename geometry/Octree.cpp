@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Octree.h"
 #include <math3d/Sphere3D.h>
@@ -374,7 +373,7 @@ void OctreePointSet::Add(const Vector3& pt,int id)
       if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
 	Split(nindex);
 	//LOG4CXX_INFO(KrisLibrary::logger(),"Split time "<<timer.ElapsedTime());
-	//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	//KrisLibrary::loggerWait();
 	break;
       }
     }

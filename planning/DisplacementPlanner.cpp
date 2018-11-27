@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "DisplacementPlanner.h"
 #include <math/random.h>
@@ -243,11 +242,11 @@ void DisplacementPlanner::Init(const Config& _start,const Config& _goal)
     if(space->displacementSpaces[i]==NULL) {
       if(!roadmap.nodes[0].tests[i].infeasible.empty()) {
 	LOG4CXX_WARN(KrisLibrary::logger(),"Warning, Start configuration violates fixed constraint "<<i);
-	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	KrisLibrary::loggerWait();
       }
       if(!roadmap.nodes[1].tests[i].infeasible.empty()) {
 	LOG4CXX_WARN(KrisLibrary::logger(),"Warning, Goal configuration violates fixed constraint "<<i);
-	if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	KrisLibrary::loggerWait();
       }
     }
 }

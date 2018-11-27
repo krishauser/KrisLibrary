@@ -1,7 +1,6 @@
 #ifndef UTILS_STAT_COLLECTOR_H
 #define UTILS_STAT_COLLECTOR_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/utils.h>
 #include <math.h>

@@ -1,7 +1,6 @@
 #ifndef STATS_INTERVAL_MAP_H
 #define STATS_INTERVAL_MAP_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "statistics.h"
 #include <vector>

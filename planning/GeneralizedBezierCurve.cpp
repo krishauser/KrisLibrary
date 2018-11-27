@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "GeneralizedBezierCurve.h"
 #include <iostream>
@@ -242,13 +241,13 @@ void GeneralizedCubicBezierCurve::Deriv(Real u,Config& dx) const
   }
   /*
   if(u == 1.0) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"End deriv: "<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger()," x0="<<x0<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger()," x1="<<x1<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger()," x2="<<x2<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger()," x3="<<x3<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Result="<<dx<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Ideal="<<(x3-x2)*3.0<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"End deriv: ");
+    LOG4CXX_INFO(KrisLibrary::logger()," x0="<<x0);
+    LOG4CXX_INFO(KrisLibrary::logger()," x1="<<x1);
+    LOG4CXX_INFO(KrisLibrary::logger()," x2="<<x2);
+    LOG4CXX_INFO(KrisLibrary::logger()," x3="<<x3);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result="<<dx);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Ideal="<<(x3-x2)*3.0);
   }
   */
 }

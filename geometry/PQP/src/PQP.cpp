@@ -38,7 +38,6 @@
 
 \**************************************************************************/
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include <stdio.h>
 #include <string.h>
@@ -102,7 +101,7 @@ PQP_Model::BeginModel(int n)
   if (!tris) 
   {
         LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error!  Out of memory for tri array on "
-                    "BeginModel() call!\n");
+                    "BeginModel() call!");
     return PQP_ERR_MODEL_OUT_OF_MEMORY;  
   }
 
@@ -113,7 +112,7 @@ PQP_Model::BeginModel(int n)
         LOG4CXX_ERROR(KrisLibrary::logger(),
             "PQP Warning! Called BeginModel() on a PQP_Model that \n"
             "was not empty. This model was cleared and previous\n"
-            "triangle additions were lost.\n");
+            "triangle additions were lost.");
     build_state = PQP_BUILD_STATE_BEGUN;
     return PQP_ERR_BUILD_OUT_OF_SEQUENCE;
   }
@@ -137,7 +136,7 @@ PQP_Model::AddTri(const PQP_REAL *p1,
         LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Warning! Called AddTri() on PQP_Model \n"
                    "object that was already ended. AddTri() was\n"
                    "ignored.  Must do a BeginModel() to clear the\n"
-                   "model for addition of new triangles\n");
+                   "model for addition of new triangles");
     return PQP_ERR_BUILD_OUT_OF_SEQUENCE;
   }
         
@@ -150,7 +149,7 @@ PQP_Model::AddTri(const PQP_REAL *p1,
     if (!temp)
     {
             LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error!  Out of memory for tri array on"
-	              " AddTri() call!\n");
+	              " AddTri() call!");
       return PQP_ERR_MODEL_OUT_OF_MEMORY;  
     }
     memcpy(temp, tris, sizeof(Tri)*num_tris);
@@ -188,7 +187,7 @@ PQP_Model::EndModel()
         LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Warning! Called EndModel() on PQP_Model \n"
                    "object that was already ended. EndModel() was\n"
                    "ignored.  Must do a BeginModel() to clear the\n"
-                   "model for addition of new triangles\n");
+                   "model for addition of new triangles");
     return PQP_ERR_BUILD_OUT_OF_SEQUENCE;
   }
 
@@ -197,7 +196,7 @@ PQP_Model::EndModel()
   if (num_tris == 0)
   {
         LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Error! EndModel() called on model with"
-                   " no triangles\n");
+                   " no triangles");
     return PQP_ERR_BUILD_EMPTY_MODEL;
   }
 
@@ -209,7 +208,7 @@ PQP_Model::EndModel()
     if (!new_tris) 
     {
             LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error!  Out of memory for tri array "
-                      "in EndModel() call!\n");
+                      "in EndModel() call!");
       return PQP_ERR_MODEL_OUT_OF_MEMORY;  
     }
     memcpy(new_tris, tris, sizeof(Tri)*num_tris);
@@ -224,7 +223,7 @@ PQP_Model::EndModel()
   if (!b)
   {
         LOG4CXX_ERROR(KrisLibrary::logger(),"PQP Error! out of memory for BV array "
-                   "in EndModel()\n");
+                   "in EndModel()");
     return PQP_ERR_MODEL_OUT_OF_MEMORY;
   }
   num_bvs_alloced = 2*num_tris - 1;
@@ -249,8 +248,8 @@ PQP_Model::MemUsage(int msg) const
   if (msg) 
   {
         LOG4CXX_ERROR(KrisLibrary::logger(),"Total for model "<< this<<": "<< total_mem);
-        LOG4CXX_ERROR(KrisLibrary::logger(),"BVs: "<<num_bvs<<" alloced, take "<<sizeof(BV)<<" bytes each\n"); 
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Tris: "<<num_tris<<" alloced, take "<<sizeof(Tri)<<" bytes each\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"BVs: "<<num_bvs<<" alloced, take "<<sizeof(BV)<<" bytes each"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Tris: "<<num_tris<<" alloced, take "<<sizeof(Tri)<<" bytes each"); 
   }
   
   return total_mem;
@@ -290,7 +289,7 @@ PQP_CollideResult::SizeTo(int n)
   if (n < num_pairs) 
   {
         LOG4CXX_ERROR(KrisLibrary::logger(), "PQP Error: Internal error in "
-                    "'PQP_CollideResult::SizeTo(int n)'\n");
+                    "'PQP_CollideResult::SizeTo(int n)'");
         LOG4CXX_ERROR(KrisLibrary::logger(), "       n = "<< n<<", but num_pairs = "<< num_pairs);
     return;
   }

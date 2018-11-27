@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "GaussianHMM.h"
 #include "OnlineMoments.h"
@@ -139,10 +138,10 @@ bool GaussianHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol,int 
     }
     discretePrior = p0accum;
     NormalizeProbability(discretePrior);
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Priors: "<<discretePrior<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Priors: "<<discretePrior);
     //now maximize transition matrix
     transitionMatrix = taccum;
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Counts: "<<transitionMatrix<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Counts: "<<transitionMatrix);
     for(int i=0;i<transitionMatrix.m;i++) {
       Vector temp;
       transitionMatrix.getColRef(i,temp);

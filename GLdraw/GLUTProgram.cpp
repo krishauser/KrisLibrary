@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "GLUTProgram.h"
 
@@ -159,34 +158,34 @@ void GLUTProgramBase::IdleFunc() { }
 
 int GLUTProgramBase::Run(const char *window_title,unsigned int mode)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
   return -1;
 }
 
 bool GLUTProgramBase::Initialize()
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 	return false;
 }
 
 void GLUTProgramBase::Refresh()
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTProgramBase::SetFullscreen(bool fullscreen_on)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTProgramBase::Handle_Idle()
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTProgramBase::SleepIdleCallback(unsigned int time)
 {
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined"<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 #endif

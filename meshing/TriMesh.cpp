@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "TriMesh.h"
 #include <locale.h>
@@ -314,7 +313,7 @@ bool LoadTriMesh(FILE* f,TriMesh& tri)
     LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
     //LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
     //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
-    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //KrisLibrary::loggerWait();
   }
   return true;
 }
@@ -442,7 +441,7 @@ istream& operator >> (istream& in,TriMesh& tri)
     LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
     LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
     //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
-    //if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    //KrisLibrary::loggerWait();
   }
   return in;
 }

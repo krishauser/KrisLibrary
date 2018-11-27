@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "IKFunctions.h"
 #include "SelfTest.h"
@@ -700,10 +699,10 @@ void RobotIKFunction::UseIK(const IKGoal& g)
   
   /*
   WorldPositionFunction f(robot,ik[0].localPosition,ik[0].link,ik.activeDofs);
-  LOG4CXX_INFO(KrisLibrary::logger(),"WorldPositionFunction:"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"WorldPositionFunction:");
   TestJacobian(&f,x,0.001,0.001);
   */
-  LOG4CXX_INFO(KrisLibrary::logger(),"Differentiation test for RobotIKFunction:"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Differentiation test for RobotIKFunction:");
   TestJacobian(this,x,0.001,0.001,0.001);
 #endif
 }
@@ -711,7 +710,7 @@ void RobotIKFunction::UseIK(const IKGoal& g)
 void RobotIKFunction::UseIK(const vector<IKGoal>& ik)
 {
   if(ik.empty()) {
-    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, IK problem is empty"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, IK problem is empty");
     return;
   }
   functions.reserve(functions.size()+ik.size());
@@ -726,10 +725,10 @@ void RobotIKFunction::UseIK(const vector<IKGoal>& ik)
   
   /*
   WorldPositionFunction f(robot,ik[0].localPosition,ik[0].link,ik.activeDofs);
-  LOG4CXX_INFO(KrisLibrary::logger(),"WorldPositionFunction:"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"WorldPositionFunction:");
   TestJacobian(&f,x,0.001,0.001);
   */
-  LOG4CXX_INFO(KrisLibrary::logger(),"Differentiation test for RobotIKFunction:"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Differentiation test for RobotIKFunction:");
   TestJacobian(this,x,0.001,0.001,0.001);
 #endif
 }
@@ -858,7 +857,7 @@ void RobotIKSolver::PrintStats()
   LOG4CXX_INFO(KrisLibrary::logger(),""<<robotIK.numEvals<<" evals ("<<robotIK.evalTime<<"s), "<<robotIK.numJacobians<<" jacobian evals("<<robotIK.jacobianTime);
   LOG4CXX_INFO(KrisLibrary::logger(),""<<robotIK.setStateTime);
   */
-  LOG4CXX_INFO(KrisLibrary::logger(),"TODO: record IK solver stats..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"TODO: record IK solver stats...");
   //Abort();
 }
 
@@ -988,7 +987,7 @@ bool IsReachableGoal(const RobotKinematics3D& robot,const IKGoal& a, const IKGoa
 bool IsReachableGoal(const IKGoal& a,const IKGoal& b,Real Lmax)
 {
   if(a.posConstraint != IKGoal::PosFixed || b.posConstraint != IKGoal::PosFixed) {
-    LOG4CXX_WARN(KrisLibrary::logger(),"IsReachableGoal(): Warning: unable to calculate reachability of sliding IK target"<<"\n");
+    LOG4CXX_WARN(KrisLibrary::logger(),"IsReachableGoal(): Warning: unable to calculate reachability of sliding IK target");
     return true;
   }
   if(b.rotConstraint > a.rotConstraint) return IsReachableGoal(b,a,Lmax);
@@ -1051,7 +1050,7 @@ bool IsReachableGoal(const IKGoal& a,const IKGoal& b,Real Lmax)
     Real d = (a.endPosition-b.endPosition).norm();
     return (d <= Lmax+da+db);
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Shouldn't get here...");
   Abort();
   return false;
 }

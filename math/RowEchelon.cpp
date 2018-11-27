@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "RowEchelon.h"
 #include "GramSchmidt.h"
@@ -261,9 +260,9 @@ void RowEchelon<T>::getNullspace(MatrixT& N) const
     //cancel out the i'th entry
     for(j=firstEntry[i]+1;j<firstEntry[i+1];j++) {
       if(numVecs >= N.n) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Num nullspace vectors "<<numVecs<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"Found more nullspace vectors than found dims, row "<<i<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(R)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Num nullspace vectors "<<numVecs);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Found more nullspace vectors than found dims, row "<<i);
+	LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(R));
       }
       Assert(numVecs < N.n);
       VectorT xn; N.getColRef(numVecs,xn);
@@ -294,9 +293,9 @@ void RowEchelon<T>::getNullspace(MatrixT& N) const
     }
   }
   if(numVecs != nullspace_dims) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in counting rank in row-eschelon decomposition"<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Num nullspace vectors "<<numVecs<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(R)<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in counting rank in row-eschelon decomposition");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Num nullspace vectors "<<numVecs);
+    LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(R));
   }
   Assert(numVecs == nullspace_dims);
 
@@ -307,10 +306,10 @@ void RowEchelon<T>::getNullspace(MatrixT& N) const
     xi.print();
     R.mul(xi,temp);
     if(temp.maxAbsElement() > 1e-4) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Nullspace vector "<<i<<" not in null space!"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Nullspace vector "<<i<<" not in null space!");
       xi.print();
       LOG4CXX_INFO(KrisLibrary::logger(),"Result = "); temp.print();
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      KrisLibrary::loggerWait();
     }
   }
   */

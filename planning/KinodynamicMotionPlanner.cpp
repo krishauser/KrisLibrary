@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "KinodynamicMotionPlanner.h"
 #include "CSetHelpers.h"
@@ -266,7 +265,7 @@ bool RRTKinodynamicPlanner::Plan(int maxIters)
   if(!goalSet) {
         LOG4CXX_ERROR(KrisLibrary::logger(),"RRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
         LOG4CXX_ERROR(KrisLibrary::logger(),"   Press enter to continue\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    KrisLibrary::loggerWait();
   }
   for(int i=0;i<maxIters;i++) {
     numIters++;
@@ -413,7 +412,7 @@ bool RRTKinodynamicPlanner::PickControl(const State& x0, const State& xDest, Kin
     return true;
   }
   else {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Failed to connect "<<x0<<" toward "<<xDest<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Failed to connect "<<x0<<" toward "<<xDest);
   }
   return false;
 }
@@ -573,7 +572,7 @@ bool LazyRRTKinodynamicPlanner::Plan(int maxIters)
   if(!goalSet) {
         LOG4CXX_ERROR(KrisLibrary::logger(),"LazyRRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
         LOG4CXX_ERROR(KrisLibrary::logger(),"   Press enter to continue\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    KrisLibrary::loggerWait();
   }
   if(goalNode) return true;
   if(goalSet && goalSet->Contains(*tree.root)) {

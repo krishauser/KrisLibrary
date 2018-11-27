@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "LDL.h"
 #include "backsubstitute.h"
@@ -35,7 +34,7 @@ void LDLDecomposition<T>::set(const MatrixT& A)
     if(FuzzyZero(sum,zeroTolerance)) {
       /*
       if(verbose >= 1)
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: LDLt decomposition has a zero element on diagonal "<<i<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: LDLt decomposition has a zero element on diagonal "<<i);
       */
     }
 
@@ -44,7 +43,7 @@ void LDLDecomposition<T>::set(const MatrixT& A)
       for(int k=0;k<i;k++) sum -= LDL(k,k)*LDL(i,k)*LDL(j,k);
       if(LDL(i,i) == 0) {
 	if(!FuzzyZero(sum,zeroTolerance)) {
-	  if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"LDLDecomposition: Zero diagonal, what to do with sum "<<sum<<"?"<<"\n");
+	  if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"LDLDecomposition: Zero diagonal, what to do with sum "<<sum<<"?");
 	  sum = 0;
 	}
       }
@@ -69,7 +68,7 @@ void LDLDecomposition<T>::set(const MatrixT& A)
   LDLt.mulTransposeB(LD,L);
   //LOG4CXX_INFO(KrisLibrary::logger(),"LDLt: "); LDLt.print();
   LDLt -= A;
-  LOG4CXX_ERROR(KrisLibrary::logger(),"Max error in LDL "<<LDLt.maxAbsElement()<<"\n");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Max error in LDL "<<LDLt.maxAbsElement());
   */
 }
 
@@ -123,7 +122,7 @@ bool LDLDecomposition<T>::DBackSub(const VectorT& b, VectorT& x) const
     else {
       if(!FuzzyZero(b(i),zeroTolerance)) {
 	if(verbose >= 1) 
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"LDLDecomposition::DBackSub(): Warning, zero on the diagonal, b("<<i<<")="<<b(i)<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"LDLDecomposition::DBackSub(): Warning, zero on the diagonal, b("<<i<<")="<<b(i));
 	res = false;
 	x(i) = Sign(b(i))*Inf;
       }
@@ -186,7 +185,7 @@ void LDLDecomposition<T>::getPseudoInverse(MatrixT& Ainv) const
   for(int i=0;i<LDL.n;i++)
     for(int j=0;j<i;j++) {
       if(!FuzzyEquals(Ainv(i,j),Ainv(j,i),tol))
-	LOG4CXX_INFO(KrisLibrary::logger(),Ainv<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),Ainv);
       Assert(FuzzyEquals(Ainv(i,j),Ainv(j,i),tol));
       Ainv(i,j)=Ainv(j,i) = 0.5*(Ainv(i,j)+Ainv(j,i));
     }

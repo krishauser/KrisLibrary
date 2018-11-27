@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "BSpline.h"
 #include <math/fastarray.h>
@@ -213,7 +212,7 @@ void CoxDeBoorBasis2(int base,int p,const std::vector<Real>& u,Real** B)
   }
   if(u[base+p] < u[base+p+1]) B[p][0]=One;
   else {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Uh... u[base] = u[base+1]?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Uh... u[base] = u[base+1]?");
     return;
   }
 
@@ -297,8 +296,8 @@ void BSplineBasis::Evaluate(Real t,SparseVector& basis) const
   Real* N = new Real[p+1];
   CoxDeBoor(knot-p,p,t,knots,N);
   for(int i=0;i<=p;i++) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"N["<<i<<"]:"<<N[i]<<"\n");
-    //LOG4CXX_INFO(KrisLibrary::logger(),"basis["<<knot-p+i<<"]:"<<basis(knot-p+i)<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"N["<<i<<"]:"<<N[i]);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"basis["<<knot-p+i<<"]:"<<basis(knot-p+i));
     basis.set(knot-p+i,N[i]);
   }
   delete [] N;

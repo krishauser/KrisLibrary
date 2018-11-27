@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Contact.h"
 #include <math/complex.h>
@@ -206,8 +205,8 @@ void FrictionToFrictionlessContacts(const vector<ContactPoint>& c1,int k,vector<
   for(size_t i=0;i<c1.size();i++) {
     if(c1[i].kFriction == 0) n++;
     else if(c1[i].kFriction > 1e6) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case"<<"\n");
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_WARN(KrisLibrary::logger(),"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case");
+      KrisLibrary::loggerWait();
     }
     else n+=k;
   }
@@ -294,8 +293,8 @@ void FrictionToFrictionlessContacts(const vector<ContactPoint2D>& c1,vector<Cont
   for(size_t i=0;i<c1.size();i++) {
     if(c1[i].kFriction == 0) n++;
     else if(c1[i].kFriction > 1e6) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case"<<"\n");
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_WARN(KrisLibrary::logger(),"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case");
+      KrisLibrary::loggerWait();
     }
     else n+=2;
   }

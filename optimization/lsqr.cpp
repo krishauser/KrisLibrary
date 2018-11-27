@@ -10,7 +10,6 @@
 * 08 Sep 1999: First version from James W. Howse <jhowse@lanl.gov>
 */
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "lsqr.h"
 

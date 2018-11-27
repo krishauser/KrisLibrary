@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "SelfTest.h"
 #include "random.h"
@@ -74,9 +73,9 @@ void SelfTest()
 
 void BasicSelfTest()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing basic"<<"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"Not done"<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing basic");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Not done");
+  KrisLibrary::loggerWait();
 }
 
 void TestVectorBasic()
@@ -115,21 +114,21 @@ void TestVectorBasic()
 
 void TestVectorOps()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Vector ops test not done"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Vector ops test not done");
 }
 
 void VectorSelfTest()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing vectors"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing vectors");
   TestVectorBasic();
   TestVectorOps();
-  LOG4CXX_INFO(KrisLibrary::logger(),"Done"<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
+  KrisLibrary::loggerWait();
 }
 
 void MatrixSelfTest()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing matrices"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing matrices");
   const Real v33[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
   Matrix m(3,3),m2(3,3,v33),m3(m2),m4;
   Vector v(3),v2,v3;
@@ -151,52 +150,52 @@ void MatrixSelfTest()
   v(1) = 2;
   v(2) = 3;
   m4.sub(m2,m);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"A"<<"\n"<<MatrixPrinter(m4)<<"\n");
-  //LOG4CXX_INFO(KrisLibrary::logger(),"b  "<<VectorPrinter(v)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A"<<MatrixPrinter(m4)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"b  "<<VectorPrinter(v));
   LUDecomposition<Real> lud;
   Assert(lud.set(m4));
   lud.backSub(v,v2);
   m4.mul(v2,v3);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"A*A^-1*b = "<<VectorPrinter(v3)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A*A^-1*b = "<<VectorPrinter(v3));
 
   lud.getInverse(m2);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"A^-1"<<"\n"<<MatrixPrinter(m2)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A^-1"<<MatrixPrinter(m2)<<"\n");
   m3.mul(m2,m4);
   for(int i=0;i<3;i++) 
     for(int j=0;j<3;j++) {
       m2.getRowRef(i,r1);
       m4.getColRef(j,r2);
       if(!FuzzyEquals(m3(i,j),r1.dot(r2))) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Row "<<i<<" of ainv: "<<VectorPrinter(r1)<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"Col "<<j<<" of a: "<<VectorPrinter(r2)<<"\n");
-	LOG4CXX_INFO(KrisLibrary::logger(),"matrix mul isn't correct, "<<i<<","<<j<<", "<<m3(i,j)<<" vs "<<r1.dot(r2)<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Row "<<i<<" of ainv: "<<VectorPrinter(r1));
+	LOG4CXX_INFO(KrisLibrary::logger(),"Col "<<j<<" of a: "<<VectorPrinter(r2));
+	LOG4CXX_INFO(KrisLibrary::logger(),"matrix mul isn't correct, "<<i<<","<<j<<", "<<m3(i,j)<<" vs "<<r1.dot(r2));
       }
       Assert(FuzzyEquals(m3(i,j),r1.dot(r2)));
     }
 
-  //LOG4CXX_INFO(KrisLibrary::logger(),"A^-1*A"<<"\n"<<MatrixPrinter(m3)<<"\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A^-1*A"<<MatrixPrinter(m3)<<"\n");
   Assert(m3.isEqual(m,1e-6));
-  LOG4CXX_INFO(KrisLibrary::logger(),"Done"<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
+  KrisLibrary::loggerWait();
 }
 
 void DifferentiationSelfTest()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing differentiation"<<"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"Not done"<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing differentiation");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Not done");
+  KrisLibrary::loggerWait();
 }
 
 void QuadratureSelfTest()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing quadrature"<<"\n");
-  LOG4CXX_INFO(KrisLibrary::logger(),"Not done"<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing quadrature");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Not done");
+  KrisLibrary::loggerWait();
 }
 
 void BlockVectorSelfTest()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing block vectors"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing block vectors");
   BlockVector v1(4,2),v2(4,2,Zero),v3;
   Assert(v1.numBlocks()==4);
   Assert(v2.hasDims(v1));
@@ -235,13 +234,13 @@ void BlockVectorSelfTest()
     Assert(v3[i][1] == i);
   }
 
-  LOG4CXX_INFO(KrisLibrary::logger(),"Done"<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
+  KrisLibrary::loggerWait();
 }
 
 void BlockMatrixSelfTest()
 {
-  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing block matrix"<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Self-testing block matrix");
   //simple test
   BlockTridiagonalMatrix mtri(4,2);
   BlockVector v(4,2),v2(4,2),v3;
@@ -264,9 +263,9 @@ void BlockMatrixSelfTest()
   mtri.mul(v2,v3);
   for(int i=0;i<4;i++) {
     if(!v[i].isEqual(v3[i],1e-3)) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error! solveInverse is wrong for diagonal matrix"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v3)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error! solveInverse is wrong for diagonal matrix");
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v));
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v3));
       Abort();
     }
   }
@@ -283,12 +282,12 @@ void BlockMatrixSelfTest()
   m1.mul(vsmall2,vsmall3);
   for(int i=0;i<2;i++) {
     if(!vsmall[i].isEqual(vsmall3[i],1e-3)) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error! solveInverse is wrong for simple matrix"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(vsmall)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(vsmall3)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"inverse is "<<BlockPrinter(vsmall2)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"matrix: "<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(m1)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error! solveInverse is wrong for simple matrix");
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(vsmall));
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(vsmall3));
+      LOG4CXX_INFO(KrisLibrary::logger(),"inverse is "<<BlockPrinter(vsmall2));
+      LOG4CXX_INFO(KrisLibrary::logger(),"matrix: ");
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(m1));
       Abort();
     }
   }
@@ -300,17 +299,17 @@ void BlockMatrixSelfTest()
   mtri.mul(v2,v3);
   for(int i=0;i<4;i++) {
     if(!v[i].isEqual(v3[i],1e-3)) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error! solveInverse is wrong for non-diagonal matrix"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v3)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(mtri)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error! solveInverse is wrong for non-diagonal matrix");
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v));
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(v3));
+      LOG4CXX_INFO(KrisLibrary::logger(),BlockPrinter(mtri));
       Abort();
     }
   }  
 
 
-  LOG4CXX_INFO(KrisLibrary::logger(),"Done"<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
+  KrisLibrary::loggerWait();
 }
 
 void BLASSelfTest()
@@ -357,7 +356,7 @@ void BLASSelfTest()
 void TestDifferentiation(VectorFieldFunction& f,Vector& x,Real h,Real eps)
 {
   //Tests
-  LOG4CXX_INFO(KrisLibrary::logger(),"Testing Jacobian/Hessians of "<<f.Label()<<"..."<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing Jacobian/Hessians of "<<f.Label()<<"...");
   int n=x.n;
   Vector xold=x;
   int nd=f.NumDimensions();
@@ -379,10 +378,10 @@ void TestDifferentiation(VectorFieldFunction& f,Vector& x,Real h,Real eps)
     }
     a=i;
     if(err > eps) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Jacobian differs from centered differences by "<<err<<" at entry "<<a<<","<<b<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Calculated value: "<<Jcalc(a,b)<<" finite difference "<<Jdiff(a,b)<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Label: "<<f.Label(a)<<"\n");
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Jacobian differs from centered differences by "<<err<<" at entry "<<a<<","<<b);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Calculated value: "<<Jcalc(a,b)<<" finite difference "<<Jdiff(a,b));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Label: "<<f.Label(a));
+      KrisLibrary::loggerWait();
     }
   }
 
@@ -395,18 +394,18 @@ void TestDifferentiation(VectorFieldFunction& f,Vector& x,Real h,Real eps)
     Hdiff -= Hcalc;
     Real err = Hdiff.maxAbsElement(&a,&b);
     if(err > eps) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Hessian "<<i<<" differs from centered differences (grad) by "<<err<<" at entry "<<a<<","<<b<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Label: "<<f.Label(i)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Hessian "<<i<<" differs from centered differences (grad) by "<<err<<" at entry "<<a<<","<<b);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Label: "<<f.Label(i));
       //Hcalc.print();
       //Hdiff.print();
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      KrisLibrary::loggerWait();
     }
     else {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Numerical Hessian "<<i<<" error "<<err<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Numerical Hessian "<<i<<" error "<<err);
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"Done."<<"\n");
-  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done.");
+  KrisLibrary::loggerWait();
 }
 
 
@@ -435,7 +434,7 @@ void DebugVector(const char* name,const Vector& v)
     int pid=fork();
 #endif
     if(pid < 0) { //error
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error forking process"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error forking process");
     }
     else if(pid==0) {  //child process
       char* buf=new char[strlen(viewProg)+strlen(tempFile)+2];
@@ -443,7 +442,7 @@ void DebugVector(const char* name,const Vector& v)
       system(buf);
       bool res=FileUtils::Delete(tempFile);
       if(!res) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Could not delete file "<<tempFile<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Could not delete file "<<tempFile);
       }
       exit(0);
     }
@@ -453,8 +452,8 @@ void DebugVector(const char* name,const Vector& v)
   }
   else {
     VectorPrinter pv(v); if(v.n > 20) pv.mode = VectorPrinter::AsciiShade;
-    LOG4CXX_INFO(KrisLibrary::logger(),name<<": "<<pv<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),name<<": "<<pv);
+    KrisLibrary::loggerWait();
   }
 }
 
@@ -480,7 +479,7 @@ void DebugMatrix(const char* name,const Matrix& v)
     int pid=fork();
 #endif
     if(pid < 0) { //error
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error forking process"<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error forking process");
     }
     else if(pid==0) {  //child process
       char* buf=new char[strlen(viewProg)+strlen(tempFile)+2];
@@ -488,7 +487,7 @@ void DebugMatrix(const char* name,const Matrix& v)
       system(buf);
       bool res=FileUtils::Delete(tempFile);
       if(!res) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"Could not delete file "<<tempFile<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Could not delete file "<<tempFile);
       }
       exit(0);
     }
@@ -498,8 +497,8 @@ void DebugMatrix(const char* name,const Matrix& v)
   }
   else {
     MatrixPrinter pv(v); if(v.n > 20) pv.mode = MatrixPrinter::AsciiShade;
-    LOG4CXX_INFO(KrisLibrary::logger(),name<<": "<<"\n"<<pv<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),name<<": "<<pv<<"\n");
+    KrisLibrary::loggerWait();
   }
 }
 
@@ -510,11 +509,11 @@ bool TestDeriv(RealFunction* f,Real t,Real h,Real atol,Real rtol)
   Real d=f->Deriv(t);
   Real ddiff=dfCenteredDifference(*f,t,h);
   if(CheckError(d,ddiff,atol,rtol)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Derivative error "<<Abs(d-ddiff)<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"User supplied: "<<d<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Finite differenced: "<<ddiff<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Derivative error "<<Abs(d-ddiff));
+    LOG4CXX_INFO(KrisLibrary::logger(),"User supplied: "<<d);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Finite differenced: "<<ddiff);
+    KrisLibrary::loggerWait();
     return false;
   }
   return true;
@@ -527,7 +526,7 @@ bool TestDeriv(VectorFunction* f,Real t,Real h,Real atol,Real rtol)
   f->Deriv(t,J);
   dfCenteredDifference(*f,t,h,Jdiff);
   if(CheckError(J,Jdiff,err,atol,rtol)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
     DebugVector("Differentation error",err);
     DebugVector("J",J);
     DebugVector("Jdiff",Jdiff);
@@ -545,7 +544,7 @@ bool TestGradient(ScalarFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
   f->Gradient(x,g);
   GradientCenteredDifference(*f,x,h,gdiff);
   if(CheckError(g,gdiff,err,atol,rtol)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
     DebugVector("Differentation error",err);
     DebugVector("g",g);
     DebugVector("gdiff",gdiff);
@@ -562,14 +561,14 @@ bool TestGradients(ScalarFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
   for(int i=0;i<x.n;i++) {
     Real gi=f->Gradient_i(x,i);
     if(gi != g(i)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error in Gradient_i("<<i<<"), result not equal to Gradient()"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error in Gradient_i("<<i<<"), result not equal to Gradient()");
       return false;
     }
   }
   GradientCenteredDifference(*f,x,h,gdiff);
   if(CheckError(g,gdiff,err,atol,rtol)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
     DebugVector("Element-wise differentation error",err);
     DebugVector("g",g);
     DebugVector("gdiff",gdiff);
@@ -584,11 +583,11 @@ bool TestDeriv2(RealFunction* f,Real t,Real h,Real atol,Real rtol)
   Real d=f->Deriv2(t);
   Real ddiff=ddfCenteredDifference(*f,t,h);
   if(CheckError(d,ddiff,atol,rtol)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),"2nd derivative error "<<Abs(d-ddiff)<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"User supplied: "<<d<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Finite differenced: "<<ddiff<<"\n");
-    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
+    LOG4CXX_ERROR(KrisLibrary::logger(),"2nd derivative error "<<Abs(d-ddiff));
+    LOG4CXX_INFO(KrisLibrary::logger(),"User supplied: "<<d);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Finite differenced: "<<ddiff);
+    KrisLibrary::loggerWait();
     return false;
   }
   return true;
@@ -601,7 +600,7 @@ bool TestDeriv2(VectorFunction* f,Real t,Real h,Real atol,Real rtol)
   f->Deriv2(t,J);
   ddfCenteredDifference(*f,t,h,Jdiff);
   if(CheckError(J,Jdiff,err,atol,rtol)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
     DebugVector("Deriv2 error",err);
     DebugVector("J",J);
     DebugVector("Jdiff",Jdiff);
@@ -619,7 +618,7 @@ bool TestHessian(ScalarFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
   f->Hessian(x,H);
   HessianCenteredDifference(*f,x,h,Hdiff);
   if(CheckError(H,Hdiff,err,atol,rtol)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
     DebugMatrix("Differentation error",err);
     DebugMatrix("H",H);
     DebugMatrix("Hdiff",Hdiff);
@@ -639,9 +638,9 @@ bool TestJacobian(VectorFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
   if(CheckError(J,Jdiff,err,atol,rtol)) {
     int i,j;
     Real emax = err.maxAbsElement(&i,&j);
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
     DebugMatrix("Differentiation error",err);
-    LOG4CXX_INFO(KrisLibrary::logger(),"Max is "<<emax<<" at "<<f->Label(i)<<" w.r.t. "<<f->VariableLabel(j)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Max is "<<emax<<" at "<<f->Label(i)<<" w.r.t. "<<f->VariableLabel(j));
     DebugMatrix("J",J);
     DebugMatrix("Jdiff",Jdiff);
     return false;
@@ -661,15 +660,15 @@ bool TestJacobians(VectorFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
     f->Jacobian_i(x,i,Ji);
     J.getRowRef(i,temp);
     if(!temp.isEqual(Ji,atol)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error in Jacobian_i("<<i<<"), result not equal to Jacobian()"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error in Jacobian_i("<<i<<"), result not equal to Jacobian()");
       DebugVector("J[i]",temp);
       DebugVector("Ji",Ji);
       temp -= Ji;
       DebugVector("err",temp);
       int index;
       Real max=temp.maxAbsElement(&index);
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Maximum error of "<<f->Label(i)<<" is "<<max<<" at "<<f->VariableLabel(index)<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Maximum error of "<<f->Label(i)<<" is "<<max<<" at "<<f->VariableLabel(index));
       return false;
     }
   }
@@ -677,9 +676,9 @@ bool TestJacobians(VectorFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
   if(CheckError(J,Jdiff,err,atol,rtol)) {
     int i,j;
     Real emax = err.maxAbsElement(&i,&j);
-    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label());
     DebugMatrix("Differentiation error",err);
-    LOG4CXX_INFO(KrisLibrary::logger(),"Max is "<<emax<<" at "<<f->Label(i)<<" w.r.t. "<<f->VariableLabel(j)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Max is "<<emax<<" at "<<f->Label(i)<<" w.r.t. "<<f->VariableLabel(j));
     DebugMatrix("J",J);
     DebugMatrix("Jdiff",Jdiff);
     return false;

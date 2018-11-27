@@ -1,7 +1,6 @@
 #ifndef ANY_COLLECTION_H
 #define ANY_COLLECTION_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "AnyValue.h"
 #include <KrisLibrary/errors.h>

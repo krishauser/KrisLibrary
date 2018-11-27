@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "rotation.h"
 #include <math/misc.h>
@@ -448,22 +447,22 @@ bool MomentRotation::setMatrix(const Matrix3& r)
   Real theta;
   Real c=(r.trace() - One)*Half;
   if(!IsFinite(c)) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is not finite!"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),r<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is not finite!");
+    LOG4CXX_ERROR(KrisLibrary::logger(),r);
     return false;
   }
   if(c >= One) {
     if(c > One+Epsilon) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is greater than 3"<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),"  Matrix:"<<"\n"<<r<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is greater than 3");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"  Matrix:"<<r<<"\n");
     }
     c = One;
     theta = Zero;
   }
   else if(c <= -One) {
     if(c < -One-Epsilon) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is less than -1"<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),"  Matrix:"<<"\n"<<r<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Warning- trace of matrix is less than -1");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"  Matrix:"<<r<<"\n");
     }
     c = -One;
     theta = Pi;
@@ -509,20 +508,20 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     getMatrix(test);
     if(!test.isEqual(r,2e-3)) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(0,0)<<" "<<r(0,1)<<" "<<r(0,2)<<"\n");            
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(1,0)<<" "<<r(1,1)<<" "<<r(1,2)<<"\n");            
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(2,0)<<" "<<r(2,1)<<" "<<r(2,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(0,0)<<" "<<r(0,1)<<" "<<r(0,2));            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(1,0)<<" "<<r(1,1)<<" "<<r(1,2));            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(2,0)<<" "<<r(2,1)<<" "<<r(2,2));            
             LOG4CXX_ERROR(KrisLibrary::logger(),"Input*Input^T (should be orthogonal)\n");
       Matrix3 ortho;
       ortho.mulTransposeB(r,r);
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(0,0)<<" "<<ortho(0,1)<<" "<<ortho(0,2)<<"\n");            
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(1,0)<<" "<<ortho(1,1)<<" "<<ortho(1,2)<<"\n");           
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(2,0)<<" "<<ortho(2,1)<<" "<<ortho(2,2)<<"\n");            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(0,0)<<" "<<ortho(0,1)<<" "<<ortho(0,2));            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(1,0)<<" "<<ortho(1,1)<<" "<<ortho(1,2));           
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(2,0)<<" "<<ortho(2,1)<<" "<<ortho(2,2));            
             LOG4CXX_ERROR(KrisLibrary::logger(),"Test errors with moment "<<x<<" "<<y<<" "<<z);
       test -= r;
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(0,0)<<" "<<test(0,1)<<" "<<test(0,2)<<"\n");            
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(1,0)<<" "<<test(1,1)<<" "<<test(1,2)<<"\n");            
-            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(2,0)<<" "<<test(2,1)<<" "<<test(2,2)<<"\n");      
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(0,0)<<" "<<test(0,1)<<" "<<test(0,2));            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(1,0)<<" "<<test(1,1)<<" "<<test(1,2));            
+            LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(2,0)<<" "<<test(2,1)<<" "<<test(2,2));      
             return false;
     }
 
@@ -567,19 +566,19 @@ bool MomentRotation::setMatrix(const Matrix3& r)
   if (!test.isEqual(r, 1e-3)) {
 	  	  LOG4CXX_ERROR(KrisLibrary::logger(), "MomentRotation::setMatrix(): Numerical error occurred, matrix is probably not a rotation?\n");
         LOG4CXX_ERROR(KrisLibrary::logger(),"Input:\n");
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(0,0)<<" "<<r(0,1)<<" "<<r(0,2)<<"\n");            
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(1,0)<<" "<<r(1,1)<<" "<<r(1,2)<<"\n");            
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(2,0)<<" "<<r(2,1)<<" "<<r(2,2)<<"\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(0,0)<<" "<<r(0,1)<<" "<<r(0,2));            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(1,0)<<" "<<r(1,1)<<" "<<r(1,2));            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<r(2,0)<<" "<<r(2,1)<<" "<<r(2,2)); 
         LOG4CXX_ERROR(KrisLibrary::logger(),"Input*Input^T (should be orthogonal)\n");
     Matrix3 ortho;
     ortho.mulTransposeB(r,r);
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(0,0)<<" "<<ortho(0,1)<<" "<<ortho(0,2)<<"\n");            
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(1,0)<<" "<<ortho(1,1)<<" "<<ortho(1,2)<<"\n");            
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(2,0)<<" "<<ortho(2,1)<<" "<<ortho(2,2)<<"\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(0,0)<<" "<<ortho(0,1)<<" "<<ortho(0,2));            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(1,0)<<" "<<ortho(1,1)<<" "<<ortho(1,2));            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<ortho(2,0)<<" "<<ortho(2,1)<<" "<<ortho(2,2)); 
         LOG4CXX_ERROR(KrisLibrary::logger(),"Moment "<<x<<" "<<y<<" "<<z<<" (angle "<<theta);
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(0,0)<<" "<<test(0,1)<<" "<<test(0,2)<<"\n");            
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(1,0)<<" "<<test(1,1)<<" "<<test(1,2)<<"\n");            
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(2,0)<<" "<<test(2,1)<<" "<<test(2,2)<<"\n"); 
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(0,0)<<" "<<test(0,1)<<" "<<test(0,2));            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(1,0)<<" "<<test(1,1)<<" "<<test(1,2));            
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  "<<test(2,0)<<" "<<test(2,1)<<" "<<test(2,2)); 
         LOG4CXX_ERROR(KrisLibrary::logger(),"Sinc function should not be near 0: "<<Sinc(theta));
 	  return false;
   }
@@ -672,9 +671,9 @@ bool QuaternionRotation::setMatrix(const Matrix3& m)
       // m(2,2) < -0.5
       // m(1,1) > -0.5
       // m(1,1) = -1 - m(2,2)
-      LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation::setMatrix(): s is zero, what do we do?"<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),"May be a non-rotation matrix"<<"\n");
-      LOG4CXX_ERROR(KrisLibrary::logger(),m<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation::setMatrix(): s is zero, what do we do?");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"May be a non-rotation matrix");
+      LOG4CXX_ERROR(KrisLibrary::logger(),m);
       for(int i=0;i<4;i++) q[i]=0;
       return false;
     }
@@ -696,9 +695,9 @@ bool QuaternionRotation::setMatrix(const Matrix3& m)
   Matrix3 temp;
   getMatrix(temp);
   if(!temp.isEqual(m,1e-2)) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Very different matrix in QuaternionRotation::setMatrix()!"<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),m<<" vs "<<"\n");
-    LOG4CXX_ERROR(KrisLibrary::logger(),temp<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Very different matrix in QuaternionRotation::setMatrix()!");
+    LOG4CXX_ERROR(KrisLibrary::logger(),m<<" vs ");
+    LOG4CXX_ERROR(KrisLibrary::logger(),temp);
     return false;
   }
   return true;
@@ -766,11 +765,11 @@ void QuaternionRotation::slerp(const Quaternion& a, const Quaternion& b, Real t)
       set(b);
       return;
     }
-    LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation::slerp(): dot product is > 1, are quaternions not normalized?"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation::slerp(): dot product is > 1, are quaternions not normalized?");
     if(!FuzzyEquals(a.norm(),One,angleEps)) 
-      LOG4CXX_ERROR(KrisLibrary::logger(),"   a is not normalized. Norm="<<a.norm()<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"   a is not normalized. Norm="<<a.norm());
     if(!FuzzyEquals(b.norm(),One,angleEps)) 
-      LOG4CXX_ERROR(KrisLibrary::logger(),"   b is not normalized. Norm="<<b.norm()<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"   b is not normalized. Norm="<<b.norm());
     Quaternion na,nb;
     na.setNormalized(a);
     nb.setNormalized(b);
@@ -804,7 +803,7 @@ void QuaternionRotation::mag(const Quaternion& a, Real t)
     return;
   }
   else if(a.w == -One) { //a is a rotation of 180 degrees
-	LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation.mag(): Quaternion is a rotation of 180 degrees"<<"\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"QuaternionRotation.mag(): Quaternion is a rotation of 180 degrees");
     return;
   }
 
@@ -835,7 +834,7 @@ void SLerp(const Quaternion& a,
     return;
   }
   else if(d == -One) {	//axes are opposing axis
-    LOG4CXX_ERROR(KrisLibrary::logger(),"SLerp(): Quaternions on opposing sides of unit sphere"<<"\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SLerp(): Quaternions on opposing sides of unit sphere");
     return;
   }
   Real bscale = (d < 0 ? -One:One);

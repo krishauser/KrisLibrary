@@ -1,7 +1,6 @@
 #ifndef GRAPH_SHORTEST_PATHS_H
 #define GRAPH_SHORTEST_PATHS_H
 
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "Graph.h"
 #include <KrisLibrary/math/math.h>

@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "PenetrationDepth.h"
 #include <math3d/geometry3d.h>
@@ -54,10 +53,10 @@ void ApproximatePenetrationDepth::ComputeInitial(const RigidTransform& f1,const 
     T2.b = f2*T2.b;
     T2.c = f2*T2.c;
     if(!T1.intersect(T2)) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"Error, T1 doesn't intersect T2!"<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"i="<<i<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),T1.a<<", "<<T1.b<<", "<<T1.c<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),T2.a<<", "<<T2.b<<", "<<T2.c<<"\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Error, T1 doesn't intersect T2!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"i="<<i);
+      LOG4CXX_INFO(KrisLibrary::logger(),T1.a<<", "<<T1.b<<", "<<T1.c);
+      LOG4CXX_INFO(KrisLibrary::logger(),T2.a<<", "<<T2.b<<", "<<T2.c);
     }
     //Assert(T1.intersect(T2) && T2.intersect(T1));
   }
@@ -102,7 +101,7 @@ void ApproximatePenetrationDepth::ComputeInitial(const RigidTransform& f1,const 
     dc = P2.distance(c);
 
     if(Max(da,db,dc) < Zero || Min(da,db,dc) > Zero) {
-      //LOG4CXX_WARN(KrisLibrary::logger(),"Warning: triangle "<<tc1[i]<<" does not intersect "<<tc2[i]<<"\n");
+      //LOG4CXX_WARN(KrisLibrary::logger(),"Warning: triangle "<<tc1[i]<<" does not intersect "<<tc2[i]);
       continue;
     }
     
@@ -141,7 +140,7 @@ void ApproximatePenetrationDepth::ComputeInitial(const RigidTransform& f1,const 
   }
 #if VERBOSE
   if(!collisions.empty())
-    LOG4CXX_INFO(KrisLibrary::logger(),collisions.size()<<" edge collisions."<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),collisions.size()<<" edge collisions.");
 #endif
 
   Real minEdgeDepth=Inf;
@@ -159,7 +158,7 @@ void ApproximatePenetrationDepth::ComputeInitial(const RigidTransform& f1,const 
       for(j=range.first;j!=range.second;j++)
 	if(j->second.voutside == i->second.vinside) break;
       if(j != range.second) {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Looks like an edge penetration..."<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Looks like an edge penetration...");
 	Assert(j->second.vinside == i->second.voutside);
 	Assert(i->second.vinside == j->second.voutside);
 	const Vector3& a = m1.verts[i->second.vinside];
@@ -167,12 +166,12 @@ void ApproximatePenetrationDepth::ComputeInitial(const RigidTransform& f1,const 
 	Plane3D p1; p1.setPointNormal(i->second.point,i->second.normal);
 	Plane3D p2; p2.setPointNormal(j->second.point,j->second.normal);
 	if(p1.distance(a) > Epsilon) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: distance from triangle to inside point is greater than 0! "<<p1.distance(a)<<"\n");
-	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: distance from triangle to inside point is greater than 0! "<<p1.distance(a));
+	  KrisLibrary::loggerWait();
 	}
 	if(p2.distance(b) > Epsilon) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: distance from triangle to inside point is greater than 0! "<<p2.distance(b)<<"\n");
-	  if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: distance from triangle to inside point is greater than 0! "<<p2.distance(b));
+	  KrisLibrary::loggerWait();
 	}
 	Real da = -p1.distance(a);
 	Real db = -p2.distance(b);
@@ -214,7 +213,7 @@ void ApproximatePenetrationDepth::ComputeInitial(const RigidTransform& f1,const 
 	vertexClass[i->second.vinside] = Outside;
       }
       else {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... the outside vertex is a fringe vertex, what do we do?"<<"\n");
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... the outside vertex is a fringe vertex, what do we do?");
       }
     }
     vertexClass[i->second.voutside] = Outside;
@@ -264,8 +263,8 @@ void ApproximatePenetrationDepth::ComputeInitial(const RigidTransform& f1,const 
 	}
       }
       else {
-	LOG4CXX_WARN(KrisLibrary::logger(),"PenetrationDepth::ComputeInitial(): Warning, initial point has a negative depth"<<"\n");
-	//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	LOG4CXX_WARN(KrisLibrary::logger(),"PenetrationDepth::ComputeInitial(): Warning, initial point has a negative depth");
+	KrisLibrary::loggerWait();
       }
       
       if(depth[x] > maxDepth) {
@@ -339,6 +338,6 @@ void ApproximatePenetrationDepth::ComputeDepth()
 
 #if VERBOSE
   if(maxDepth != Zero)
-    LOG4CXX_INFO(KrisLibrary::logger(),"MaxDepth "<<maxDepth<<", "<<visitedNodes<<" of "<<m1.verts.size()<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"MaxDepth "<<maxDepth<<", "<<visitedNodes<<" of "<<m1.verts.size());
 #endif
 }

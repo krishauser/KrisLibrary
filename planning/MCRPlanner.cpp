@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "MCRPlanner.h"
 #include "GeneralizedAStar.h"
@@ -154,9 +153,9 @@ void MCRPlanner::UpdatePathsGreedy()
 
     LOG4CXX_INFO(KrisLibrary::logger(),"Mode "<<i<<": subset "<<modeGraph.nodes[i].subset<<", size "<<modeGraph.nodes[i].roadmapNodes.size()<<", cover: ");
     if(modeGraph.nodes[i].pathCovers.size() > 0)
-      LOG4CXX_INFO(KrisLibrary::logger(),modeGraph.nodes[i].pathCovers[0]<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),modeGraph.nodes[i].pathCovers[0]);
     else
-      LOG4CXX_INFO(KrisLibrary::logger(),"(not reached)"<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"(not reached)");
   }
   */
 }
@@ -558,9 +557,9 @@ int MCRPlanner::AddNode(const Config& q,const Subset& subset,int parent)
   */
 
   if(parent < 0 || modeGraph.nodes[roadmap.nodes[parent].mode].subset != subset)  {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"New mode graph node:"<<subset<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"New mode graph node:"<<subset);
     //if(parent >= 0)
-    //  LOG4CXX_INFO(KrisLibrary::logger(),"Parent mode: "<<modeGraph.nodes[roadmap.nodes[parent].mode].subset<<"\n");
+    //  LOG4CXX_INFO(KrisLibrary::logger(),"Parent mode: "<<modeGraph.nodes[roadmap.nodes[parent].mode].subset);
     //add a new mode
     int mode = (int)modeGraph.nodes.size();
     modeGraph.AddNode(Mode());
@@ -579,7 +578,7 @@ int MCRPlanner::AddNode(const Config& q,const Subset& subset,int parent)
       for(size_t i=0;i<modeGraph.nodes[pmode].pathCovers.size();i++)
 	modeGraph.nodes.back().pathCovers[i] = modeGraph.nodes[pmode].pathCovers[i] + subset;
       UpdateMinCost(modeGraph.nodes.back());
-      //LOG4CXX_INFO(KrisLibrary::logger(),"New mode min cost: "<<modeGraph.nodes.back().minCost<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"New mode min cost: "<<modeGraph.nodes.back().minCost);
     }
   }
   else {
@@ -709,8 +708,8 @@ void MCRPlanner::AddEdgeRaw(int i,int j)
     /*
     if(nmi != 1 && nmj != 1){
       LOG4CXX_INFO(KrisLibrary::logger(),"Merging two modes: "<<mi<<"->"<<mj<<", sizes "<<nmi<<" "<<nmj);
-      LOG4CXX_INFO(KrisLibrary::logger(),ma.subset<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),mb.subset<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),ma.subset);
+      LOG4CXX_INFO(KrisLibrary::logger(),mb.subset);
     }
     */
 
@@ -1234,10 +1233,10 @@ void MCRPlanner::Expand2(Real maxExplanationCost,vector<int>& newNodes)
 	    Subset vn = Violations(space,roadmap.nodes[newNodes[i]].q);
 	    Subset vg = Violations(space,roadmap.nodes[1].q);
 	    Subset ve = Violations(space,roadmap.nodes[1].q,roadmap.nodes[newNodes[i]].q);
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Vn "<<vn<<"\n");
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Vg "<<vg<<"\n");
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Ve "<<ve<<"\n");
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Goal cover "<<ve + modeGraph.nodes[mode].pathCovers[0]<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Vn "<<vn);
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Vg "<<vg);
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Ve "<<ve);
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Goal cover "<<ve + modeGraph.nodes[mode].pathCovers[0]);
 	    */
 	    didRefine = true;
 	  }

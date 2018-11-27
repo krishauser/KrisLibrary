@@ -1,4 +1,3 @@
-#include <log4cxx/logger.h>
 #include <KrisLibrary/Logger.h>
 #include "LinearProcessHMM.h"
 #include <math/sample.h>
@@ -226,7 +225,7 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
     for(size_t i=0;i<examples.size();i++) {
       discretePrior += w[i][0];
       /*
-      LOG4CXX_INFO(KrisLibrary::logger(),"Initialization probability "<<i<<": "<<w[i][0]<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Initialization probability "<<i<<": "<<w[i][0]);
       LOG4CXX_INFO(KrisLibrary::logger(),"Emission probabilities: ");
       for(int j=0;j<discretePrior.n;j++)
 	LOG4CXX_INFO(KrisLibrary::logger(),""<<emissionModels[j].probability(examples[i][0]));
@@ -234,10 +233,10 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
       */
     }
     NormalizeProbability(discretePrior);
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Priors: "<<discretePrior<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Priors: "<<discretePrior);
     //now maximize transition matrix
     transitionMatrix = taccum;
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Counts: "<<transitionMatrix<<"\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Counts: "<<transitionMatrix);
     for(int i=0;i<transitionMatrix.m;i++) {
       Vector temp;
       transitionMatrix.getColRef(i,temp);
@@ -272,8 +271,8 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
 	//downscale by predictionHorizon
 	if(predictionHorizon != 1) {
 #if PRINT_PREDICT_FIT
-	  LOG4CXX_INFO(KrisLibrary::logger(),"Prediction A"<<"\n");
-	  LOG4CXX_INFO(KrisLibrary::logger(),emissionModels[i].A<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Prediction A");
+	  LOG4CXX_INFO(KrisLibrary::logger(),emissionModels[i].A);
 #endif //PRINT_PREDICT_FIT
 
 	  Matrix Ades = emissionModels[i].A;
@@ -332,10 +331,10 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
 	    Ai[j]=temp;
 	  }
 #if PRINT_PREDICT_FIT
-	  LOG4CXX_INFO(KrisLibrary::logger(),"one step (1/k'th power) ~="<<"\n");
-	  LOG4CXX_INFO(KrisLibrary::logger(),emissionModels[i].A<<"\n");
-	  LOG4CXX_INFO(KrisLibrary::logger(),"raised to k'th power ="<<"\n");
-	  LOG4CXX_INFO(KrisLibrary::logger(),temp<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"one step (1/k'th power) ~=");
+	  LOG4CXX_INFO(KrisLibrary::logger(),emissionModels[i].A);
+	  LOG4CXX_INFO(KrisLibrary::logger(),"raised to k'th power =");
+	  LOG4CXX_INFO(KrisLibrary::logger(),temp);
 #endif //PRINT_PREDICT_FIT
 
 	  Vector vtemp;
@@ -347,8 +346,8 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
 	  }
 	  else {
 #if PRINT_PREDICT_FIT
-	    LOG4CXX_ERROR(KrisLibrary::logger(),"Original predicted mean"<<emissionModels[i].error.mu<<"\n");
-	    LOG4CXX_INFO(KrisLibrary::logger(),"New 1-step mean"<<vtemp<<"\n");
+	    LOG4CXX_ERROR(KrisLibrary::logger(),"Original predicted mean"<<emissionModels[i].error.mu);
+	    LOG4CXX_INFO(KrisLibrary::logger(),"New 1-step mean"<<vtemp);
 #endif // PRINT_PREDICT_FIT
 	    emissionModels[i].error.mu = vtemp;
 	  }
@@ -359,8 +358,8 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
 	  Matrix covdes;
 	  emissionModels[i].error.getCovariance(covdes);
 #if PRINT_PREDICT_FIT
-	  LOG4CXX_INFO(KrisLibrary::logger(),"Predicted covariance"<<"\n");
-	  LOG4CXX_INFO(KrisLibrary::logger(),covdes<<"\n");
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Predicted covariance");
+	  LOG4CXX_INFO(KrisLibrary::logger(),covdes);
 #endif
 	  //stack rhs
 	  for(int j=0;j<covdes.n;j++)
@@ -402,21 +401,21 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
 	    Matrix oldL = emissionModels[i].error.L;
 	    res=emissionModels[i].error.setCovariance(covdes);
 	    if(!res) {
-	      LOG4CXX_ERROR(KrisLibrary::logger(),"Error setting covariance matrix"<<"\n"<<covdes<<"\n");
+	      LOG4CXX_ERROR(KrisLibrary::logger(),"Error setting covariance matrix"<<covdes<<"\n");
 	      emissionModels[i].error.L = oldL;
 	      emissionModels[i].error.L /= Sqrt(Real(predictionHorizon));
 	      emissionModels[i].error.getCovariance(covdes);
 	    }
 	    else {
 #if PRINT_PREDICT_FIT
-	      LOG4CXX_INFO(KrisLibrary::logger(),"Solved 1-step covariance"<<"\n");
-	      LOG4CXX_INFO(KrisLibrary::logger(),covdes<<"\n");
+	      LOG4CXX_INFO(KrisLibrary::logger(),"Solved 1-step covariance");
+	      LOG4CXX_INFO(KrisLibrary::logger(),covdes);
 #endif // PRINT_PREDICT_FIT
 	    }
 #endif // NAIVE_PREDICT_FIT_SIGMA
 
 #if PRINT_PREDICT_FIT
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Compounded covariance"<<"\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Compounded covariance");
 	    temp = covdes;
 	    for(int j=0;j<predictionHorizon-1;j++) {
 	      Matrix temp2,temp3;
@@ -424,8 +423,8 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
 	      temp3.mul(temp2,Ai[j]);
 	      temp += temp3;
 	    }
-	    LOG4CXX_INFO(KrisLibrary::logger(),temp<<"\n");
-	    if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	    LOG4CXX_INFO(KrisLibrary::logger(),temp);
+	    KrisLibrary::loggerWait();
 #endif //PRINT_PREDICT_FIT
 	  }
 	}
@@ -433,7 +432,7 @@ bool LinearProcessHMM::TrainEM(const vector<vector<Vector> >& examples,Real& tol
 	  if(emissionModels[i].error.L(j,j) < covarianceRegularizationFactor)
 	    emissionModels[i].error.L(j,j) = covarianceRegularizationFactor;
       }
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Center "<<i<<": "<<emissionModels[i].mu<<"\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Center "<<i<<": "<<emissionModels[i].mu);
     }
   }
   return true;
@@ -478,7 +477,7 @@ Real LinearProcessHMM::LogLikelihood(const vector<Vector>& observations) const
   pobs0 = NormalizeProbability(p);
   if(pobs0 == 0) {
     LOG4CXX_WARN(KrisLibrary::logger(),"Warning, probability of initial observation is 0\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Discrete distribution "<<discretePrior<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Discrete distribution "<<discretePrior);
   }
   ll += Log(pobs0);
   for(size_t i=1;i<observations.size();i++) {
@@ -486,10 +485,10 @@ Real LinearProcessHMM::LogLikelihood(const vector<Vector>& observations) const
     Real pi = Probability(temp,observations[i-1],observations[i]);
     if(pi == 0) {
       LOG4CXX_WARN(KrisLibrary::logger(),"Warning, probability of transition "<<i);
-      LOG4CXX_INFO(KrisLibrary::logger(),"Discrete distribution "<<temp<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Observations: "<<observations[i-1]<<" "<<observations[i]<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Discrete distribution "<<temp);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Observations: "<<observations[i-1]<<" "<<observations[i]);
       for(int j=0;j<discretePrior.n;j++)
-	LOG4CXX_INFO(KrisLibrary::logger(),"Logp["<<j<<"] = "<<emissionModels[j].LogProbability(observations[i-1],observations[i])<<"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Logp["<<j<<"] = "<<emissionModels[j].LogProbability(observations[i-1],observations[i]));
     }
     ll += Log(pi);
     Update(temp,observations[i-1],observations[i],p);
@@ -1030,26 +1029,26 @@ Real LinearProcessHMMRegression::ProbabilityX(const LinearProcessHMMState& s,con
   }
   else {
     Real p=0;
-    LOG4CXX_INFO(KrisLibrary::logger(),"PObservation "<<x<<"\n");
-    LOG4CXX_INFO(KrisLibrary::logger(),"  Discrete prior "<<s.p<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"PObservation "<<x);
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Discrete prior "<<s.p);
     for(int i=0;i<s.p.n;i++) {
       if(s.p(i) != 0.0) {
 	if(!s.x.empty()) {
 	  Vector vtemp;
 	  xRegressions[i].A.mul(s.x,vtemp);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"  Prediction "<<i<<": "<<vtemp+xRegressions[i].error.mu<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"  Prediction "<<i<<": "<<vtemp+xRegressions[i].error.mu);
 	  p += s.p(i) * xRegressions[i].Probability(s.x,x);
 	}
 	else {
 	  Vector vtemp;
 	  xRegressions[i].A.mul(s.xPrev,vtemp);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"  Prediction "<<i<<": "<<vtemp+xRegressions[i].error.mu<<"\n");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"  Error cov L "<<xRegressions[i].error.L<<"\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"  Prediction "<<i<<": "<<vtemp+xRegressions[i].error.mu);
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"  Error cov L "<<xRegressions[i].error.L);
 	  p += s.p(i) * xRegressions[i].Probability(s.xPrev,x);
 	}
       }
     }
-    LOG4CXX_INFO(KrisLibrary::logger(),"  Probability of obs "<<p<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Probability of obs "<<p);
     return p;
   }
 }
@@ -1098,12 +1097,12 @@ void LinearProcessHMMRegression::Update(const LinearProcessHMMState& s,const Vec
       GaussianCondition(s.xy[i].means[j],s.xy[i].covariances[j],x,xindices,
 			sobs.y[i].means[j],sobs.y[i].covariances[j]);
       /*
-      LOG4CXX_INFO(KrisLibrary::logger(),"Joint mean"<<s.xy[i].means[j]<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Joint cov"<<s.xy[i].covariances[j]<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Observation "<<x<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"new mean: "<<sobs.y[i].means[j]<<"\n");
-      LOG4CXX_INFO(KrisLibrary::logger(),"new cov: "<<sobs.y[i].covariances[j]<<"\n");
-      if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Joint mean"<<s.xy[i].means[j]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Joint cov"<<s.xy[i].covariances[j]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Observation "<<x);
+      LOG4CXX_INFO(KrisLibrary::logger(),"new mean: "<<sobs.y[i].means[j]);
+      LOG4CXX_INFO(KrisLibrary::logger(),"new cov: "<<sobs.y[i].covariances[j]);
+      KrisLibrary::loggerWait();
       */
       //what's the probability that x[t] is x in this component?
       sobs.y[i].phi[j] = s.xy[i].phi[j]*gx.probability(x);
@@ -1112,7 +1111,7 @@ void LinearProcessHMMRegression::Update(const LinearProcessHMMState& s,const Vec
     if(sobs.p(i) > 1e-10 && !sobs.y[i].phi.empty()) {
       if(psum == 0.0) {
 	LOG4CXX_WARN(KrisLibrary::logger(),"LPHMMR warning: probability of discrete state "<<i<<": "<<sobs.p(i)<<", detailed obs prob sum "<<psum);
-	//if(KrisLibrary::logger()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+	//KrisLibrary::loggerWait();
       }
       //Assert(psum != 0.0);
     }
