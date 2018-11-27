@@ -1,6 +1,8 @@
 #ifndef GLDRAW_GLUT_STRING_H
 #define GLDRAW_GLUT_STRING_H
 
+#if HAVE_GLUT
+
 #if defined (__APPLE__) || defined (MACOSX)
 #include <KrisLibrary/Logger.h>
 #include <GLUT/glut.h>
@@ -43,6 +45,28 @@ inline int glutStrokeStringWidth(void* fontface,const char* str)
   }
   return w;
 }
+
+#else
+
+inline void glutBitmapString(void* fontface,const char* str)
+{}
+
+inline void glutStrokeString(void* fontface,const char* str)
+{}
+
+inline int glutBitmapStringWidth(void* fontface,const char* str)
+{
+  return 0;
+}
+
+inline int glutStrokeStringWidth(void* fontface,const char* str)
+{
+  return 0;
+}
+
+
+#endif //HAVE_GLUT
+
 
 inline void glutBitmapInt(void* fontface,int i)
 {
