@@ -8,6 +8,8 @@
 #include "Logger.h"
 #include <stdio.h>
 
+#if HAVE_LOG4CXX
+
 namespace KrisLibrary {
 
 //static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("KrisLibrary"));
@@ -118,3 +120,4 @@ void loggerWait(log4cxx::LoggerPtr logger)
 
 } //namespace KrisLibrary
 
+#endif //HAVE_LOG4CXX
