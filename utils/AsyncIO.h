@@ -186,8 +186,8 @@ class StreamTransport : public TransportBase
   StreamTransport(std::ostream& out);
   StreamTransport(std::istream& in,std::ostream& out);
   virtual ~StreamTransport() {}
-  virtual bool ReadReady() { return (in != NULL) && *in; }
-  virtual bool WriteReady() { return (out != NULL) && *out; }
+  virtual bool ReadReady();
+  virtual bool WriteReady();
   virtual const std::string* DoRead();
   virtual bool DoWrite(const char* msg,int length);
 };
