@@ -366,6 +366,16 @@ StreamTransport::StreamTransport(std::istream& _in,std::ostream& _out)
   :in(&_in),out(&_out),format(IntLengthPrepended)
 {}
 
+bool StreamTransport::ReadReady()
+{
+  return (in != NULL) && !in->fail();
+}
+
+bool StreamTransport::WriteReady()
+{
+  return (out != NULL) && !out->fail();
+}
+
 const string* StreamTransport::DoRead()
 {
   if(!in) return NULL;
