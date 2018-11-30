@@ -298,6 +298,7 @@ void MakeTriMesh(const AABB3D& geom,TriMesh& mesh)
   mat(1,1) = geom.bmax.y-geom.bmin.y;
   mat(2,2) = geom.bmax.z-geom.bmin.z;
   geom.bmin.get(mat(3,0),mat(3,1),mat(3,2));
+  mesh.Transform(mat);
 }
 
 void MakeTriMesh(const Box3D& geom,TriMesh& mesh)
@@ -363,13 +364,16 @@ void MakeTriMesh(const GeometricPrimitive3D& geom,TriMesh& mesh,int numDivs)
     MakeTriMesh(*AnyCast_Raw<Cylinder3D>(&geom.data),numDivs,mesh);
     break;
   case GeometricPrimitive3D::Sphere:
-    MakeTriMesh(*AnyCast_Raw<Sphere3D>(&geom.data),numDivs,numDivs,mesh);
+    MakeTriMesh(*AnyCast_Raw<Sphere3D>(&geom.data),numDivs/2,numDivs,mesh);
     break;
   case GeometricPrimitive3D::Ellipsoid:
     MakeTriMesh(*AnyCast_Raw<Ellipsoid3D>(&geom.data),numDivs,numDivs,mesh);
     break;
+  case GeometricPrimitive3D::AABB:
+    MakeTriMesh(*AnyCast_Raw<AABB3D>(&geom.data),mesh);
+    break;
   default:
-    FatalError("Invalid primitive type for MakeTriMesh");
+    FatalError("Invalid primitive type %d for MakeTriMesh",geom.type);
   }
 }
 

@@ -255,6 +255,9 @@ bool AnyGeometry3D::Convert(Type restype,AnyGeometry3D& res,double param) const
           else {
             AABB3D bb = GetAABB();
             Real w = (bb.bmax-bb.bmin).maxAbsElement();
+            const GeometricPrimitive3D& g = AsPrimitive();
+            if(g.type == GeometricPrimitive3D::Cylinder) 
+              w = AnyCast_Raw<Math3D::Cylinder3D>(&g.data)->radius*2;
             param = int(w/param);
           }
           Meshing::TriMesh mesh;
