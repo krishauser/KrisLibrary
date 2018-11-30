@@ -273,7 +273,7 @@ void MakeTriMesh(const Sphere3D& geom,int numStacks,int numSlices,TriMesh& mesh)
   Matrix4 mat;
   mat.setIdentity();
   mat(0,0) = mat(1,1) = mat(2,2) = geom.radius;
-  geom.center.get(mat(3,0),mat(3,1),mat(3,2));
+  geom.center.get(mat(0,3),mat(1,3),mat(2,3));
   mesh.Transform(mat);
 }
 
@@ -297,7 +297,7 @@ void MakeTriMesh(const AABB3D& geom,TriMesh& mesh)
   mat(0,0) = geom.bmax.x-geom.bmin.x;
   mat(1,1) = geom.bmax.y-geom.bmin.y;
   mat(2,2) = geom.bmax.z-geom.bmin.z;
-  geom.bmin.get(mat(3,0),mat(3,1),mat(3,2));
+  geom.bmin.get(mat(0,3),mat(1,3),mat(2,3));
   mesh.Transform(mat);
 }
 
