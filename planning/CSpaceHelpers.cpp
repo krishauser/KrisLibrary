@@ -902,12 +902,23 @@ class StatUpdatingEdgePlanner : public PiggybackEdgePlanner
 
 EdgePlannerPtr AdaptiveCSpace::PathChecker(const Config& a,const Config& b)
 {
-  if(!adaptive) return PiggybackCSpace::PathChecker(a,b);
+  printf("AdaptiveCSpace::PathChecker\n");
+  if(!adaptive) {
+    printf("  non adaptive\n");
+    return PiggybackCSpace::PathChecker(a,b);
+  }
   if(feasibleStats.size() != constraints.size()) SetupAdaptiveInfo();  
-  if(useBaseVisibleTest) return make_shared<StatUpdatingEdgePlanner>(PiggybackCSpace::PathChecker(a,b),&baseVisibleStats);
+  if(useBaseVisibleTest) {
+    printf("  base test\n");
+    return make_shared<StatUpdatingEdgePlanner>(PiggybackCSpace::PathChecker(a,b),&baseVisibleStats);
+  }
   std::vector<EdgePlannerPtr> obstacleEdges(constraints.size());
-  for(size_t i=0;i<visibleTestOrder.size();i++)
+  printf("  multiple edge checker\n");
+  for(size_t i=0;i<visibleTestOrder.size();i++) {
     obstacleEdges[i] = PathChecker(a,b,visibleTestOrder[i]);
+    printf("  %d",visibleTestOrder[i]);
+  }
+  printf("\n");
   return make_shared<PathEdgeChecker>(this,obstacleEdges);
 }
 
