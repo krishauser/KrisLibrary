@@ -913,8 +913,10 @@ EdgePlannerPtr AdaptiveCSpace::PathChecker(const Config& a,const Config& b)
 
 EdgePlannerPtr AdaptiveCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
+  if(!visibleTestDeps.empty()) {
     if(!visibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent visibility tests\n");}
     else if(!feasibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent feasibility tests\n");}
+  }
   return PathChecker_NoDeps(a,b,obstacle);
 }
 
