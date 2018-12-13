@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 
 /** @file utils/ioutils.h
  * @ingroup Utils
@@ -56,7 +56,7 @@ std::string TranslateEscapes(const std::string& str);
 ///Returns the entire contents of a file as a string
 bool GetFileContents(const char *filename,std::string& contents);
 
-///ReadFile() for STL vectors.  See myfile.h
+///ReadFile() for STL vectors.  See File.h
 template <class type>
 bool ReadFile(File& f, std::vector<type>& v)
 {
@@ -68,7 +68,7 @@ bool ReadFile(File& f, std::vector<type>& v)
 	return true;
 }
 
-///WriteFile() for STL vectors.  See myfile.h
+///WriteFile() for STL vectors.  See File.h
 template <class type>
 bool WriteFile(File& f, const std::vector<type>& v)
 {

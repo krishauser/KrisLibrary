@@ -8,7 +8,7 @@
 #include <iostream>
 #include <KrisLibrary/meshing/TriMesh.h>
 #include <KrisLibrary/math/misc.h>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <string>
 using namespace std;
 

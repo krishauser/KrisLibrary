@@ -1,7 +1,7 @@
 #ifndef ARRAY3D_H
 #define ARRAY3D_H
 
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/utils.h>
 #include <KrisLibrary/utils/IntTriple.h>
 #include <KrisLibrary/utils/indexing.h>

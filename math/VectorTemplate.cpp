@@ -2,7 +2,7 @@
 #include "VectorTemplate.h"
 #include "fastarray.h"
 #include "complex.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/errors.h>
 #include <iostream>
 using namespace std;

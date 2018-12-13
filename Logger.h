@@ -18,12 +18,18 @@ namespace KrisLibrary {
 typedef log4cxx::LoggerPtr LoggerType;
 
 /** @brief Retrieves the base logger. 
+ * 
+ * On first call, will attempt to load a configuration from log4cxx.xml in the current directory.
+ * If this doesn't exist, then a default configuration printing to stderr will be used.
  *
  * To log, call LOG4CXX_INFO(KrisLibrary::logger(),msg...), or LOG4CXX_WARN, LOG4CXX_ERROR, etc.
  */
 extern LoggerType logger();
 
 /** @brief Retrieves a named logger. 
+ * 
+ * On first call, will attempt to load a configuration from log4cxx.xml in the current directory.
+ * If this doesn't exist, then a default configuration printing to stderr will be used.
  *
  * It can be used by calling LOG4CXX_INFO(KrisLibrary::logger(name),msg...), or LOG4CXX_WARN, LOG4CXX_ERROR, etc.
  * However, this is not the most efficient method, since logger lookup is performed for each message.  Instead

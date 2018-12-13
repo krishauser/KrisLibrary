@@ -902,19 +902,26 @@ class StatUpdatingEdgePlanner : public PiggybackEdgePlanner
 
 EdgePlannerPtr AdaptiveCSpace::PathChecker(const Config& a,const Config& b)
 {
-  if(!adaptive) return PiggybackCSpace::PathChecker(a,b);
+  if(!adaptive) {
+    return PiggybackCSpace::PathChecker(a,b);
+  }
   if(feasibleStats.size() != constraints.size()) SetupAdaptiveInfo();  
-  if(useBaseVisibleTest) return make_shared<StatUpdatingEdgePlanner>(PiggybackCSpace::PathChecker(a,b),&baseVisibleStats);
+  if(useBaseVisibleTest) {
+    return make_shared<StatUpdatingEdgePlanner>(PiggybackCSpace::PathChecker(a,b),&baseVisibleStats);
+  }
   std::vector<EdgePlannerPtr> obstacleEdges(constraints.size());
-  for(size_t i=0;i<visibleTestOrder.size();i++)
+  for(size_t i=0;i<visibleTestOrder.size();i++) {
     obstacleEdges[i] = PathChecker(a,b,visibleTestOrder[i]);
+  }
   return make_shared<PathEdgeChecker>(this,obstacleEdges);
 }
 
 EdgePlannerPtr AdaptiveCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
+  if(!visibleTestDeps.empty()) {
     if(!visibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent visibility tests\n");}
     else if(!feasibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent feasibility tests\n");}
+  }
   return PathChecker_NoDeps(a,b,obstacle);
 }
 
