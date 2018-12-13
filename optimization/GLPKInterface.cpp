@@ -347,6 +347,8 @@ bool GLPKInterface::Enabled() { return true; }
 
 #else
 
+#include <iostream>
+
 using namespace Optimization;
 using namespace std;
 
