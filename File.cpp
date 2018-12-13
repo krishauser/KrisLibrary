@@ -1,5 +1,5 @@
 #include <KrisLibrary/Logger.h>
-#include "myfile.h"
+#include "File.h"
 #include "utils.h"
 #include "errors.h"
 #include <stdlib.h>
@@ -9,8 +9,8 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <utils/socketutils.h>
-#include <utils/threadutils.h>
+#include <KrisLibrary/utils/socketutils.h>
+#include <KrisLibrary/utils/threadutils.h>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

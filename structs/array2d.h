@@ -1,7 +1,7 @@
 #ifndef ARRAY2D_H
 #define ARRAY2D_H
 
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/errors.h>
 #include <KrisLibrary/utils/IntPair.h>
 #include <KrisLibrary/utils/indexing.h>

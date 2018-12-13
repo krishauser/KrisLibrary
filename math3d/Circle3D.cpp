@@ -3,7 +3,7 @@
 #include "geometry3d.h"
 #include "misc.h"
 #include <KrisLibrary/math/misc.h>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 using namespace std;
 using namespace Math3D;
 

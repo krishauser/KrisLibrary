@@ -1,5 +1,5 @@
 #include <KrisLibrary/Logger.h>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/utils.h>
 #include <KrisLibrary/errors.h>
 #include <stdlib.h>

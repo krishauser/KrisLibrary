@@ -10,7 +10,7 @@
 #include <meshing/VolumeGrid.h>
 #include <meshing/Expand.h>
 #include <geometry/Conversions.h>
-#include "Timer.h"
+#include <KrisLibrary/Timer.h>
 
 using namespace Geometry;
 

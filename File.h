@@ -112,7 +112,7 @@ private:
 	FileImpl* impl;
 };
 
-/** \file myfile.h
+/** \file File.h
  * \ingroup Standard
  * \brief A unified interface for reading/writing binary data to file.
  *

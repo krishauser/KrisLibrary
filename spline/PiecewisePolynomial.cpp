@@ -1,6 +1,6 @@
 #include <KrisLibrary/Logger.h>
 #include "PiecewisePolynomial.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <math.h>
 #include <stdio.h>
 #include <algorithm>

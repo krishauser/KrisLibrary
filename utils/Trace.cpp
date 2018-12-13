@@ -1,6 +1,6 @@
 #include <KrisLibrary/Logger.h>
 #include "Trace.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <iostream>
 #include <utils.h>
 #include <stdarg.h>

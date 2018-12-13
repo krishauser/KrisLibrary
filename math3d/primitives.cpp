@@ -1,6 +1,6 @@
 #include <KrisLibrary/Logger.h>
 #include "primitives.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <iostream>
 
 namespace Math3D {

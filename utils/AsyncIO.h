@@ -7,7 +7,7 @@
 #include <memory>
 #include <string.h>
 #include <KrisLibrary/Logger.h>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/Timer.h>
 #include <KrisLibrary/errors.h>
 #include <KrisLibrary/math/math.h>
