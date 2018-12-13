@@ -1,7 +1,7 @@
 # KrisLibrary
 
-Basic C++ math, geometry, robotics, and other routines used in projects
-from Kris Hauser's lab.
+Basic C++ math, geometry, robotics, I/O, and other routines used in projects
+from Kris Hauser's lab. 
 
 Authors:
 - Kris Hauser (kris.hauser@duke.edu)
@@ -9,9 +9,8 @@ Authors:
 
 ## Building
 
-
 Requirements
-- C++11: support needed in your compiler
+- C++11: must be supported in your compiler
 - CMake: needed to configure and build KrisLibrary
 - OpenGL
 
@@ -25,7 +24,7 @@ Optional
   BLAS and LAPACK interfaces through CLAPACK.  
 - Log4CXX: for custom logging functionality
 - FreeImage: needed for extra image file format loading (JPG,PNG,TIF,GIF, etc)
-- OMPL: interfaces to the Open Motion Planning Library. (Note: only works with an old verison)
+- OMPL: interfaces to the Open Motion Planning Library. (Note: only works with an older verison)
 
 To build, run:
 
@@ -37,29 +36,44 @@ or for debug information, run
 > cmake . -DCMAKE_BUILD_TYPE=debug
 > make
 
-If you observe any packages not identified in the first step, run "cmake-gui ."
-to potentially set the appropriate paths manually.  Let us know if you have
-trouble on your system.
+If you observe that any packages on your system are not identified in the first step, run
+
+> cmake-gui .
+
+to set the appropriate paths manually.  These are variables in the form of `X_ROOT`.  You may also
+disable certain packages by turning off the `USE_X` variables.  Please submit an issue on Github
+if you have trouble building on your system.
 
 
 ## Packages
 
-  * [main folder] - basic things (error reporting, unified binary file/stream/socket I/O class, safe deletion, and timer)
+  * [main folder] - standard useful items (error reporting, unified binary file/stream/socket I/O class, safe deletion, and timer)
   * structs - useful data structures
   * utils - assorted utilites 
   * math - a large general-purpose math library
   * math3d - 2d/3d math library
-  * geometry - several computational geometry routines (e.g. convex hull)
+  * geometry - several computational geometry routines (e.g. collision detection, convex hull)
   * optimization - convex/nonconvex optimization routines / interfaces
   * GLdraw - OpenGL wrappers and utilities
   * graph - template graph library
   * camera - projective geometry for cameras in a 3d world
   * image - basic image loading/saving
-  * meshing - triangle mesh structures
+  * meshing - triangle mesh, volume mesh classes and routines
   * statistics - basic statistics routines
   * robotics - robot kinematics, dynamics, and contact mechanics
   * planning - motion planning
   * spline - splines
+
+## Features
+
+- Unified I/O to files, sockets, and memory buffers using the File object.
+- Undirected graphs, directed graphs, and trees.  Dijkstra's algorithm and A* are supported.  Vertices and edges can store arbitrary datatypes.
+- 2D, 3D, N-d, and sparse arrays.
+- An "any" datatype that can contain objects of arbitrary type (based on boost::any).
+- JSON loading and saving via AnyCollection.
+- 2D and 3D math library, including many types of rotation representations (rotation matrix, quaternions, axis-angle).
+- Wide variety of geometries supported: triangle meshes, point clouds, volume grids, and geometric primitives.  Supports loading, saving, collision detection, and conversion between types.
+- 
 
 ## Known "cruft"
 
@@ -67,12 +81,14 @@ trouble on your system.
 * optimization/LCP is a poor quality implementation.
 * optimization/MinNormProblem does not have access to a good quadratic
   programming solver.
-* The camera/ package is pretty non-conformant with the overall style.
 * The GLdraw/ package is capitalized, which is non-conformant
-* Image saving is very, very basic at the moment.
+* Image saving is very basic at the moment.
+* OFF file loading only supports triangle meshes
 * Eventually everything should be placed in a unified namespace.
+* The utils/stl_tr1.h file was a workaround for the unordered_set / undordered_map containers that was useful
+  while STL was in flux around the time of adoption of C++11.  Now this looks standardized... Can it be safely replaced?
 * Latest version of OMPL should be supported.
-
+* Logger calls are still calling LOG4CXX, even if LOG4CXX is not used.  Maybe this should be renamed to KL_LOG or something similar.
 
 ## Contribution guidelines
 
@@ -90,7 +106,7 @@ guidelines when adding to the library.
 
 Encapsulate the file with the standard #ifndef CATEGORY_FILENAME_H ... #endif
 where CATEGORY is the folder name, FILENAME is the file name, translated into
-capitals and _ inserted between words
+capitals and _ inserted between words.
 
 If a file belongs to a coherent library, the entire body (minus preprocessor
 commands) should be enclosed in a namespace.  Only use `using namespace'
@@ -105,10 +121,10 @@ Math namespace).
 * Type 2: higher-level classes
 * Type 3: sloppy objects that don't fall into the prev 2 types.  These should eventually be eliminated.
 
-Classes are always capitalized (e.g. ClassName).
+Classes are always capitalized camel-case (e.g. ClassName).
 
 Methods are:
-* Type 1. camel-case e.g. myFunction
+* Type 1. camel-case beginning with a lowercase letter e.g. myFunction
 * Type 2. Capitalized
 
 Member variables are always lowercase.
@@ -133,5 +149,16 @@ ReadFile(object,File&) methods.
 
 * 12/14/2018 (Latest version): upgraded to take out Boost dependencies, officially using C++11, optional LOG4CXX support, bug fixes.
 
+... prior to that, there is a long and undocumented history stretching back over a decade!
 
-... there is a very long and undocumented history with this package
+## Questions for future development
+
+- Most of the vector / matrix operations could be replaced with another library e.g., Eigen.  But this means replacing a lot of 
+  legacy code in the optimization, robotics, and statistics packages. Is this worth doing?
+
+- When this was first developed in the 2000's, there were few cross-platform C++ libraries for doing OS, I/O, and numerical
+  operations, so the routines here filled a need.  This has changed significantly with libraries like POCO, Boost, and language 
+  upgrades to C++11 and beyond.
+
+- Many functions don't take advantage of the move semantics introduced in C++11.  So almost all method signatures are like
+  `void get(Output& result)` rather than `Output get()`.  Should this be changed to make it the code more modern?
