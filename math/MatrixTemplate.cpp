@@ -255,6 +255,7 @@ MatrixTemplate<T>& MatrixTemplate<T>::operator =(MyT&& a)
   jstride = a.jstride;
   n = a.n;
   a.vals = NULL;
+  return *this;
 }
 
 
