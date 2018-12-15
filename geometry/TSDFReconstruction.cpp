@@ -135,7 +135,7 @@ void TSDFMarchingCubes(const Array3D<T>& input,T isoLevel,T truncationDistance,c
 
 ICPParameters::ICPParameters()
 :maxIters(10),subsample(47),pointToPlane(true),colorWeight(0.01),percentileOutliers(0.2),rmseThreshold(1e-3),rmseChangeThreshold(1e-6),
-numIters(0),stderr(6,0.0),rmseDistance(0),rmseColor(0),numInliers(0)
+numIters(0),standardError(6,0.0),rmseDistance(0),rmseColor(0),numInliers(0)
 {
   Tcamera.setIdentity();
 }
@@ -243,7 +243,7 @@ void DenseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransfo
 
     if(correspondences.size() == 0) {
       params.rmseDistance = Inf;
-      params.stderr.resize(6,Inf);
+      params.standardError.resize(6,Inf);
       return;
     }
 
@@ -255,7 +255,7 @@ void DenseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransfo
     rmse_distance = Sqrt(rmse_distance/distances.size());
     params.rmseDistance = rmse_distance;
     if(rmse_distance < params.rmseThreshold || Abs(rmse_distance - old_rmse) < params.rmseChangeThreshold) {
-      //TODO: estimate stderr
+      //TODO: estimate standardError
       printf("Terminated due to convergence\n");
       printf("  Old RMSE %f, new RMSE %f\n",old_rmse,rmse_distance);
       return;
@@ -263,7 +263,7 @@ void DenseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransfo
 
     //not enough correspondences
     if(correspondences.size() <= 6) {
-      params.stderr.resize(6,Inf);
+      params.standardError.resize(6,Inf);
       return;
     }
     
@@ -330,7 +330,7 @@ void DenseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransfo
       Matrix Cinv;
       ldl.getInverse(Cinv);
       for(int i=0;i<6;i++)
-        params.stderr(i) = Sqrt(Cinv(i,i));
+        params.standardError(i) = Sqrt(Cinv(i,i));
       //getchar();
         
     }
@@ -353,7 +353,7 @@ void DenseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransfo
       if(IsInf(sse2)) {
         //some numerical error
         params.Tcamera = Tlast;
-        params.stderr.resize(6,Inf);
+        params.standardError.resize(6,Inf);
         return;
       }
     }
@@ -1629,7 +1629,7 @@ void SparseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransf
 
     if(correspondences.size() == 0) {
       params.rmseDistance = Inf;
-      params.stderr.resize(6,Inf);
+      params.standardError.resize(6,Inf);
       return;
     }
 
@@ -1641,19 +1641,19 @@ void SparseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransf
     rmse_distance = Sqrt(rmse_distance/distances.size());
     params.rmseDistance = rmse_distance;
     if(rmse_distance < params.rmseThreshold || Abs(rmse_distance - old_rmse) < params.rmseChangeThreshold) {
-      //TODO: estimate stderr
+      //TODO: estimate standardError
       printf("Terminated due to convergence\n");
       printf("  Old RMSE %f, new RMSE %f\n",old_rmse,rmse_distance);
       Matrix Cinv;
       ldl.getInverse(Cinv);
       for(int i=0;i<6;i++)
-        params.stderr(i) = Sqrt(Cinv(i,i));
+        params.standardError(i) = Sqrt(Cinv(i,i));
       return;
     }
 
     //not enough correspondences
     if(correspondences.size() <= 6) {
-      params.stderr.resize(6,Inf);
+      params.standardError.resize(6,Inf);
       return;
     }
     
@@ -1711,7 +1711,7 @@ void SparseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransf
           Matrix Cinv;
           ldl.getInverse(Cinv);
           for(int i=0;i<6;i++)
-            params.stderr(i) = Sqrt(Cinv(i,i));
+            params.standardError(i) = Sqrt(Cinv(i,i));
           return;
         }
         if(twist.normSquared() < 1e-6)
@@ -1756,7 +1756,7 @@ void SparseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransf
       if(IsInf(sse2)) {
         //some numerical error
         params.Tcamera = Tlast;
-        params.stderr.resize(6,Inf);
+        params.standardError.resize(6,Inf);
         return;
       }
     }

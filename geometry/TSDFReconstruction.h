@@ -27,7 +27,7 @@ public:
   //output parameters
   int numIters;
   RigidTransform Tcamera;
-  Vector stderr;
+  Vector standardError;
   Real rmseDistance,rmseColor;
   int numInliers;
   std::vector<std::pair<Vector3,Vector3> > correspondences;
