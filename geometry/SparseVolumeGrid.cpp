@@ -2,6 +2,7 @@
 #include <KrisLibrary/meshing/MarchingCubes.h>
 #include <algorithm>
 #include <iostream>
+#include <limits>
 
 using namespace std;
 using namespace Geometry;
@@ -475,7 +476,7 @@ void SparseVolumeGrid::ExtractMesh(float isosurface,Meshing::TriMesh& mesh)
   mesh.tris.resize(0);
   mesh.verts.resize(0);
   const static int m=8,n=8,p=8;
-  const static float NaN = 0.0/0.0;
+  const static float NaN = std::numeric_limits<float>::quiet_NaN();
   TriMesh tempMesh;
   Array3D<float> expandedBlock(m+1,n+1,p+1);
   for(auto b=hash.buckets.begin();b!=hash.buckets.end();b++) {
