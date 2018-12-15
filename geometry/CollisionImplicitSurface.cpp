@@ -125,13 +125,13 @@ void CollisionImplicitSurface::DistanceRangeLocal(const AABB3D& bb,Real& vmin,Re
   }
   else {
     int index=Spline::TimeSegmentation::Map(resolutionMap,res);
-    if(index < 0 or index >= (int)minHierarchy.size()) {
+    if(index < 0 || index >= (int)minHierarchy.size()) {
       printf("Uh... can't look up resolution? %g, result %d\n",res,index);
       for(size_t i=0;i<resolutionMap.size();i++)
         printf("%g ",resolutionMap[i]);
       printf("\n");
     }
-    Assert(index >= 0 and index < (int)minHierarchy.size());
+    Assert(index >= 0 && index < (int)minHierarchy.size());
     chosenMin = &minHierarchy[index];
     chosenMax = &maxHierarchy[index];
   }
@@ -321,7 +321,7 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
   Tpc_s.mulInverseA(s.currentTransform,pc.currentTransform);
   Matrix4 Mpc_s(Tpc_s);
   AABB3D bb;
-  Real dmin,dmax;
+  //Real dmin,dmax;
   Heap<int,Real> heap;
 
   int bruteForceClosestPoint = -1;
@@ -434,7 +434,7 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
     }
   }
   if(DEBUG_DISTANCE_CHECKING) {
-    if(bruteForceDmin != mindist and bruteForceDmin < upperBound) {
+    if(bruteForceDmin != mindist && bruteForceDmin < upperBound) {
       printf("CollisionImplicitSurface vs CollisionPointCloud Distance error");
       printf("   Discrepancy between brute force and expedited checking: %g vs %g\n",bruteForceDmin,mindist);
       printf("   Points %d vs %d\n",bruteForceClosestPoint,closestPoint);
