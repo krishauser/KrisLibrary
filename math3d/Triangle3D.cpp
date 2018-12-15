@@ -456,7 +456,7 @@ bool Triangle3D::intersects(const Triangle3D& T, Segment3D& S) const
   Vector2 A,D;
   A = planeCoords(S.a);
   D = planeCoords(S.b)-A;
-  if(A.isZero() and D.isZero()) return false; //degenerate
+  if(A.isZero() && D.isZero()) return false; //degenerate
   Real tmin=Zero,tmax=One;
   //(u,v) = A+t*D
   //1) u >= 0 => -uA+t*(-uD) <= 0
