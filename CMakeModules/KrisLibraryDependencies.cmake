@@ -130,10 +130,17 @@ IF(USE_GLPK)
 ENDIF(USE_GLPK)
 
 # TinyXML
-SET(TINYXML_ROOT "${KRISLIBRARY_ROOT}/tinyxml"
-  CACHE PATH
-  "Root of TinyXML Package"
-  FORCE)
+IF(WIN32)
+  SET(TINYXML_ROOT "${KRISLIBRARY_ROOT}"
+    CACHE PATH
+    "Root or parent of TinyXML Package"
+    FORCE)
+ELSE(WIN32)
+  SET(TINYXML_ROOT "${KRISLIBRARY_ROOT}/tinyxml"
+    CACHE PATH
+    "Root of TinyXML Package"
+    FORCE)
+ENDIF(WIN32)
 FIND_PACKAGE(TinyXML)
 IF(TINYXML_FOUND)
   MESSAGE("TinyXML library found")
