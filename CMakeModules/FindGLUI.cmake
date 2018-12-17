@@ -40,26 +40,52 @@ if(OPENGL_FOUND AND GLUT_FOUND)
 			${GLUI_ROOT_DIR}/include
 			DOC
 			"GLUI include directory")
-		find_library(GLUI_LIBRARY
-			NAMES
-			glui32
-			HINTS
-			${GLUI_ROOT_DIR}/msvc/lib
-			${GLUI_ROOT_DIR}/Release
-			${OPENGL_LIBRARY_DIR}
-			${OPENGL_INCLUDE_DIR}/../lib
-			DOC
-			"GLUI library")
-		find_library(GLUI_DEBUG_LIBRARY
-			NAMES
-			glui32d
-			HINTS
-			${GLUI_ROOT_DIR}/msvc/lib
-			${GLUI_ROOT_DIR}/Debug
-			${OPENGL_LIBRARY_DIR}
-			${OPENGL_INCLUDE_DIR}/../lib
-			DOC
-			"GLUI debug library")
+		IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			find_library(GLUI_LIBRARY_RELEASE
+				NAMES
+				glui64
+				HINTS
+				${GLUI_ROOT_DIR}/msvc/lib
+				${GLUI_ROOT_DIR}/x64/Release
+				${OPENGL_LIBRARY_DIR}
+				${OPENGL_INCLUDE_DIR}/../lib
+				DOC
+				"GLUI library")
+			find_library(GLUI_LIBRARY_DEBUG
+				NAMES
+				glui64d
+				HINTS
+				${GLUI_ROOT_DIR}/msvc/lib
+				${GLUI_ROOT_DIR}/x64/Debug
+				${OPENGL_LIBRARY_DIR}
+				${OPENGL_INCLUDE_DIR}/../lib
+				DOC
+				"GLUI debug library")
+		ELSE()
+			find_library(GLUI_LIBRARY_RELEASE
+				NAMES
+				glui32
+				HINTS
+				${GLUI_ROOT_DIR}/msvc/lib
+				${GLUI_ROOT_DIR}/Release
+				${OPENGL_LIBRARY_DIR}
+				${OPENGL_INCLUDE_DIR}/../lib
+				DOC
+				"GLUI library")
+			find_library(GLUI_LIBRARY_DEBUG
+				NAMES
+				glui32d
+				HINTS
+				${GLUI_ROOT_DIR}/msvc/lib
+				${GLUI_ROOT_DIR}/Debug
+				${OPENGL_LIBRARY_DIR}
+				${OPENGL_INCLUDE_DIR}/../lib
+				DOC
+				"GLUI debug library")
+		ENDIF()
+		#this is used to pick between RELEASE and DEBUG library
+		include(SelectLibraryConfigurations)
+		select_library_configurations(GLUI)
 	else()
 		find_library(GLUI_LIBRARY
 			NAMES
