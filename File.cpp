@@ -93,11 +93,11 @@ inline bool FileWrite(FILE_POINTER x, const void* d, int size)
   return (size == s);
 }
 
-inline int SocketClose(int fd) { shutdown(fd,SD_BOTH); return closesocket(fd); }
+inline int SocketClose(SOCKET fd) { shutdown(fd,SD_BOTH); return closesocket(fd); }
 
-inline int SocketRead(int fd,char* data,int size) { return recv(fd,data,size,0); }
+inline int SocketRead(SOCKET fd,char* data,int size) { return recv(fd,data,size,0); }
 
-inline int SocketWrite(int fd,const char* data,int size) { return send(fd,data,size,0); }
+inline int SocketWrite(SOCKET fd,const char* data,int size) { return send(fd,data,size,0); }
 
 #else
 
