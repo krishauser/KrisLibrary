@@ -27,6 +27,11 @@ IF(WIN32)
   FIND_LIBRARY(KRISLIBRARY_LIBRARY_RELEASE
 	NAMES KrisLibrary
 	PATHS ${KRISLIBRARY_ROOT})
+
+	#this is used to pick between RELEASE and DEBUG library
+    include(SelectLibraryConfigurations)
+    select_library_configurations(KRISLIBRARY)
+
   find_package_handle_standard_args(KRISLIBRARY
 	DEFAULT_MSG
 	KRISLIBRARY_INCLUDE_DIR
