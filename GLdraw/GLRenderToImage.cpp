@@ -244,7 +244,7 @@ void GLRenderToImage::GetDepth(const Camera::Viewport& vp,vector<float>& image)
       image[i] = vp.f;
     }
     else {
-      image[i] = 1.0/(zmininv - image[i]*zscale);
+      image[i] = float(1.0/(zmininv - image[i]*zscale));
     }
   }
 }

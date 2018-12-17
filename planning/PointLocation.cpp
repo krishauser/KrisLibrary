@@ -34,7 +34,7 @@ bool NaivePointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::vec
   for(size_t i=0;i<points.size();i++) {
     Real d=space->Distance(points[i],p);
     if(d > 0 && d < dmax) {
-      pair<Real,int> idx(d,i);
+      pair<Real,int> idx(d,(int)i);
       knn.insert(idx);
       if((int)knn.size() > k)
 	knn.erase(--knn.end());

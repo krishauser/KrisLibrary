@@ -625,7 +625,7 @@ void OctreePointSet::FitToPoints()
       }
       Real r = 0;
       if(!ptidx.empty()) {
-        s.center /= ptidx.size();
+        s.center /= (Real)ptidx.size();
         for(size_t j=0;j<ptidx.size();j++) 
           r = Max(r,s.center.distanceSquared(points[ptidx[j]]));
         s.radius = Sqrt(r);

@@ -30,7 +30,7 @@ void NeighborGraph(const vector<Vector3>& pc,Real R,Graph::UndirectedGraph<int,i
     for(GridSubdivision::ObjectSet::const_iterator j=items.begin();j!=items.end();j++) {
       const Vector3* ptr = (const Vector3*)(*j);
       if(ptr->distanceSquared(pc[i]) > R*R) continue;
-      int jindex = ptr - &pc[0];
+      int jindex = int(ptr - &pc[0]);
       if(jindex <= (int)i) continue;
       G.AddEdge((int)i,jindex,0);
     }

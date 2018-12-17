@@ -212,7 +212,7 @@ int Polynomial<T>::Degree() const
 {
   for(size_t i=0;i<coef.size();i++)
     if(coef[coef.size()-1-i]!=T(0))
-return (int)coef.size()-1-i;
+      return int(coef.size()-1-i);
   return 0;
 }
 

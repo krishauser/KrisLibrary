@@ -410,7 +410,7 @@ void MCRPlannerGoalSet::UpdatePathsComplete2(int nstart)
     UpdateMinCost(mode0);
 
     for(size_t i=0;i<mode0.pathCovers.size();i++)
-      q.push(pair<int,int>(m0,i),-Cost(mode0.pathCovers[i]));
+      q.push(pair<int,int>(m0,(int)i),-Cost(mode0.pathCovers[i]));
   }
 
   vector<pair<int,int> > reducible;

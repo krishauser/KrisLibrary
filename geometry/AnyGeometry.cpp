@@ -186,7 +186,7 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D>& geoms)
 {
   vector<int> nonempty;
   for(size_t i=0;i<geoms.size();i++)
-    if(!geoms[i].Empty()) nonempty.push_back(i);
+    if(!geoms[i].Empty()) nonempty.push_back((int)i);
   if(nonempty.empty()) *this = AnyGeometry3D();
   else  if(nonempty.size()==1) {
     *this = geoms[nonempty[0]];
@@ -1174,7 +1174,7 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3& pt,const 
         AnyDistanceQueryResult ires = items[i].Distance(pt,modsettings);
         if(ires.d < res.d) {
           res = ires;
-          PushGroup1(res,i);
+          PushGroup1(res,(int)i);
           modsettings.upperBound = res.d + margin;
         }
       }
@@ -1217,7 +1217,7 @@ bool Collides(const GeometricPrimitive3D& a,const CollisionImplicitSurface& b,Re
 bool Collides(const GeometricPrimitive3D& a,const CollisionMesh& c,Real margin,
 	      vector<int>& meshelements,size_t maxContacts)
 {
-  NearbyTriangles(c,a,margin,meshelements,maxContacts);
+  NearbyTriangles(c,a,margin,meshelements,(int)maxContacts);
   return !meshelements.empty();
 }
 
@@ -1260,7 +1260,7 @@ bool Collides(const CollisionMesh& a,const CollisionMesh& b,Real margin,
     }
     return res;
   }
-  NearbyTriangles(a,b,margin,elements1,elements2,maxContacts);
+  NearbyTriangles(a,b,margin,elements1,elements2,(int)maxContacts);
   return !elements1.empty();
 }
 
@@ -1813,7 +1813,7 @@ AnyDistanceQueryResult Distance_Group(const T& a,const vector<AnyCollisionGeomet
     AnyDistanceQueryResult ires = ::Distance(a,bitems[i],settings);
     if(ires.d < res.d) {
       res = ires;
-      PushGroup2(res,i);
+      PushGroup2(res,(int)i);
       settings.upperBound = res.d;
     }
   }

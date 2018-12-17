@@ -1020,17 +1020,17 @@ void* FuseThread(void* vdata)
     }
     else if(job.type == JOB_THRESHOLD) {
       Timer timer;
-      if(DEBUG_THREADING) printf("Thread %d working on JOB_THRESHOLD\n");
+      if(DEBUG_THREADING) printf("Thread %d working on JOB_THRESHOLD\n",data->id);
       DoThreshold(data);
-      if(DEBUG_THREADING) printf("Thread %d finished JOB_THRESHOLD\n");
+      if(DEBUG_THREADING) printf("Thread %d finished JOB_THRESHOLD\n", data->id);
       if(data->finished)
         data->finished->set(data->id);
     }
     else if(job.type == JOB_COVARIANCE) {
       Timer timer;
-      if(DEBUG_THREADING) printf("Thread %d working on JOB_COVARIANCE\n");
+      if(DEBUG_THREADING) printf("Thread %d working on JOB_COVARIANCE\n", data->id);
       DoCovariance(data);
-      if(DEBUG_THREADING) printf("Thread %d finished JOB_COVARIANCE\n");
+      if(DEBUG_THREADING) printf("Thread %d finished JOB_COVARIANCE\n", data->id);
       if(data->finished)
         data->finished->set(data->id);
     }

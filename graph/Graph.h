@@ -182,7 +182,7 @@ int Graph<NodeData,EdgeData>::AddNode(const NodeData& n)
   nodes.push_back(n);
   edges.push_back(EdgeList());
   co_edges.push_back(CoEdgeList());
-  return nodes.size()-1;
+  return int(nodes.size())-1;
 }
 
 template <class NodeData,class EdgeData>

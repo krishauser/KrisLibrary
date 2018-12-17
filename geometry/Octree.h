@@ -37,7 +37,7 @@ class Octree
   ///Returns the depth of the node in the tree (root is depth 0)
   int Depth(const OctreeNode& n) const { if(n.parentIndex<0) return 0; return 1+Depth(nodes[n.parentIndex]); }
   ///Returns the index of the node 
-  int Index(const OctreeNode& n) const { return &n - &nodes[0]; }
+  int Index(const OctreeNode& n) const { return int(&n - &nodes[0]); }
   ///Returns the node for a given index
   const OctreeNode& Node(int index) const { return nodes[index]; }
   ///Returns the node for a given index

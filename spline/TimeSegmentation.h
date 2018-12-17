@@ -16,7 +16,7 @@ struct TimeSegmentation : public std::vector<Real>
     if(timing.empty() || t < timing.front())    return -1;
     std::vector<Real>::const_iterator i=--std::upper_bound(timing.begin(),timing.end(),t);
     if(i == timing.end()) { return (int)timing.size()-1; }
-    else { return i-timing.begin(); }
+    else { return int(i-timing.begin()); }
   }
 
   ///Same as above, but calculates a parameter u such that
@@ -27,7 +27,7 @@ struct TimeSegmentation : public std::vector<Real>
     if(i == timing.end() || i==--timing.end()) { param=1.0; return (int)timing.size()-1; }
     else { n=i; ++n; }
     param = (t-*i)/(*n-*i);
-    return i-timing.begin();
+    return int(i-timing.begin());
   }
 
   ///Returns an index i such that t is in [t[i],t[i+1]).  If it is beyond
