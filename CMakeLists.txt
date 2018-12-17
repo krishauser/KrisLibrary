@@ -16,7 +16,7 @@ SET (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 INCLUDE(CompilerSettings)
 
 # Set output directories for libraries and executables
-SET( BASE_DIR ${CMAKE_SOURCE_DIR} )
+SET( BASE_DIR ${CMAKE_BINARY_DIR} )
 SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BASE_DIR}/lib )
 SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BASE_DIR}/lib )
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/bin )
@@ -42,6 +42,13 @@ SET(KrisLibrary_SRCS ${KrisLibrary_SRCS} ${PQP_SRCS})
 IF(NOT WIN32)
   list(REMOVE_ITEM KrisLibrary_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/image/gdi.cpp)
 ENDIF(NOT WIN32)
+
+IF(WIN32)
+  #output lib/Release/KrisLibrary.lib and lib/Debug/KrisLibraryd.lib
+  if(NOT CMAKE_DEBUG_POSTFIX)
+    set(CMAKE_DEBUG_POSTFIX d)
+  endif()
+ENDIF(WIN32)
 
 #add all compilation files to the library
 ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS})
