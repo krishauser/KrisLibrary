@@ -129,6 +129,7 @@ public:
 
   VectorTemplate();
   VectorTemplate(const MyT&);
+  VectorTemplate(MyT&&);
   VectorTemplate(int n);
   VectorTemplate(int n, T initval);
   VectorTemplate(int n, const T* vals);
@@ -149,13 +150,14 @@ public:
   void resizePersist(int size, T initval);
   void clear();
 
-  const MyT& operator = (const MyT& v);
+  MyT& operator = (const MyT& v);
+  MyT& operator = (MyT&& v);
   bool operator == (const MyT&) const;
   inline bool operator != (const MyT& a) const { return !operator==(a); }
   inline operator T* ();
   inline operator const T* () const;
   operator std::vector<T> () const;
-  inline const MyT& operator = (const std::vector<T>& v) { copy(v); return *this; }
+  inline MyT& operator = (const std::vector<T>& v) { copy(v); return *this; }
   inline const T& operator() (int i) const { return operator[](i); }
   inline T& operator() (int i) { return operator[](i); }
   inline const T& operator[] (int i) const;

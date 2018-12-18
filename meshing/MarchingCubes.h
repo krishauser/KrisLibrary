@@ -28,11 +28,15 @@ void MarchingCubes(Real (*f)(Real,Real,Real),Real isoval,const AABB3D& bb,const 
 /// Takes a 3D grid as input, meshes the isosurface at f(x)=isoval.
 /// Assumes the input values are defined at the vertices of a grid with
 /// m-1 x n-1 x p-1 cells
-void MarchingCubes(const Array3D<Real>& input,Real isoval,const AABB3D& bb,TriMesh& m);
+///
+/// Defined for T = char, int, float, and double
+template <class T>
+void MarchingCubes(const Array3D<T>& input,T isoval,const AABB3D& bb,TriMesh& m);
 
 /// Takes values of a function f at a cube's vertices as input,
 /// meshes the isosurface at f(x)=isoval
-/// cube vertex indices are given by the index's last 3 bits in xyz order
+/// cube vertex indices are given by the index's last 3 bits in xyz order,
+/// i.e., 0 = 000b = (0,0,0), 1 = 001b = (0,0,+x), 3 = 011b = (0,+y,+x), etc.
 void CubeToMesh(const Real vals[8],Real isoval,const AABB3D& bb,TriMesh& m);
 
   /*@}*/

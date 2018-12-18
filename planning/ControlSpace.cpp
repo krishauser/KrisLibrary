@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "ControlSpace.h"
 #include "CSetHelpers.h"
 #include "EdgePlanner.h"
@@ -20,20 +21,20 @@ class MultiControlSpace : public ControlSpace
 {
 public:
   MultiControlSpace();
-  MultiControlSpace(const std::vector<int>& istateStarts,const std::vector<SmartPointer<ControlSpace> >& spaces);
-  MultiControlSpace(const MultiCSpace* space,const std::vector<SmartPointer<ControlSpace> >& spaces);
-  void Add(int istatemin,int istatemax,const SmartPointer<ControlSpace>& item);
-  void Add(CSpace* space,const SmartPointer<ControlSpace>& item);
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
+  MultiControlSpace(const std::vector<int>& istateStarts,const std::vector<std::shared_ptr<ControlSpace> >& spaces);
+  MultiControlSpace(const MultiCSpace* space,const std::vector<std::shared_ptr<ControlSpace> >& spaces);
+  void Add(int istatemin,int istatemax,const std::shared_ptr<ControlSpace>& item);
+  void Add(CSpace* space,const std::shared_ptr<ControlSpace>& item);
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
   virtual void Successor(const State& x0, const ControlInput& u,State& x1);
   virtual Math::VectorFieldFunction* SuccessorNumeric();
 
   std::vector<pair<int,int>  istateRanges;
-  std::vector<SmartPointer<ControlSpace> > components;
+  std::vector<std::shared_ptr<ControlSpace> > components;
 };
 */
 
-IntegratedControlSet::IntegratedControlSet(const SmartPointer<CSet>& _base,Real _dtmax)
+IntegratedControlSet::IntegratedControlSet(const std::shared_ptr<CSet>& _base,Real _dtmax)
 :timeSelection(Biased),base(_base),dtmax(_dtmax)
 {}
 
@@ -82,16 +83,16 @@ void IntegratedControlSet::Sample(ControlInput& u)
 
 
 
-IntegratedControlSpace::IntegratedControlSpace(const SmartPointer<CSet>& _controlSet,Real _dt,Real _dtmax)
+IntegratedControlSpace::IntegratedControlSpace(const std::shared_ptr<CSet>& _controlSet,Real _dt,Real _dtmax)
 :myDynamics(NULL),type(Euler),space(NULL),controlSet(_controlSet),dt(_dt),dtmax(_dtmax)
 {
-  myControlSet = new IntegratedControlSet(controlSet,dtmax);
+  myControlSet.reset(new IntegratedControlSet(controlSet,dtmax));
 }
 
-IntegratedControlSpace::IntegratedControlSpace(DynamicsFn f,const SmartPointer<CSet>& _controlSet,Real _dt,Real _dtmax)
+IntegratedControlSpace::IntegratedControlSpace(DynamicsFn f,const std::shared_ptr<CSet>& _controlSet,Real _dt,Real _dtmax)
 :myDynamics(f),type(Euler),space(NULL),controlSet(_controlSet),dt(_dt),dtmax(_dtmax)
 {
-  myControlSet = new IntegratedControlSet(controlSet,dtmax);
+  myControlSet.reset(new IntegratedControlSet(controlSet,dtmax));
 }
 
 std::string IntegratedControlSpace::VariableName(int i)
@@ -100,13 +101,13 @@ std::string IntegratedControlSpace::VariableName(int i)
   else return ControlSpace::VariableName(i-1);
 }
 
-void IntegratedControlSpace::SetBaseControlSet(SmartPointer<CSet> baseControlSet)
+void IntegratedControlSpace::SetBaseControlSet(std::shared_ptr<CSet> baseControlSet)
 {
   IntegratedControlSet* iset = dynamic_cast<IntegratedControlSet*>(&*myControlSet);
   iset->base = baseControlSet;
 }
 
-SmartPointer<CSet> IntegratedControlSpace::GetBaseControlSet()
+std::shared_ptr<CSet> IntegratedControlSpace::GetBaseControlSet()
 {
   IntegratedControlSet* iset = dynamic_cast<IntegratedControlSet*>(&*myControlSet);
   return iset->base;
@@ -133,7 +134,7 @@ struct IntegrationFunction : public DiffEqFunction
 };
 
 
-Interpolator* IntegratedControlSpace::Simulate(const State& x0, const ControlInput& u)
+InterpolatorPtr IntegratedControlSpace::Simulate(const State& x0, const ControlInput& u)
 {
   UpdateIntegrationParameters(x0);
 
@@ -168,10 +169,10 @@ Interpolator* IntegratedControlSpace::Simulate(const State& x0, const ControlInp
   //TODO: differential equations on geodesics?
   //if(space)
   //  return new PiecewiseLinearCSpaceInterpolator(space,p);
-  return new PiecewiseLinearInterpolator(p);
+  return make_shared<PiecewiseLinearInterpolator>(p);
 }
 
-SmartPointer<CSet> IntegratedControlSpace::GetControlSet(const Config& x)
+std::shared_ptr<CSet> IntegratedControlSpace::GetControlSet(const Config& x)
 {
   UpdateIntegrationParameters(x);
   IntegratedControlSet* s = dynamic_cast<IntegratedControlSet*>(&*myControlSet);
@@ -184,7 +185,7 @@ void IntegratedControlSpace::Derivative(const State& x, const ControlInput& u,St
 {
   if(myDynamics) myDynamics(x,u,dx);
   else {
-    fprintf(stderr,"IntegratedControlSpace: no dynamics function provided\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"IntegratedControlSpace: no dynamics function provided\n");
     dx.resize(x.n);
     dx.set(0.0);
   }
@@ -203,10 +204,10 @@ public:
 class KinematicSteeringFunction : public SteeringFunction
 {
 public:
-  SmartPointer<CSpace> space;
-  KinematicSteeringFunction(const SmartPointer<CSpace>& _space) :space(_space) {}
+  std::shared_ptr<CSpace> space;
+  KinematicSteeringFunction(const std::shared_ptr<CSpace>& _space) :space(_space) {}
   virtual bool Connect(const Config& x,const Config& y,KinodynamicMilestonePath& path) {
-    path = KinodynamicMilestonePath(y,new CSpaceInterpolator(space,x,y));
+    path = KinodynamicMilestonePath(y,make_shared<CSpaceInterpolator>(space.get(),x,y));
     return true; 
   }
 };
@@ -216,8 +217,8 @@ class ReverseKinematicControlSpace : public ControlSpace
 {
 public:
   ReverseKinematicControlSpace(KinematicControlSpace* space);
-  virtual SmartPointer<CSet> GetControlSet(const Config& x);
-  virtual Interpolator* Simulate(const State& x1, const ControlInput& u);
+  virtual std::shared_ptr<CSet> GetControlSet(const Config& x);
+  virtual InterpolatorPtr Simulate(const State& x1, const ControlInput& u);
   virtual void Successor(const State& x1, const ControlInput& u,State& x0);
   virtual Math::VectorFieldFunction* SuccessorNumeric();
 
@@ -227,18 +228,18 @@ public:
 ReverseKinematicControlSpace::ReverseKinematicControlSpace(KinematicControlSpace* _space)
 :space(_space)
 {}
-SmartPointer<CSet> ReverseKinematicControlSpace::GetControlSet(const Config& x)
-{ return SmartPointer<CSet>(new KinematicControlSet(space->base,x,space->maxNeighborhoodRadius));}
-Interpolator* ReverseKinematicControlSpace::Simulate(const State& x1, const ControlInput& u) { return new CSpaceInterpolator(space->base,x1,u); }
+std::shared_ptr<CSet> ReverseKinematicControlSpace::GetControlSet(const Config& x)
+{ return std::shared_ptr<CSet>(new KinematicControlSet(space->base.get(),x,space->maxNeighborhoodRadius));}
+InterpolatorPtr ReverseKinematicControlSpace::Simulate(const State& x1, const ControlInput& u) { return make_shared<CSpaceInterpolator>(space->base.get(),x1,u); }
 void ReverseKinematicControlSpace::Successor(const State& x1, const ControlInput& u,State& x0) { x0 = u;}
 Math::VectorFieldFunction* ReverseKinematicControlSpace::SuccessorNumeric() { return NULL; }
 
 
-KinematicControlSpace::KinematicControlSpace(const SmartPointer<CSpace>& _base,Real _maxNeighborhoodRadius)
+KinematicControlSpace::KinematicControlSpace(const std::shared_ptr<CSpace>& _base,Real _maxNeighborhoodRadius)
 :base(_base),maxNeighborhoodRadius(_maxNeighborhoodRadius)
 {
-  mySteeringFunction = new KinematicSteeringFunction(_base);
-  reverseControlSpace = new ReverseKinematicControlSpace(this);
+  mySteeringFunction = make_shared<KinematicSteeringFunction>(_base);
+  reverseControlSpace = make_shared<ReverseKinematicControlSpace>(this);
 }
 
 std::string KinematicControlSpace::VariableName(int i) 
@@ -246,14 +247,14 @@ std::string KinematicControlSpace::VariableName(int i)
   return base->VariableName(i)+"-target";
 }
 
-SmartPointer<CSet> KinematicControlSpace::GetControlSet(const Config& x)
+std::shared_ptr<CSet> KinematicControlSpace::GetControlSet(const Config& x)
 {
-  return SmartPointer<CSet>(new KinematicControlSet(base,x,maxNeighborhoodRadius));
+  return std::shared_ptr<CSet>(new KinematicControlSet(base.get(),x,maxNeighborhoodRadius));
 }
 
-Interpolator* KinematicControlSpace::Simulate(const State& x0, const ControlInput& u)
+InterpolatorPtr KinematicControlSpace::Simulate(const State& x0, const ControlInput& u)
 {
-  return new CSpaceInterpolator(base,x0,u);
+  return make_shared<CSpaceInterpolator>(base.get(),x0,u);
 }
 
 void KinematicControlSpace::Successor(const State& x0, const ControlInput& u,State& x1)

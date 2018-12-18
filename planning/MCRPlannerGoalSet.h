@@ -35,7 +35,7 @@ class MCRPlannerGoalSet
     int mode;
   };
   struct Edge {
-    SmartPointer<EdgePlanner> e;
+    EdgePlannerPtr e;
     int mode;
   };
   typedef Graph::UndirectedGraph<Milestone,Edge> Roadmap;
@@ -54,10 +54,10 @@ class MCRPlannerGoalSet
   MCRPlannerGoalSet(CSpace* space);
   void Init(const Config& start,CSet* goal);
   ///Performs one iteration of planning given a limit on the explanation size
-  void Expand(Real maxExplanationCost,vector<int>& newNodes);
-  void Expand2(Real maxExplanationCost,vector<int>& newNodes);
+  void Expand(Real maxExplanationCost,std::vector<int>& newNodes);
+  void Expand2(Real maxExplanationCost,std::vector<int>& newNodes);
   ///Performs bottom-up planning according to a given limit expansion schedule
-  void Plan(int initialLimit,const vector<int>& expansionSchedule,vector<int>& bestPath,Subset& cover);
+  void Plan(int initialLimit,const std::vector<int>& expansionSchedule,std::vector<int>& bestPath,Subset& cover);
   ///Outputs the graph with the given explanation limit
   void BuildRoadmap(Real maxExplanationCost,RoadmapPlanner& prm);
   ///Outputs the CC graph.  Each node is a connected component of the roadmap
@@ -82,8 +82,8 @@ class MCRPlannerGoalSet
   int AddEdge(int i,const Config& q,Real maxExplanationCost);  //returns index of q
   void AddEdgeRaw(int i,int j);
   int ExtendToward(int i,const Config& qdest,Real maxExplanationCost);
-  void KNN(const Config& q,int k,vector<int>& neighbors,vector<Real>& distances);
-  void KNN(const Config& q,Real maxExplanationCost,int k,vector<int>& neighbors,vector<Real>& distances);
+  void KNN(const Config& q,int k,std::vector<int>& neighbors,std::vector<Real>& distances);
+  void KNN(const Config& q,Real maxExplanationCost,int k,std::vector<int>& neighbors,std::vector<Real>& distances);
   void UpdatePathsGreedy();
   void UpdatePathsComplete();
   void UpdatePathsGreedy2(int nstart=-1);
@@ -111,10 +111,10 @@ class MCRPlannerGoalSet
   CSpace* space;
   CSet* goalSet;
   Optimization::NonlinearProgram* goalNumeric;
-  vector<int> goalNodes;   //a list of goal nodes in roadmap
+  std::vector<int> goalNodes;   //a list of goal nodes in roadmap
 
   //weighted explanation
-  vector<Real> obstacleWeights;
+  std::vector<Real> obstacleWeights;
  
   //settings for RRT* like expansion
   int numConnections;

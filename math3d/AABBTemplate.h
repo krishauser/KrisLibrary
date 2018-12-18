@@ -2,7 +2,7 @@
 #define MATH3D_AABB_TEMPLATE_H
 
 #include <KrisLibrary/math/math.h>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 
 namespace Math3D {
 

@@ -109,7 +109,7 @@ public:
   Math::Real kernelRadius,kernelTruncationFactor;
   std::vector<Math::Vector> pointList;
   std::vector<void*> dataList;
-  SmartPointer<PointLocationBase> pointLocation;
+  std::shared_ptr<PointLocationBase> pointLocation;
 };
 
 

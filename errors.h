@@ -1,6 +1,7 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
+#include <KrisLibrary/Logger.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -23,7 +24,7 @@ void Abort();
 
 inline void __Assert(const char * file, int line, const char * e)
 {
-  fprintf(stderr,"Assertion \"%s\" failed: file \"%s\", line %d\n",e,file,line);
+    LOG4CXX_FATAL(KrisLibrary::logger(),"Assertion \""<<e<<"\" failed: file \""<<file<<"\", line "<<line);
   Abort();
 }
 
@@ -40,28 +41,30 @@ inline void __Assert(const char * file, int line, const char * e)
 
 inline void RaiseErrorFmt(const char* func, const char* file, int line, const char* fmt, ...)
 {
-  fprintf(stderr,"Error in %s (%s:%d): ", func,file,line); 
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in "<< func<<" ("<<file<<":"<<line); 
   va_list args;
 	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-  fprintf(stderr,"\n");
+  char buf[1024];
+	vsnprintf(buf, 1024, fmt, args);
+    LOG4CXX_FATAL(KrisLibrary::logger(),buf);
   Abort();
 }
 
 inline void RaiseErrorFmt(const char* fmt,...)
 {
-  fprintf(stderr,"Error (unknown function): ");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error (unknown function): ");
   va_list args;
 	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-  fprintf(stderr,"\n");
+	char buf[1024];
+  vsnprintf(buf, 1024, fmt, args);
+    LOG4CXX_FATAL(KrisLibrary::logger(),buf);
   Abort();
 }
 
 
 inline void RaiseError(const char* func, const char* file, int line, const char* text)
 {
-  fprintf(stderr,"Error in %s (%s:%d): %s\n", func,file,line,text); 
+    LOG4CXX_FATAL(KrisLibrary::logger(),"Error in "<< func<<" ("<<file<<":"<<line<<"): "<<text); 
   Abort();
 }
 

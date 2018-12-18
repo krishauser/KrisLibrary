@@ -28,7 +28,7 @@ public:
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual bool IsFeasible(const Config& x);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Properties(PropertyMap&) const;
 

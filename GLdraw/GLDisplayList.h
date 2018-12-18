@@ -1,7 +1,7 @@
 #ifndef GL_DISPLAY_LIST_H
 #define GL_DISPLAY_LIST_H
 
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 
 namespace GLDraw {
 
@@ -17,7 +17,7 @@ struct GLDisplayList
   void callAll() const;
   void erase();
 
-  SmartPointer<int> id;
+  std::shared_ptr<int> id;
   int count;
 };
 

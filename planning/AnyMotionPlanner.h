@@ -1,6 +1,7 @@
 #ifndef ANY_MOTION_PLANNER_H
 #define ANY_MOTION_PLANNER_H
 
+#include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 
 class TiXmlElement;
@@ -24,9 +25,9 @@ class HaltingCondition
  public:
   HaltingCondition();
   ///Load settings from JSON string
-  bool LoadJSON(const string& str);
+  bool LoadJSON(const std::string& str);
   ///Save settings to JSON string
-  string SaveJSON() const;
+  std::string SaveJSON() const;
 
   ///Stop on the first solution found
   bool foundSolution;
@@ -65,7 +66,7 @@ class HaltingCondition
 class MotionPlannerInterface
 {
  public:
-  typedef Graph::UndirectedGraph<Config,SmartPointer<EdgePlanner> > Roadmap;
+  typedef Graph::UndirectedGraph<Config,std::shared_ptr<EdgePlanner> > Roadmap;
 
   MotionPlannerInterface() {}
   virtual ~MotionPlannerInterface() {}
@@ -176,9 +177,9 @@ class MotionPlanningProblem
  * MilestonePath path;
  * string res = planner->Plan(path,cond);
  * if(path.edges.empty())  //failed
- *   printf("Planning failed\n");
+ *   LOG4CXX_INFO(KrisLibrary::logger(),"Planning failed\n");
  * else
- *   printf("Planning succeeded, path has length %g\n",path.Length());
+ *   LOG4CXX_INFO(KrisLibrary::logger(),"Planning succeeded, path has length "<<path.Length());
  *
  * //clean up the planner
  * delete planner;
@@ -245,18 +246,18 @@ class MotionPlannerFactory
   virtual MotionPlannerInterface* Create(CSpace* space,const Config& a,CSet* goalSet);
   ///Helper: make a motion planner without shortcut / restart modifiers
   virtual MotionPlannerInterface* CreateRaw(CSpace* space);
-  ///Helper: apply shortcut / restart modifiers to a given planner interface
+  ///Helper: apply shortcut / restart modifiers to a given planner interface, deleting the prior pointer if necessary
   virtual MotionPlannerInterface* ApplyModifiers(MotionPlannerInterface*,const MotionPlanningProblem& problem);
   ///Load settings from XML
   bool Load(TiXmlElement* e);
   ///Save settings to XML
   bool Save(TiXmlElement* e);
   ///Load settings from JSON string
-  bool LoadJSON(const string& str);
+  bool LoadJSON(const std::string& str);
   ///Save settings to JSON string
-  string SaveJSON() const;
+  std::string SaveJSON() const;
 
-  string type;
+  std::string type;
   int knn;                 ///<for PRM (default 10)
   Real connectionThreshold;///<for PRM,RRT,SBL,SBLPRT,RRT*,PRM*,LazyPRM*,LazyRRG* (default Inf)
   Real suboptimalityFactor;///<for RRT*, LazyPRM*, LazyRRG* (default 0)
@@ -267,11 +268,11 @@ class MotionPlannerFactory
   bool useGrid;            ///<for SBL, SBLPRT (default true): for SBL, uses grid-based random point selection
   Real gridResolution;     ///<for SBL, SBLPRT, FMM, FMM* (default 0): if nonzero, for SBL, specifies point selection grid size (default 0.1), for FMM / FMM*, specifies resolution (default 1/8 of domain)
   int randomizeFrequency;  ///<for SBL, SBLPRT (default 50): how often the grid projection is randomly perturbed
-  string pointLocation;    ///<for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("random", "randombest [k]", "kdtree" supported)
+  std::string pointLocation;    ///<for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("random", "randombest [k]", "kdtree" supported)
   bool storeEdges;         ///<true if local planner data is stored during planning (false may save memory, default)
   bool shortcut;           ///<true if you wish to perform shortcutting afterwards (default false)
   bool restart;            ///<true if you wish to restart the planner to get better paths with the remaining time (default false)
-  string restartTermCond;  ///<used if restart is true, JSON string defining termination condition (default "{foundSolution:1;maxIters:1000}")
+  std::string restartTermCond;  ///<used if restart is true, JSON string defining termination condition (default "{foundSolution:1;maxIters:1000}")
 };
 
 

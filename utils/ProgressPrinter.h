@@ -1,6 +1,7 @@
 #ifndef UTILS_PROGRESS_PRINTER_H
 #define UTILS_PROGRESS_PRINTER_H
 
+#include <KrisLibrary/Logger.h>
 #include <iosfwd>
 
 /** @ingroup Utils

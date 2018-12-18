@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Contact.h"
 #include <math/complex.h>
 #include <iostream>
@@ -204,8 +205,8 @@ void FrictionToFrictionlessContacts(const vector<ContactPoint>& c1,int k,vector<
   for(size_t i=0;i<c1.size();i++) {
     if(c1[i].kFriction == 0) n++;
     else if(c1[i].kFriction > 1e6) {
-      cout<<"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case"<<endl;
-      getchar();
+      LOG4CXX_WARN(KrisLibrary::logger(),"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case");
+      KrisLibrary::loggerWait();
     }
     else n+=k;
   }
@@ -292,8 +293,8 @@ void FrictionToFrictionlessContacts(const vector<ContactPoint2D>& c1,vector<Cont
   for(size_t i=0;i<c1.size();i++) {
     if(c1[i].kFriction == 0) n++;
     else if(c1[i].kFriction > 1e6) {
-      cout<<"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case"<<endl;
-      getchar();
+      LOG4CXX_WARN(KrisLibrary::logger(),"FrictionToFrictionlessContacts: Warning, be careful with the use of this function, behavior is not always correct in kFriction = inf case");
+      KrisLibrary::loggerWait();
     }
     else n+=2;
   }
@@ -658,7 +659,7 @@ void CustomContactFormation::addLinkForceLimit(int link,const Vector3& direction
   for(size_t i=0;i<links.size();i++) 
     if(links[i] == link) contactIndices.push_back(int(i));
   if(contactIndices.empty()) {
-    fprintf(stderr,"CustomContactFormation::addLinkForceLimit: warning, link %d does not appear to be represented in this formation\n",link);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"CustomContactFormation::addLinkForceLimit: warning, link "<<link);
     return;
   }
   addForceLimit(contactIndices,direction,maximum);
@@ -670,7 +671,7 @@ void CustomContactFormation::addLinkWrenchLimit(int link,const Vector3& fdirecti
   for(size_t i=0;i<links.size();i++) 
     if(links[i] == link) contactIndices.push_back(int(i));
   if(contactIndices.empty()) {
-    fprintf(stderr,"CustomContactFormation::addLinkWrenchLimit: warning, link %d does not appear to be represented in this formation\n",link);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"CustomContactFormation::addLinkWrenchLimit: warning, link "<<link);
     return;
   }
   addWrenchLimit(contactIndices,fdirection,mdirection,maximum);
@@ -713,7 +714,7 @@ void CustomContactFormation::addLinkForceConstraint(int link,const Matrix& A,con
   for(size_t i=0;i<links.size();i++) 
     if(links[i] == link) contactIndices.push_back(int(i));
   if(contactIndices.empty()) {
-    fprintf(stderr,"CustomContactFormation::addLinkForceConstraint: warning, link %d does not appear to be represented in this formation\n",link);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"CustomContactFormation::addLinkForceConstraint: warning, link "<<link);
     return;
   }
   vector<Matrix> matrices(contactIndices.size());
@@ -730,7 +731,7 @@ void CustomContactFormation::addLinkWrenchConstraint(int link,const Matrix& A,co
   for(size_t i=0;i<links.size();i++) 
     if(links[i] == link) contactIndices.push_back(int(i));
   if(contactIndices.empty()) {
-    fprintf(stderr,"CustomContactFormation::addLinkForceConstraint: warning, link %d does not appear to be represented in this formation\n",link);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"CustomContactFormation::addLinkForceConstraint: warning, link "<<link);
     return;
   }
   vector<Matrix> matrices(contactIndices.size());

@@ -1,6 +1,7 @@
 #ifndef GRAPH_APPROXIMATE_SHORTEST_PATHS_H
 #define GRAPH_APPROXIMATE_SHORTEST_PATHS_H
 
+#include <KrisLibrary/Logger.h>
 #include "ShortestPaths.h"
 
 namespace Graph {
@@ -366,7 +367,7 @@ bool ApproximateShortestPathProblem<Node,Edge>::HasShortestPaths(int s,WeightFun
     int n=H.top(); H.pop();
     if(n==s) {
       if(d[n]!=0) {
-	printf("The start doesn't have distance 0\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"The start doesn't have distance 0\n");
 	return false;
       }
     }
@@ -376,15 +377,15 @@ bool ApproximateShortestPathProblem<Node,Edge>::HasShortestPaths(int s,WeightFun
       if(p[n] == t) {
 	if(fudgeFactor == 1.0) {
 	  if(fabs(d[n]-d[t]-W) > 1e-10) {
-	    printf("Inconsistency in node %d's weight through parent %d, %f vs %f=%f+%f\n", n, t, d[n],d[t]+W,d[t],W);
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Inconsistency in node "<< n<<"'s weight through parent "<< t<<", "<< d[n]<<" vs "<<d[t]+W<<"="<<d[t]<<"+"<<W);
 	    return false;
 	  }
 	}
       }
       if(d[n]-(d[t]+W)*fudgeFactor > 1e-10) {
-	printf("There exists a shorter path (%d,%d) not (%d,%d)!\n",t,n,p[n],n);
-	printf("Weight 1 is %f compared to %f\n", d[t]+W, d[n]);
-	printf("Fudge factor %f, comparison value %f\n", fudgeFactor, d[n]-(d[t]-W)*fudgeFactor);
+	LOG4CXX_INFO(KrisLibrary::logger(),"There exists a shorter path ("<<t<<","<<n<<") not ("<<p[n]<<","<<n);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Weight 1 is "<< d[t]+W<<" compared to "<< d[n]);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Fudge factor "<< fudgeFactor<<", comparison value "<< d[n]-(d[t]-W)*fudgeFactor);
 	return false;
       }
     }

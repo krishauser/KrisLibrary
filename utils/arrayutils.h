@@ -3,11 +3,16 @@
 
 #include <algorithm>
 #include <functional>
+
 #if ((defined (__GNUC__) && (__GNUC__ > 2)) && !defined(__APPLE__))
 #include <ext/algorithm>
+#if __cplusplus <= 199711L
+//CPLUSPLUS 11 or greater
 namespace std {
   using __gnu_cxx::copy_n;
 }
+#endif 
+
 #endif
 #include <assert.h>
 
@@ -105,9 +110,9 @@ inline T nth_element (const std::vector<T>& S, size_t n)
     if(S[i] < m) S1.push_back(S[i]);
     else if(m < S[i]) S2.push_back(S[i]);
   }
-  if(S1.size() > n) return nth_element(S1,n,std::less<T>());
+  if(S1.size() > n) return nth_element(S1,n);
   else if(S.size()-S2.size()>=n) return m;
-  else return nth_element(S2,n-(S.size()-S2.size()),std::less<T>());
+  else return nth_element(S2,n-(S.size()-S2.size()));
 }
 
 ///returns the nth largest element in the array a

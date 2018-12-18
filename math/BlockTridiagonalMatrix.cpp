@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "BlockTridiagonalMatrix.h"
 #include "LUDecomposition.h"
 #include <errors.h>
@@ -283,7 +284,7 @@ bool BlockTridiagonalMatrix::solveInverse_LU(const BlockVector& b,BlockVector& x
   for(size_t i=0;i<diagonal.size();i++) {
     if(i == 0) {
       if(!lud.set(diagonal[i])) {
-        printf("diagonal block %d not invertible\n",i);
+        LOG4CXX_INFO(KrisLibrary::logger(),"diagonal block "<<i);
         return false;
       }
       lud.getInverse(Binv[i]);
@@ -296,7 +297,7 @@ bool BlockTridiagonalMatrix::solveInverse_LU(const BlockVector& b,BlockVector& x
       mtemp2.mul(upperDiagonal[i-1],mtemp);
       mtemp.sub(diagonal[i],mtemp2);
       if(!lud.set(mtemp)) {
-        printf("diagonal block %d not invertible\n",i);
+        LOG4CXX_INFO(KrisLibrary::logger(),"diagonal block "<<i);
         return false;
       }
       lud.getInverse(Binv[i]);

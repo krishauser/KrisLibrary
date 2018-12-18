@@ -49,6 +49,7 @@
 *------------------------------------------------------------------------------
 */
 
+#include <KrisLibrary/Logger.h>
 #include "stdio.h"
 #include <KrisLibrary/math/VectorTemplate.h>
 using namespace Math;

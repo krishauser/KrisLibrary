@@ -1,6 +1,8 @@
+#include <KrisLibrary/Logger.h>
 #include "FMMMotionPlanner.h"
 #include <utils/indexing.h>
 #include <Timer.h>
+using namespace std;
 
 ///binding for fMM
 static CSpace* currentFMMSpace = NULL;
@@ -123,18 +125,18 @@ bool FMMMotionPlanner::SolveFMM()
       Real w=(bmax[i]-bmin[i]);
       if(FreeLower(distances,i)) {
 	bmin[i] -= w*0.25;
-	printf("Decreasing bottom domain %d by %g\n",i,w*0.25);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Decreasing bottom domain "<<i<<" by "<<w*0.25);
       }
       if(FreeUpper(distances,i)) {
 	bmax[i] += w*0.25;
-	printf("Increasing top domain %d by %g\n",i,w*0.25);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Increasing top domain "<<i<<" by "<<w*0.25);
       }
     }
   }
 
   currentFMMSpace = space;
   if(!FMMSearch(start,goal,bmin,bmax,resolution,FMMCost,distances)) {
-    printf("FMM search failed\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"FMM search failed\n");
     return false;
   }
   vector<Vector> pts = GradientDescent(distances,ToGrid(goal));
@@ -159,7 +161,7 @@ bool FMMMotionPlanner::SolveFMM()
   bool feasible = true;
   for(size_t i=0;i<pathCheck.edges.size();i++) {
     if(!pathCheck.edges[i]->IsVisible()) {
-      cout<<"Path check failed on edge "<<pathCheck.edges[i]->Start()<<" -> "<<pathCheck.edges[i]->End()<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Path check failed on edge "<<pathCheck.edges[i]->Start()<<" -> "<<pathCheck.edges[i]->End());
       feasible = false;
       break;
     }
@@ -170,11 +172,11 @@ bool FMMMotionPlanner::SolveFMM()
   }
   else {
     if(!solution.edges.empty() && solution.Length() < pathCheck.Length()) {
-      printf("SolveFMM: Warning, higher resolution found a longer feasible path: %g vs %g\n",pathCheck.Length(),solution.Length());
+      LOG4CXX_WARN(KrisLibrary::logger(),"SolveFMM: Warning, higher resolution found a longer feasible path: "<<pathCheck.Length()<<" vs "<<solution.Length());
       return false;
     }
     else {
-      printf("SolveFMM: Found a solution, length %g!\n",pathCheck.Length());
+      LOG4CXX_INFO(KrisLibrary::logger(),"SolveFMM: Found a solution, length "<<pathCheck.Length());
       solution = pathCheck;
     }
   }

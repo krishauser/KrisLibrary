@@ -87,7 +87,7 @@ class SBLPRT
   virtual ~SBLPRT();
   virtual void Cleanup();
   int AddSeed(const Config& q);
-  pair<int,int> Expand();  //picks a random tree, returns connection if made
+  std::pair<int,int> Expand();  //picks a random tree, returns connection if made
   int ExpandTree(int t);  //expands tree t, calls PickConnection to attempt a connection, and returns the connected tree if successful, or -1 on failure
 
   void AddRoadmapEdgesIfBelowThreshold(Real distanceThreshold);
@@ -97,7 +97,7 @@ class SBLPRT
   bool AreSeedsConnected(int i,int j) const { return ccs.GetComponent(i) == ccs.GetComponent(j); }
   void CreatePath(int i,int j,MilestonePath& path);
 
-  virtual pair<int,Node*> PickConnection(int t,Node* n);
+  virtual std::pair<int,Node*> PickConnection(int t,Node* n);
   //helpers for picking a tree/node to connect
   int PickRandomAdjacentTree(int t);
   int PickClosestAdjacentTree(int t,const Config& x);

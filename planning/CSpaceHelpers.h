@@ -21,7 +21,7 @@ public:
 class GeodesicCSpaceAdaptor : public GeodesicCSpace
 {
 public:
-  GeodesicCSpaceAdaptor(const SmartPointer<GeodesicSpace>& geodesic);
+  GeodesicCSpaceAdaptor(const std::shared_ptr<GeodesicSpace>& geodesic);
   virtual int NumDimensions() { return geodesic->NumDimensions(); }
   virtual int NumIntrinsicDimensions() { return geodesic->NumIntrinsicDimensions(); }
   virtual Real Distance(const Config& x, const Config& y) { return geodesic->Distance(x,y); }
@@ -34,7 +34,7 @@ public:
   virtual void InterpolateDeriv2(const Config& a,const Config& b,Real u,Vector& ddx) { geodesic->InterpolateDeriv2(a,b,u,ddx); }
   virtual void Integrate(const Config& a,const Vector& da,Config& b) { geodesic->Integrate(a,da,b); }
 
-  SmartPointer<GeodesicSpace> geodesic;
+  std::shared_ptr<GeodesicSpace> geodesic;
 };
 
 /** @ingroup MotionPlanning
@@ -67,7 +67,7 @@ public:
   BoxCSpace(const Vector& bmin,const Vector& bmax);
   void SetDomain(const Vector& bmin,const Vector& bmax);
   void GetDomain(Vector& bmin,Vector& bmax);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual void Properties(PropertyMap&);
@@ -84,9 +84,9 @@ class MultiCSpace : public GeodesicCSpace
 {
 public:
   MultiCSpace();
-  MultiCSpace(const SmartPointer<CSpace>& space1,const SmartPointer<CSpace>& space2);
-  MultiCSpace(const std::vector<SmartPointer<CSpace> >& components);
-  void Add(const std::string& name,const SmartPointer<CSpace>& space,Real distanceWeight=1);
+  MultiCSpace(const std::shared_ptr<CSpace>& space1,const std::shared_ptr<CSpace>& space2);
+  MultiCSpace(const std::vector<std::shared_ptr<CSpace> >& components);
+  void Add(const std::string& name,const std::shared_ptr<CSpace>& space,Real distanceWeight=1);
 
   ///Rather than testing individual CSpace's, this flattens all the constraints so that 
   ///they're in the constraints list.
@@ -94,7 +94,7 @@ public:
   ///Works once CSpaces are flattened
   void AddConstraint(int spaceIndex,const std::string& name,CSet* constraint);
   ///Works once CSpaces are flattened
-  void AddConstraint(int spaceIndex,const std::string& name,const SmartPointer<CSet>& constraint);
+  void AddConstraint(int spaceIndex,const std::string& name,const std::shared_ptr<CSet>& constraint);
   ///Works once CSpaces are flattened
   void AddConstraint(int spaceIndex,const std::string& name,CSet::CPredicate test);
 
@@ -108,15 +108,15 @@ public:
   virtual std::string VariableName(int i);
   virtual int NumConstraints();
   virtual std::string ConstraintName(int i);
-  virtual SmartPointer<CSet> Constraint(int i);
+  virtual std::shared_ptr<CSet> Constraint(int i);
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual bool IsFeasible(const Config&);
   virtual bool ProjectFeasible(Config& x);
   virtual Optimization::NonlinearProgram* FeasibleNumeric();
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int constraint);
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int constraint);
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
   virtual void Midpoint(const Config& x,const Config& y,Config& out);
@@ -130,7 +130,7 @@ public:
   virtual void InterpolateDeriv2(const Config& a,const Config& b,Real u,Vector& ddx);
   virtual void Integrate(const Config& a,const Vector& da,Config& b);
 
-  std::vector<SmartPointer<CSpace> > components;
+  std::vector<std::shared_ptr<CSpace> > components;
   std::vector<std::string> componentNames;
   std::vector<Real> distanceWeights;
 };
@@ -153,12 +153,12 @@ public:
   virtual std::string VariableName(int i);
   virtual int NumConstraints();
   virtual std::string ConstraintName(int i);
-  virtual SmartPointer<CSet> Constraint(int i);
+  virtual std::shared_ptr<CSet> Constraint(int i);
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
   virtual bool IsFeasible(const Config& x);
   virtual bool IsFeasible(const Config&,int constraint);
   virtual bool ProjectFeasible(Config& x);
@@ -183,9 +183,9 @@ public:
   virtual bool IsFeasible(const Config& x,int obstacle) { return CSpace::IsFeasible(x,obstacle); }
   virtual bool ProjectFeasible(Config& x) { return CSpace::ProjectFeasible(x); }
   virtual Optimization::NonlinearProgram* FeasibleNumeric() { return CSpace::FeasibleNumeric(); }
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b) { return CSpace::LocalPlanner(a,b); }
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b) { return CSpace::LocalPlanner(a,b); }
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
 
   std::vector<int> activeConstraints;
 };
@@ -210,10 +210,10 @@ public:
   virtual bool IsFeasible(const Config& x);
   virtual bool IsFeasible(const Config& x,int obstacle);
   virtual void CheckConstraints(const Config& x,std::vector<bool>& satisfied);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
   bool IsFeasible_NoDeps(const Config& x,int obstacle);
-  EdgePlanner* PathChecker_NoDeps(const Config& a,const Config& b,int obstacle);
+  EdgePlannerPtr PathChecker_NoDeps(const Config& a,const Config& b,int obstacle);
   void SetupAdaptiveInfo();
   bool AddFeasibleDependency(int constraint,int dependency);
   bool AddVisibleDependency(int constraint,int dependency);
@@ -243,11 +243,11 @@ public:
 
 /** @brief Create a single-obstacle edge checker that uses discretization.
  */
-EdgePlanner* MakeSingleConstraintEpsilonChecker(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon);
+EdgePlannerPtr MakeSingleConstraintEpsilonChecker(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon);
 
 /** @brief Create a single-obstacle edge checker that uses repeated bisection.
  */
-EdgePlanner* MakeSingleConstraintBisectionPlanner(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon);
+EdgePlannerPtr MakeSingleConstraintBisectionPlanner(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon);
 
 
 #endif

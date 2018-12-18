@@ -3,7 +3,7 @@
 #include "misc.h"
 #include <KrisLibrary/math/misc.h>
 #include <KrisLibrary/math/Interval.h>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include "LinearlyDependent.h"
 #include "interpolate.h"
 using namespace std;

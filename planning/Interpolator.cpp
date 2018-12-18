@@ -36,11 +36,11 @@ CSpaceInterpolator::CSpaceInterpolator(CSpace* _space,const Config& _a,const Con
 :space(_space),a(_a),b(_b)
 {}
 
-ReverseInterpolator::ReverseInterpolator(const SmartPointer<Interpolator>& _base)
+ReverseInterpolator::ReverseInterpolator(const InterpolatorPtr& _base)
 :base(_base)
 {}
 
-TimeRemappedInterpolator::TimeRemappedInterpolator(const SmartPointer<Interpolator>& _base,Real _a,Real _b,Real _pstart,Real _pend)
+TimeRemappedInterpolator::TimeRemappedInterpolator(const InterpolatorPtr& _base,Real _a,Real _b,Real _pstart,Real _pend)
 :base(_base),a(_a),b(_b),pstart(_pstart),pend(_pend)
 {}
 
@@ -57,7 +57,7 @@ Real TimeRemappedInterpolator::Length() const
 PathInterpolator::PathInterpolator()
 {}
 
-PathInterpolator::PathInterpolator(const SmartPointer<Interpolator>& interp)
+PathInterpolator::PathInterpolator(const InterpolatorPtr& interp)
 {
   segments.push_back(interp);
   durations.push_back(1.0);
@@ -65,7 +65,7 @@ PathInterpolator::PathInterpolator(const SmartPointer<Interpolator>& interp)
   times.push_back(1);
 }
 
-PathInterpolator::PathInterpolator(const std::vector<SmartPointer<Interpolator> > & _segments,Real totalTime)
+PathInterpolator::PathInterpolator(const std::vector<InterpolatorPtr > & _segments,Real totalTime)
 {
   segments = _segments;
   durations.resize(segments.size(),totalTime / Real(segments.size()));
@@ -76,7 +76,7 @@ PathInterpolator::PathInterpolator(const std::vector<SmartPointer<Interpolator> 
   times.back()=totalTime;
 }
 
-void PathInterpolator::Append(const SmartPointer<Interpolator>& interp,Real duration)
+void PathInterpolator::Append(const InterpolatorPtr& interp,Real duration)
 {
   if(segments.empty()) {
     *this = PathInterpolator(interp);
@@ -217,7 +217,7 @@ Real PiecewisePolynomialInterpolator::Length() const
 }
 
 
-SubsetInterpolator::SubsetInterpolator(const SmartPointer<Interpolator>& _base,int _start,int _end)
+SubsetInterpolator::SubsetInterpolator(const InterpolatorPtr& _base,int _start,int _end)
 :base(_base),start(_start),end(_end)
 {
   a.resize(end-start);
@@ -236,7 +236,7 @@ void SubsetInterpolator::Eval(Real u,Config& x) const
 
 
 
-  MultiInterpolator::MultiInterpolator(const SmartPointer<Interpolator>& component1,const SmartPointer<Interpolator>& component2)
+  MultiInterpolator::MultiInterpolator(const InterpolatorPtr& component1,const InterpolatorPtr& component2)
   {
     components.push_back(component1);
     components.push_back(component2);
@@ -253,7 +253,7 @@ void SubsetInterpolator::Eval(Real u,Config& x) const
     b.copySubVector(n1,component2->End());
   }
 
-  MultiInterpolator::MultiInterpolator(const std::vector<SmartPointer<Interpolator> > & _components)
+  MultiInterpolator::MultiInterpolator(const std::vector<InterpolatorPtr > & _components)
   :components(_components)
   {
     int n=0;

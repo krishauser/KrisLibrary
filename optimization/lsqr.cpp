@@ -10,6 +10,7 @@
 * 08 Sep 1999: First version from James W. Howse <jhowse@lanl.gov>
 */
 
+#include <KrisLibrary/Logger.h>
 #include "lsqr.h"
 
 using namespace std;

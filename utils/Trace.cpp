@@ -1,5 +1,6 @@
+#include <KrisLibrary/Logger.h>
 #include "Trace.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <iostream>
 #include <utils.h>
 #include <stdarg.h>
@@ -66,7 +67,7 @@ void Trace::Clear()
 void Trace::ResetTrace()
 {
   if(cur != &root) {
-    cout<<"Trace::ResetLoop: Warning, there looks like an unended call in the trace log"<<endl;
+    LOG4CXX_WARN(KrisLibrary::logger(),"Trace::ResetLoop: Warning, there looks like an unended call in the trace log");
     abort();
   }
   timer.Reset();
@@ -128,7 +129,7 @@ bool Trace::LoadIter(File& f,TraceItem& item,TraceFunctionCall* parent)
     item.text = buf;
     return true;
   }
-  cout<<"Trace::Load(): Wrong type, got "<<type<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Trace::Load(): Wrong type, got "<<type);
   return false;
 }
 

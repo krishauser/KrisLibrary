@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "LinearProgram.h"
 #include <iostream>
 #include <math/SVDecomposition.h>
@@ -268,8 +269,8 @@ bool LinearConstraints::IsFeasible(const Vector& x,Real equalityTol) const
 
 void LinearConstraints::ProjectDirection(Vector& v) const
 {
-  cerr<<"LinearConstraints::ProjectDirection(): is deprecated!"<<endl;
-  getchar();
+  LOG4CXX_ERROR(KrisLibrary::logger(),"LinearConstraints::ProjectDirection(): is deprecated!");
+  KrisLibrary::loggerWait();
   //if constraint is a.x <= b, if direction increases a.x, crop it to 0
   //if it's a.x = b, crop direction to 0
   Real initialMaxErr=Inf;
@@ -297,10 +298,10 @@ void LinearConstraints::ProjectDirection(Vector& v) const
       }
       if(include) {
 	/*
-	cout<<"ProjectDirection: error at bound "<<i<<": "<<p<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ProjectDirection: error at bound "<<i<<": "<<p);
 	Vector ai;
 	A.getRowRef(i,ai);
-	cout<<"Bound direction: "<<VectorPrinter(ai)<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Bound direction: "<<VectorPrinter(ai));
 	*/
 	bounds.push_back(i);
 	maxErr = Max(maxErr,Abs(p));
@@ -309,13 +310,13 @@ void LinearConstraints::ProjectDirection(Vector& v) const
     if(maxErr < 1e-5) return;
     /*
     if(maxErr >= initialMaxErr) {
-      cout<<"ProjectDirection(): Error, the error bound increased!"<<endl;
-      cout<<"From "<<initialMaxErr<<" to "<<maxErr<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ProjectDirection(): Error, the error bound increased!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"From "<<initialMaxErr<<" to "<<maxErr);
       Abort();
     }
     */
     initialMaxErr=maxErr;
-    //cout<<"ProjectVector: "<<bounds.size()<<" bounds, max error "<<maxErr<<endl;
+    //LOG4CXX_ERROR(KrisLibrary::logger(),"ProjectVector: "<<bounds.size()<<" bounds, max error "<<maxErr);
     C.resize((int)bounds.size(),A.n);
     for(size_t i=0;i<bounds.size();i++) {
       Vector ai;
@@ -326,16 +327,16 @@ void LinearConstraints::ProjectDirection(Vector& v) const
     //TODO: should this be put into SVDecomposition::set()?
     svd.svd.U.resize(C.m,C.n);
     if(!svd.set(C)) {
-      cout<<"ProjectDirection(): Warning: unable to set SVD, returning prematurely"<<endl;
+      LOG4CXX_WARN(KrisLibrary::logger(),"ProjectDirection(): Warning: unable to set SVD, returning prematurely");
       return;
     }
     svd.nullspaceComponent(v,vNull);
     v -= vNull;
   }
-  cout<<"Error: ProjectDirection didn't converge within "<<maxIters<<" iters, resulting error "<<maxErr<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Error: ProjectDirection didn't converge within "<<maxIters<<" iters, resulting error "<<maxErr);
   if(maxErr > 1e-3) {
-    cout<<"Press enter to continue..."<<endl;
-    getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),"Press enter to continue...");
+    KrisLibrary::loggerWait();
   }
 }
 
@@ -359,7 +360,7 @@ void LinearConstraints::Print(std::ostream& out) const
     
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      getchar();
+      KrisLibrary::loggerWait();
       lastline = numlines;
     }
   }
@@ -376,7 +377,7 @@ void LinearConstraints::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      getchar();
+      KrisLibrary::loggerWait();
       lastline = numlines;
     }
   }
@@ -744,7 +745,7 @@ void LinearConstraints_Sparse::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      getchar();
+      KrisLibrary::loggerWait();
       lastline = numlines;
     }
     numlines += 1+(A.rows[i].numEntries()/6);
@@ -762,7 +763,7 @@ void LinearConstraints_Sparse::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) == 40) {
       out<<"Press enter to continue..."<<endl;
-      getchar();
+      KrisLibrary::loggerWait();
       lastline = numlines;
     }
   }

@@ -22,7 +22,7 @@ class TimeControlSpace : public ControlSpace
  public:
   TimeControlSpace(Real dtmax=1.0);
   void SetMaxTimeStep(Real dtmax);
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
   virtual void SimulateEndpoint(const State& x0, const ControlInput& u,State& x1) { x1 = x0+u; }
 };
 
@@ -34,12 +34,12 @@ class TimeControlSpace : public ControlSpace
 class SpaceTimeCSpace : public MultiCSpace
 {
 public:
-  SpaceTimeCSpace(const SmartPointer<CSpace>& stateSpace,Real tmax=Inf);
+  SpaceTimeCSpace(const std::shared_ptr<CSpace>& stateSpace,Real tmax=Inf);
   void SetTimeMetricWeight(Real weight);
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
 };
 
 /** @brief Given an IntegratedControlSpace on a certain state space, this will produce a
@@ -48,11 +48,11 @@ public:
 class SpaceTimeIntegratedControlSpace : public IntegratedControlSpace
 {
 public:
-  SpaceTimeIntegratedControlSpace(const SmartPointer<IntegratedControlSpace>& base);
+  SpaceTimeIntegratedControlSpace(const std::shared_ptr<IntegratedControlSpace>& base);
   virtual std::string VariableName(int i);
   virtual void Derivative(const State& x, const ControlInput& u,State& dx);
   virtual void UpdateIntegrationParameters(const State& x);
-  SmartPointer<IntegratedControlSpace> base;
+  std::shared_ptr<IntegratedControlSpace> base;
 };
 
 /** @ingroup MotionPlanning
@@ -62,7 +62,7 @@ public:
 class SpaceTimeIntegratedKinodynamicSpace : public IntegratedKinodynamicSpace
 {
 public:
-  SpaceTimeIntegratedKinodynamicSpace(const SmartPointer<CSpace>& space,const SmartPointer<IntegratedControlSpace>& controlSpace);
+  SpaceTimeIntegratedKinodynamicSpace(const std::shared_ptr<CSpace>& space,const std::shared_ptr<IntegratedControlSpace>& controlSpace);
   void SetTimeMetricWeight(Real weight);
 };
 

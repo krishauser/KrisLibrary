@@ -4,7 +4,6 @@
 #include "CSpace.h"
 #include "Interpolator.h"
 #include "CSpaceHelpers.h"
-#include <KrisLibrary/utils/SmartPointer.h>
 namespace Math {
   class VectorFieldFunction;
 } //namespace Math
@@ -36,21 +35,20 @@ public:
 
   ///Returns this space's control set at the given
   ///state.  By default returns myControlSet.
-  virtual SmartPointer<CSet> GetControlSet(const State& x) { return myControlSet; }
+  virtual std::shared_ptr<CSet> GetControlSet(const State& x) { return myControlSet; }
 
   ///Returns this space's steering function, if available
-  virtual SmartPointer<SteeringFunction> GetSteeringFunction() { return mySteeringFunction; }
+  virtual std::shared_ptr<SteeringFunction> GetSteeringFunction() { return mySteeringFunction; }
 
   ///Executes the simulation function f(x0,u) and records its trace in p.
   ///The trace is an interpolator between x0 and the successor state
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u)=0;
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u)=0;
 
   ///Executes the simulation function x1 = f(x0,u).  By default, uses
   ///the result from Simulate().
   virtual void Successor(const State& x0, const ControlInput& u,State& x1) {
-    Interpolator* p = Simulate(x0,u);
+    InterpolatorPtr p = Simulate(x0,u);
     x1 = p->End();
-    delete p;
   }
 
   ///If possible, express Successor as a VectorFieldFunction on the vector (x,u)
@@ -72,9 +70,9 @@ public:
   virtual bool IsValidControl(const State& x,const ControlInput& u) { return GetControlSet(x)->Contains(u); }
 
   ///Dynamically overridable default control set (Note: state independent)
-  SmartPointer<CSet> myControlSet;
+  std::shared_ptr<CSet> myControlSet;
   ///Dynamically overridable default steering function
-  SmartPointer<SteeringFunction> mySteeringFunction;
+  std::shared_ptr<SteeringFunction> mySteeringFunction;
 };
 
 /** @ingroup MotionPlanning
@@ -90,7 +88,7 @@ public:
   ///x0 = f(x1,u) and returns true.  If no such u exists, return false.
   virtual bool ReverseControl(const State& x0,const State& x1,ControlInput& u) { return false; }
 
-  SmartPointer<ControlSpace> reverseControlSpace;
+  std::shared_ptr<ControlSpace> reverseControlSpace;
 };
 
 /** @ingroup MotionPlanning
@@ -117,16 +115,16 @@ class MultiControlSpace : public ControlSpace
 {
 public:
   MultiControlSpace();
-  MultiControlSpace(const std::vector<int>& istateStarts,const std::vector<SmartPointer<ControlSpace> >& spaces);
-  MultiControlSpace(const MultiCSpace* space,const std::vector<SmartPointer<ControlSpace> >& spaces);
-  void Add(int istatemin,int istatemax,const SmartPointer<ControlSpace>& item);
-  void Add(CSpace* space,const SmartPointer<ControlSpace>& item);
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
+  MultiControlSpace(const std::vector<int>& istateStarts,const std::vector<std::shared_ptr<ControlSpace> >& spaces);
+  MultiControlSpace(const MultiCSpace* space,const std::vector<std::shared_ptr<ControlSpace> >& spaces);
+  void Add(int istatemin,int istatemax,const std::shared_ptr<ControlSpace>& item);
+  void Add(CSpace* space,const std::shared_ptr<ControlSpace>& item);
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
   virtual void Successor(const State& x0, const ControlInput& u,State& x1);
   virtual Math::VectorFieldFunction* SuccessorNumeric();
 
   std::vector<pair<int,int>  istateRanges;
-  std::vector<SmartPointer<ControlSpace> > components;
+  std::vector<std::shared_ptr<ControlSpace> > components;
 };
 */
 
@@ -137,7 +135,7 @@ class IntegratedControlSet : public CSet
 public:
   enum TimeSelection { Uniform, Maximum, Biased };
 
-  IntegratedControlSet(const SmartPointer<CSet>& base,Real dtmax);
+  IntegratedControlSet(const std::shared_ptr<CSet>& base,Real dtmax);
   virtual int NumDimensions() const;
   virtual bool Project(Config& x);
   virtual bool IsSampleable() const;
@@ -145,7 +143,7 @@ public:
   virtual bool Contains(const ControlInput& u);
   
   TimeSelection timeSelection;
-  SmartPointer<CSet> base;
+  std::shared_ptr<CSet> base;
   Real dtmax;
 };
 
@@ -172,14 +170,14 @@ class IntegratedControlSpace : public ControlSpace
 
   enum Integrator { Euler, RK4 };
 
-  IntegratedControlSpace(const SmartPointer<CSet>& fControlSet,Real dt=0.01,Real dtmax=0.1);
-  IntegratedControlSpace(DynamicsFn f,const SmartPointer<CSet>& fControlSet,Real dt=0.01,Real dtmax=0.1);
+  IntegratedControlSpace(const std::shared_ptr<CSet>& fControlSet,Real dt=0.01,Real dtmax=0.1);
+  IntegratedControlSpace(DynamicsFn f,const std::shared_ptr<CSet>& fControlSet,Real dt=0.01,Real dtmax=0.1);
   void SetGeodesicSpace(GeodesicSpace* space);
-  void SetBaseControlSet(SmartPointer<CSet> baseControlSet);
-  SmartPointer<CSet> GetBaseControlSet();
+  void SetBaseControlSet(std::shared_ptr<CSet> baseControlSet);
+  std::shared_ptr<CSet> GetBaseControlSet();
   virtual std::string VariableName(int i);
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
-  virtual SmartPointer<CSet> GetControlSet(const Config& x);
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
+  virtual std::shared_ptr<CSet> GetControlSet(const Config& x);
 
   //subclasses may override the following:
 
@@ -192,7 +190,7 @@ class IntegratedControlSpace : public ControlSpace
   DynamicsFn myDynamics;
   Integrator type;
   GeodesicSpace* space;
-  SmartPointer<CSet> controlSet;
+  std::shared_ptr<CSet> controlSet;
   Real dt;          ///< integration time step
   Real dtmax;       ///< maximum dt chosen in controls
 };
@@ -209,19 +207,19 @@ class IntegratedControlSpace : public ControlSpace
 class KinematicControlSpace : public ReversibleControlSpace
 {
  public:
-  KinematicControlSpace(const SmartPointer<CSpace>& base,Real maxNeighborhoodRadius=0.1);
+  KinematicControlSpace(const std::shared_ptr<CSpace>& base,Real maxNeighborhoodRadius=0.1);
   virtual ~KinematicControlSpace() {}
 
   virtual std::string VariableName(int i);
-  virtual SmartPointer<CSet> GetControlSet(const Config& x);
+  virtual std::shared_ptr<CSet> GetControlSet(const Config& x);
 
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
   virtual void Successor(const State& x0, const ControlInput& u,State& x1);
   virtual Math::VectorFieldFunction* SuccessorNumeric();
 
   virtual bool ReverseControl(const State& x0,const State& x1,ControlInput& u);
 
-  SmartPointer<CSpace> base;
+  std::shared_ptr<CSpace> base;
   Real maxNeighborhoodRadius;
 };
 

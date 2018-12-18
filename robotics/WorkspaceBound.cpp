@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "WorkspaceBound.h"
 #include "AngleBracket.h"
 #include "Geometry.h"
@@ -209,14 +210,14 @@ bool HollowBall::intersects(const Line3D& line, ClosedIntervalSet& segs) const
   ClosedInterval i;
   OpenInterval j;
   if(!s.intersects(line,&i.a,&i.b)) return false;
-  //cout<<"Outer sphere intersects at "<<i.a<<","<<i.b<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Outer sphere intersects at "<<i.a<<","<<i.b);
 
   segs.resize(1);
   segs[0] = i;
   if(innerRadius >= 0) {
     s.radius=innerRadius-wsEpsilon;
     if(s.intersects(line,&j.a,&j.b)) {
-      //cout<<"Inner sphere intersects at "<<j.a<<","<<j.b<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Inner sphere intersects at "<<j.a<<","<<j.b);
       ClosedInterval p,q;
       int num=IntervalSubtract(i,j,p,q);
       Assert(num==2);
@@ -243,9 +244,9 @@ bool HollowBall::intersects(const AxisSweptPoint& c, AngleSet& arcs) const
     if(!j.isEmpty()) {
       AngleInterval p,q;
       int num=AngleIntervalSubtract(i,j,p,q);
-      //cout<<"Subtracting interval!"<<endl;
-      //cout<<i<<"  -  "<<j<<endl;
-      //cout<<" = "<<p<<", "<<q<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Subtracting interval!");
+      //LOG4CXX_INFO(KrisLibrary::logger(),i<<"  -  "<<j);
+      //LOG4CXX_INFO(KrisLibrary::logger()," = "<<p<<", "<<q);
       Assert(num == 2);
       arcs.resize(num);
       arcs[0]=p;
@@ -431,7 +432,7 @@ void WorkspaceBound::SetTransformed(const WorkspaceBound& w, RigidTransform& T)
 
 bool WorkspaceBound::SetIntersection(const WorkspaceBound& a, const WorkspaceBound& b)
 {
-  //cout<<"Setting intersection of "<<a<<" and "<<b<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Setting intersection of "<<a<<" and "<<b);
   if(a.IsEmpty() || b.IsEmpty()) { SetEmpty(); return false; }
   if(a.balls.empty()) { *this = b; return true; }
   if(b.balls.empty()) { *this = a; return true; }
@@ -445,7 +446,7 @@ bool WorkspaceBound::SetIntersection(const WorkspaceBound& a, const WorkspaceBou
   copy(b.balls.begin(),b.balls.end(),balls.begin()+a.balls.size());
   maxAngle=Max(a.maxAngle,b.maxAngle);
   RemoveRedundancies();
-  //cout<<"Result is "<<*this<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Result is "<<*this);
   return true;
 }
 
@@ -458,7 +459,7 @@ bool WorkspaceBound::InplaceIntersection(const WorkspaceBound& b)
 void WorkspaceBound::SetMinkowskiSum(const WorkspaceBound& a,const WorkspaceBound& b)
 {
   if(a.IsEmpty() || b.IsEmpty()) { 
-    cerr<<"Warning, minkowski sum is empty"<<endl; 
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, minkowski sum is empty"); 
     SetEmpty(); 
     return;
   }
@@ -726,11 +727,11 @@ bool WorkspaceBound::SetIntersection(const WorkspaceBound& a, const WorkspaceBou
   if(res==2) {  //it's a circle
     Assert(c.radius <= a.outerRadius+Epsilon && c.radius <= b.outerRadius+Epsilon);
     if(!sa.contains(c.center) || !sb.contains(c.center)) {
-      cout<<"Uh... circle intersection of balls isn't contained in them"<<endl;
-      cout<<sa.center<<" r "<<sa.radius<<endl;
-      cout<<sb.center<<" r "<<sb.radius<<endl;
-      cout<<"Center "<<c.center<<" radius "<<c.radius<<endl;
-      getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Uh... circle intersection of balls isn't contained in them");
+      LOG4CXX_INFO(KrisLibrary::logger(),sa.center<<" r "<<sa.radius);
+      LOG4CXX_INFO(KrisLibrary::logger(),sb.center<<" r "<<sb.radius);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Center "<<c.center<<" radius "<<c.radius);
+      KrisLibrary::loggerWait();
     }
     Assert(sa.contains(c.center));
     Assert(sb.contains(c.center));

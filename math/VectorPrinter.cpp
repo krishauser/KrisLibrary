@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "VectorPrinter.h"
 #include "complex.h"
 #include <utils/stringutils.h>
@@ -51,12 +52,12 @@ void VectorPrinter::Print(ostream& out) const
   case AsciiShade:
     if(fv) OutputASCIIShade(out,*fv);
     else if(dv) OutputASCIIShade(out,*dv);
-    else if(cv) { cerr<<"Unable to output an ASCII-shaded complex matrix"<<endl; }
+    else if(cv) { LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to output an ASCII-shaded complex matrix"); }
     break;
   case PlusMinus:
     if(fv) OutputPlusMinus(out,*fv);
     else if(dv) OutputPlusMinus(out,*dv);
-    else if(cv) { cerr<<"Unable to output an +/- shaded complex matrix"<<endl; }
+    else if(cv) { LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to output an +/- shaded complex matrix"); }
     break;
   }
 }

@@ -4,7 +4,7 @@
 #include <KrisLibrary/math/function.h>
 #include <KrisLibrary/math/vector.h>
 #include <KrisLibrary/math/matrix.h>
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 
 namespace Optimization {
 using namespace Math;
@@ -22,7 +22,7 @@ using namespace Math;
 class NonlinearProgram
 {
 public:
-  NonlinearProgram(const SmartPointer<ScalarFieldFunction>& f,const SmartPointer<VectorFieldFunction>& c=NULL,const SmartPointer<VectorFieldFunction>& d=NULL);
+  NonlinearProgram(const std::shared_ptr<ScalarFieldFunction>& f,const std::shared_ptr<VectorFieldFunction>& c=NULL,const std::shared_ptr<VectorFieldFunction>& d=NULL);
   void PreEval(const Vector& x);
   bool SatisfiesEquality(const Vector& x,Real tol=Epsilon);
   bool SatisfiesInequality(const Vector& x);
@@ -38,9 +38,9 @@ public:
   void LagrangianGradient_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Vector& grad);
   void LagrangianHessian_Sparse(const Vector& x,const Vector& lambda,const Vector& mu, Matrix& H);
 
-  SmartPointer<ScalarFieldFunction> f;
-  SmartPointer<VectorFieldFunction> c;
-  SmartPointer<VectorFieldFunction> d;
+  std::shared_ptr<ScalarFieldFunction> f;
+  std::shared_ptr<VectorFieldFunction> c;
+  std::shared_ptr<VectorFieldFunction> d;
   bool minimize;        ///true if f is to be minimized, false if maximized
   bool inequalityLess;  ///inequality constraints are d<=0, else d>=0
 };

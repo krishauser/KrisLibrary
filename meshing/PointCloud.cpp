@@ -1,10 +1,12 @@
+#include <KrisLibrary/Logger.h>
 #include "PointCloud.h"
 #include <iostream>
-#include <math3d/AABB3D.h>
-#include <math3d/rotation.h>
-#include <utils/SimpleParser.h>
-#include <utils/stringutils.h>
-#include <utils/ioutils.h>
+#include <KrisLibrary/math3d/AABB3D.h>
+#include <KrisLibrary/math3d/rotation.h>
+#include <KrisLibrary/utils/SimpleParser.h>
+#include <KrisLibrary/utils/stringutils.h>
+#include <KrisLibrary/utils/ioutils.h>
+#include <KrisLibrary/Timer.h>
 #include <errors.h>
 #include <sstream>
 #include <fstream>
@@ -12,6 +14,14 @@
 #include <string.h>
 
 using namespace Meshing;
+const static Real one_over_255 = 1.0/255.0;
+
+string IntToStr(int i)
+{
+  stringstream ss;
+  ss<<i;
+  return ss.str();
+}
 
 class PCLParser : public SimpleParser
 {
@@ -29,185 +39,216 @@ public:
     }
     else if(state == READING_TYPES) {
       if(word != "F" && word != "U" && word != "I") {
-	fprintf(stderr,"PCD parser: Invalid PCD TYPE %s\n",word.c_str());
-	return Error;
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid PCD TYPE "<<word.c_str());
+        return Error;
       }
       types.push_back(word);
     }
     else if(state == READING_COUNTS) {
       if(!IsValidInteger(word.c_str())) {
-	fprintf(stderr,"PCD parser: Invalid PCD COUNT string %s, must be integer\n",word.c_str());
-	return Error;
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid PCD COUNT string "<<word.c_str()<<", must be integer");
+        return Error;
       }
       stringstream ss(word);
       int count;
       ss>>count;
-      if(count != 1) {
-	fprintf(stderr,"PCD parser: Invalid PCD COUNT %s, we only handle counts of 1\n",word.c_str());
-	return Error;
+      if(ss.bad() || count <= 0) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid PCD COUNT "<<word.c_str()<<", must be a positive integer");
+        return Error;
       }
       counts.push_back(count);
     }
     else if(state == READING_SIZES) {
       if(!IsValidInteger(word.c_str())) {
-	fprintf(stderr,"PCD parser: Invalid PCD SIZE string %s, must be integer\n",word.c_str());
-	return Error;
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid PCD SIZE string "<<word.c_str()<<", must be integer");
+        return Error;
       }
       stringstream ss(word);
       int size;
       ss>>size;
       if(size <= 0) {
-	fprintf(stderr,"PCD parser: Invalid PCD SIZE %s, must be positive\n",word.c_str());
-	return Error;
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid PCD SIZE "<<word.c_str()<<" must be positive");
+        return Error;
       }
       sizes.push_back(size);
     }
     else {
       if(word == "POINTS") {
-	string points;
-	ReadLine(points);
-	stringstream ss(points);
-	ss>>numPoints;
-	if(!ss) {
-	  fprintf(stderr,"PCD parser: Unable to read integer POINTS\n");
-	  return Error;
-	}
+        string points;
+        ReadLine(points);
+        stringstream ss(points);
+        ss>>numPoints;
+        if(!ss) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Unable to read integer POINTS");
+          return Error;
+        }
       }
       else if(word == "FIELDS") {
-	state = READING_FIELDS;
+        state = READING_FIELDS;
       }
       else if(word == "COUNT") {
-	state = READING_COUNTS;
+        state = READING_COUNTS;
       }
       else if(word == "TYPE") {
-	state = READING_TYPES;
+        state = READING_TYPES;
       }
       else if(word == "SIZE") {
-	state = READING_SIZES;
+        state = READING_SIZES;
       }
       else if(word == "DATA") {
-	string datatype;
-	if(!ReadLine(datatype)) return Error;
-	datatype = Strip(datatype);
-	if(datatype == "binary") {
-	  //pull in the endline
-	  int c = in.get();
-	  assert(c == '\n');
-	  //read in binary data
-	  if(numPoints < 0) {
-	    fprintf(stderr,"PCD parser: DATA specified before POINTS element\n");
-	    return Error;
-	  }
-	  if(sizes.size() != pc.propertyNames.size()) {
-	    fprintf(stderr,"PCD parser: Invalid number of SIZE elements\n");
-	    return Error;
-	  }
-	  if(types.size() != pc.propertyNames.size()) {
-	    fprintf(stderr,"PCD parser: Invalid number of TYPE elements\n");
-	    return Error;
-	  }
-	  int pointsize = 0;
-	  for(size_t i=0;i<sizes.size();i++)
-	    pointsize += sizes[i];
-	  vector<char> buffer(pointsize);
-	  for(int i=0;i<numPoints;i++) {
-	    in.read(&buffer[0],pointsize);
-	    if(!in) {
-	      fprintf(stderr,"PCD parser: Error reading data for point %d\n",i);
-	      return Error;
-	    }
-	    //parse the point and add it
-	    Vector v(pc.propertyNames.size());
-	    int ofs = 0;
-	    for(size_t j=0;j<sizes.size();j++) {
-	      if(types[j] == "F") {
-		if(sizes[j] == 4) {
-		  float f;
-		  memcpy(&f,&buffer[ofs],sizes[j]);
-		  v[j] = f;
-		}
-		else if(sizes[j] == 8) {
-		  double f;
-		  memcpy(&f,&buffer[ofs],sizes[j]);
-		  v[j] = f;
-		}
-		else {
-		  fprintf(stderr,"PCD parser: Invalid float size %d\n",sizes[j]);
-		  return Error;
-		}
-	      }
-	      else if(types[j] == "U") {
-		if(sizes[j] > 4) {
-		  fprintf(stderr,"PCD parser: Invalid unsigned int size %d\n",sizes[j]);
-		  return Error;		  
-		}
-		unsigned i=0;
-		memcpy(&i,&buffer[ofs],sizes[j]);
-		v[j] = Real(i);
-	      }
-	      else if(types[j] == "I") {
-		fprintf(stderr,"PCD parser: Invalid int size %d\n",sizes[j]);
-		int i=0;
-		memcpy(&i,&buffer[ofs],sizes[j]);
-		v[j] = Real(i);
-	      }
-	      else {
-		fprintf(stderr,"PCD parser: Invalid type %s\n",types[i].c_str());
-		return Error;
-	      }
-	      ofs += sizes[j];
-	    }
-	    pc.properties.push_back(v);
-	  }
-	}
-	else if(datatype == "ascii") {
-	  if(numPoints < 0) {
-	    fprintf(stderr,"PCD parser: DATA specified before POINTS element\n");
-	    return Error;
-	  }
-	  string line;
-	  for(int i=0;i<numPoints;i++) {
-	    int c = in.get();
-	    assert(c=='\n' || c==EOF);
-	    lineno++;
-	    if(c==EOF) {
-	      fprintf(stderr,"PCD parser: Premature end of DATA element\n");
-	      return Error;
-	    }
-	    if(!ReadLine(line)) {
-	      fprintf(stderr,"PCD parser: Error reading point %d\n",i);
-	      return Error;
-	    }
-	    vector<string> elements = Split(line," ");
-	    if(elements.size() != pc.propertyNames.size()) {
-	      fprintf(stderr,"PCD parser: DATA element %d has length %d, but %d properties specified\n",i,elements.size(),pc.propertyNames.size());
-	      return Error;
-	    }
-	    Vector v(elements.size());
-	    for(size_t k=0;k<elements.size();k++) {
-	      stringstream ss(elements[k]);
-	      SafeInputFloat(ss,v[k]);
-	    }
-	    pc.properties.push_back(v);
-	  }
-	}
-	else {
-	  fprintf(stderr,"PCD parser: DATA is not spcified as ascii or binary\n");
-	  return Error;
-	}
+        ConvertToSingleCounts();
+        /*
+        cout<<"property names, type, size"<<endl;
+        for(size_t i=0;i<pc.propertyNames.size();i++)
+          cout<<pc.propertyNames[i]<<", "<<types[i]<<", "<<sizes[i]<<endl;
+        */
+        string datatype;
+        if(!ReadLine(datatype)) return Error;
+        datatype = Strip(datatype);
+        if(datatype == "binary") {
+          //pull in the endline
+          int c = in.get();
+          if(c != '\n') {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: DATA binary not followed immediately by endline");
+            return Error;
+          }
+          //read in binary data
+          if(numPoints < 0) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: DATA specified before POINTS element");
+            return Error;
+          }
+          if(sizes.size() != pc.propertyNames.size()) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid number of SIZE elements");
+            return Error;
+          }
+          if(types.size() != pc.propertyNames.size()) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid number of TYPE elements");
+            return Error;
+          }
+          int pointsize = 0;
+          for(size_t i=0;i<sizes.size();i++)
+            pointsize += sizes[i];
+
+          streampos fcur = in.tellg();
+          in.seekg( 0, std::ios::end );
+          streampos fsize = in.tellg() - fcur;
+          in.seekg( fcur );
+          if(fsize-streampos(pointsize*numPoints) != 0) {
+            cout<<"Size of point "<<pointsize<<" x "<<numPoints<<" points"<<endl;
+            cout<<"Remaining bytes left: "<<fsize<<", we'll probably have "<<fsize-streampos(pointsize*numPoints)<<" left?"<<endl;
+            for(int i=0;i<int(fsize)-pointsize*numPoints;i++) {
+              if(in.peek() != 0) {
+                cout<<"Hmmm... what's this wasted space? stopped on "<<i<<endl;
+              }
+              in.get();
+            }
+          }
+
+          vector<char> buffer(pointsize);
+          for(int i=0;i<numPoints;i++) {
+            in.read(&buffer[0],pointsize);
+            if(!in) {
+              LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Error reading data for point "<<i);
+              return Error;
+            }
+            //parse the point and add it
+            Vector v(pc.propertyNames.size());
+            int ofs = 0;
+            for(size_t j=0;j<sizes.size();j++) {
+              if(types[j] == "F") {
+                if(sizes[j] == 4) {
+                  float f;
+                  memcpy(&f,&buffer[ofs],sizes[j]);
+                  v[j] = f;
+                  /*
+                  if(i % 10000 == 0)
+                    printf("%s Buffer %x => float %f\n",pc.propertyNames[j].c_str(),*((unsigned int*)&buffer[ofs]),f);
+                    */
+                }
+                else if(sizes[j] == 8) {
+                  double f;
+                  memcpy(&f,&buffer[ofs],sizes[j]);
+                  v[j] = f;
+                }
+                else {
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid float size "<<sizes[j]);
+                  return Error;
+                }
+              }
+              else if(types[j] == "U") {
+                if(sizes[j] > 4) {
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid unsigned int size "<<sizes[j]);
+                  return Error;       
+                }
+                unsigned i=0;
+                memcpy(&i,&buffer[ofs],sizes[j]);
+                v[j] = Real(i);
+              }
+              else if(types[j] == "I") {
+                LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid int size "<<sizes[j]);
+                int i=0;
+                memcpy(&i,&buffer[ofs],sizes[j]);
+                v[j] = Real(i);
+              }
+              else {
+                LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Invalid type "<<types[i].c_str());
+                return Error;
+              }
+              ofs += sizes[j];
+            }
+            pc.properties.push_back(v);
+          }
+          return Stop;
+        }
+        else if(datatype == "ascii") {
+          if(numPoints < 0) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: DATA specified before POINTS element");
+            return Error;
+          }
+          string line;
+          for(int i=0;i<numPoints;i++) {
+            int c = in.get();
+            assert(c=='\n' || c==EOF);
+            lineno++;
+            if(c==EOF) {
+              LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Premature end of DATA element");
+              return Error;
+            }
+            if(!ReadLine(line)) {
+              LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Error reading point "<<i);
+              return Error;
+            }
+            vector<string> elements = Split(line," ");
+            if(elements.size() != pc.propertyNames.size()) {
+              LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: DATA element "<<i<<" has length "<<elements.size()<<", but "<<pc.propertyNames.size());
+              return Error;
+            }
+            Vector v(elements.size());
+            for(size_t k=0;k<elements.size();k++) {
+              stringstream ss(elements[k]);
+              SafeInputFloat(ss,v[k]);
+            }
+            pc.properties.push_back(v);
+          }
+        }
+        else {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: DATA is not spcified as ascii or binary");
+          return Error;
+        }
       }
       else {
         string value;
         if(!ReadLine(value)) return Error;
+        value = Strip(value);
 
         if(word == "VERSION") {
           if(value != "0.7" && value != ".7") {
-            fprintf(stderr,"PCD parser: Warning, PCD version 0.7 expected, got %s\n",value.c_str());
+                        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Warning, PCD version 0.7 expected, got \""<<value.c_str()<<"\"");
           }
           pc.settings["pcd_version"] = value;
         }
         else {
-          //printf("PCD parser: Read property \"%s\" = \"%s\"\n",word.c_str(),pc.settings[word].c_str());
+          //LOG4CXX_INFO(KrisLibrary::logger(),"PCD parser: Read property \""<<word.c_str()<<"\" = \""<<pc.settings[word].c_str());
           string key=word;
           Lowercase(key);
           pc.settings[key] = Strip(value);
@@ -221,6 +262,29 @@ public:
   {
     if(state != NORMAL) state=NORMAL;
     return Continue;
+  }
+
+  void ConvertToSingleCounts()
+  {
+    size_t i=0;
+    while(i < counts.size()) {
+      if(counts[i] > 1) {
+        int n=counts[i];
+        LOG4CXX_INFO(KrisLibrary::logger(),"PCD parser: converting element "<<pc.propertyNames[i]<<" into "<<counts[i]<<" sub-elements");
+        string basename = pc.propertyNames[i];
+        pc.propertyNames[i] = basename + '_' + IntToStr(0);
+        counts[i] = 1;
+        for(int j=1;j<n;j++) {
+          pc.propertyNames.insert(pc.propertyNames.begin()+i+1,basename + '_' + IntToStr(j));
+          types.insert(types.begin()+i+1,types[i]);
+          sizes.insert(sizes.begin()+i+1,sizes[i]);
+          counts.insert(counts.begin()+i+1,1);
+        }
+        i += n;
+      }
+      else
+        i++;
+    }
   }
 
   PointCloud3D& pc;
@@ -264,7 +328,7 @@ bool PointCloud3D::LoadPCL(istream& in)
 {
   PCLParser parser(in,*this);
   if(!parser.Read()) {
-    fprintf(stderr,"PCD parser: Unable to parse PCD file\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Unable to parse PCD file");
     return false;
   }
   int elemIndex[3] = {-1,-1,-1};
@@ -274,11 +338,11 @@ bool PointCloud3D::LoadPCL(istream& in)
     if(propertyNames[i]=="z") elemIndex[2] = (int)i;
   }
   if(elemIndex[0]<0 || elemIndex[1]<0 || elemIndex[2]<0) {
-    fprintf(stderr,"PCD parser: Warning, PCD file does not have x, y or z\n");
-    fprintf(stderr,"  Properties:");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Warning, PCD file does not have x, y or z");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"  Properties:");
     for(size_t i=0;i<propertyNames.size();i++)
-      fprintf(stderr," \"%s\"",propertyNames[i].c_str());
-    fprintf(stderr,"\n");
+            LOG4CXX_ERROR(KrisLibrary::logger()," \""<<propertyNames[i].c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"");
     return true;
   }
 
@@ -289,21 +353,21 @@ bool PointCloud3D::LoadPCL(istream& in)
     if(parser.types[k] == "F" && (propertyNames[k] == "rgb" || propertyNames[k] == "rgba")) { 
       bool docast = false;
       for(size_t i=0;i<properties.size();i++) {
-	Vector& v = properties[i];
-	float f = float(v[k]);
-	if(f < 1.0 && f > 0.0) {
-	  docast=true;
-	  break;
-	}
+    Vector& v = properties[i];
+    float f = float(v[k]);
+    if(f < 1.0 && f > 0.0) {
+      docast=true;
+      break;
+    }
       }
       if(docast) {
-	//fprintf(stderr,"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast\n");
-	for(size_t i=0;i<properties.size();i++) {
-	  Vector& v = properties[i];
-	  float f = float(v[k]);
-	  int rgb = *((int*)&f);
-	  v[k] = (Real)rgb;
-	}
+        //LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast");
+    for(size_t i=0;i<properties.size();i++) {
+      Vector& v = properties[i];
+      float f = float(v[k]);
+      int rgb = *((int*)&f);
+      v[k] = (Real)rgb;
+    }
       }
     }
   }
@@ -313,7 +377,7 @@ bool PointCloud3D::LoadPCL(istream& in)
   for(size_t i=0;i<properties.size();i++) {
     points[i].set(properties[i][elemIndex[0]],properties[i][elemIndex[1]],properties[i][elemIndex[2]]);
   }
-  //printf("PCD parser: %d points read\n",points.size());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PCD parser: "<<points.size());
 
   if(properties.size()==3 && elemIndex[0]==0 && elemIndex[1]==1 && elemIndex[2]==2) {
     //x,y,z are the only properties, go ahead and take them out
@@ -337,40 +401,84 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<" x y z";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" "<<propertyNames[i];
-  out<<"\n";
+  out;
   out<<"TYPE";
   if(addxyz)
     out<<" F F F";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" F";
-  out<<"\n";
+  out;
 
   if(!properties.empty())
-    out<<"POINTS "<<properties.size()<<"\n";
+    out<<"POINTS "<<properties.size();
   else 
-    out<<"POINTS "<<points.size()<<"\n";
+    out<<"POINTS "<<points.size();
 
   for(map<string,string>::const_iterator i=settings.begin();i!=settings.end();i++) {
     if(i->first == "pcd_version" || i->first == "file") continue;
     string key = i->first;
     Uppercase(key);
-    out<<key<<" "<<i->second<<"\n";
+    out<<key<<" "<<i->second;
   }
-  out<<"DATA ascii"<<"\n";  
+  out<<"DATA ascii";  
   if(propertyNames.empty()) {
     for(size_t i=0;i<points.size();i++) 
-      out<<points[i]<<"\n";
+      out<<points[i];
   }
   else {
     for(size_t i=0;i<properties.size();i++) {
       if(addxyz)
-	out<<points[i]<<" ";
+    out<<points[i]<<" ";
       for(int j=0;j<properties[i].n;j++)
-	out<<properties[i][j]<<" ";
-      out<<"\n";
+    out<<properties[i][j]<<" ";
+      out;
     }
   }
   return true;
+}
+
+void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const std::vector<float>& depths,const std::vector<unsigned int>& rgb,float invalidDepth)
+{
+  SetStructured(w,h);
+  Real xscale = Tan(wfov/2)*(2.0/w);
+  Real yscale = Tan(hfov/2)*(2.0/h);
+  Assert(depths.size()==points.size());
+  Real xc = Real(w)/2;
+  Real yc = Real(h)/2;
+  int k=0;
+  Real fi=0,fj=0;
+  for(int j=0;j<h;j++,fj+=1.0) {
+    fi = 0;
+    for(int i=0;i<w;i++,k++,fi+=1.0) {
+      if(depths[k] == invalidDepth)
+        points[k].setZero();
+      else {
+        Real x = (fi-xc)*xscale;
+        Real y = (fj-yc)*yscale;
+        points[k].x = depths[k]*x;
+        points[k].y = depths[k]*y;
+        points[k].z = depths[k];
+      }
+    }
+  }
+  if(!rgb.empty()) {
+    Assert(rgb.size()==depths.size());
+    propertyNames.resize(1);
+    propertyNames[0] = "rgb";
+    properties.resize(points.size());
+    for(size_t i=0;i<points.size();i++) {
+      properties[i].resize(1);
+      properties[i][0] = Real(rgb[i]);
+    }
+  }
+}
+
+void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,float depthscale,const std::vector<unsigned short>& depths,const std::vector<unsigned int>& rgb,unsigned short invalidDepth)
+{
+  vector<float> fdepth(depths.size());
+  for(size_t i=0;i<depths.size();i++)
+    fdepth[i] = depths[i]*depthscale;
+  FromDepthImage(w,h,wfov,hfov,fdepth,rgb,invalidDepth*depthscale);
 }
 
 bool PointCloud3D::IsStructured() const
@@ -521,9 +629,9 @@ void PointCloud3D::SetXYZAsProperties(bool isprop)
     int numprops = propertyNames.size();
     for(int i=0;i<3;i++)
       if(elemIndex[i] < 0) {
-	propertyNames.push_back(elementNames[i]);
-	elemIndex[i] = numprops;
-	numprops++;
+    propertyNames.push_back(elementNames[i]);
+    elemIndex[i] = numprops;
+    numprops++;
       }
     if(properties.empty()) 
       properties.resize(points.size());
@@ -654,17 +762,16 @@ bool PointCloud3D::PackColorChannels(const char* fmt)
 
 bool PointCloud3D::GetColors(vector<Vector4>& out) const
 {
+  Timer timer;
   vector<Real> rgb;
   if(GetProperty("rgb",rgb)) {
     //convert real to hex to GLcolor
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
       unsigned int col = (unsigned int)rgb[i];
-      Real r=((col&0xff0000)>>16) / 255.0;
-      Real g=((col&0xff00)>>8) / 255.0;
-      Real b=(col&0xff) / 255.0;
-      int w=GetStructuredWidth();
-      int h=GetStructuredHeight();
+      Real r=((col&0xff0000)>>16) *one_over_255;
+      Real g=((col&0xff00)>>8) *one_over_255;
+      Real b=(col&0xff) *one_over_255;
       out[i].set(r,g,b,1.0);
     }
     return true;
@@ -675,10 +782,10 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
       unsigned int col = (unsigned int)rgb[i];
-      Real r = ((col&0xff0000)>>16) / 255.0;
-      Real g = ((col&0xff00)>>8) / 255.0;
-      Real b = (col&0xff) / 255.0;
-      Real a = ((col&0xff000000)>>24) / 255.0;
+      Real r = ((col&0xff0000)>>16) *one_over_255;
+      Real g = ((col&0xff00)>>8) *one_over_255;
+      Real b = (col&0xff) *one_over_255;
+      Real a = ((col&0xff000000)>>24) *one_over_255;
       out[i].set(r,g,b,a);
     }
     return true;
@@ -692,7 +799,7 @@ bool PointCloud3D::GetColors(vector<Vector4>& out) const
   else if(GetProperty("c",rgb)) {
     out.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) 
-      out[i].set(1,1,1,rgb[i]/255.0);
+      out[i].set(1,1,1,rgb[i]*one_over_255);
     return true;
   }
   return false;
@@ -710,9 +817,9 @@ bool PointCloud3D::GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vec
     fill(a.begin(),a.end(),1.0);
     for(size_t i=0;i<rgb.size();i++) {
       int col = (int)rgb[i];
-      r[i]=((col&0xff0000)>>16) / 255.0;
-      g[i]=((col&0xff00)>>8) / 255.0;
-      b[i]=(col&0xff) / 255.0;
+      r[i]=((col&0xff0000)>>16) *one_over_255;
+      g[i]=((col&0xff00)>>8) *one_over_255;
+      b[i]=(col&0xff) *one_over_255;
     }
     return true;
   }
@@ -725,10 +832,10 @@ bool PointCloud3D::GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vec
     a.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) {
       int col = (int)rgb[i];
-      r[i] = ((col&0xff0000)>>16) / 255.0;
-      g[i] = ((col&0xff00)>>8) / 255.0;
-      b[i] = (col&0xff) / 255.0;
-      a[i] = ((col&0xff000000)>>24) / 255.0;
+      r[i] = ((col&0xff0000)>>16) * one_over_255;
+      g[i] = ((col&0xff00)>>8) * one_over_255;
+      b[i] = (col&0xff) * one_over_255;
+      a[i] = ((col&0xff000000)>>24) * one_over_255;
     }
     return true;
   }
@@ -745,7 +852,7 @@ bool PointCloud3D::GetColors(vector<Real>& r,vector<Real>& g,vector<Real>& b,vec
     b.resize(rgb.size(),1.0);
     a.resize(rgb.size());
     for(size_t i=0;i<rgb.size();i++) 
-      a[i] = rgb[i]/255.0;
+      a[i] = rgb[i]*one_over_255;
     return true;
   }
   return false;
@@ -770,8 +877,8 @@ void PointCloud3D::SetColors(const vector<Real>& r,const vector<Real>& g,const v
     vector<Real> rgb(r.size());
     for(size_t i=0;i<r.size();i++) {
       int col = ((int(r[i]*255.0) & 0xff) << 16) |
-	((int(g[i]*255.0) & 0xff) << 8) |
-	(int(b[i]*255.0) & 0xff);
+    ((int(g[i]*255.0) & 0xff) << 8) |
+    (int(b[i]*255.0) & 0xff);
       rgb[i] = Real(col);
     }
     SetProperty("rgb",rgb);
@@ -781,9 +888,9 @@ void PointCloud3D::SetColors(const vector<Real>& r,const vector<Real>& g,const v
     vector<Real> rgba(r.size());
     for(size_t i=0;i<r.size();i++) {
       int col = ((int(a[i]*255.0) & 0xff) << 24) |
-	((int(r[i]*255.0) & 0xff) << 16) |
-	((int(g[i]*255.0) & 0xff) << 8) |
-	(int(b[i]*255.0) & 0xff);
+    ((int(r[i]*255.0) & 0xff) << 16) |
+    ((int(g[i]*255.0) & 0xff) << 8) |
+    (int(b[i]*255.0) & 0xff);
       rgba[i] = Real(col);
     }
     SetProperty("rgba",rgba);
@@ -800,8 +907,8 @@ void PointCloud3D::SetColors(const vector<Vector4>& rgba,bool includeAlpha)
     for(size_t i=0;i<rgba.size();i++) {
       rgba[i].get(r,g,b,a);
       int col = ((int(r*255.0) & 0xff) << 16) |
-  ((int(g*255.0) & 0xff) << 8) |
-  (int(b*255.0) & 0xff);
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
       packed[i] = Real(col);
     }
     SetProperty("rgb",packed);
@@ -812,9 +919,9 @@ void PointCloud3D::SetColors(const vector<Vector4>& rgba,bool includeAlpha)
     for(size_t i=0;i<rgba.size();i++) {
       rgba[i].get(r,g,b,a);
       int col = ((int(a*255.0) & 0xff) << 24) |
-  ((int(r*255.0) & 0xff) << 16) |
-  ((int(g*255.0) & 0xff) << 8) |
-  (int(b*255.0) & 0xff);
+        ((int(r*255.0) & 0xff) << 16) |
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
       packed[i] = Real(col);
     }
     SetProperty("rgba",packed);
@@ -890,14 +997,14 @@ void PointCloud3D::RemoveProperty(const string& name)
   if(i >= 0) {
     for(size_t k=0;k<properties.size();k++) {
       for(size_t j=i+1;j<propertyNames.size();j++)
-	properties[k][j-1] = properties[k][j];
+    properties[k][j-1] = properties[k][j];
       properties[k].n--;
     }
     propertyNames.erase(propertyNames.begin()+i);
     return;
   }
   else
-    fprintf(stderr,"PointCloud3D::RemoveProperty: warning, property %s does not exist\n",name.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::RemoveProperty: warning, property "<<name.c_str());
 }
 
 void PointCloud3D::GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud)
@@ -926,34 +1033,34 @@ void PointCloud3D::GetSubCloud(const string& property,Real minValue,Real maxValu
   if(property == "x") {
     for(size_t i=0;i<points.size();i++)
       if(minValue <= points[i].x && points[i].x <= maxValue) {
-	subcloud.points.push_back(points[i]);
-	subcloud.properties.push_back(properties[i]);
+    subcloud.points.push_back(points[i]);
+    subcloud.properties.push_back(properties[i]);
       }
   }
   else if(property == "y") {
     for(size_t i=0;i<points.size();i++)
       if(minValue <= points[i].y && points[i].y <= maxValue) {
-	subcloud.points.push_back(points[i]);
-	subcloud.properties.push_back(properties[i]);
+    subcloud.points.push_back(points[i]);
+    subcloud.properties.push_back(properties[i]);
       }
   }
   else if(property == "z") {
     for(size_t i=0;i<points.size();i++)
       if(minValue <= points[i].z && points[i].z <= maxValue) {
-	subcloud.points.push_back(points[i]);
-	subcloud.properties.push_back(properties[i]);
+    subcloud.points.push_back(points[i]);
+    subcloud.properties.push_back(properties[i]);
       }
   }
   else {
     int i=PropertyIndex(property);
     if(i < 0) {
-      fprintf(stderr,"PointCloud3D::GetSubCloud: warning, property %s does not exist\n",property.c_str());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::GetSubCloud: warning, property "<<property.c_str());
       return;
     }
     for(size_t k=0;k<properties.size();k++)
       if(minValue <= properties[k][i] && properties[k][i] <= maxValue) {
-	subcloud.points.push_back(points[k]);
-	subcloud.properties.push_back(properties[k]);
+    subcloud.points.push_back(points[k]);
+    subcloud.properties.push_back(properties[k]);
       }
   }
 }

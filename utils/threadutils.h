@@ -1,17 +1,55 @@
 #ifndef THREAD_UTILS_H
 #define THREAD_UTILS_H
 
+#ifndef USE_CPP_THREADS
 #ifndef USE_BOOST_THREADS
 #ifndef USE_PTHREADS
 #ifdef _WIN32
-#define USE_BOOST_THREADS 1
+#if (_MSC_VER>=1700)
+#define USE_CPP_THREADS 1
+#define USE_BOOST_THREADS 0
 #define USE_PTHREADS 0
 #else
+#define USE_CPP_THREADS 0
+#define USE_BOOST_THREADS 1
+#define USE_PTHREADS 0
+#endif
+#else
+#define USE_CPP_THREADS 0
 #define USE_BOOST_THREADS 0
 #define USE_PTHREADS 1
 #endif
 #endif //USE_PTHREADS
 #endif //USE_BOOST_THREADS
+#endif //USE_CPP_THREADS
+
+
+#if USE_CPP_THREADS
+#include <thread>
+#include <condition_variable>
+#include <mutex>
+#include <iostream>
+typedef std::thread Thread;
+struct Mutex
+{
+  Mutex() { }
+  ~Mutex() { mutex.~mutex(); }
+  void lock() { mutex.lock(); }
+  bool trylock() { return (mutex.try_lock() == 0); }
+  void unlock() { mutex.unlock(); }
+  std::mutex mutex;
+};
+struct ScopedLock{
+  ScopedLock(Mutex& _mutex) :mutex(_mutex) { mutex.lock(); }
+  ~ScopedLock() { mutex.unlock(); }
+  Mutex& mutex;
+};
+typedef std::condition_variable Condition;
+inline Thread ThreadStart(void* (*fn)(void*), void* data = NULL) { return std::thread(fn, data); }
+inline void ThreadJoin(Thread& thread) { thread.join(); }
+inline void ThreadYield() { std::this_thread::yield(); }
+
+#endif //USE_CPP_THREADS
 
 #if USE_BOOST_THREADS
 #include <boost/thread.hpp>

@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Minimization.h"
 #include <math/LDL.h>
 #include <math/AABB.h>
@@ -136,14 +137,14 @@ ConvergenceResult MinimizationProblem::SolveNewton(int& iters)
     Vector d;
     ldl.LDL.getDiagRef(0,d);
     if(d.minElement() < 0) {
-      if(verbose>=1) cout<<"Warning, hessian is not positive definite"<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"Warning, hessian is not positive definite");
       for(int i=0;i<d.n;i++)
 	if(d(i) < 1e-4) d(i) = 1e-4;
       //return ConvergenceError;
     }
     ldl.backSub(grad,dx);
     if(dot(dx,grad) < Zero) {
-      if(verbose>=1) cout<<"MinimizationProblem::SolveNewton(): Warning, direction opposes gradient on step "<<iters<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"MinimizationProblem::SolveNewton(): Warning, direction opposes gradient on step "<<iters);
       //dx.setNegative(grad);
     }
     dx.inplaceNegative();
@@ -180,7 +181,7 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
   qn.SetHessian(H);
   bool posDef = qn.IsPositiveDefinite(1e-5);
   if(!posDef) {
-    if(verbose>=1) cout<<"MinimizationProblem::SolveQuasiNewton(): initial hessian is not positive definite with tolerance 1e-5"<<endl;
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"MinimizationProblem::SolveQuasiNewton(): initial hessian is not positive definite with tolerance 1e-5");
     H.setIdentity();
     qn.SetHessian(H);
   }
@@ -191,14 +192,14 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
   if(verbose >= 3) {
     trueH.resize(x.n,x.n);
     f->Hessian(x,trueH);
-    cout<<"Iter "<<0<<", Norm_f of error "<<Distance_Frobenius(H,trueH)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Iter "<<0<<", Norm_f of error "<<Distance_Frobenius(H,trueH));
   }
 
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
     qn.BackSub(grad,dx);
     if(dot(dx,grad) < Zero) {
-      if(verbose>=1) cout<<"MinimizationProblem::SolveQuasiNewton(): Warning, direction opposes gradient on step "<<iters<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"MinimizationProblem::SolveQuasiNewton(): Warning, direction opposes gradient on step "<<iters);
       //dx.setNegative(grad);
     }
     dx.inplaceNegative();
@@ -219,17 +220,17 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
     if(updateType == BFGS) {
       bool res=qn.UpdateBFGS(s,q);
       if(!res) {
-	cerr<<"Unable to update the hessian approximation, ignoring update"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to update the hessian approximation, ignoring update");
 	    }
     }
     else if(updateType == DFS) {
       bool res=qn.UpdateDFS(s,q);
       if(!res) {
-	cerr<<"Unable to update the hessian approximation, ignoring update"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to update the hessian approximation, ignoring update");
 	    }
     }
     else {
-      cout<<"Unknown type of quasi-Newton update"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Unknown type of quasi-Newton update");
       Abort();
     }
 
@@ -237,10 +238,10 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
       //test
       qn.GetHessian(H);
       f->Hessian(x,trueH);
-      cout<<"Iter "<<iters+1<<", Norm_f of error "<<Distance_Frobenius(H,trueH)<<endl;
-      cout<<"H':"<<endl<<MatrixPrinter(H)<<endl;
-      cout<<"H:"<<endl<<MatrixPrinter(trueH)<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Iter "<<iters+1<<", Norm_f of error "<<Distance_Frobenius(H,trueH));
+      LOG4CXX_INFO(KrisLibrary::logger(),"H':"<<MatrixPrinter(H)<<"\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"H:"<<MatrixPrinter(trueH)<<"\n");
+      KrisLibrary::loggerWait();
     }
   }
   return MaxItersReached;
@@ -311,7 +312,7 @@ ConvergenceResult MinimizationProblem::LineMinimizationStep(const Vector& dx,Rea
   Real t = alpha0;
   for(int lineSearchIters=1;;lineSearchIters++) {
     if(Abs(t) * normdx < tolx) {
-      if(verbose>=1) cout<<"MinimizationProblem::LineMinimizationStep(): Quitting on line search iter "<<lineSearchIters<<endl;
+      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"MinimizationProblem::LineMinimizationStep(): Quitting on line search iter "<<lineSearchIters);
       x = x0; alpha0 = 0;
       return ConvergenceX;
     }
@@ -324,7 +325,7 @@ ConvergenceResult MinimizationProblem::LineMinimizationStep(const Vector& dx,Rea
 
   /*
   if(alpha0 != 1) {
-    if(verbose>=1) cout<<"MinimizationProblem::LineMinimizationStep(): Warning, alpha0 is set to something other than 1"<<endl;
+    if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"MinimizationProblem::LineMinimizationStep(): Warning, alpha0 is set to something other than 1");
   }
   Real t=f->LineMinimization(x,dx);
   x.madd(dx,t);
@@ -385,14 +386,14 @@ ConvergenceResult BCMinimizationProblem::SolveNewton(int& iters)
     Vector d;
     ldl.LDL.getDiagRef(0,d);
     if(d.minElement() < 0) {
-      if(verbose>=1) cout<<"Warning, hessian is not positive definite"<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"Warning, hessian is not positive definite");
       for(int i=0;i<d.n;i++)
 	if(d(i) < 1e-4) d(i) = 1e-4;
       //return ConvergenceError;
     }
     ldl.backSub(grad,dx);
     if(dot(dx,grad) < Zero) {
-      if(verbose>=1) cout<<"BCMinimizationProblem::SolveNewton(): Warning, hessian direction opposes gradient on step "<<iters<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"BCMinimizationProblem::SolveNewton(): Warning, hessian direction opposes gradient on step "<<iters);
       //dx.setNegative(grad);
     }
     dx.inplaceNegative();
@@ -431,7 +432,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
   for(iters=0;iters<maxIters;iters++) {
     ldl.backSub(grad,dx);
     if(dot(dx,grad) < Zero) {
-      if(verbose>=1) cout<<"BCMinimizationProblem::SolveQuasiNewton(): Warning, hessian direction opposes gradient on step "<<iters<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"BCMinimizationProblem::SolveQuasiNewton(): Warning, hessian direction opposes gradient on step "<<iters);
       //dx.setNegative(grad);
     }
     grad.inplaceNegative();
@@ -454,7 +455,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
     //first part
     Real qdots = q.dot(s);
     if(qdots <= 0) {
-      if(verbose >= 2) printf("BCMinimizationProblem: Warning, gradient update is in wrong direction\n");
+      if(verbose >= 2) LOG4CXX_WARN(KrisLibrary::logger(),"BCMinimizationProblem: Warning, gradient update is in wrong direction\n");
       //revert to identity
       ldl.LDL.setIdentity();
       continue;
@@ -473,7 +474,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
     Assert(sHs > 0);
     upd /= Sqrt(sHs);
     if(!ldl.downdate(upd)) {
-      if(verbose>=1) cout<<"Unable to maintain strict positive definiteness of hessian!"<<endl;
+      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain strict positive definiteness of hessian!");
       //revert to identity
       ldl.LDL.setIdentity();
       continue;
@@ -483,7 +484,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
     Vector d;
     ldl.LDL.getDiagRef(0,d);
     if(d.minElement() <= 0) {
-      if(verbose>=1) cout<<"Unable to maintain positive definiteness of hessian!"<<endl;
+      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain positive definiteness of hessian!");
       return ConvergenceError;
     }
   }
@@ -493,7 +494,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
 ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& alpha0)
 {
   if(alpha0 != 1) {
-    if(verbose>=1) cout<<"BCMinimizationProblem::LineMinimizationStep(): Warning, alpha0 is set to something other than 1"<<endl;
+    if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"BCMinimizationProblem::LineMinimizationStep(): Warning, alpha0 is set to something other than 1");
   }
   Assert(AABBContains(x,bmin,bmax));
   activeSet.resize(x.n);
@@ -568,28 +569,28 @@ bool ConstrainedMinimizationProblem::CheckPoint(const Vector& x) const
 {
   if(C&&!SatisfiesEquality(C,x,tolc)) {
     if(verbose>=1) {
-      cout<<"ConstrainedMinimizationProblem::Solve(): Error, initial point\n    doesn't satisfy equality constraints"<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::Solve(): Error, initial point\n    doesn't satisfy equality constraints");
       Vector v(C->NumDimensions());
       (*C)(x,v);
       int index;
       Real max=v.maxAbsElement(&index);
-      cout<<"    Error "<<max<<" at "<<C->Label(index)<<" exceeds threshold "<<tolc<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"    Error "<<max<<" at "<<C->Label(index)<<" exceeds threshold "<<tolc);
     }
     return false;
   }
   if(D&&!SatisfiesInequality(D,x,Zero)) {
     if(verbose>=1) {
-      cout<<"ConstrainedMinimizationProblem::Solve(): Error, initial point\n    doesn't satisfy inequality constraints"<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::Solve(): Error, initial point\n    doesn't satisfy inequality constraints");
       Vector v(D->NumDimensions());
       (*D)(x,v);
       int index;
       Real max=v.minElement(&index);
-      cout<<"    Error "<<max<<" at "<<D->Label(index)<<" is less than zero"<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"    Error "<<max<<" at "<<D->Label(index)<<" is less than zero");
     }
     return false;
   }
   if(!bmin.isEmpty()&&!AABBContains(x,bmin,bmax)) {
-    if(verbose>=1) cout<<"ConstrainedMinimizationProblem::Solve(): Error, initial point doesn't satisfy bound constraints"<<endl;
+    if(verbose>=1) LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::Solve(): Error, initial point doesn't satisfy bound constraints");
     return false;
   }
   return true;
@@ -611,14 +612,14 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveGD(int& iters)
     NullspaceProjection(x,grad);
     Real dxnorm = grad.maxAbsElement();
     if(dxnorm < tolgrad) {
-      if(verbose >= 1) cout<<"Projected gradient is 0!"<<endl;
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Projected gradient is 0!");
       return LocalMinimum;
     }
     Real alpha0 = Min(dxnorm0/dxnorm,(Real)10);
     ConvergenceResult res=LineMinimizationStep(grad,alpha0);
     if(res != MaxItersReached) return res;
   }
-  if(verbose>=1) cout<<"ConstrainedMinimzationProblem::Solve(): Max iters reached "<<iters<<"."<<endl;
+  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::Solve(): Max iters reached "<<iters<<".");
   return MaxItersReached;
 }
 
@@ -634,18 +635,18 @@ ConvergenceResult ConstrainedMinimizationProblem::StepGD()
 
   //HACK!
   Real dxnorm0 = grad.maxAbsElement();
-  cout<<"ConstrainedMinimization: Projecting gradient to nullspace..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization: Projecting gradient to nullspace...");
   NullspaceProjection(x,grad);
-  cout<<"Done"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
   Real dxnorm = grad.maxAbsElement();
   if(dxnorm < tolgrad) {
-    if(verbose>=1) cout<<"Projected gradient is 0!"<<endl;
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Projected gradient is 0!");
     return LocalMinimum;
   }
   Real alpha0 = Min(dxnorm0/dxnorm,(Real)1);
-  cout<<"ConstrainedMinimization: Line minimization..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization: Line minimization...");
   ConvergenceResult res = LineMinimizationStep(grad,alpha0);
-  cout<<"Done"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
   return res;
 }
 
@@ -666,14 +667,14 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveNewton(int& iters)
     Vector d;
     ldl.LDL.getDiagRef(0,d);
     if(d.minElement() < 0) {
-      if(verbose>=1) cout<<"Warning, hessian is not positive definite"<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"Warning, hessian is not positive definite");
       for(int i=0;i<d.n;i++)
 	if(d(i) < 1e-4) d(i) = 1e-4;
       //return ConvergenceError;
     }
     ldl.backSub(grad,dx);
     if(dot(dx,grad) < Zero) {
-      if(verbose>=1) cout<<"ConstrainedMinimizationProblem::SolveNewton(): Warning, hessian direction opposes gradient on step "<<iters<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveNewton(): Warning, hessian direction opposes gradient on step "<<iters);
       //dx.setNegative(grad);
     }
     dx.inplaceNegative();
@@ -685,7 +686,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveNewton(int& iters)
     ConvergenceResult res=LineMinimizationStep(dx,alpha0);
     if(res != MaxItersReached) return res;
   }
-  if(verbose>=1) cout<<"ConstrainedMinimzationProblem::Solve(): Max iters reached "<<iters<<"."<<endl;
+  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::Solve(): Max iters reached "<<iters<<".");
   return MaxItersReached;
 }
 
@@ -709,8 +710,8 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
   Vector cx(cn),dx(dn);
   (*C)(x,cx);
   (*D)(x,dx);
-  cout<<"******************************************************"<<endl;
-  cout<<"ConstrainedMinimization::StepTR(): objective "<<fx<<", initial distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement()<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"******************************************************");
+  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): objective "<<fx<<", initial distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
 
   //solving the linearized version of the problem for a displacement
   //y such that C(x+y) ~= C(x)+J(x)*y = 0
@@ -746,7 +747,7 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
     LinearProgram::Result res=lps.Solve(lp);
 
     if(res == LinearProgram::Infeasible) {
-      cout<<"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too small, doing a feasibility solve step"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too small, doing a feasibility solve step");
       //NOTE: if MaxItersReached is returned, this will return ConvergenceError
       ConvergenceResult r;
       SolveFeasiblePoint(x,1,&r);
@@ -759,7 +760,7 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	return ConvergenceError;
     }
     else if(res == LinearProgram::Unbounded) {
-      cout<<"ConstrainedMinimization::StepTR(): uh... can't be unbounded!"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): uh... can't be unbounded!");
       Abort();
     }
     else if(res == LinearProgram::Feasible) {
@@ -777,8 +778,8 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	(*D)(x,dx);
 	fx = (*f)(x);
 	Real newMerit = Merit(fx,cx,dx,fScale);
-	cout<<"ConstrainedMinimization::StepTR(): step length "<<stepNorm*alpha<<endl;
-	cout<<"ConstrainedMinimization::StepTR(): objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement()<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): step length "<<stepNorm*alpha);
+	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
       
 	if(newMerit < origMerit) {
 	  if(numSteps == 0) {
@@ -787,20 +788,20 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	    return MaxItersReached;
 	  }
 	  else {
-	    cout<<"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large"<<endl;
-	    cout<<"Suggest radius "<<R*alpha<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Suggest radius "<<R*alpha);
 	    return Divergence;
 	  }
 	}
 	numSteps++;
 	alpha *= 0.5;
       }
-      cout<<"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
       x = xold;
       return Divergence;
     }
     else { //error
-      cout<<"ConstrainedMinimization::StepTR(): error solving linear program!"<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): error solving linear program!");
       return ConvergenceError;
     }
     return MaxItersReached;
@@ -822,12 +823,10 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
     catch(exception& e) {
       FatalError("Could not cast C or D to sparse functions! exception: %s",e.what());
     }
-    cout<<"Evaluating equality jacobian..."; cout.flush();
-    sC->Jacobian_Sparse(x,Ac);
-    cout<<Ac.numNonZeros()<<" nonzeros"<<endl;
-    cout<<"Evaluating inequality jacobian..."; cout.flush();
-    sD->Jacobian_Sparse(x,Ad);
-    cout<<Ad.numNonZeros()<<" nonzeros"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Evaluating equality jacobian...");     sC->Jacobian_Sparse(x,Ac);
+    LOG4CXX_INFO(KrisLibrary::logger(),Ac.numNonZeros()<<" nonzeros");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Evaluating inequality jacobian...");     sD->Jacobian_Sparse(x,Ad);
+    LOG4CXX_INFO(KrisLibrary::logger(),Ad.numNonZeros()<<" nonzeros");
     lp.A.copySubMatrix(0,0,Ac);
     lp.A.copySubMatrix(cn,0,Ad);
     bc.setRef(lp.p,0,1,cn);
@@ -848,15 +847,15 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
     LinearProgram::Result res=lps.Solve(lp);
 
     if(res == LinearProgram::Infeasible) {
-      cout<<"Linear program is infeasible!"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Linear program is infeasible!");
 
       /*
       lp.l.set(-Inf);
       lp.u.set(Inf);
       LinearProgram::Result res2=lps.Solve(lp);
       if(res2 == LinearProgram::Infeasible) {
-	cout<<"Seems to be infeasible over entire space!"<<endl;
-	getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"Seems to be infeasible over entire space!");
+	KrisLibrary::loggerWait();
 
 	//deactivate inequality constraints
 	for(int i=0;i<dn;i++) {
@@ -865,20 +864,20 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	}
 	res2 = lps.Solve(lp);
 	if(res2 == LinearProgram::Infeasible) {
-	  cout<<"equalities are infeasible!"<<endl;
-	  //cout<<"Equalities: "<<cn<<", variables "<<x.n<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),"equalities are infeasible!");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Equalities: "<<cn<<", variables "<<x.n);
 	  //lp.Print(cout);
-	  getchar();
+	  KrisLibrary::loggerWait();
 
-	  cout<<"Trying LSQR of equalities..."<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Trying LSQR of equalities...");
 	  LSQRInterface lsqr;
 	  lsqr.verbose = 0;
 	  if(lsqr.Solve(Ac,cx)) {
 	    lsqr.x.inplaceNegative();
-	    cout<<"LSQR solved the problem with residual "<<lsqr.residualNorm<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"LSQR solved the problem with residual "<<lsqr.residualNorm);
 	  }
 	  else
-	    cout<<"LSQR failed with residual "<<lsqr.residualNorm<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"LSQR failed with residual "<<lsqr.residualNorm);
 	  return ConvergenceError;
 	}
 	else {
@@ -902,17 +901,16 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	  lptemp.q(j) = lp.q(j);
 	}
 	if(lps.Solve(lptemp) == LinearProgram::Infeasible) {
-	  cout<<"Constraint "<<i<<" caused the LP to become infeasible!"<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Constraint "<<i<<" caused the LP to become infeasible!");
 	  SparseVector tmp;
 	  tmp.set(lptemp.A.rows[i-1]);
-	  cout<<lptemp.q(i-1)<<" < "; tmp.print(cout); cout<<" < "<<lptemp.p(i-1)<<endl;
-	  getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger()(),lptemp.q(i-1)<<" < "); tmp.print(	  if(KrisLibrary::logger()()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
 	  break;
 	}
       }
       */
 
-      cout<<"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too small, doing a feasibility solve step"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too small, doing a feasibility solve step");
       rootSolver.tolf = tolc;
       rootSolver.tolmin = tolx;
       rootSolver.tolx = tolx;
@@ -921,28 +919,28 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
       rootSolver.verbose = verbose;
       rootSolver.x.setRef(x);
       rootSolver.sparse = sparse;
-      cout<<"ConstrainedMinimizationProblem::SolveFeasiblePoint..."<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveFeasiblePoint...");
       int iters=1;
       ConvergenceResult r=rootSolver.SolveConstrained_SLP(iters);
       if(r == ConvergenceError) {
-	cout<<"ConstrainedMinimization::StepTR(): feasibility could not be solved!"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): feasibility could not be solved!");
 	return ConvergenceError;
       }
       else if(r == ConvergenceX) {
-	cout<<"ConstrainedMinimization::StepTR(): feasibility could not be solved, x tolerance has been reached"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): feasibility could not be solved, x tolerance has been reached");
 	return ConvergenceX;
       }
 
       /*
       if(!SolveFeasiblePoint(x,1)) {
-	cout<<"ConstrainedMinimization::StepTR(): feasibility could not be solved!"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): feasibility could not be solved!");
 	return ConvergenceError;
       }
       */
       (*C)(x,cx);
       (*D)(x,dx);
       fx = (*f)(x);
-      cout<<"ConstrainedMinimization::StepTR(): final objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement()<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): final objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
       /*
       //shortcut to SolveFeasiblePoint() -- just solve the least squares problem
       for(int i=0;i<dn;i++)
@@ -966,26 +964,26 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	  alpha *= 0.5;
 	}
 	if(alpha <= 1e-4) {
-	  cout<<"ConstrainedMinimization::StepTR(): backtracking failed!"<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): backtracking failed!");
 	  x=x0;
 	}
 	else {
-	  cout<<"ConstrainedMinimization::StepTR(): final objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement()<<endl;
+	  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): final objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
 	}
       }
       */
       return LocalMinimum;
     }
     else if(res == LinearProgram::Unbounded) {
-      cout<<"ConstrainedMinimization::StepTR(): uh... can't be unbounded!"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): uh... can't be unbounded!");
       Abort();
     }
     else if(res == LinearProgram::Feasible) {
       //arbitrary merit function...
       Real fScale=tolf/tolc;
       Real origMerit = Merit(fx,cx,dx,fScale);
-      cout<<"ConstrainedMinimization::StepTR():"<<endl;
-      cout<<"   Original merit "<<origMerit<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR():");
+      LOG4CXX_INFO(KrisLibrary::logger(),"   Original merit "<<origMerit);
 
       Real alpha = One;
       Real stepNorm = lps.xopt.norm();
@@ -997,8 +995,8 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	(*D)(x,dx);
 	fx = (*f)(x);
 	Real newMerit = Merit(fx,cx,dx,fScale);
-	cout<<"   Step length "<<stepNorm*alpha<<", merit "<<newMerit<<endl;
-	cout<<"   Objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement()<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"   Step length "<<stepNorm*alpha<<", merit "<<newMerit);
+	LOG4CXX_INFO(KrisLibrary::logger(),"   Objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
       
 	if(newMerit < origMerit) {
 	  if(numSteps == 0) {
@@ -1007,20 +1005,20 @@ ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
 	    return MaxItersReached;
 	  }
 	  else {
-	    cout<<"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large"<<endl;
-	    cout<<"Suggest radius "<<R*alpha<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Suggest radius "<<R*alpha);
 	    return Divergence;
 	  }
 	}
 	numSteps++;
 	alpha *= 0.5;
       }
-      cout<<"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
       x = xold;
       return Divergence;
     }
     else { //error
-      cout<<"ConstrainedMinimization::StepTR(): error solving linear program!"<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): error solving linear program!");
       return ConvergenceError;
     }
     return MaxItersReached;
@@ -1055,9 +1053,9 @@ void ConstrainedMinimizationProblem::NullspaceProjection(const Vector& x,Vector&
     C->Jacobian(x,J);
     svd.resize(m,n);
     if(!svd.set(J)) {
-      cerr<<"ConstrainedMinimizationProblem::NullspaceProjection: Error setting SVD of equality Jacobian!!!"<<endl;
-      //cout<<MatrixPrinter(J)<<endl;
-      //getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::NullspaceProjection: Error setting SVD of equality Jacobian!!!");
+      //LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(J));
+      //KrisLibrary::loggerWait();
       J.setZero();
       svd.setZero(J.m,J.n);
     }
@@ -1094,11 +1092,11 @@ ConvergenceResult ConstrainedMinimizationProblem::LineMinimizationStep(const Vec
     return ConvergenceF;
   }
 
-  //if(verbose>=1 && t != alpha0) cout<<"Starting t value: "<<t<<endl;
+  //if(verbose>=1 && t != alpha0) LOG4CXX_INFO(KrisLibrary::logger(),"Starting t value: "<<t);
   //find a step that descends along grad
   for(int lineSearchIters=0;;lineSearchIters++) {
     if(t*dxnorm < tolx) {
-      if(verbose>=1) cout<<"ConstrainedMinimzationProblem::LineSearch(): Converged on t on line search iteration "<<lineSearchIters<<", |dx|="<<dxnorm<<endl;
+      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::LineSearch(): Converged on t on line search iteration "<<lineSearchIters<<", |dx|="<<dxnorm);
       //x must remain on surface... just set x to x0
       x = x0; alpha0 = 0;
       return ConvergenceX;
@@ -1106,10 +1104,10 @@ ConvergenceResult ConstrainedMinimizationProblem::LineMinimizationStep(const Vec
     x = x0; x.madd(dx,t);
     for(int i=0;i<x.n;i++)
       if(IsNaN(x(i))) {
-	cerr<<"ConstrainedMinimizationProblem: x is NaN!"<<endl;
-	cerr<<"t is "<<t<<endl;
-	cerr<<"x0 is "<<x0<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem: x is NaN!");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"t is "<<t);
+	LOG4CXX_ERROR(KrisLibrary::logger(),"x0 is "<<x0);
+	KrisLibrary::loggerWait();
 	return ConvergenceError;
       }
     if(SolveFeasiblePoint(x,20)) {
@@ -1120,7 +1118,7 @@ ConvergenceResult ConstrainedMinimizationProblem::LineMinimizationStep(const Vec
       }
     }
     else {
-      if(verbose>=1) cout<<"ConstrainedMinimzationProblem::StepGD(): Warning, MoveToSurface_Bounded failed on line search iteration "<<lineSearchIters<<endl;
+      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"ConstrainedMinimzationProblem::StepGD(): Warning, MoveToSurface_Bounded failed on line search iteration "<<lineSearchIters);
     }
     //reduce t
     t *= lineSearchShrink;
@@ -1128,11 +1126,11 @@ ConvergenceResult ConstrainedMinimizationProblem::LineMinimizationStep(const Vec
   alpha0 = t;
 
   if(Abs(fx-fx0) <= tolf) {
-    if(verbose>=1) cout<<"ConstrainedMinimzationProblem::StepGD(): Success, change in f is "<<fx0-fx<<endl;
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::StepGD(): Success, change in f is "<<fx0-fx);
     return ConvergenceF;
   }
 
-  if(verbose>=1) cout<<"StepGD(): Target "<<fx<<", length of gradient "<<dxnorm<<", step size "<<t*dxnorm<<endl;
+  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"StepGD(): Target "<<fx<<", length of gradient "<<dxnorm<<", step size "<<t*dxnorm);
 
   if(bmin.n != 0)
     Assert(AABBContains(x0,bmin,bmax));
@@ -1150,7 +1148,7 @@ bool ConstrainedMinimizationProblem::SolveFeasiblePoint(Vector& x,int maxIters,C
   rootSolver.verbose = verbose;
   rootSolver.x.setRef(x);
   rootSolver.sparse = sparse;
-  cout<<"ConstrainedMinimizationProblem::SolveFeasiblePoint..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveFeasiblePoint...");
   return rootSolver.GlobalSolve(maxIters,res);
 }
 

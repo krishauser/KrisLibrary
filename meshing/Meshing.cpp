@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Meshing.h"
 #include <math3d/interpolate.h>
 #include <math3d/Plane3D.h>
@@ -318,12 +319,12 @@ void TriSplitter::Split(const Plane3D& p)
       v1=newVerts[i][0].second;
       a=t[e1];
       if(d[a] <= -tol || d[a] >= tol) {
-	cerr<<"Error with the vertex split!"<<endl;
-	cout<<"Triangle "<<mesh.tris[i]<<endl;
-	cout<<"Distances "<<d[mesh.tris[i][0]]<<", "<<d[mesh.tris[i][1]]<<", "<<d[mesh.tris[i][2]]<<endl;
-	cout<<"Edge "<<e1<<endl;
-	cout<<"Split vertex "<<a<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error with the vertex split!");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<mesh.tris[i]);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Distances "<<d[mesh.tris[i][0]]<<", "<<d[mesh.tris[i][1]]<<", "<<d[mesh.tris[i][2]]);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Edge "<<e1);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Split vertex "<<a);
+	KrisLibrary::loggerWait();
       }
       Assert(d[a] >= -tol && d[a] <= tol);
       t.getCompliment(e1,b,c);
@@ -475,7 +476,7 @@ void GetConnectedCoplanarTris(TriMeshWithTopology& mesh,int t,Real tol,PolygonWi
   }
 
   //extract cycles from the edge list
-  cout<<"TODO: extract cycles from edge list"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"TODO: extract cycles from edge list");
   abort();
 }
 */

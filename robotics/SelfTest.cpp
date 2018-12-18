@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include <math/random.h>
 #include <math/VectorPrinter.h>
 #include <math3d/random.h>
@@ -82,7 +83,7 @@ struct RotationAxisFunction : public VectorFunction
 
 void TestRotationDiff()
 {
-  cout<<"Testing rotation angle differentiation..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing rotation angle differentiation...");
   RotationAngleFunction rf;
   QuaternionRotation r;
   int numTests=100;
@@ -91,14 +92,14 @@ void TestRotationDiff()
     RandRotation(r);
     r.getMatrix(rf.R);
     Real t=0;
-    cout<<"Initial matrix angle: "<<rf(t)<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Initial matrix angle: "<<rf(t));
     AngleAxisRotation aa; r.getAngleAxis(aa);
-    cout<<"Difference between matrix angle and rotation angle: "<<Acos(Clamp(rf.z.dot(aa.axis),-1,1))<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Difference between matrix angle and rotation angle: "<<Acos(Clamp(rf.z.dot(aa.axis),-1,1)));
     if(!TestDeriv(&rf,t,0.001,0.001,1e-2)) {
     }
   }
 
-  cout<<"Testing moment rotation differentiation..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing moment rotation differentiation...");
   RotationAxisFunction f;
   for(int i=0;i<numTests;i++) {
     SampleSphere(One,f.a);
@@ -116,7 +117,7 @@ void TestRotations()
 {
   TestRotationDiff();
 
-  cout<<"Testing moment rotations..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing moment rotations...");
   Real tol=1e-3;
   Matrix3 Rm,Ra;
   MomentRotation m,m2;
@@ -145,20 +146,20 @@ void TestRotations()
   Assert(Rx.isEqual(RxR,tol));
 
   //singularities
-  cout<<"Testing singularities"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing singularities");
   SampleSphere(Pi,m);
   Assert(FuzzyEquals(m.norm(),Pi,tol));
   m.getMatrix(Rm);
   m2.setMatrix(Rm);
   if(!FuzzyEquals(Abs(m.dot(m2)),Pi*Pi,Sqrt(tol))) {
-    cout<<"Error in singularity!"<<endl;
-    cout<<"Rotation "<<m<<" => "<<m2<<endl;
-    cout<<"Matrix "<<endl<<Rm<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in singularity!");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Rotation "<<m<<" => "<<m2);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Matrix "<<Rm<<"\n");
     abort();
   }
 
   //euler angles
-  cout<<"Testing Euler angles"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Testing Euler angles");
   EulerAngleRotation e,e2;
   SampleCube(4,e);
   e.getMatrixXYZ(Rm);
@@ -212,19 +213,19 @@ void TestRLG() {
   JointStructure jschain(chain);
   jschain.Init();
   jschain.SolveRootBounds();
-  cout<<"Initial bounds:"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Initial bounds:");
   for(int i=0;i<n;i++) {
     const WorkspaceBound& b=jschain.bounds[i];
-    cout<<i<<" is "<<b<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),i<<" is "<<b);
   }
-  getchar();
+  KrisLibrary::loggerWait();
   jschain.IntersectWorkspaceBounds(ikgoal);
-  cout<<"Bounds:"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Bounds:");
   for(int i=0;i<n;i++) {
     const WorkspaceBound& b=jschain.bounds[i];
-    cout<<i<<" is "<<b<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),i<<" is "<<b);
   }
-  getchar();
+  KrisLibrary::loggerWait();
 
   vector<IKGoal> ik;
   ik.push_back(ikgoal);
@@ -241,13 +242,13 @@ void TestRLG() {
     chain.links[n-1].GetLocalTransform(chain.q(n-1),Tloc);
     chain.links[n-1].T_World = Tn*Tloc;
 
-    cout<<"Q is "<<VectorPrinter(chain.q)<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Q is "<<VectorPrinter(chain.q));
     if(!chain.InJointLimits(chain.q)) {
-      cout<<"Chain out of joint limits!"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Chain out of joint limits!");
       abort();
     }
     for(int k=0;k<chain.q.n;k++) {
-      cout<<k<<": "<<chain.links[k].T_World.t<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),k<<": "<<chain.links[k].T_World.t);
       Frame3D tp;
       Frame3D tloc,tk;
       if(chain.parents[k]!=-1) {
@@ -260,9 +261,9 @@ void TestRLG() {
     }
     Vector3 p;
     chain.GetWorldPosition(ikgoal.localPosition,ikgoal.link,p);
-    cout<<n<<": "<<p<<endl;
-    cout<<"Goal distance "<<p.distance(ikgoal.endPosition)<<endl;
-    getchar();
+    LOG4CXX_INFO(KrisLibrary::logger(),n<<": "<<p);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Goal distance "<<p.distance(ikgoal.endPosition));
+    KrisLibrary::loggerWait();
   }
 }
 

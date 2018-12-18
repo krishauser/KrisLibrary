@@ -8,6 +8,7 @@
  */
 
 
+#include <KrisLibrary/Logger.h>
 #include "vector.h"
 
 namespace Math {
@@ -41,7 +42,7 @@ struct JacobiPreconditioner
     isSet = true;
     for(int i=0; i<m.m; i++) {
       if(m(i,i) == Zero) {
-	printf("Preconditioning won't work, there's a zero entry on diagonal!\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Preconditioning won't work, there's a zero entry on diagonal!\n");
 	abort();
 	isSet = false;
       }
@@ -133,7 +134,7 @@ CG(const Matrix &A, Vector &x, const Vector &b,
 
     Real d = dot(p, q);
     if(d == Zero) {
-      printf("matrix is not SPD\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"matrix is not SPD\n");
       max_iter = 0;
       return 0;
     }

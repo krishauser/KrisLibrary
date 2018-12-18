@@ -17,8 +17,8 @@
 class DoubleIntegratorKinodynamicSpace : public KinodynamicSpace
 {
 public:
-  DoubleIntegratorKinodynamicSpace(SmartPointer<CSpace> qspace,SmartPointer<CSpace> dqspace,SmartPointer<CSet> ddqset,Real dtmax);
-  virtual EdgePlanner* TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path);
+  DoubleIntegratorKinodynamicSpace(std::shared_ptr<CSpace> qspace,std::shared_ptr<CSpace> dqspace,std::shared_ptr<CSet> ddqset,Real dtmax);
+  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const std::shared_ptr<Interpolator>& path);
   void SetVisibilityEpsilon(Real tol);
 
   Real visibilityEpsilon;
@@ -27,9 +27,9 @@ public:
 class DoubleIntegratorControlSpace : public IntegratedControlSpace
 {
 public:
-  DoubleIntegratorControlSpace(const SmartPointer<CSet>& uset,Real dtmax);
+  DoubleIntegratorControlSpace(const std::shared_ptr<CSet>& uset,Real dtmax);
   virtual std::string VariableName(int i);
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
   virtual void Successor(const State& x0, const ControlInput& u,State& x1);
 
   virtual void Derivative(const State& x, const ControlInput& u,State& dx);

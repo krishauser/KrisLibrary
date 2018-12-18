@@ -12,11 +12,11 @@
 class StateCostControlSpace: public ControlSpace
 {
 public:
-  StateCostControlSpace(const SmartPointer<ControlSpace>& base,const SmartPointer<ObjectiveFunctionalBase>& objective);
+  StateCostControlSpace(const std::shared_ptr<ControlSpace>& base,const std::shared_ptr<ObjectiveFunctionalBase>& objective);
   virtual std::string VariableName(int i);
-  virtual SmartPointer<CSet> GetControlSet(const State& x);
-  virtual SmartPointer<SteeringFunction> GetSteeringFunction();
-  virtual Interpolator* Simulate(const State& x0, const ControlInput& u);
+  virtual std::shared_ptr<CSet> GetControlSet(const State& x);
+  virtual std::shared_ptr<SteeringFunction> GetSteeringFunction();
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
   virtual void Successor(const State& x0, const ControlInput& u,State& x1);
 
   static void Split(const State& xc,State& x,Real& cost);
@@ -24,24 +24,24 @@ public:
   static void Join(const State& x,Real cost,State& xc);
   static Real Cost(const State& xc);
 
-  SmartPointer<ControlSpace> base;
-  SmartPointer<ObjectiveFunctionalBase> objective;
+  std::shared_ptr<ControlSpace> base;
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
 };
 
 class StateCostKinodynamicSpace: public KinodynamicSpace
 {
 public:
-  StateCostKinodynamicSpace(const SmartPointer<KinodynamicSpace>& base,const SmartPointer<ObjectiveFunctionalBase>& objective,Real costMax=Inf);
-  virtual EdgePlanner* TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path);
+  StateCostKinodynamicSpace(const std::shared_ptr<KinodynamicSpace>& base,const std::shared_ptr<ObjectiveFunctionalBase>& objective,Real costMax=Inf);
+  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const std::shared_ptr<Interpolator>& path);
 
   void SetCostMax(Real costmax);
   void SetCostDistanceWeight(Real weight);
   Real GetCostMax();
   Real GetCostDistanceWeight();
 
-  SmartPointer<KinodynamicSpace> base;
-  SmartPointer<CSpace> scspace;
-  SmartPointer<ObjectiveFunctionalBase> objective;
+  std::shared_ptr<KinodynamicSpace> base;
+  std::shared_ptr<CSpace> scspace;
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
 };
 
 #endif

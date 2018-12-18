@@ -6,7 +6,7 @@
 namespace Camera {
 
 /** @brief A class containing viewport / camera information.  This uses OpenGL coordinate convention
- * in which x is to the right of the image, y is downward in the image, and z is backward. 
+ * in which x is to the right of the image, y is upward in the image, and z is backward. 
  */
 class Viewport : public Camera
 {
@@ -14,8 +14,14 @@ public:
 	Viewport();
 	///Sets the viewport as a perspective or orthographic viewport
 	void setPerspective(bool enabled);
-	///Sets the absolute lens angle in the width direction
-	void setLensAngle(float rads);
+	///Sets the absolute field of view in the width direction (deprecated name)
+	inline void setLensAngle(float rads) { setFOV(rads); }
+	///Sets the absolute field of view in the width direction
+	void setFOV(float rads);
+	///Returns the absolute field of view in the width direction
+	float getFOV() const;
+	///Returns the absolute field of view in the height direction
+	float getHFOV() const;
 
 	///Returns true if the point (mx,my) is within the viewport
 	bool clicked(int mx, int my) const;

@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "CSpace.h"
 #include "CSpaceHelpers.h"
 #include "EdgePlanner.h"
@@ -8,15 +9,15 @@
 #include <sstream>
 using namespace std;
 
-#if HAVE_BOOST
 CSet::CSet()
 :test()
 {}
-#else
-CSet::CSet()
-:test(NULL)
-{}
-#endif //HAVE_BOOST
+
+#if __cplusplus > 199711L  || _MSC_VER >= 1900
+  CSet::CSet(PREDICATE_FUNCTION_PTR f)
+  :test(ptr_fun(f))
+  {}
+#endif //C++11
 
 CSet::CSet(CPredicate _test)
 :test(_test)
@@ -24,7 +25,6 @@ CSet::CSet(CPredicate _test)
 
 bool CSet::Contains(const Config& x)
 {
-  if(!test) return true;
   return test(x);
 }
 
@@ -36,11 +36,11 @@ void CSpace::AddConstraint(const std::string& name,CSet::CPredicate test)
 
 void CSpace::AddConstraint(const std::string& name,CSet* constraint)
 {
-  constraints.push_back(constraint);
+  constraints.push_back(std::shared_ptr<CSet>(constraint));
   constraintNames.push_back(name);
 }
 
-void CSpace::AddConstraint(const std::string& name,const SmartPointer<CSet>& constraint)
+void CSpace::AddConstraint(const std::string& name,const std::shared_ptr<CSet>& constraint)
 {
   constraints.push_back(constraint);
   constraintNames.push_back(name);
@@ -73,17 +73,17 @@ bool CSpace::IsFeasible(const Config& q,int constraint)
   return constraints[constraint]->Contains(q);
 }
 
-EdgePlanner* CSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr CSpace::PathChecker(const Config& a,const Config& b)
 {
   for(size_t i=0;i<constraints.size();i++)
     if(!constraints[i]->IsConvex())
       FatalError("Cannot instantiate PathChecker, your CSpace subclass needs to override this method\n");
-  return new EndpointEdgeChecker(this,a,b);
+  return make_shared<EndpointEdgeChecker>(this,a,b);
 }
 
-EdgePlanner* CSpace::PathChecker(const Config& a,const Config& b,int constraint)
+EdgePlannerPtr CSpace::PathChecker(const Config& a,const Config& b,int constraint)
 {
-  if(constraints[constraint]->IsConvex()) return new EndpointEdgeChecker(this,a,b);
+  if(constraints[constraint]->IsConvex()) return make_shared<EndpointEdgeChecker>(this,a,b);
   FatalError("Cannot instantiate PathChecker for obstacle %d, your CSpace subclass needs to override this method\n");
   return NULL;
 }
@@ -117,7 +117,7 @@ void CSpace::Midpoint(const Config& x, const Config& y, Config& out)
   //out.inplaceMul(Half);
 }
 
-EdgePlanner* CSpace::LocalPlanner(const Config& a,const Config& b)
+EdgePlannerPtr CSpace::LocalPlanner(const Config& a,const Config& b)
 {
   return PathChecker(a,b);
 }
@@ -149,8 +149,8 @@ bool CSpace::ProjectFeasible(Config& x)
 class NegativeVectorFieldFunction : public VectorFieldFunction
 {
 public:
-  SmartPointer<VectorFieldFunction> base;
-  NegativeVectorFieldFunction(const SmartPointer<VectorFieldFunction>& _base) : base(_base) {}
+  std::shared_ptr<VectorFieldFunction> base;
+  NegativeVectorFieldFunction(const std::shared_ptr<VectorFieldFunction>& _base) : base(_base) {}
   virtual std::string Label() const { return "-"+base->Label(); }
   virtual int NumDimensions() const { return base->NumDimensions(); }
   virtual void PreEval(const Vector& x) { base->PreEval(x); }
@@ -165,22 +165,22 @@ public:
   virtual Real Hessian_ijk(const Vector& x,int i,int j,int k) { return -base->Hessian_ijk(x,i,j,k); }
 };
 
-Optimization::NonlinearProgram* Join(const vector<SmartPointer<Optimization::NonlinearProgram> >& nlps)
+Optimization::NonlinearProgram* Join(const vector<std::shared_ptr<Optimization::NonlinearProgram> >& nlps)
 {
-  CompositeVectorFieldFunction* c = new CompositeVectorFieldFunction;
-  CompositeVectorFieldFunction* d = new CompositeVectorFieldFunction;
+  std::shared_ptr<CompositeVectorFieldFunction> c(new CompositeVectorFieldFunction);
+  std::shared_ptr<CompositeVectorFieldFunction> d(new CompositeVectorFieldFunction);
   for(size_t i=0;i<nlps.size();i++) {
-    if(nlps[i]->f != NULL) fprintf(stderr,"Join(NonlinearProgram): Warning, NLP %d has an objective function?\n",(int)i);
+        if(nlps[i]->f != NULL) LOG4CXX_ERROR(KrisLibrary::logger(),"Join(NonlinearProgram): Warning, NLP "<<(int)i);
     if(nlps[i]->c != NULL) c->functions.push_back(nlps[i]->c);
     if(nlps[i]->d != NULL) {
       if(!nlps[i]->inequalityLess)
-        d->functions.push_back(new NegativeVectorFieldFunction(nlps[i]->d));
+        d->functions.push_back(std::shared_ptr<VectorFieldFunction>(new NegativeVectorFieldFunction(nlps[i]->d)));
       else
         d->functions.push_back(nlps[i]->d);
     }
   }
-  if(c->functions.empty()) SafeDelete(c);
-  if(d->functions.empty()) SafeDelete(d);
+  if(c->functions.empty()) c=NULL;
+  if(d->functions.empty()) d=NULL;
   Optimization::NonlinearProgram* res = new Optimization::NonlinearProgram(NULL,c,d);
   res->inequalityLess = true;
   return res;
@@ -188,9 +188,9 @@ Optimization::NonlinearProgram* Join(const vector<SmartPointer<Optimization::Non
 
 Optimization::NonlinearProgram* CSpace::FeasibleNumeric()
 {
-  vector<SmartPointer<Optimization::NonlinearProgram> > nlps(constraints.size());
+  vector<std::shared_ptr<Optimization::NonlinearProgram> > nlps(constraints.size());
   for(size_t i=0;i<constraints.size();i++) {
-    nlps[i] = constraints[i]->Numeric();
+    nlps[i].reset(constraints[i]->Numeric());
     if(!nlps[i]) 
       return NULL;
   }

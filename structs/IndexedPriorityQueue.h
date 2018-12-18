@@ -4,8 +4,6 @@
 #include <set>
 #include <map>
 
-namespace std {
-
 /** @brief Contains a priority queue with an associated index, allowing
  * updates of the priority value.  Priority defined with lowest value first.
  *
@@ -38,9 +36,9 @@ template <class IT,class PT>
 class IndexedPriorityQueue
 {
  public:
-  typedef pair<PT,IT> value_type;
-  typedef typename set<pair<PT,IT> >::iterator iterator;
-  typedef typename set<pair<PT,IT> >::const_iterator const_iterator;
+  typedef std::pair<PT,IT> value_type;
+  typedef typename std::set<std::pair<PT,IT> >::iterator iterator;
+  typedef typename std::set<std::pair<PT,IT> >::const_iterator const_iterator;
 
   iterator begin() { return q.begin(); }
   const_iterator begin() const { return q.begin(); }
@@ -78,7 +76,7 @@ class IndexedPriorityQueue
     return i;
   }
   iterator find(const IT& index) {
-    typename map<IT,iterator>::iterator i=indices.find(index);
+    auto i=indices.find(index);
     if(i==indices.end()) return end();
     return i->second;
   }
@@ -90,17 +88,15 @@ class IndexedPriorityQueue
     return i;
   }
   bool is_valid() const {
-    for(typename map<IT,iterator>::const_iterator i=indices.begin();i!=indices.end();++i) {
+    for(auto i=indices.begin();i!=indices.end();++i) {
       if(i->second->second != i->first) return false;
     }
     return true;
   }
 
  private:
-  map<IT,iterator> indices;
-  set<pair<PT,IT> > q;
+  std::map<IT,iterator> indices;
+  std::set<std::pair<PT,IT> > q;
 };
-
-} //namespace std
 
 #endif

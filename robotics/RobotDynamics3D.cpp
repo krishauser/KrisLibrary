@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "RobotDynamics3D.h"
 #include <math/CholeskyDecomposition.h>
 #include <Timer.h>
@@ -380,8 +381,8 @@ void RobotDynamics3D::GetKineticEnergyMatrixDeriv(int z,Matrix& dB) const
     for(int j=0;j<q.n;j++) {
     Real ke_dz=GetKineticEnergyDeriv(i,j,z);
     if(!FuzzyEquals(ke_dz,dB(i,j),(Real)1e-7)) {
-    cout<<"Error in kinetic energy deriv "<<i<<" "<<j<<" : "<<ke_dz<<" vs "<<dB(i,j)<<endl;
-    cout<<"Difference "<<ke_dz-dB(i,j)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in kinetic energy deriv "<<i<<" "<<j<<" : "<<ke_dz<<" vs "<<dB(i,j));
+    LOG4CXX_INFO(KrisLibrary::logger(),"Difference "<<ke_dz-dB(i,j));
     Assert(ke_dz == dB(i,j));
     }
     }
@@ -447,8 +448,8 @@ void RobotDynamics3D::CalcAcceleration(Vector& ddq, const Vector& fext)
 	GetKineticEnergyMatrix(B);
 	CholeskyDecomposition<Real> cholesky;
 	if(!cholesky.set(B)) {
-		cerr<<"Kinetic energy matrix is not positive definite!"<<endl;
-		cerr<<B<<endl;
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Kinetic energy matrix is not positive definite!");
+		LOG4CXX_ERROR(KrisLibrary::logger(),B);
 		Abort();
 	}
 

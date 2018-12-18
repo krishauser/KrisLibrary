@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Octree.h"
 #include <math3d/Sphere3D.h>
 #include <math3d/Box3D.h>
@@ -134,7 +135,9 @@ OctreeNode* Octree::Lookup(OctreeNode& root,const Vector3& point,int maxDepth)
     n = &nodes[n->childIndices[c]];
     maxDepth--;
   }
-  Assert(n->bb.contains(point));
+  if(!n->bb.contains(point))
+    //this can occur if the bounding boxes are shrunk
+    return NULL;
   return n;
 }
 
@@ -353,7 +356,7 @@ void OctreePointSet::Add(const Vector3& pt,int id)
   OctreeNode* node = Lookup(pt);
   if(node == NULL) FatalError("OctreePointSet: adding point outside range");
   int nindex = Index(*node);
-  //printf("Lookup time %g\n",timer.ElapsedTime());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Lookup time "<<timer.ElapsedTime());
   //timer.Reset();
   Assert(nindex >= 0 && nindex<(int)nodes.size());
   if(nindex >= (int)indexLists.size()) {
@@ -369,8 +372,8 @@ void OctreePointSet::Add(const Vector3& pt,int id)
       bbox.expand(points[indexLists[nindex][i]]);
       if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
 	Split(nindex);
-	//printf("Split time %g\n",timer.ElapsedTime());
-	//getchar();
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Split time "<<timer.ElapsedTime());
+	//KrisLibrary::loggerWait();
 	break;
       }
     }
@@ -605,20 +608,49 @@ int OctreePointSet::_KNearestNeighbors(const OctreeNode& n,const Vector3& c,vect
 void OctreePointSet::FitToPoints()
 {
   fit = true;
+  balls.resize(nodes.size());
   //assume topological sort, go backwards
   for(size_t i=0;i<nodes.size();i++) {
     int index=(int)nodes.size()-1-(int)i;
     OctreeNode& n = nodes[index];
+    Sphere3D& s=balls[index];
+    s.center.setZero();
+    s.radius=0;
     if(IsLeaf(n)) {
+      const vector<int>& ptidx = indexLists[index];
       n.bb.minimize();
-      for(size_t j=0;j<indexLists[index].size();j++) 
-	n.bb.expand(points[indexLists[index][j]]);
+      for(size_t j=0;j<ptidx.size();j++) {
+        n.bb.expand(points[ptidx[j]]);
+        s.center += points[ptidx[j]];
+      }
+      Real r = 0;
+      if(!ptidx.empty()) {
+        s.center /= (Real)ptidx.size();
+        for(size_t j=0;j<ptidx.size();j++) 
+          r = Max(r,s.center.distanceSquared(points[ptidx[j]]));
+        s.radius = Sqrt(r);
+      }
     }
     else{
       //form bb from child bb's
       n.bb.minimize();
       for(int c=0;c<8;c++) 
-	n.bb.setUnion(nodes[n.childIndices[c]].bb);
+        n.bb.setUnion(nodes[n.childIndices[c]].bb);
+      Real sumw = 0;
+      for(int c=0;c<8;c++) {
+        //Real w=pow(balls[n.childIndices[c]].radius,3);
+        Real w=1;
+        if(balls[n.childIndices[c]].radius == 0) w = 0;
+        s.center.madd(balls[n.childIndices[c]].center,w);
+        sumw += w;
+      }
+      s.center /= sumw;
+      Real r=0;
+      for(int c=0;c<8;c++) {
+        Real d = s.center.distance(balls[n.childIndices[c]].center) + balls[n.childIndices[c]].radius;
+        r = Max(d,r);
+      }
+      s.radius = r;
     }
   }
 }

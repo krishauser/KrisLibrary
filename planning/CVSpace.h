@@ -10,7 +10,7 @@
 class CVSpace : public MultiCSpace
 {
  public:
-  CVSpace(const SmartPointer<CSpace>& baseSpace,const SmartPointer<CSpace>& velSpace);
+  CVSpace(const std::shared_ptr<CSpace>& baseSpace,const std::shared_ptr<CSpace>& velSpace);
 
   static void GetState(const Config& x,Config& q,Vector& v);
   static void GetConfig(const Config& x,Config& q);
@@ -29,7 +29,7 @@ class CVSpace : public MultiCSpace
 class HermiteCSpace : public CVSpace
 {
  public:
-  HermiteCSpace(const SmartPointer<CSpace>& baseSpace,const SmartPointer<CSpace>& velSpace);
+  HermiteCSpace(const std::shared_ptr<CSpace>& baseSpace,const std::shared_ptr<CSpace>& velSpace);
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
   virtual void Properties(PropertyMap& props);

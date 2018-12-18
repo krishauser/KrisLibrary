@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "root.h"
 #include <iostream>
 #include "SVDecomposition.h"
@@ -41,7 +42,7 @@ ConvergenceResult Root_Bisection(RealFunction& f,Real& a, Real& b, Real& x, Real
     else {
       if(fx == 0) { return ConvergenceX;  }
       else {
-	printf("Weird error in Root_Bisection(), perhaps function not stateless?\n");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Weird error in Root_Bisection(), perhaps function not stateless?\n");
 	return ConvergenceError;
       }
     }

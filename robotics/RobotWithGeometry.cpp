@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "RobotWithGeometry.h"
 #include <meshing/IO.h>
 #include <errors.h>
@@ -114,7 +115,7 @@ const RobotWithGeometry& RobotWithGeometry::operator = (const RobotDynamics3D& r
 
 bool RobotWithGeometry::LoadGeometry(int i,const char* file)
 {
-  geometry[i] = new CollisionGeometry;
+  geometry[i].reset(new CollisionGeometry);
   if(!geometry[i]->Load(file)) return false;
   return true;
 }
@@ -140,7 +141,7 @@ void RobotWithGeometry::InitCollisions()
   }
   double t = timer.ElapsedTime();
   if(t > 0.2) 
-    printf("Initialized robot collision data structures in time %gs\n",t);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Initialized robot collision data structures in time "<<t);
 }
 
 void RobotWithGeometry::CleanupCollisions()
@@ -410,7 +411,7 @@ void RobotWithGeometry::SelfCollisions(vector<pair<int,int> >& pairs,Real distan
 bool RobotWithGeometry::MeshCollision(CollisionGeometry& mesh)
 {
   if(!envCollisions[0] || envCollisions[0]->b != &mesh) {
-    fprintf(stderr,"Warning, MeshCollision() called with a different mesh\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, MeshCollision() called with a different mesh\n");
     InitMeshCollision(mesh);
   }
   for(size_t i=0;i<links.size();i++)

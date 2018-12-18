@@ -84,8 +84,8 @@ public:
   virtual int NumDimensions() const { return 2; }
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
   virtual Real Distance(const Config& x, const Config& y);
   virtual Real ObstacleDistance(const Config& x) { return ObstacleDistance(Vector2(x(0),x(1))); }
   virtual void Properties(PropertyMap&) const;

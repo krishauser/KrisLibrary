@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Triangle3D.h"
 #include "geometry3d.h"
 #include "clip.h"
@@ -189,7 +190,7 @@ Vector2 Triangle3D::closestPointCoords(const Point3D& in) const
 	E = dot(e2,x0);
 	Real det = A*C-B*B;
 	if(det == Zero) { //collapsed to a line
-	  //cout<<"Triangle3D::closestPointCoords(): Warning, triangle is actually a line!!!"<<endl;
+	  //LOG4CXX_WARN(KrisLibrary::logger(),"Triangle3D::closestPointCoords(): Warning, triangle is actually a line!!!");
 		return Vector2(Zero);
 	}
 
@@ -244,11 +245,11 @@ Point3D Triangle3D::closestPoint(const Point3D& x) const
     pc /= (pc.x+pc.y);
   Vector3 pt2 = planeCoordsToPoint(pc);
   if(x.distance(pt) > x.distance(pt2)+1e-6) {
-    cout<<"Error with closestpointcoords routine!!!"<<endl;
-    cout<<"x = "<<x<<endl;
-    cout<<"pt = "<<pt<<endl;
-    cout<<"pt2 = "<<pt2<<endl;
-    cout<<"planecoords = "<<planeCoords(x)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error with closestpointcoords routine!!!");
+    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<x);
+    LOG4CXX_INFO(KrisLibrary::logger(),"pt = "<<pt);
+    LOG4CXX_INFO(KrisLibrary::logger(),"pt2 = "<<pt2);
+    LOG4CXX_INFO(KrisLibrary::logger(),"planecoords = "<<planeCoords(x));
     abort();
   }
   */
@@ -410,7 +411,7 @@ bool Triangle3D::intersects(const Plane3D& P, Segment3D& S) const
     p[j] = pi;
   }
   if(!(d[0] <= d[1] && d[1] <= d[2])) {
-    printf ("AAAACK: %f %f %f\n",d[0],d[1],d[2]);
+    LOG4CXX_INFO(KrisLibrary::logger() ,"AAAACK: "<<d[0]<<" "<<d[1]<<" "<<d[2]);
   }
   assert(d[0] <= d[1] && d[1] <= d[2]);
 
@@ -445,6 +446,8 @@ bool Triangle3D::intersects(const Triangle3D& T, Segment3D& S) const
   //intersect this plane with t
   Plane3D p;
   getPlane(p);
+  if(p.normal.isZero()) return false;  //degenerate -- TODO: handle triangles that are just segments
+  if(!IsFinite(p.normal.x)) return false; //degenerate
   if(!T.intersects(p,S)) return false;
 
   //now limit S to the boundaries of this triangle
@@ -453,6 +456,7 @@ bool Triangle3D::intersects(const Triangle3D& T, Segment3D& S) const
   Vector2 A,D;
   A = planeCoords(S.a);
   D = planeCoords(S.b)-A;
+  if(A.isZero() && D.isZero()) return false; //degenerate
   Real tmin=Zero,tmax=One;
   //(u,v) = A+t*D
   //1) u >= 0 => -uA+t*(-uD) <= 0
@@ -605,6 +609,228 @@ bool Triangle3D::intersects(const AABB3D& bb) const
   if(!bbInt.intersects(triInt)) return false;
   return true;
 }
+
+Real Triangle3D::distance(const Triangle3D& other,Vector3& P,Vector3& Q) const
+{
+  ///source: PQP
+
+  Vector3 S[3] = {a,b,c};
+  Vector3 T[3] = {other.a,other.b,other.c};
+  Vector3 Sv[3], Tv[3];
+  Vector3 VEC;
+
+  Sv[0].sub(b,a);
+  Sv[1].sub(c,b);
+  Sv[2].sub(a,c);
+  Tv[0].sub(other.b,other.a);
+  Tv[1].sub(other.c,other.b);
+  Tv[2].sub(other.a,other.c);
+
+  // For each edge pair, the vector connecting the closest points 
+  // of the edges defines a slab (parallel planes at head and tail
+  // enclose the slab). If we can show that the off-edge vertex of 
+  // each triangle is outside of the slab, then the closest points
+  // of the edges are the closest points for the triangles.
+  // Even if these tests fail, it may be helpful to know the closest
+  // points found, and whether the triangles were shown disjoint
+
+  Vector3 V,Z,minP,minQ;
+  Real mindd;
+  int shown_disjoint = 0;
+
+  mindd = S[0].distanceSquared(T[0]) + 1;  // Set first minimum safely high
+
+  Segment3D s1,s2;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      // Find closest points on edges i & j, plus the 
+      // vector (and distance squared) between these points
+      s1.a = S[i];
+      s1.b = Sv[i];
+      s2.a = T[j];
+      s2.b = Tv[j];
+      Real t1,t2;
+      s1.closestPoint(s2,t1,t2);
+      s1.eval(t1,P);
+      s2.eval(t2,Q);
+      VEC.sub(Q,P);
+      
+      Real dd = VEC.dot(VEC);
+
+      // Verify this closest point pair only if the distance 
+      // squared is less than the minimum found thus far.
+
+      if (dd <= mindd)
+      {
+        minP = P;
+        minQ = Q;
+        mindd = dd;
+
+        Z.sub(S[(i+2)%3],P);
+        Real a = Z.dot(VEC);
+        Z.sub(T[(j+2)%3],Q);
+        Real b = Z.dot(VEC);
+
+        if ((a <= 0) && (b >= 0)) return sqrt(dd);
+
+        Real p = V.dot(VEC);
+
+        if (a < 0) a = 0;
+        if (b > 0) b = 0;
+        if ((p - a + b) > 0) shown_disjoint = 1;  
+      }
+    }
+  }
+
+  // No edge pairs contained the closest points.  
+  // either:
+  // 1. one of the closest points is a vertex, and the
+  //    other point is interior to a face.
+  // 2. the triangles are overlapping.
+  // 3. an edge of one triangle is parallel to the other's face. If
+  //    cases 1 and 2 are not true, then the closest points from the 9
+  //    edge pairs checks above can be taken as closest points for the
+  //    triangles.
+  // 4. possibly, the triangles were degenerate.  When the 
+  //    triangle points are nearly colinear or coincident, one 
+  //    of above tests might fail even though the edges tested
+  //    contain the closest points.
+
+  // First check for case 1
+
+  Vector3 Sn;
+  Real Snl;       
+  Sn.setCross(Sv[0],Sv[1]); // Compute normal to S triangle
+  Snl = Sn.normSquared();      // Compute square of length of normal
+  
+  // If cross product is long enough,
+
+  if (Snl > 1e-15)  
+  {
+    // Get projection lengths of T points
+
+    Vector3 Tp; 
+
+    Tp[0] = (a-other.a).dot(Sn);
+    Tp[1] = (a-other.b).dot(Sn);
+    Tp[2] = (a-other.c).dot(Sn);
+
+    // If Sn is a separating direction,
+    // find point with smallest projection
+
+    int point = -1;
+    if ((Tp[0] > 0) && (Tp[1] > 0) && (Tp[2] > 0))
+    {
+      if (Tp[0] < Tp[1]) point = 0; else point = 1;
+      if (Tp[2] < Tp[point]) point = 2;
+    }
+    else if ((Tp[0] < 0) && (Tp[1] < 0) && (Tp[2] < 0))
+    {
+      if (Tp[0] > Tp[1]) point = 0; else point = 1;
+      if (Tp[2] > Tp[point]) point = 2;
+    }
+
+    // If Sn is a separating direction, 
+
+    if (point >= 0) 
+    {
+      shown_disjoint = 1;
+
+      // Test whether the point found, when projected onto the 
+      // other triangle, lies within the face.
+    
+      V.sub(T[point],a);
+      Z.setCross(Sn,Sv[0]);
+      if (V.dot(Z) > 0)
+      {
+        V.sub(T[point],S[1]);
+        Z.setCross(Sn,Sv[1]);
+        if (V.dot(Z) > 0)
+        {
+          V.sub(T[point],S[2]);
+          Z.setCross(Sn,Sv[2]);
+          if (V.dot(Z) > 0)
+          {
+            // T[point] passed the test - it's a closest point for 
+            // the T triangle; the other point is on the face of S
+
+            P=T[point];
+            P.madd(Sn,Tp[point]/Snl);
+            Q = T[point];
+            return P.distance(Q);
+          }
+        }
+      }
+    }
+  }
+
+  Vector3 Tn;
+  Real Tnl;       
+  Tn.setCross(Tv[0],Tv[1]); 
+  Tnl = Tn.normSquared();
+  
+  if (Tnl > 1e-15)  
+  {
+    Real Sp[3]; 
+
+    Sp[0] = (T[0]-S[0]).dot(Tn);
+
+    Sp[1] = (T[0]-S[1]).dot(Tn);
+
+    Sp[2] = (T[0]-S[2]).dot(Tn);
+
+    int point = -1;
+    if ((Sp[0] > 0) && (Sp[1] > 0) && (Sp[2] > 0))
+    {
+      if (Sp[0] < Sp[1]) point = 0; else point = 1;
+      if (Sp[2] < Sp[point]) point = 2;
+    }
+    else if ((Sp[0] < 0) && (Sp[1] < 0) && (Sp[2] < 0))
+    {
+      if (Sp[0] > Sp[1]) point = 0; else point = 1;
+      if (Sp[2] > Sp[point]) point = 2;
+    }
+
+    if (point >= 0) 
+    { 
+      shown_disjoint = 1;
+
+      V.sub(S[point],T[0]);
+      Z.setCross(Tn,Tv[0]);
+      if (V.dot(Z) > 0)
+      {
+        V.sub(S[point],T[1]);
+        Z.setCross(Tn,Tv[1]);
+        if (V.dot(Z) > 0)
+        {
+          V.sub(S[point],T[2]);
+          Z.setCross(Tn,Tv[2]);
+          if (V.dot(Z) > 0)
+          {
+            P = S[point];
+            Q=S[point];
+            Q.madd(Tn,Sp[point]/Tnl);
+            return P.distance(Q);
+          }
+        }
+      }
+    }
+  }
+
+  // Case 1 can't be shown.
+  // If one of these tests showed the triangles disjoint,
+  // we assume case 3 or 4, otherwise we conclude case 2, 
+  // that the triangles overlap.
+  
+  if (shown_disjoint)
+  {
+    P = minP;
+    Q = minQ;
+    return Sqrt(mindd);
+  }
+  else return 0;
+}
+
 
 
 namespace Math3D

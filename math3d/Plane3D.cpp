@@ -1,7 +1,8 @@
+#include <KrisLibrary/Logger.h>
 #include "Plane3D.h"
 #include "geometry3d.h"
 #include "LinearlyDependent.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <iostream>
 #include <errors.h>
 using namespace Math3D;
@@ -65,8 +66,8 @@ void Plane3D::setTransformed(const Plane3D& pin, const Matrix4& xform)
 		setTransformed(temp,xform);
 		return;
 	}
-  cerr<<"Using slow version of Plane3D::setTransformed, may want to use RigidTransform version"<<endl;
-  getchar();
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Using slow version of Plane3D::setTransformed, may want to use RigidTransform version");
+  KrisLibrary::loggerWait();
   Matrix4 xformInv;
   if(xformInv.setInverse(xform)) {
     xformInv.inplaceTranspose();
@@ -266,7 +267,7 @@ int Plane3D::allIntersections(const Plane3D& p,Line3D& l) const
     N(0,1) = N(1,0) = normal.dot(p.normal);
     N(1,1) = p.normal.normSquared();
     if(FuzzyZero(N.determinant())) {
-      //cerr<<"That's strange, I thought these weren't linearly dependent"<<endl;
+      //LOG4CXX_ERROR(KrisLibrary::logger(),"That's strange, I thought these weren't linearly dependent");
       return 0;
     }
     N.inplaceInverse();
@@ -275,20 +276,20 @@ int Plane3D::allIntersections(const Plane3D& p,Line3D& l) const
     l.source.madd(p.normal,u.y);
     /*
     if(!Fuzzyzero(distance(l.source),Epsilon)) {
-      cerr<<"Hmm... plane-plane intersection has a weird result: "<<endl;
-      cerr<<"distance to line point "<<l.source<<" is "<<distance(l.source)<<endl;
-      cerr<<"determinant of normal equations: "<<N.determinant()<<endl;
-      cout<<"p1 : normal "<<normal<<" offset "<<offset<<endl;
-      cout<<"p2 : normal "<<p.normal<<" offset "<<p.offset<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Hmm... plane-plane intersection has a weird result: ");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"distance to line point "<<l.source<<" is "<<distance(l.source));
+      LOG4CXX_ERROR(KrisLibrary::logger(),"determinant of normal equations: "<<N.determinant());
+      LOG4CXX_INFO(KrisLibrary::logger(),"p1 : normal "<<normal<<" offset "<<offset);
+      LOG4CXX_INFO(KrisLibrary::logger(),"p2 : normal "<<p.normal<<" offset "<<p.offset);
+      KrisLibrary::loggerWait();
     }
     if(!FuzzyZero(p.distance(l.source),Epsilon)) {
-      cerr<<"Hmm... plane-plane intersection has a weird result: "<<endl;
-      cerr<<"distance to line point "<<l.source<<" is "<<distance(l.source)<<endl;
-      cerr<<"determinant of normal equations: "<<N.determinant()<<endl;
-      cout<<"p1 : normal "<<normal<<" offset "<<offset<<endl;
-      cout<<"p2 : normal "<<p.normal<<" offset "<<p.offset<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Hmm... plane-plane intersection has a weird result: ");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"distance to line point "<<l.source<<" is "<<distance(l.source));
+      LOG4CXX_ERROR(KrisLibrary::logger(),"determinant of normal equations: "<<N.determinant());
+      LOG4CXX_INFO(KrisLibrary::logger(),"p1 : normal "<<normal<<" offset "<<offset);
+      LOG4CXX_INFO(KrisLibrary::logger(),"p2 : normal "<<p.normal<<" offset "<<p.offset);
+      KrisLibrary::loggerWait();
     }
     assert(FuzzyZero(distance(l.source),Epsilon));
     assert(FuzzyZero(p.distance(l.source),Epsilon));

@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "CSpaceHelpers.h"
 #include "CSetHelpers.h"
 #include "EdgePlanner.h"
@@ -15,7 +16,7 @@
 using namespace Math;
 using namespace std;
 
-GeodesicCSpaceAdaptor::GeodesicCSpaceAdaptor(const SmartPointer<GeodesicSpace>& _geodesic)
+GeodesicCSpaceAdaptor::GeodesicCSpaceAdaptor(const shared_ptr<GeodesicSpace>& _geodesic)
 :geodesic(_geodesic)
 {}
 
@@ -50,7 +51,7 @@ std::string PiggybackCSpace::ConstraintName(int i) {
   return CSpace::ConstraintName(i);
 }
 
-SmartPointer<CSet> PiggybackCSpace::Constraint(int i) 
+shared_ptr<CSet> PiggybackCSpace::Constraint(int i) 
 {
   if(baseSpace) return baseSpace->Constraint(i);
   return CSpace::Constraint(i);
@@ -63,15 +64,15 @@ void PiggybackCSpace::SampleNeighborhood(const Config& c,Real r,Config& x) {
   if(baseSpace!=NULL) baseSpace->SampleNeighborhood(c,r,x);
   else CSpace::SampleNeighborhood(c,r,x);
 }
-EdgePlanner* PiggybackCSpace::LocalPlanner(const Config& a,const Config& b) {
+EdgePlannerPtr PiggybackCSpace::LocalPlanner(const Config& a,const Config& b) {
   Assert(baseSpace != NULL);
   return baseSpace->LocalPlanner(a,b);
 }
-EdgePlanner* PiggybackCSpace::PathChecker(const Config& a,const Config& b) {
+EdgePlannerPtr PiggybackCSpace::PathChecker(const Config& a,const Config& b) {
   Assert(baseSpace != NULL);
   return baseSpace->PathChecker(a,b);
 }
-EdgePlanner* PiggybackCSpace::PathChecker(const Config& a,const Config& b,int obstacle) {
+EdgePlannerPtr PiggybackCSpace::PathChecker(const Config& a,const Config& b,int obstacle) {
   Assert(baseSpace != NULL);
   return baseSpace->PathChecker(a,b,obstacle);
 }
@@ -162,15 +163,15 @@ void BoxCSpace::Properties(PropertyMap& pmap)
   pmap.set("diameter",Distance(bmin,bmax));
 }
 
-EdgePlanner* BoxCSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr BoxCSpace::PathChecker(const Config& a,const Config& b)
 {
-  return new TrueEdgeChecker(this,a,b);
+  return make_shared<TrueEdgeChecker>(this,a,b);
 }
 
 MultiCSpace::MultiCSpace()
 {}
 
-MultiCSpace::MultiCSpace(const SmartPointer<CSpace>& space1,const SmartPointer<CSpace>& space2)
+MultiCSpace::MultiCSpace(const shared_ptr<CSpace>& space1,const shared_ptr<CSpace>& space2)
 {
   components.resize(2);
   components[0] = space1;
@@ -180,7 +181,7 @@ MultiCSpace::MultiCSpace(const SmartPointer<CSpace>& space1,const SmartPointer<C
   componentNames[1] = "space2";
 }
   
-MultiCSpace::MultiCSpace(const std::vector<SmartPointer<CSpace> >& _components)
+MultiCSpace::MultiCSpace(const std::vector<shared_ptr<CSpace> >& _components)
 :components(_components)
 {
   componentNames.resize(components.size());
@@ -191,7 +192,7 @@ MultiCSpace::MultiCSpace(const std::vector<SmartPointer<CSpace> >& _components)
   }
 }
 
-void MultiCSpace::Add(const std::string& componentName,const SmartPointer<CSpace>& space,Real distanceWeight)
+void MultiCSpace::Add(const std::string& componentName,const shared_ptr<CSpace>& space,Real distanceWeight)
 {
   componentNames.push_back(componentName);
   components.push_back(space);
@@ -241,7 +242,7 @@ std::string MultiCSpace::ConstraintName(int index)
   return "ERROR, INVALID CONSTRAINT INDEX";
 }
 
-SmartPointer<CSet> MultiCSpace::Constraint(int index)
+std::shared_ptr<CSet> MultiCSpace::Constraint(int index)
 {
   if(!constraints.empty()) return constraints[index];
   int n=0;
@@ -249,7 +250,7 @@ SmartPointer<CSet> MultiCSpace::Constraint(int index)
     int nc = components[i]->NumConstraints();
     int d = components[i]->NumDimensions();
     if(index < nc) {
-      return new SubspaceSet(components[i]->Constraint(index),n,n+d);
+      return make_shared<SubspaceSet>(components[i]->Constraint(index),n,n+d);
     }
     index -= nc;
     n += d;
@@ -264,10 +265,10 @@ void MultiCSpace::AddConstraint(int spaceIndex,const std::string& name,CSet::CPr
 
 void MultiCSpace::AddConstraint(int spaceIndex,const std::string& name,CSet* constraint)
 {
-  AddConstraint(spaceIndex,name,SmartPointer<CSet>(constraint));
+  AddConstraint(spaceIndex,name,shared_ptr<CSet>(constraint));
 }
 
-void MultiCSpace::AddConstraint(int spaceIndex,const std::string& name,const SmartPointer<CSet>& constraint)
+void MultiCSpace::AddConstraint(int spaceIndex,const std::string& name,const shared_ptr<CSet>& constraint)
 {
   assert(!constraints.empty());
   int n=0;
@@ -386,29 +387,29 @@ Optimization::NonlinearProgram* MultiCSpace::FeasibleNumeric()
   return NULL;
 }
 
-EdgePlanner* MultiCSpace::LocalPlanner(const Config& a,const Config& b)
+EdgePlannerPtr MultiCSpace::LocalPlanner(const Config& a,const Config& b)
 {
   vector<Config> aitems,bitems;
   SplitRef(a,aitems);
   SplitRef(b,bitems);
-  vector<SmartPointer<EdgePlanner> > items(components.size());
+  vector<EdgePlannerPtr > items(components.size());
   for(size_t i=0;i<components.size();i++)
     items[i] = components[i]->LocalPlanner(aitems[i],bitems[i]);
-  return new MultiEdgePlanner(this,new CSpaceInterpolator(this,a,b),items);
+  return make_shared<MultiEdgePlanner>(this,make_shared<CSpaceInterpolator>(this,a,b),items);
 }
 
-EdgePlanner* MultiCSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr MultiCSpace::PathChecker(const Config& a,const Config& b)
 {
   vector<Config> aitems,bitems;
   SplitRef(a,aitems);
   SplitRef(b,bitems);
-  vector<SmartPointer<EdgePlanner> > items(components.size());
+  vector<EdgePlannerPtr > items(components.size());
   for(size_t i=0;i<components.size();i++)
     items[i] = components[i]->PathChecker(aitems[i],bitems[i]);
-  return new MultiEdgePlanner(this,new CSpaceInterpolator(this,a,b),items);
+  return make_shared<MultiEdgePlanner>(this,make_shared<CSpaceInterpolator>(this,a,b),items);
 }
 
-EdgePlanner* MultiCSpace::PathChecker(const Config& a,const Config& b,int constraint)
+EdgePlannerPtr MultiCSpace::PathChecker(const Config& a,const Config& b,int constraint)
 {
   int n=0;
   for(size_t i=0;i<components.size();i++) {
@@ -418,8 +419,8 @@ EdgePlanner* MultiCSpace::PathChecker(const Config& a,const Config& b,int constr
       Config ai,bi;
       ai.setRef(a,n,1,d);
       bi.setRef(b,n,1,d);
-      EdgePlanner* e = components[i]->PathChecker(ai,bi,constraint);
-      return new PiggybackEdgePlanner(this,a,b,e);
+      EdgePlannerPtr e = components[i]->PathChecker(ai,bi,constraint);
+      return make_shared<PiggybackEdgePlanner>(this,a,b,e);
     }
     constraint -= nc;
     n += d;
@@ -501,7 +502,7 @@ void MultiCSpace::Properties(PropertyMap& map)
     if(!cmap.get("metric",m) || m=="euclidean") {
     }
     else {
-      printf("MultiCSpace: component %d (dim %d) not euclidean?\n",i,components[i]->NumDimensions());
+      LOG4CXX_INFO(KrisLibrary::logger(),"MultiCSpace: component "<<i<<" (dim "<<components[i]->NumDimensions());
       euclidean = false;
     }
     vector<double> cmin,cmax;
@@ -530,7 +531,7 @@ void MultiCSpace::Properties(PropertyMap& map)
     map.setArray("metricWeights",vector<double>(temp));
   }
   else
-    printf("No weighting?\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"No weighting?\n");
   if(!cspaceminimum.empty()) {
     Vector temp;
     Join(cspaceminimum,temp);
@@ -692,7 +693,7 @@ void OptimizeTestingOrder(const vector<AdaptiveCSpace::PredicateStats>& stats,co
     Graph::TopologicalSortCallback<int> callback;
     G.DFS(callback);
     if(callback.hasCycle) {
-      fprintf(stderr,"motionplanning: WARNING: Test dependency order has cycles... breaking arbitrarily\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"motionplanning: WARNING: Test dependency order has cycles... breaking arbitrarily\n");
     }
     //revise priorities from bottom up based off of children
     //a parent node's priority is the minimum of (cost of this + cost of best child) / (1-probability of this*probability of best child)
@@ -714,7 +715,7 @@ void OptimizeTestingOrder(const vector<AdaptiveCSpace::PredicateStats>& stats,co
         for(G.Begin(*i,e);!e.end();e++) {
           int j=e.target();
           if(G.InDegree(j) > 1) //has more than one dependency
-            fprintf(stderr,"motionplanning: WARNING: Constraint %d has multiple dependencies including %d, can't really optimize yet\n",j,*i);
+            LOG4CXX_ERROR(KrisLibrary::logger(),"motionplanning: WARNING: Constraint "<< j <<" has multiple dependencied including "<< *i<<", can't really optimize yet\n");          
           double priority = (depcosts[*i]+depcosts[j])/(1.0-depprobs[*i]*depprobs[j]);
           if(priority < bestPriority || best < 0) {
             best = j;
@@ -763,29 +764,29 @@ void OptimizeTestingOrder(const vector<AdaptiveCSpace::PredicateStats>& stats,co
   }
   /*
   //Debugging
-  printf("Costs:");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Costs:");
   for(size_t i=0;i<stats.size();i++) 
-    printf(" %g",stats[i].cost);
-  printf("\n");
-  printf("Probabilities:");
+    LOG4CXX_INFO(KrisLibrary::logger()," "<<stats[i].cost);
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Probabilities:");
   for(size_t i=0;i<stats.size();i++) 
-    printf(" %g",stats[i].probability);
-  printf("\n");
-  printf("Dependencies:");
+    LOG4CXX_INFO(KrisLibrary::logger()," "<<stats[i].probability);
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Dependencies:");
   for(size_t i=0;i<deps.size();i++)  {
-    printf(" [");
+    LOG4CXX_INFO(KrisLibrary::logger()," [");
     for(size_t j=0;j<deps[i].size();j++) {
-      if(j > 0) printf(",");
-      printf("%d",deps[i][j]);
+      if(j > 0) LOG4CXX_INFO(KrisLibrary::logger(),",");
+      LOG4CXX_INFO(KrisLibrary::logger(),""<<deps[i][j]);
     }
-    printf("]");
+    LOG4CXX_INFO(KrisLibrary::logger(),"]");
   }
-  printf("\n");
-  printf("Order:");
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Order:");
   for(size_t i=0;i<order.size();i++) 
-    printf(" %d",order[i]);
-  printf("\n");
-  //getchar();
+    LOG4CXX_INFO(KrisLibrary::logger()," "<<order[i]);
+  LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+  //KrisLibrary::loggerWait();
   */
 }
 
@@ -887,7 +888,7 @@ class StatUpdatingEdgePlanner : public PiggybackEdgePlanner
 {
  public:
   AdaptiveCSpace::PredicateStats* stats;
-  StatUpdatingEdgePlanner(const SmartPointer<EdgePlanner>& _base,AdaptiveCSpace::PredicateStats* _stats)
+  StatUpdatingEdgePlanner(const EdgePlannerPtr& _base,AdaptiveCSpace::PredicateStats* _stats)
   : PiggybackEdgePlanner(_base),stats(_stats)
   {}
   virtual bool IsVisible()
@@ -899,30 +900,37 @@ class StatUpdatingEdgePlanner : public PiggybackEdgePlanner
   }
 };
 
-EdgePlanner* AdaptiveCSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr AdaptiveCSpace::PathChecker(const Config& a,const Config& b)
 {
-  if(!adaptive) return PiggybackCSpace::PathChecker(a,b);
+  if(!adaptive) {
+    return PiggybackCSpace::PathChecker(a,b);
+  }
   if(feasibleStats.size() != constraints.size()) SetupAdaptiveInfo();  
-  if(useBaseVisibleTest) return new StatUpdatingEdgePlanner(PiggybackCSpace::PathChecker(a,b),&baseVisibleStats);
-  std::vector<SmartPointer<EdgePlanner> > obstacleEdges(constraints.size());
-  for(size_t i=0;i<visibleTestOrder.size();i++)
+  if(useBaseVisibleTest) {
+    return make_shared<StatUpdatingEdgePlanner>(PiggybackCSpace::PathChecker(a,b),&baseVisibleStats);
+  }
+  std::vector<EdgePlannerPtr> obstacleEdges(constraints.size());
+  for(size_t i=0;i<visibleTestOrder.size();i++) {
     obstacleEdges[i] = PathChecker(a,b,visibleTestOrder[i]);
-  return new PathEdgeChecker(this,obstacleEdges);
+  }
+  return make_shared<PathEdgeChecker>(this,obstacleEdges);
 }
 
-EdgePlanner* AdaptiveCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+EdgePlannerPtr AdaptiveCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
-  if(!visibleTestDeps[obstacle].empty()) fprintf(stderr,"AdaptiveCSpace: Warning, single-obstacle path checker has dependent visibility tests\n");
-  else if(!feasibleTestDeps[obstacle].empty()) fprintf(stderr,"AdaptiveCSpace: Warning, single-obstacle path checker has dependent feasibility tests\n");
+  if(!visibleTestDeps.empty()) {
+    if(!visibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent visibility tests\n");}
+    else if(!feasibleTestDeps[obstacle].empty()) {LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, single-obstacle path checker has dependent feasibility tests\n");}
+  }
   return PathChecker_NoDeps(a,b,obstacle);
 }
 
-EdgePlanner* AdaptiveCSpace::PathChecker_NoDeps(const Config& a,const Config& b,int obstacle)
+EdgePlannerPtr AdaptiveCSpace::PathChecker_NoDeps(const Config& a,const Config& b,int obstacle)
 {
   if(!adaptive) return PiggybackCSpace::PathChecker(a,b,obstacle);
   if(feasibleStats.size() != constraints.size()) SetupAdaptiveInfo();  
-  if(useBaseVisibleTest) return new StatUpdatingEdgePlanner(PiggybackCSpace::PathChecker(a,b,obstacle),&baseVisibleStats);
-  return new StatUpdatingEdgePlanner(PiggybackCSpace::PathChecker(a,b,obstacle),&visibleStats[obstacle]);
+  if(useBaseVisibleTest) return make_shared<StatUpdatingEdgePlanner>(PiggybackCSpace::PathChecker(a,b,obstacle),&baseVisibleStats);
+  return make_shared<StatUpdatingEdgePlanner>(PiggybackCSpace::PathChecker(a,b,obstacle),&visibleStats[obstacle]);
 }
 
 void AdaptiveCSpace::SetupAdaptiveInfo()
@@ -930,8 +938,8 @@ void AdaptiveCSpace::SetupAdaptiveInfo()
   constraintMap.clear();
   for(size_t i=0;i<constraints.size();i++) {
     if(constraintMap.count(constraintNames[i])!= 0) {
-      printf("AdaptiveCSpace: warning, constraint name %s is duplicated!\n",constraintNames[i].c_str());
-      printf("  named dependencies may not work correctly\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"AdaptiveCSpace: warning, constraint name "<<constraintNames[i].c_str());
+      LOG4CXX_INFO(KrisLibrary::logger(),"  named dependencies may not work correctly\n");
     }
     constraintMap[constraintNames[i]] = (int)i;
   }
@@ -963,7 +971,7 @@ bool AdaptiveCSpace::AddFeasibleDependency(int cindex,int dindex)
   if(feasibleTestDeps.empty())
     feasibleTestDeps.resize(constraints.size());
   if(dindex <= cindex) {
-    fprintf(stderr,"AdaptiveCSpace: Warning, added dependency of feasibility test %d on %d out of order\n",cindex,dindex);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AdaptiveCSpace: Warning, added dependency of feasibility test "<<cindex<<" on "<<dindex);
   }
   feasibleTestDeps[cindex].push_back(dindex);
   return true;
@@ -1080,15 +1088,15 @@ SubsetConstraintCSpace::SubsetConstraintCSpace(CSpace* baseSpace,int constraint)
   AddConstraint(baseSpace->ConstraintName(constraint),new CSpaceConstraintSet(baseSpace,constraint));
 }
 
-EdgePlanner* SubsetConstraintCSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr SubsetConstraintCSpace::PathChecker(const Config& a,const Config& b)
 {
-  vector<SmartPointer<EdgePlanner> > ocheckers(activeConstraints.size());
+  vector<EdgePlannerPtr > ocheckers(activeConstraints.size());
   for(size_t i=0;i<activeConstraints.size();i++)
     ocheckers[i] = baseSpace->PathChecker(a,b,activeConstraints[i]);
-  return new PathEdgeChecker(this,ocheckers);
+  return make_shared<PathEdgeChecker>(this,ocheckers);
 }
 
-EdgePlanner* SubsetConstraintCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+EdgePlannerPtr SubsetConstraintCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
   return baseSpace->PathChecker(a,b,activeConstraints[obstacle]);
 }
@@ -1098,17 +1106,17 @@ EdgePlanner* SubsetConstraintCSpace::PathChecker(const Config& a,const Config& b
 
 /** @brief Create a single-obstacle edge checker that uses discretization.
  */
-EdgePlanner* MakeSingleConstraintEpsilonChecker(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon)
+EdgePlannerPtr MakeSingleConstraintEpsilonChecker(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon)
 {
-  SubsetConstraintCSpace* ospace = new SubsetConstraintCSpace(space,obstacle);
-  return new EdgePlannerWithCSpaceContainer(ospace,new EpsilonEdgeChecker(ospace,a,b,epsilon));
+  auto ospace = make_shared<SubsetConstraintCSpace>(space,obstacle);
+  return make_shared<EdgePlannerWithCSpaceContainer>(ospace,make_shared<EpsilonEdgeChecker>(ospace.get(),a,b,epsilon));
 };
 
 
 /** @brief Create a single-obstacle edge checker that uses repeated bisection.
  */
-EdgePlanner* MakeSingleConstraintBisectionPlanner(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon)
+EdgePlannerPtr MakeSingleConstraintBisectionPlanner(CSpace* space,const Config& a,const Config& b,int obstacle,Real epsilon)
 {
-  SubsetConstraintCSpace* ospace = new SubsetConstraintCSpace(space,obstacle);
-  return new EdgePlannerWithCSpaceContainer(ospace,new BisectionEpsilonEdgePlanner(ospace,a,b,epsilon));
+  auto ospace = make_shared<SubsetConstraintCSpace>(space,obstacle);
+  return make_shared<EdgePlannerWithCSpaceContainer>(ospace,make_shared<BisectionEpsilonEdgePlanner>(ospace.get(),a,b,epsilon));
 };

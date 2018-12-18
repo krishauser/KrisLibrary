@@ -1,10 +1,11 @@
 #ifndef RESOURCE_LIBRARY_H
 #define RESOURCE_LIBRARY_H
 
-#include "SmartPointer.h"
+#include <KrisLibrary/Logger.h>
 #include "AnyCollection.h"
-#include <string.h>
+#include <memory>
 #include <string>
+#include <string.h>
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
@@ -65,7 +66,7 @@ class ResourceBase
   std::string name,fileName;
 };
 
-typedef SmartPointer<ResourceBase> ResourcePtr;
+typedef std::shared_ptr<ResourceBase> ResourcePtr;
 
 
 /** @brief A collection of resources, which may be loaded/saved as separate
@@ -187,7 +188,7 @@ std::vector<T*> ResourcesByType(std::vector<ResourcePtr>& resources)
 {
   std::vector<T*> rtype;
   for(size_t i=0;i<resources.size();i++) {
-    T* ptr = dynamic_cast<T*>((ResourceBase*)resources[i]);
+    T* ptr = dynamic_cast<T*>(resources[i].get());
     if(ptr) rtype.push_back(ptr);
   }
   return rtype;
@@ -351,7 +352,7 @@ class BasicArrayResource : public CompoundResourceBase
   virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL) {
     subobjects.resize(data.size());
     for(size_t i=0;i<data.size();i++) {
-      subobjects[i] = new BasicResource<T>(data[i]);
+      subobjects[i] = std::make_shared<BasicResource<T> >(data[i]);
       std::stringstream ss;
       ss<<"data["<<i<<"]";
       subobjects[i]->name = ss.str();
@@ -392,14 +393,14 @@ class ResourceLibraryResource : public CompoundResourceBase
 template <class T>
 void ResourceLibrary::AddType()
 {
-  ResourcePtr res=new T;
+  ResourcePtr res(new T);
   if(knownTypes.count(res->Type()) == 0) {
     knownTypes[res->Type()].push_back(res);
   }
   else {
     //potential conflict? check raw string
     if(knownTypes[res->Type()][0]->Type() != res->Type())
-      fprintf(stderr,"ResourceLibrary: Potential conflict with type %s\n",res->Type());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"ResourceLibrary: Potential conflict with type "<<res->Type());
     knownTypes[res->Type()][0] = res;
   }
 }
@@ -408,7 +409,7 @@ template <class T>
 void ResourceLibrary::AddLoader(const std::string& ext)
 {
   AddType<T>();
-  ResourcePtr res=new T;
+  ResourcePtr res(new T);
   loaders[ext].push_back(res);
 }
 
@@ -417,7 +418,7 @@ T* ResourceLibrary::Get(const std::string& name,int index)
 {
   std::vector<ResourcePtr>& items=Get(name);
   if(index < 0 || index > (int)items.size()) return NULL;
-  return dynamic_cast<T*>((ResourceBase*)items[index]);
+  return dynamic_cast<T*>(items[index].get());
 }
 
 template <class T>
@@ -433,7 +434,7 @@ std::vector<T*> ResourceLibrary::GetPtrsByType()
   std::vector<ResourcePtr>& items = GetByType<T>();
   std::vector<T*> cast_items(items.size());
   for(size_t i=0;i<items.size();i++)
-    cast_items[i] = dynamic_cast<T*>((ResourceBase*)items[i]);
+    cast_items[i] = dynamic_cast<T*>(items[i].get());
   return cast_items;
 }
 

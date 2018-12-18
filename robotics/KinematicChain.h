@@ -1,6 +1,7 @@
 #ifndef ROBOTICS_KINEMATIC_CHAIN_H
 #define ROBOTICS_KINEMATIC_CHAIN_H
 
+#include <KrisLibrary/Logger.h>
 #include "Frame.h"
 #include "Chain.h"
 #include <KrisLibrary/math/vector.h>

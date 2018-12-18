@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "PerturbationCSpace.h"
 #include "Interpolator.h"
 using namespace std;
@@ -24,12 +25,12 @@ bool PerturbationCSpace::IsFeasible(const Config& q,int obstacle)
   return baseSpace->IsFeasible(Perturb(q,perturbations[obstacle]));
 }
 
-EdgePlanner* PerturbationCSpace::LocalPlanner(const Config& a,const Config& b,int obstacle)
+EdgePlannerPtr PerturbationCSpace::LocalPlanner(const Config& a,const Config& b,int obstacle)
 {
   return baseSpace->LocalPlanner(Perturb(a,perturbations[obstacle]),Perturb(b,perturbations[obstacle]));
 }
 
-EdgePlanner* PerturbationCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+EdgePlannerPtr PerturbationCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
   return baseSpace->PathChecker(a+perturbations[obstacle],b+perturbations[obstacle]);
 }

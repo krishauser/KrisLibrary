@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "QuadProgPPInterface.h"
 #include <iostream>
 using namespace Optimization;
@@ -11,7 +12,7 @@ typedef double RowVector [MATRIX_DIM];
 LinearProgram::Result QuadProgPPInterface::Solve(const QuadraticProgram& qp,Vector& xopt)
 {
   if(qp.Pobj.m > MATRIX_DIM) {
-    cerr<<"QuadProgPPInterface: QPs must not exceed "<<MATRIX_DIM<<" dimensions"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"QuadProgPPInterface: QPs must not exceed "<<MATRIX_DIM<<" dimensions");
     return LinearProgram::Error;
   }
 
@@ -22,11 +23,11 @@ LinearProgram::Result QuadProgPPInterface::Solve(const QuadraticProgram& qp,Vect
   int p=Aeq.m;
   int m=Aineq.m;
   if(p > MATRIX_DIM) {
-    cerr<<"QuadProgPPInterface: QPs must not exceed "<<MATRIX_DIM<<" dimensions"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"QuadProgPPInterface: QPs must not exceed "<<MATRIX_DIM<<" dimensions");
     return LinearProgram::Error;
   }
   if(m > MATRIX_DIM) {
-    cerr<<"QuadProgPPInterface: QPs must not exceed "<<MATRIX_DIM<<" dimensions"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"QuadProgPPInterface: QPs must not exceed "<<MATRIX_DIM<<" dimensions");
     return LinearProgram::Error;
   }
   RowVector* G = new RowVector[n];
@@ -54,12 +55,12 @@ LinearProgram::Result QuadProgPPInterface::Solve(const QuadraticProgram& qp,Vect
       CI[j][i] = Aineq(i,j);
   }
 
-  printf("Calling solve_quadprog...\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Calling solve_quadprog...\n");
   double res=solve_quadprog(G,g0,n, 
 			    CE,ce0,p, 
 			    CI,ci0,m,
 			    x);
-  printf("Done with solve_quadprog\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Done with solve_quadprog\n");
 
   delete [] G;
   delete [] g0;
@@ -69,8 +70,8 @@ LinearProgram::Result QuadProgPPInterface::Solve(const QuadraticProgram& qp,Vect
   delete [] ci0;
 
   if(!IsInf(std::numeric_limits<double>::infinity())) {
-    cout<<"Warning, numeric limits infinity is not infinity..."<<endl;
-    getchar();
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, numeric limits infinity is not infinity...");
+    KrisLibrary::loggerWait();
   }
 
   if(IsInf(res) || res== std::numeric_limits<double>::infinity()) {
@@ -89,7 +90,7 @@ LinearProgram::Result QuadProgPPInterface::Solve(const QuadraticProgram& qp,Vect
 
 LinearProgram::Result QuadProgPPInterface::Solve(const QuadraticProgram& qp,Vector& xopt)
 {
-  cout<<"QuadProgPPInterface: not defined"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"QuadProgPPInterface: not defined");
   return LinearProgram::Error;
 }
 

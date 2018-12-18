@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "ProgressPrinter.h"
 #include <iostream>
 #include <math.h>

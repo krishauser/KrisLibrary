@@ -1,5 +1,5 @@
 #include "spline.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/math/complex.h>
 #include <assert.h>
 

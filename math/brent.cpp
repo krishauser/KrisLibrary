@@ -153,7 +153,7 @@ ConvergenceResult ParabolicMinimization(Real x,RealFunction& f,int& maxIters,Rea
 
 Real ParabolicLineMinimization(ScalarFieldFunction& f,const Vector& x,const Vector& n,int maxIters,Real tol)
 {
-  ScalarFieldDirectionalFunction pf(&f,x,n);
+  ScalarFieldDirectionalFunction pf(f,x,n);
   Real dx;
   //Real f=
   ParabolicMinimization(0,pf,maxIters,tol,dx);
@@ -162,7 +162,7 @@ Real ParabolicLineMinimization(ScalarFieldFunction& f,const Vector& x,const Vect
 
 Real ParabolicLineMinimization_i(ScalarFieldFunction& f,const Vector& x,int i,int maxIters,Real tol)
 {
-  ScalarFieldProjectionFunction pf(&f,x,i);
+  ScalarFieldProjectionFunction pf(f,x,i);
   Real dx;
   //Real f=
   ParabolicMinimization(Zero,pf,maxIters,tol,dx);

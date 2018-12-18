@@ -3,6 +3,7 @@
 
 #include "function.h"
 #include "root.h"
+#include <memory>
 
 /** @file math/brent.h
  * @ingroup Math

@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "GramSchmidt.h"
 #include "complex.h"
 #include <iostream>
@@ -22,7 +23,7 @@ int OrthonormalBasis(const VectorTemplate<T>* x, VectorTemplate<T>* basis, int n
       k++;
     }
     else {
-      cout<<"Redundant vector "<<i<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Redundant vector "<<i);
     }
   }
   return k;
@@ -45,7 +46,7 @@ int OrthogonalBasis(const VectorTemplate<T>* x, VectorTemplate<T>* basis, int n)
       k++;
     }
     else {
-      cout<<"Redundant vector "<<i<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Redundant vector "<<i);
     }
   }
   delete [] basisSquared;

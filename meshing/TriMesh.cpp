@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "TriMesh.h"
 #include <locale.h>
 #include <iostream>
@@ -76,21 +77,21 @@ bool TriMesh::IsValid() const
   for(size_t i=0;i<tris.size();i++) {
     for(int k=0;k<3;k++) {
       if(tris[i][k] < 0 || tris[i][k] >= numverts) {
-	cout<<"Invalid triangle "<<i<<" vertex "<<k<<": "<<tris[i][k]<<endl;
-	res=false;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Invalid triangle "<<i<<" vertex "<<k<<": "<<tris[i][k]);
+    res=false;
       }
     }
     if(tris[i].a == tris[i].b || 
        tris[i].a == tris[i].c ||
        tris[i].b == tris[i].c) {
-      cout<<"Degenerate triangle "<<i<<": "<<tris[i]<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Degenerate triangle "<<i<<": "<<tris[i]);
       res=false;
     }
     /*
     Triangle3D t;
     GetTriangle(i,t);
     if(t.area() == Zero) {
-      cout<<"Degenerate triangle "<<tris[i]<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Degenerate triangle "<<tris[i]);
     }
     */
   }
@@ -137,9 +138,9 @@ int TriMesh::RayCast(const Ray3D& r,Vector3& pt) const
     GetTriangle(i,tri);
     if(tri.rayIntersects(r,&d,&uv.x,&uv.y)) {
       if(d < dmin) {
-	tmin = (int)i;
-	dmin = d;
-	pt = tri.planeCoordsToPoint(uv);
+    tmin = (int)i;
+    dmin = d;
+    pt = tri.planeCoordsToPoint(uv);
       }
     }
   }
@@ -236,9 +237,22 @@ void TriMesh::Merge(const vector<TriMesh>& files)
   tris.resize(numtris);
   for(size_t i=0;i<files.size();i++) {
     copy(files[i].verts.begin(),files[i].verts.end(),
-	 verts.begin()+vertoffsets[i]);
-	std::transform(files[i].tris.begin(),files[i].tris.end(),
-	 tris.begin()+trioffsets[i],AddTriOffset(vertoffsets[i]));
+     verts.begin()+vertoffsets[i]);
+    std::transform(files[i].tris.begin(),files[i].tris.end(),
+     tris.begin()+trioffsets[i],AddTriOffset(vertoffsets[i]));
+  }
+}
+
+void TriMesh::MergeWith(const TriMesh& mesh)
+{
+  size_t vertoffset = verts.size();
+  size_t trioffset = tris.size();
+  verts.insert(verts.end(),mesh.verts.begin(),mesh.verts.end());
+  tris.insert(tris.end(),mesh.tris.begin(),mesh.tris.end());
+  for(size_t t=trioffset;t<tris.size();t++) {
+    tris[t].a += vertoffset;
+    tris[t].b += vertoffset;
+    tris[t].c += vertoffset;
   }
 }
 
@@ -251,9 +265,9 @@ void TriMesh::RemoveUnusedVerts()
     for(int k=0;k<3;k++) {
       int v=tris[i][k];
       if(vertexMap[v]==-1) {
-	vertexMap[v]=numVerts;
-	newVerts[numVerts]=verts[v];
-	numVerts++;
+    vertexMap[v]=numVerts;
+    newVerts[numVerts]=verts[v];
+    numVerts++;
       }
       tris[i][k]=vertexMap[v];
     }
@@ -268,38 +282,38 @@ bool LoadTriMesh(FILE* f,TriMesh& tri)
   setlocale(LC_NUMERIC, "en_US.UTF-8");
   if(fscanf(f,"%d",&numverts) <= 0) return false;
   if(numverts <= 0 || numverts>10000000) {
-    cerr << "LoadTriMesh: Invalid number of vertices: "<<numverts<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(), "LoadTriMesh: Invalid number of vertices: "<<numverts);
     return false;
   }
       
   tri.verts.resize(numverts);
   for(int i=0;i<numverts;i++) {
     if(fscanf(f,"%lg %lg %lg",&tri.verts[i].x,&tri.verts[i].y,&tri.verts[i].z)<=0) {
-      cerr << "LoadTriMesh: Invalid vertex: "<<i<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(), "LoadTriMesh: Invalid vertex: "<<i);
       return false;
     }
   }
       
   if(fscanf(f,"%d",&numtris)<=0) {
-    cerr<<"LoadTriMesh: Couldn't read num triangles"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadTriMesh: Couldn't read num triangles");
     return false;
   }
   if(numtris <= 0 || numtris>10000000) {
-    cerr<<"LoadTriMesh: Invalid number of triangles: "<<numtris<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadTriMesh: Invalid number of triangles: "<<numtris);
     return false;
   }
   tri.tris.resize(numtris);
   for(int i=0;i<numtris;i++) {
     if(fscanf(f,"%d %d %d",&tri.tris[i].a,&tri.tris[i].b,&tri.tris[i].c)<=0) {
-      cerr<<"ERROR: Couldn't read triangle # "<<i<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR: Couldn't read triangle # "<<i);
       return false;
     }
   }
   if(!tri.IsValid()) {
-    cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
-    //cerr<<"Continuing may have unexpected results."<<endl;
-    //cerr<<"Press enter to continue."<<endl;
-    //getchar();
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
+    //LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
+    //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
+    //KrisLibrary::loggerWait();
   }
   return true;
 }
@@ -310,18 +324,18 @@ bool TriMesh::Load(const char* fn)
   ifstream in;
   in.open(fn);
   if(!in) {
-    cout<<"Couldn't open tri file "<<fn<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't open tri file "<<fn);
     return false;
   }
   in >> *this;
   if(!in) {
-    cout<<"Couldn't read tri file"<<fn<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't read tri file"<<fn);
     return false;
   }
   */
   FILE* f = fopen(fn,"r");
   if(!f) {
-    cout<<"Couldn't open tri file "<<fn<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't open tri file "<<fn);
     return false;
   }
   if(!LoadTriMesh(f,*this)) {
@@ -337,12 +351,12 @@ bool TriMesh::Save(const char* fn) const
   ofstream out;
   out.open(fn);
   if(!out) {
-    cout<<"Couldn't open file for writing "<<fn<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't open file for writing "<<fn);
     return false;
   }
   out << *this;
   if(!out) {
-    cout<<"Couldn't write tri file"<<fn<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't write tri file"<<fn);
     return false;
   }
   return true;
@@ -354,20 +368,20 @@ bool LoadMultipleTriMeshes(const char* fn,TriMesh& tri)
   ifstream in;
   in.open(fn);
   if(!in) {
-    cout<<"Couldn't open tri file "<<fn<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't open tri file "<<fn);
     return false;
   }
   */
   FILE* f = fopen(fn, "r");
   if (!f) {
-	  cout << "Couldn't open tri file " << fn << endl;
-	  return false;
+      LOG4CXX_INFO(KrisLibrary::logger(), "Couldn't open tri file " << fn << "\n");
+      return false;
   }
   vector<TriMesh> models;
   bool res;
   do {
     models.push_back(TriMesh());
-	res = LoadTriMesh(f, models[models.size() - 1]);
+    res = LoadTriMesh(f, models[models.size() - 1]);
     //in >> models[models.size()-1];
   //} while(in);
   } while (res);
@@ -379,7 +393,7 @@ bool LoadMultipleTriMeshes(const char* fn,TriMesh& tri)
     return true;
   }
   else {
-    cout<<"Error while loading tri file "<<fn<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error while loading tri file "<<fn);
     return false;
   }
   return true;
@@ -392,7 +406,7 @@ istream& operator >> (istream& in,TriMesh& tri)
   in >> numverts;      
   if(!in) return in;
   if(numverts <= 0 || numverts>10000000) {
-    cout << "ERROR: Invalid number of vertices: "<<numverts<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(), "ERROR: Invalid number of vertices: "<<numverts);
     in.clear(ios::badbit);
     return in;
   }
@@ -405,12 +419,12 @@ istream& operator >> (istream& in,TriMesh& tri)
       
   in >> numtris;
   if(!in) {
-    cout<<"ERROR: Couldn't read num triangles"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR: Couldn't read num triangles");
     in.clear(ios::badbit);
     return in;
   }
   if(numtris <= 0 || numtris>10000000) {
-    cout<<"ERROR: Invalid number of triangles: "<<numtris<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR: Invalid number of triangles: "<<numtris);
     in.clear(ios::badbit);
     return in;
   }
@@ -418,16 +432,16 @@ istream& operator >> (istream& in,TriMesh& tri)
   for(int i=0;i<numtris;i++) {
     in >> tri.tris[i];
     if(!in) {
-      cout<<"ERROR: Couldn't read triangle # "<<i<<endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"ERROR: Couldn't read triangle # "<<i);
       in.clear(ios::badbit);  
       return in;
     }
   }
   if(!tri.IsValid()) {
-    cerr<<"Warning: the triangle mesh is invalid or has degenerate triangles."<<endl;
-    cerr<<"Continuing may have unexpected results."<<endl;
-    //cerr<<"Press enter to continue."<<endl;
-    //getchar();
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
+    //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
+    //KrisLibrary::loggerWait();
   }
   return in;
 }

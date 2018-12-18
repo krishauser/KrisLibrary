@@ -4,7 +4,6 @@
 #include <KrisLibrary/graph/Tree.h>
 #include <KrisLibrary/geometry/GridSubdivision.h>
 #include <KrisLibrary/utils/ArrayMapping.h>
-#include <KrisLibrary/utils/SmartPointer.h>
 #include <list>
 #include "CSpace.h"
 #include "EdgePlanner.h"
@@ -17,11 +16,11 @@
 class SBLTree
 {
 public:
-  typedef Graph::TreeNode<Config,SmartPointer<EdgePlanner> > Node;
+  typedef Graph::TreeNode<Config,EdgePlannerPtr > Node;
   struct EdgeInfo
   {
     Node *s,*t;
-    SmartPointer<EdgePlanner> e;
+    EdgePlannerPtr e;
     bool reversed;
   };
 

@@ -48,7 +48,7 @@ bool AnalyticIKMap::Solve(RobotKinematics3D& robot,
     base = robot.parents[base];
   }
   std::pair<int,int> ind(base,goal.link);
-  std::map<std::pair<int,int>,SmartPointer<AnalyticalIKSolver> >::const_iterator solver = solvers.find(ind);
+  auto solver = solvers.find(ind);
   if(solver == solvers.end())
     return false;
 
@@ -69,7 +69,7 @@ bool AnalyticIKMap::Solve(int base,int ee,
 			    AnalyticIKSolution& solution) const
 {
   std::pair<int,int> ind(base,ee);
-  std::map<std::pair<int,int>,SmartPointer<AnalyticalIKSolver> >::const_iterator solver = solvers.find(ind);
+  auto solver = solvers.find(ind);
   if(solver == solvers.end())
     return false;
   return solver->second->Solve(base,ee,T,solution);

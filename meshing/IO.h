@@ -37,6 +37,15 @@ bool LoadOFF(std::istream& in,TriMesh& tri);
 ///Saves to the GeomView Object File Format (OFF)
 bool SaveOFF(std::ostream& out,const TriMesh& tri);
 
+///Loads from the Wavefront OBJ file format
+bool LoadOBJ(const char* fn,TriMesh& tri);
+///Loads from the Wavefront OBJ file format (can get per-vertex colors)
+bool LoadOBJ(const char* fn,TriMesh& tri,GLDraw::GeometryAppearance& app);
+///Saves to the Wavefront OBJ file format
+bool SaveOBJ(const char* fn,const TriMesh& tri);
+///Saves to the Wavefront OBJ file format (per-vertex colors not supported yet)
+bool SaveOBJ(const char* fn,const TriMesh& tri,const GLDraw::GeometryAppearance& app);
+
 ///Loads using Assimp if available on your system
 bool LoadAssimp(const char* fn,TriMesh& tri);
 ///Loads using Assimp if available on your system

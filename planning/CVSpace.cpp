@@ -2,7 +2,7 @@
 #include "EdgePlanner.h"
 #include "GeneralizedBezierCurve.h"
 
-CVSpace::CVSpace(const SmartPointer<CSpace>& _baseSpace,const SmartPointer<CSpace>& _velSpace)
+CVSpace::CVSpace(const std::shared_ptr<CSpace>& _baseSpace,const std::shared_ptr<CSpace>& _velSpace)
   :MultiCSpace(_baseSpace,_velSpace)
 {
   Assert(components.size()==2);
@@ -73,7 +73,7 @@ void CVSpace::SetVelocity(const Vector& v,Config& x)
 
 
 
-HermiteCSpace::HermiteCSpace(const SmartPointer<CSpace>& _baseSpace,const SmartPointer<CSpace>& _velSpace)
+HermiteCSpace::HermiteCSpace(const std::shared_ptr<CSpace>& _baseSpace,const std::shared_ptr<CSpace>& _velSpace)
   :CVSpace(_baseSpace,_velSpace)
 {}
 
@@ -84,7 +84,7 @@ Real HermiteCSpace::Distance(const Config& x, const Config& y)
   CVSpace::GetStateRef(y,yq,yv);
   const static Real third=1.0/3.0;
   Vector x1,x2;
-  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(&*components[0]);
+  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(components[0].get());
   if(manifold) {
     manifold->Integrate(xq,xv*third,x1);
     manifold->Integrate(yq,yv*(-third),x2);
@@ -93,7 +93,7 @@ Real HermiteCSpace::Distance(const Config& x, const Config& y)
     x1 = xq+xv*third;
     x2 = yq-yv*third;
   }
-  CSpace* baseSpace = components[0];
+  CSpace* baseSpace = components[0].get();
   return baseSpace->Distance(xq,x1)+baseSpace->Distance(x1,x2)+baseSpace->Distance(x2,yq);
 }
 
@@ -104,8 +104,8 @@ void HermiteCSpace::Interpolate(const Config& x,const Config& y,Real u,Config& o
   CVSpace::GetStateRef(y,yq,yv);
   out.resize(x.n);
   CVSpace::GetStateRef(out,outq,outv);
-  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(&*components[0]);
-  GeneralizedCubicBezierCurve curve(components[0],manifold);
+  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(components[0].get());
+  GeneralizedCubicBezierCurve curve(components[0].get(),manifold);
   curve.x0.setRef(xq);
   curve.x3.setRef(yq);
   curve.SetNaturalTangents(xv,yv);
@@ -128,8 +128,8 @@ void HermiteCSpace::InterpolateDeriv(const Config& x,const Config& y,Real u,Vect
   CVSpace::GetStateRef(y,yq,yv);
   dx.resize(x.n);
   CVSpace::GetStateRef(dx,dq,dv);
-  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(&*components[0]);
-  GeneralizedCubicBezierCurve curve(components[0],manifold);
+  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(components[0].get());
+  GeneralizedCubicBezierCurve curve(components[0].get(),manifold);
   curve.x0.setRef(xq);
   curve.x3.setRef(yq);
   curve.SetNaturalTangents(xv,yv);
@@ -144,7 +144,7 @@ void HermiteCSpace::Integrate(const Config& x,const Vector& dx,Config& y)
   CVSpace::GetStateRef(dx,dq,dv);
   y.resize(x.n);
   CVSpace::GetStateRef(y,yq,yv);
-  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(&*components[0]);
+  GeodesicCSpace* manifold = dynamic_cast<GeodesicCSpace*>(components[0].get());
   if(manifold) manifold->Integrate(xq,dq,yq);
   else yq = xq+dq;
   yv = xv+dv;

@@ -4,7 +4,7 @@
 #include "function.h"
 #include "vector.h"
 #include "matrix.h"
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 #include <vector>
 #include <assert.h>
 
@@ -28,7 +28,7 @@ namespace Math {
 class ScalarFieldDirectionalFunction : public RealFunction
 {
 public:
-  ScalarFieldDirectionalFunction(ScalarFieldFunction*_f,const Vector& x,const Vector& n,bool ref=false);
+  ScalarFieldDirectionalFunction(ScalarFieldFunction& _f,const Vector& x,const Vector& n,bool ref=false);
   virtual std::string Label() const;
   virtual void PreEval(Real t);
   virtual Real Eval(Real t);
@@ -52,7 +52,7 @@ private:
 class ScalarFieldProjectionFunction : public RealFunction
 {
 public:
-  ScalarFieldProjectionFunction(ScalarFieldFunction* f,const Vector& x,int i);
+  ScalarFieldProjectionFunction(ScalarFieldFunction& f,const Vector& x,int i);
   virtual std::string Label() const;
   virtual void PreEval(Real t);
   virtual Real Eval(Real t);
@@ -199,7 +199,7 @@ public:
 class ComposeScalarFieldFunction : public ScalarFieldFunction
 {
 public:
-  ComposeScalarFieldFunction(SmartPointer<RealFunction> _f,SmartPointer<ScalarFieldFunction> _g) : f(_f), g(_g) {}
+  ComposeScalarFieldFunction(std::shared_ptr<RealFunction> _f,std::shared_ptr<ScalarFieldFunction> _g) : f(_f), g(_g) {}
   virtual std::string Label() const;
   virtual void PreEval(const Vector& x);
   virtual Real Eval(const Vector& x) { return f->Eval(gx); }
@@ -208,8 +208,8 @@ public:
   virtual void Hessian(const Vector& x,Matrix& H);
   virtual Real Hessian_ij(const Vector& x,int i,int j); 
  
-  SmartPointer<RealFunction> f;
-  SmartPointer<ScalarFieldFunction> g;
+  std::shared_ptr<RealFunction> f;
+  std::shared_ptr<ScalarFieldFunction> g;
   //temp
   Real gx;
 };
@@ -268,7 +268,7 @@ class LinearVectorFieldFunction : public VectorFieldFunction
 class Compose_SF_VF_Function : public ScalarFieldFunction
 {
 public:
-  Compose_SF_VF_Function(SmartPointer<ScalarFieldFunction> _f,SmartPointer<VectorFieldFunction> _g) : f(_f), g(_g) {}
+  Compose_SF_VF_Function(std::shared_ptr<ScalarFieldFunction> _f,std::shared_ptr<VectorFieldFunction> _g) : f(_f), g(_g) {}
   virtual std::string Label() const;
   virtual void PreEval(const Vector& x);
   virtual Real Eval(const Vector& x) { return f->Eval(gx); }
@@ -277,8 +277,8 @@ public:
   virtual void Hessian(const Vector& x,Matrix& H);
   virtual Real Hessian_ij(const Vector& x,int i,int j);
   
-  SmartPointer<ScalarFieldFunction> f;
-  SmartPointer<VectorFieldFunction> g;
+  std::shared_ptr<ScalarFieldFunction> f;
+  std::shared_ptr<VectorFieldFunction> g;
   //temp
   Vector gx;
   Vector gradf;
@@ -289,7 +289,7 @@ public:
 class Compose_VF_VF_Function : public ScalarFieldFunction
 {
 public:
-  Compose_VF_VF_Function(SmartPointer<VectorFieldFunction> _f,SmartPointer<VectorFieldFunction> _g) : f(_f), g(_g) {}
+  Compose_VF_VF_Function(std::shared_ptr<VectorFieldFunction> _f,std::shared_ptr<VectorFieldFunction> _g) : f(_f), g(_g) {}
   virtual std::string Label() const;
   virtual void PreEval(const Vector& x);
   virtual void Eval(const Vector& x,Vector& v) { f->Eval(gx,v); }
@@ -298,8 +298,8 @@ public:
   virtual void Jacobian_i(const Vector& x,int i,Vector& Ji);
   virtual void Jacobian_j(const Vector& x,int j,Vector& Jj);
  
-  SmartPointer<VectorFieldFunction> f;
-  SmartPointer<VectorFieldFunction> g;
+  std::shared_ptr<VectorFieldFunction> f;
+  std::shared_ptr<VectorFieldFunction> g;
   Vector gx;
   Matrix Jg,Jf;
 };
@@ -320,14 +320,14 @@ public:
   virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
   virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
 
-  std::vector<SmartPointer<ScalarFieldFunction> > functions;
+  std::vector<std::shared_ptr<ScalarFieldFunction> > functions;
 };
 
 /// A function g(x) that returns the i'th component of vector field f(x)
 class VectorFieldProjectionFunction : public ScalarFieldFunction
 {
 public:
-  VectorFieldProjectionFunction(VectorFieldFunction* f,int i);
+  VectorFieldProjectionFunction(VectorFieldFunction& f,int i);
   virtual std::string Label() const;
   virtual void PreEval(const Vector& x) { f->PreEval(x); }
   virtual Real Eval(const Vector& x);
@@ -345,8 +345,8 @@ class CompositeVectorFieldFunction : public VectorFieldFunction
 {
 public:
   CompositeVectorFieldFunction();
-  CompositeVectorFieldFunction(SmartPointer<VectorFieldFunction> f1,SmartPointer<VectorFieldFunction>& f2);
-  CompositeVectorFieldFunction(const std::vector<SmartPointer<VectorFieldFunction> >& fs);
+  CompositeVectorFieldFunction(std::shared_ptr<VectorFieldFunction> f1,std::shared_ptr<VectorFieldFunction>& f2);
+  CompositeVectorFieldFunction(const std::vector<std::shared_ptr<VectorFieldFunction> >& fs);
   virtual std::string Label() const;
   virtual std::string Label(int i) const;
   virtual int NumDimensions() const;
@@ -360,7 +360,7 @@ public:
 
   int GetFunction(int &i) const;
 
-  std::vector<SmartPointer<VectorFieldFunction> > functions;
+  std::vector<std::shared_ptr<VectorFieldFunction> > functions;
 };
 
 /// A vector field function f(x) = g(x[xindices])[findices]
@@ -378,7 +378,7 @@ public:
   virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
   virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
 
-  SmartPointer<VectorFieldFunction> function;
+  std::shared_ptr<VectorFieldFunction> function;
   std::vector<int> xindices,findices;
 
   //temp
@@ -401,7 +401,7 @@ public:
   virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
   virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
 
-  SmartPointer<VectorFieldFunction> function;
+  std::shared_ptr<VectorFieldFunction> function;
   Vector x0;
   std::vector<int> xindices;
 

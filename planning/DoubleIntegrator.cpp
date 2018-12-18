@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "DoubleIntegrator.h"
 #include "InterpolatorHelpers.h"
 #include "ParabolicRamp.h"
@@ -79,11 +80,11 @@ void Convert(const std::vector<std::vector<ParabolicRamp::ParabolicRamp1D> >& ra
 
 
 
-DoubleIntegratorControlSpace::DoubleIntegratorControlSpace(const SmartPointer<CSet>& uset,Real dtmax)
+DoubleIntegratorControlSpace::DoubleIntegratorControlSpace(const std::shared_ptr<CSet>& uset,Real dtmax)
 :IntegratedControlSpace(uset,dtmax,dtmax)
 {}
 
-Interpolator* DoubleIntegratorControlSpace::Simulate(const State& x0, const ControlInput& u)
+InterpolatorPtr DoubleIntegratorControlSpace::Simulate(const State& x0, const ControlInput& u)
 {
   //do we want to have the interpolator in the range [0,1]?
   Vector q0,v0;
@@ -105,7 +106,7 @@ Interpolator* DoubleIntegratorControlSpace::Simulate(const State& x0, const Cont
     elements[i+q0.n].SetCoef(1,ubase[i]);
   }
   Spline::PiecewisePolynomialND path(elements,0,udt);
-  return new PiecewisePolynomialInterpolator(path);
+  return make_shared<PiecewisePolynomialInterpolator>(path);
 }
 
 std::string DoubleIntegratorControlSpace::VariableName(int i)
@@ -144,12 +145,12 @@ void DoubleIntegratorControlSpace::EvalDynamics(const State& x0, const ControlIn
 
 
 
-DoubleIntegratorKinodynamicSpace::DoubleIntegratorKinodynamicSpace(SmartPointer<CSpace> qspace,SmartPointer<CSpace> vspace,SmartPointer<CSet> uset,Real dtmax)
-:KinodynamicSpace(new CVSpace(qspace,vspace),new DoubleIntegratorControlSpace(uset,dtmax)),visibilityEpsilon(1e-2)
+DoubleIntegratorKinodynamicSpace::DoubleIntegratorKinodynamicSpace(std::shared_ptr<CSpace> qspace,std::shared_ptr<CSpace> vspace,std::shared_ptr<CSet> uset,Real dtmax)
+:KinodynamicSpace(make_shared<CVSpace>(qspace,vspace),make_shared<DoubleIntegratorControlSpace>(uset,dtmax)),visibilityEpsilon(1e-2)
 {
-  BoxSet* abset = dynamic_cast<BoxSet*>(&*uset);
+  BoxSet* abset = dynamic_cast<BoxSet*>(uset.get());
   if(!abset) {
-    printf("DoubleIntegratorKinodynamicSpace: No steering function available; accelerations are not box-bounded\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"DoubleIntegratorKinodynamicSpace: No steering function available; accelerations are not box-bounded\n");
   }
   else {
     //create steering function
@@ -160,13 +161,13 @@ DoubleIntegratorKinodynamicSpace::DoubleIntegratorKinodynamicSpace(SmartPointer<
       vmin.resize(abset->bmin.size(),-Inf);
       vmax.resize(abset->bmax.size(),Inf);
     }
-    controlSpace->mySteeringFunction = new DoubleIntegratorBoxBoundedSteeringFunction(abset->bmax,vmax);
+    controlSpace->mySteeringFunction = make_shared<DoubleIntegratorBoxBoundedSteeringFunction>(abset->bmax,vmax);
   }
 }
 
-EdgePlanner* DoubleIntegratorKinodynamicSpace::TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path)
+EdgePlannerPtr DoubleIntegratorKinodynamicSpace::TrajectoryChecker(const ControlInput& u,const std::shared_ptr<Interpolator>& path)
 {
-  return new EpsilonEdgeChecker(GetStateSpace(),path,visibilityEpsilon);
+  return make_shared<EpsilonEdgeChecker>(GetStateSpace().get(),path,visibilityEpsilon);
 }
 
 void DoubleIntegratorKinodynamicSpace::SetVisibilityEpsilon(Real tol)
@@ -210,6 +211,6 @@ bool DoubleIntegratorBoxBoundedSteeringFunction::Connect(const State& x,const St
   Spline::PiecewisePolynomialND dpath = ppath.Differentiate();
   //the polynomial needs derivative information too...
   ppath.elements.insert(ppath.elements.end(),dpath.elements.begin(),dpath.elements.end());
-  path.paths.push_back(new PiecewisePolynomialInterpolator(ppath));
+  path.paths.push_back(make_shared<PiecewisePolynomialInterpolator>(ppath));
   return true;
 }

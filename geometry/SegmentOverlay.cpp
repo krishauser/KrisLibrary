@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "SegmentOverlay.h"
 #include "primitives.h"
 #include <math3d/Plane2D.h>
@@ -71,39 +72,39 @@ int SegmentOverlay::StatusCmp::operator()(int a,int b) const
     assert(!epsLower);
     assert(a==-1);
     int res=PtSegCmp(p,(*S)[b],tol);
-    //cout<<"  Final res: "<<res<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"  Final res: "<<res);
     return res;
   }
   const Segment2D &u=(*S)[a], &v=(*S)[b];
-  //cout<<"  At "<<p<<", cmp segs "<<u.a<<" -> "<<u.b<<" vs "<<v.a<<" -> "<<v.b<<" = ";
+  //LOG4CXX_INFO(KrisLibrary::logger(),"  At "<<p<<", cmp segs "<<u.a<<" -> "<<u.b<<" vs "<<v.a<<" -> "<<v.b<<" = ");
   Real ux,vx;
   //if both intersect at p, check the left/right orientation
   ux = LeastIntersection(p,u);
   vx = LeastIntersection(p,v);
   if(FuzzyEquals(ux,vx,tol)) {
     if(FuzzyEquals(ux,p.x,tol)) { //intersect at p, check orientation
-      //cout<<endl<<"Orientation test about p: ";
+      //LOG4CXX_INFO(KrisLibrary::logger(),"\n"<<"Orientation test about p: ");
 	    //orientation test about p
 	    const Vector2 *a, *b;
 	    a = (SweepLineOrder(p,u.a) ? &u.a :&u.b);
 	    b = (SweepLineOrder(p,v.a) ? &v.a :&v.b);
 	    int res=OrientCmp(p,*b,*a);
-      //cout<<res<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),res);
       return res;
     }
     //don't ever return 0 -- which one is oriented about the intersection pt?
     Vector2 p2(ux,p.y);
-    //cout<<endl<<"Orientation test about different p "<<p2<<": ";
+    //LOG4CXX_INFO(KrisLibrary::logger(),"\n"<<"Orientation test about different p "<<p2<<": ");
     //orientation test about p2
     const Vector2 *a, *b;
     a = (SweepLineOrder(p2,u.a) ? &u.a :&u.b);
     b = (SweepLineOrder(p2,v.a) ? &v.a :&v.b);
     int res=OrientCmp(p2,*b,*a);
-    //cout<<res<<endl;
+    //LOG4CXX_INFO(KrisLibrary::logger(),res);
     return res;
   }
-  else if(ux < vx) { /*cout<<-1<<endl; */return -1; }
-  else { /*cout<<1<<endl; */ return 1; }
+  else if(ux < vx) { /*LOG4CXX_INFO(KrisLibrary::logger(),-1); */return -1; }
+  else { /*LOG4CXX_INFO(KrisLibrary::logger(),1); */ return 1; }
 }
 
 
@@ -149,11 +150,11 @@ void SegmentOverlay::HandleEvent(const Event& e)
   const vector<int>& U=e.U;
   StatusTree::iterator begin,end,i,next;
   if(verbose >= 1) {
-    cout<<"Handling "<<p<<endl;
-    cout<<"  Status is ";
+    LOG4CXX_INFO(KrisLibrary::logger(),"Handling "<<p);
+    LOG4CXX_INFO(KrisLibrary::logger(),"  Status is ");
     for(i=status.begin();i!=status.end();i++)
-      cout<<*i<<" ";
-    cout<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),*i<<" ");
+    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   }
   //Get points containing p into L,C
   vector<int> L,C;
@@ -174,7 +175,7 @@ void SegmentOverlay::HandleEvent(const Event& e)
   }
 
   if(verbose >= 2)
-    cout<<"  |L|,|U|,|C| = "<<L.size()<<" "<<U.size()<<" "<<C.size()<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"  |L|,|U|,|C| = "<<L.size()<<" "<<U.size()<<" "<<C.size());
   if(L.size()+U.size()+C.size() > 1) {
     size_t index=output.size();
     output.resize(output.size()+1);
@@ -212,14 +213,14 @@ void SegmentOverlay::HandleEvent(const Event& e)
     int l,r,sl,sr;
     //get the leftmost and rightmost segments in U union C
     GetLeftmostRightmost(U,C,l,r);
-    if(verbose >= 2) cout<<"  Leftmost, rightmost are "<<l<<", "<<r<<endl;
+    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Leftmost, rightmost are "<<l<<", "<<r);
 
     if(StatusLowerNeighbor(l,sl)) {
-      if(verbose >= 2) cout<<"  Lower neighbor "<<sl<<endl;
+      if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Lower neighbor "<<sl);
       FindNewEvent(sl,l,p);
     }
     if(StatusUpperNeighbor(r,sr)) {
-      if(verbose >= 2) cout<<"  Upper neighbor "<<sr<<endl;
+      if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Upper neighbor "<<sr);
       FindNewEvent(r,sr,p);
     }
   }
@@ -230,7 +231,7 @@ void SegmentOverlay::FindNewEvent(int sl,int sr,const Vector2& p)
   Vector2 x;
   if(S[sl].intersects(S[sr],x)) {
     if(SweepLineOrder(p,x)) {  //x comes after p in the ordering
-      if(verbose >= 1) cout<<"New intersection at "<<x<<endl;
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"New intersection at "<<x);
       //insert x as a new event
       Event e;
       e.p=x;

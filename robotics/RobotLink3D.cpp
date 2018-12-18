@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "RobotLink3D.h"
 #include <iostream>
 using namespace std;
@@ -30,14 +31,14 @@ void RobotLink3D::GetLocalTransform(Real qi,Frame3D& T) const
     else if(w.z == One)
       T.R.setRotateZ(qi);
     else {
-      //cout<<"Not a standard axis: "<<w<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Not a standard axis: "<<w);
       MomentRotation r(qi*w);
       r.getMatrix(T.R);
     }
     break;
   default:
     T.setIdentity();
-    cerr<<"Invalid joint type "<<type<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid joint type "<<type);
     Abort();
     break;
   }
@@ -53,7 +54,7 @@ void RobotLink3D::GetOrientationJacobian(Vector3& Jo) const
     Jo.setZero();
     break;
   default:
-    cerr<<"Invalid joint type"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid joint type");
     Abort();
     Jo.setZero();
     break;
@@ -80,7 +81,7 @@ void RobotLink3D::GetPositionJacobian(Real qi,const Vector3& p, Vector3& Jp) con
     Jp = T_World.R*w;
     break;
   default:
-    cout<<"Invalid joint type"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Invalid joint type");
     Jp.setZero();
     Abort();
     break;
@@ -110,7 +111,7 @@ void RobotLink3D::GetJacobian(Real qi,const Vector3& p, Vector3& Jo, Vector3& Jp
     Jo.setZero();
     break;
   default:
-    cout<<"Invalid joint type"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Invalid joint type");
     Jp.setZero(); Jo.setZero();
     Abort();
     break;

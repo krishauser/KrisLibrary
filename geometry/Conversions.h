@@ -48,6 +48,9 @@ void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::V
 
 /** @ingroup Geometry
  * @brief Creates an implicit surface for a mesh using a Fast Marching Method.
+ *
+ * Note: the mesh's current transform is NOT taken into account (i.e., the resulting grid
+ * is in local coordinates)
  */
 void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution);
 
@@ -56,6 +59,9 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
  * The grid has resolution no less than resolution on each axis.  numViews views
  * (6 orthographic, numViews-6 random) are taken of the mesh to create the space
  * carving.
+ *
+ * Note: the mesh's current transform is NOT taken into account (i.e., the resulting grid
+ * is in local coordinates)
  */
 void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews=20);
 

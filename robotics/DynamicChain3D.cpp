@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "DynamicChain3D.h"
 #include <math/CholeskyDecomposition.h>
 #include <Timer.h>
@@ -348,9 +349,9 @@ Real DynamicChain3D::GetKineticEnergyDeriv(int i,int j,int z) const
 	}
 
 	if(!FuzzyEquals(dB_dq[z](i,j),ke_dz)) {
-	  std::cout<<"They don't agree on "<<i<<" "<<j<<" "<<z<<std::endl;
-	  std::cout<<dB_dq[z](i,j)<<" vs "<<ke_dz<<std::endl;
-	  getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger(),"They don't agree on "<<i<<" "<<j<<" "<<z);
+	  LOG4CXX_INFO(KrisLibrary::logger(),dB_dq[z](i,j)<<" vs "<<ke_dz);
+	  KrisLibrary::loggerWait();
 	}
 
 	return ke_dz;
@@ -368,7 +369,7 @@ void DynamicChain3D::GetKineticEnergyMatrixDeriv(int z,Matrix& dB) const
 	    GetJacobianDeriv_Fast(links[i].com,i,j,z,dJO(i,j),dJP(i,j));
 	    /*
 	    if(!GetJacobianDeriv(links[i].com,i,j,z,dJO(i,j),dJP(i,j))) { 
-	      std::cout<<"Error, an invalid jacobian derivative in dB setup"<<std::endl;
+	      LOG4CXX_ERROR(KrisLibrary::logger(),"Error, an invalid jacobian derivative in dB setup");
 	      Abort(); }
 	    */
 	  }
@@ -448,7 +449,7 @@ void DynamicChain3D::GetCoriolisForces(Vector& Cdq)
   Timer timer;
 	Cdq.resize(q.n);
 	Update_dB_dq();
-	std::cout<<"Update took "<<timer.ElapsedTime()<<std::endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Update took "<<timer.ElapsedTime());
 	for(int i=0;i<q.n;i++) {
 		Real val=Zero;
 		for(int j=0;j<q.n;j++) {
@@ -465,7 +466,7 @@ void DynamicChain3D::GetCoriolisForces(Vector& Cdq)
 		val*=Half;
 		Cdq(i)=val;
 	}
-	std::cout<<"triple product took "<<timer.ElapsedTime()<<std::endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"triple product took "<<timer.ElapsedTime());
 }
 
 void DynamicChain3D::GetForceVector(const Vector3& torque, const Vector3& force, int i, Vector& F) const
@@ -517,8 +518,8 @@ void DynamicChain3D::GetAcceleration(Vector& ddq, const Vector& fext)
 	GetKineticEnergyMatrix(B);
 	CholeskyDecomposition<Real> cholesky;
 	if(!cholesky.set(B)) {
-		std::cerr<<"Kinetic energy matrix is not positive definite!"<<std::endl;
-		std::cerr<<B<<std::endl;
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Kinetic energy matrix is not positive definite!");
+		LOG4CXX_ERROR(KrisLibrary::logger(),B);
 		Abort();
 	}
 

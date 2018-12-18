@@ -4,6 +4,7 @@
 #include "EdgePlannerHelpers.h"
 #include "CSetHelpers.h"
 #include <math/random.h>
+using namespace std;
 
 void Join(Real t,const Config& q,Config& tq)
 {
@@ -32,7 +33,7 @@ class TimeSteeringFunction : public SteeringFunction
 public:
   virtual bool Connect(const Config& x,const Config& y,KinodynamicMilestonePath& path) {
     if(x(0) > y(0)) return false;
-    path = KinodynamicMilestonePath(y-x,new LinearInterpolator(x,y));
+    path = KinodynamicMilestonePath(y-x,make_shared<LinearInterpolator>(x,y));
     return true;
   }
 };
@@ -51,26 +52,26 @@ void TimeCSpace::Sample(Config& x)
 
 TimeControlSpace::TimeControlSpace(Real dtmax)
 {
-  myControlSet = new TimeControlSet(dtmax);
-  mySteeringFunction = new TimeSteeringFunction();
+  myControlSet = make_shared<TimeControlSet>(dtmax);
+  mySteeringFunction = make_shared<TimeSteeringFunction>();
 }
 void TimeControlSpace::SetMaxTimeStep(Real dtmax) 
 {
-  myControlSet = new TimeControlSet(dtmax);
+  myControlSet = make_shared<TimeControlSet>(dtmax);
 }
 
-Interpolator* TimeControlSpace::Simulate(const State& x0, const ControlInput& u)
+InterpolatorPtr TimeControlSpace::Simulate(const State& x0, const ControlInput& u)
 {
   State x1;
   SimulateEndpoint(x0,u,x1);
-  return new LinearInterpolator(x0,x1);
+  return make_shared<LinearInterpolator>(x0,x1);
 }
 
 
 
-SpaceTimeCSpace::SpaceTimeCSpace(const SmartPointer<CSpace>& stateSpace,Real tmax)
+SpaceTimeCSpace::SpaceTimeCSpace(const shared_ptr<CSpace>& stateSpace,Real tmax)
 {
-  Add("time",new TimeCSpace(tmax));
+  Add("time",make_shared<TimeCSpace>(tmax));
   Add("",stateSpace);
 }
 
@@ -86,15 +87,15 @@ void SpaceTimeCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
   x(0)=c(0)+Rand(0,r); 
 }
 
-EdgePlanner* SpaceTimeCSpace::LocalPlanner(const Config& a,const Config& b)
+EdgePlannerPtr SpaceTimeCSpace::LocalPlanner(const Config& a,const Config& b)
 {
-  if(a(0) > b(0)) return new FalseEdgeChecker(this,a,b);
+  if(a(0) > b(0)) return make_shared<FalseEdgeChecker>(this,a,b);
   else return MultiCSpace::LocalPlanner(a,b);
 }
 
-EdgePlanner* SpaceTimeCSpace::PathChecker(const Config& a, const Config& b)
+EdgePlannerPtr SpaceTimeCSpace::PathChecker(const Config& a, const Config& b)
 {
-  if(a(0) > b(0)) return new FalseEdgeChecker(this,a,b);
+  if(a(0) > b(0)) return make_shared<FalseEdgeChecker>(this,a,b);
   else return MultiCSpace::PathChecker(a,b);
 }
 
@@ -105,8 +106,8 @@ EdgePlanner* SpaceTimeCSpace::PathChecker(const Config& a, const Config& b)
 class SpaceTimeSteeringFunction : public SteeringFunction
 {
 public:
-  SmartPointer<SteeringFunction> base;
-  SpaceTimeSteeringFunction(const SmartPointer<SteeringFunction> &_base)
+  shared_ptr<SteeringFunction> base;
+  SpaceTimeSteeringFunction(const shared_ptr<SteeringFunction> &_base)
   :base(_base)
   {}
 
@@ -134,7 +135,7 @@ public:
       if(i+1 < qpath.milestones.size()) {
         Join(dt,qpath.controls[i],path.controls[i]);
         Real u2 = Real(i+1)*dt;
-        path.paths[i] = new MultiInterpolator(new LinearInterpolator(u,u2),qpath.paths[i]);
+        path.paths[i] = make_shared<MultiInterpolator>(make_shared<LinearInterpolator>(u,u2),qpath.paths[i]);
       }
     }
     path.edges.resize(0);
@@ -142,12 +143,12 @@ public:
   }
 };
 
-SpaceTimeIntegratedControlSpace::SpaceTimeIntegratedControlSpace(const SmartPointer<IntegratedControlSpace>& _base)
+SpaceTimeIntegratedControlSpace::SpaceTimeIntegratedControlSpace(const shared_ptr<IntegratedControlSpace>& _base)
 :IntegratedControlSpace(_base->myDynamics,_base->controlSet,_base->dt,_base->dtmax),base(_base)
 {
-  SmartPointer<SteeringFunction> sf = base->GetSteeringFunction();
+  shared_ptr<SteeringFunction> sf = base->GetSteeringFunction();
   if(sf)
-    mySteeringFunction = new SpaceTimeSteeringFunction(sf);
+    mySteeringFunction = make_shared<SpaceTimeSteeringFunction>(sf);
 }
 
 std::string SpaceTimeIntegratedControlSpace::VariableName(int i)
@@ -175,7 +176,7 @@ void SpaceTimeIntegratedControlSpace::UpdateIntegrationParameters(const State& x
   type = base->type;
 }
 
-SpaceTimeIntegratedKinodynamicSpace::SpaceTimeIntegratedKinodynamicSpace(const SmartPointer<CSpace>& space,const SmartPointer<IntegratedControlSpace>& controlSpace)
-:IntegratedKinodynamicSpace(new SpaceTimeCSpace(space),new SpaceTimeIntegratedControlSpace(controlSpace))
+SpaceTimeIntegratedKinodynamicSpace::SpaceTimeIntegratedKinodynamicSpace(const shared_ptr<CSpace>& space,const shared_ptr<IntegratedControlSpace>& controlSpace)
+:IntegratedKinodynamicSpace(make_shared<SpaceTimeCSpace>(space),make_shared<SpaceTimeIntegratedControlSpace>(controlSpace))
 {}
 

@@ -41,6 +41,8 @@
 #ifndef PQP_MATVEC_H
 #define PQP_MATVEC_H
 
+#include <log4cxx/logger.h>
+#include <KrisLibrary/Logger.h>
 #include <math.h>
 #include <stdio.h>
 #include "PQP_Compile.h"
@@ -79,10 +81,9 @@ inline
 void
 Mprintg(const PQP_REAL M[3][3])
 {
-  printf("%g %g %g\n%g %g %g\n%g %g %g\n",
-	 M[0][0], M[0][1], M[0][2],
-	 M[1][0], M[1][1], M[1][2],
-	 M[2][0], M[2][1], M[2][2]);
+  LOG4CXX_INFO(KrisLibrary::logger(),""<<M[0][0]<<" "<<M[0][1] <<" "<<M[0][2] <<"\n"<<
+    M[1][0]<<" "<<M[1][1] <<" "<<M[1][2] <<"\n"<<
+    M[2][0]<<" "<<M[2][1] <<" "<<M[2][2] <<"\n");
 }
 
 
@@ -100,17 +101,16 @@ inline
 void
 Mprint(const PQP_REAL M[3][3])
 {
-  printf("%g %g %g\n%g %g %g\n%g %g %g\n",
-	 M[0][0], M[0][1], M[0][2],
-	 M[1][0], M[1][1], M[1][2],
-	 M[2][0], M[2][1], M[2][2]);
+  LOG4CXX_INFO(KrisLibrary::logger(),""<<M[0][0]<<" "<<M[0][1] <<" "<<M[0][2] <<"\n"<<
+    M[1][0]<<" "<<M[1][1] <<" "<<M[1][2] <<"\n"<<
+    M[2][0]<<" "<<M[2][1] <<" "<<M[2][2] <<"\n");
 }
 
 inline
 void
 Vprintg(const PQP_REAL V[3])
 {
-  printf("%g %g %g\n", V[0], V[1], V[2]);
+  LOG4CXX_INFO(KrisLibrary::logger(),""<< V[0]<<" "<< V[1]<<" "<< V[2]);
 }
 
 inline
@@ -124,7 +124,7 @@ inline
 void
 Vprint(const PQP_REAL V[3])
 {
-  printf("%g %g %g\n", V[0], V[1], V[2]);
+  LOG4CXX_INFO(KrisLibrary::logger(),""<< V[0]<<" "<< V[1]<<" "<< V[2]);
 }
 
 inline
@@ -698,7 +698,7 @@ Meigen(PQP_REAL vout[3][3], PQP_REAL dout[3], PQP_REAL a[3][3])
   for(i=0; i<50; i++)
     {
 
-      printf("2\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"2\n");
 
       sm=0.0; sm+=fabs(a[0][1]); sm+=fabs(a[0][2]); sm+=fabs(a[1][2]);
       if (sm == 0.0) { McM(vout,v); VcV(dout,d); return i; }
@@ -778,7 +778,7 @@ Meigen(PQP_REAL vout[3][3], PQP_REAL dout[3], PQP_REAL a[3][3])
       
     }
 
-  fprintf(stderr, "eigen: too many iterations in Jacobi transform (%d).\n", i);
+    LOG4CXX_ERROR(KrisLibrary::logger(), "eigen: too many iterations in Jacobi transform ("<< i);
 
   return i;
 }
@@ -869,7 +869,7 @@ Meigen(PQP_REAL vout[3][3], PQP_REAL dout[3], PQP_REAL a[3][3])
 	}
     }
 
-  fprintf(stderr, "eigen: too many iterations in Jacobi transform.\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(), "eigen: too many iterations in Jacobi transform.\n");
 
   return;
 }
