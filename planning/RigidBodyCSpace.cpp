@@ -81,7 +81,7 @@ Real SO2CSpace::Distance(const Config& a,const Config& b)
   return Abs(AngleDiff(a(0),b(0)));
 }
 
-void SO2CSpace::Properties(PropertyMap& pmap) const
+void SO2CSpace::Properties(PropertyMap& pmap)
 {
   pmap.set("cartesian",0);
   pmap.set("geodesic",1);
@@ -198,7 +198,7 @@ Real SO3CSpace::Distance(const Config& a,const Config& b)
   return Abs(aa.angle);
 }
 
-void SO3CSpace::Properties(PropertyMap& pmap) const
+void SO3CSpace::Properties(PropertyMap& pmap)
 {
   pmap.set("cartesian",0);
   pmap.set("geodesic",1);
