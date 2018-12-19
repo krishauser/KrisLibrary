@@ -13,14 +13,15 @@
     #define USE_TR1_NAMESPACE 1
   #endif
 #elif defined(__APPLE__)
-  #if available(macOS 10.7, *) 
-    #define USE_TR1_NAMESPACE 0
-    #include <unordered_set>
-    #include <unordered_map>
-  #else
+  #include <Availability.h>
+  #if __MAC_OS_X_VERSION_MIN_REQUIRED < 1070
     #define USE_TR1_NAMESPACE 1
     #include <tr1/unordered_set>
     #include <tr1/unordered_map>
+  #else
+    #define USE_TR1_NAMESPACE 0
+    #include <unordered_set>
+    #include <unordered_map>
   #endif
 #else
   #include <tr1/unordered_set>
