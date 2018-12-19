@@ -419,7 +419,7 @@ void GetCoplanarTris(const TriMesh& mesh,int t,Real tol,vector<int>& tris)
     bool coplanar=(withinTol[mesh.tris[i].a]&&
 		   withinTol[mesh.tris[i].b]&&
 		   withinTol[mesh.tris[i].c]);
-    if(coplanar && p.normal.dot(mesh.TriangleNormal(i) > 0)) {
+    if(coplanar && p.normal.dot(mesh.TriangleNormal(i)) > 0) {
       tris.push_back(i);
     }
   }
