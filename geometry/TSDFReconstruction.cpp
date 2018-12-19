@@ -787,118 +787,119 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
     //for(auto i : blockpoints[j]) {
     for(auto listptr : blockpoints[j]) {
       POINTINDEXLIST& ptlist = *listptr;
-      for(auto i : ptlist)
+      for(auto i : ptlist) {
         assert(i >= 0 && i < pc.points.size());
-    for(auto i : ptlist) {
-      const Vector3& p = pc.points[i];
-      Real zmin = p.z - truncationDistance;
-      Real zmax = p.z + truncationDistance;
-      Real zinv = 1.0/p.z;
-      s.a.x = p.x * zmin*zinv;
-      s.a.y = p.y * zmin*zinv;
-      s.a.z = zmin;
-      s.b.x = p.x * zmax*zinv;
-      s.b.y = p.y * zmax*zinv;
-      s.b.z = zmax;
-      s.a = Tcamera*s.a;
-      s.b = Tcamera*s.b;
-      if(self->colored) {
-        for(int c=0;c<3;c++)
-          pointRgb[c] = (unsigned char)((*data->colors)[i][c]*255.0);
       }
-      //clamp segment to bbox
-      Real u1=0,u2=1;
-      if(!ClipLine(s.a,s.b-s.a,b->grid.channels[0].bb,u1,u2)) {
-        //cout<<"Skipping point "<<i<<" bbox "<<b->grid.channels[0].bb<<endl;;
-        continue;
-      }
-      if(u1 > 0 || u2 < 1) {
-        Vector3 va = s.a + Max(0.0,u1)*(s.b-s.a);
-        Vector3 vb = s.a + Min(1.0,u2)*(s.b-s.a);
-        s.a = va;
-        s.b = vb;
-      }
-      Vector3 wp = Tcamera*p;
-      Vector3 ray = wp - Tcamera.t;
-      ray.inplaceNormalize();
+      for(auto i : ptlist) {
+        const Vector3& p = pc.points[i];
+        Real zmin = p.z - truncationDistance;
+        Real zmax = p.z + truncationDistance;
+        Real zinv = 1.0/p.z;
+        s.a.x = p.x * zmin*zinv;
+        s.a.y = p.y * zmin*zinv;
+        s.a.z = zmin;
+        s.b.x = p.x * zmax*zinv;
+        s.b.y = p.y * zmax*zinv;
+        s.b.z = zmax;
+        s.a = Tcamera*s.a;
+        s.b = Tcamera*s.b;
+        if(self->colored) {
+          for(int c=0;c<3;c++)
+            pointRgb[c] = (unsigned char)((*data->colors)[i][c]*255.0);
+        }
+        //clamp segment to bbox
+        Real u1=0,u2=1;
+        if(!ClipLine(s.a,s.b-s.a,b->grid.channels[0].bb,u1,u2)) {
+          //cout<<"Skipping point "<<i<<" bbox "<<b->grid.channels[0].bb<<endl;;
+          continue;
+        }
+        if(u1 > 0 || u2 < 1) {
+          Vector3 va = s.a + Max(0.0,u1)*(s.b-s.a);
+          Vector3 vb = s.a + Min(1.0,u2)*(s.b-s.a);
+          s.a = va;
+          s.b = vb;
+        }
+        Vector3 wp = Tcamera*p;
+        Vector3 ray = wp - Tcamera.t;
+        ray.inplaceNormalize();
 
-      Real certainty = 1.0/(self->depthStddev0+p.z*self->depthStddev1);
-      Real sweight = weight*certainty;
+        Real certainty = 1.0/(self->depthStddev0+p.z*self->depthStddev1);
+        Real sweight = weight*certainty;
 
-      if(DEBUG) {
-        data->pointTime += timer.ElapsedTime();
-        timer.Reset();
-      }
-      //cout<<"Segment "<<s.a<<" -- "<<s.b<<endl;
-      Meshing::GetSegmentCells(s,depthGrid.m,depthGrid.n,depthGrid.p,b->grid.channels[0].bb,cells);
-      if(oldWeightScale != 1.0) {
+        if(DEBUG) {
+          data->pointTime += timer.ElapsedTime();
+          timer.Reset();
+        }
+        //cout<<"Segment "<<s.a<<" -- "<<s.b<<endl;
+        Meshing::GetSegmentCells(s,depthGrid.m,depthGrid.n,depthGrid.p,b->grid.channels[0].bb,cells);
+        if(oldWeightScale != 1.0) {
+          for(auto c : cells) {
+            if(c.a >= weightGrid.m) continue;
+            if(c.b >= weightGrid.n) continue;
+            if(c.c >= weightGrid.p) continue;
+            float& weight = weightGrid(c);
+            float& age = ageGrid(c);
+            if(weight > 1e-3)
+              weight *= Pow(float(oldWeightScale),scanFloat-age);
+            if(surfaceWeightGrid) {
+              float& surfaceWeight = (*surfaceWeightGrid)(c);
+              if(surfaceWeight > 1e-3)
+                surfaceWeight *= Pow(float(oldWeightScale),scanFloat-age);
+            }
+          }
+        }
+        data->numChangedCells += (int)cells.size();
         for(auto c : cells) {
           if(c.a >= weightGrid.m) continue;
           if(c.b >= weightGrid.n) continue;
           if(c.c >= weightGrid.p) continue;
+          float& dval = depthGrid(c);
           float& weight = weightGrid(c);
           float& age = ageGrid(c);
-          if(weight > 1e-3)
-            weight *= Pow(float(oldWeightScale),scanFloat-age);
-          if(surfaceWeightGrid) {
+          //tsdf.GetCenter(c,cc);
+          cc.x = c.a*center1.x;
+          cc.y = c.b*center1.y;
+          cc.z = c.c*center1.z;
+          cc += center0;
+          Real dcell = fwd.dot(cc-Tcamera.t);
+          //Real dsurf = cc.distance(wp);
+          //if(dcell < p.z)
+          //  dsurf = -dsurf;
+          Vector3 perp = cc-Tcamera.t - (ray*ray.dot(cc-Tcamera.t));
+          Real dperp = perp.norm();
+          Real dsurf = dcell - p.z;
+          //define a simple falloff
+          Real wscale = 1.0-Abs(dsurf+dperp)/truncationDistance;
+          if(wscale <= 0) continue;
+          Real u = wscale*sweight/(weight+wscale*sweight);
+          dval += u*(dsurf-dval);
+          if(self->surfaceWeightChannel>=0 && Abs(dsurf+dperp)*certainty < 3) {
             float& surfaceWeight = (*surfaceWeightGrid)(c);
-            if(surfaceWeight > 1e-3)
-              surfaceWeight *= Pow(float(oldWeightScale),scanFloat-age);
+            Real wsurf = Exp(-0.5*Sqr(dsurf+dperp)*certainty);
+            Real usurf = wsurf / (surfaceWeight+wsurf);
+            //TODO: figure out occupancy estimate
+            //Real pfree = 0.5*(Erf(dsurf*certainty)+1);
+            //vox.occupancy += pfree*(-vox.occupancy);
+            if(self->colored) {
+              unsigned char* rgb = reinterpret_cast<unsigned char*>(&(*rgbGrid)(c));
+              for(int c=0;c<3;c++)
+                rgb[c] = (unsigned char)(rgb[c] + usurf*(pointRgb[c] - rgb[c]));
+            }
+            for(size_t k=0;k<self->auxiliaryAttributes.size();k++) {
+              Real vnew = pc.properties[i][self->auxiliaryAttributes[k]];
+              float& v = b->grid.channels[self->auxiliaryChannelStart+k].value(c);
+              v += usurf*(vnew - v);
+            }
+            surfaceWeight += wsurf;
           }
+          age = scanFloat;
+          weight += wscale*sweight;
+        }
+        if(DEBUG) {
+          data->cellTime += timer.ElapsedTime();
+          timer.Reset();
         }
       }
-      data->numChangedCells += (int)cells.size();
-      for(auto c : cells) {
-        if(c.a >= weightGrid.m) continue;
-        if(c.b >= weightGrid.n) continue;
-        if(c.c >= weightGrid.p) continue;
-        float& dval = depthGrid(c);
-        float& weight = weightGrid(c);
-        float& age = ageGrid(c);
-        //tsdf.GetCenter(c,cc);
-        cc.x = c.a*center1.x;
-        cc.y = c.b*center1.y;
-        cc.z = c.c*center1.z;
-        cc += center0;
-        Real dcell = fwd.dot(cc-Tcamera.t);
-        //Real dsurf = cc.distance(wp);
-        //if(dcell < p.z)
-        //  dsurf = -dsurf;
-        Vector3 perp = cc-Tcamera.t - (ray*ray.dot(cc-Tcamera.t));
-        Real dperp = perp.norm();
-        Real dsurf = dcell - p.z;
-        //define a simple falloff
-        Real wscale = 1.0-Abs(dsurf+dperp)/truncationDistance;
-        if(wscale <= 0) continue;
-        Real u = wscale*sweight/(weight+wscale*sweight);
-        dval += u*(dsurf-dval);
-        if(self->surfaceWeightChannel>=0 && Abs(dsurf+dperp)*certainty < 3) {
-          float& surfaceWeight = (*surfaceWeightGrid)(c);
-          Real wsurf = Exp(-0.5*Sqr(dsurf+dperp)*certainty);
-          Real usurf = wsurf / (surfaceWeight+wsurf);
-          //TODO: figure out occupancy estimate
-          //Real pfree = 0.5*(Erf(dsurf*certainty)+1);
-          //vox.occupancy += pfree*(-vox.occupancy);
-          if(self->colored) {
-            unsigned char* rgb = reinterpret_cast<unsigned char*>(&(*rgbGrid)(c));
-            for(int c=0;c<3;c++)
-              rgb[c] = (unsigned char)(rgb[c] + usurf*(pointRgb[c] - rgb[c]));
-          }
-          for(size_t k=0;k<self->auxiliaryAttributes.size();k++) {
-            Real vnew = pc.properties[i][self->auxiliaryAttributes[k]];
-            float& v = b->grid.channels[self->auxiliaryChannelStart+k].value(c);
-            v += usurf*(vnew - v);
-          }
-          surfaceWeight += wsurf;
-        }
-        age = scanFloat;
-        weight += wscale*sweight;
-      }
-      if(DEBUG) {
-        data->cellTime += timer.ElapsedTime();
-        timer.Reset();
-      }
-    }
     }
   }
 }
