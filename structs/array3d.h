@@ -62,7 +62,7 @@ class Array3D
   
   bool find(const T& item,int& i,int& j,int& k) const;
   bool find(const T& item,IntTriple& t) const { return find(item,t.a,t.b,t.c); }
-  inline bool contains(const T& item) const { int i,j,k; return find(item,i,j); }
+  inline bool contains(const T& item) const { int i,j,k; return find(item,i,j,k); }
   void set(const T& item);
   void set(const Array3D<T>&);
   void swap(Array3D<T>&);
