@@ -189,7 +189,7 @@ inline EdgePlannerPtr IsVisible(CSpace* w,const Config& a,const Config& b)
 {
   EdgePlannerPtr e=w->LocalPlanner(a,b);
   if(e->IsVisible()) return e;
-  return NULL;
+  return EdgePlannerPtr();
 }
 
 #endif
