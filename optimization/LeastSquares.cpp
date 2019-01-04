@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "LeastSquares.h"
 #include "QuadraticProgram.h"
 #include <math/MatrixPrinter.h>
@@ -45,10 +46,10 @@ bool LeastSquares::Solve(Vector& x) const
     MatrixEquation eq(Aeq,beq);
     if(!eq.AllSolutions(x0,N)) {
       if(verbose >= 1)
-	cerr<<"LeastSquares: Error solving for all solutions to equality constraints"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LeastSquares: Error solving for all solutions to equality constraints");
       if(verbose >= 2) {
-	cerr<<"Press any key to continue"<<endl;
-	getchar();
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Press any key to continue");
+	KrisLibrary::loggerWait();
       }
       return false;
     }
@@ -56,22 +57,22 @@ bool LeastSquares::Solve(Vector& x) const
       Vector r;
       eq.Residual(x0,r);
       if(r.norm() > 1e-4) {
-	cout<<"Residual of Aeq*x0=beq: "<<VectorPrinter(r)<<endl;
-	cout<<"Norm is "<<r.norm()<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Residual of Aeq*x0=beq: "<<VectorPrinter(r));
+	LOG4CXX_INFO(KrisLibrary::logger(),"Norm is "<<r.norm());
 	if(r.norm() > 1e-2) {
-	  cout<<MatrixPrinter(Aeq)<<endl;
-	  cout<<"Press any key to continue"<<endl;
-	  getchar();
+	  LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(Aeq));
+	  LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue");
+	  KrisLibrary::loggerWait();
 	  return false;
 	}
-	cout<<"Press any key to continue"<<endl;
-	getchar();
+	LOG4CXX_INFO(KrisLibrary::logger(),"Press any key to continue");
+	KrisLibrary::loggerWait();
       }
     }
 
     if(verbose >= 1) {
-      cout<<"Projecting problem on equality constraints"<<endl;
-      cout<<"Original dimension "<<A.n<<", nullspace dimension "<<N.n<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Projecting problem on equality constraints");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Original dimension "<<A.n<<", nullspace dimension "<<N.n);
     }
 
     //set bnew
@@ -81,17 +82,17 @@ bool LeastSquares::Solve(Vector& x) const
     A_new.mul(A,N);
 
     if(verbose >= 2) {
-      cout<<"x0: "<<VectorPrinter(x0)<<endl;
-      cout<<"N: "<<endl<<MatrixPrinter(N)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"x0: "<<VectorPrinter(x0));
+      LOG4CXX_INFO(KrisLibrary::logger(),"N: "<<MatrixPrinter(N)<<"\n");
     }
-    if(verbose >=1) cout<<"Solving transformed problem..."<<endl;
+    if(verbose >=1) LOG4CXX_INFO(KrisLibrary::logger(),"Solving transformed problem...");
       {
       MatrixEquation ls(A_new,b_new);
       if(!ls.LeastSquares(y)) {
-	cerr<<"LeastSquares: Error solving transformed least squares!!!"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LeastSquares: Error solving transformed least squares!!!");
 	if(verbose >=1) {
-	  cerr<<"Press any key to continue"<<endl;
-	  getchar();
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Press any key to continue");
+	  KrisLibrary::loggerWait();
 	}
 	return false;
       }
@@ -99,22 +100,22 @@ bool LeastSquares::Solve(Vector& x) const
     x=x0;
     N.madd(y,x);
     if(verbose >= 1) {
-      cout<<"Result of transformed problem: "<<VectorPrinter(y)<<endl;
-      cout<<"   in original space: "<<VectorPrinter(x)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Result of transformed problem: "<<VectorPrinter(y));
+      LOG4CXX_INFO(KrisLibrary::logger(),"   in original space: "<<VectorPrinter(x));
     }
   }
   else {
     if(Aineq.m == 0) {  //can just do regular least squares
       MatrixEquation ls(A,b);
       if(!ls.LeastSquares(x)) {
-	cout<<"Error solving for least squares!!!"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Error solving for least squares!!!");
 	return false;
       }
     }
     else {
       //form constrained quadratic program
       //min 0.5*x^t*A^t*A*x - A^t*b
-      if(Aineq.m < Aineq.n) cout<<"Warning: may not find solution, unbounded domain"<<endl;
+      if(Aineq.m < Aineq.n) LOG4CXX_WARN(KrisLibrary::logger(),"Warning: may not find solution, unbounded domain");
       QuadraticProgram qp;
       qp.Pobj.mulTransposeA(A,A);
       A.mulTranspose(b,qp.qobj); qp.qobj.inplaceNegative();
@@ -125,7 +126,7 @@ bool LeastSquares::Solve(Vector& x) const
     }
   }
   if(verbose >= 1) {
-    cout<<"LeastSquares solved."<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"LeastSquares solved.");
   }
   return true;
 }

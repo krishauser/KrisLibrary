@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "TriMeshTopology.h"
 #include <set>
 #include <queue>
@@ -50,6 +51,9 @@ void TriMeshWithTopology::CalcTriNeighbors()
   if(incidentTris.size()!=verts.size())
     CalcIncidentTris();
 
+  size_t numDuplicateNeighbors = 0;
+  size_t duplicateNeighborMin = tris.size();
+  size_t duplicateNeighborMax = 0;
   triNeighbors.resize(tris.size());
   for(size_t i=0;i<tris.size();i++) {
     const TriMesh::Tri& t=tris[i];
@@ -65,21 +69,18 @@ void TriMeshWithTopology::CalcTriNeighbors()
       if(t2.contains(t.b)) {
 	//edge ba
 	if(triNeighbors[i].c!=-1) {
-	  cerr<<"TriMeshTopology: mesh has two neighbors on the same edge!"<<endl;
-	  cerr<<"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].c<<" and "<<k<<" on edge a-b"<<endl;
-	  //cerr<<"Triangle "<<i<<": "<<tris[i]<<endl;
-	  //cerr<<"Neighbor 1: "<<tris[triNeighbors[i].c]<<endl;
-	  //cerr<<"Neighbor 2: "<<tris[k]<<endl;
-	  //getchar();
+    numDuplicateNeighbors += 1;
+    duplicateNeighborMin = Min(duplicateNeighborMin,i);
+    duplicateNeighborMax = Max(duplicateNeighborMax,i);
 	}
 	triNeighbors[i].c=k;
       }
       if(t2.contains(t.c)) {
 	//edge ac
 	if(triNeighbors[i].b!=-1) {
-	  cerr<<"TriMeshTopology: mesh has two neighbors on the same edge!"<<endl;
-	  cerr<<"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].b<<" and "<<k<<" on edge a-c"<<endl;
-	  //getchar();
+	  numDuplicateNeighbors += 1;
+    duplicateNeighborMin = Min(duplicateNeighborMin,i);
+    duplicateNeighborMax = Max(duplicateNeighborMax,i);
 	}
 	triNeighbors[i].b=k;
       }
@@ -93,13 +94,19 @@ void TriMeshWithTopology::CalcTriNeighbors()
       if(t2.contains(t.c)) {
 	//edge bc
 	if(triNeighbors[i].a!=-1) {
-	  cerr<<"TriMeshTopology: mesh has two neighbors on the same edge!"<<endl;
-	  cerr<<"Triangle "<<i<<" abuts triangles "<<triNeighbors[i].a<<" and "<<k<<" on edge b-c"<<endl;
-	  //getchar();
+	  numDuplicateNeighbors += 1;
+    duplicateNeighborMin = Min(duplicateNeighborMin,i);
+    duplicateNeighborMax = Max(duplicateNeighborMax,i);
 	}
 	triNeighbors[i].a=k;
       }
     }
+  }
+  if(numDuplicateNeighbors>0) {
+    LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: mesh has "<<numDuplicateNeighbors<<" triangles with duplicate neighbors!");
+    LOG4CXX_WARN(KrisLibrary::logger(),"  Triangle range "<<duplicateNeighborMin<<" to "<<duplicateNeighborMax);
+    LOG4CXX_WARN(KrisLibrary::logger(),"  May see strange results for some triangle mesh operations");
+    //KrisLibrary::loggerWait();
   }
 }
 
@@ -149,11 +156,11 @@ void TriMeshWithTopology::SplitEdge(int tri,int e,const Vector3& newPt)
   tris[tri].getCompliment(e,b,c);
   int ind1,ind2;
   if(!tris[adj].contains(b,ind1)) {
-    cout<<"Internal inconsistency!"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Internal inconsistency!");
     abort();
   }
   if(!tris[adj].contains(c,ind2)) {
-    cout<<"Internal inconsistency!"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Internal inconsistency!");
     abort();
   }
   int ea=3-ind1-ind2;

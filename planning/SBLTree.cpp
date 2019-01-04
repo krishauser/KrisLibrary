@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "SBLTree.h"
 #include <math/random.h>
 #include <errors.h>
@@ -176,22 +177,18 @@ struct LessEdgePriority
   {
     return a.e->Priority() < b.e->Priority();
   }
-  bool operator() (EdgePlanner* a,EdgePlanner* b) const
-  {
-    return a->Priority() < b->Priority();
-  }
 };
 
 bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeInfo>& outputPath)
 {
   CSpace* space=s->space;
   Assert(s->space == g->space);
-  //cout<<"Checking path!!!"<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Checking path!!!");
   Assert(s->HasNode(ns));
   Assert(g->HasNode(ng));
   Assert(outputPath.empty());
   //start -> ns -> ng -> goal
-  SmartPointer<EdgePlanner> bridge = space->LocalPlanner(*ns,*ng);  //edge from ns to ng
+  EdgePlannerPtr bridge = space->LocalPlanner(*ns,*ng);  //edge from ns to ng
 
   priority_queue<EdgeInfo,vector<EdgeInfo>,LessEdgePriority> q;
 
@@ -245,7 +242,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
     Config *a,*b;
     BisectionEpsilonEdgeChecker* bisectionEdge;
     try {
-      bisectionEdge=dynamic_cast<BisectionEpsilonEdgeChecker*>((EdgePlanner*)temp.e);
+      bisectionEdge=dynamic_cast<BisectionEpsilonEdgeChecker*>(temp.e);
     }
     catch(exception& e) {
       FatalError("SBLPlanner is unable to cast edge planner to BisectionEpsilonEdgeChecker - turn off USE_PLAN_EXTENSIONS in SBLTree.cpp");
@@ -258,11 +255,11 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
 
       //disconnect!
       if(temp.e == bridge) {
-	//cout<<"Disconnecting edge between connected nodes"<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge between connected nodes");
 	bridge = NULL;
       }
       else if(s->HasNode(temp.s)) {
-	//cout<<"Disconnecting edge on start tree"<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on start tree");
 	//disconnect tree from s->t
 	temp.s->detachChild(temp.t);
 	Assert(temp.t == ns || temp.t->hasDescendent(ns));
@@ -277,7 +274,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
 	Assert(s->root->getParent()==NULL);
       }
       else {     //on goal tree
-	//cout<<"Disconnecting edge on goal tree"<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on goal tree");
 	Assert(g->HasNode(temp.t));
 	//disconnect tree from s->t
 	temp.t->detachChild(temp.s);
@@ -301,19 +298,19 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
       if(space->Distance(q,*temp.t) > kMinExtensionLength) {
 	g->AddChild(temp.t,q);
       }
-      //cout<<"CheckPath: Failed on edge of length "<<len<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"CheckPath: Failed on edge of length "<<len);
       return false;
     }
 #else
     if(!temp.e->Plan()) {
       //disconnect!
       if(temp.e == bridge) {
-	//cout<<"Disconnecting edge between connected nodes"<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge between connected nodes");
 	//no change in graph
 	bridge = NULL;
       }
       else if(s->HasNode(temp.s)) {
-	//cout<<"Disconnecting edge on start tree"<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on start tree");
 	//disconnect tree from s->t
 	temp.s->detachChild(temp.t);
 	Assert(temp.t == ns || temp.t->hasDescendent(ns));
@@ -328,7 +325,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
 	Assert(s->root->getParent()==NULL);
       }
       else {     //on goal tree
-	//cout<<"Disconnecting edge on goal tree"<<endl;
+	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on goal tree");
 	Assert(g->HasNode(temp.t));
 	//disconnect tree from s->t
 	temp.t->detachChild(temp.s);
@@ -351,7 +348,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
   }
 
   //done!
-  //cout<<"Path checking success"<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Path checking success");
 
   //check the reversed flags for the output path
   for(list<EdgeInfo>::iterator i=outputPath.begin();i!=outputPath.end();i++) {
@@ -367,7 +364,7 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
 
 bool SBLTree::CheckPath(SBLTree* t,Node* ns,Node* ng,MilestonePath& outputPath)
 {
-  //cout<<"Checking path!!!"<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Checking path!!!");
   Assert(t->HasNode(ns));
   Assert(ns->hasAncestor(ng) || ng->hasAncestor(ns));
   if(!ng->hasAncestor(ns))
@@ -398,7 +395,7 @@ bool SBLTree::CheckPath(SBLTree* t,Node* ns,Node* ng,MilestonePath& outputPath)
     if(temp.e->Done()) continue;
     if(!temp.e->Plan()) {
       //disconnect!
-      //cout<<"Disconnecting edge on start tree"<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on start tree");
       t->DeleteSubtree(temp.t);
       outputPath.edges.clear();
       return false;
@@ -492,7 +489,7 @@ void SBLTreeWithGrid::InitDefaultGrid(int numDims,Real h)
 
 void SBLTreeWithGrid::RandomizeSubset()
 {
-  //cout<<"SBLTreeWithGrid: Randomizing subset"<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"SBLTreeWithGrid: Randomizing subset");
   A.Clear();
   A.Randomize(space->NumDimensions(),3,gridDivision);
 

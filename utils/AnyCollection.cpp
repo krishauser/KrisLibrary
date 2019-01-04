@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "AnyCollection.h"
 #include "stringutils.h"
 #include "ioutils.h"
@@ -17,14 +18,14 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
 {
   EatWhitespace(in);
   if(!in) {
-    printf("ReadValue: hit end of file\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: hit end of file\n");
     return false;
   }
   if(in.peek() == '"') {
     //beginning of string
     std::string str;
     if(!InputQuotedString(in,str)) {
-      printf("ReadValue: unable to read quoted string\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: unable to read quoted string\n");
       return false;
     }
     value = str;
@@ -37,7 +38,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
     value = c;
     char end=in.get();
     if(end != '\'') {
-      printf("ReadValue: character not delimited properly\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: character not delimited properly\n");
       return false;
     }
     return true;
@@ -52,7 +53,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       }
     }
     if(str.empty()) {
-      printf("ReadValue: read an empty string\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: read an empty string\n");
       return false;
     }
     if(IsValidInteger(str.c_str())) {
@@ -87,7 +88,7 @@ bool ReadValue(AnyValue& value,std::istream& in,const std::string& delims)
       //check for invalid values
       for(size_t i=0;i<str.length();i++) {
 	if(!(isalnum(str[i])||str[i]=='_')) {
-	  std::cerr<<"ReadValue: Invalid basic data type \""<<str<<"\""<<std::endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"ReadValue: Invalid basic data type \""<<str<<"\"");
 	  return false;
 	}
       }
@@ -304,7 +305,7 @@ void AnyCollection::resize(size_t n)
     FatalError("AnyCollection::resize(): Cannot resize value without clearing first\n");
   }
   if(type == Map) {
-    std::cout<<*this<<std::endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),*this);
     //TODO: check to see if there are integer entries
     FatalError("AnyCollection::resize(): Cannot resize map without clearing first\n");
   }
@@ -312,7 +313,7 @@ void AnyCollection::resize(size_t n)
   array.resize(n,NULL);
   for(size_t i=0;i<n;i++) {
     if(!array[i])
-      array[i] = new AnyCollection;
+      array[i].reset(new AnyCollection);
   }
 }
 
@@ -323,14 +324,14 @@ void AnyCollection::clear()
   map.clear();
 }
 
-SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<std::string>& path,bool doinsert)
+std::shared_ptr<AnyCollection> AnyCollection::lookup(const std::vector<std::string>& path,bool doinsert)
 {
   if(path.empty()) {
-    SmartPointer<AnyCollection> res = new AnyCollection;
+    std::shared_ptr<AnyCollection> res(new AnyCollection);
     res->shallow_copy(*this);
     return res;
   }
-  SmartPointer<AnyCollection> entry;
+  std::shared_ptr<AnyCollection> entry;
   if(type == Array) {
     int index;
     if(!LexicalCast(path[0],index)) {
@@ -383,7 +384,7 @@ SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<std::string>
   }
 
   for(size_t i=1;i<path.size();i++) {
-    SmartPointer<AnyCollection> child;
+    std::shared_ptr<AnyCollection> child;
     if(entry->type == Array) {
       int index;
       if(!LexicalCast(path[i],index)) {
@@ -434,14 +435,14 @@ SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<std::string>
   return entry;
 }
 
-SmartPointer<AnyCollection> AnyCollection::lookup(const std::vector<AnyKeyable>& path,bool doinsert)
+std::shared_ptr<AnyCollection> AnyCollection::lookup(const std::vector<AnyKeyable>& path,bool doinsert)
 {
   if(path.empty()) {
-    SmartPointer<AnyCollection> res = new AnyCollection;
+    std::shared_ptr<AnyCollection> res(new AnyCollection);
     res->shallow_copy(*this);
     return res;
   }
-  SmartPointer<AnyCollection> entry;
+  std::shared_ptr<AnyCollection> entry;
   if(doinsert) entry = insert(path[0]);
   else entry = find(path[0]);
   if(!entry) {
@@ -478,11 +479,11 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       }
       else {
 	if(reference[i]==rbracket) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: unexpected right bracket in position "<<(int)i);
 	  return false;
 	}
 	if(i!=0) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected string in position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: unexpected string in position "<<(int)i);
 	  return false;
 	}
 	mode = 1;
@@ -492,7 +493,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
     case 1: //reading member key
       if(reference[i]=='\"') {
 	if(i>start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation at position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: unexpected quotation at position "<<(int)i);
 	  return false;
 	}
 	mode = 3;
@@ -501,7 +502,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       else if(reference[i]==delim || reference[i]==lbracket) { 
 	//read out path entry
 	if(i<start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: empty reference string in position %d, start of ref in position %d\n",(int)i,(int)start);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: empty reference string in position "<<(int)i<<", start of ref in position "<<(int)start);
 	  return false;
 	}
 	path.push_back(reference.substr(start,i-start));
@@ -510,14 +511,14 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
 	else mode = 1; //ending at delim
       }
       else if(reference[i]==rbracket) {
-	fprintf(stderr,"AnyCollection::parse_reference: unexpected right bracket in position %d\n",(int)i);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: unexpected right bracket in position "<<(int)i);
 	return false;
       }
       break;
     case 2: //reading array key
       if(reference[i]=='\"') {
 	if(i>start+1) {
-	  fprintf(stderr,"AnyCollection::parse_reference: unexpected quotation in key at position %d\n",(int)i);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: unexpected quotation in key at position "<<(int)i);
 	  return false;
 	}
 	mode = 4;
@@ -528,7 +529,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
 	mode = 0;
       }
       else if(reference[i]==lbracket || reference[i]==delim) {
-	fprintf(stderr,"AnyCollection::parse_reference: unexpected character %c in key in position %d\n",reference[i],(int)i);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: unexpected character "<<reference[i]<<" in key in position "<<(int)i);
 	return false;
       }
       break;
@@ -546,7 +547,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
       break;
     case 5: //end of quoted array key
       if(reference[i]!=rbracket) {
-	fprintf(stderr,"AnyCollection::parse_reference: quoted array key must be followed by right bracket at position %d\n",(int)i);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: quoted array key must be followed by right bracket at position "<<(int)i);
 	return false;
       }
       mode = 0;
@@ -558,7 +559,7 @@ bool AnyCollection::parse_reference(const std::string& reference,std::vector<std
     path.push_back(reference.substr(start,reference.length()-start));
   }
   if(mode >= 2) {
-    fprintf(stderr,"AnyCollection::parse_reference: unexpected termination of reference\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::parse_reference: unexpected termination of reference\n");
     return false;
   }
   return true;
@@ -568,11 +569,11 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
 {
   key_path.resize(path.size());
   if(path.empty()) return true;
-  SmartPointer<AnyCollection> entry;
+  std::shared_ptr<AnyCollection> entry;
   if(type == Array) {
     int index;
     if(!LexicalCast(path[0],index)) {
-      fprintf(stderr,"AnyCollection::lookup(): invalid array index %s\n",path[0].c_str());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::lookup(): invalid array index "<<path[0].c_str());
       return false;
     }
     key_path[0] = AnyKeyable(index);
@@ -596,11 +597,11 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
   else return false;
 
   for(size_t i=1;i<path.size();i++) {
-    SmartPointer<AnyCollection> child;
+    std::shared_ptr<AnyCollection> child;
     if(type == Array) {
       int index;
       if(!LexicalCast(path[i],index)) {
-	fprintf(stderr,"AnyCollection::lookup(): invalid array index %s\n",path[i].c_str());
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::lookup(): invalid array index "<<path[i].c_str());
 	return false;
       }
       key_path[i] = AnyKeyable(index);
@@ -625,21 +626,21 @@ bool AnyCollection::match_path(const std::vector<std::string>& path,std::vector<
   return true;
 }
 
-SmartPointer<AnyCollection> AnyCollection::lookup(const std::string& reference,bool insert,char delim,char lbracket,char rbracket)
+std::shared_ptr<AnyCollection> AnyCollection::lookup(const std::string& reference,bool insert,char delim,char lbracket,char rbracket)
 {
   std::vector<std::string> path;
   if(!parse_reference(reference,path,delim,lbracket,rbracket)) {
-    fprintf(stderr,"AnyCollection::lookup: unable to parse reference string %s\n",reference.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::lookup: unable to parse reference string "<<reference.c_str());
     return NULL;
   }
   return lookup(path,insert);
 }
 
-SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,const char* delims)
+std::shared_ptr<AnyCollection> AnyCollection::slice(const std::string& reference,const char* delims)
 {
-  SmartPointer<AnyCollection> res;
+  std::shared_ptr<AnyCollection> res;
   if(reference.empty()) {
-    res = new AnyCollection;
+    res.reset(new AnyCollection);
     res->shallow_copy(*this);
     return res;
   }
@@ -650,7 +651,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
   char comma = delims[4];
   if(reference[0]==member) {
     if(type != Map) {
-      fprintf(stderr,"AnyCollection: slice reference %s in a non-map type\n",reference.c_str());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: slice reference "<<reference.c_str());
       return NULL;
     }
     //parse out the key lookup
@@ -660,7 +661,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	pos = (int)i;
       }
     std::string key = reference.substr(1,pos-1);
-    SmartPointer<AnyCollection> res=find(key);
+    std::shared_ptr<AnyCollection> res=find(key);
     if(res) return res->slice(reference.substr(pos,reference.length()-pos),delims);
     return NULL;
   }
@@ -672,7 +673,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	pos = (int)i;
       }
     if(pos < 0) {
-      fprintf(stderr,"AnyCollection: lookup reference %s has unterminated bracket\n",reference.c_str());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: lookup reference "<<reference.c_str());
       return NULL;
     }
     std::string key = reference.substr(1,pos-1);
@@ -682,26 +683,26 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
       if(type == Array) {
 	//cast to an integer
 	if(!IsValidInteger(key.c_str())) {
-	  fprintf(stderr,"AnyCollection: lookup index %s is not a valid integer\n",key.c_str());
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: lookup index "<<key.c_str());
 	  return NULL;
 	}
 	int index;
 	std::stringstream ss(key);
 	ss>>index;
-	SmartPointer<AnyCollection> res=find(index);
+	std::shared_ptr<AnyCollection> res=find(index);
 	if(res) return res->slice(reference.substr(pos+1,reference.length()-pos-1),delims);
 	return NULL;
       }
       else {
 	//lookup 
-	SmartPointer<AnyCollection> res=find(key);
+	std::shared_ptr<AnyCollection> res=find(key);
 	if(res) return res->slice(reference.substr(pos+1,reference.length()-pos-1),delims);
 	return NULL;
       }
     }
     else {
       //complex key
-      res = new AnyCollection;
+      res.reset(new AnyCollection);
       //TODO split keys into subsets
       std::string slice1,slice2;
       std::vector<std::string> elements;
@@ -714,27 +715,27 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	  if(islice1 < 0) {
 	    islice1 = islice1 + (int)array.size();
 	    if(islice1 < 0) {
-	      fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice1-(int)array.size());
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: Invalid array index "<<islice1-(int)array.size());
 	      return NULL;
 	    }
 	  }
 	  else if (islice1 >= (int)array.size()) {
-	    fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice1);
+	    	    LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: Invalid array index "<<islice1);
 	    return NULL;
 	  }
 	  if(islice2 < 0) {
 	    islice2 = islice2 + (int)array.size();
 	    if(islice2 < 0) {
-	      fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice2-(int)array.size());
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: Invalid array index "<<islice2-(int)array.size());
 	      return NULL;
 	    }
 	  }
 	  else if (islice2 >= (int)array.size()) {
-	    fprintf(stderr,"AnyCollection: Invalid array index %d\n",islice2);
+	    	    LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: Invalid array index "<<islice2);
 	    return NULL;
 	  }
 	  if(islice1 > islice2) {
-	    fprintf(stderr,"AnyCollection: Invalid array slice %d:%d\n",islice1,islice2);
+	    	    LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: Invalid array slice "<<islice1<<":"<<islice2);
 	    return NULL;
 	  }
 	  for(int i=islice1;i<islice2;i++) {
@@ -746,7 +747,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
 	  //go through the elements
 	  for(size_t i=0;i<ielements.size();i++) {
 	    if(ielements[i] < 0 || ielements[i] >= (int)array.size()) {
-	      fprintf(stderr,"AnyCollection: Invalid array index %d\n",ielements[i]);
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: Invalid array index "<<ielements[i]);
 	      return NULL;
 	    }
 	    res->array.push_back(array[ielements[i]]->slice(reference.substr(pos+1,reference.length()-pos-1),delims));
@@ -761,7 +762,7 @@ SmartPointer<AnyCollection> AnyCollection::slice(const std::string& reference,co
     return NULL;
   }
   else {
-    fprintf(stderr,"AnyCollection: cannot lookup reference %s in a primitive type\n",reference.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: cannot lookup reference "<<reference.c_str());
     return NULL;
   }
 }
@@ -782,7 +783,7 @@ bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyColle
     else {
       std::vector<std::string> path;
       if(!parse_reference(paths[i],path,member,lbracket,rbracket)) {
-	fprintf(stderr,"AnyCollection::subcollection(): error parsing path %s\n",paths[i].c_str());
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::subcollection(): error parsing path "<<paths[i].c_str());
 	return false;
       }
       //parse strings into ints if necessary
@@ -796,9 +797,9 @@ bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyColle
 	else
 	  key_path[j] = AnyKeyable(path[j]);
       }
-      SmartPointer<AnyCollection> item = lookup(key_path);
+      std::shared_ptr<AnyCollection> item = lookup(key_path);
       if(!item) {
-	fprintf(stderr,"AnyCollection::subcollection(): invalid item %s\n",paths[i].c_str());
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::subcollection(): invalid item "<<paths[i].c_str());
 	return false;
       }
       subset.lookup(key_path,true)->deepmerge(*item);
@@ -807,7 +808,7 @@ bool AnyCollection::subcollection(const std::vector<std::string>& paths,AnyColle
   return true;
 }
 
-SmartPointer<AnyCollection> AnyCollection::find(int i) const
+std::shared_ptr<AnyCollection> AnyCollection::find(int i) const
 {
   if(type == Array) {
     if(i < 0 || i >= (int)array.size()) return NULL;
@@ -820,13 +821,13 @@ SmartPointer<AnyCollection> AnyCollection::find(int i) const
   return NULL;
 }
 
-SmartPointer<AnyCollection> AnyCollection::find(const char* str) const
+std::shared_ptr<AnyCollection> AnyCollection::find(const char* str) const
 {
   if(type != Map) return NULL;
   return find(AnyKeyable(std::string(str)));
 }
 
-SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
+std::shared_ptr<AnyCollection> AnyCollection::find(AnyKeyable key) const
 {
   if(type == Array) {
     if(key.value.hastype<int>())
@@ -844,7 +845,7 @@ SmartPointer<AnyCollection> AnyCollection::find(AnyKeyable key) const
   return NULL;
 }
 
-SmartPointer<AnyCollection> AnyCollection::insert(int index)
+std::shared_ptr<AnyCollection> AnyCollection::insert(int index)
 {
   if(type == None) {
     if(index==0) { // first array reference
@@ -861,7 +862,7 @@ SmartPointer<AnyCollection> AnyCollection::insert(int index)
       size_t start = array.size();
       array.resize(index+1);
       for(int i=start;i<(int)array.size();i++)
-	array[i] = new AnyCollection();
+	array[i].reset(new AnyCollection());
     }
     else if(index > (int)array.size()) {
       //convert to a map
@@ -871,7 +872,7 @@ SmartPointer<AnyCollection> AnyCollection::insert(int index)
       for(size_t i=0;i<array.size();i++)
 	map[(int)i] = array[i];
       array.clear();
-      map[index] = new AnyCollection();
+      map[index].reset(new AnyCollection());
       return map[index];
     }
     return array[index];
@@ -884,12 +885,12 @@ SmartPointer<AnyCollection> AnyCollection::insert(int index)
   return NULL;
 }
 
-SmartPointer<AnyCollection> AnyCollection::insert(const char* str)
+std::shared_ptr<AnyCollection> AnyCollection::insert(const char* str)
 {
   return insert(AnyKeyable(std::string(str)));
 }
 
-SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
+std::shared_ptr<AnyCollection> AnyCollection::insert(AnyKeyable key)
 {
   if(type == None) {
     //if the key is an integer, try turning it into an array
@@ -927,14 +928,14 @@ SmartPointer<AnyCollection> AnyCollection::insert(AnyKeyable key)
       size_t start = array.size();
       array.resize(index+1);
       for(size_t i=start;i<array.size();i++)
-	array[i] = new AnyCollection();
+        array[i].reset(new AnyCollection());
     }
     return array[index];
   }
   else if(type == Map) {
     MapType::iterator i=map.find(key);
     if(i == map.end()) {
-      map[key] = new AnyCollection;
+      map[key].reset(new AnyCollection());
       return map[key];
     }
     return i->second;
@@ -961,7 +962,7 @@ AnyCollection& AnyCollection::operator[](int index)
       size_t start = array.size();
       array.resize(index+1);
       for(size_t i=start;i<array.size();i++)
-	array[i] = new AnyCollection();
+	array[i].reset(new AnyCollection());
     }
     return *array[index];
   }
@@ -1028,14 +1029,14 @@ AnyCollection& AnyCollection::operator[](AnyKeyable key)
       size_t start = array.size();
       array.resize(index+1);
       for(int i=start;i<(int)array.size();i++)
-	array[i] = new AnyCollection();
+	array[i].reset(new AnyCollection());
     }
     return *array[index];
   }
   else if(type == Map) {
     MapType::iterator i=map.find(key);
     if(i == map.end()) {
-      map[key] = new AnyCollection;
+      map[key].reset(new AnyCollection());
       return *map[key];
     }
     return *i->second;
@@ -1063,9 +1064,9 @@ const AnyCollection& AnyCollection::operator[](AnyKeyable key) const
     MapType::const_iterator i=map.find(key);
     if(i == map.end()) {
       return nullCollection;
-      std::cerr<<"AnyCollection: const [] accessor can't find key";
+      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection: const [] accessor can't find key");
       WriteValue(key.value,std::cerr);
-      std::cerr<<std::endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"\n");
       Abort();
       return *this;
     }
@@ -1095,13 +1096,13 @@ void AnyCollection::deep_copy(const AnyCollection& rhs)
   else if(type == Array) {
     array.resize(rhs.array.size());
     for(size_t i=0;i<rhs.array.size();i++) {
-      array[i] = new AnyCollection;
+      array[i].reset(new AnyCollection);
       array[i]->deep_copy(*rhs.array[i]);
     }
   }
   else if(type == Map) {
     for(MapType::const_iterator i=rhs.map.begin();i!=rhs.map.end();i++) {
-      map[i->first] = new AnyCollection;
+      map[i->first].reset(new AnyCollection);
       map[i->first]->deep_copy(*i->second);
     }
   }
@@ -1171,7 +1172,7 @@ size_t AnyCollection::depth() const
   return -1;
 }
 
-void AnyCollection::enumerate(std::vector<SmartPointer<AnyCollection> >& collections) const
+void AnyCollection::enumerate(std::vector<std::shared_ptr<AnyCollection> >& collections) const
 {
   collections.resize(0);
   if(type == Array) {
@@ -1300,7 +1301,7 @@ void AnyCollection::deepmerge(const AnyCollection& other)
       array.clear();
       type = Map;
       for(MapType::const_iterator i=other.map.begin();i!=other.map.end();i++) {
-	SmartPointer<AnyCollection>& lhs = map[i->first];
+	std::shared_ptr<AnyCollection>& lhs = map[i->first];
 	if(i->second->collection() && lhs->collection())
 	  lhs->deepmerge(*i->second);
 	else
@@ -1321,7 +1322,7 @@ void AnyCollection::deepmerge(const AnyCollection& other)
   else {
     if(other.type == Array) {
       for(size_t i=0;i<other.array.size();i++) {
-	SmartPointer<AnyCollection>& lhs = map[(int)i];
+	std::shared_ptr<AnyCollection>& lhs = map[(int)i];
 	if(other.array[i]->collection() && lhs->collection())
 	  lhs->deepmerge(*other.array[i]);
 	else
@@ -1330,7 +1331,7 @@ void AnyCollection::deepmerge(const AnyCollection& other)
     }
     else {
       for(MapType::const_iterator i=other.map.begin();i!=other.map.end();i++) {
-	SmartPointer<AnyCollection>& lhs = map[i->first];
+	std::shared_ptr<AnyCollection>& lhs = map[i->first];
 	if(i->second->collection() && lhs->collection())
 	  lhs->deepmerge(*i->second);
 	else
@@ -1395,29 +1396,28 @@ bool AnyCollection::read(std::istream& in)
       return true;
     }
     //read list
-    SmartPointer<AnyCollection> value;
-    value = new AnyCollection();
+    std::shared_ptr<AnyCollection> value(new AnyCollection());
     if(!value->read(in)) {
-      fprintf(stderr,"AnyCollection::read(): failed on array item %d\n",(int)array.size());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): failed on array item "<<(int)array.size());
       return false;
     }
     array.push_back(value);
     EatWhitespace(in);
     while(in.peek() != ']') {
       if(in.get() != ',') {
-	std::cerr<<"AnyCollection::read(): List not separated by commas"<<std::endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): List not separated by commas");
 	return false;
       }
-      value = new AnyCollection();
+      value.reset(new AnyCollection());
       if(!value->read(in)) {
-	fprintf(stderr,"AnyCollection::read(): failed on array item %d\n",(int)array.size());
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): failed on array item "<<(int)array.size());
 	return false;
       }
       array.push_back(value);
       EatWhitespace(in);
     }
     if(!in) {
-      fprintf(stderr,"AnyCollection::read(): file ended before end-of-list item %d\n",(int)array.size());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): file ended before end-of-list item "<<(int)array.size());
       return false;
     }
     in.get();
@@ -1434,25 +1434,25 @@ bool AnyCollection::read(std::istream& in)
     }
     //read list
     AnyKeyable key;
-    SmartPointer<AnyCollection> value;
+    std::shared_ptr<AnyCollection> value;
     while(true) {
       if(!ReadValue(key.value,in,":")) {
-	fprintf(stderr,"AnyCollection::read(): failed on map item %d\n",(int)map.size());
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): failed on map item "<<(int)map.size());
 	return false;
       }
       EatWhitespace(in);
       if(in.peek() != ':') {
-	std::cerr<<"AnyCollection::read(): Map missing a colon-separator between key-value pair ";
+	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): Map missing a colon-separator between key-value pair ");
 	WriteValue(key.value,std::cerr);
-	std::cerr<<std::endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"\n");
 	return false;
       }
       in.get();
-      value = new AnyCollection();
+      value.reset(new AnyCollection());
       if(!value->read(in)) {
-	std::cerr<<"AnyCollection::read(): couldn't read map value for key ";
+	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): couldn't read map value for key ");
 	WriteValue(key.value,std::cerr);
-	std::cerr<<std::endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"\n");
 	return false;
       }
       map[key] = value;
@@ -1460,7 +1460,7 @@ bool AnyCollection::read(std::istream& in)
       char c = in.get();
       if(c == '}') return true;
       if(c != ',') {
-	std::cerr<<"AnyCollection::read(): Map entries not separated by commas"<<std::endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read(): Map entries not separated by commas");
 	return false;
       }
     }
@@ -1469,14 +1469,14 @@ bool AnyCollection::read(std::istream& in)
     //could be part of a list or map
     type = Value;
     if(!ReadValue(value,in,",]}")) {
-      std::cerr<<"AnyCollection::read() Unable to read primitive value"<<std::endl;
+      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read() Unable to read primitive value");
       return false;
     }
     if(value.empty()) //read a null
       type = None;
     return true;
   }
-  std::cerr<<"AnyCollection::read() failed for some reason..."<<std::endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"AnyCollection::read() failed for some reason...");
   return false;
 }
 
@@ -1518,10 +1518,10 @@ void AnyCollection::write(std::ostream& out,int indent) const
     out<<"[";
     for(size_t i=0;i<array.size();i++) {
       if(i!=0) out<<", ";
-      if(!write_inline)	out<<"\n"<<std::string(indent+2,' ');
+      if(!write_inline)	out<<std::string(indent+2,' ');
       array[i]->write(out,indent+2);
     }
-    if(!write_inline)	out<<"\n"<<std::string(indent,' ');
+    if(!write_inline)	out<<std::string(indent,' ');
     out<<"]";
   }
   else {
@@ -1530,12 +1530,12 @@ void AnyCollection::write(std::ostream& out,int indent) const
     out<<"{";
     for(MapType::const_iterator i=map.begin();i!=map.end();i++) {
       if(i!=map.begin()) out<<", ";
-      if(!write_inline) out<<"\n"<<std::string(indent+2,' ');
+      if(!write_inline) out<<std::string(indent+2,' ');
       WriteValue(i->first.value,out);
       out<<": ";
       i->second->write(out,indent+2);
     }
-    if(!write_inline) out<<"\n"<<std::string(indent,' ');
+    if(!write_inline) out<<std::string(indent,' ');
     out<<"}";
   }
 }

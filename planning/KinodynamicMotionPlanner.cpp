@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "KinodynamicMotionPlanner.h"
 #include "CSetHelpers.h"
 #include <KrisLibrary/math/sample.h>
@@ -55,28 +56,28 @@ void KinodynamicTree::Init(const State& initialState)
 void KinodynamicTree::EnablePointLocation(const char* type)
 { 
   if(type == NULL) 
-    pointLocation = new NaivePointLocation(pointRefs,space->GetStateSpace());
+    pointLocation = make_shared<NaivePointLocation>(pointRefs,space->GetStateSpace().get());
   else if(0==strcmp(type,"kdtree")) {
     PropertyMap props;
     space->Properties(props);
     int euclidean;
     if(props.get("euclidean",euclidean) && euclidean == 0)
-      fprintf(stderr,"KinodynamicTree: Warning, requesting K-D tree point location for non-euclidean space\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree: Warning, requesting K-D tree point location for non-euclidean space\n");
 
     vector<Real> weights;
     if(props.getArray("metricWeights",weights)) {
-      pointLocation = new KDTreePointLocation(pointRefs,2,weights);
+      pointLocation = make_shared<KDTreePointLocation>(pointRefs,2,weights);
     }
     else {
-      pointLocation = new KDTreePointLocation(pointRefs);
+      pointLocation = make_shared<KDTreePointLocation>(pointRefs);
     }
   }
   else if(0==strcmp(type,"random"))
-    pointLocation = new RandomPointLocation(pointRefs);
+    pointLocation = make_shared<RandomPointLocation>(pointRefs);
   else
     FatalError("Invalid point location method %s\n",type);
   //rebuild point location data structures
-  printf("Rebuilding point location data structures\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Rebuilding point location data structures\n");
   VectorizeCallback callback;
   if(root) root->DFS(callback);
   index = callback.nodes;
@@ -109,7 +110,7 @@ Node* KinodynamicTree::AddMilestone(Node* parent, const ControlInput& u)
   return AddMilestone(parent,path,path.edges[0]);
 }
 
-Node* KinodynamicTree::AddMilestone(Node* parent,const ControlInput& u,const SmartPointer<Interpolator>& path,const SmartPointer<EdgePlanner>& e)
+Node* KinodynamicTree::AddMilestone(Node* parent,const ControlInput& u,const std::shared_ptr<Interpolator>& path,const EdgePlannerPtr& e)
 {
   Node* c;
   if(e->Start() == *parent) {
@@ -130,7 +131,7 @@ Node* KinodynamicTree::AddMilestone(Node* parent,const ControlInput& u,const Sma
   return c;
 }
 
-Node* KinodynamicTree::AddMilestone(Node* parent,KinodynamicMilestonePath& path,const SmartPointer<EdgePlanner>& e)
+Node* KinodynamicTree::AddMilestone(Node* parent,KinodynamicMilestonePath& path,const EdgePlannerPtr& e)
 {
   assert(*parent == path.milestones[0]);
   Node* c;
@@ -165,7 +166,7 @@ void KinodynamicTree::Reroot(Node* n)
 Node* KinodynamicTree::FindClosest(const State& x)
 {
   if(!pointLocation) {
-    fprintf(stderr,"KinodynamicTree::FindClosest: Warning, point location not enabled, now enabling it\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree::FindClosest: Warning, point location not enabled, now enabling it\n");
     EnablePointLocation();
   }
   int id;
@@ -177,7 +178,7 @@ Node* KinodynamicTree::FindClosest(const State& x)
 Node* KinodynamicTree::PickRandom()
 {
   if(!pointLocation) {
-    fprintf(stderr,"KinodynamicTree::PickRandom: Warning, point location not enabled, now enabling it\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree::PickRandom: Warning, point location not enabled, now enabling it\n");
     EnablePointLocation();
   }
   return index[RandInt(index.size())];
@@ -215,7 +216,7 @@ void KinodynamicTree::DeleteSubTree(Node* n,bool rebuild)
   delete n;  //this automatically deletes n and all children
 
   if(rebuild && pointLocation) {
-    printf("Rebuilding point location data structure on subtree delete..\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Rebuilding point location data structure on subtree delete..\n");
     RebuildPointLocation();
   }
 }
@@ -248,7 +249,7 @@ KinodynamicPlannerBase::KinodynamicPlannerBase(KinodynamicSpace* s)
 
 void KinodynamicPlannerBase::Init(const State& xinit,const State& xgoal,Real goalRadius)
 {
-  Init(xinit,new NeighborhoodSet(space->GetStateSpace(),xgoal,goalRadius));
+  Init(xinit,new NeighborhoodSet(space->GetStateSpace().get(),xgoal,goalRadius));
 }
 
 
@@ -262,9 +263,9 @@ bool RRTKinodynamicPlanner::Plan(int maxIters)
 {
   if(goalNode) return true;
   if(!goalSet) {
-    fprintf(stderr,"RRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
-    fprintf(stderr,"   Press enter to continue\n");
-    getchar();
+        LOG4CXX_ERROR(KrisLibrary::logger(),"RRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"   Press enter to continue\n");
+    KrisLibrary::loggerWait();
   }
   for(int i=0;i<maxIters;i++) {
     numIters++;
@@ -312,7 +313,7 @@ void RRTKinodynamicPlanner::PickDestination(State& xdest)
   if(goalSet && goalSet->IsSampleable() && RandBool(goalSeekProbability)) {
     goalSet->Sample(xdest);
     if(!goalSet->Project(xdest)) {
-      printf("Warning: goal set doesnt sample a feasible configuration\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: goal set doesnt sample a feasible configuration\n");
     }
   }
   else {
@@ -351,7 +352,7 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
   pickControlTime += timer.ElapsedTime();
   timer.Reset();
   if(!space->GetStateSpace()->IsFeasible(path.End())) {
-    //printf("Edge endpoint is not feasible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible\n");
     visibleTime += timer.ElapsedTime();
     numInfeasibleEndpoints++;
     return NULL;
@@ -365,7 +366,7 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
   }
 
   timer.Reset();
-  SmartPointer<EdgePlanner> e = space->TrajectoryChecker(path);
+  EdgePlannerPtr e(space->TrajectoryChecker(path));
   if(e->IsVisible()) {
     numSuccessfulExtensions++;
     visibleTime += timer.ElapsedTime();
@@ -375,7 +376,7 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
     return n;
   }
   else {
-    //printf("Edge is not visible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge is not visible\n");
     visibleTime += timer.ElapsedTime();
     return NULL;
   }
@@ -395,11 +396,11 @@ bool RRTKinodynamicPlanner::GetPath(KinodynamicMilestonePath& path)
 
 bool RRTKinodynamicPlanner::PickControl(const State& x0, const State& xDest, KinodynamicMilestonePath& path)
 {
-  SmartPointer<SteeringFunction> sf = space->GetControlSpace()->GetSteeringFunction();
+  std::shared_ptr<SteeringFunction> sf = space->GetControlSpace()->GetSteeringFunction();
   if(!sf)  {
     int nd = space->GetControlSet(x0)->NumDimensions();
     if(nd < 0) nd = space->GetStateSpace()->NumDimensions();
-    sf = new RandomBiasSteeringFunction(space,3*nd);
+    sf = make_shared<RandomBiasSteeringFunction>(space,3*nd);
   }
   if(sf->Connect(x0,xDest,path)) {
     //steering function is assumed to create valid controls
@@ -411,7 +412,7 @@ bool RRTKinodynamicPlanner::PickControl(const State& x0, const State& xDest, Kin
     return true;
   }
   else {
-    cout<<"Failed to connect "<<x0<<" toward "<<xDest<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Failed to connect "<<x0<<" toward "<<xDest);
   }
   return false;
 }
@@ -423,7 +424,7 @@ numIters(0),numFilteredExtensions(0),numSuccessfulExtensions(0),
 sampleTime(0),simulateTime(0),visibleTime(0),overheadTime(0)
 {
   if(s)
-    densityEstimator = new MultiGridDensityEstimator(s->GetStateSpace()->NumDimensions(),3,0.1);
+    densityEstimator = make_shared<MultiGridDensityEstimator>(s->GetStateSpace()->NumDimensions(),3,0.1);
 }
 
 void ESTKinodynamicPlanner::EnableExtensionCaching(int cacheSize)
@@ -442,9 +443,9 @@ void ESTKinodynamicPlanner::SetDensityEstimatorResolution(const Vector& res)
   Assert(space != NULL);
   Assert(res.n == space->GetStateSpace()->NumDimensions());
   if(densityEstimator == NULL)
-    densityEstimator = new MultiGridDensityEstimator(space->GetStateSpace()->NumDimensions(),3,res);
+    densityEstimator = make_shared<MultiGridDensityEstimator>(space->GetStateSpace()->NumDimensions(),3,res);
   else {
-    MultiGridDensityEstimator* mgrid = dynamic_cast<MultiGridDensityEstimator*>(&*densityEstimator);
+    MultiGridDensityEstimator* mgrid = dynamic_cast<MultiGridDensityEstimator*>(densityEstimator.get());
     Assert(mgrid != NULL);
     mgrid->numDims = space->GetStateSpace()->NumDimensions();
     mgrid->h = res;
@@ -478,7 +479,7 @@ bool ESTKinodynamicPlanner::Plan(int maxIters)
 
   const static bool precheckCachedExtensions = false;
   const static int gESTNumControlSamplesPerNode = 1;
-  SmartPointer<ControlSpace> controlSpace = space->GetControlSpace();
+  std::shared_ptr<ControlSpace> controlSpace = space->GetControlSpace();
   for(int iters=0;iters<maxIters;iters++) {
     numIters++;
     int numNodeSamples = extensionCacheSize - (int)extensionCache.size();
@@ -487,7 +488,7 @@ bool ESTKinodynamicPlanner::Plan(int maxIters)
       Node* n = (Node*)densityEstimator->Random();
       if(n == NULL) 
         FatalError("DensityEstimator random selection returned NULL? was the tree not initialized?");
-      SmartPointer<CSet> uspace = controlSpace->GetControlSet(*n);
+      std::shared_ptr<CSet> uspace = controlSpace->GetControlSet(*n);
       ControlInput u;
       for(int sample=0;sample<gESTNumControlSamplesPerNode;sample++) {
         uspace->Sample(u);
@@ -569,9 +570,9 @@ LazyRRTKinodynamicPlanner::LazyRRTKinodynamicPlanner(KinodynamicSpace* s)
 bool LazyRRTKinodynamicPlanner::Plan(int maxIters)
 {
   if(!goalSet) {
-    fprintf(stderr,"LazyRRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
-    fprintf(stderr,"   Press enter to continue\n");
-    getchar();
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LazyRRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"   Press enter to continue\n");
+    KrisLibrary::loggerWait();
   }
   if(goalNode) return true;
   if(goalSet && goalSet->Contains(*tree.root)) {
@@ -616,7 +617,7 @@ Node* LazyRRTKinodynamicPlanner::ExtendToward(const State& xdest)
   pickControlTime += timer.ElapsedTime();
   timer.Reset();
   if(!space->GetStateSpace()->IsFeasible(path.End())) {
-    //printf("Edge endpoint is not feasible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible\n");
     visibleTime += timer.ElapsedTime();
     numInfeasibleEndpoints++;
     return NULL;
@@ -629,7 +630,7 @@ Node* LazyRRTKinodynamicPlanner::ExtendToward(const State& xdest)
     return NULL;
   }
 
-  SmartPointer<EdgePlanner> e = space->TrajectoryChecker(path);
+  EdgePlannerPtr e(space->TrajectoryChecker(path));
   numSuccessfulExtensions++;
   return tree.AddMilestone(n,path,e);
 }
@@ -667,13 +668,13 @@ bool LazyRRTKinodynamicPlanner::CheckPath(Node* n)
     n = n->getParent();
     Assert(n != NULL);
   }
-  printf("LazyRRTKinodynamicPlanner::CheckPath: %d nodes to check\n",q.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"LazyRRTKinodynamicPlanner::CheckPath: "<<q.size());
   while(!q.empty()) {
     n=q.top(); q.pop();
-    EdgePlanner* e=n->edgeFromParent().checker;
+    EdgePlannerPtr& e=n->edgeFromParent().checker;
     if(!e->Done()) {
       if(!e->Plan()) {
-        printf("Edge found infeasible, deleting\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Edge found infeasible, deleting\n");
 	//disconnect n from the rest of the tree
   Timer timer;
 	tree.DeleteSubTree(n);
@@ -683,7 +684,7 @@ bool LazyRRTKinodynamicPlanner::CheckPath(Node* n)
       q.push(n);
     }
   }
-  printf("Path checking successful!\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Path checking successful!\n");
   return true;
 }
 
@@ -736,7 +737,7 @@ bool BidirectionalRRTKP::Done() const
 
 bool BidirectionalRRTKP::Plan(int maxIters)
 {
-  SmartPointer<CSpace> stateSpace = space->GetStateSpace();
+  std::shared_ptr<CSpace> stateSpace = space->GetStateSpace();
   for(int iters=0;iters<maxIters;iters++) {
     if(RandBool()) {
       Node* s=ExtendStart();
@@ -766,7 +767,7 @@ Node* BidirectionalRRTKP::ExtendStart()
   if(!PickControl(*n,xdest,path)) return NULL;
   if(!space->GetStateSpace()->IsFeasible(path.End()))
     return NULL;
-  SmartPointer<EdgePlanner> e=space->TrajectoryChecker(path);
+  EdgePlannerPtr e(space->TrajectoryChecker(path));
   if(e->IsVisible())
     return start.AddMilestone(n,path,e);
   return NULL;
@@ -782,7 +783,7 @@ Node* BidirectionalRRTKP::ExtendGoal()
   PickReverseControl(*n,xdest,path);
   if(!space->GetStateSpace()->IsFeasible(path.End()))
     return NULL;
-  SmartPointer<EdgePlanner> e=space->TrajectoryChecker(path);
+  EdgePlannerPtr e(space->TrajectoryChecker(path));
   if(e->IsVisible())
     return goal.AddMilestone(n,path,e);
   return NULL;
@@ -791,19 +792,19 @@ Node* BidirectionalRRTKP::ExtendGoal()
 bool BidirectionalRRTKP::ConnectTrees(Node* a,Node* b)
 {
   EZCallTrace tr("BidirectionalRRTKP::ConnectTrees()");
-  SmartPointer<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
+  std::shared_ptr<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
   if(sf && sf->Connect(*a,*b,bridge.path)) {
     Real d=space->GetStateSpace()->Distance(bridge.path.End(),*b);
     if(d >= 1e-3) {
-fprintf(stderr,"BidirectionRRTKP: error detected in CSpace's ConnectionControl() method, distance %g\n",d);
+LOG4CXX_ERROR(KrisLibrary::logger(),"BidirectionRRTKP: error detected in CSpace's ConnectionControl() method, distance "<<d);
 return false;
     }
     Assert(d < 1e-3);
     bridge.checker = space->TrajectoryChecker(bridge.path);
     if(bridge.checker->IsVisible()) {
-bridge.nStart=a;
-bridge.nGoal=b;
-return true;
+      bridge.nStart=a;
+      bridge.nGoal=b;
+      return true;
     }
     else return false;
   }
@@ -811,9 +812,9 @@ return true;
 }
 
 bool BidirectionalRRTKP::PickControl(const State& x0, const State& xDest, KinodynamicMilestonePath& path) {
-  SmartPointer<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
+  std::shared_ptr<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
   if(!sf)  
-    sf = new RandomBiasSteeringFunction(space,10);
+    sf = make_shared<RandomBiasSteeringFunction>(space,10);
   if(sf->Connect(x0,xDest,path)) {
     //steering function is assumed to create valid controls
     for(size_t i=0;i<path.controls.size();i++) 
@@ -827,11 +828,11 @@ bool BidirectionalRRTKP::PickControl(const State& x0, const State& xDest, Kinody
 bool BidirectionalRRTKP::PickReverseControl(const State& x1, const State& xStart, KinodynamicMilestonePath& path)
 {
   ReversibleControlSpace* rspace = dynamic_cast<ReversibleControlSpace*>(&*space->controlSpace);
-  SmartPointer<SteeringFunction> sf;
+  std::shared_ptr<SteeringFunction> sf;
   if(rspace)
     sf = rspace->reverseControlSpace->GetSteeringFunction();
   if(!sf)  
-    sf = new RandomBiasReverseSteeringFunction(space,10);
+    sf = make_shared<RandomBiasReverseSteeringFunction>(space,10);
   if(sf->Connect(x1,xStart,path)) {
     //steering function is assumed to create valid controls
     for(size_t i=0;i<path.controls.size();i++) 

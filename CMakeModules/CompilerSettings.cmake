@@ -17,6 +17,15 @@ IF (CMAKE_COMPILER_IS_GNUCC)
   ADD_DEFINITIONS(-fPIC)
 ENDIF()
 
+IF(MSVC)
+	#These are used to be compatible with Klampt
+	SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} /MD")
+	SET (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} /MD")
+	SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} /MDd")
+	SET (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} /MDd")
+ENDIF()
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Set full rpath http://www.paraview.org/Wiki/CMake_RPATH_handling
 # (good to have and required with ROS)

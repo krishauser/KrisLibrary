@@ -1,8 +1,9 @@
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/Logger.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/utils.h>
+#include <KrisLibrary/errors.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include <utils.h>
 #include <memory.h>
 #include <math.h>
@@ -31,8 +32,14 @@ PIXELGETPROC pixel_get_proc(Image::PixelFormat format)
 		return x1r5g5b5_get;
 	case Image::A8:
 		return a8_get;
+	case Image::FloatRGB:
+		return frgb_get;
+	case Image::FloatRGBA:
+		return frgba_get;
+	case Image::FloatA:
+		return fa_get;
 	default:
-		abort();
+		FatalError("Unknown Image pixel format");
 	}
 	return NULL;
 }
@@ -51,8 +58,14 @@ PIXELSETPROC pixel_set_proc(Image::PixelFormat format)
 		return x1r5g5b5_set;
 	case Image::A8:
 		return a8_set;
+	case Image::FloatRGB:
+		return frgb_set;
+	case Image::FloatRGBA:
+		return frgba_set;
+	case Image::FloatA:
+		return fa_set;
 	default:
-		abort();
+		FatalError("Unknown Image pixel format");
 	}
 	return NULL;
 }
@@ -113,7 +126,7 @@ int Image::initialize(int _w, int _h, PixelFormat _fmt)
 		data = (unsigned char*)malloc(num_bytes);
 		if(!data)
 		{
-		  cerr<<"Error allocating "<<num_bytes<<" bytes"<<endl;
+		  LOG4CXX_ERROR(KrisLibrary::logger(),"Error allocating "<<num_bytes<<" bytes");
 		  return -1;
 		}
 	}
@@ -158,12 +171,12 @@ bool Image::Read(File& f)
 	int hdr,tmp;
 	if(!ReadFile(f, hdr))
 	{
-	  cerr<<"Could not read header"<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Could not read header");
 	  return false;
 	}
 	if(hdr != IMAGEHEADER)
 	{
-	  cerr<<"Invalid header "<<hdr<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Invalid header "<<hdr);
 	  return false;
 	}
 
@@ -173,13 +186,13 @@ bool Image::Read(File& f)
 	format = (PixelFormat)tmp;
 	if(initialize(w,h,format) < 0)
 	{
-	  cerr<<"Error initializing image"<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Error initializing image");
 	  return false;
 	}
 
 	if(!f.ReadData(data, num_bytes))
 	{
-	  cerr<<"Could not read texture"<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Could not read texture");
 	  unload();
 	  return false;
 	}
@@ -380,7 +393,7 @@ int countMipLevels(unsigned int w, unsigned int h)
 		mask=mask<<1;
 		if(!(minsize&mask)) return i;
 	}
-	cerr<<"Cant have more than 32 mip levels... something's fishy"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"Cant have more than 32 mip levels... something's fishy");
 	abort();
 	return i;
 }
@@ -402,7 +415,7 @@ unsigned char* shrink_texture_boxfilter(const unsigned char* src, int w, int h, 
 	int size=w2*h2*pixelsize;
 	unsigned char* shrunken = new unsigned char[size];
 	if(!shrunken) {
-	  cerr<<"Not enough memory to allocate shrunken bitmap?"<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Not enough memory to allocate shrunken bitmap?");
 	  abort();
 	}
 	unsigned char* dest = shrunken;
@@ -458,7 +471,7 @@ void ImageMipmapped::createMipmaps()
 	mipmap_data = new unsigned char* [num_mipmap_levels];
 	if(!mipmap_data)
 	{
-	  cerr<<"Not enough memory to create mipmap bits?"<<endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Not enough memory to create mipmap bits?");
 	  mipmap_data = 0;
 	  return;
 	}

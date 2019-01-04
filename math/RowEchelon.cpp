@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "RowEchelon.h"
 #include "GramSchmidt.h"
 #include "MatrixPrinter.h"
@@ -259,9 +260,9 @@ void RowEchelon<T>::getNullspace(MatrixT& N) const
     //cancel out the i'th entry
     for(j=firstEntry[i]+1;j<firstEntry[i+1];j++) {
       if(numVecs >= N.n) {
-	cout<<"Num nullspace vectors "<<numVecs<<endl;
-	cout<<"Found more nullspace vectors than found dims, row "<<i<<endl;
-	cout<<MatrixPrinter(R)<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Num nullspace vectors "<<numVecs);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Found more nullspace vectors than found dims, row "<<i);
+	LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(R));
       }
       Assert(numVecs < N.n);
       VectorT xn; N.getColRef(numVecs,xn);
@@ -292,9 +293,9 @@ void RowEchelon<T>::getNullspace(MatrixT& N) const
     }
   }
   if(numVecs != nullspace_dims) {
-    cout<<"Error in counting rank in row-eschelon decomposition"<<endl;
-    cout<<"Num nullspace vectors "<<numVecs<<endl;
-    cout<<MatrixPrinter(R)<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in counting rank in row-eschelon decomposition");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Num nullspace vectors "<<numVecs);
+    LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(R));
   }
   Assert(numVecs == nullspace_dims);
 
@@ -305,10 +306,10 @@ void RowEchelon<T>::getNullspace(MatrixT& N) const
     xi.print();
     R.mul(xi,temp);
     if(temp.maxAbsElement() > 1e-4) {
-      cout<<"Nullspace vector "<<i<<" not in null space!"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Nullspace vector "<<i<<" not in null space!");
       xi.print();
-      cout<<"Result = "; temp.print();
-      getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Result = "); temp.print();
+      KrisLibrary::loggerWait();
     }
   }
   */

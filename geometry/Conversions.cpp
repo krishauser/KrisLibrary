@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Conversions.h"
 #include "CollisionMesh.h"
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
@@ -8,16 +9,17 @@
 #include <KrisLibrary/meshing/Voxelize.h>
 #include <KrisLibrary/math3d/random.h>
 #include <KrisLibrary/math3d/basis.h>
+#include <KrisLibrary/Timer.h>
 
 namespace Geometry {
 	
-void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersion)
+void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersion2)
 {
 	Vector3 c = (t.a+t.b+t.c)/3.0;
-	if(c.distanceSquared(t.a) > maxDispersion || c.distanceSquared(t.b) > maxDispersion || c.distanceSquared(t.c) > maxDispersion) {
+	if(c.distanceSquared(t.a) > maxDispersion2 || c.distanceSquared(t.b) > maxDispersion2 || c.distanceSquared(t.c) > maxDispersion2) {
 		Real ab = t.a.distanceSquared(t.b);
 		Real bc = t.b.distanceSquared(t.c);
-		Real ca = t.c.distanceSquared(t.a);
+		Real ca = t.c.distanceSquared(t.a);		
 		int maxEdge = 0;
 		Real maxLen = bc;
 		if(ab > maxLen) {
@@ -30,6 +32,7 @@ void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersi
 		}
 		Segment3D s = t.edge(maxEdge);
 		Vector3 center = (s.a+s.b)*0.5;
+		pc.points.push_back(center);
 		Triangle3D tc1,tc2;
 		tc1.a = center;
 		tc1.b = t.vertex(maxEdge);
@@ -37,8 +40,8 @@ void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersi
 		tc2.a = center;
 		tc2.b = s.b;
 		tc2.c = t.vertex(maxEdge);
-		SubdivideAdd(tc1,pc,maxDispersion);
-		SubdivideAdd(tc2,pc,maxDispersion);
+		SubdivideAdd(tc1,pc,maxDispersion2);
+		SubdivideAdd(tc2,pc,maxDispersion2);
 	}
 }
 
@@ -49,15 +52,17 @@ void MeshToPointCloud(const Meshing::TriMesh& mesh,Meshing::PointCloud3D& pc,Rea
 	pc.points = mesh.verts;
 	if(IsInf(maxDispersion)) return;
 
+	Real maxDispersion2 = Sqr(maxDispersion);
 	for(size_t i=0;i<mesh.tris.size();i++) {
 		Triangle3D t;
 		mesh.GetTriangle(i,t);
-		SubdivideAdd(t,pc,maxDispersion);
+		SubdivideAdd(t,pc,maxDispersion2);
 	}
 }
 
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& appearance,Real depthDiscontinuity)
 {
+	Timer timer;
 	PointCloudToMesh(pc,mesh,depthDiscontinuity);
 	vector<Vector4> colors;
 	if(pc.GetColors(colors)) {
@@ -74,7 +79,7 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLD
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Real depthDiscontinuity)
 {
 	if(!pc.IsStructured()) {
-		fprintf(stderr,"PointCloudToMesh: TODO: convert unstructured point clouds to meshes\n");
+				LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloudToMesh: TODO: convert unstructured point clouds to meshes\n");
 		return;
 	}
 	mesh.verts = pc.points;
@@ -104,10 +109,10 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Rea
 			if(!IsFinite(z12)) z12=0;
 			if(!IsFinite(z21)) z21=0;
 			if(!IsFinite(z22)) z22=0;
-			bool d1x = (Abs(z11 - z12) > depthDiscontinuity*Abs(z11+z12)) || (z11 == 0 || z12 == 0);
-			bool d1y = (Abs(z11 - z21) > depthDiscontinuity*Abs(z11+z21)) || (z11 == 0 || z21 == 0);
-			bool d2x = (Abs(z22 - z21) > depthDiscontinuity*Abs(z22+z21)) || (z22 == 0 || z21 == 0);
-			bool d2y = (Abs(z22 - z12) > depthDiscontinuity*Abs(z22+z12)) || (z22 == 0 || z12 == 0);
+			bool d1x = (z11 == 0 || z12 == 0) || (Abs(z11 - z12) > depthDiscontinuity*Abs(z11+z12));
+			bool d1y = (z11 == 0 || z21 == 0) || (Abs(z11 - z21) > depthDiscontinuity*Abs(z11+z21));
+			bool d2x = (z22 == 0 || z21 == 0) || (Abs(z22 - z21) > depthDiscontinuity*Abs(z22+z21));
+			bool d2y = (z22 == 0 || z12 == 0) || (Abs(z22 - z12) > depthDiscontinuity*Abs(z22+z12));
 			bool dupperleft = (d1x || d1y);
 			bool dupperright = (d1x || d2y);
 			bool dlowerleft = (d2x || d1y);
@@ -141,9 +146,10 @@ void PrimitiveToMesh(const GeometricPrimitive3D& primitive,Meshing::TriMesh& mes
 	Meshing::MakeTriMesh(primitive,mesh,numDivs);
 }
 
-void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution)
+void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0.5)
 {
 	Vector3 size=bb.bmax-bb.bmin;
+	size += expansion*2*resolution;
 	int m = (int)Ceil(size.x/resolution)+2;
 	int n = (int)Ceil(size.y/resolution)+2;
 	int p = (int)Ceil(size.z/resolution)+2;
@@ -155,9 +161,9 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution)
 	grid.bb.bmin = center - 0.5*size;
 	grid.bb.bmax = center + 0.5*size;
 	if(m*n*p > 100000000) {
-		fprintf(stderr,"FitGridToBB: Warning, creating a volume grid of resolution %g will create %d cells\n",resolution,m*n*p);
-		fprintf(stderr,"  Press enter to continue\n");
-		getchar();
+				LOG4CXX_ERROR(KrisLibrary::logger(),"FitGridToBB: Warning, creating a volume grid of resolution "<<resolution<<" will create "<<m*n*p);
+				LOG4CXX_ERROR(KrisLibrary::logger(),"  Press enter to continue");
+		KrisLibrary::loggerWait();
 	}
 	grid.Resize(m,n,p);
 }
@@ -170,8 +176,9 @@ void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::V
 	Vector3 c;
 	while(!it.isDone()) {
 		it.getCellCenter(c);
-		if(primitive.Collides(c)) *it = -expansion;
-		else *it = primitive.Distance(c)-expansion;
+		//if(primitive.Collides(c)) *it = -expansion;
+		//else
+		*it = primitive.Distance(c)-expansion;
 		++it;
 	}
 }
@@ -199,7 +206,7 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 	Extrema(grid.bb,y,ymin,ymax);
 	Vector3 cellSize = grid.GetCellSize();
 	Real cellResolution = (cellSize.x + cellSize.y + cellSize.z)/3.0;
-	printf("Carving over range [%g,%g]x[%g,%g] with resolution %g\n",xmin,xmax,ymin,ymax,resolution);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Carving over range ["<<xmin<<","<<xmax<<"]x["<<ymin<<","<<ymax<<"] with resolution "<<resolution);
 	double truncationCellCount = 10;
 	Ray3D r;
 	Segment3D s;
@@ -229,12 +236,12 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 				nhit ++;
 				s.a = r.source;
 				s.b = pt + (truncationCellCount*resolution)*d;
-				//cout<<"source "<<r.source<<" direction "<<r.direction<<endl;
-				//cout<<"Hit point "<<pt<<endl;
+				//LOG4CXX_INFO(KrisLibrary::logger(),"source "<<r.source<<" direction "<<r.direction);
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Hit point "<<pt);
 				Meshing::GetSegmentCells(s,grid.value.m,grid.value.n,grid.value.p,grid.bb,cells);
-				//cout<<"segment "<<s.a<<" -> "<<s.b<<endl;
-				//cout<<"Bbox "<<grid.bb<<endl;
-				//printf("Segment up to %g depth hits %d cells\n",5*resolution,cells.size());
+				//LOG4CXX_INFO(KrisLibrary::logger(),"segment "<<s.a<<" -> "<<s.b);
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Bbox "<<grid.bb);
+				//LOG4CXX_INFO(KrisLibrary::logger(),"Segment up to "<<5*resolution<<" depth hits "<<cells.size());
 				for(size_t i=0;i<cells.size();i++) {
 					//grid.GetCellCenter(cells[i].a,cells[i].b,cells[i].c,c);
 					grid.GetCell(cells[i].a,cells[i].b,cells[i].c,cell);
@@ -246,14 +253,15 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 						v = grid.value(cells[i]);
 					}
 					else {
-						s.eval((tmin + tmax)*0.5,c);
-						//printf("Intersection %g %g\n",tmin,tmax);
+						//s.eval((tmin + tmax)*0.5,c);
+						c = (cell.bmin + cell.bmax)*0.5;
+						//LOG4CXX_INFO(KrisLibrary::logger(),"Intersection "<<tmin<<" "<<tmax);
 						weight = Min(tmax-tmin,cellResolution) / cellResolution;
 						//weight = 1.0;
 						v = grid.value(cells[i]);
 						if(!firstPass && Abs(v) < cellResolution)
 							v = grid.TrilinearInterpolate(c);
-						//printf("Interpolated value %g, cell value %g\n",v,grid.value(cells[i]));
+						//LOG4CXX_INFO(KrisLibrary::logger(),"Interpolated value "<<v<<", cell value "<<grid.value(cells[i]));
 					}
 					//distance from c to pt 
 					Real measured = pt.distance(c)*Sign(d.dot(pt-c));
@@ -263,17 +271,21 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 					Real occ = occupancy(cells[i]);
 					if(measured <= cellResolution*0.5) {
 						if(measured >= -cellResolution*0.5) 
-							//occupancy(cells[i]) += weight;
 							occupancy(cells[i]) += 1;
 					}
 
-					//cout<<cell.bmin<<" -> "<<cell.bmax<<endl;
-					//printf("Cell %g %g %g, point %g %g %g, old distance %g new distance %g\n",c.x,c.y,c.z,pt.x,pt.y,pt.z,v,distance);
-					//printf("Weight %g\n",weight);
-					//getchar();
+					//LOG4CXX_INFO(KrisLibrary::logger(),cell.bmin<<" -> "<<cell.bmax);
+					//LOG4CXX_INFO(KrisLibrary::logger(),"Cell "<<c.x<<" "<<c.y<<" "<<c.z<<", point "<<pt.x<<" "<<pt.y<<" "<<pt.z<<", old distance "<<v<<" new distance "<<distance);
+					//LOG4CXX_INFO(KrisLibrary::logger(),"Weight "<<weight);
+					//KrisLibrary::loggerWait();
 					//assert(s.distance(c) < cellResolution);
 					
-					//printf("Distance to segment: %g\n",s.distance(c));
+					//LOG4CXX_INFO(KrisLibrary::logger(),"Distance to segment: "<<s.distance(c));
+
+					//method 1: just average
+					grid.value(cells[i]) += (measured-v)/(1+occ);
+					//method 2: check inside vs outside
+					/*
 					if(v > 0) { //think we're outside, update if the ray gives a closer point
 						if(measured < -resolution) {
 							//previous ray says we're outside, but measurement is inside.  probably occluded.
@@ -293,8 +305,9 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 							//both measurement and previous are inside -- is the measurement a closer point to the surface?
 							grid.value(cells[i]) += (measured-v)/(1.0+occ);
 					}
+					*/
 				}
-				//getchar();
+				//KrisLibrary::loggerWait();
 			}
 			else {
 				//carve through free space
@@ -305,16 +318,16 @@ void SpaceCarving(const CollisionMesh& mesh,const Vector3& d,const Vector3& x,co
 					Real v = grid.value(cells[i]);
 					Real occ = occupancy(cells[i]);
 					if(occ == 0) {
-						if(v < 0) grid.value(cells[i]) += (resolution-v)/(1.0+occ*2.0);
 						if(v > rmax) grid.value(cells[i]) = rmax;
 					}
+					if(v < resolution) grid.value(cells[i]) += (resolution-v)/(1.0+occ);
 				}
 			}
 			v += resolution;
 		}
 		u += resolution;
 	}
-	printf("%d / %d rays hit the mesh\n",nhit,ncast);
+	LOG4CXX_INFO(KrisLibrary::logger(),""<<nhit<<" / "<<ncast);
 }
 
 void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
@@ -332,26 +345,24 @@ void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
 void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution)
 {
 	AABB3D aabb;
-	Box3D b;
-	GetBB(mesh,b);
-	b.getAABB(aabb);
+	mesh.GetAABB(aabb.bmin,aabb.bmax);
 	FitGridToBB(aabb,grid,resolution);
 	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
 	vector<IntTriple> surfaceCells;
-	Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
+	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
+	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
 }
 
 void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews)
 {
 	AABB3D aabb;
-	Box3D b;
-	GetBB(mesh,b);
-	b.getAABB(aabb);
+	mesh.GetAABB(aabb.bmin,aabb.bmax);
 	FitGridToBB(aabb,grid,resolution);
 	Array3D<Real> occupancy(grid.value.m,grid.value.n,grid.value.p);
 	double defaultValue = -aabb.size().maxAbsElement();
 	grid.value.set(defaultValue);
 	occupancy.set(0.0);
+	//carve along the 6 canonical directions
 	for(int i=0;i<6;i++) {
 		Vector3 d(Zero);
 		if(i%2 == 0)
@@ -361,15 +372,17 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 		Vector3 x(0.0),y(0.0);
 		x[(i/2+1)%3] = 1;
 		y[(i/2+2)%3] = 1;
-		SpaceCarving(mesh,d,x,y,grid,occupancy,resolution*0.5);
+		SpaceCarving(mesh,d,x,y,grid,occupancy,resolution*0.5,false);
 	}
+	//carve along random directions
 	for(int i=6;i<numViews;i++) {
 		Vector3 d;
 		SampleSphere(1,d);
 		Vector3 x,y;
 		GetCanonicalBasis(d,x,y);
-		SpaceCarving(mesh,d,x,y,grid,occupancy,resolution*0.5);
+		SpaceCarving(mesh,d,x,y,grid,occupancy,resolution*0.5,false);
 	}
+	//count the number of inside cells, set all far cells to -resolution*0.5
 	int inside = 0;
 	for(int i=0;i<grid.value.m;i++)
 		for(int j=0;j<grid.value.n;j++)
@@ -433,7 +446,7 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 			depth = grid.TrilinearInterpolate(mesh.verts[i]);
 		}
 	}
-	printf("Volume grid has %d / %d cells occupied\n",inside,grid.value.m*grid.value.n*grid.value.p);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Volume grid has "<<inside<<" / "<<grid.value.m*grid.value.n*grid.value.p);
 }
 
 void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh)
@@ -443,7 +456,7 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
 	//make correction for grid cell centers
 	center_bb.bmin += celldims*0.5;
 	center_bb.bmax -= celldims*0.5;
-    MarchingCubes(grid.value,0,center_bb,mesh);
+    MarchingCubes(grid.value,0.0,center_bb,mesh);
 }
 
 } //namespace Geometry

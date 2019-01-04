@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "GLUTProgram.h"
 
 #if HAVE_GLUT
@@ -157,34 +158,34 @@ void GLUTProgramBase::IdleFunc() { }
 
 int GLUTProgramBase::Run(const char *window_title,unsigned int mode)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
   return -1;
 }
 
 bool GLUTProgramBase::Initialize()
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 	return false;
 }
 
 void GLUTProgramBase::Refresh()
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTProgramBase::SetFullscreen(bool fullscreen_on)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTProgramBase::Handle_Idle()
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 void GLUTProgramBase::SleepIdleCallback(unsigned int time)
 {
-  cerr<<"Warning, GLUT not defined"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLUT not defined");
 }
 
 #endif

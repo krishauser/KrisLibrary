@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "RobotKinematics3D.h"
 #include "Rotation.h"
 #include "Inertia.h"

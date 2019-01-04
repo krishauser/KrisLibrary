@@ -1,6 +1,7 @@
 #ifndef REDBLACK_H
 #define REDBLACK_H
 
+#include <KrisLibrary/Logger.h>
 #include <iostream>
 #include <assert.h>
 #include <KrisLibrary/utils/cmp_func.h>
@@ -218,7 +219,7 @@ bool Node<T>::isValid() const
 	{
 		if (!left->hasColor(Black) && !right->hasColor(Black))
 		{
-			//fprintf(stderr, "Children of red node not both black, x=%ld", (unsigned long)this);
+						//LOG4CXX_ERROR(KrisLibrary::logger(), "Children of red node not both black, x="<< (unsigned long)this);
 			return false;
 		}
 	}
@@ -227,7 +228,7 @@ bool Node<T>::isValid() const
 	{
 		if (left->up != this)
 		{
-			//fprintf(stderr, "x->left->up != x, x=%ld", (unsigned long)this);
+						//LOG4CXX_ERROR(KrisLibrary::logger(), "x->left->up != x, x="<< (unsigned long)this);
 			return false;
 		}
 
@@ -239,7 +240,7 @@ bool Node<T>::isValid() const
 	{
 		if (right->up != this)
 		{
-			//fprintf(stderr, "x->right->up != x, x=%ld", (unsigned long)this);
+						//LOG4CXX_ERROR(KrisLibrary::logger(), "x->right->up != x, x="<< (unsigned long)this);
 			return false;
 		}
 
@@ -261,7 +262,7 @@ int Node<T>::count_black()
 
 	if (nleft != nright)
 	{
-		//fprintf(stderr, "Black count not equal on left & right, x=%ld", (unsigned long)this);
+				//LOG4CXX_ERROR(KrisLibrary::logger(), "Black count not equal on left & right, x="<< (unsigned long)this);
 		return(-1);
 	}
 
@@ -827,7 +828,7 @@ bool Tree<T,Cmp>::checkValid() const
 {
 	if (root->up!=NULL)
 	{
-	  std::cerr<< "Root up pointer not NULL" <<std::endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(), "Root up pointer not NULL" <<"\n");
 		root->dumptree(std::cerr,0);
 		return false;
 	}
@@ -840,7 +841,7 @@ bool Tree<T,Cmp>::checkValid() const
 
 	if (root->count_black()==-1)
 	{
-	  std::cerr<<"Error in black count"<<std::endl;
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"Error in black count"<<"\n");
 	  root->dumptree(std::cerr,0);
 	  return false;
 	}

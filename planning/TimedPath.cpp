@@ -35,7 +35,7 @@ void TimedMilestonePath::Set(const MilestonePath& path,int timeIndex)
   }
 }
 
-void TimedMilestonePath::Set(const SmartPointer<EdgePlanner>& e,int timeIndex)
+void TimedMilestonePath::Set(const EdgePlannerPtr& e,int timeIndex)
 {
   edges.resize(1);
   durations.resize(1);
@@ -43,7 +43,7 @@ void TimedMilestonePath::Set(const SmartPointer<EdgePlanner>& e,int timeIndex)
   durations[0] = (timeIndex >= 0 ? e->End()[timeIndex]-e->Start()[timeIndex] : e->Length());
 }
 
-void TimedMilestonePath::Append(const SmartPointer<EdgePlanner>& e,int timeIndex)
+void TimedMilestonePath::Append(const EdgePlannerPtr& e,int timeIndex)
 {
   if(!edges.empty()) Assert(e->Start()==End());
   edges.push_back(e);
@@ -53,7 +53,7 @@ void TimedMilestonePath::Append(const SmartPointer<EdgePlanner>& e,int timeIndex
 
 void TimedMilestonePath::AppendDelay(Real t)
 {
-  edges.push_back(Space()->LocalPlanner(End(),End()));
+  edges.push_back(EdgePlannerPtr(Space()->LocalPlanner(End(),End())));
   durations.push_back(t);
 }
 
@@ -112,18 +112,18 @@ void TimedMilestonePath::Split(Real dt,TimedMilestonePath& before,TimedMilestone
     }
     else {
       if(dt <= durations[i]) {
-	//cut current path
-	Config x;
-	if(durations[i] == 0) x=edges[i]->Start();
-	else edges[i]->Eval(dt/durations[i],x);
-	before.edges.push_back(cspace->LocalPlanner(edges[i]->Start(),x));
-	before.durations.push_back(dt);
-	after.edges.push_back(cspace->LocalPlanner(x,edges[i]->End()));
-	after.durations.push_back(durations[i]-dt);
+        //cut current path
+        Config x;
+        if(durations[i] == 0) x=edges[i]->Start();
+        else edges[i]->Eval(dt/durations[i],x);
+        before.edges.push_back(cspace->LocalPlanner(edges[i]->Start(),x));
+        before.durations.push_back(dt);
+        after.edges.push_back(cspace->LocalPlanner(x,edges[i]->End()));
+        after.durations.push_back(durations[i]-dt);
       }
       else {
-	before.edges.push_back(edges[i]);
-	before.durations.push_back(durations[i]);
+        before.edges.push_back(edges[i]);
+        before.durations.push_back(durations[i]);
       }
       dt -= durations[i];
     }

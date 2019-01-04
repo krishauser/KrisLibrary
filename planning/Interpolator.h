@@ -2,6 +2,7 @@
 #define PLANNING_INTERPOLATOR_H
 
 #include <KrisLibrary/planning/CSpace.h>
+#include <memory>
 
 /** @ingroup MotionPlanning
  * @brief A base class for all 1D interpolators.
@@ -24,15 +25,16 @@ public:
 class ReverseInterpolator : public Interpolator
 {
 public:
-  ReverseInterpolator(const SmartPointer<Interpolator>& base);
+  ReverseInterpolator(const std::shared_ptr<Interpolator>& base);
   virtual ~ReverseInterpolator() {}
   virtual void Eval(Real u,Config& x) const { base->Eval(1.0-u,x); }
   virtual Real Length() const { return base->Length(); }
   virtual const Config& Start() const { return base->End(); }
   virtual const Config& End() const { return base->Start(); }
 
-  SmartPointer<Interpolator> base;
+  std::shared_ptr<Interpolator> base;
 };
 
+typedef std::shared_ptr<Interpolator> InterpolatorPtr;
 
 #endif

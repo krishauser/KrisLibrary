@@ -29,9 +29,9 @@ class PRMStarPlanner : public RoadmapPlanner
   ///Helper: add a milestone and update data structures
   virtual int AddMilestone(const Config& x);
   ///Helper: add a (feasible) edge, and update data structures
-  virtual void ConnectEdge(int i,int j,const SmartPointer<EdgePlanner>& e);
+  virtual void ConnectEdge(int i,int j,const EdgePlannerPtr& e);
   ///Helper: add an unchecked edge, and update data structures
-  void ConnectEdgeLazy(int i,int j,const SmartPointer<EdgePlanner>& e);
+  void ConnectEdgeLazy(int i,int j,const EdgePlannerPtr& e);
 
   //configuration variables
   ///Set lazy to true if you wish to do lazy planning (default false)
@@ -59,7 +59,7 @@ class PRMStarPlanner : public RoadmapPlanner
   Real suboptimalityFactor;
 
   int start,goal;
-  typedef Graph::ShortestPathProblem<Config,SmartPointer<EdgePlanner> > ShortestPathProblem;
+  typedef Graph::ShortestPathProblem<Config,EdgePlannerPtr> ShortestPathProblem;
   ShortestPathProblem spp,sppGoal,sppLB,sppLBGoal;
   Roadmap LBroadmap;
 

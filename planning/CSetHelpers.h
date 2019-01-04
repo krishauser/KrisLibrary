@@ -71,7 +71,7 @@ public:
 class SubspaceSet : public CSet
 {
 public:
-  SubspaceSet(const SmartPointer<CSet>& base,int imin,int imax);
+  SubspaceSet(const std::shared_ptr<CSet>& base,int imin,int imax);
   virtual ~SubspaceSet() {}
   virtual int NumDimensions() const { return -1; }
   virtual bool Contains(const Config& x);
@@ -80,7 +80,7 @@ public:
   virtual Real ObstacleDistance(const Config& x);
   virtual Optimization::NonlinearProgram* Numeric();
 
-  SmartPointer<CSet> base;
+  std::shared_ptr<CSet> base;
   int imin,imax;
 };
 
@@ -119,8 +119,8 @@ public:
 class UnionSet : public CSet
 {
 public:
-  UnionSet(const SmartPointer<CSet>& a,const SmartPointer<CSet>& b);
-  UnionSet(const std::vector<SmartPointer<CSet> >& items);
+  UnionSet(const std::shared_ptr<CSet>& a,const std::shared_ptr<CSet>& b);
+  UnionSet(const std::vector<std::shared_ptr<CSet> >& items);
   virtual ~UnionSet() {}
   virtual int NumDimensions() const;
   virtual bool Contains(const Config& x);
@@ -128,14 +128,14 @@ public:
   virtual bool IsSampleable() const;
   virtual void Sample(Config& x);
 
-  std::vector<SmartPointer<CSet> > items;
+  std::vector<std::shared_ptr<CSet> > items;
 };
 
 class IntersectionSet : public CSet
 {
 public:
-  IntersectionSet(const SmartPointer<CSet>& a,const SmartPointer<CSet>& b);
-  IntersectionSet(const std::vector<SmartPointer<CSet> >& items);
+  IntersectionSet(const std::shared_ptr<CSet>& a,const std::shared_ptr<CSet>& b);
+  IntersectionSet(const std::vector<std::shared_ptr<CSet> >& items);
   virtual ~IntersectionSet() {}
   virtual int NumDimensions() const;
   virtual bool Contains(const Config& x);
@@ -145,7 +145,7 @@ public:
   virtual Real ObstacleDistance(const Config& x);
   virtual Optimization::NonlinearProgram* Numeric();
 
-  std::vector<SmartPointer<CSet> > items;
+  std::vector<std::shared_ptr<CSet> > items;
 };
 
 

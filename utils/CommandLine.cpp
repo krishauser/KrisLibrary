@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "CommandLine.h"
 #include <assert.h>
 #include <string.h>
@@ -103,26 +104,26 @@ bool CommandBase::ProcessLine()
 {
 	assert(line != NULL);
 	if(line->size() < NumArgs()) {
-		cout<<"Not enough arguments to "<<Name()<<endl;
+		LOG4CXX_INFO(KrisLibrary::logger(),"Not enough arguments to "<<Name());
 		return false;
 	}
 	int args_remaining = (int)line->size();
 	int j;
 	for(j=0; j<NumArgs(); j++,args_remaining--) {
 		if(!SetArg(j,(*line)[j])) {
-			cout<<"Error reading argument "<<GetArgName(j)<<"="<<(*line)[j]<<" to "<<Name()<<endl;
+			LOG4CXX_ERROR(KrisLibrary::logger(),"Error reading argument "<<GetArgName(j)<<"="<<(*line)[j]<<" to "<<Name());
 			return false;
 		}
 	}
 	int num_inputs = args_remaining - NumOutputs();
 	if(MaxInputs() >= 0) {
 		if(num_inputs > MaxInputs()) {
-			cout << "The number of max inputs to -" <<Name()<<" was exceeded."<<endl;
+			LOG4CXX_INFO(KrisLibrary::logger(), "The number of max inputs to -" <<Name()<<" was exceeded.");
 			return false;
 		}
 	}
 	if(num_inputs < MinInputs()) {
-		cout << "Not enough inputs given to -" <<Name()<<endl;
+		LOG4CXX_INFO(KrisLibrary::logger(), "Not enough inputs given to -" <<Name());
 		return false;
 	}
 	inputs.resize(num_inputs);
@@ -155,16 +156,16 @@ bool CommandBase::SetArg(int arg, const char* val)
 
 void PrintUsage(const char* appName)
 {
-	cout << "USAGE: " << appName << " [COMMAND] args inputs outputs ..." << endl;
-	cout << "# as an argument denotes using the default argument." << endl;
+	LOG4CXX_INFO(KrisLibrary::logger(), "USAGE: " << appName << " [COMMAND] args inputs outputs ..." << "\n");
+	LOG4CXX_INFO(KrisLibrary::logger(), "# as an argument denotes using the default argument." << "\n");
 }
 
 void PrintCommands(CommandBase* commands [], int num_commands)
 {
-	cout << "COMMANDS:"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(), "COMMANDS:");
 	for(int i=0; i<num_commands; i++)
 		commands[i]->PrintDescription(cout);
-	cout<<"For more information, type -help commandname"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"For more information, type -help commandname");
 }
 
 struct CommandHelp : public CommandBase
@@ -185,7 +186,7 @@ struct CommandHelp : public CommandBase
 			}
 		}
 		if(!found_command) {
-			cout<<"Unknown command given to help :"<<item_name<<endl;
+			LOG4CXX_INFO(KrisLibrary::logger(),"Unknown command given to help :"<<item_name);
 			return -1;
 		}
 		return 0;
@@ -244,7 +245,7 @@ int Reader(CommandBase* commands [], int num_commands, int argc, const char** ar
 				}
 			}
 			if(!command_chosen) {
-				printf("Unknown command %s\n", argv[i]);
+				LOG4CXX_INFO(KrisLibrary::logger(),"Unknown command "<< argv[i]);
 				PrintCommands(commands, num_commands);
 				return -1;
 			}
@@ -256,7 +257,7 @@ int Reader(CommandBase* commands [], int num_commands, int argc, const char** ar
 	}
 	if(command_count == 0) {
 		if(inputs.size() > 0)
-			cout<<"Some stray elements were given on the command line"<<endl;
+			LOG4CXX_INFO(KrisLibrary::logger(),"Some stray elements were given on the command line");
 		PrintCommands(commands, num_commands);
 	}
 	else {

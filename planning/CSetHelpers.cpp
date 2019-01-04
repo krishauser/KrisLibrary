@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "CSetHelpers.h"
 #include "CSet.h"
 #include "EdgePlanner.h"
@@ -109,7 +110,7 @@ Optimization::NonlinearProgram* NeighborhoodSet::Numeric()
 }
 
 
-SubspaceSet::SubspaceSet(const SmartPointer<CSet>& _base,int _imin,int _imax)
+SubspaceSet::SubspaceSet(const shared_ptr<CSet>& _base,int _imin,int _imax)
 :base(_base),imin(_imin),imax(_imax)
 {}
 
@@ -157,10 +158,8 @@ int VisibilitySet::NumDimensions() const
 
 bool VisibilitySet::Contains(const Config& x)
 { 
-  EdgePlanner* e=space->LocalPlanner(x,center);
-  bool res=e->IsVisible();
-  delete e;
-  return res;
+  EdgePlannerPtr e=space->LocalPlanner(x,center);
+  return e->IsVisible();
 }
 
 
@@ -196,7 +195,7 @@ bool FiniteSet::Project(Config& x)
 int FiniteSet::NumDimensions() const
 {
   if(items.empty()) {
-    fprintf(stderr,"FiniteSet::NumDimensions(): no items, returning -1\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"FiniteSet::NumDimensions(): no items, returning -1\n");
     return -1;
   }
   return items[0].n;
@@ -213,14 +212,14 @@ Optimization::NonlinearProgram* FiniteSet::Numeric()
 }
 
 
-UnionSet::UnionSet(const SmartPointer<CSet>& a,const SmartPointer<CSet>& b)
+UnionSet::UnionSet(const shared_ptr<CSet>& a,const shared_ptr<CSet>& b)
 {
   items.resize(2);
   items[0] = a;
   items[1] = b;
 }
 
-UnionSet::UnionSet(const std::vector<SmartPointer<CSet> >& _items)
+UnionSet::UnionSet(const std::vector<shared_ptr<CSet> >& _items)
 :items(_items)
 {}
 
@@ -261,14 +260,14 @@ void UnionSet::Sample(Config& x)
 }
 
 
-IntersectionSet::IntersectionSet(const SmartPointer<CSet>& a,const SmartPointer<CSet>& b)
+IntersectionSet::IntersectionSet(const shared_ptr<CSet>& a,const shared_ptr<CSet>& b)
 {
   items.resize(2);
   items[0] = a;
   items[1] = b;
 }
 
-IntersectionSet::IntersectionSet(const std::vector<SmartPointer<CSet> >& _items)
+IntersectionSet::IntersectionSet(const std::vector<shared_ptr<CSet> >& _items)
 :items(_items)
 {}
 

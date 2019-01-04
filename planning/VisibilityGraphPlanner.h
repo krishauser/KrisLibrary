@@ -24,14 +24,13 @@ struct VisibilityGraphPlanner
     Real fdata;
     Config q;
   };
-  typedef SmartPointer<EdgePlanner> Arc;
 
   int TestAndConnectVertex(const Vertex& v);
 
   Geometric2DCSpace* space;
   Real offset;                //offset from obstacle boundaries
-  Graph::UndirectedGraph<Vertex,Arc> vertexGraph;
-  Graph::UndirectedGraph<Vertex,Arc> tempGraph;
+  Graph::UndirectedGraph<Vertex,EdgePlannerPtr> vertexGraph;
+  Graph::UndirectedGraph<Vertex,EdgePlannerPtr> tempGraph;
 };
 
 

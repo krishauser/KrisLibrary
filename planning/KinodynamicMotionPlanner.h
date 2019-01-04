@@ -27,7 +27,7 @@ public:
   struct EdgeData
   {
     KinodynamicMilestonePath path;
-    SmartPointer<EdgePlanner> checker;
+    EdgePlannerPtr checker;
   };
   typedef Graph::TreeNode<State,EdgeData> Node;
 
@@ -37,8 +37,8 @@ public:
   void EnablePointLocation(const char* type=NULL);
   void Clear();
   Node* AddMilestone(Node* parent,const ControlInput& u);
-  Node* AddMilestone(Node* parent,const ControlInput& u,const SmartPointer<Interpolator>& path,const SmartPointer<EdgePlanner>& e);
-  Node* AddMilestone(Node* parent,KinodynamicMilestonePath& path,const SmartPointer<EdgePlanner>& e=NULL);
+  Node* AddMilestone(Node* parent,const ControlInput& u,const InterpolatorPtr& path,const EdgePlannerPtr& e);
+  Node* AddMilestone(Node* parent,KinodynamicMilestonePath& path,const EdgePlannerPtr& e=NULL);
   void AddPath(Node* n0,const KinodynamicMilestonePath& path,std::vector<Node*>& res);
   void Reroot(Node* n);
   Node* PickRandom();
@@ -56,7 +56,7 @@ public:
   Node* root;
 
   ///If point location is enabled, this will contain a point location data structure
-  SmartPointer<PointLocationBase> pointLocation;
+  std::shared_ptr<PointLocationBase> pointLocation;
   std::vector<Node*> index;
   std::vector<Vector> pointRefs;
 };
@@ -147,7 +147,7 @@ public:
   void RebuildDensityEstimator();
 
   KinodynamicTree tree;
-  SmartPointer<DensityEstimatorBase> densityEstimator;
+  std::shared_ptr<DensityEstimatorBase> densityEstimator;
   int extensionCacheSize;
 
   ///These are a list of nodes that have been added to the tree but
@@ -206,7 +206,7 @@ public:
   {
     Node *nStart,*nGoal;
     KinodynamicMilestonePath path;
-    SmartPointer<EdgePlanner> checker;
+    EdgePlannerPtr checker;
   };
 
   Bridge bridge;

@@ -2,7 +2,7 @@
 #include "geometry3d.h"
 #include "clip.h"
 #include "interpolate.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 using namespace Math3D;
 using namespace std;
 

@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "SparseVectorTemplate.h"
 #include "fastarray.h"
 #include <algorithm>
@@ -737,14 +738,14 @@ void SparseVectorCompressed<T>::print(std::ostream& out) const
 
 template<> Complex SparseVectorTemplate<Complex>::minElement(int* index) const
 {
-  cerr<<"Incomplete"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete");
   AssertNotReached();
   return Zero;
 }
 
 template<> Complex SparseVectorTemplate<Complex>::maxElement(int* index) const
 {
-  cerr<<"Incomplete"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete");
   AssertNotReached();
   return Zero;
 }

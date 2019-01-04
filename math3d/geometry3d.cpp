@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "geometry3d.h"
 #include "AABB2D.h"
 #include "Polygon2D.h"
@@ -7,7 +8,7 @@
 #include <iostream>
 #include <KrisLibrary/meshing/TriMesh.h>
 #include <KrisLibrary/math/misc.h>
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <string>
 using namespace std;
 
@@ -98,11 +99,11 @@ bool Sphere3D::intersects(const Line3D& l, Real* t1, Real* t2) const
 	int res=quadratic(a,b,c,x1,x2);
 	if(res<=0) return false;
 	if(res==1) {
-	  //cout<<"Whoa, line just intersects at one point on the sphere"<<endl;
-	  //cout<<"l= "<<l.source<<"->"<<l.direction<<endl;
-	  //cout<<"c= "<<center<<", r="<<radius<<endl;
-	  //cout<<"t="<<x1<<endl;
-	  //getchar();
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"Whoa, line just intersects at one point on the sphere");
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"l= "<<l.source<<"->"<<l.direction);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"c= "<<center<<", r="<<radius);
+	  //LOG4CXX_INFO(KrisLibrary::logger(),"t="<<x1);
+	  //KrisLibrary::loggerWait();
 	  x2=x1;
 	}
 	if(x1 > x2) Swap(x1,x2);
@@ -778,7 +779,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     }
     return false;
   case Segment:
-    fprintf(stderr,"Segment ray cast not done yet\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Segment ray cast not done yet\n");
     return false;
   case Sphere:
     {
@@ -1204,7 +1205,260 @@ Real GeometricPrimitive3D::Distance(const Cylinder3D& c) const
   }
 }
 
+bool GeometricPrimitive3D::SupportsClosestPoints(Type a,Type b)
+{
+  if(a == Point || a == Sphere || b == Point || b == Sphere) return true;
+  if(a == AABB && b == AABB) return true;
+  if(a == Segment && b == Segment) return true;
+  if(a == Triangle && b == Triangle) return true;
+  return false;
+}
 
+Vector3 Unit(const Vector3& v)
+{
+  Real n = v.norm();
+  if(Math::FuzzyZero(n)) return Vector3(0.0);
+  else return v*(1.0/n);
+}
+
+Real GeometricPrimitive3D::ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction) const
+{
+  Real d;
+  switch(type) {
+  case Point:
+    cp = *AnyCast_Raw<Vector3>(&data);
+    direction = Unit(pt-cp);
+    return cp.distance(pt);
+  case Segment:
+    {
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
+      d = s->closestPoint(pt,cp);
+    }
+    break;
+  case Triangle:
+    {
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
+      cp = t->closestPoint(pt);
+      direction = pt-cp;
+      Real n = direction.norm();
+      if(Math::FuzzyZero(n)) direction = t->normal();
+      else direction = direction/n;
+      return n;
+    }
+    break;
+  case Polygon:
+    return Inf;
+  case Sphere:
+    {
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
+      Real d = s->closestPoint(pt,cp);
+      direction = Unit(pt - s->center);
+      return d;
+    }
+  case AABB:
+    {
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
+      ///TODO better normal estimation
+      d = b->distance(pt,cp);
+    }
+    break;
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      ///TODO better normal estimation 
+      d = b->distance(pt,cp);
+    }
+    break;
+  case Cylinder:
+    {
+      const Cylinder3D* c=AnyCast_Raw<Cylinder3D>(&data);
+      d = c->closestPoint(pt,cp);
+    }
+    break;
+  default:
+    FatalError("Invalid primitive type");
+    return Inf;
+  }
+  //default: assume d and cp are calculated
+  direction = Unit(pt-cp);
+  return d;
+}
+
+Real GeometricPrimitive3D::ClosestPoints(const Segment3D& s,Vector3& cp,Vector3& direction) const
+{
+  Vector3 cp_other;
+  switch(type) {
+  case Point:
+    cp = *AnyCast_Raw<Vector3>(&data);
+    s.closestPoint(cp,cp_other);
+    break;
+  case Sphere:
+    {
+      const Sphere3D* sme=AnyCast_Raw<Sphere3D>(&data);
+      Real d = s.closestPoint(sme->center,cp_other);
+      direction = cp_other-sme->center;
+      direction.inplaceNormalize();
+      cp = sme->center + sme->radius*direction;
+      return d - sme->radius;
+    }
+  case Segment:
+    {
+      Real t,u;
+      const Segment3D* sme=AnyCast_Raw<Segment3D>(&data);
+      sme->closestPoint(s,t,u);
+      sme->eval(t,cp);
+      s.eval(u,cp_other);
+    }
+    break;
+  default:
+    return Inf;
+  }
+  //assume cp and cp_other are evaluated
+  direction = cp_other-cp;
+  Real n = direction.norm();
+  if(Math::FuzzyZero(n)) direction = Vector3(0.0);
+  else direction *= 1.0/n;
+  return n;
+}
+Real GeometricPrimitive3D::ClosestPoints(const Triangle3D& t,Vector3& cp,Vector3& direction) const
+{
+  Vector3 cp_other;
+  switch(type) {
+  case Point:
+    {
+      cp = *AnyCast_Raw<Vector3>(&data);
+      cp_other = t.closestPoint(cp);
+      direction = cp_other-cp;
+      Real n = direction.norm();
+      if(Math::FuzzyZero(n)) direction = -t.normal();
+      else direction *= 1.0/n;
+      return n;
+    }
+  case Sphere:
+    {
+      const Sphere3D* sme=AnyCast_Raw<Sphere3D>(&data);
+      cp_other = t.closestPoint(sme->center);
+      Real d = cp_other.distance(sme->center);
+      direction = cp_other-sme->center;
+      direction.inplaceNormalize();
+      cp = sme->center + sme->radius*direction;
+      return d - sme->radius;
+    }
+  case Triangle:
+    {
+      const Triangle3D* tme=AnyCast_Raw<Triangle3D>(&data);
+      Real d = tme->distance(t,cp,cp_other);
+    }
+    break;
+  default:
+    return Inf;
+  }
+  //assume cp and cp_other are evaluated
+  direction = cp_other-cp;
+  Real n = direction.norm();
+  if(Math::FuzzyZero(n)) direction = Vector3(0.0);
+  else direction *= 1.0/n;
+  return n;
+}
+Real GeometricPrimitive3D::ClosestPoints(const Polygon3D& p,Vector3& cp,Vector3& direction) const
+{
+  return Inf;
+}
+Real GeometricPrimitive3D::ClosestPoints(const Sphere3D& s,Vector3& cp,Vector3& direction) const
+{
+  Real d = ClosestPoints(s.center,cp,direction);
+  return d - s.radius;
+}
+
+Real GeometricPrimitive3D::ClosestPoints(const Ellipsoid3D& s,Vector3& cp,Vector3& direction) const
+{
+  return Inf;
+}
+Real GeometricPrimitive3D::ClosestPoints(const Cylinder3D& s,Vector3& cp,Vector3& direction) const
+{
+  return Inf;
+}
+Real GeometricPrimitive3D::ClosestPoints(const AABB3D& s,Vector3& cp,Vector3& direction) const
+{
+  Vector3 cp_other;
+  switch(type) {
+  case Point:
+    {
+      cp = *AnyCast_Raw<Vector3>(&data);
+      Real d = s.distance(cp,cp_other);
+      direction = Unit(cp_other - cp);
+      return d;
+    }
+  case Sphere:
+    {
+      const Sphere3D* sme=AnyCast_Raw<Sphere3D>(&data);
+      Real d = s.distance(sme->center,cp_other);
+      direction = cp_other-sme->center;
+      direction.inplaceNormalize();
+      cp = sme->center + sme->radius*direction;
+      return d - sme->radius;
+    }
+  case AABB:
+    {
+      const AABB3D* sme=AnyCast_Raw<AABB3D>(&data);
+      Real d = sme->distance(s,cp,cp_other);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
+    break;
+  default:
+    return Inf;
+  }
+}
+Real GeometricPrimitive3D::ClosestPoints(const Box3D& s,Vector3& cp,Vector3& direction) const
+{
+  Vector3 cp_other;
+  switch(type) {
+  case Point:
+    {
+      cp = *AnyCast_Raw<Vector3>(&data);
+      Real d = s.distance(cp,cp_other);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
+  case Sphere:
+    {
+      const Sphere3D* sme=AnyCast_Raw<Sphere3D>(&data);
+      Real d = s.distance(sme->center,cp_other);
+      direction = cp_other-sme->center;
+      direction.inplaceNormalize();
+      cp = sme->center + sme->radius*direction;
+      return d - sme->radius;
+    }
+  default:
+    return Inf;
+  }
+}
+Real GeometricPrimitive3D::ClosestPoints(const GeometricPrimitive3D& g,Vector3& cp,Vector3& direction) const
+{
+  switch(g.type) {
+  case Point:
+    return ClosestPoints(*AnyCast_Raw<Vector3>(&g.data),cp,direction);
+  case Segment:
+    return ClosestPoints(*AnyCast_Raw<Segment3D>(&g.data),cp,direction);
+  case Sphere:
+    return ClosestPoints(*AnyCast_Raw<Sphere3D>(&g.data),cp,direction);
+  case Ellipsoid:
+    return ClosestPoints(*AnyCast_Raw<Ellipsoid3D>(&g.data),cp,direction);
+  case Cylinder:
+    return ClosestPoints(*AnyCast_Raw<Cylinder3D>(&g.data),cp,direction);
+  case AABB:
+    return ClosestPoints(*AnyCast_Raw<AABB3D>(&g.data),cp,direction);
+  case Box:
+    return ClosestPoints(*AnyCast_Raw<Box3D>(&g.data),cp,direction);
+  case Triangle:
+    return ClosestPoints(*AnyCast_Raw<Triangle3D>(&g.data),cp,direction);
+  case Polygon:
+    return ClosestPoints(*AnyCast_Raw<Polygon3D>(&g.data),cp,direction);
+  default:
+    return Inf;
+  }
+}
 
 
 
@@ -1321,7 +1575,7 @@ std::istream& operator >>(std::istream& in,GeometricPrimitive3D& g)
     g = GeometricPrimitive3D(s);
   }
   else {
-    cout<<"istream >> GeometricPrimitive3D: Invalid type "<<type<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"istream >> GeometricPrimitive3D: Invalid type "<<type);
     in.setstate(ios::badbit);
   }
   return in;

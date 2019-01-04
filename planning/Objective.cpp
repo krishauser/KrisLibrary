@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Objective.h"
 #include "KinodynamicPath.h"
 #include "Path.h"
@@ -111,7 +112,7 @@ Real ObjectiveFunctionalBase::IncrementalCost(const KinodynamicMilestonePath& pa
 {
   Real c = 0.0;
   for(size_t i=0;i<path.paths.size();i++) {
-    c += IncrementalCost(path.controls[i],path.paths[i]);
+    c += IncrementalCost(path.controls[i],path.paths[i].get());
   }
   return c;
 }
@@ -121,7 +122,7 @@ Real ObjectiveFunctionalBase::PathCost(const MilestonePath& path)
   if(PathInvariant()) return TerminalCost(path.End());
   Real c = TerminalCost(path.End());
   for(size_t i=0;i<path.edges.size();i++)
-    c += IncrementalCost(path.edges[i]);
+    c += IncrementalCost(path.edges[i].get());
   return c;
 }
 
@@ -229,7 +230,7 @@ CompositeObjective::~CompositeObjective()
 {
 }
 
-void CompositeObjective::Add(const SmartPointer<ObjectiveFunctionalBase>& obj,Real weight)
+void CompositeObjective::Add(const std::shared_ptr<ObjectiveFunctionalBase>& obj,Real weight)
 {
   components.push_back(obj);
   if(!weights.empty())

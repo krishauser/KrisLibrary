@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "AsyncIO.h"
 #include "socketutils.h"
 #include "ioutils.h"
@@ -24,7 +25,7 @@ void AsyncReaderQueue::OnRead_NoLock(const string& msg)
     msgQueue.pop_front();
     numDroppedMsgs++;
     if(numDroppedMsgs % 1000 == 1) {
-      fprintf(stderr,"AsyncReaderQueue: Warning, dropped %d messages, ask your sender to reduce the send rate\n",(int)numDroppedMsgs);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"AsyncReaderQueue: Warning, dropped "<<(int)numDroppedMsgs<<" messages, ask your sender to reduce the send rate\n");
     }
   }
   msgQueue.push_back(msg);
@@ -79,14 +80,14 @@ string AsyncWriterQueue::OnWrite_NoLock()
   if(msgQueue.empty()) return "";
   string res = msgQueue.front();
   if(msgQueue.size() >= queueMax) {
-    printf("AsyncWriterQueue: Message queue overflowing!\n");
-    printf("   solution: slow down rate of sending via Send\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"AsyncWriterQueue: Message queue overflowing!\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"   solution: slow down rate of sending via Send\n");
   }
   while(msgQueue.size()>=queueMax) {
     msgQueue.pop_front();
     numDroppedMsgs++;
     if(numDroppedMsgs % 1000 == 1) {
-      fprintf(stderr,"AsyncWriterQueue: Warning, dropped %d messages, slow down the rate of sending via SendMessage\n",(int)numDroppedMsgs);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"AsyncWriterQueue: Warning, dropped "<<(int)numDroppedMsgs<<" messages, slow down the rate of sending via SendMessage\n");
     }
   }
   msgQueue.pop_front();
@@ -171,10 +172,10 @@ void SyncPipe::Work()
     }
   }
   if(readerr) {
-    printf("SyncPipe::Work(): An error occurred during reading\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SyncPipe::Work(): An error occurred during reading\n");
   }
   if(writeerr) {
-    printf("SyncPipe::Work(): An error occurred during writing\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SyncPipe::Work(): An error occurred during writing\n");
   }
 }
 
@@ -202,7 +203,7 @@ void* read_worker_thread_func(void * ptr)
   while(data->timer.ElapsedTime() < data->lastReadTime + data->timeout) {
     const string* res = data->transport->DoRead();
     if(!res) {
-      fprintf(stderr,"AsyncReaderThread: abnormal termination, read failed\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"AsyncReaderThread: abnormal termination, read failed\n");
       data->transport->Stop();
       data->initialized = false;
       return NULL;
@@ -216,7 +217,7 @@ void* read_worker_thread_func(void * ptr)
     }
   }
   if(data->timeout != 0)
-    fprintf(stderr,"AsyncReaderThread: quitting due to timeout\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AsyncReaderThread: quitting due to timeout\n");
   return NULL;
 }
 
@@ -281,7 +282,7 @@ void* pipe_worker_thread_func(void * ptr)
     if(data->transport->ReadReady()) {
       const string* res = data->transport->DoRead();
       if(!res) {
-	fprintf(stderr,"AsyncPipeThread: abnormal termination, read failed\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),"AsyncPipeThread: abnormal termination, read failed\n");
 	data->transport->Stop();
 	data->initialized = false;
 	return NULL;
@@ -310,7 +311,7 @@ void* pipe_worker_thread_func(void * ptr)
           done = true;
         else {
   	if(!data->transport->DoWrite(send)) {
-  	  fprintf(stderr,"AsyncPipeThread: abnormal termination, write failed\n");
+  	    	  LOG4CXX_ERROR(KrisLibrary::logger(),"AsyncPipeThread: abnormal termination, write failed\n");
   	  data->transport->Stop();
   	  return NULL;
   	}
@@ -320,7 +321,7 @@ void* pipe_worker_thread_func(void * ptr)
     else {
       if(data->WriteAvailable()) {
 	if(iters % 100 == 0)
-	  fprintf(stderr,"AsyncPipeThread: Data is ready to send, waiting for transport to be ready\n");
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"AsyncPipeThread: Data is ready to send, waiting for transport to be ready\n");
 	iters++;
 
 	ThreadSleep(0.01);
@@ -439,7 +440,7 @@ bool StreamTransport::DoWrite(const char* msg,int length)
     }
     break;
   case Ascii:
-    if(msg[length] != 0) { fprintf(stderr,"StreamTransport: not writing a NULL-terminated string, Ascii mode\n"); return false; }
+        if(msg[length] != 0) { LOG4CXX_ERROR(KrisLibrary::logger(),"StreamTransport: not writing a NULL-terminated string, Ascii mode\n"); return false; }
     SafeOutputString(*out,buffer);
     (*out) << '\n';
     break;
@@ -481,16 +482,16 @@ bool ReadIntPrependedString(File& file,std::string& buf)
 {
   int slen;
   if(!file.ReadData(&slen,4)) {
-    fprintf(stderr,"Socket::ReadString read length failed\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Socket::ReadString read length failed\n");
     return false;
   }
   if(slen < 0) {
-    fprintf(stderr,"ReadIntPrependedString read length %d is negative\n",slen);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadIntPrependedString read length "<<slen);
     return false;
   }
   buf.resize(slen);
   if(!file.ReadData(&buf[0],slen)) {
-    fprintf(stderr,"ReadIntPrependedString read string failed\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadIntPrependedString read string failed\n");
     return false;
   }
   return true;
@@ -500,7 +501,7 @@ const string* SocketClientTransport::DoRead()
 {
   ScopedLock lock(mutex);
   if(!ReadIntPrependedString(socket,buf)) {
-    cout<<"SocketClientTransport: Error reading string on "<<addr<<"..."<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SocketClientTransport: Error reading string on "<<addr<<"...");
     return NULL;
   }
   return &buf;
@@ -508,12 +509,12 @@ const string* SocketClientTransport::DoRead()
 
 bool SocketClientTransport::Start()
 {
-  cout<<"SocketClientTransport: Creating socket on "<<addr<<"..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"SocketClientTransport: Creating socket on "<<addr<<"...");
   bool opened = false;
   if(socket.IsOpen()) opened = true;
   while(!opened) {
     if(!socket.Open(addr.c_str(),FILECLIENT)) {
-      fprintf(stderr,"SocketClientTransport: Unable to connect to %s... waiting\n",addr.c_str());
+            LOG4CXX_ERROR(KrisLibrary::logger(),"SocketClientTransport: Unable to connect to "<<addr.c_str());
       ThreadSleep(1);
     }
     else
@@ -521,7 +522,7 @@ bool SocketClientTransport::Start()
   }
   void* ptr = socket.FileObjectPointer();
   if(ptr == NULL) {
-    fprintf(stderr,"SocketClientTransport: uh... File returns NULL socket?\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"SocketClientTransport: uh... File returns NULL socket?\n");
     return false;
   }
   SetNodelay(*((SOCKET*)ptr));
@@ -532,7 +533,7 @@ bool SocketClientTransport::Stop()
 {
   ScopedLock lock(mutex);
   if(socket.IsOpen()) {
-    cout<<"SocketClientTransport: Closing "<<addr<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"SocketClientTransport: Closing "<<addr);
     socket.Close();
   }
   return true;
@@ -563,7 +564,7 @@ bool SocketServerTransport::Start()
 {
   serversocket = Bind(addr.c_str(),true);
   if(serversocket < 0) {
-    fprintf(stderr,"Unable to bind server socket to address %s\n",addr.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to bind server socket to address "<<addr.c_str());
     return false;
   }
   listen(serversocket,maxclients);
@@ -597,9 +598,9 @@ const string* SocketServerTransport::DoRead()
   if((int)clientsockets.size() < maxclients) {
     SOCKET clientsock = Accept(serversocket,5.0);
     if(clientsock != INVALID_SOCKET) {
-      printf("Accepted new client on %s\n",addr.c_str());
+      LOG4CXX_INFO(KrisLibrary::logger(),"Accepted new client on "<<addr.c_str());
       SetNodelay(clientsock);
-      clientsockets.push_back(new File);
+      clientsockets.push_back(std::unique_ptr<File>(new File));
       clientsockets.back()->OpenTCPSocket(clientsock);
     }
   }
@@ -624,9 +625,9 @@ const string* SocketServerTransport::DoRead()
       return &buf;
     }
     //close the client
-    printf("SocketServerTransport: Lost client %d\n",currentclient);
+    LOG4CXX_INFO(KrisLibrary::logger(),"SocketServerTransport: Lost client "<<currentclient);
     clientsockets[currentclient] = NULL;
-    clientsockets[currentclient] = clientsockets.back();
+    clientsockets[currentclient].reset(clientsockets.back().release());
     clientsockets.resize(clientsockets.size()-1);
     if(clientsockets.empty()) {
       currentclient = -1;
@@ -646,9 +647,9 @@ bool SocketServerTransport::DoWrite(const char* str,int length)
   if((int)clientsockets.size() < maxclients) {
     SOCKET clientsock = Accept(serversocket,5.0);
     if(clientsock != INVALID_SOCKET) {
-      printf("Accepted new client on %s\n",addr.c_str());
+      LOG4CXX_INFO(KrisLibrary::logger(),"Accepted new client on "<<addr.c_str());
       SetNodelay(clientsock);
-      clientsockets.push_back(new File);
+      clientsockets.push_back(std::unique_ptr<File>(new File));
       clientsockets.back()->OpenTCPSocket(clientsock);
     }
   }
@@ -659,10 +660,10 @@ bool SocketServerTransport::DoWrite(const char* str,int length)
 
   for(size_t i=0;i<clientsockets.size();i++) {
     if(!clientsockets[i]->WriteData(&length,4) || !clientsockets[i]->WriteData(str,length)) {
-      printf("SocketServerTransport: Lost client %d\n",(int)i);
+      LOG4CXX_INFO(KrisLibrary::logger(),"SocketServerTransport: Lost client "<<(int)i);
       //close the client
       clientsockets[i] = NULL;
-      clientsockets[i] = clientsockets.back();
+      clientsockets[i].reset(clientsockets.back().release());
       clientsockets.resize(clientsockets.size()-1);
       i--;
     }

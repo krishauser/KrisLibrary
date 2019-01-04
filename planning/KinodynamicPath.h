@@ -24,7 +24,7 @@ class KinodynamicMilestonePath : public Interpolator
 {
  public:
   KinodynamicMilestonePath();
-  KinodynamicMilestonePath(const ControlInput& u,const SmartPointer<Interpolator>& path);
+  KinodynamicMilestonePath(const ControlInput& u,const InterpolatorPtr& path);
   virtual const Config& Start() const { return milestones.front(); }
   virtual const Config& End() const { return milestones.back(); }
   virtual void Eval(Real u,Config& q) const { Eval2(u,q); }
@@ -46,8 +46,8 @@ class KinodynamicMilestonePath : public Interpolator
   ///If paths are not filled out, SimulateFromControls is called.
   void MakeEdges(KinodynamicSpace* space);
   void Append(const ControlInput& u,KinodynamicSpace* space);
-  void Append(const ControlInput& u,const SmartPointer<Interpolator>& path,KinodynamicSpace* space);
-  void Append(const ControlInput& u,const SmartPointer<Interpolator>& path,const SmartPointer<EdgePlanner>& e);
+  void Append(const ControlInput& u,const InterpolatorPtr& path,KinodynamicSpace* space);
+  void Append(const ControlInput& u,const InterpolatorPtr& path,const EdgePlannerPtr& e);
   void Concat(const KinodynamicMilestonePath& suffix);
   bool IsValid() const;
   bool IsFeasible();
@@ -88,8 +88,8 @@ class KinodynamicMilestonePath : public Interpolator
 
   std::vector<State> milestones;
   std::vector<ControlInput> controls;
-  std::vector<SmartPointer<Interpolator> > paths;
-  std::vector<SmartPointer<EdgePlanner> > edges;
+  std::vector<InterpolatorPtr> paths;
+  std::vector<EdgePlannerPtr> edges;
 };
 
 #endif

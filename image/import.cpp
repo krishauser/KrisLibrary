@@ -1,12 +1,109 @@
+#include <KrisLibrary/Logger.h>
 #include "import.h"
 #include <string.h>
 #include <errors.h>
 #include <utils/stringutils.h>
+#if HAVE_FREE_IMAGE
+#include "FreeImage.h"
+#endif //HAVE_FREE_IMAGE
 
 const char* ImageImportTypes()
 {
 	return ".bit;.ppm;.bmp;.tga;";
 }
+
+#if HAVE_FREE_IMAGE
+class FreeImageInitializer
+{
+public:
+	FreeImageInitializer() : initialized(false) {}
+	void initialize() {
+		if(!initialized) {
+			FreeImage_Initialise();
+			initialized = true;
+			int res;
+			LOG4CXX_INFO(KrisLibrary::logger(),"Initializing FreeImage...");
+			res = FreeImage_SetPluginEnabled(FIF_BMP,1);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  BMP enabled: "<<res);
+			res = FreeImage_SetPluginEnabled(FIF_PNG,1);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  PNG enabled: "<<res);
+			res = FreeImage_SetPluginEnabled(FIF_JPEG,1);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  JPEG enabled: "<<res);
+			res = FreeImage_SetPluginEnabled(FIF_TIFF,1);
+			LOG4CXX_INFO(KrisLibrary::logger(),"  TIFF enabled: "<<res);
+		}
+	}
+	~FreeImageInitializer() { if(initialized) FreeImage_DeInitialise(); }
+	bool initialized;
+};
+
+FreeImageInitializer _free_image_initializer;
+
+void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
+{
+	int w=FreeImage_GetWidth(fimg);
+	int h=FreeImage_GetWidth(fimg);
+	Image::PixelFormat fmt;
+	FREE_IMAGE_TYPE imgtype = FreeImage_GetImageType(fimg);
+	FREE_IMAGE_COLOR_TYPE coltype = FreeImage_GetColorType(fimg);
+	switch(coltype) {
+	case FIC_MINISWHITE:
+		fmt = Image::A8;
+		break;
+	case FIC_MINISBLACK:
+		fmt = Image::A8;
+		break;
+	case FIC_RGB:
+		fmt = Image::R8G8B8;
+		break;
+	case FIC_PALETTE:
+		fmt = Image::R8G8B8;
+		break;
+	case FIC_RGBALPHA:
+		fmt = Image::A8R8G8B8;
+		break;
+	case FIC_CMYK:
+		fmt = Image::R8G8B8;
+		break;
+	}
+	img.initialize(w,h,fmt);
+	if(fmt == Image::R8G8B8) {
+		RGBQUAD rgb;
+		for(int i=0;i<h;i++) {
+			for(int j=0;j<w;j++) {
+				FreeImage_GetPixelColor(fimg,j,i,&rgb);
+				unsigned char* d=img.getData(j,i);
+				d[0] = rgb.rgbBlue;
+				d[1] = rgb.rgbGreen;
+				d[2] = rgb.rgbRed;
+			}
+		}
+	}
+	else if(fmt == Image::A8R8G8B8) {
+		RGBQUAD rgb;
+		for(int i=0;i<h;i++) {
+			for(int j=0;j<w;j++) {
+				FreeImage_GetPixelColor(fimg,j,i,&rgb);
+				unsigned char* d=img.getData(j,i);
+				d[0] = rgb.rgbBlue;
+				d[1] = rgb.rgbGreen;
+				d[2] = rgb.rgbRed;
+				d[3] = 0xff;
+			}
+		}
+	}
+	else {
+		RGBQUAD rgb;
+		for(int i=0;i<h;i++) {
+			for(int j=0;j<w;j++) {
+				FreeImage_GetPixelColor(fimg,j,i,&rgb);
+				unsigned char* d=img.getData(j,i);
+				d[0] = rgb.rgbBlue;
+			}
+		}
+	}
+}
+#endif //HAVE_FREE_IMAGE
 
 #ifndef _WIN32
 bool ImportImageGDIPlus(const char* fn, Image& img) { return false; }
@@ -14,13 +111,35 @@ bool ImportImageGDIPlus(const char* fn, Image& img) { return false; }
 
 bool ImportImage(const char* fn, Image& img)
 {
+#if HAVE_FREE_IMAGE
+	_free_image_initializer.initialize();
+	FREE_IMAGE_FORMAT fif_type = FIF_UNKNOWN;
+	const char* ext = FileExtension(fn);
+	if(ext != NULL) {
+		if(0==strcmp(ext,"png")) 
+			fif_type = FIF_PNG;
+		else if(0==strcmp(ext,"jpg") || 0==strcmp(ext,"jpeg")) 
+			fif_type = FIF_JPEG;
+		else if(0==strcmp(ext,"bmp")) 
+			fif_type = FIF_BMP;
+		else if(0==strcmp(ext,"tif") || 0==strcmp(ext,"tiff")) 
+			fif_type = FIF_TIFF;
+	}
+	FIBITMAP* fimg = FreeImage_Load(fif_type,fn);
+	if(fimg != NULL) {
+		FreeImageBitmapToImage(fimg,img);
+		FreeImage_Unload(fimg);
+		return true;
+	}
+	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Load result is NULL");
+#else 
 	const char* ext = FileExtension(fn);
 	if(!ext) {
-	  fprintf(stderr,"Couldnt detect an extension on image import file %s\n", fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Couldnt detect an extension on image import file "<< fn);
 		return false;
 	}
 	if(strlen(ext) > 8) {
-	  fprintf(stderr,"Unknown extension \"%s\" on image import file %s\n", ext, fn);
+	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown extension \""<< ext<<"\" on image import file "<< fn);
 		return false;
 	}
 	char extbuf[8];
@@ -42,15 +161,11 @@ bool ImportImage(const char* fn, Image& img)
 #ifdef _WIN32
 		return ImportImageGDIPlus(fn, img);
 #else
-		fprintf(stderr,"ImportImage: Unknown file extension \"%s\" on image import file %s\n",extbuf,fn);
+				LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage: Unknown file extension \""<<extbuf<<"\" on image import file "<<fn);
 		return false;
 #endif //_WIN32
 	}
-	/*
-	{
-		ReportError("Unknown extension \"%s\" on image import file %s", ext, fn);
-		return false;
-	}*/
+#endif //HAVE_FREE_IMAGE
 }
 
 
@@ -69,21 +184,21 @@ bool ImportImageBMP(const char* fn, Image& img)
 	BITMAPFILEHEADER bfh;
 	if(fread(&bfh, sizeof(bfh), 1, f) != 1)
 	{
-		printf("Couldn't load file header\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't load file header\n");
 		fclose(f);
 		return false;
 	}
 
 	if(memcmp(&bfh.bfType, "BM", 2) != 0) 
 	{
-		printf("This isn't a bitmap file\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"This isn't a bitmap file\n");
 		return false;
 	}
 
 	BITMAPINFOHEADER bi;
 	if(fread(&bi, sizeof(bi), 1, f) != 1)
 	{
-		printf("Couldn't load info header\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Couldn't load info header\n");
 		fclose(f);
 		return false;
 	}
@@ -97,7 +212,7 @@ bool ImportImageBMP(const char* fn, Image& img)
 			unpackedsize = bi.biWidth * bi.biHeight * (bi.biBitCount>>3);
 		break;
 	default:
-		printf("Unsupported compression type\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Unsupported compression type\n");
 		fclose(f);
 		return false;
 	}
@@ -115,11 +230,11 @@ bool ImportImageBMP(const char* fn, Image& img)
 		{
 		if(bi.biClrUsed != 0)
 			palette_size = bi.biClrUsed;
-		printf("8 bit\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"8 bit\n");
 		decode_8 = true;
 		if(fread(&palette, sizeof(RGBQUAD), palette_size, f) != palette_size)
 		{
-			printf("Couldnt read palette\n");
+			LOG4CXX_INFO(KrisLibrary::logger(),"Couldnt read palette\n");
 			fclose(f);
 			return false;
 		}
@@ -127,27 +242,27 @@ bool ImportImageBMP(const char* fn, Image& img)
 		}
 		break;
 	case 16:
-		printf("16 bit\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"16 bit\n");
 		fmt = Image::R5G6B5;
 		break;
 	case 24:
-		printf("24 bit\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"24 bit\n");
 		fmt = Image::R8G8B8;
 		break;
 	default:
-		printf("Unsupported bit count\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Unsupported bit count\n");
 		fclose(f);
 		return false;
 	}
 
-	printf("currently %d\n", ftell(f));
+	LOG4CXX_INFO(KrisLibrary::logger(),"currently "<< ftell(f));
 	
 	fseek(f, bfh.bfOffBits, SEEK_SET);
 
 	unsigned char* bits = new unsigned char [size_to_read];
 	if(fread(bits, 1, size_to_read, f) != size_to_read)
 	{
-		printf("Couldnt read bits\n");
+		LOG4CXX_INFO(KrisLibrary::logger(),"Couldnt read bits\n");
 		fclose(f);
 		delete [] bits;
 		return false;
@@ -157,7 +272,7 @@ bool ImportImageBMP(const char* fn, Image& img)
 	{
 		int cur = ftell(f);
 		fseek(f, 0, SEEK_END);
-		printf("Um, there was some stuff missed: offset is %d, size is %d, to read is %d, current is %d, end is %d\n",
+		LOG4CXX_INFO(KrisLibrary::logger(),"Um, there was some stuff missed: offset is %d, size is %d, to read is %d, current is %d, end is %d\n",
 			bfh.bfOffBits, bfh.bfSize, size_to_read, cur, ftell(f));
 	}
 
@@ -172,7 +287,7 @@ bool ImportImageBMP(const char* fn, Image& img)
 		{
 			if(*bit >= palette_size)
 			{
-				printf("out of palette range\n");
+				LOG4CXX_INFO(KrisLibrary::logger(),"out of palette range\n");
 			}
 			pixel[0] = palette[*bit].rgbBlue;
 			pixel[1] = palette[*bit].rgbGreen;
@@ -230,20 +345,20 @@ struct tga_file_header
 
 void print_header(tga_file_header& h)
 {
-	printf("size ident: %d\n", h.size_image_identification);
-	printf("color map type: %d\n", h.color_map_type);
-	printf("image type: %d\n\n", h.image_type);
+	LOG4CXX_INFO(KrisLibrary::logger(),"size ident: "<< h.size_image_identification);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map type: "<< h.color_map_type);
+	LOG4CXX_INFO(KrisLibrary::logger(),"image type: "<< h.image_type);
 
-	printf("color map origin: %d\n", h.color_map_origin);
-	printf("color map size: %d\n", h.color_map_size);
-	printf("color map bpp: %d\n\n", h.color_map_bpp);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map origin: "<< h.color_map_origin);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map size: "<< h.color_map_size);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map bpp: "<< h.color_map_bpp);
 
-	printf("x origin: %d\n", h.x_origin);
-	printf("y origin: %d\n", h.y_origin);
-	printf("width: %d\n", h.width);
-	printf("height: %d\n", h.height);
-	printf("bpp: %d\n", h.bpp);
-	printf("color map bpp: %d\n\n", h.color_map_bpp);
+	LOG4CXX_INFO(KrisLibrary::logger(),"x origin: "<< h.x_origin);
+	LOG4CXX_INFO(KrisLibrary::logger(),"y origin: "<< h.y_origin);
+	LOG4CXX_INFO(KrisLibrary::logger(),"width: "<< h.width);
+	LOG4CXX_INFO(KrisLibrary::logger(),"height: "<< h.height);
+	LOG4CXX_INFO(KrisLibrary::logger(),"bpp: "<< h.bpp);
+	LOG4CXX_INFO(KrisLibrary::logger(),"color map bpp: "<< h.color_map_bpp);
 }
 
 #include <memory.h>
@@ -286,7 +401,7 @@ bool ImportImageTGA(const char* fn, Image& img)
 //	if(fread(&header, sizeof(tga_file_header), 1, f) != 1)
 //		return false;
 
-	printf("size of header %d\n", sizeof(tga_file_header));
+	LOG4CXX_INFO(KrisLibrary::logger(),"size of header "<< sizeof(tga_file_header));
 
 	print_header(header);
 

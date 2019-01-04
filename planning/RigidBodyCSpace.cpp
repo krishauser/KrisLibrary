@@ -81,7 +81,7 @@ Real SO2CSpace::Distance(const Config& a,const Config& b)
   return Abs(AngleDiff(a(0),b(0)));
 }
 
-void SO2CSpace::Properties(PropertyMap& pmap) const
+void SO2CSpace::Properties(PropertyMap& pmap)
 {
   pmap.set("cartesian",0);
   pmap.set("geodesic",1);
@@ -115,11 +115,11 @@ void SO2CSpace::SetRotation(const Math3D::Matrix2& R,Config& x)
 }
   
 SE2CSpace::SE2CSpace(Real bmin,Real bmax)
-:MultiCSpace(new R2CSpace(bmin,bmax),new SO2CSpace())
+:MultiCSpace(make_shared<R2CSpace>(bmin,bmax),make_shared<SO2CSpace>())
 {}
 
 SE2CSpace::SE2CSpace(const Math3D::Vector2& bmin,const Math3D::Vector2& bmax)
-:MultiCSpace(new R2CSpace(bmin,bmax),new SO2CSpace())
+:MultiCSpace(make_shared<R2CSpace>(bmin,bmax),make_shared<SO2CSpace>())
 {}
 
 
@@ -198,7 +198,7 @@ Real SO3CSpace::Distance(const Config& a,const Config& b)
   return Abs(aa.angle);
 }
 
-void SO3CSpace::Properties(PropertyMap& pmap) const
+void SO3CSpace::Properties(PropertyMap& pmap)
 {
   pmap.set("cartesian",0);
   pmap.set("geodesic",1);
@@ -240,11 +240,11 @@ void SO3CSpace::SetRotation(const Math3D::Matrix3& R,Config& x)
 
 
 SE3CSpace::SE3CSpace(Real bmin,Real bmax)
-:MultiCSpace(new R3CSpace(bmin,bmax),new SO3CSpace())
+:MultiCSpace(make_shared<R3CSpace>(bmin,bmax),make_shared<SO3CSpace>())
 {}
 
 SE3CSpace::SE3CSpace(const Math3D::Vector3& bmin,const Math3D::Vector3& bmax)
-:MultiCSpace(new R3CSpace(bmin,bmax),new SO3CSpace())
+:MultiCSpace(make_shared<R3CSpace>(bmin,bmax),make_shared<SO3CSpace>())
 {}
 
 

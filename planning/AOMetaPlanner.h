@@ -18,7 +18,7 @@ class CostSpaceRRTPlanner : public LazyRRTKinodynamicPlanner
 public:
   typedef Real (*HeuristicFn) (const Config& x);
 
-  CostSpaceRRTPlanner(const SmartPointer<KinodynamicSpace>& baseSpace,const SmartPointer<ObjectiveFunctionalBase>& objective,Real costMax=Inf);
+  CostSpaceRRTPlanner(const std::shared_ptr<KinodynamicSpace>& baseSpace,const std::shared_ptr<ObjectiveFunctionalBase>& objective,Real costMax=Inf);
   virtual ~CostSpaceRRTPlanner() {}
   void EnableCostSpaceBias(bool enabled);
   void SetCostMax(Real cmax);
@@ -39,10 +39,10 @@ public:
   Real PathCost() const;
   Real TerminalCost(const State& xc);
 
-  SmartPointer<KinodynamicSpace> baseSpace;
-  SmartPointer<KinodynamicSpace> costSpace;
-  SmartPointer<ObjectiveFunctionalBase> objective;
-  SmartPointer<CSet> costGoalSet;
+  std::shared_ptr<KinodynamicSpace> baseSpace;
+  std::shared_ptr<KinodynamicSpace> costSpace;
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
+  std::shared_ptr<CSet> costGoalSet;
   HeuristicFn heuristic;
   Real costSpaceDistanceWeight;
   bool lazy;
@@ -73,7 +73,7 @@ class CostSpaceESTPlanner : public ESTKinodynamicPlanner
 public:
   typedef Real (*HeuristicFn) (const Config& x);
 
-  CostSpaceESTPlanner(const SmartPointer<KinodynamicSpace>& baseSpace,const SmartPointer<ObjectiveFunctionalBase>& objective,Real costMax=Inf);
+  CostSpaceESTPlanner(const std::shared_ptr<KinodynamicSpace>& baseSpace,const std::shared_ptr<ObjectiveFunctionalBase>& objective,Real costMax=Inf);
   virtual ~CostSpaceESTPlanner() {}
   void EnableCostSpaceBias(bool enabled);
   void SetCostMax(Real cmax);
@@ -92,10 +92,10 @@ public:
   Real PathCost() const;
   Real TerminalCost(const State& xc);
 
-  SmartPointer<KinodynamicSpace> baseSpace;
-  SmartPointer<KinodynamicSpace> costSpace;
-  SmartPointer<ObjectiveFunctionalBase> objective;
-  SmartPointer<CSet> costGoalSet;
+  std::shared_ptr<KinodynamicSpace> baseSpace;
+  std::shared_ptr<KinodynamicSpace> costSpace;
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
+  std::shared_ptr<CSet> costGoalSet;
   HeuristicFn heuristic;
   Real costSpaceResolution;
 

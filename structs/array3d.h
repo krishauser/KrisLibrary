@@ -1,11 +1,12 @@
 #ifndef ARRAY3D_H
 #define ARRAY3D_H
 
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/utils.h>
 #include <KrisLibrary/utils/IntTriple.h>
 #include <KrisLibrary/utils/indexing.h>
 #include <KrisLibrary/errors.h>
+#include <iosfwd>
 
 /** @brief A three-dimensional m x n x parray.
  *
@@ -34,13 +35,15 @@ class Array3D
   Array3D(int m,int n,int p);
   Array3D(int m,int n,int p,const T& initVal);
   Array3D(const Array3D<T>& rhs);
+  Array3D(Array3D<T>&& rhs);
   ~Array3D();
   
-  inline T& operator()(int i,int j,int k) { Assert(i>=0&&i<m); Assert(j>=0&&j<n); Assert(k>=0&&k<p); return items[i*n*p+j*p+k]; }
-  inline const T& operator()(int i,int j,int k) const { Assert(i>=0&&i<m); Assert(j>=0&&j<n); return items[i*n*p+j*p+k]; }
+  inline T& operator()(int i,int j,int k) { Assert(i>=0&&i<m); return items[(i*n+j)*p+k]; }
+  inline const T& operator()(int i,int j,int k) const { return items[(i*n+j)*p+k]; }
   inline T& operator()(const IntTriple& t) { return operator()(t.a,t.b,t.c); }
   inline const T& operator()(const IntTriple& t) const { return operator()(t.a,t.b,t.c); }
-  const Array3D<T>& operator =(const Array3D<T>& rhs);
+  Array3D<T>& operator =(const Array3D<T>& rhs);
+  Array3D<T>& operator =(Array3D<T>&& rhs);
   
   bool Read(File& f);
   bool Write(File& f) const;
@@ -59,7 +62,7 @@ class Array3D
   
   bool find(const T& item,int& i,int& j,int& k) const;
   bool find(const T& item,IntTriple& t) const { return find(item,t.a,t.b,t.c); }
-  inline bool contains(const T& item) const { int i,j,k; return find(item,i,j); }
+  inline bool contains(const T& item) const { int i,j,k; return find(item,i,j,k); }
   void set(const T& item);
   void set(const Array3D<T>&);
   void swap(Array3D<T>&);
@@ -82,7 +85,7 @@ class Array3D
     inline void incThird(int skip=1) { it.incThird(skip); }
     inline T& operator*() { return array->getData()[*it]; }
     const iterator& operator = (const iterator& rhs);
-    inline bool operator == (const iterator& rhs) const { return array==rhs.array && it == rhs.it; }
+    inline bool operator == (const iterator& rhs) const { return it == rhs.it && array==rhs.array; }
     inline bool operator != (const iterator& rhs) const { return !operator==(rhs); }
     inline bool operator < (const iterator& rhs) const { return it<rhs.it; }
     IntTriple getElement() const {
@@ -121,6 +124,35 @@ class Array3D
 };
 
 template <class T>
+std::istream& operator >> (std::istream& in,Array3D<T>& a)
+{
+  int m,n,p;
+  in>>m>>n>>p;
+  if(!in) return in;
+  Assert(m >= 0 && n >= 0 && p >= 0);
+  a.resize(m,n,p);
+  for(int i=0;i<m;i++)
+    for(int j=0;j<n;j++)
+      for(int k=0;k<p;k++)
+        in>>a(i,j,k);
+  return in;
+}
+
+template <class T>
+std::ostream& operator << (std::ostream& out,const Array3D<T>& a)
+{
+  out<<a.m<<" "<<a.n<<" "<<" "<<a.p<<std::endl;
+  for(int i=0;i<a.m;i++) {
+    for(int j=0;j<a.n;j++) {
+      for(int k=0;k<a.p;k++)
+        out<<a(i,j,k)<<" ";
+      out<<std::endl;
+    }
+  }
+  return out;
+}
+
+template <class T>
 Array3D<T>::Array3D()
   :m(0),n(0),p(0),items(0),capacity(0)
 {}
@@ -147,16 +179,41 @@ Array3D<T>::Array3D(const Array3D<T>& rhs)
 }
 
 template <class T>
+Array3D<T>::Array3D(Array3D<T>&& rhs)
+{
+  m = rhs.m;
+  n = rhs.n;
+  p = rhs.p;
+  items = rhs.items;
+  capacity = rhs.capacity;
+  //prevent deletion
+  rhs.items = 0;
+}
+
+template <class T>
 Array3D<T>::~Array3D()
 {
 	clear();
 }
 
 template <class T>
-const Array3D<T>& Array3D<T>::operator =(const Array3D<T>& rhs)
+Array3D<T>& Array3D<T>::operator =(const Array3D<T>& rhs)
 {
 	set(rhs);
 	return *this;
+}
+
+template <class T>
+Array3D<T>& Array3D<T>::operator =(Array3D<T>&& rhs)
+{
+  m = rhs.m;
+  n = rhs.n;
+  p = rhs.p;
+  items = rhs.items;
+  capacity = rhs.capacity;
+  //prevent deletion
+  rhs.items = 0;
+  return *this;
 }
 
 template <class T>

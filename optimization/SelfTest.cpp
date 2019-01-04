@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "SelfTest.h"
 #include "Minimization.h"
 #include "NewtonSolver.h"
@@ -39,26 +40,26 @@ namespace Optimization {
     temp.resize(A.n);
     LSQRInterface lsqr;
     if(!lsqr.Solve(A,b)) {
-      cout<<"Failed LSQR solve!"<<endl;
-      cout<<"A="<<endl;
-      cout<<MatrixPrinter(mA)<<endl;
-      cout<<"b="<<VectorPrinter(b)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failed LSQR solve!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"A=");
+      LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(mA));
+      LOG4CXX_INFO(KrisLibrary::logger(),"b="<<VectorPrinter(b));
       return;
     }
     x=lsqr.x;
     MatrixEquation eq(mA,b);
     if(!eq.LeastSquares_Cholesky(temp)) {
-      cout<<"Failed cholesky solve!"<<endl;
-      cout<<"A="<<endl;
-      cout<<MatrixPrinter(mA)<<endl;
-      cout<<"b="<<VectorPrinter(b)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Failed cholesky solve!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"A=");
+      LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(mA));
+      LOG4CXX_INFO(KrisLibrary::logger(),"b="<<VectorPrinter(b));
       return;
     }
 
     if(!x.isEqual(temp,1e-3)) {
-      cout<<"Results differ!"<<endl;
-      cout<<"LSQR: "<<VectorPrinter(x)<<endl;
-      cout<<"Cholesky: "<<VectorPrinter(temp)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Results differ!");
+      LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: "<<VectorPrinter(x));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Cholesky: "<<VectorPrinter(temp));
     }
   }
 
@@ -72,7 +73,7 @@ namespace Optimization {
       RandomSparseMatrix(A,nnz,1);
       RandomVector(b,1);
       
-      cout<<"Overconstrained test"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Overconstrained test");
       TestLSQR(A,b);
     }
 
@@ -83,27 +84,27 @@ namespace Optimization {
       RandomSparseMatrix(A,nnz,1);
       RandomVector(b,1);
       
-      cout<<"Underconstrained test"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Underconstrained test");
       TestLSQR(A,b);
     }
   }
 
   void NewtonEqualitySelfTest()
   {
-    cout<<"Testing equality-constrained Newton solver..."<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing equality-constrained Newton solver...");
     Matrix A(2,2);
     Vector b(2);
     Real c;
     A.setIdentity(); A *= -Two;
     b.setZero();
     c=10;
-    ComponentVectorFieldFunction* C = new ComponentVectorFieldFunction();
-    C->functions.push_back(new QuadraticScalarFieldFunction(A,b,c));
+    shared_ptr<ComponentVectorFieldFunction> C(new ComponentVectorFieldFunction());
+    C->functions.push_back(make_shared<QuadraticScalarFieldFunction>(A,b,c));
 
     Vector p(2);
     p(0) = -1; p(1) = 0;
     Real q=0;
-    LinearScalarFieldFunction* f = new LinearScalarFieldFunction(p,q);
+    shared_ptr<LinearScalarFieldFunction> f(new LinearScalarFieldFunction(p,q));
 
     NonlinearProgram nlp(f,C);
     nlp.minimize = true;
@@ -115,14 +116,14 @@ namespace Optimization {
     newton.Init();
     int iters=100;
     ConvergenceResult res=newton.Solve(iters);
-    cout<<"Result "<<res<<" iters "<<iters<<endl;
-    cout<<"x = "<<VectorPrinter(newton.x)<<endl;
-    cout<<"done."<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result "<<res<<" iters "<<iters);
+    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<VectorPrinter(newton.x));
+    LOG4CXX_INFO(KrisLibrary::logger(),"done.");
   }
 
   void NewtonInequalitySelfTest()
   {
-    cout<<"Testing inequality-constrained Newton solver..."<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing inequality-constrained Newton solver...");
     Matrix A(2,2);
     Vector b(2);
     Real c;
@@ -132,14 +133,14 @@ namespace Optimization {
     QuadraticScalarFieldFunction* c1 = new QuadraticScalarFieldFunction(A,b,c); 
     Vector j(2);  j(0) = 0; j(1) = 1;
     LinearScalarFieldFunction* d1 = new LinearScalarFieldFunction(j,-0.5);  //y greater than 0.5
-    ComponentVectorFieldFunction* C = new ComponentVectorFieldFunction;
-    ComponentVectorFieldFunction* D = new ComponentVectorFieldFunction;
-    C->functions.resize(1); C->functions[0] = c1;
-    D->functions.resize(1); D->functions[0] = d1;
+    shared_ptr<ComponentVectorFieldFunction> C (new ComponentVectorFieldFunction);
+    shared_ptr<ComponentVectorFieldFunction> D (new ComponentVectorFieldFunction);
+    C->functions.resize(1); C->functions[0].reset(c1);
+    D->functions.resize(1); D->functions[0].reset(d1);
 
     Vector p(2);
     p(0) = -1; p(1) = 0;
-    LinearScalarFieldFunction* f = new LinearScalarFieldFunction(p,0);
+    shared_ptr<LinearScalarFieldFunction> f(new LinearScalarFieldFunction(p,0));
 
     NonlinearProgram nlp(f,C,D);
     nlp.minimize = true;
@@ -151,9 +152,9 @@ namespace Optimization {
     newton.Init();
     int iters=100;
     ConvergenceResult res=newton.Solve(iters);
-    cout<<"Result "<<res<<" iters "<<iters<<endl;
-    cout<<"x = "<<VectorPrinter(newton.x)<<endl;
-    cout<<"done."<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Result "<<res<<" iters "<<iters);
+    LOG4CXX_INFO(KrisLibrary::logger(),"x = "<<VectorPrinter(newton.x));
+    LOG4CXX_INFO(KrisLibrary::logger(),"done.");
   }
 
   void LCPSelfTest() {
@@ -169,14 +170,14 @@ namespace Optimization {
       LemkeLCP lcp(A,b);
       lcp.verbose = 3;
       if(!lcp.Solve()) {
-	cerr<<"LCP didn't solve!"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LCP didn't solve!");
 	Abort();
       }
       Vector w,z;
       lcp.GetW(w);
       lcp.GetZ(z);
-      cout<<"W: "<<VectorPrinter(w)<<endl;
-      cout<<"Z: "<<VectorPrinter(z)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"W: "<<VectorPrinter(w));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Z: "<<VectorPrinter(z));
     }
     {
       A(0,0) = -1; A(0,1) = -1; A(0,2) = 0;
@@ -188,14 +189,14 @@ namespace Optimization {
       LemkeLCP lcp(A,b);
       lcp.verbose = 3;
       if(!lcp.Solve()) {
-	cerr<<"LCP didn't solve!"<<endl;
+	LOG4CXX_ERROR(KrisLibrary::logger(),"LCP didn't solve!");
 	Abort();
       }
       Vector w,z;
       lcp.GetW(w);
       lcp.GetZ(z);
-      cout<<"W: "<<VectorPrinter(w)<<endl;
-      cout<<"Z: "<<VectorPrinter(z)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"W: "<<VectorPrinter(w));
+      LOG4CXX_INFO(KrisLibrary::logger(),"Z: "<<VectorPrinter(z));
     }
   }
 
@@ -222,7 +223,7 @@ namespace Optimization {
     Assert(res == ConvergenceF || res == ConvergenceX);
 
     //bound-constrained problems up to 20 dimensions
-    cout<<"Testing bound-constrained problems..."<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing bound-constrained problems...");
     solver.verbose = 0;
     for(int n=2;n<20;n++) {  //setup bound constraints
       //pick a minimum norm problem -- min ||x - x0||
@@ -322,22 +323,22 @@ void MinimizationSelfTest()
   p.x.setZero();
   int iters = 1000;
   ConvergenceResult res = p.SolveSD(iters);
-  printf("SD: result %d, %d iters, x=%f %f, value=%f\n",res,iters,p.x(0),p.x(1),p.fx);
+  LOG4CXX_INFO(KrisLibrary::logger(),"SD: result "<<res<<", "<<iters<<" iters, x="<<p.x(0)<<" "<<p.x(1)<<", value="<<p.fx);
 
   p.x.setZero();
   iters = 1000;
   res = p.SolveNewton(iters);
-  printf("Newton: result %d, %d iters, x=%f %f, value=%f\n",res,iters,p.x(0),p.x(1),p.fx);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Newton: result "<<res<<", "<<iters<<" iters, x="<<p.x(0)<<" "<<p.x(1)<<", value="<<p.fx);
 
   p.x.setZero();
   iters = 1000;
   res = p.SolveQuasiNewton_Ident(iters);
-  printf("QuasiNewton (I): result %d, %d iters, x=%f %f, value=%f\n",res,iters,p.x(0),p.x(1),p.fx);
+  LOG4CXX_INFO(KrisLibrary::logger(),"QuasiNewton (I): result "<<res<<", "<<iters<<" iters, x="<<p.x(0)<<" "<<p.x(1)<<", value="<<p.fx);
 
   p.x.setZero();
   iters = 1000;
   res = p.SolveQuasiNewton_Diff(1e-4,iters);
-  printf("QuasiNewton (D): result %d, %d iters, x=%f %f, value=%f\n",res,iters,p.x(0),p.x(1),p.fx);
+  LOG4CXX_INFO(KrisLibrary::logger(),"QuasiNewton (D): result "<<res<<", "<<iters<<" iters, x="<<p.x(0)<<" "<<p.x(1)<<", value="<<p.fx);
 }
 
 

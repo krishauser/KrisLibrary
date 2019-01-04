@@ -52,8 +52,30 @@ class PointCloud3D
   bool SavePCL(const char* fn) const;
   bool LoadPCL(istream& in);
   bool SavePCL(ostream& out) const;
+  /** @brief Converts a w x h depth image to a structured point cloud.  The camera frame is x right, y down, z forward.
+   *
+   * - w,h: width and height 
+   * - wfov,hfov: the field of view in the width and height directions, respectively (in radians)
+   * - depths: depth values in scanline order)
+   * - rgb (optional): color values in RGB format
+   * - invalidDepth: a depth value that indicates a bad reading
+   */
+  void FromDepthImage(int w,int h,float wfov,float hfov,const std::vector<float>& depths,const std::vector<unsigned int>& rgb,float invalidDepth=0.0);
+  /** @brief Converts a w x h depth image to a structured point cloud.  The camera frame is x right, y down, z forward.
+   *
+   * - w,h: width and height 
+   * - wfov,hfov: the field of view in the width and height directions, respectively (in radians)
+   * - depthscale: the absolute depth is depths[i]*depthscale
+   * - depths: depth values in scanline order)
+   * - rgb (optional): color values in RGB format
+   * - invalidDepth: a depth value that indicates a bad reading
+   */
+  void FromDepthImage(int w,int h,float wfov,float hfov,float depthscale,const std::vector<unsigned short>& depths,const std::vector<unsigned int>& rgb,unsigned short invalidDepth=0);
+  ///Returns the bounding box of the point set
   void GetAABB(Vector3& bmin,Vector3& bmax) const;
+  ///Transforms all points and, if present, normals
   void Transform(const Matrix4& mat);
+  ///A structured point cloud has settings "width" and "height".  Invalid points are marked as (0,0,0) (preferred) or (nan,nan,nan)
   bool IsStructured() const;
   int GetStructuredWidth() const;
   int GetStructuredHeight() const;
@@ -67,14 +89,22 @@ class PointCloud3D
   bool GetProperty(const string& name,vector<Real>& items) const;
   void SetProperty(const string& name,const vector<Real>& items);
   void RemoveProperty(const string& name);
+  ///Extracts all points within the bounding box [bmin,bmax]
   void GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud);
+  ///Extracts all points with the named property = value
   void GetSubCloud(const string& property,Real value,PointCloud3D& subcloud);
+  ///Extracts all points with the minValue <= named property <= maxValue
   void GetSubCloud(const string& property,Real minValue,Real maxValue,PointCloud3D& subcloud);
+  ///Some point clouds have properties x, y, and z rather than specifying points
   bool HasXYZAsProperties() const;
+  ///Convert to/from x, y, z as properties vs points
   void SetXYZAsProperties(bool);
   bool HasNormals() const;
   bool GetNormals(vector<Vector3>& normals) const;
   void SetNormals(const vector<Vector3>& normals);
+  ///Computes normals.  Uses the structured point cloud (centered difference) or an unstructured point cloud.
+  ///In the latter case, the given radius is used for normal estimation (locally weighted regression)
+  void ComputeNormals(Real radius=0);
   bool HasColor() const;
   bool HasOpacity() const;
   bool HasRGB() const;

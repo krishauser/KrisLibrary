@@ -1,7 +1,8 @@
+#include <KrisLibrary/Logger.h>
 #include "MatrixTemplate.h"
 #include "fastarray.h"
 #include "complex.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <iostream>
 #include <errors.h>
 using namespace std;
@@ -44,6 +45,14 @@ MatrixTemplate<T>::MatrixTemplate(const MyT& a)
 base(0),istride(0),m(0),jstride(0),n(0)
 {
   copy(a);
+}
+
+template <class T>
+MatrixTemplate<T>::MatrixTemplate(MyT&& a)
+:vals(a.vals),capacity(a.capacity),allocated(a.allocated),
+base(a.base),istride(a.istride),m(a.m),jstride(a.jstride),n(a.n)
+{
+  a.vals = NULL;
 }
 
 template <class T>
@@ -226,11 +235,26 @@ void MatrixTemplate<T>::resizePersist(int _m, int _n, T initval)
 
 
 template <class T>
-const MatrixTemplate<T>& MatrixTemplate<T>::operator = (const MyT& a)
+MatrixTemplate<T>& MatrixTemplate<T>::operator = (const MyT& a)
 {
   if(this == &a) return *this;
   if(m!=a.m || n!=a.n) resize(a.m,a.n);
   gen_array2d_equal(MYGENARGS,GENARGS(a),m,n);
+  return *this;
+}
+
+template <class T>
+MatrixTemplate<T>& MatrixTemplate<T>::operator =(MyT&& a)
+{
+  vals = a.vals;
+  capacity = a.capacity;
+  allocated = a.allocated;
+  base = a.base;
+  istride = a.istride;
+  m = a.m;
+  jstride = a.jstride;
+  n = a.n;
+  a.vals = NULL;
   return *this;
 }
 
@@ -663,7 +687,7 @@ void MatrixTemplate<T>::setInverse(const MyT& m)
   {
     RaiseErrorFmt(WHERE_AM_I,MatrixError_NotSquare);
   }
-  fprintf(stderr,"Inverse not done yet");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Inverse not done yet");
   AssertNotReached();
 }
 
@@ -761,29 +785,29 @@ bool MatrixTemplate<T>::isValid() const
 {
   if(vals == NULL) {
     if(capacity != 0) {
-      cout<<"Invalid capacity on empty matrix"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Invalid capacity on empty matrix");
       return false;
     }
     if(m > 0 && n > 0) {
-      cout<<"Invalid size on empty matrix"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Invalid size on empty matrix");
       return false;
     }
     return true;
   }
   if(istride < 0 || jstride < 0) {
-    cout<<"Invalid strides "<<istride<<", "<<jstride<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Invalid strides "<<istride<<", "<<jstride);
     return false;
   }
   //check non-overlap of rows/cols
   if(istride > jstride) {
     if(jstride*(n-1) >= istride) {
-      cout<<"J-row overlaps with I-row"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"J-row overlaps with I-row");
       return false;
     }
   }
   else if(jstride < istride) {
     if(istride*(m-1) >= jstride) { 
-      cout<<"I-row overlaps with J-row"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"I-row overlaps with J-row");
       return false;
     }
   }
@@ -792,17 +816,17 @@ bool MatrixTemplate<T>::isValid() const
     if(m == 0 && n == 0) ok=true;
     if(istride == 1 && (m<=1 || n<=1)) ok=true;
     if(!ok) {
-      cout<<"Equal i-stride and j-stride?"<<endl;
-      cout<<"dims "<<m<<"x"<<n<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Equal i-stride and j-stride?");
+      LOG4CXX_INFO(KrisLibrary::logger(),"dims "<<m<<"x"<<n);
       return false;
     }
   }
   if(base+(m-1)*istride+(n-1)*jstride>=capacity) {
-    cout<<"Overloaded capacity: "<<base+(m-1)*istride+(n-1)*jstride<<" vs "<<capacity<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Overloaded capacity: "<<base+(m-1)*istride+(n-1)*jstride<<" vs "<<capacity);
     return false;
   }
   if(base < 0) {
-    cout<<"Negative base"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Negative base");
     return false;
   }
   return true;
@@ -952,7 +976,7 @@ T MatrixTemplate<T>::determinant() const
   if(isEmpty()) return Zero;
   if(!isSquare()) RaiseErrorFmt(WHERE_AM_I,MatrixError_NotSquare);
 
-  fprintf(stderr,"Haven't completed the determinant\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Haven't completed the determinant\n");
   AssertNotReached();
   /*
   LU_Decomposition(*this, L,U, P);

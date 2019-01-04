@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "CollisionPointCloud.h"
 #include <Timer.h>
 
@@ -54,31 +55,30 @@ void CollisionPointCloud::InitCollisions()
   int validptcount = 0;
   for(size_t i=0;i<points.size();i++) {
     if(IsFinite(points[i].x)) {
-      Vector p(3,points[i]);
-      GridSubdivision::Index ind;
-      grid.PointToIndex(p,ind);
+      GridSubdivision3D::Index ind;
+      grid.PointToIndex(points[i],ind);
       grid.Insert(ind,&points[i]);
       validptcount++;
     }
   }
-  printf("CollisionPointCloud::InitCollisions: %d valid points, res %g, time %gs\n",validptcount,res,timer.ElapsedTime());
+  LOG4CXX_INFO(KrisLibrary::logger(),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
   //print stats
   int nmax = 0;
-  for(GridSubdivision::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
+  for(GridSubdivision3D::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
     nmax = Max(nmax,(int)i->second.size());
-  printf("  %d nonempty grid buckets, max size %d, avg %g\n",grid.buckets.size(),nmax,Real(points.size())/grid.buckets.size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
   timer.Reset();
 
   //initialize the octree, 10 points per cell, res is minimum cell size
-  octree = new OctreePointSet(bblocal,10,res);
+  octree = make_shared<OctreePointSet>(bblocal,10,res);
   for(size_t i=0;i<points.size();i++) {
     if(IsFinite(points[i].x))
       octree->Add(points[i],(int)i);
   }
-  printf("  octree initialized in time %gs, %d nodes, depth %d\n",timer.ElapsedTime(),octree->Size(),octree->MaxDepth());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
   //TEST: should we fit to points
   octree->FitToPoints();
-  printf("  octree fit to points in time %gs\n",timer.ElapsedTime());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  octree fit to points in time "<<timer.ElapsedTime());
   /*
   //TEST: method 2.  Turns out to be much slower
   timer.Reset();
@@ -87,7 +87,7 @@ void CollisionPointCloud::InitCollisions()
   for(size_t i=0;i<points.size();i++)
     octree->Add(points[i],(int)i);
   octree->Collapse(10);
-  printf("  octree 2 initialized in time %gs, %d nodes\n",timer.ElapsedTime(),octree->Size());
+  LOG4CXX_INFO(KrisLibrary::logger(),"  octree 2 initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size());
   */
 }
 
@@ -132,8 +132,8 @@ bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,
   /*
   //grid enumeration method
   GridSubdivision::Index imin,imax;
-  pc.grid.PointToIndex(Vector(3,gbb.bmin),imin);
-  pc.grid.PointToIndex(Vector(3,gbb.bmax),imax);
+  pc.grid.PointToIndex(gbb.bmin,imin);
+  pc.grid.PointToIndex(gbb.bmax,imax);
   int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
   if(numCells > (int)pc.points.size()) {
     //test all points, linearly
@@ -161,23 +161,63 @@ bool distanceTest(void* obj)
 
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g)
 {
+  int cpoint;
+  return Distance(pc,g,cpoint);
+}
+
+Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& closestPoint,Real upperBound)
+{
   GeometricPrimitive3D glocal = g;
   RigidTransform Tinv;
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
-
-  /*
-  AABB3D gbb = glocal.GetAABB();
-  gDistanceTestValue = Inf;
-  gDistanceTestObject = &glocal;
-  pc.grid.BoxQuery(Vector(3,gbb.bmin),Vector(3,gbb.bmax),distanceTest);
-  return gDistanceTestValue;
-  */
-  //test all points, linearly
-  Real dmax = Inf;
-  for(size_t i=0;i<pc.points.size();i++)
-    dmax = Min(dmax,glocal.Distance(pc.points[i]));
-  return dmax;
+  closestPoint=-1;
+  if(!IsInf(upperBound) && glocal.Distance(pc.bblocal) > upperBound) {
+    return upperBound;
+  }
+  bool doBoundsTest= (g.type != GeometricPrimitive3D::Point && g.type != GeometricPrimitive3D::Sphere && g.type != GeometricPrimitive3D::AABB);
+  if(doBoundsTest) {
+    AABB3D gbb = glocal.GetAABB();
+    Sphere3D sbb;
+    sbb.center = 0.5*(gbb.bmin+gbb.bmax);
+    sbb.radius = sbb.center.distance(gbb.bmin);
+    /*
+    gDistanceTestValue = Inf;
+    gDistanceTestObject = &glocal;
+    pc.grid.BoxQuery(gbb.bmin,gbb.bmax,distanceTest);
+    return gDistanceTestValue;
+    */
+    Real radius0 = sbb.radius;
+    sbb.radius += upperBound;
+    //AABB3D bb0 = gbb;
+    //gbb.bmin -= Vector3(upperBound);
+    //gbb.bmax += Vector3(upperBound);
+    //test all points, linearly
+    Real dmax = upperBound;
+    for(size_t i=0;i<pc.points.size();i++) {
+      if(sbb.contains(pc.points[i])) {
+        Real d = glocal.Distance(pc.points[i]);
+        if(d < dmax) {
+          closestPoint = (int)i;
+          dmax = d;
+          sbb.radius = radius0 + dmax;
+        }
+      }
+    }
+    return dmax;
+  }
+  else {
+    Real dmax = upperBound;
+    //bounds testing not worth it
+    for(size_t i=0;i<pc.points.size();i++) {
+      Real d = glocal.Distance(pc.points[i]);
+      if(d < dmax) {
+        closestPoint = (int)i;
+        dmax = d;
+      }
+    }
+    return dmax;
+  }
 }
 
 static Real gNearbyTestThreshold = 0;
@@ -221,12 +261,12 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
 
   /*
   //grid enumeration method
-  GridSubdivision::Index imin,imax;
-  pc.grid.PointToIndex(Vector(3,gbb.bmin),imin);
-  pc.grid.PointToIndex(Vector(3,gbb.bmax),imax);
+  GridSubdivision3D::Index imin,imax;
+  pc.grid.PointToIndex(gbb.bmin,imin);
+  pc.grid.PointToIndex(gbb.bmax,imax);
   int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
   if(numCells > (int)pc.points.size()) {
-    printf("Testing all points\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing all points\n");
     //test all points, linearly
     for(size_t i=0;i<pc.points.size();i++)
       if(glocal.Distance(pc.points[i]) <= tol) {
@@ -235,12 +275,12 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
       }
   }
   else {
-    printf("Testing points in BoxQuery\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Testing points in BoxQuery\n");
     gNearbyTestThreshold = tol;
     gNearbyTestResults.resize(0);
     gNearbyTestObject = &glocal;
     gNearbyTestBranch = maxContacts;
-    pc.grid.BoxQuery(Vector(3,gbb.bmin),Vector(3,gbb.bmax),nearbyTest);
+    pc.grid.BoxQuery(gbb.bmin,gbb.bmax,nearbyTest);
     pointIds.resize(gNearbyTestResults.size());
     for(size_t i=0;i<points.size();i++)
       pointIds[i] = gNearbyTestResults[i] - &pc.points[0];
@@ -329,6 +369,126 @@ int RayCastLocal(const CollisionPointCloud& pc,Real rad,const Ray3D& r,Vector3& 
   pt = r.eval(closest);
   return closestpt;
   */
+}
+
+inline Real Volume(const AABB3D& bb)
+{
+  Vector3 d = bb.bmax-bb.bmin;
+  return d.x*d.y*d.z;
+}
+
+inline Real Volume(const OctreeNode& n)
+{
+  return Volume(n.bb);
+}
+
+class PointPointCollider
+{
+public:
+  const CollisionPointCloud& a;
+  const CollisionPointCloud& b;
+  RigidTransform Tba,Twa,Tab;
+  Real margin;
+  size_t maxContacts;
+  vector<int> acollisions,bcollisions;
+  PointPointCollider(const CollisionPointCloud& _a,const CollisionPointCloud& _b,Real _margin)
+    :a(_a),b(_b),margin(_margin),maxContacts(1)
+  {
+    Twa.setInverse(a.currentTransform);
+    Tba.mul(Twa,b.currentTransform);
+    Tab.setInverse(Tba);
+  }
+  bool Recurse(size_t _maxContacts=1)
+  {
+    maxContacts=_maxContacts;
+    _Recurse(0,0);
+    return !acollisions.empty();
+  }
+  bool Prune(const OctreeNode& anode,const OctreeNode& bnode) {
+    Box3D meshbox_pc;
+    meshbox_pc.setTransformed(bnode.bb,Tba);
+    if(margin==0)
+      return !meshbox_pc.intersects(anode.bb);
+    else {
+      AABB3D expanded_bb = anode.bb;
+      expanded_bb.bmin -= Vector3(margin);
+      expanded_bb.bmax += Vector3(margin);
+      return !meshbox_pc.intersects(expanded_bb);
+    }
+  }
+  bool _Recurse(int aindex,int bindex) {
+    const OctreeNode& anode = a.octree->Node(aindex);
+    const OctreeNode& bnode = b.octree->Node(bindex);
+    //returns true to keep recursing
+    if(Prune(anode,bnode))
+      return true;
+    if(a.octree->IsLeaf(anode)) {
+      if(b.octree->IsLeaf(bnode)) {
+        //collide the two points contained within
+        vector<Vector3> apts,bpts;
+        vector<int> aids,bids;
+        a.octree->GetPoints(aindex,apts);
+        b.octree->GetPoints(bindex,bpts);
+        a.octree->GetPointIDs(aindex,aids);
+        b.octree->GetPointIDs(bindex,bids);
+        for(size_t i=0;i<apts.size();i++) {
+          for(size_t j=0;j<bpts.size();j++) {
+            if(apts[i].distanceSquared(bpts[j]) <= Sqr(margin)) {
+              acollisions.push_back(aids[i]);
+              acollisions.push_back(bids[i]);
+              if(acollisions.size() >= maxContacts) return false;
+            }
+          }
+        }
+        //continue
+        return true;
+      }
+      else {
+        //split b
+        return _RecurseSplitB(aindex,bindex);
+      }
+    }
+    else {
+      if(b.octree->IsLeaf(bnode)) {
+        //split a
+        return _RecurseSplitA(aindex,bindex);
+      }
+      else {
+        //determine which BVH to split
+        Real va = Volume(anode);
+        Real vb = Volume(bnode);
+        if(va < vb)
+          return _RecurseSplitB(aindex,bindex);
+        else
+          return _RecurseSplitA(aindex,bindex);
+      }
+    }
+  }
+  bool _RecurseSplitA(int aindex,int bindex) {
+    const OctreeNode& anode = a.octree->Node(aindex);
+    for(int i=0;i<8;i++)
+      if(!_Recurse(anode.childIndices[i],bindex)) return false;
+    return true;
+  }
+  bool _RecurseSplitB(int aindex,int bindex) {
+    const OctreeNode& bnode = b.octree->Node(bindex);
+    for(int i=0;i<8;i++)
+      if(!_Recurse(aindex,bnode.childIndices[i])) return false;
+    return true;
+  }
+};
+
+
+bool Collides(const CollisionPointCloud& a,const CollisionPointCloud& b,Real margin,std::vector<int>& apoints,std::vector<int>& bpoints,size_t maxContacts)
+{
+  PointPointCollider collider(a,b,margin);
+  bool res=collider.Recurse(maxContacts);
+  if(res) {
+    apoints=collider.acollisions;
+    bpoints=collider.bcollisions;
+    return true;
+  }
+  return false;
 }
 
 } //namespace Geometry

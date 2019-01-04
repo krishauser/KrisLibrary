@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "LUDecomposition.h"
 #include "backsubstitute.h"
 #include "complex.h"
@@ -64,7 +65,7 @@ bool LUDecomposition<T>::set(const MatrixT& A)
     }
     assert(imax >= 0);
     if (j != imax) {			//Do we need to interchange rows?
-      //printf("interchanging rows %d, %d\n", j, imax);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"interchanging rows "<< j<<", "<< imax);
       VectorT rowimax,rowj;
       LU.getRowRef(imax,rowimax);
       LU.getRowRef(j,rowj);
@@ -87,7 +88,7 @@ bool LUDecomposition<T>::set(const MatrixT& A)
 	LU(i,j) *= sum;
     }
   } //Go back for the next column in the reduction.
-  //if(!res) printf("LUDecomposition(): Warning, near-singular matrix\n");
+  //if(!res) LOG4CXX_WARN(KrisLibrary::logger(),"LUDecomposition(): Warning, near-singular matrix\n");
   return true;
 }
 

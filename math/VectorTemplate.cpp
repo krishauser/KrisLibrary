@@ -1,7 +1,8 @@
+#include <KrisLibrary/Logger.h>
 #include "VectorTemplate.h"
 #include "fastarray.h"
 #include "complex.h"
-#include <KrisLibrary/myfile.h>
+#include <KrisLibrary/File.h>
 #include <KrisLibrary/errors.h>
 #include <iostream>
 using namespace std;
@@ -68,6 +69,14 @@ base(0),stride(0),n(0)
   copy(_vals);
 }
 
+template <class T>
+VectorTemplate<T>::VectorTemplate(MyT&& _vals)
+:vals(NULL),capacity(0),allocated(false),
+base(0),stride(0),n(0)
+{
+  operator = (_vals);
+}
+
 
 template <class T>
 VectorTemplate<T>::~VectorTemplate()
@@ -82,9 +91,9 @@ void VectorTemplate<T>::resize(int _n)
   if(size() != _n) {
     if(allocated) {
       if(!isCompact()) {
-	cout<<"base "<<base<<endl;
-	cout<<"stride "<<stride<<endl;
-	cout<<"n "<<n<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base);
+	LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride);
+	LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n);
       }
       Assert(isCompact());
     }
@@ -121,9 +130,9 @@ void VectorTemplate<T>::resizePersist(int _n)
   if(size() != _n) {
     if(allocated) {
       if(!isCompact()) {
-	cout<<"base "<<base<<endl;
-	cout<<"stride "<<stride<<endl;
-	cout<<"n "<<n<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base);
+	LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride);
+	LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n);
       }
       Assert(isCompact());
     }
@@ -186,11 +195,23 @@ VectorTemplate<T>::operator std::vector<T> () const
 }
 
 template <class T>
-const VectorTemplate<T>& VectorTemplate<T>::operator = (const MyT& a)
+VectorTemplate<T>& VectorTemplate<T>::operator = (const MyT& a)
 {
   if(this == &a) return *this;
   if(n!=a.n) resize(a.n);
   gen_array_equal(getStart(),stride, a.getStart(),a.stride, n);
+  return *this;
+}
+
+template <class T>
+VectorTemplate<T>& VectorTemplate<T>::operator = (MyT&& v)
+{
+  ::swap(vals,v.vals);
+  ::swap(capacity,v.capacity);
+  ::swap(allocated,v.allocated);
+  ::swap(base,v.base);
+  ::swap(stride,v.stride);
+  ::swap(n,v.n);
   return *this;
 }
 
@@ -480,19 +501,19 @@ template <class T>
 bool VectorTemplate<T>::isValid() const
 {
   if(base < 0) {
-    cout<<"VectorTemplate::isValid(): Base is negative"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): Base is negative");
     return false;
   }
   if(n > 0) {
     if(base + stride*(n-1) >= capacity) {
-      cout<<"base "<<base<<endl;
-      cout<<"stride "<<stride<<endl;
-      cout<<"n "<<n<<endl;
-      cout<<"VectorTemplate::isValid(): max element exceeds bounds"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"base "<<base);
+      LOG4CXX_INFO(KrisLibrary::logger(),"stride "<<stride);
+      LOG4CXX_INFO(KrisLibrary::logger(),"n "<<n);
+      LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): max element exceeds bounds");
       return false;
     }
     if(stride < 0) {
-      cout<<"VectorTemplate::isValid(): stride is negative"<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"VectorTemplate::isValid(): stride is negative");
     }
   }
   return true;
@@ -767,14 +788,14 @@ template<> Complex VectorTemplate<Complex>::dotSelf() const
 
 template<> Complex VectorTemplate<Complex>::minElement(int* index) const
 {
-  cerr<<"Incomplete"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete");
   AssertNotReached();
   return Zero;
 }
 
 template<> Complex VectorTemplate<Complex>::maxElement(int* index) const
 {
-  cerr<<"Incomplete"<<endl;
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Incomplete");
   AssertNotReached();
   return Zero;
 }

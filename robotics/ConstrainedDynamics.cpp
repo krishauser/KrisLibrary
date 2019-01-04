@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "ConstrainedDynamics.h"
 #include "NewtonEuler.h"
 #include "IKFunctions.h"
@@ -217,29 +218,29 @@ bool ConstrainedForwardDynamics(RobotDynamics3D& robot,const Vector& ddx,const M
   //Inspection code
   Vector D;
   ldl.getD(D);
-  cout<<"LDL D: "<<D<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"LDL D: "<<D);
 
-  cout<<"Jc:"<<endl<<Jc<<endl;
-  cout<<"B^-1:"<<endl<<Binv<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Jc:"<<Jc<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"B^-1:"<<Binv<<"\n");
 
   Matrix B;
   robot.UpdateDynamics();
   robot.GetKineticEnergyMatrix(B);
-  cout<<"B: "<<endl<<B<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"B: "<<B<<"\n");
   LDLDecomposition<Real> ldlB;
   ldlB.set(B);
   ldlB.getPseudoInverse(Binv);
-  cout<<"Binv (pseudoinverted): "<<Binv<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Binv (pseudoinverted): "<<Binv);
 
-  cout<<"J*B^-1*Jt:"<<endl<<JBinvJt<<endl;
-  cout<<"(J*B^-1*Jt)^-1:"<<endl<<JBinvJT_Inv<<endl;
-  cout<<"Ddqref: "<<ddqref<<endl;
-  cout<<"Ddxref: "<<ddxref<<endl;
-  cout<<"f0:"<<f0<<endl;
-  cout<<"BinvJt*f: "<<bp<<endl;
-  cout<<"A:"<<endl<<A<<endl;
-  cout<<"b: "<<b<<endl;
-  getchar();
+  LOG4CXX_INFO(KrisLibrary::logger(),"J*B^-1*Jt:"<<JBinvJt<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"(J*B^-1*Jt)^-1:"<<JBinvJT_Inv<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Ddqref: "<<ddqref);
+  LOG4CXX_INFO(KrisLibrary::logger(),"Ddxref: "<<ddxref);
+  LOG4CXX_INFO(KrisLibrary::logger(),"f0:"<<f0);
+  LOG4CXX_INFO(KrisLibrary::logger(),"BinvJt*f: "<<bp);
+  LOG4CXX_INFO(KrisLibrary::logger(),"A:"<<A<<"\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"b: "<<b);
+  KrisLibrary::loggerWait();
   */
 
   //checking
@@ -252,16 +253,16 @@ bool ConstrainedForwardDynamics(RobotDynamics3D& robot,const Vector& ddx,const M
     A.mul(ei,temp);
     temp += b;
     if(ti.isEqual(temp,1e-3)) {
-      printf("Agreement between CalcAccel and ForwardDynamics\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"Agreement between CalcAccel and ForwardDynamics\n");
     }
     else {
-      printf("Disagreement between CalcAccel and ForwardDynamics\n");
-      cout<<"CalcAccel: "<<ti<<endl;
-      cout<<"ForwardDynamics: "<<temp<<endl;
-      cout<<"bp: "<<bp<<endl;
-      cout<<"f0: "<<f0<<endl;
-      cout<<"ddqref: "<<ddqref<<endl;
-      getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Disagreement between CalcAccel and ForwardDynamics\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"CalcAccel: "<<ti);
+      LOG4CXX_INFO(KrisLibrary::logger(),"ForwardDynamics: "<<temp);
+      LOG4CXX_INFO(KrisLibrary::logger(),"bp: "<<bp);
+      LOG4CXX_INFO(KrisLibrary::logger(),"f0: "<<f0);
+      LOG4CXX_INFO(KrisLibrary::logger(),"ddqref: "<<ddqref);
+      KrisLibrary::loggerWait();
     }
   }
   */
@@ -282,7 +283,7 @@ bool ConstrainedCalcTorque(RobotDynamics3D& robot,const Vector& ddx,const Matrix
   ldl.set(A);
   ldl.zeroTolerance = 1e-6;
   if(!ldl.backSub(temp,t)) {
-    fprintf(stderr,"ConstrainedCalcTorque could not invert dynamics matrix\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedCalcTorque could not invert dynamics matrix\n");
     return false;
   }
   return true;

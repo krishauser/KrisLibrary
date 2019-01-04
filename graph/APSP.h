@@ -60,7 +60,7 @@ class APSP
   std::vector<std::vector<int> > next;
 
   //Dijkstra
-  std::vector<SmartPointer<SetUpdatingShortestPathProblem<Node,Edge> > > spps;
+  std::vector<std::shared_ptr<SetUpdatingShortestPathProblem<Node,Edge> > > spps;
   Graph<int,std::set<int> > edgeSets;
 };
 

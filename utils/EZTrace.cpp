@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "EZTrace.h"
 #include <errors.h>
 using namespace std;
@@ -13,18 +14,18 @@ EZTrace::EZTrace()
 
 EZTrace::~EZTrace()
 {
-  cout<<"Destroying EZTrace object..."<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Destroying EZTrace object...");
   Assert(curTrace != NULL);
   Assert(curTrace == &myTrace);
   if(dumpTrace) {
-    cout<<"********* Program execution trace: **********"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"********* Program execution trace: **********");
     curTrace->DumpTrace(cout);
-    cout<<"*********************************************"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************");
   }
   if(dumpStats) {
-    cout<<"********** Function call stats: *************"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"********** Function call stats: *************");
     curTrace->DumpStats(cout);
-    cout<<"*********************************************"<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"*********************************************");
   }
   curTrace = NULL;
 }

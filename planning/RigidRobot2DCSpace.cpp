@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "RigidRobot2DCSpace.h"
 #include "CSpaceHelpers.h"
 #include "EdgePlannerHelpers.h"
@@ -69,15 +70,15 @@ void RigidRobot2DCSpace::DrawGL(const Config& x) const
   DrawRobotGL(x);
 }
 
-EdgePlanner* RigidRobot2DCSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr RigidRobot2DCSpace::PathChecker(const Config& a,const Config& b)
 {
-  return new EpsilonEdgeChecker(this,a,b,visibilityEpsilon);
+  return make_shared<EpsilonEdgeChecker>(this,a,b,visibilityEpsilon);
 }
 
-EdgePlanner* RigidRobot2DCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+EdgePlannerPtr RigidRobot2DCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
 {
-  CSpace* space = new SubsetConstraintCSpace(this,obstacle);
-  return new EdgePlannerWithCSpaceContainer(space,new EpsilonEdgeChecker(space,a,b,visibilityEpsilon));
+  auto space = make_shared<SubsetConstraintCSpace>(this,obstacle);
+  return make_shared<EdgePlannerWithCSpaceContainer>(space,make_shared<EpsilonEdgeChecker>(space.get(),a,b,visibilityEpsilon));
 }
 
 void RigidRobot2DCSpace::Properties(PropertyMap& map)

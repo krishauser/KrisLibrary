@@ -4,6 +4,8 @@ language: cpp
 compiler:
   - clang
   - gcc
+# Ubuntu 14.04+ is required
+dist: trusty
 # Build steps
 script:
   - cmake . && make
@@ -11,11 +13,11 @@ addons:
   apt:
     packages:
     - cmake
-    - libboost-system-dev
-    - libboost-thread-dev
     - freeglut3
     - freeglut3-dev
     - libxmu-dev
     - libxi-dev
     - libglpk-dev
+    - liblog4cxx10-dev
+    - libglew-dev
 

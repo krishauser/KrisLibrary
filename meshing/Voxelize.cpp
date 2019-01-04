@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Voxelize.h"
 #include "Rasterize.h"
 #include "ClosestPoint.h"
@@ -160,10 +161,10 @@ Real GridCellDensity(const AABB3D& cell,const Plane3D& p)
   Real R = Sqrt(3.0);
   Real d = planeNormal.dot(ptOnPlane);
   if(d < -R || d > R) {
-    cerr<<"Warning, numerical error in GridCellDensity"<<endl;
-    cerr<<"   point "<<ptOnPlane<<endl;
-    cerr<<"   d="<<d<<", R="<<R<<endl;
-    getchar();
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, numerical error in GridCellDensity");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"   point "<<ptOnPlane);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"   d="<<d<<", R="<<R);
+    KrisLibrary::loggerWait();
     if(d < -R) return 0;
     else return 1;
   }
@@ -190,19 +191,19 @@ void GetTriangleBuckets(const TriMesh& m,const AABB3D& bb,Array3D<list<int> >& t
     query.expand(tri.c);
     bool q=QueryGrid(triangles,bb,query,lo,hi);
     if(!q) continue;
-    //getchar();
+    //KrisLibrary::loggerWait();
     IntTriple index=lo;
     while(index.a <= hi.a) {
       while(index.b <= hi.b) {
-	while(index.c <= hi.c) {
-	  GetGridCell(triangles,bb,index,cell);
-	  if(tri.intersects(cell)) {
-	    triangles(index.a,index.b,index.c).push_back(i);
-	  }
-	  index.c++;
-	}
-	index.b++;
-	index.c = lo.c;
+        while(index.c <= hi.c) {
+          GetGridCell(triangles,bb,index,cell);
+          if(tri.intersects(cell)) {
+            triangles(index.a,index.b,index.c).push_back(i);
+          }
+          index.c++;
+        }
+        index.b++;
+        index.c = lo.c;
       }
       index.a++;
       index.b = lo.b;
@@ -239,26 +240,26 @@ void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells)
     }
     if(d.y > 0) { //check +y face
       if((cellCorner.y+1.0)-s.a.y < param*d.y) {
-	param = ((cellCorner.y+1.0)-s.a.y)*invdy;
-	closest = 2;
+        param = ((cellCorner.y+1.0)-s.a.y)*invdy;
+        closest = 2;
       }
     }
     else if(d.y < 0) { //check -y face
       if(cellCorner.y-s.a.y > param*d.y) {
-	param = (cellCorner.y-s.a.y)*invdy;
-	closest = -2;
+        param = (cellCorner.y-s.a.y)*invdy;
+        closest = -2;
       }
     }
     if(d.z > 0) { //check +z face
       if((cellCorner.z+1.0)-s.a.z < param*d.z) {
-	param = ((cellCorner.z+1.0)-s.a.z)*invdz; 
-	closest = 3;
+        param = ((cellCorner.z+1.0)-s.a.z)*invdz; 
+        closest = 3;
       }
     }
     else if(d.z < 0) { //check -y face
       if(cellCorner.z-s.a.z > param*d.z) {
-	param = (cellCorner.z-s.a.z)*invdz;
-	closest = -3;
+        param = (cellCorner.z-s.a.z)*invdz;
+        closest = -3;
       }
     }
     switch(closest) {
@@ -322,26 +323,26 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
     }
     if(d.y > 0) { //check +y face
       if((cellCorner.y+cellSize.y)-s.a.y < param*d.y) {
-	param = ((cellCorner.y+cellSize.y)-s.a.y)/d.y;
-	closest = 2;
+        param = ((cellCorner.y+cellSize.y)-s.a.y)/d.y;
+        closest = 2;
       }
     }
     else if(d.y < 0) { //check -y face
       if(cellCorner.y-s.a.y > param*d.y) {
-	param = (cellCorner.y-s.a.y)/d.y;
-	closest = -2;
+        param = (cellCorner.y-s.a.y)/d.y;
+        closest = -2;
       }
     }
     if(d.z > 0) { //check +z face
       if((cellCorner.z+cellSize.z)-s.a.z < param*d.z) {
-	param = ((cellCorner.z+cellSize.z)-s.a.z)/d.z;
-	closest = 3;
+        param = ((cellCorner.z+cellSize.z)-s.a.z)/d.z;
+        closest = 3;
       }
     }
     else if(d.z < 0) { //check -y face
       if(cellCorner.z-s.a.z > param*d.z) {
-	param = (cellCorner.z-s.a.z)/d.z;
-	closest = -3;
+        param = (cellCorner.z-s.a.z)/d.z;
+        closest = -3;
       }
     }
     switch(closest) {
@@ -387,12 +388,12 @@ void GetTriangleCells(const Triangle3D& tri,vector<IntTriple>& cells)
       index.c = lo.c;
       cellCorner.z=lo.c;
       while(index.c <= hi.c) {
-	cell.bmin = cellCorner;
-	cell.bmax = cellCorner + cellSize;
-	if(tri.intersects(cell)) cells.push_back(index);
-	
-	index.c++;
-	cellCorner.z += cellSize.z;
+        cell.bmin = cellCorner;
+        cell.bmax = cellCorner + cellSize;
+        if(tri.intersects(cell)) cells.push_back(index);
+        
+        index.c++;
+        cellCorner.z += cellSize.z;
       }
       index.b++;
       cellCorner.y += cellSize.y;
@@ -428,12 +429,12 @@ void GetTriangleCells(const Triangle3D& tri,int m,int n,int p,const AABB3D& bb,v
       index.c = lo.c;
       cellCorner.z = bb.bmin.z+Real(lo.c)/Real(p)*(bb.bmax.z-bb.bmin.z);
       while(index.c <= hi.c) {
-	cell.bmin = cellCorner;
-	cell.bmax = cellCorner + cellSize;
-	if(tri.intersects(cell)) cells.push_back(index);
-	
-	index.c++;
-	cellCorner.z += cellSize.z;
+        cell.bmin = cellCorner;
+        cell.bmax = cellCorner + cellSize;
+        if(tri.intersects(cell)) cells.push_back(index);
+        
+        index.c++;
+        cellCorner.z += cellSize.z;
       }
       index.b++;
       cellCorner.y += cellSize.y;
@@ -493,14 +494,14 @@ void GetTriangleCells2(const Triangle3D& torig,int m,int n,int p,const AABB3D& b
     }
     else {  //a < b, c < b
       if(Lexical3DOrder(torig.a,torig.c)) { //a < c < b 
-	a = torig.b;
-	b = torig.c;
-	c = torig.a;
+        a = torig.b;
+        b = torig.c;
+        c = torig.a;
       }
       else { //c < a < b
-	a = torig.b;
-	b = torig.a;
-	c = torig.c;
+        a = torig.b;
+        b = torig.a;
+        c = torig.c;
       }
     }
   }
@@ -647,16 +648,16 @@ void GetTriangleCells2(const Triangle3D& torig,int m,int n,int p,const AABB3D& b
     testSet.insert(testCells[i]);
   for(size_t i=0;i<testCells.size();i++) {
     if(!cellSet.count(testCells[i])) {
-      cout<<"Triangle "<<a<<" "<<b<<" "<<c<<endl;
-      cerr<<"GetTriangleCells2 incorrect: doesnt contain "<<testCells[i]<<endl;
-      getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<a<<" "<<b<<" "<<c);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"GetTriangleCells2 incorrect: doesnt contain "<<testCells[i]);
+      KrisLibrary::loggerWait();
     }
   }
   for(size_t i=0;i<cells.size();i++) {
     if(!testSet.count(cells[i])) {
-      cout<<"Triangle "<<a<<" "<<b<<" "<<c<<endl;
-      cerr<<"GetTriangleCells2 incorrect: contains additional "<<cells[i]<<endl;
-      getchar();
+      LOG4CXX_INFO(KrisLibrary::logger(),"Triangle "<<a<<" "<<b<<" "<<c);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"GetTriangleCells2 incorrect: contains additional "<<cells[i]);
+      KrisLibrary::loggerWait();
     }
   }
   */
@@ -683,29 +684,29 @@ void SurfaceOccupancyGrid(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb)
     query.expand(tri.c);
     bool q=QueryGrid(occupied,bb,query,lo,hi);
     if(!q) continue;
-    //getchar();
+    //KrisLibrary::loggerWait();
     VolumeGridIterator<bool> it(occupied,bb);
     it.setRange(lo,hi);
     for(;!it.isDone();++it) {
       it.getCell(cell);
       if(tri.intersects(cell))
-	occupied(it.index)=true;
+        occupied(it.index)=true;
     }
     /*
     IntTriple index=lo;
     while(index.a <= hi.a) {
       while(index.b <= hi.b) {
-	while(index.c <= hi.c) {
-	  if(!occupied(index)) {
-	    GetGridCell(occupied,bb,index,cell);
-	    if(tri.intersects(cell)) {
-	      occupied(index)=true;
-	    }
-	  }
-	  index.c++;
-	}
-	index.b++;
-	index.c = lo.c;
+        while(index.c <= hi.c) {
+          if(!occupied(index)) {
+            GetGridCell(occupied,bb,index,cell);
+            if(tri.intersects(cell)) {
+              occupied(index)=true;
+            }
+          }
+          index.c++;
+        }
+        index.b++;
+        index.c = lo.c;
       }
       index.a++;
       index.b = lo.b;
@@ -727,7 +728,25 @@ void VolumeOccupancyGrid_FloodFill(const TriMesh& m,Array3D<bool>& occupied,AABB
   for(int i=0;i<surface.m;i++) 
     for(int j=0;j<surface.n;j++) 
       for(int k=0;k<surface.p;k++) 
-	if(surface(i,j,k)) occupied(i,j,k) = seedOccupied;
+        if(surface(i,j,k)) occupied(i,j,k) = seedOccupied;
+
+  bool grow = true;
+  Array3D<bool> buffer;
+  if(grow) {
+    //try to grow to fill some gaps
+    for(int i=0;i<surface.m;i++) 
+      for(int j=0;j<surface.n;j++) 
+        for(int k=0;k<surface.p;k++)
+          if(surface(i,j,k)) {
+            if(i > 1) occupied(i-1,j,k) = seedOccupied;
+            if(i+2<surface.m) occupied(i+1,j,k) = seedOccupied;
+            if(j > 1) occupied(i,j-1,k) = seedOccupied;
+            if(j+2<surface.n) occupied(i,j+1,k) = seedOccupied;
+            if(k > 1) occupied(i,j,k-1) = seedOccupied;
+            if(k+2<surface.p) occupied(i,j,k+1) = seedOccupied;
+          }
+    buffer = occupied;
+  }
 
   list<IntTriple> queue;
   queue.push_back(seed);
@@ -773,11 +792,33 @@ void VolumeOccupancyGrid_FloodFill(const TriMesh& m,Array3D<bool>& occupied,AABB
     index.c++;
   }
 
-  if(!seedOccupied) {  //need to set surface cells
+  if(grow) { //erode
+    if(!seedOccupied) {
+      for(int i=0;i<surface.m;i++) 
+        for(int j=0;j<surface.n;j++) 
+          for(int k=0;k<surface.p;k++)
+            if(buffer(i,j,k) == seedOccupied) occupied(i,j,k) = true;
+    }
+    surface = occupied;
     for(int i=0;i<surface.m;i++) 
       for(int j=0;j<surface.n;j++) 
-	for(int k=0;k<surface.p;k++) 
-	  if(surface(i,j,k)) occupied(i,j,k) = true;
+        for(int k=0;k<surface.p;k++) 
+          if(surface(i,j,k) == seedOccupied) {
+            if(i > 0) occupied(i-1,j,k) = seedOccupied;
+            if(i+1<surface.m) occupied(i+1,j,k) = seedOccupied;
+            if(j > 0) occupied(i,j-1,k) = seedOccupied;
+            if(j+1<surface.n) occupied(i,j+1,k) = seedOccupied;
+            if(k > 0) occupied(i,j,k-1) = seedOccupied;
+            if(k+1<surface.p) occupied(i,j,k+1) = seedOccupied;
+          }
+  }
+  else {
+    if(!seedOccupied) {  //need to set surface cells
+      for(int i=0;i<surface.m;i++) 
+        for(int j=0;j<surface.n;j++) 
+          for(int k=0;k<surface.p;k++) 
+            if(surface(i,j,k)) occupied(i,j,k) = true;
+    }
   }
 }
 
@@ -794,7 +835,7 @@ void DensityEstimate_FloodFill(const TriMeshWithTopology& m,Array3D<Real>& densi
   for(int i=0;i<buckets.m;i++) 
     for(int j=0;j<buckets.n;j++) 
       for(int k=0;k<buckets.p;k++) 
-	if(!buckets(i,j,k).empty()) density(i,j,k) = 0.0;
+        if(!buckets(i,j,k).empty()) density(i,j,k) = 0.0;
 
   list<IntTriple> queue;
   queue.push_back(seed);
@@ -845,31 +886,31 @@ void DensityEstimate_FloodFill(const TriMeshWithTopology& m,Array3D<Real>& densi
   for(int i=0;i<buckets.m;i++) 
     for(int j=0;j<buckets.n;j++) 
       for(int k=0;k<buckets.p;k++) {
-	if(!buckets(i,j,k).empty()) {
-	  const list<int>& b=buckets(i,j,k);
-	  Real minDistance = Inf;
-	  Vector3 minDir;
-	  AABB3D cell;
-	  Vector3 cellCenter;
-	  GetGridCell(buckets,bb,IntTriple(i,j,k),cell);
-	  cellCenter = 0.5*(cell.bmin+cell.bmax);
-	  for(list<int>::const_iterator a=b.begin();a!=b.end();a++) {
-	    m.GetTriangle(*a,tri);
-	    Vector3 cp = tri.closestPoint(cellCenter);
-	    Vector3 dir = cellCenter-cp;
-	    Real dist = dir.norm();
-	    if(dir.dot(tri.normal()) > 0) //on inside
-	      dist = -dist;
-	    if(dist < minDistance) {
-	      minDistance = dist;
-	      minDir = dir/dist;
-	    }
-	  }
-	  Plane3D p;
-	  p.offset = minDir.dot(cellCenter) - minDistance;
-	  p.normal = minDir;
-	  density(i,j,k) = GridCellDensity(cell,p);
-	}
+        if(!buckets(i,j,k).empty()) {
+          const list<int>& b=buckets(i,j,k);
+          Real minDistance = Inf;
+          Vector3 minDir;
+          AABB3D cell;
+          Vector3 cellCenter;
+          GetGridCell(buckets,bb,IntTriple(i,j,k),cell);
+          cellCenter = 0.5*(cell.bmin+cell.bmax);
+          for(list<int>::const_iterator a=b.begin();a!=b.end();a++) {
+            m.GetTriangle(*a,tri);
+            Vector3 cp = tri.closestPoint(cellCenter);
+            Vector3 dir = cellCenter-cp;
+            Real dist = dir.norm();
+            if(dir.dot(tri.normal()) > 0) //on inside
+              dist = -dist;
+            if(dist < minDistance) {
+              minDistance = dist;
+              minDir = dir/dist;
+            }
+          }
+          Plane3D p;
+          p.offset = minDir.dot(cellCenter) - minDistance;
+          p.normal = minDir;
+          density(i,j,k) = GridCellDensity(cell,p);
+        }
       }
 
 }
@@ -899,61 +940,61 @@ void VolumeOccupancyGrid_CenterShooting(const TriMesh& m,Array3D<bool>& occupied
       int numHits = 0;
       //sweep a ray across x axis
       for(int i=0;i<occupied.m;i++) {
-	Real startdistance = (Real(i))*xscale;
-	Real enddistance = (Real(i+1))*xscale;
-	Real centerdistance = (Real(i)+0.5)*xscale;
-	const list<int>& triangles = triangleLists(i,j,k);
-	Heap<Triangle3D,Real> entering,exiting;
-	for(list<int>::const_iterator a=triangles.begin();a!=triangles.end();a++) {
-	  m.GetTriangle(*a,tri);
-	  Real t,u,v;
-	  if(tri.rayIntersects(ray,&t,&u,&v)) {
-	    if(t >= startdistance && t < enddistance) {
-	      if(t > centerdistance) exiting.push(tri,-t);
-	      else entering.push(tri,-t);
-	    }
-	  }
-	}
-	//take all the triangles from the entering cell face to the center
-	while(!entering.empty()) {
-	  tri = entering.top(); entering.pop();
-	  Vector3 n=tri.normal();
-	  if(n[shootDirection] < 0) { //entering into the triangle
-	    if(parity > 0)   //on outside
-	      parity = -parity;
-	  }
-	  else if(n[shootDirection] > 0) {  //exiting the triangle
-	    if(parity < 0)   //on inside
-	      parity = -parity;
-	    else if(numHits==0) {  //first hit is on inside of triangle
-	      for(int i2=0;i2<i;i2++)
-		occupied(i2,j,k) = true;
-	    }
-	  }
-	  numHits++;
-	}
+        Real startdistance = (Real(i))*xscale;
+        Real enddistance = (Real(i+1))*xscale;
+        Real centerdistance = (Real(i)+0.5)*xscale;
+        const list<int>& triangles = triangleLists(i,j,k);
+        Heap<Triangle3D,Real> entering,exiting;
+        for(list<int>::const_iterator a=triangles.begin();a!=triangles.end();a++) {
+          m.GetTriangle(*a,tri);
+          Real t,u,v;
+          if(tri.rayIntersects(ray,&t,&u,&v)) {
+            if(t >= startdistance && t < enddistance) {
+              if(t > centerdistance) exiting.push(tri,-t);
+              else entering.push(tri,-t);
+            }
+          }
+        }
+        //take all the triangles from the entering cell face to the center
+        while(!entering.empty()) {
+          tri = entering.top(); entering.pop();
+          Vector3 n=tri.normal();
+          if(n[shootDirection] < 0) { //entering into the triangle
+            if(parity > 0)   //on outside
+              parity = -parity;
+          }
+          else if(n[shootDirection] > 0) {  //exiting the triangle
+            if(parity < 0)   //on inside
+              parity = -parity;
+            else if(numHits==0) {  //first hit is on inside of triangle
+              for(int i2=0;i2<i;i2++)
+                occupied(i2,j,k) = true;
+            }
+          }
+          numHits++;
+        }
 
-	//set the occupation grid
-	occupied(i,j,k) = (parity < 0);
+        //set the occupation grid
+        occupied(i,j,k) = (parity < 0);
 
-	//take all the triangles from the cell center to the exiting face
-	while(!exiting.empty()) {
-	  tri = exiting.top(); exiting.pop();
-	  Vector3 n=tri.normal();
-	  if(n[shootDirection] < 0) { //entering into the triangle
-	    if(parity > 0)   //on outside
-	      parity = -parity;
-	  }
-	  else if(n[shootDirection] > 0) {  //exiting the triangle
-	    if(parity < 0)   //on inside
-	      parity = -parity;
-	    else if(numHits==0) {  //first hit is on inside of triangle
-	      for(int i2=0;i2<=i;i2++)
-		occupied(i2,j,k) = true;
-	    }
-	  }
-	  numHits++;
-	}
+        //take all the triangles from the cell center to the exiting face
+        while(!exiting.empty()) {
+          tri = exiting.top(); exiting.pop();
+          Vector3 n=tri.normal();
+          if(n[shootDirection] < 0) { //entering into the triangle
+            if(parity > 0)   //on outside
+              parity = -parity;
+          }
+          else if(n[shootDirection] > 0) {  //exiting the triangle
+            if(parity < 0)   //on inside
+              parity = -parity;
+            else if(numHits==0) {  //first hit is on inside of triangle
+              for(int i2=0;i2<=i;i2++)
+                occupied(i2,j,k) = true;
+            }
+          }
+          numHits++;
+        }
       }
     }
   }
@@ -987,53 +1028,53 @@ void DensityEstimate_CenterShooting(const TriMesh& m,Array3D<Real>& density,AABB
       int numHits = 0;
       //sweep a ray across x axis
       for(int i=0;i<density.m;i++) {
-	Real startdistance = (Real(i))*xscale;
-	Real enddistance = (Real(i+1))*xscale;
-	const list<int>& triangles = triangleLists(i,j,k);
-	Heap<Triangle3D,Real> tris;
-	for(list<int>::const_iterator a=triangles.begin();a!=triangles.end();a++) {
-	  m.GetTriangle(*a,tri);
-	  Real t,u,v;
-	  if(tri.rayIntersects(ray,&t,&u,&v)) {
-	    if(t >= startdistance && t < enddistance)
-	      tris.push(tri,-t);
-	  }
-	}
-	//integrate the length of segment intersected by the triangle interiors
-	Real occupation=0;
-	Real lastt = startdistance; //last intersection into the object
-	while(!tris.empty()) {
-	  tri = tris.top();
-	  Real t=-tris.topPriority();
-	  tris.pop();
-	  
-	  Vector3 n=tri.normal();
-	  if(n[shootDirection] < 0) { //entering into the triangle
-	    if(parity > 0) {  //on outside
-	      parity = -parity;
-	      lastt = t;
-	    }
-	  }
-	  else if(n[shootDirection] > 0) {  //exiting the triangle
-	    if(parity < 0) {  //on inside
-	      parity = -parity;
-	      occupation += t-lastt;
-	    }
-	    else if(numHits == 0) {  //first hit exited a triangle, assume all previous cells were occupied
-	      for(int i2=0;i2<i;i2++)
-		density(i2,j,k) += xscale;
-	      //occupation += t-lastt;
-	      parity = -parity;
-	    }
-	  }
-	  numHits++;
-	}
-	if(parity < 0) //on the inside
-	  occupation += enddistance - lastt;
-	
-	//set the occupation grid
-	density(i,j,k) += occupation*xscaleInv;
-	if(density(i,j,k) > 1.0) density(i,j,k) = 1.0;
+        Real startdistance = (Real(i))*xscale;
+        Real enddistance = (Real(i+1))*xscale;
+        const list<int>& triangles = triangleLists(i,j,k);
+        Heap<Triangle3D,Real> tris;
+        for(list<int>::const_iterator a=triangles.begin();a!=triangles.end();a++) {
+          m.GetTriangle(*a,tri);
+          Real t,u,v;
+          if(tri.rayIntersects(ray,&t,&u,&v)) {
+            if(t >= startdistance && t < enddistance)
+              tris.push(tri,-t);
+          }
+        }
+        //integrate the length of segment intersected by the triangle interiors
+        Real occupation=0;
+        Real lastt = startdistance; //last intersection into the object
+        while(!tris.empty()) {
+          tri = tris.top();
+          Real t=-tris.topPriority();
+          tris.pop();
+          
+          Vector3 n=tri.normal();
+          if(n[shootDirection] < 0) { //entering into the triangle
+            if(parity > 0) {  //on outside
+              parity = -parity;
+              lastt = t;
+            }
+          }
+          else if(n[shootDirection] > 0) {  //exiting the triangle
+            if(parity < 0) {  //on inside
+              parity = -parity;
+              occupation += t-lastt;
+            }
+            else if(numHits == 0) {  //first hit exited a triangle, assume all previous cells were occupied
+              for(int i2=0;i2<i;i2++)
+                density(i2,j,k) += xscale;
+              //occupation += t-lastt;
+              parity = -parity;
+            }
+          }
+          numHits++;
+        }
+        if(parity < 0) //on the inside
+          occupation += enddistance - lastt;
+        
+        //set the occupation grid
+        density(i,j,k) += occupation*xscaleInv;
+        if(density(i,j,k) > 1.0) density(i,j,k) = 1.0;
       }
     }
   }
@@ -1064,61 +1105,61 @@ void DensityEstimate_RandomShooting(const TriMesh& m,Array3D<Real>& density,AABB
       ray.source.x = bb.bmin.x;
 
       for(int sample=0;sample<numSamples;sample++) {
-	ray.source.y=Rand(cell.bmin.y,cell.bmax.y);
-	ray.source.z=Rand(cell.bmin.z,cell.bmax.z);
+        ray.source.y=Rand(cell.bmin.y,cell.bmax.y);
+        ray.source.z=Rand(cell.bmin.z,cell.bmax.z);
 
-	//parity is 1 if it's outside, -1 if inside
-	int parity = 1;
-	int numHits = 0;
-	//sweep a ray across x axis
-	for(int i=0;i<density.m;i++) {
-	  Real startdistance = (Real(i))*xscale;
-	  Real enddistance = (Real(i+1))*xscale;
-	  const list<int>& triangles = triangleLists(i,j,k);
-	  Heap<Triangle3D,Real> tris;
-	  for(list<int>::const_iterator a=triangles.begin();a!=triangles.end();a++) {
-	    m.GetTriangle(*a,tri);
-	    Real t,u,v;
-	    if(tri.rayIntersects(ray,&t,&u,&v)) {
-	      if(t >= startdistance && t < enddistance)
-		tris.push(tri,-t);
-	    }
-	  }
-	  //integrate the length of segment intersected by the triangle interiors
-	  Real occupation=0;
-	  Real lastt = startdistance; //last intersection into the object
-	  while(!tris.empty()) {
-	    tri = tris.top();
-	    Real t=-tris.topPriority();
-	    tris.pop();
+        //parity is 1 if it's outside, -1 if inside
+        int parity = 1;
+        int numHits = 0;
+        //sweep a ray across x axis
+        for(int i=0;i<density.m;i++) {
+          Real startdistance = (Real(i))*xscale;
+          Real enddistance = (Real(i+1))*xscale;
+          const list<int>& triangles = triangleLists(i,j,k);
+          Heap<Triangle3D,Real> tris;
+          for(list<int>::const_iterator a=triangles.begin();a!=triangles.end();a++) {
+            m.GetTriangle(*a,tri);
+            Real t,u,v;
+            if(tri.rayIntersects(ray,&t,&u,&v)) {
+              if(t >= startdistance && t < enddistance)
+                tris.push(tri,-t);
+            }
+          }
+          //integrate the length of segment intersected by the triangle interiors
+          Real occupation=0;
+          Real lastt = startdistance; //last intersection into the object
+          while(!tris.empty()) {
+            tri = tris.top();
+            Real t=-tris.topPriority();
+            tris.pop();
 
-	    Vector3 n=tri.normal();
-	    if(n[shootDirection] < 0) { //entering into the triangle
-	      if(parity > 0) {  //on outside
-		parity = -parity;
-		lastt = t;
-	      }
-	    }
-	    else if(n[shootDirection] > 0) {  //exiting the triangle
-	      if(parity < 0) {  //on inside
-		parity = -parity;
-		occupation += t-lastt;
-	      }
-	      else if(numHits == 0) {  //first hit exited a triangle, assume all previous cells were occupied
-		for(int i2=0;i2<i;i2++)
-		  density(i2,j,k) += xscale;
-		//occupation += t-lastt;
-		parity = -parity;
-	      }
-	    }
-	    numHits++;
-	  }
-	  if(parity < 0) //on the inside
-	    occupation += enddistance - lastt;
+            Vector3 n=tri.normal();
+            if(n[shootDirection] < 0) { //entering into the triangle
+              if(parity > 0) {  //on outside
+                parity = -parity;
+                lastt = t;
+              }
+            }
+            else if(n[shootDirection] > 0) {  //exiting the triangle
+              if(parity < 0) {  //on inside
+                parity = -parity;
+                occupation += t-lastt;
+              }
+              else if(numHits == 0) {  //first hit exited a triangle, assume all previous cells were occupied
+                for(int i2=0;i2<i;i2++)
+                  density(i2,j,k) += xscale;
+                //occupation += t-lastt;
+                parity = -parity;
+              }
+            }
+            numHits++;
+          }
+          if(parity < 0) //on the inside
+            occupation += enddistance - lastt;
 
-	  //set the occupation grid
-	  density(i,j,k) += occupation;
-	}
+          //set the occupation grid
+          density(i,j,k) += occupation;
+        }
       }
     }
   }
@@ -1127,8 +1168,8 @@ void DensityEstimate_RandomShooting(const TriMesh& m,Array3D<Real>& density,AABB
   for(int i=0;i<density.m;i++) 
     for(int j=0;j<density.n;j++) 
       for(int k=0;k<density.p;k++) {
-	density(i,j,k) *= scale;
-	if(density(i,j,k) > 1) density(i,j,k) = 1;
+        density(i,j,k) *= scale;
+        if(density(i,j,k) > 1) density(i,j,k) = 1;
       }
 }
 
@@ -1148,25 +1189,25 @@ void SweepVisibilityGrid(const TriMesh& m,int direction,Array3D<bool>& visible,A
       bool hitsurface=false;
       if(direction < 0) {
         for(index[dim]=dims[dim]-1;index[dim]>=0;index[dim]--) {
-	  if(hitsurface) {
-	    visible(index[0],index[1],index[2])=false;
-	  }
-	  else {
-	    hitsurface=visible(index[0],index[1],index[2]);
-	    visible(index[0],index[1],index[2])=true;
-	  }
-	}
+          if(hitsurface) {
+            visible(index[0],index[1],index[2])=false;
+          }
+          else {
+            hitsurface=visible(index[0],index[1],index[2]);
+            visible(index[0],index[1],index[2])=true;
+          }
+        }
       }
       else {
         for(index[dim]=0;index[dim]<dims[dim];index[dim]++) {
-	  if(hitsurface) {
-	    visible(index[0],index[1],index[2])=false;
-	  }
-	  else {
-	    hitsurface=visible(index[0],index[1],index[2]);
-	    visible(index[0],index[1],index[2])=true;
-	  }
-	}
+          if(hitsurface) {
+            visible(index[0],index[1],index[2])=false;
+          }
+          else {
+            hitsurface=visible(index[0],index[1],index[2]);
+            visible(index[0],index[1],index[2])=true;
+          }
+        }
       }
     }
   }
@@ -1174,80 +1215,167 @@ void SweepVisibilityGrid(const TriMesh& m,int direction,Array3D<bool>& visible,A
 
 enum FMMStatus { Accepted, Considered, Far };
 
+struct TrimeshFeature
+{
+  enum { F=0, V=1, E1=2, E2=3, E3=4 };
+  int index;
+  int feature;
+};
+
+//inline std::pair<int,int> to_pair(const TrimeshFeature& f) { return std::make_pair(f.index,f.feature); }
+inline int to_pair(const TrimeshFeature& f) { return f.index; }
+
 struct TriangleClosestPointData
 {
-  //given the closest point is the given vertex, sets the dir member and
+  //given the closest point to queryPoint is the given vertex, sets the dir member and
   //signedDistance
   void SetVertexDistance(const TriMeshWithTopology& mesh,int vertex,
-			 const Vector3& queryPoint,const Vector3& closestPoint)
+                         const Vector3& queryPoint)
   {
+    closestPoint = mesh.verts[vertex];
     dir = queryPoint-closestPoint;
     Real distance = dir.norm();
+
+    bool onVertex = true;
+    //check for change of closest point
+    Triangle3D tri;
+    for(size_t i=0;i<mesh.incidentTris[vertex].size();i++) {
+      int t=mesh.incidentTris[vertex][i];
+      mesh.GetTriangle(t,tri);
+      Vector3 point = tri.closestPoint(queryPoint);
+      Real dadj = point.distance(queryPoint);
+      if(dadj < distance-Epsilon) {
+        //migration!
+        SetFaceDistance(mesh,t,queryPoint);
+        onVertex = false;
+        break;
+      }
+    }
+    if(!onVertex) return;
+
+    feature.index = vertex;
+    feature.feature = TrimeshFeature::V;
     //check orientation at edge
     if(FuzzyZero(distance)) {  //right at the apex
-      cout<<"Closest point is right at the apex of vertex "<<vertex<<endl;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Voxelize.cpp: Closest point is right at the apex of vertex "<<vertex);
       //average the adjacent normals
       Vector3 aveNormal(Zero);
       for(size_t i=0;i<mesh.incidentTris[vertex].size();i++) {
-	int t=mesh.incidentTris[vertex][i];
-	aveNormal += mesh.TriangleNormal(t);
+        int t=mesh.incidentTris[vertex][i];
+        aveNormal += mesh.TriangleNormal(t);
       }
       Real nnorm = aveNormal.norm();
       if(FuzzyZero(nnorm)) { //norm is zero?!
-	dir.setZero();
-	signedDistance = distance;
-	cout<<"Uhh... average normal is zero??"<<endl;
+        dir.setZero();
+        signedDistance = distance;
+        LOG4CXX_WARN(KrisLibrary::logger(),"Voxelize.cpp: Uhh... average normal is zero??");
       }
       else {
-	aveNormal /= nnorm;
-	Real sign = Sign(dot(dir,aveNormal));
-	dir = aveNormal*sign;
-	signedDistance = sign*distance;
+        aveNormal /= nnorm;
+        Real sign = Sign(dot(dir,aveNormal));
+        dir = aveNormal*sign;
+        signedDistance = sign*distance;
       }
-      getchar();
+      //printf("Warning getchar?\n");
+      //KrisLibrary::loggerWait();
     }
     else {
       //find the triangle that's the most perpendicular to the point
       Real maxAngle=-1;
       int maxAngleIndex=-1;
+      int numpos = 0;
+      int numneg = 0;
       for(size_t i=0;i<mesh.incidentTris[vertex].size();i++) {
-	int t=mesh.incidentTris[vertex][i];
-	Real angle = Abs(dot(mesh.TriangleNormal(t),dir));
-	if(angle > maxAngle) {
-	  maxAngle = angle;
-	  maxAngleIndex = t;
-	}
+        int t=mesh.incidentTris[vertex][i];
+        if(Sign(dot(mesh.TriangleNormal(t),dir)) > 0) numpos ++;
+        else numneg ++;
+        Real angle = Abs(dot(mesh.TriangleNormal(t),dir));
+        if(angle > maxAngle) {
+          maxAngle = angle;
+          maxAngleIndex = t;
+        }
       }
+      /*
+      if(numpos > 0 && numneg > 0) {
+        LOG4CXX_INFO(KrisLibrary::logger(),"Conflict between normals on vertex");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<dir);
+        for(size_t i=0;i<mesh.incidentTris[vertex].size();i++) {
+          int t=mesh.incidentTris[vertex][i];
+          LOG4CXX_INFO(KrisLibrary::logger(),"Triangle normal "<<mesh.TriangleNormal(t)<<" dot product "<<dot(mesh.TriangleNormal(t),dir));
+        }
+      }
+      */
       Assert(maxAngleIndex >= 0);
       Real sign = Sign(dot(mesh.TriangleNormal(maxAngleIndex),dir));
+      if(sign == 0) {
+        LOG4CXX_WARN(KrisLibrary::logger(),"Voxelize.cpp: Sign is 0 on vertex "<<vertex);
+        LOG4CXX_WARN(KrisLibrary::logger(),"  Point "<<queryPoint<<", closest point "<<closestPoint);
+        for(size_t i=0;i<mesh.incidentTris[vertex].size();i++)  {
+          int t=mesh.incidentTris[vertex][i];
+          LOG4CXX_WARN(KrisLibrary::logger(),"  Triangle normal "<<mesh.TriangleNormal(t)<<", dot product "<<dot(mesh.TriangleNormal(t),dir));
+          sign = 1.0;
+        }
+      }
       dir /= distance;
       dir *= sign;
       signedDistance = sign*distance;
+      assert(signedDistance != 0);
     }
   }
 
   //given the closest point is triangleIndex on the given edge, sets
   //the dir member and signedDistance
-  void SetEdgeDistance(const TriMeshWithTopology& mesh,int edge,
-		       const Vector3& queryPoint,const Vector3& closestPoint)
+  void SetEdgeDistance(const TriMeshWithTopology& mesh,int triangle,int edge,
+                       const Vector3& queryPoint)
   {
-    int adjIndex = mesh.triNeighbors[triangleIndex][edge];
+    assert(edge >= 0 && edge <= 2);
+    int v1,v2;
+    mesh.GetEdge(triangle,edge,v1,v2);
+    Segment3D s;
+    s.a = mesh.verts[v1];
+    s.b = mesh.verts[v2];
+    s.closestPoint(queryPoint,closestPoint);
+    if(closestPoint == s.a) {
+      //vertex feature
+      SetVertexDistance(mesh,v1,queryPoint);
+      return;
+    }
+    else if(closestPoint == s.b) {
+      //vertex feature
+      SetVertexDistance(mesh,v2,queryPoint);
+      return;
+    }
+    int adjIndex = mesh.triNeighbors[triangle][edge];
     dir = queryPoint-closestPoint;
     Real distance = dir.norm();
-    Vector3 normal = mesh.TriangleNormal(triangleIndex);
 
+    if(adjIndex >= 0) {
+      //check for change of closest point
+      Triangle3D tri;
+      mesh.GetTriangle(adjIndex,tri);
+      Vector3 point = tri.closestPoint(queryPoint);
+      Real dadj = point.distance(queryPoint);
+      if(dadj < distance-Epsilon) {
+        SetFaceDistance(mesh,adjIndex,queryPoint);
+        return;
+      }
+    }
+
+    feature.index = triangle;
+    feature.feature = TrimeshFeature::E1+edge;
+    Vector3 normal = mesh.TriangleNormal(triangle);
     if(adjIndex < 0) {
-      printf("No adjacent triangle on edge\n");
       //query sign by triangle normal
       Real sign = Sign(dot(normal,dir));
       signedDistance = sign*distance;
       if(FuzzyZero(distance,Zero)) {
-	dir = normal;
+        dir = normal;
       }
       else {
-	dir /= distance;
-	dir *= sign;
+        dir /= distance;
+        dir *= sign;
       }
+      //LOG4CXX_INFO(KrisLibrary::logger(),"No adjacent triangle on edge, setting distance to "<<signedDistance);
       return;
     }
 
@@ -1255,51 +1383,66 @@ struct TriangleClosestPointData
     
     //check orientation at edge
     if(FuzzyZero(distance)) {  //right at the apex
-      printf("Cell center right on edge\n");
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Voxelize.cpp: Vertex exactly on edge");
       //average the adjacent normals
       Vector3 aveNormal = normal + adjNormal;
       Real nnorm = aveNormal.norm();
       if(FuzzyZero(nnorm)) { //norm is zero?!
-	cerr<<"Warning: closest point is right at the edge, and the normal of an edge is zero!"<<endl;
-	getchar();
-	dir.setZero();
-	signedDistance = 0;
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Voxelize.cpp: Warning: closest point is right at the edge, and the normal of an edge is zero!");
+        KrisLibrary::loggerWait();
+        dir.setZero();
+        signedDistance = 0;
       }
       else {
-	aveNormal /= nnorm;
-	Real sign = Sign(dot(dir,aveNormal));
-	dir = aveNormal;
-	signedDistance = sign*distance;
+        aveNormal /= nnorm;
+        Real sign = Sign(dot(dir,aveNormal));
+        dir = aveNormal;
+        signedDistance = sign*distance;
       }
     }
     else {
       //find the triangle that's the most perpendicular to the point
+      /*
+      if(Sign(dot(normal,dir)) != Sign(dot(adjNormal,dir))) {
+        LOG4CXX_INFO(KrisLibrary::logger(),"WEIRD SITUATION: "<<dot(normal,dir)<<", "<<dot(adjNormal,dir));
+        LOG4CXX_INFO(KrisLibrary::logger(),"Point: "<<queryPoint);
+        LOG4CXX_INFO(KrisLibrary::logger(),"Closest: "<<closestPoint);
+        Triangle3D tri;
+        mesh.GetTriangle(triangleIndex,tri);
+        Vector2 planeCoords = tri.closestPointCoords(queryPoint);
+        LOG4CXX_INFO(KrisLibrary::logger(),"Triangle: "<<tri<<", point coords "<<planeCoords);
+        mesh.GetTriangle(adjIndex,tri);
+        planeCoords = tri.closestPointCoords(queryPoint);
+        LOG4CXX_INFO(KrisLibrary::logger(),"Adjacent triangle: "<<tri<<" on edge"<<edge<<", point coords "<<planeCoords);
+        getchar();
+      }
+      */
       Real sign;
+      /*
+      if(Sign(dot(normal,dir)) != Sign(dot(adjNormal,dir)))  {
+        LOG4CXX_INFO(KrisLibrary::logger(),"Conflict between normals on edge");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<dir);
+        LOG4CXX_INFO(KrisLibrary::logger(),"Normal1 "<<normal);
+        LOG4CXX_INFO(KrisLibrary::logger(),"Normal2 "<<adjNormal);
+        LOG4CXX_INFO(KrisLibrary::logger(),"Angles "<<dot(normal,dir)<<", "<<dot(adjNormal,dir));
+      }
+      */
       if(Abs(dot(normal,dir)) > Abs(dot(adjNormal,dir))) 
-	sign = Sign(dot(normal,dir));
+        sign = Sign(dot(normal,dir));
       else
-	sign = Sign(dot(adjNormal,dir));
+        sign = Sign(dot(adjNormal,dir));
 
       if(sign==0.0) sign=1.0;
       dir /= distance;
       dir *= sign;
       signedDistance = sign*distance;
+      assert(signedDistance != 0);
     }
   }
 
-
-  void Update(const TriMeshWithTopology& mesh,int index,const Vector3& queryPoint) {
-    Vector3 point;
-    //triangleIndex = ClosestPointDescent(mesh,queryPoint,index,point);
-    triangleIndex = index;
-    Calculate(mesh,triangleIndex,queryPoint);
-  }
-
-  void Calculate(const TriMeshWithTopology& mesh,int index,const Vector3& queryPoint) {
-    Assert(!mesh.triNeighbors.empty());
-    Assert(!mesh.incidentTris.empty());
-    triangleIndex = index;
-
+  void SetFaceDistance(const TriMeshWithTopology& mesh,int triangleIndex,
+                       const Vector3& queryPoint)
+  {
     Triangle3D tri;
     mesh.GetTriangle(triangleIndex,tri);
     Vector2 planeCoords = tri.closestPointCoords(queryPoint);
@@ -1307,63 +1450,95 @@ struct TriangleClosestPointData
     Assert(planeCoords.x+planeCoords.y <= One + Epsilon);
     Vector3 point = tri.planeCoordsToPoint(planeCoords);
     dir = queryPoint-point;
-    Real distance = dir.norm();
-
+    closestPoint = point;
 
     //figure out the sign of distance from the feature
     if(FuzzyZero(planeCoords.x)) {
       if(FuzzyZero(planeCoords.y)) {
-	//closest at point a
-	int vertex=mesh.tris[triangleIndex][0];
-	SetVertexDistance(mesh,vertex,queryPoint,point);
+        //closest at point a
+        int vertex=mesh.tris[triangleIndex][0];
+        SetVertexDistance(mesh,vertex,queryPoint);
       }
       else if(FuzzyEquals(planeCoords.y,1.0)) {
-	//closest at point c
-	int vertex=mesh.tris[triangleIndex][2];
-	SetVertexDistance(mesh,vertex,queryPoint,point);
+        //closest at point c
+        int vertex=mesh.tris[triangleIndex][2];
+        SetVertexDistance(mesh,vertex,queryPoint);
       }
       else {
-	//closest at edge ac
-	SetEdgeDistance(mesh,2,queryPoint,point);
+        //closest at edge ac
+        SetEdgeDistance(mesh,triangleIndex,1,queryPoint);
       }
     }
     else if(FuzzyZero(planeCoords.y)) {
       if(FuzzyEquals(planeCoords.x,1.0)) {
-	//closest at point b
-	int vertex=mesh.tris[triangleIndex][1];
-	SetVertexDistance(mesh,vertex,queryPoint,point);
+        //closest at point b
+        int vertex=mesh.tris[triangleIndex][1];
+        SetVertexDistance(mesh,vertex,queryPoint);
       }
       else {
-	//closest at edge ab
-	SetEdgeDistance(mesh,0,queryPoint,point);
+        //closest at edge ab
+        SetEdgeDistance(mesh,triangleIndex,2,queryPoint);
       }
     }
     else {
       if(FuzzyEquals(planeCoords.x+planeCoords.y,One)) {
-	//closest at edge bc
-	SetEdgeDistance(mesh,1,queryPoint,point);
+        //closest at edge bc
+        SetEdgeDistance(mesh,triangleIndex,0,queryPoint);
       }
       else {
-	//closest is triangle face
+        //closest is triangle face
 
-	//query sign by triangle normal
-	Real sign = Sign(dot(tri.normal(),dir));
-	if(sign == 0) sign = 1.0;
-	signedDistance = sign*distance;
-	if(FuzzyZero(distance,Zero)) {
-	  dir = tri.normal();
-	}
-	else {
-	  dir /= distance;
-	  dir *= sign;
-	}
+        Real distance = dir.norm();
+        //query sign by triangle normal
+        Real sign = Sign(dot(tri.normal(),dir));
+        if(sign == 0) sign = 1.0;
+        signedDistance = sign*distance;
+        if(FuzzyZero(distance,Zero)) {
+          dir = tri.normal();
+        }
+        else {
+          dir /= distance;
+          dir *= sign;
+        }
+        feature.index = triangleIndex;
+        feature.feature = TrimeshFeature::F;
       }
     }
   }
 
-  int triangleIndex;     //indexed triangle
+  void Update(const TriMeshWithTopology& mesh,const TrimeshFeature& seedFeature,const Vector3& queryPoint) {
+    Calculate(mesh,seedFeature,queryPoint);
+  }
+
+  void Calculate(const TriMeshWithTopology& mesh,int triangleindex,const Vector3& queryPoint) {
+    TrimeshFeature f;
+    f.index = triangleindex;
+    f.feature = TrimeshFeature::F;
+    Calculate(mesh,f,queryPoint);
+    assert(feature.index >= 0);
+    assert(feature.feature >= TrimeshFeature::F && feature.feature <= TrimeshFeature::E3);
+  }
+  void Calculate(const TriMeshWithTopology& mesh,const TrimeshFeature& seedFeature,const Vector3& queryPoint) {
+    Assert(!mesh.triNeighbors.empty());
+    Assert(!mesh.incidentTris.empty());
+    feature = seedFeature;
+
+    if(feature.feature == TrimeshFeature::F) {
+      SetFaceDistance(mesh,feature.index,queryPoint);
+    }
+    else if(feature.feature == TrimeshFeature::V) {
+      SetVertexDistance(mesh,feature.index,queryPoint);
+    }
+    else {
+      assert(feature.feature >= TrimeshFeature::E1 && feature.feature <= TrimeshFeature::E3);
+      SetEdgeDistance(mesh,feature.index,feature.feature-TrimeshFeature::E1,queryPoint);
+    }
+  }
+
+  TrimeshFeature feature;     //feature defining the closest point
   Real signedDistance;   //signed distance to point
   Vector3 dir;           //signed distance gradient
+  Vector3 closestPoint;  //closest point
 };
 
 void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells)
@@ -1373,76 +1548,67 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
   if(bb.bmin.x > bb.bmax.x || bb.bmin.y > bb.bmax.y || bb.bmin.z > bb.bmax.z)
     FitGridToMesh(distance,bb,m);
 
-  Array3D<int> closestTriangle(M,N,P,-1);
+  TrimeshFeature nullFeature;
+  nullFeature.index = -1;
+  nullFeature.feature = TrimeshFeature::F;
+  Array3D<TrimeshFeature> closestFeature(M,N,P,nullFeature);
   Array3D<FMMStatus> status(M,N,P,Far);
   //encode an index i,j,k as (i*N+j)*P+k
   FixedSizeHeap<Real> queue(M*N*P);
 
   IntTriple index,lo,hi;
   //fill in initial surface distances, get surface set
-  cout<<"Filling initial surfaces"<<endl;
   distance.set(Inf);
   set<IntTriple> surfaceSet;
   Triangle3D tri;
   AABB3D query,cell;
   for(size_t i=0;i<m.tris.size();i++) {
     m.GetTriangle(i,tri);
+    if(tri.area()==0) continue;  //degenerate triangles wreak havoc on distance calculations
     query.setPoint(tri.a);
     query.expand(tri.b);
     query.expand(tri.c);
     bool q=QueryGrid(distance,bb,query,lo,hi);
     if(!q) continue;
-    /*
-    index=lo;
-    while(index.a <= hi.a) {
-      while(index.b <= hi.b) {
-	while(index.c <= hi.c) {
-	  GetGridCell(distance,bb,index,cell);
-    */
     VolumeGridIterator<Real> it(distance,bb);
     it.setRange(lo,hi);
     for(;!it.isDone();++it) {
       it.getCell(cell);
       index = it.getIndex();
 
-	  if(tri.intersects(cell)) {
-	    surfaceSet.insert(index);
+      if(tri.intersects(cell)) {
+        surfaceSet.insert(index);
 
-	    Vector3 cellCenter = (cell.bmin+cell.bmax)*Half;
-	    TriangleClosestPointData cp;
-	    //TODO: use triangle neighborhood information
-	    cp.Calculate(m,i,cellCenter);
+        Vector3 cellCenter = (cell.bmin+cell.bmax)*Half;
+        TriangleClosestPointData cp;
+        //TODO: use triangle neighborhood information
+        cp.Calculate(m,i,cellCenter);
 
-	    if(Abs(cp.signedDistance) < Abs(distance(index))) {
-	      distance(index) = cp.signedDistance;
-	      gradient(index) = cp.dir;
-	      closestTriangle(index) = (int)i;
-	      int heapIndex = (index.a*N+index.b)*P+index.c;
-	      queue.adjust(heapIndex,-Abs(cp.signedDistance));
-	    }
-	  }
-	  /*
-	  index.c++;
-	}
-	index.b++;
-	index.c = lo.c;
+        if(Abs(cp.signedDistance) < Abs(distance(index))) {
+          distance(index) = cp.signedDistance;
+          gradient(index) = cp.dir;
+          closestFeature(index) = cp.feature;
+          int heapIndex = (index.a*N+index.b)*P+index.c;
+          queue.adjust(heapIndex,-Abs(cp.signedDistance));
+        }
       }
-      index.a++;
-      index.b = lo.b;
-    }
-	  */
     }
   }
 
-  //cout<<"Converting surface cells"<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM starting with "<<surfaceSet.size()<<" surface cells, grid of size "<<M<<" "<<N<<" "<<P);
+  if(surfaceSet.empty()) {
+    LOG4CXX_WARN(KrisLibrary::logger(),"FMM starting with nothing??");
+    LOG4CXX_WARN(KrisLibrary::logger(),"  Bounding box "<<bb.bmin<<" -> "<<bb.bmax);
+    LOG4CXX_WARN(KrisLibrary::logger(),"  Mesh has "<<m.tris.size()<<" tris and "<<m.verts.size()<<" vertices");
+    m.GetTriangle(0,tri);
+    LOG4CXX_WARN(KrisLibrary::logger(),"  First triangle "<<tri.a<<", "<<tri.b<<", "<<tri.c);
+  }
+
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Converting surface cells");
   //convert surface set to vector
   surfaceCells.resize(surfaceSet.size());
-  int i=0;
-  for(set<IntTriple>::const_iterator it=surfaceSet.begin();it!=surfaceSet.end();it++,i++) {
-    surfaceCells[i]=*it;
-  }
+  copy(surfaceSet.begin(),surfaceSet.end(),surfaceCells.begin());
 
-  cout<<"FMM iterations"<<endl;
   Vector3 cellSize = (bb.bmax-bb.bmin);
   cellSize.x /= M;
   cellSize.y /= N;
@@ -1471,11 +1637,10 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
     index.b = (heapIndex / P)%N;
     index.a = (heapIndex / (P*N));
     Assert(index.a < M);
-
+    TrimeshFeature lastFeature = closestFeature(index.a,index.b,index.c);
+    assert(lastFeature.index >= 0 && lastFeature.feature >= TrimeshFeature::F && lastFeature.feature <= TrimeshFeature::E3);
     status(index.a,index.b,index.c)=Accepted;
-    int lastClosestTri=closestTriangle(index.a,index.b,index.c);
-    Assert(lastClosestTri >= 0 && lastClosestTri <(int)m.tris.size());
-
+    
     //add all potentially adjacent neighbors
     adj.resize(0);
     if(index.a+1 < M) { adj.push_back(index); adj.back().a++; }
@@ -1497,31 +1662,84 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
       //numCPCalls++;
       //timer.Reset();
       cp.signedDistance = Inf;
-      cp.Update(m,lastClosestTri,cellCenter);
+      cp.Update(m,lastFeature,cellCenter);
       //closestPointTime = timer.ElapsedTime();
 
       if(Abs(cp.signedDistance) < Abs(distance(index.a,index.b,index.c))) {
-	//timer.Reset();
-	distance(index.a,index.b,index.c) = cp.signedDistance;
-	gradient(index.a,index.b,index.c) = cp.dir;
-	closestTriangle(index.a,index.b,index.c) = cp.triangleIndex;
-	//overheadTime += timer.ElapsedTime();
-	//encode heap index
-	//numHeapUpdates++;
-	//timer.Reset();
-	int heapIndex = (index.a*N+index.b)*P+index.c;
-	queue.adjust(heapIndex,-Abs(cp.signedDistance));
-	//heapUpdateTime += timer.ElapsedTime();
+        //timer.Reset();
+        distance(index.a,index.b,index.c) = cp.signedDistance;
+        gradient(index.a,index.b,index.c) = cp.dir;
+        closestFeature(index.a,index.b,index.c) = cp.feature;
+        //overheadTime += timer.ElapsedTime();
+        //encode heap index
+        //numHeapUpdates++;
+        //timer.Reset();
+        int heapIndex = (index.a*N+index.b)*P+index.c;
+        queue.adjust(heapIndex,-Abs(cp.signedDistance));
+        //heapUpdateTime += timer.ElapsedTime();
       }
     }
   }
+  //sanity check
   for(int i=0;i<status.m;i++)
     for(int j=0;j<status.n;j++)
       for(int k=0;k<status.p;k++)
-	Assert(status(i,j,k)==Accepted);
-  //printf("Overall time: %g\n",overallTimer.ElapsedTime());
-  //printf("Overall: %g, heap pop: %g, heap update: %g, cp: %g, overhead %g\n",overallTimer.ElapsedTime(),heapPopTime,heapUpdateTime,closestPointTime,overheadTime);
-  //printf("%d iterations, %d cp calls, %d heap updates, max heap size %d\n",numIters,numCPCalls,numHeapUpdates,maxHeapSize);
+        Assert(status(i,j,k)==Accepted);
+
+  //try to fix flipped triangles by looking at the boundary
+  //set<pair<int,int> > flipped;
+  set<int> flipped;
+  for(int i=0;i<status.m;i++)
+    for(int j=0;j<status.n;j++) {
+      if(distance(i,j,0) < 0)
+        flipped.insert(to_pair(closestFeature(i,j,0)));
+      if(distance(i,j,status.p-1) < 0)
+        flipped.insert(to_pair(closestFeature(i,j,status.p-1)));
+    }
+  for(int i=0;i<status.m;i++)
+    for(int k=0;k<status.p;k++) {
+      if(distance(i,0,k) < 0)
+        flipped.insert(to_pair(closestFeature(i,0,k)));
+      if(distance(i,status.n-1,k) < 0)
+        flipped.insert(to_pair(closestFeature(i,status.n-1,k)));
+    }
+  for(int j=0;j<status.n;j++) 
+    for(int k=0;k<status.p;k++) {
+      if(distance(0,j,k) < 0)
+        flipped.insert(to_pair(closestFeature(0,j,k)));
+      if(distance(status.m-1,j,k) < 0)
+        flipped.insert(to_pair(closestFeature(status.m-1,j,k)));
+    }
+  if(flipped.size() > 0) {
+    printf("FMM flipped triangles: ");
+    for(auto i=flipped.begin();i!=flipped.end();i++)
+      printf("%d ",*i);
+      //printf("%d ",i->first);
+    printf("\n");
+    /*
+    int numflipped = 0;
+    for(int i=0;i<status.m;i++)
+      for(int j=0;j<status.n;j++) 
+        for(int k=0;k<status.p;k++) {
+          if(flipped.count(to_pair(closestFeature(i,j,k)))) {
+            distance(i,j,k) *= -1;
+            gradient(i,j,k).inplaceNormalize();
+            numflipped ++;
+          }
+        }
+    printf("  flipped %d cells\n",numflipped);
+    */
+  }
+
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall time: "<<overallTimer.ElapsedTime());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall: "<<overallTimer.ElapsedTime()<<", heap pop: "<<heapPopTime<<", heap update: "<<heapUpdateTime<<", cp: "<<closestPointTime<<", overhead "<<overheadTime);
+  //LOG4CXX_INFO(KrisLibrary::logger(),""<<numIters<<" iterations, "<<numCPCalls<<" cp calls, "<<numHeapUpdates<<" heap updates, max heap size "<<maxHeapSize);
+  int numInside = 0;
+  for(int i=0;i<status.m;i++)
+    for(int j=0;j<status.n;j++)
+      for(int k=0;k<status.p;k++)
+        if(distance(i,j,k) <=0) numInside++;
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM found "<<numInside<<" interior and "<<M*N*P - numInside<<" exterior cells");
 }
 
 void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells)
@@ -1538,34 +1756,44 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
   for(int i=0;i<M;i++)
     for(int j=0;j<N;j++)
       for(int k=0;k<P;k++) {
-	if(!occupied(i,j,k)) {
-	  //erode the interior mesh
-	  if(i>0) interior(i-1,j,k)=false;
-	  if(i+1<M) interior(i+1,j,k)=false;
-	  if(j>0) interior(i,j-1,k)=false;
-	  if(j+1<N) interior(i,j+1,k)=false;
-	  if(k>0) interior(i,j,k-1)=false;
-	  if(k+1<P) interior(i,j,k+1)=false;
-	}
-	else {
-	  //grow the exterior mesh
-	  if(i>0) exterior(i-1,j,k)=true;
-	  if(i+1<M) exterior(i+1,j,k)=true;
-	  if(j>0) exterior(i,j-1,k)=true;
-	  if(j+1<N) exterior(i,j+1,k)=true;
-	  if(k>0) exterior(i,j,k-1)=true;
-	  if(k+1<P) exterior(i,j,k+1)=true;
-	}
+        if(!occupied(i,j,k)) {
+          //erode the interior mesh
+          if(i>0) interior(i-1,j,k)=false;
+          if(i+1<M) interior(i+1,j,k)=false;
+          if(j>0) interior(i,j-1,k)=false;
+          if(j+1<N) interior(i,j+1,k)=false;
+          if(k>0) interior(i,j,k-1)=false;
+          if(k+1<P) interior(i,j,k+1)=false;
+        }
+        else {
+          //grow the exterior mesh
+          if(i>0) exterior(i-1,j,k)=true;
+          if(i+1<M) exterior(i+1,j,k)=true;
+          if(j>0) exterior(i,j-1,k)=true;
+          if(j+1<N) exterior(i,j+1,k)=true;
+          if(k>0) exterior(i,j,k-1)=true;
+          if(k+1<P) exterior(i,j,k+1)=true;
+        }
       } 
+  int noccupied = 0, ninterior = 0, nexterior = 0;
+  for(int i=0;i<M;i++)
+    for(int j=0;j<N;j++)
+      for(int k=0;k<P;k++) {
+        if(occupied(i,j,k)) noccupied ++;
+        if(interior(i,j,k)) ninterior ++;
+        if(exterior(i,j,k)) nexterior ++;
+      }
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM starting with "<<noccupied<<" surface, "<<ninterior<<" interior, "<<nexterior<<" exterior cells");
 
-  Array3D<int> closestTriangle(M,N,P,-1);
+  TrimeshFeature nullFeature; nullFeature.index = -1;
+  nullFeature.feature = TrimeshFeature::F;
+  Array3D<TrimeshFeature> closestFeature(M,N,P,nullFeature);
   Array3D<FMMStatus> status(M,N,P,Far);
   //encode an index i,j,k as (i*N+j)*P+k
   FixedSizeHeap<Real> queue(M*N*P);
 
   IntTriple index,lo,hi;
   //fill in initial surface distances, get surface set
-  cout<<"Filling initial surfaces"<<endl;
   distance.set(Inf);
   set<IntTriple> surfaceSet;
   Triangle3D tri;
@@ -1576,13 +1804,12 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
     query.expand(tri.b);
     query.expand(tri.c);
     bool q=QueryGrid(distance,bb,query,lo,hi);
-    if(!q) continue;
     /*
     index=lo;
     while(index.a <= hi.a) {
       while(index.b <= hi.b) {
-	while(index.c <= hi.c) {
-	  GetGridCell(distance,bb,index,cell);
+        while(index.c <= hi.c) {
+          GetGridCell(distance,bb,index,cell);
     */
     VolumeGridIterator<Real> it(distance,bb);
     it.setRange(lo,hi);
@@ -1591,44 +1818,49 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
       index = it.getIndex();
 
       if(!interior(index.a,index.b,index.c) && tri.intersects(cell)) {
-	    surfaceSet.insert(index);
+            surfaceSet.insert(index);
 
-	    Vector3 cellCenter = (cell.bmin+cell.bmax)*Half;
-	    TriangleClosestPointData cp;
-	    //TODO: use triangle neighborhood information
-	    cp.Calculate(m,i,cellCenter);
+            Vector3 cellCenter = (cell.bmin+cell.bmax)*Half;
+            TriangleClosestPointData cp;
+            //TODO: use triangle neighborhood information
+            cp.Calculate(m,i,cellCenter);
 
-	    if(Abs(cp.signedDistance) < Abs(distance(index))) {
-	      distance(index) = cp.signedDistance;
-	      gradient(index) = cp.dir;
-	      closestTriangle(index) = (int)i;
-	      int heapIndex = (index.a*N+index.b)*P+index.c;
-	      queue.adjust(heapIndex,-Abs(cp.signedDistance));
-	      status(index.a,index.b,index.c)=Accepted;
-	    }
-	  }
-	  /*
-	  index.c++;
-	}
-	index.b++;
-	index.c = lo.c;
+            if(Abs(cp.signedDistance) < Abs(distance(index))) {
+              distance(index) = cp.signedDistance;
+              gradient(index) = cp.dir;
+              closestFeature(index) = cp.feature;
+              int heapIndex = (index.a*N+index.b)*P+index.c;
+              queue.adjust(heapIndex,-Abs(cp.signedDistance));
+              status(index.a,index.b,index.c)=Accepted;
+            }
+          }
+          /*
+          index.c++;
+        }
+        index.b++;
+        index.c = lo.c;
       }
       index.a++;
       index.b = lo.b;
     }
-	  */
+          */
     }
   }
 
-  //cout<<"Converting surface cells"<<endl;
-  //convert surface set to vector
-  surfaceCells.resize(surfaceSet.size());
-  int i=0;
-  for(set<IntTriple>::const_iterator it=surfaceSet.begin();it!=surfaceSet.end();it++,i++) {
-    surfaceCells[i]=*it;
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM starting with "<<surfaceSet.size()<<" surface cells, grid of size "<<M<<" "<<N<<" "<<P);
+  if(surfaceSet.empty()) {
+    LOG4CXX_WARN(KrisLibrary::logger(),"FMM starting with nothing??");
+    LOG4CXX_WARN(KrisLibrary::logger(),"  Bounding box "<<bb.bmin<<" -> "<<bb.bmax);
+    LOG4CXX_WARN(KrisLibrary::logger(),"  Mesh has "<<m.tris.size()<<" tris and "<<m.verts.size()<<" vertices");
+    m.GetTriangle(0,tri);
+    LOG4CXX_WARN(KrisLibrary::logger(),"  First triangle "<<tri.a<<", "<<tri.b<<", "<<tri.c);
   }
 
-  cout<<"FMM iterations"<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Converting surface cells");
+  //convert surface set to vector
+  surfaceCells.resize(surfaceSet.size());
+  copy(surfaceSet.begin(),surfaceSet.end(),surfaceCells.begin());
+
   Vector3 cellSize = (bb.bmax-bb.bmin);
   cellSize.x /= M;
   cellSize.y /= N;
@@ -1659,8 +1891,8 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
     Assert(index.a < M);
 
     status(index.a,index.b,index.c)=Accepted;
-    int lastClosestTri=closestTriangle(index.a,index.b,index.c);
-    Assert(lastClosestTri >= 0 && lastClosestTri <(int)m.tris.size());
+    TrimeshFeature lastClosest=closestFeature(index.a,index.b,index.c);
+    assert(lastClosest.index >= 0);
 
     //add all potentially adjacent neighbors
     adj.resize(0);
@@ -1683,63 +1915,46 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
       //numCPCalls++;
       //timer.Reset();
       cp.signedDistance = Inf;
-      cp.Update(m,lastClosestTri,cellCenter);
+      cp.Update(m,lastClosest,cellCenter);
       //closestPointTime = timer.ElapsedTime();
 
       if(cp.signedDistance < 0 && !exterior(index)) {
-	//printf("Warning, exterior exploration led to negative signed distance?\n");
-	continue;
+        //LOG4CXX_WARN(KrisLibrary::logger(),"Warning, exterior exploration led to negative signed distance?");
+        //continue;
+        cp.signedDistance *= -1;
+        cp.dir.inplaceNegative();
       }
       else if(cp.signedDistance > 0 && interior(index)) {
-	//printf("Warning, interior exploration led to positive signed distance?\n");
-	continue;
+        //LOG4CXX_WARN(KrisLibrary::logger(),"Warning, interior exploration led to positive signed distance?");
+        //continue;
+        cp.signedDistance *= -1;
+        cp.dir.inplaceNegative();
       }
       if(Abs(cp.signedDistance) < Abs(distance(index.a,index.b,index.c))) {
-	//timer.Reset();
-	distance(index.a,index.b,index.c) = cp.signedDistance;
-	gradient(index.a,index.b,index.c) = cp.dir;
-	closestTriangle(index.a,index.b,index.c) = cp.triangleIndex;
-	//overheadTime += timer.ElapsedTime();
-	//encode heap index
-	//numHeapUpdates++;
-	//timer.Reset();
-	int heapIndex = (index.a*N+index.b)*P+index.c;
-	queue.adjust(heapIndex,-Abs(cp.signedDistance));
-	//heapUpdateTime += timer.ElapsedTime();
+        //timer.Reset();
+        distance(index.a,index.b,index.c) = cp.signedDistance;
+        gradient(index.a,index.b,index.c) = cp.dir;
+        closestFeature(index.a,index.b,index.c) = cp.feature;
+        //overheadTime += timer.ElapsedTime();
+        //encode heap index
+        //numHeapUpdates++;
+        //timer.Reset();
+        int heapIndex = (index.a*N+index.b)*P+index.c;
+        queue.adjust(heapIndex,-Abs(cp.signedDistance));
+        //heapUpdateTime += timer.ElapsedTime();
       }
     }
   }
 
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall time: "<<overallTimer.ElapsedTime());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Overall: "<<overallTimer.ElapsedTime()<<", heap pop: "<<heapPopTime<<", heap update: "<<heapUpdateTime<<", cp: "<<closestPointTime<<", overhead "<<overheadTime);
+  //LOG4CXX_INFO(KrisLibrary::logger(),""<<numIters<<" iterations, "<<numCPCalls<<" cp calls, "<<numHeapUpdates<<" heap updates, max heap size "<<maxHeapSize);
+  int numInside = 0;
   for(int i=0;i<status.m;i++)
     for(int j=0;j<status.n;j++)
-      for(int k=0;k<status.p;k++) {
-	if(status(i,j,k)!=Accepted) {
-	  //fill in with neighbors
-	  if(interior(i,j,k)) {
-	    Real minNeighbor = Inf;
-	    if(i > 0 && status(i-1,j,k)==Accepted) minNeighbor=Min(minNeighbor,distance(i-1,j,k));
-	    if(i+1 < M && status(i+1,j,k)==Accepted) minNeighbor=Min(minNeighbor,distance(i+1,j,k));
-	    if(j > 0 && status(i,j-1,k)==Accepted) minNeighbor=Min(minNeighbor,distance(i,j-1,k));
-	    if(j+1 < N && status(i,j+1,k)==Accepted) minNeighbor=Min(minNeighbor,distance(i,j+1,k));
-	    if(k > 0 && status(i,j,k-1)==Accepted) minNeighbor=Min(minNeighbor,distance(i,j,k-1));
-	    if(k+1 < P && status(i,j,k+1)==Accepted) minNeighbor=Min(minNeighbor,distance(i,j,k+1));
-	    distance(i,j,k) = minNeighbor; 
-	  }
-	  else {
-	    Real maxNeighbor = Inf;
-	    if(i > 0 && status(i-1,j,k)==Accepted) maxNeighbor=Max(maxNeighbor,distance(i-1,j,k));
-	    if(i+1 < M && status(i+1,j,k)==Accepted) maxNeighbor=Max(maxNeighbor,distance(i+1,j,k));
-	    if(j > 0 && status(i,j-1,k)==Accepted) maxNeighbor=Max(maxNeighbor,distance(i,j-1,k));
-	    if(j+1 < N && status(i,j+1,k)==Accepted) maxNeighbor=Max(maxNeighbor,distance(i,j+1,k));
-	    if(k > 0 && status(i,j,k-1)==Accepted) maxNeighbor=Max(maxNeighbor,distance(i,j,k-1));
-	    if(k+1 < P && status(i,j,k+1)==Accepted) maxNeighbor=Max(maxNeighbor,distance(i,j,k+1));
-	    distance(i,j,k) = maxNeighbor; 
-	  }
-	}
-      }
-  //printf("Overall time: %g\n",overallTimer.ElapsedTime());
-  //printf("Overall: %g, heap pop: %g, heap update: %g, cp: %g, overhead %g\n",overallTimer.ElapsedTime(),heapPopTime,heapUpdateTime,closestPointTime,overheadTime);
-  //printf("%d iterations, %d cp calls, %d heap updates, max heap size %d\n",numIters,numCPCalls,numHeapUpdates,maxHeapSize);
+      for(int k=0;k<status.p;k++) 
+        if(distance(i,j,k) <=0) numInside++;
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM found "<<numInside<<" interior and "<<M*N*P - numInside<<" exterior cells");
 }
 
 
@@ -1760,11 +1975,11 @@ void DensityEstimate_FMM(const TriMeshWithTopology& m,Array3D<Real>& density,AAB
   for(int i=0;i<density.m;i++) 
     for(int j=0;j<density.n;j++) 
       for(int k=0;k<density.p;k++) {
-	//can't rule on points close to the surface
-	Vector3 surfpt = distance(i,j,k)*gradient(i,j,k);
-	if(Abs(surfpt.x) < resolution.x && Abs(surfpt.y) < resolution.y && Abs(surfpt.z) < resolution.z) continue;
-	if((distance(i,j,k) > 0) == occupied(i,j,k))
-	  distance(i,j,k) *= -1.0;
+        //can't rule on points close to the surface
+        Vector3 surfpt = distance(i,j,k)*gradient(i,j,k);
+        if(Abs(surfpt.x) < resolution.x && Abs(surfpt.y) < resolution.y && Abs(surfpt.z) < resolution.z) continue;
+        if((distance(i,j,k) > 0) == occupied(i,j,k))
+          distance(i,j,k) *= -1.0;
       }
 
   DensityEstimate_FMM(distance,gradient,bb,density);
@@ -1780,10 +1995,10 @@ void DensityEstimate_FMM(const Array3D<Real>& distance,const Array3D<Vector3>& g
   for(int i=0;i<density.m;i++) {
     for(int j=0;j<density.n;j++) {
       for(int k=0;k<density.p;k++) {
-	GetGridCell(density,bb,IntTriple(i,j,k),cell);
-	p.normal = gradient(i,j,k);
-	p.offset = dot(p.normal,(cell.bmin+cell.bmax)*0.5)-distance(i,j,k);
-	density(i,j,k) = GridCellDensity(cell,p);
+        GetGridCell(density,bb,IntTriple(i,j,k),cell);
+        p.normal = gradient(i,j,k);
+        p.offset = dot(p.normal,(cell.bmin+cell.bmax)*0.5)-distance(i,j,k);
+        density(i,j,k) = GridCellDensity(cell,p);
       }
     }
   }

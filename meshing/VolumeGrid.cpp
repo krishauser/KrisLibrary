@@ -1,10 +1,12 @@
+#include <KrisLibrary/Logger.h>
 #include "VolumeGrid.h"
 #include <iostream>
 using namespace std;
 
 namespace Meshing {
 
-void VolumeGrid::ResizeByResolution(const Vector3& res)
+template <class T>
+void VolumeGridTemplate<T>::ResizeByResolution(const Vector3& res)
 {
   Assert(res.x > 0 && res.y > 0 && res.z > 0);
   int m=(int)Ceil((bb.bmax.x-bb.bmin.x)/res.x);
@@ -13,18 +15,8 @@ void VolumeGrid::ResizeByResolution(const Vector3& res)
   value.resize(m,n,p);
 }
 
-void VolumeGrid::MakeSimilar(const VolumeGrid& grid)
-{
-  bb=grid.bb;
-  value.resize(grid.value.m,grid.value.n,grid.value.p);
-}
-
-bool VolumeGrid::IsSimilar(const VolumeGrid& grid) const
-{
-  return (grid.value.m == value.m && grid.value.n == value.n && grid.value.p == value.p) && (bb.bmin == grid.bb.bmin && bb.bmax == grid.bb.bmax);
-}
-
-Vector3 VolumeGrid::GetCellSize() const
+template <class T>
+Vector3 VolumeGridTemplate<T>::GetCellSize() const
 {
   Vector3 size=bb.bmax-bb.bmin;
   size.x /= Real(value.m);
@@ -33,7 +25,8 @@ Vector3 VolumeGrid::GetCellSize() const
   return size;
 }
 
-void VolumeGrid::GetCell(int i,int j,int k,AABB3D& cell) const
+template <class T>
+void VolumeGridTemplate<T>::GetCell(int i,int j,int k,AABB3D& cell) const
 {
   Real u=Real(i)/Real(value.m);
   Real v=Real(j)/Real(value.n);
@@ -49,7 +42,8 @@ void VolumeGrid::GetCell(int i,int j,int k,AABB3D& cell) const
   cell.bmax.z = bb.bmin.z + w2*(bb.bmax.z-bb.bmin.z);
 }
 
-void VolumeGrid::GetCellCenter(int i,int j,int k,Vector3& center) const
+template <class T>
+void VolumeGridTemplate<T>::GetCellCenter(int i,int j,int k,Vector3& center) const
 {
   Real u=(Real(i)+0.5)/Real(value.m);
   Real v=(Real(j)+0.5)/Real(value.n);
@@ -59,7 +53,8 @@ void VolumeGrid::GetCellCenter(int i,int j,int k,Vector3& center) const
   center.z = bb.bmin.z + w*(bb.bmax.z-bb.bmin.z);
 }
 
-void VolumeGrid::GetIndex(const Vector3& pt,int& i,int& j,int& k) const
+template <class T>
+void VolumeGridTemplate<T>::GetIndex(const Vector3& pt,int& i,int& j,int& k) const
 {
   Real u=(pt.x - bb.bmin.x)/(bb.bmax.x-bb.bmin.x);
   Real v=(pt.y - bb.bmin.y)/(bb.bmax.y-bb.bmin.y);
@@ -70,7 +65,8 @@ void VolumeGrid::GetIndex(const Vector3& pt,int& i,int& j,int& k) const
   k = (int)Floor(w*value.p);
 }
 
-void VolumeGrid::GetIndexAndParams(const Vector3& pt,IntTriple& index,Vector3& params) const
+template <class T>
+void VolumeGridTemplate<T>::GetIndexAndParams(const Vector3& pt,IntTriple& index,Vector3& params) const
 {
   Real u=(pt.x - bb.bmin.x)/(bb.bmax.x-bb.bmin.x)*value.m;
   Real v=(pt.y - bb.bmin.y)/(bb.bmax.y-bb.bmin.y)*value.n;
@@ -90,13 +86,15 @@ void VolumeGrid::GetIndexAndParams(const Vector3& pt,IntTriple& index,Vector3& p
   index.c = (int)rk;
 }
 
-void VolumeGrid::GetIndexRange(const AABB3D& range,IntTriple& imin,IntTriple& imax) const
+template <class T>
+void VolumeGridTemplate<T>::GetIndexRange(const AABB3D& range,IntTriple& imin,IntTriple& imax) const
 {
   GetIndex(range.bmin,imin);
   GetIndex(range.bmax,imax);
 }
 
-Real VolumeGrid::TrilinearInterpolate(const Vector3& pt) const
+template <class T>
+T VolumeGridTemplate<T>::TrilinearInterpolate(const Vector3& pt) const
 {
   Real u=(pt.x - bb.bmin.x)/(bb.bmax.x-bb.bmin.x)*value.m;
   Real v=(pt.y - bb.bmin.y)/(bb.bmax.y-bb.bmin.y)*value.n;
@@ -132,16 +130,17 @@ Real VolumeGrid::TrilinearInterpolate(const Vector3& pt) const
   if(j2 < 0) j2=0; if(j2 >= value.n) j2=value.n-1;
   if(k1 < 0) k1=0; if(k1 >= value.p) k1=value.p-1;
   if(k2 < 0) k2=0; if(k2 >= value.p) k2=value.p-1;
-  Real v11 = (1-w)*value(i1,j1,k1) + w*value(i1,j1,k2);
-  Real v12 = (1-w)*value(i1,j2,k1) + w*value(i1,j2,k2);
-  Real v21 = (1-w)*value(i2,j1,k1) + w*value(i2,j1,k2);
-  Real v22 = (1-w)*value(i2,j2,k1) + w*value(i2,j2,k2);
-  Real w1 = (1-v)*v11+v*v12;
-  Real w2 = (1-v)*v21+v*v22;
+  T v11 = (1-w)*value(i1,j1,k1) + w*value(i1,j1,k2);
+  T v12 = (1-w)*value(i1,j2,k1) + w*value(i1,j2,k2);
+  T v21 = (1-w)*value(i2,j1,k1) + w*value(i2,j1,k2);
+  T v22 = (1-w)*value(i2,j2,k1) + w*value(i2,j2,k2);
+  T w1 = (1-v)*v11+v*v12;
+  T w2 = (1-v)*v21+v*v22;
   return (1-u)*w1 + u*w2;
 }
 
-Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
+template <class T>
+T VolumeGridTemplate<T>::MinimumFreeInterpolate(const Vector3& pt) const
 {
   IntTriple i1,i2;
   Vector3 u;
@@ -156,20 +155,20 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
     if(i1[i]>=size[i]) i1[i]=size[i]-1;
     if(i2[i]<0) i2[i]=0;
     if(i2[i]>=size[i]) i2[i]=size[i]-1;
-  }  
+  } 
 
   //pick a minimal center value
-  Real v111=value(i1);
-  Real v112=value(i1.a,i1.b,i2.c);
-  Real v121=value(i1.a,i2.b,i1.c);
-  Real v122=value(i1.a,i2.b,i2.c);
-  Real v211=value(i2.a,i1.b,i1.c);
-  Real v212=value(i2.a,i1.b,i2.c);
-  Real v221=value(i2.a,i2.b,i1.c);
-  Real v222=value(i2);
+  T v111=value(i1);
+  T v112=value(i1.a,i1.b,i2.c);
+  T v121=value(i1.a,i2.b,i1.c);
+  T v122=value(i1.a,i2.b,i2.c);
+  T v211=value(i2.a,i1.b,i1.c);
+  T v212=value(i2.a,i1.b,i2.c);
+  T v221=value(i2.a,i2.b,i1.c);
+  T v222=value(i2);
   //minimum center value is on the diagonals
-  Real val;
-  Real centerValue = 0.5*(v111+v222);
+  T val;
+  T centerValue = 0.5*(v111+v222);
   val = 0.5*(v211+v122);
   if(val < centerValue) centerValue = val;
   val = 0.5*(v121+v212);
@@ -183,7 +182,7 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
     if(Abs(u[i]-0.5) == mainAxisParam) 
       mainAxis=i; 
   mainAxisParam = u[mainAxis];
-  Real faceCenterValue;
+  T faceCenterValue;
   //minimum face-center value is on diagonal of given face
   if(mainAxis == 0) {
     if(mainAxisParam < 0.5) {  //-x
@@ -214,7 +213,7 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
   int tertiaryAxis=(mainAxis+2)%3;
   if(Abs(u[secondaryAxis]-0.5) < Abs(u[tertiaryAxis]-0.5))
     swap(secondaryAxis,tertiaryAxis);
-  Real ve1,ve2;  //values at endpoints at tertiary edge
+  T ve1,ve2;  //values at endpoints at tertiary edge
   IntTriple ie1,ie2;  //endpoints at tertiary edge
   ie1[mainAxis] = ie2[mainAxis] = (u[mainAxis] < 0.5 ? i1[mainAxis] : i2[mainAxis]);
   ie1[secondaryAxis] = ie2[secondaryAxis] = (u[secondaryAxis] < 0.5 ? i1[secondaryAxis] : i2[secondaryAxis]);
@@ -247,15 +246,15 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
   Real vmax = ::Max(::Max(::Max(v111,v112),::Max(v121,v122)),
 		    ::Max(::Max(v211,v212),::Max(v221,v222)));
   if(val < vmin-Epsilon || val > vmax+Epsilon) {
-    cerr<<"Error in MinimumFreeInterpolate!"<<endl;
-    cerr<<"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax<<endl;
-    cerr<<"Params "<<u<<endl;
-    cerr<<"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122<<endl;
-    cerr<<"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222<<endl;
-    cerr<<"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]<<endl;
-    cerr<<"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2<<endl;
-    cerr<<"Tetrahedron Params "<<up<<" "<<back<<" "<<across<<endl;
-    getchar();
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Error in MinimumFreeInterpolate!");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Value "<<val<<" out of bounds "<<vmin<<", "<<vmax);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Params "<<u);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"corners "<<v111<<" "<<v112<<" "<<v121<<" "<<v122);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"        "<<v211<<" "<<v212<<" "<<v221<<" "<<v222);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"barycentric coordinates "<<bary[0]<<" "<<bary[1]<<" "<<bary[2]<<" "<<bary[3]);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"values "<<centerValue<<" "<<faceCenterValue<<" "<<ve1<<" "<<ve2);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Tetrahedron Params "<<up<<" "<<back<<" "<<across);
+    KrisLibrary::loggerWait();
   }
   Assert(centerValue >= vmin-Epsilon && centerValue <= vmax+Epsilon);
   Assert(faceCenterValue >= vmin-Epsilon && faceCenterValue <= vmax+Epsilon);
@@ -264,7 +263,8 @@ Real VolumeGrid::MinimumFreeInterpolate(const Vector3& pt) const
   */
 }
 
-Real VolumeGrid::Average(const AABB3D& range) const
+template <class T>
+T VolumeGridTemplate<T>::Average(const AABB3D& range) const
 {
   IntTriple imin,imax;
   GetIndexRange(range,imin,imax);
@@ -323,7 +323,117 @@ Real VolumeGrid::Average(const AABB3D& range) const
   return sumValue / rangeVolume;
 }
 
-void VolumeGrid::ResampleTrilinear(const VolumeGrid& grid)
+template <class T>
+void VolumeGridTemplate<T>::Gradient_ForwardDifference(const IntTriple& _index,Vector3& grad) const
+{
+  IntTriple index = _index;
+  if(index.a < 0) index.a = 0;  if(index.a >= value.m) index.a = value.m-1;
+  if(index.b < 0) index.b = 0;  if(index.b >= value.n) index.b = value.n-1;
+  if(index.c < 0) index.c = 0;  if(index.c >= value.p) index.c = value.p-1;
+  Real cv = value(index);
+  Vector3 h = GetCellSize();
+  if(index.a+1 < value.m) grad.x = (value(index.a+1,index.b,index.c) - cv)/h.x;
+  else grad.x = (cv - value(index.a-1,index.b,index.c))/h.x;
+  if(index.b+1 < value.n) grad.y = (value(index.a,index.b+1,index.c) - cv)/h.y;
+  else grad.y = (cv - value(index.a,index.b-1,index.c))/h.y;
+  if(index.c+1 < value.p) grad.z = (value(index.a,index.b,index.c+1) - cv)/h.z;
+  else grad.z = (cv - value(index.a,index.b,index.c-1))/h.z;
+}
+
+template <class T>
+void VolumeGridTemplate<T>::Gradient_CenteredDifference(const IntTriple& _index,Vector3& grad) const
+{
+  IntTriple index = _index;
+  if(index.a < 0) index.a = 0;  if(index.a >= value.m) index.a = value.m-1;
+  if(index.b < 0) index.b = 0;  if(index.b >= value.n) index.b = value.n-1;
+  if(index.c < 0) index.c = 0;  if(index.c >= value.p) index.c = value.p-1;
+  Vector3 h = GetCellSize();
+  Real n,p;
+  int shift;
+  shift=0;
+  if(index.a+1 < value.m) { n = value(index.a+1,index.b,index.c); shift++; }
+  else n = value(index);
+  if(index.a > 0) { p = value(index.a-1,index.b,index.c); shift++; }
+  else p = value(index);
+  grad.x = (n - p)/(shift*h.x);
+
+  shift=0;
+  if(index.b+1 < value.n) { n = value(index.a,index.b+1,index.c); shift++; }
+  else n = value(index);
+  if(index.b > 0) { p = value(index.a,index.b-1,index.c); shift++; }
+  else p = value(index);
+  grad.y = (n - p)/(shift*h.y);
+
+  shift=0;
+  if(index.c+1 < value.p) { n = value(index.a,index.b,index.c+1); shift++; }
+  else n = value(index);
+  if(index.c > 0) { p = value(index.a,index.b,index.c-1); shift++; }
+  else p = value(index);
+  grad.z = (n - p)/(shift*h.z);
+}
+
+template <class T>
+void VolumeGridTemplate<T>::Gradient(const Vector3& pt,Vector3& grad) const
+{
+  IntTriple ind;
+  Vector3 params;
+  GetIndexAndParams(pt,ind,params);
+  Real u,v,w;
+  params.get(u,v,w);
+  int i1,j1,k1;
+  i1 = ind.a;
+  j1 = ind.b;
+  k1 = ind.c;
+
+  //get the alternate cell indices, interpolation parameters
+  //(u interpolates between i1,i2, etc)
+  int i2,j2,k2;
+  if(u > 0.5) { i2=i1+1; u = u-0.5; }
+  else { i2=i1; i1--; u = 0.5+u; }
+  if(v > 0.5) { j2=j1+1; v = v-0.5; }
+  else { j2=j1; j1--; v = 0.5+v; }
+  if(w > 0.5) { k2=k1+1; w = w-0.5; }
+  else { k2=k1; k1--; w = 0.5+w; }
+
+  if(i1 < 0) i1=0; if(i1 >= value.m) i1=value.m-1;
+  if(i2 < 0) i2=0; if(i2 >= value.m) i2=value.m-1;
+  if(j1 < 0) j1=0; if(j1 >= value.n) j1=value.n-1;
+  if(j2 < 0) j2=0; if(j2 >= value.n) j2=value.n-1;
+  if(k1 < 0) k1=0; if(k1 >= value.p) k1=value.p-1;
+  if(k2 < 0) k2=0; if(k2 >= value.p) k2=value.p-1;
+  Real v11 = (1-w)*value(i1,j1,k1) + w*value(i1,j1,k2);
+  Real v12 = (1-w)*value(i1,j2,k1) + w*value(i1,j2,k2);
+  Real v21 = (1-w)*value(i2,j1,k1) + w*value(i2,j1,k2);
+  Real v22 = (1-w)*value(i2,j2,k1) + w*value(i2,j2,k2);
+  Real w1 = (1-v)*v11+v*v12;
+  Real w2 = (1-v)*v21+v*v22;
+  //Real res = (1-u)*w1 + u*w2;
+  Vector3 h = GetCellSize();
+  //u = x/h.x+bx, v = y/h.y+by, w = z/h.z+bz
+  //res = (1-u)*w1(v,w) + u*w2(v,w)
+  if(u==0.5 || v==0.5 || v==0.5 || i1==i2 || j1==j2 || k1==k2) {
+    Gradient_CenteredDifference(ind,grad);
+  }
+  if(u != 0.5 && i1 != i2) 
+    grad.x = (w2 - w1)/h.x;
+  if(v != 0.5 && j1 != j2) {
+    Real dw1 = v12-v11;
+    Real dw2 = v22-v21;
+    grad.y = ((1-u)*dw1 + u*dw2)/h.y;
+  }
+  if(w != 0.5 && k1 != k2) {
+    Real dv11 = value(i1,j1,k2)-value(i1,j1,k1);
+    Real dv12 = value(i1,j2,k2)-value(i1,j2,k1);
+    Real dv21 = value(i2,j1,k2)-value(i2,j1,k1);
+    Real dv22 = value(i2,j2,k2)-value(i2,j2,k1);
+    Real dw1 = (1-v)*dv11+v*dv12;
+    Real dw2 = (1-v)*dv21+v*dv22;
+    grad.z = ((1-u)*dw1 + u*dw2)/h.y;
+  }
+}
+
+template <class T>
+void VolumeGridTemplate<T>::ResampleTrilinear(const MyT& grid)
 {
   if(IsSimilar(grid)) {
     value = grid.value;
@@ -336,7 +446,8 @@ void VolumeGrid::ResampleTrilinear(const VolumeGrid& grid)
   }
 }
 
-void VolumeGrid::ResampleAverage(const VolumeGrid& grid)
+template <class T>
+void VolumeGridTemplate<T>::ResampleAverage(const MyT& grid)
 {
   if(IsSimilar(grid)) {
     value = grid.value;
@@ -351,10 +462,11 @@ void VolumeGrid::ResampleAverage(const VolumeGrid& grid)
   }
 }
 
-void VolumeGrid::Add(const VolumeGrid& grid)
+template <class T>
+void VolumeGridTemplate<T>::Add(const MyT& grid)
 {
   if(!IsSimilar(grid)) {
-    VolumeGrid resample;
+    MyT resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
     resample.ResampleAverage(grid);
@@ -362,7 +474,7 @@ void VolumeGrid::Add(const VolumeGrid& grid)
     return;
   }
 
-  for(Array3D<Real>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
+  for(typename Array3D<T>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
     *i += *j;
   }
   /*
@@ -373,10 +485,11 @@ void VolumeGrid::Add(const VolumeGrid& grid)
   */
 }
 
-void VolumeGrid::Subtract(const VolumeGrid& grid)
+template <class T>
+void VolumeGridTemplate<T>::Subtract(const MyT& grid)
 {
   if(!IsSimilar(grid)) {
-    VolumeGrid resample;
+    MyT resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
     resample.ResampleAverage(grid);
@@ -384,7 +497,7 @@ void VolumeGrid::Subtract(const VolumeGrid& grid)
     return;
   }
 
-  for(Array3D<Real>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
+  for(typename Array3D<T>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
     *i -= *j;
   }
   /*
@@ -395,10 +508,11 @@ void VolumeGrid::Subtract(const VolumeGrid& grid)
   */
 }
 
-void VolumeGrid::Multiply(const VolumeGrid& grid)
+template <class T>
+void VolumeGridTemplate<T>::Multiply(const MyT& grid)
 {
   if(!IsSimilar(grid)) {
-    VolumeGrid resample;
+    MyT resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
     resample.ResampleAverage(grid);
@@ -406,7 +520,7 @@ void VolumeGrid::Multiply(const VolumeGrid& grid)
     return;
   }
 
-  for(Array3D<Real>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
+  for(typename Array3D<T>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
     *i *= *j;
   }
   /*
@@ -417,10 +531,11 @@ void VolumeGrid::Multiply(const VolumeGrid& grid)
   */
 }
 
-void VolumeGrid::Max(const VolumeGrid& grid)
+template <class T>
+void VolumeGridTemplate<T>::Max(const MyT& grid)
 {
   if(!IsSimilar(grid)) {
-    VolumeGrid resample;
+    MyT resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
     resample.ResampleAverage(grid);
@@ -428,7 +543,7 @@ void VolumeGrid::Max(const VolumeGrid& grid)
     return;
   }
 
-  for(Array3D<Real>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
+  for(typename Array3D<T>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
     *i = ::Max(*i,*j);
   }
   /*
@@ -439,10 +554,11 @@ void VolumeGrid::Max(const VolumeGrid& grid)
   */
 }
 
-void VolumeGrid::Min(const VolumeGrid& grid)
+template <class T>
+void VolumeGridTemplate<T>::Min(const MyT& grid)
 {
   if(!IsSimilar(grid)) {
-    VolumeGrid resample;
+    MyT resample;
     resample.value.resize(value.m,value.n,value.p);
     resample.bb = bb;
     resample.ResampleAverage(grid);
@@ -450,7 +566,7 @@ void VolumeGrid::Min(const VolumeGrid& grid)
     return;
   }
 
-  for(Array3D<Real>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
+  for(typename Array3D<T>::iterator i=value.begin(),j=grid.value.begin();i!=value.end();++i,++j) {
     *i = ::Min(*i,*j);
   }
   /*
@@ -461,9 +577,10 @@ void VolumeGrid::Min(const VolumeGrid& grid)
   */
 }
 
-void VolumeGrid::Add(Real val)
+template <class T>
+void VolumeGridTemplate<T>::Add(T val)
 {
-  for(Array3D<Real>::iterator i=value.begin();i!=value.end();++i) {
+  for(typename Array3D<T>::iterator i=value.begin();i!=value.end();++i) {
     *i += val;
   }
   /*
@@ -474,9 +591,10 @@ void VolumeGrid::Add(Real val)
   */
 }
 
-void VolumeGrid::Multiply(Real val)
+template <class T>
+void VolumeGridTemplate<T>::Multiply(T val)
 {
-  for(Array3D<Real>::iterator i=value.begin();i!=value.end();++i) {
+  for(typename Array3D<T>::iterator i=value.begin();i!=value.end();++i) {
     *i *= val;
   }
   /*
@@ -487,9 +605,10 @@ void VolumeGrid::Multiply(Real val)
   */
 }
 
-void VolumeGrid::Max(Real val)
+template <class T>
+void VolumeGridTemplate<T>::Max(T val)
 {
-  for(Array3D<Real>::iterator i=value.begin();i!=value.end();++i) {
+  for(typename Array3D<T>::iterator i=value.begin();i!=value.end();++i) {
     *i = ::Max(*i,val);
   }
   /*
@@ -500,9 +619,10 @@ void VolumeGrid::Max(Real val)
   */
 }
 
-void VolumeGrid::Min(Real val)
+template <class T>
+void VolumeGridTemplate<T>::Min(T val)
 {
-  for(Array3D<Real>::iterator i=value.begin();i!=value.end();++i) {
+  for(typename Array3D<T>::iterator i=value.begin();i!=value.end();++i) {
     *i = ::Min(*i,val);
   }
   /*
@@ -514,50 +634,11 @@ void VolumeGrid::Min(Real val)
 }
 
 
-
-
-template <class T>
-istream& operator >> (istream& in,Array3D<T>& a)
-{
-  int m,n,p;
-  in>>m>>n>>p;
-  if(!in) return in;
-  Assert(m >= 0 && n >= 0 && p >= 0);
-  a.resize(m,n,p);
-  for(int i=0;i<m;i++)
-    for(int j=0;j<n;j++)
-      for(int k=0;k<p;k++)
-	in>>a(i,j,k);
-  return in;
-}
-
-template <class T>
-ostream& operator << (ostream& out,const Array3D<T>& a)
-{
-  out<<a.m<<" "<<a.n<<" "<<" "<<a.p<<endl;
-  for(int i=0;i<a.m;i++) {
-    for(int j=0;j<a.n;j++) {
-      for(int k=0;k<a.p;k++)
-	out<<a(i,j,k)<<" ";
-      out<<endl;
-    }
-  }
-  return out;
-}
-
-istream& operator >> (istream& in,VolumeGrid& grid)
-{
-  in>>grid.bb.bmin>>grid.bb.bmax;
-  in>>grid.value;
-  return in;
-}
-
-ostream& operator << (ostream& out,const VolumeGrid& grid)
-{
-  out<<grid.bb.bmin<<"    "<<grid.bb.bmax<<endl;
-  out<<grid.value<<endl;
-  return out;
-}
+///forward declarations
+template class VolumeGridTemplate<float>;
+template class VolumeGridTemplate<double>;
+template class VolumeGridTemplate<int>;
+template class VolumeGridTemplate<char>;
 
 
 } //namespace Meshing

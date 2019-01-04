@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "PointLocation.h"
 #include <math/random.h>
 #include <set>
@@ -33,7 +34,7 @@ bool NaivePointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::vec
   for(size_t i=0;i<points.size();i++) {
     Real d=space->Distance(points[i],p);
     if(d > 0 && d < dmax) {
-      pair<Real,int> idx(d,i);
+      pair<Real,int> idx(d,(int)i);
       knn.insert(idx);
       if((int)knn.size() > k)
 	knn.erase(--knn.end());
@@ -280,7 +281,7 @@ void KDTreePointLocation::OnAppend()
   tree->Insert(points.back(),id);
   /*
   if(points.size() % 100 == 0)
-    printf("K-D Tree size %d, depth %d\n",tree.TreeSize(),tree.MaxDepth());
+    LOG4CXX_INFO(KrisLibrary::logger(),"K-D Tree size "<<tree.TreeSize()<<", depth "<<tree.MaxDepth());
   */
 }
 

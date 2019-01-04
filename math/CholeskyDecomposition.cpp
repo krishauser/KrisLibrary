@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "CholeskyDecomposition.h"
 #include "backsubstitute.h"
 #include "complex.h"
@@ -47,13 +48,13 @@ bool CholeskyDecomposition<T>::set(const MatrixT& A)
       temp -= Sqr(L(i,k));
 
 	  if(temp <= -Zero) {
-	    printf("CholeskyDecomposition: A is not positive definite!\n");
-	    printf("   %d'th row, temp is %f\n",i,temp);
+	    LOG4CXX_INFO(KrisLibrary::logger(),"CholeskyDecomposition: A is not positive definite!\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"   "<<i<<"'th row, temp is "<<temp);
 	    return false;
 	  }
 	  lii = Sqrt(temp);
 	  if(lii < zeroEpsilon) {
-	    printf("CholeskyDecomposition: A is not strictly positive definite!\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"CholeskyDecomposition: A is not strictly positive definite!\n");
 	    lii = (T)zeroEpsilon;
 	  }
     L(i,i)=lii;
@@ -107,7 +108,7 @@ bool CholeskyDecomposition<T>::setPerturbed(const MatrixT& A,T& lambda)
   }
 
   if(lambda == Zero) return true;
-  cout<<"Lambda is "<<lambda<<endl;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Lambda is "<<lambda);
 
   for(i=0; i<n; i++) {
     temp = A(i,i);
@@ -246,7 +247,7 @@ bool CholeskyDecomposition<Complex>::set(const MatrixT& A)
 
     lii = Sqrt(temp);
 	  if(Abs(lii) < zeroEpsilon.x) {
-	    printf("CholeskyDecomposition<Complex>: A is not strictly positive definite!\n");
+	    LOG4CXX_INFO(KrisLibrary::logger(),"CholeskyDecomposition<Complex>: A is not strictly positive definite!\n");
 	    return false;
 	  }
     L(i,i)=lii;
@@ -266,7 +267,7 @@ bool CholeskyDecomposition<Complex>::set(const MatrixT& A)
 
 bool CholeskyDecomposition<Complex>::setPerturbed(const MatrixT& A,Complex& lambda)
 {
-	printf("CholeskyDecomposition<Complex>: Perturbed decomposition isn't defined\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"CholeskyDecomposition<Complex>: Perturbed decomposition isn't defined\n");
 	return false;
 }
 

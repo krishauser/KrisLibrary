@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "Geometric2DCSpace.h"
 #include "EdgePlannerHelpers.h"
 #include "CSetHelpers.h"
@@ -646,8 +647,8 @@ public:
   }
   
   virtual CSpace* Space() const { return space; }
-  virtual EdgePlanner* Copy() const { return new Geometric2DEdgeChecker(path->Start(),path->End(),gspace,obstacle); }
-  virtual EdgePlanner* ReverseCopy() const  { return new Geometric2DEdgeChecker(path->End(),path->Start(),gspace,obstacle); }
+  virtual EdgePlannerPtr Copy() const { return make_shared<Geometric2DEdgeChecker>(path->Start(),path->End(),gspace,obstacle); }
+  virtual EdgePlannerPtr ReverseCopy() const  { return make_shared<Geometric2DEdgeChecker>(path->End(),path->Start(),gspace,obstacle); }
 
   //for incremental planners
   virtual Real Priority() const { return s.a.distanceSquared(s.b); }
@@ -663,22 +664,22 @@ public:
   bool failed;
 };
 
-EdgePlanner* Geometric2DCSpace::PathChecker(const Config& a,const Config& b)
+EdgePlannerPtr Geometric2DCSpace::PathChecker(const Config& a,const Config& b)
 {
   //return new EpsilonEdgeChecker(a,b,this,visibilityEpsilon);
-  return new Geometric2DEdgeChecker(a,b,this);
+  return make_shared<Geometric2DEdgeChecker>(a,b,this);
 }
 
-EdgePlanner* Geometric2DCSpace::PathChecker(const Config& a,const Config& b,int constraint)
+EdgePlannerPtr Geometric2DCSpace::PathChecker(const Config& a,const Config& b,int constraint)
 {
-  if(constraint <= 1) return new TrueEdgeChecker(this,a,b);
+  if(constraint <= 1) return make_shared<TrueEdgeChecker>(this,a,b);
   Segment2D s;
   s.a.set(a(0),a(1));
   s.b.set(b(0),b(1));
   if(Geometric2DCollection::Collides(s,constraint-1))
-    return new FalseEdgeChecker(this,a,b);
+    return make_shared<FalseEdgeChecker>(this,a,b);
   else
-    return new TrueEdgeChecker(this,a,b);
+    return make_shared<TrueEdgeChecker>(this,a,b);
 }
 
 Real Geometric2DCSpace::Distance(const Config& x, const Config& y)

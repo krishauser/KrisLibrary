@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "AnyMapper.h"
 #include <iostream>
 using namespace std;
@@ -22,7 +23,7 @@ bool Match(const AnyCollection& item,const AnyCollection& schema,AnyCollection& 
 	if(wildcardValues.find(val.id) != NULL) {
 	  //item must be equal to the existing value
 	  if(wildcardValues[val.id] != item) {
-	    cout<<"Match: Invalid match on existing wildcard "<<val.id<<endl;
+	    LOG4CXX_INFO(KrisLibrary::logger(),"Match: Invalid match on existing wildcard "<<val.id);
 	    return false;
 	  }
 	  return true;
@@ -64,7 +65,7 @@ bool Fill(const AnyCollection& schema,const AnyCollection& wildcardValues,AnyCol
     Wildcard val(0);
     if(schema.as<Wildcard>(val)) {
       if(wildcardValues.find(val.id) == NULL) {
-	cout<<"Fill: wildcard "<<val.id<<" was not matched"<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Fill: wildcard "<<val.id<<" was not matched");
 	return false;
       }
       out = *wildcardValues.find(val.id);

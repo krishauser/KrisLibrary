@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "OMPLInterface.h"
 #include <KrisLibrary/planning/EdgePlanner.h>
 #include <KrisLibrary/utils/stringutils.h>
@@ -108,9 +109,8 @@ OMPLCSpace::OMPLCSpace( const ob::SpaceInformationPtr& si)
     Config a,b;
     FromOMPL(stemp1,a);
     FromOMPL(stemp2,b);
-    EdgePlanner* e= LocalPlanner(a,b);
+    EdgePlannerPtr e= LocalPlanner(a,b);
     assert(visible == e->IsVisible());
-    delete e;
   }
   */
 }
@@ -226,7 +226,7 @@ public:
   :EpsilonEdgeChecker(space,x,y,resolution),omplspace(space)
   {
   }
-  OMPLEdgePlanner(OMPLCSpace* space,const SmartPointer<Interpolator>& path,Real resolution)
+  OMPLEdgePlanner(OMPLCSpace* space,const std::shared_ptr<Interpolator>& path,Real resolution)
   :EpsilonEdgeChecker(space,path,resolution),omplspace(space)
   {
   }
@@ -237,14 +237,14 @@ public:
     this->dist = 0;
     return !this->foundInfeasible;
   }
-  virtual EdgePlanner* Copy() const { return new OMPLEdgePlanner(omplspace,path,epsilon); }
-  virtual EdgePlanner* ReverseCopy() { return new OMPLEdgePlanner(omplspace,new ReverseInterpolator(path),epsilon); }
+  virtual EdgePlannerPtr Copy() const { return make_shared<OMPLEdgePlanner>(omplspace,path,epsilon); }
+  virtual EdgePlannerPtr ReverseCopy() { return make_shared<OMPLEdgePlanner>(omplspace,make_shared<ReverseInterpolator>(path),epsilon); }
   OMPLCSpace* omplspace;
 };
 
-EdgePlanner* OMPLCSpace::PathChecker(const Config& x, const Config& y)
+EdgePlannerPtr OMPLCSpace::PathChecker(const Config& x, const Config& y)
 {
-  return new OMPLEdgePlanner(this,x,y,resolution);
+  return make_shared<OMPLEdgePlanner>(this,x,y,resolution);
 }
 
 
@@ -262,7 +262,7 @@ void KrisLibraryOMPLPlanner::setup()
 {
   ob::ProblemDefinitionPtr pdef = this->getProblemDefinition();
   if(pdef == NULL) {
-    fprintf(stderr,"KrisLibraryOMPLPlanner::setup(): problem definition not set\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::setup(): problem definition not set\n");
     return;
   }
   cspace = new OMPLCSpace(pdef->getSpaceInformation());
@@ -279,7 +279,7 @@ void KrisLibraryOMPLPlanner::setup()
   //TODO: objective functions?
   planner = factory.Create(problem);
   if(!planner) {
-    fprintf(stderr,"KrisLibraryOMPLPlanner::setup(): there was a problem creating the planner!\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::setup(): there was a problem creating the planner!\n");
     return;
   }
   if(planner->IsOptimizing()) {
@@ -314,7 +314,7 @@ ob::PlannerStatus KrisLibraryOMPLPlanner::solve (const ob::PlannerTerminationCon
 {
   if(!planner) {
     //may have had a previous clear() call
-    //fprintf(stderr,"KrisLibraryOMPLPlanner::solve(): Warning, setup() not called yet\n");
+        //LOG4CXX_ERROR(KrisLibrary::logger(),"KrisLibraryOMPLPlanner::solve(): Warning, setup() not called yet\n");
     setup();
     if(!planner) 
       return ob::PlannerStatus(ob::PlannerStatus::UNKNOWN);
@@ -443,7 +443,7 @@ void CSpaceOMPLStateSpace::enforceBounds (ob::State *state) const
     vector<Real> q;
     this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
-      fprintf(stderr,"CSpaceOMPLStateSpace::enforceBounds: incorrect size of configuration?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"CSpaceOMPLStateSpace::enforceBounds: incorrect size of configuration?\n");
       return;
     }
     for(size_t i=0;i<q.size();i++)
@@ -458,7 +458,7 @@ bool CSpaceOMPLStateSpace::satisfiesBounds (const ob::State *state) const
     vector<Real> q;
     this->copyToReals(q,state);
     if(q.size() != minimum.size()) {
-      fprintf(stderr,"CSpaceOMPLStateSpace::satisfiesBounds: incorrect size of configuration?\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"CSpaceOMPLStateSpace::satisfiesBounds: incorrect size of configuration?\n");
       return true;
     }
     for(size_t i=0;i<q.size();i++)
@@ -528,9 +528,8 @@ CSpaceOMPLMotionValidator::CSpaceOMPLMotionValidator(CSpaceOMPLSpaceInformation*
 
 bool CSpaceOMPLMotionValidator::checkMotion (const ob::State *s1, const ob::State *s2) const
 {
-  EdgePlanner* e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
+  EdgePlannerPtr e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
   if(e->IsVisible()) {
-    delete e;
     return true;
   }
   return false;
@@ -538,9 +537,8 @@ bool CSpaceOMPLMotionValidator::checkMotion (const ob::State *s1, const ob::Stat
 
 bool CSpaceOMPLMotionValidator::checkMotion (const ob::State *s1, const ob::State *s2, std::pair< ob::State *, double > &lastValid) const
 {
-  EdgePlanner* e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
+  EdgePlannerPtr e=space->LocalPlanner(FromOMPL(si_,s1),FromOMPL(si_,s2));
   if(e) {
-    delete e;
     return true;
   }
   lastValid.first = si_->cloneState(s1);

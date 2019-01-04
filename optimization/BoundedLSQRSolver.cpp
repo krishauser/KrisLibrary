@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "BoundedLSQRSolver.h"
 #include <math/AABB.h>
 #include <math/linalgebra.h>
@@ -36,10 +37,10 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
   }
   Assert(IsFinite(x));
 
-  //cout<<"A: "<<A<<endl;
-  //cout<<"X: "<<x<<endl;
-  //cout<<"L: "<<l<<endl;
-  //cout<<"U: "<<u<<endl;
+  //LOG4CXX_INFO(KrisLibrary::logger(),"A: "<<A);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"X: "<<x);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"L: "<<l);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"U: "<<u);
   std::vector<int> activeSet;
   std::vector<int> activeIndex(x.n,-1);
   Matrix Aact(A.m,A.n);
@@ -70,9 +71,9 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
   vtemp -= b;
   Real lastResidual=vtemp.norm();
   if(verbose >= 2) {
-    cout<<"Active set 0"<<endl;
-    for(size_t i=0;i<activeSet.size();i++) cout<<activeSet[i]<<", ";
-    cout<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Active set 0");
+    for(size_t i=0;i<activeSet.size();i++) LOG4CXX_INFO(KrisLibrary::logger(),activeSet[i]<<", ");
+    LOG4CXX_INFO(KrisLibrary::logger(),"\n");
   }
   bool recomputeW;
   Vector w,Ax,xtemp,dx(x.n);
@@ -92,19 +93,19 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
     bool lsqrres=eq.LeastSquares(xtemp);
     if(!lsqrres) {
       if(verbose >= 1)
-	fprintf(stderr,"Error solving LSQR problem\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Error solving LSQR problem\n");
       return LinearProgram::Error;
     }
     dx.set(Zero);
     for(size_t i=0;i<activeSet.size();i++) 
       dx[activeSet[i]] = xtemp[i]-x[activeSet[i]];
     if(!IsFinite(xtemp)) {
-      cout<<"A: "<<Aact<<endl;
-      cout<<"B: "<<bact<<endl;
-      cout<<"Desired pos "<<xtemp<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"A: "<<Aact);
+      LOG4CXX_INFO(KrisLibrary::logger(),"B: "<<bact);
+      LOG4CXX_INFO(KrisLibrary::logger(),"Desired pos "<<xtemp);
       Matrix AtA;
       AtA.mulTransposeA(Aact,Aact);
-      cout<<"AtA: "<<AtA<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"AtA: "<<AtA);
       FatalError("Invalid solution to least squares problem");
     }
     Real alpha=1.0;
@@ -117,7 +118,7 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
     }
     else {
       if(alpha == 0) {
-	if(verbose >= 2) printf("took a step of size 0, should come up with a different value\n");
+	if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"took a step of size 0, should come up with a different value\n");
 	//round off caused us to want to go back into the variable, take it back out of the active set and set w to zero
 	for(int i=0;i<x.n;i++) {
 	  if(activeIndex[i] >= 0) {
@@ -135,7 +136,7 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
       }
       for(int i=0;i<x.n;i++) {
 	if(i == res || (activeIndex[i] >= 0 && (x(i) > u(i)-Epsilon || x(i) < l(i)+Epsilon))) {
-	  if(verbose >= 2) printf("Removing axis %d\n",i);
+	  if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Removing axis "<<i);
 	  //remove from active set, rearrange Aact
 	  int k=activeIndex[i];
 	  activeSet[k] = activeSet.back();
@@ -179,8 +180,8 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
 	}
 	else {
 	  if(x(i) != l(i)) {
-	    cout<<"Error: non-active variable is not on the bound?"<<endl;
-	    cout<<x(i)<<" != "<<l(i)<<" or "<<u(i)<<endl;
+	    LOG4CXX_ERROR(KrisLibrary::logger(),"Error: non-active variable is not on the bound?");
+	    LOG4CXX_INFO(KrisLibrary::logger(),x(i)<<" != "<<l(i)<<" or "<<u(i));
 	  }
 	  Assert(x(i) == l(i));
 	  if(w(i) > maxDissatisfied) {
@@ -191,25 +192,25 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
       }
     }
     if(maxDissatisfiedIndex < 0) {
-      if(verbose >= 1) cout<<"Converged after "<<iters<<" iterations"<<endl;
+      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged after "<<iters<<" iterations");
       if(verbose >= 2) {
-	cout<<"Type: ";
+	LOG4CXX_INFO(KrisLibrary::logger(),"Type: ");
 	for(size_t i=0;i<activeIndex.size();i++)
 	  if(activeIndex[i] < 0) {
-	    if(x(i) == l(i) && x(i)==u(i)) cout<<"E, ";
-	    else if(x(i)==l(i)) cout<<"L, ";
-	    else { Assert(x(i)==u(i)); cout<<"U, "; }
+	    if(x(i) == l(i) && x(i)==u(i)) {LOG4CXX_INFO(KrisLibrary::logger(),"E, ");}
+	    else if(x(i)==l(i)) {LOG4CXX_INFO(KrisLibrary::logger(),"L, ");}
+	    else { Assert(x(i)==u(i)); LOG4CXX_INFO(KrisLibrary::logger(),"U, "); }
 	  }
-	  else cout<<"F, ";
-	cout<<endl;
-	cout<<"Gradient: "<<w<<endl;
+	  else {LOG4CXX_INFO(KrisLibrary::logger(),"F, ");}
+	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
+	LOG4CXX_INFO(KrisLibrary::logger(),"Gradient: "<<w);
       }
       return LinearProgram::Feasible;
     }
     else {
       //add this index to the active set
       int i=maxDissatisfiedIndex;
-      if(verbose >= 2) printf("Adding axis %d, gradient value %g\n",i,maxDissatisfied);
+      if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Adding axis "<<i<<", gradient value "<<maxDissatisfied);
       int k=(int)activeSet.size();
       activeSet.push_back(i);
       activeIndex[i] = k;
@@ -220,33 +221,33 @@ LinearProgram::Result BoundedLSQRSolver::Solve(Vector& x)
     }
     if(recomputeW) {
       if(verbose >= 2) {
-	cout<<"Active set "<<iters+1<<endl;
-	for(size_t i=0;i<activeSet.size();i++) cout<<activeSet[i]<<", ";
-	cout<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Active set "<<iters+1);
+	for(size_t i=0;i<activeSet.size();i++) LOG4CXX_INFO(KrisLibrary::logger(),activeSet[i]<<", ");
+	LOG4CXX_INFO(KrisLibrary::logger(),"\n");
       }
       A.mul(x,vtemp);
       vtemp -= b;
       Real newResidual = vtemp.norm();
       if(verbose >= 1) {
-	cout<<"Difference between old and current residual: "<<newResidual<<" vs "<<lastResidual<<endl;
-	cout<<"Delta x: "<<dx.norm()*alpha<<endl;
+	LOG4CXX_INFO(KrisLibrary::logger(),"Difference between old and current residual: "<<newResidual<<" vs "<<lastResidual);
+	LOG4CXX_INFO(KrisLibrary::logger(),"Delta x: "<<dx.norm()*alpha);
       }
       if(iters > 0) {
 	if(FuzzyEquals(newResidual,lastResidual,fTol)) {
-	  if(verbose >= 1) cout<<"Converged on f"<<endl;
+	  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged on f");
 	  return LinearProgram::Feasible;
 	}
 	lastResidual = newResidual;
 	if(dx.norm()*alpha < xTol) {
-	  if(verbose >= 1) cout<<"Converged on x"<<endl;
+	  if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Converged on x");
 	  return LinearProgram::Feasible;
 	}
       }
     }
   }
   if(verbose >= 1) {
-    cout<<"Ran out of iterations, current x: "<<x<<endl;
-    cout<<"Remaining gradient: "<<w<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Ran out of iterations, current x: "<<x);
+    LOG4CXX_INFO(KrisLibrary::logger(),"Remaining gradient: "<<w);
   }
   return LinearProgram::Error;
 }

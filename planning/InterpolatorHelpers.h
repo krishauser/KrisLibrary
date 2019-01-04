@@ -3,7 +3,7 @@
 
 #include "Interpolator.h"
 #include "GeodesicSpace.h"
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 #include <KrisLibrary/math/interpolate.h>
 #include <KrisLibrary/spline/Hermite.h>
 #include <KrisLibrary/spline/PiecewisePolynomial.h>
@@ -71,7 +71,7 @@ public:
 class TimeRemappedInterpolator : public Interpolator
 {
 public:
-  TimeRemappedInterpolator(const SmartPointer<Interpolator>& base,Real a,Real b,Real pstart=0,Real pend=1);
+  TimeRemappedInterpolator(const InterpolatorPtr& base,Real a,Real b,Real pstart=0,Real pend=1);
   virtual ~TimeRemappedInterpolator() {}
   virtual void Eval(Real u,Config& x) const;
   virtual Real Length() const;
@@ -80,7 +80,7 @@ public:
   virtual Real ParamStart() const { return pstart; }
   virtual Real ParamEnd() const { return pend; }
 
-  SmartPointer<Interpolator> base;
+  InterpolatorPtr base;
   Real a,b;
   Real pstart,pend;
 };
@@ -93,11 +93,11 @@ class PathInterpolator : public Interpolator
 {
 public:
   PathInterpolator();
-  PathInterpolator(const SmartPointer<Interpolator>& interp);
-  PathInterpolator(const std::vector<SmartPointer<Interpolator> > & segments,Real totalTime=1.0);
+  PathInterpolator(const InterpolatorPtr& interp);
+  PathInterpolator(const std::vector<InterpolatorPtr > & segments,Real totalTime=1.0);
   virtual ~PathInterpolator() {}
   ///Adds a new segment.  If duration = 0, all durations / times are scaled to keep the current total time
-  void Append(const SmartPointer<Interpolator>& interp,Real duration=0);
+  void Append(const InterpolatorPtr& interp,Real duration=0);
   void Concat(const PathInterpolator& path);
   void ScaleDuration(Real scale);
   void SetTotalTime(Real ttotal);
@@ -108,7 +108,7 @@ public:
   virtual Real ParamStart() const { return times.empty() ? 0 : times.front(); }
   virtual Real ParamEnd() const { return times.empty() ? 1 : times.back(); }
 
-  std::vector<SmartPointer<Interpolator> > segments;
+  std::vector<InterpolatorPtr > segments;
   std::vector<Real> durations;
   std::vector<Real> times;
 };
@@ -165,8 +165,8 @@ public:
 class MultiInterpolator : public Interpolator
 {
 public:
-  MultiInterpolator(const SmartPointer<Interpolator>& component1,const SmartPointer<Interpolator>& component2);
-  MultiInterpolator(const std::vector<SmartPointer<Interpolator> > & components);
+  MultiInterpolator(const InterpolatorPtr& component1,const InterpolatorPtr& component2);
+  MultiInterpolator(const std::vector<InterpolatorPtr > & components);
   virtual ~MultiInterpolator() {}
   void Split(const Vector& x,std::vector<Vector>& items) const;
   void Join(const std::vector<Vector>& items,Vector& x) const;
@@ -177,14 +177,14 @@ public:
   virtual Real ParamStart() const { return components[0]->ParamStart(); }
   virtual Real ParamEnd() const { return components[0]->ParamEnd(); }
 
-  std::vector<SmartPointer<Interpolator> > components;
+  std::vector<InterpolatorPtr > components;
   Config a,b;
 };
 
 class SubsetInterpolator : public Interpolator
 {
 public:
-  SubsetInterpolator(const SmartPointer<Interpolator>& base,int start,int end);
+  SubsetInterpolator(const InterpolatorPtr& base,int start,int end);
   virtual ~SubsetInterpolator() {}
   virtual void Eval(Real u,Config& x) const;
   virtual Real Length() const { return base->Length(); }
@@ -193,7 +193,7 @@ public:
   virtual Real ParamStart() const { return base->ParamStart(); }
   virtual Real ParamEnd() const { return base->ParamEnd(); }
 
-  SmartPointer<Interpolator> base;
+  InterpolatorPtr base;
   int start,end;
   Config a,b;
 };

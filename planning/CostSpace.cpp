@@ -5,7 +5,7 @@
 #include "TimeCSpace.h"
 using namespace std;
 
-StateCostControlSpace::StateCostControlSpace(const SmartPointer<ControlSpace>& _base,const SmartPointer<ObjectiveFunctionalBase>& _objective)
+StateCostControlSpace::StateCostControlSpace(const std::shared_ptr<ControlSpace>& _base,const std::shared_ptr<ObjectiveFunctionalBase>& _objective)
 :base(_base),objective(_objective)
 {}
 
@@ -16,7 +16,7 @@ std::string StateCostControlSpace::VariableName(int i)
   return base->VariableName(i);
 }
 
-SmartPointer<CSet> StateCostControlSpace::GetControlSet(const State& x)
+std::shared_ptr<CSet> StateCostControlSpace::GetControlSet(const State& x)
 {
   Vector q; Real c; SplitRef(x,q,c);
   return base->GetControlSet(q);
@@ -25,9 +25,9 @@ SmartPointer<CSet> StateCostControlSpace::GetControlSet(const State& x)
 class StateCostSteeringFunction : public SteeringFunction
 {
 public:
-  SmartPointer<SteeringFunction> base;
-  SmartPointer<ObjectiveFunctionalBase> objective;
-  StateCostSteeringFunction(const SmartPointer<SteeringFunction>& _base,const SmartPointer<ObjectiveFunctionalBase>& _objective)
+  std::shared_ptr<SteeringFunction> base;
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
+  StateCostSteeringFunction(const std::shared_ptr<SteeringFunction>& _base,const std::shared_ptr<ObjectiveFunctionalBase>& _objective)
   :base(_base),objective(_objective)
   {}
   virtual bool IsExact() const { return false; }
@@ -49,8 +49,8 @@ public:
       if(i+1 < qpath.milestones.size()) {
         path.controls[i] = qpath.controls[i];
         Real u2 = Real(i+1)*dt;
-        Real c2 = c + objective->IncrementalCost(qpath.controls[i],qpath.paths[i]);
-        path.paths[i] = new MultiInterpolator(qpath.paths[i],new LinearInterpolator(c,c2,qpath.paths[i]->ParamStart(),qpath.paths[i]->ParamEnd()));
+        Real c2 = c + objective->IncrementalCost(qpath.controls[i],qpath.paths[i].get());
+        path.paths[i] = make_shared<MultiInterpolator>(qpath.paths[i],make_shared<LinearInterpolator>(c,c2,qpath.paths[i]->ParamStart(),qpath.paths[i]->ParamEnd()));
 
         c = c2;
       }
@@ -60,28 +60,27 @@ public:
   }
 };
 
-SmartPointer<SteeringFunction> StateCostControlSpace::GetSteeringFunction()
+std::shared_ptr<SteeringFunction> StateCostControlSpace::GetSteeringFunction()
 {
-  SmartPointer<SteeringFunction> bsf = base->GetSteeringFunction();
-  if(bsf) return new StateCostSteeringFunction(bsf,objective);
+  std::shared_ptr<SteeringFunction> bsf = base->GetSteeringFunction();
+  if(bsf) return make_shared<StateCostSteeringFunction>(bsf,objective);
   return NULL;
 }
 
-Interpolator* StateCostControlSpace::Simulate(const State& x0, const ControlInput& u)
+InterpolatorPtr StateCostControlSpace::Simulate(const State& x0, const ControlInput& u)
 {
   Vector q; Real c; SplitRef(x0,q,c);
-  Interpolator* qpath = base->Simulate(q,u);
-  Real dc = objective->IncrementalCost(u,qpath);
-  return new MultiInterpolator(qpath,new LinearInterpolator(c,c+dc,qpath->ParamStart(),qpath->ParamEnd()));
+  InterpolatorPtr qpath = base->Simulate(q,u);
+  Real dc = objective->IncrementalCost(u,qpath.get());
+  return make_shared<MultiInterpolator>(qpath,make_shared<LinearInterpolator>(c,c+dc,qpath->ParamStart(),qpath->ParamEnd()));
 }
 
 void StateCostControlSpace::Successor(const State& x0, const ControlInput& u,State& x1)
 {
   Vector q; Real c; SplitRef(x0,q,c);
-  Interpolator* qpath = base->Simulate(q,u);
-  c += objective->IncrementalCost(u,qpath);
+  InterpolatorPtr qpath = base->Simulate(q,u);
+  c += objective->IncrementalCost(u,qpath.get());
   Join(qpath->End(),c,x1);
-  delete qpath;
 }
 
 class CostCSpace : public TimeCSpace
@@ -95,25 +94,25 @@ public:
   }
 };
 
-StateCostKinodynamicSpace::StateCostKinodynamicSpace(const SmartPointer<KinodynamicSpace>& _base,const SmartPointer<ObjectiveFunctionalBase>& _objective,Real costMax)
-:KinodynamicSpace(NULL,new StateCostControlSpace(_base->GetControlSpace(),_objective)),base(_base),scspace(new MultiCSpace),objective(_objective)
+StateCostKinodynamicSpace::StateCostKinodynamicSpace(const std::shared_ptr<KinodynamicSpace>& _base,const std::shared_ptr<ObjectiveFunctionalBase>& _objective,Real costMax)
+:KinodynamicSpace(NULL,make_shared<StateCostControlSpace>(_base->GetControlSpace(),_objective)),base(_base),scspace(make_shared<MultiCSpace>()),objective(_objective)
 {
   MultiCSpace* mspace = dynamic_cast<MultiCSpace*>(&*scspace);
   mspace->Add("",_base->GetStateSpace());
-  mspace->Add("cost",new CostCSpace(costMax));
+  mspace->Add("cost",make_shared<CostCSpace>(costMax));
   this->stateSpace = scspace;
 }
 
-EdgePlanner* StateCostKinodynamicSpace::TrajectoryChecker(const ControlInput& u,const SmartPointer<Interpolator>& path)
+EdgePlannerPtr StateCostKinodynamicSpace::TrajectoryChecker(const ControlInput& u,const std::shared_ptr<Interpolator>& path)
 {
-  const MultiInterpolator* mi = dynamic_cast<const MultiInterpolator*>(&*path);
+  const MultiInterpolator* mi = dynamic_cast<const MultiInterpolator*>(path.get());
   if(!mi) return KinodynamicSpace::TrajectoryChecker(u,path);
   Assert(path->Start().n == GetStateSpace()->NumDimensions());
   Assert(path->End().n == GetStateSpace()->NumDimensions());
   Assert(mi->components[0]->Start().n == base->GetStateSpace()->NumDimensions());
   Assert(mi->components[0]->End().n == base->GetStateSpace()->NumDimensions());
-  EdgePlanner* ebase = base->TrajectoryChecker(u,mi->components[0]);
-  return new PiggybackEdgePlanner(GetStateSpace(),path,ebase);
+  EdgePlannerPtr ebase = base->TrajectoryChecker(u,mi->components[0]);
+  return make_shared<PiggybackEdgePlanner>(GetStateSpace().get(),path,ebase);
 }
 
 void StateCostKinodynamicSpace::SetCostMax(Real costmax) 

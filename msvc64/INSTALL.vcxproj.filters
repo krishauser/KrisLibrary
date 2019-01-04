@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\CMakeFiles\c721557f261a9a8b1ddc20627d9bee44\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{699748DF-A596-3392-85CB-AE6CDBFCDA00}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

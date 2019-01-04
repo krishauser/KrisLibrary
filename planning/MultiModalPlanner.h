@@ -25,18 +25,18 @@ class MultiModalPRM
   
   struct ModeInfo
   {
-    SmartPointer<MotionPlannerInterface> planner;
+    std::shared_ptr<MotionPlannerInterface> planner;
     int sampleCount;
   };
 
   struct TransitionInfo
   {
     int sampleCount;
-    vector<Config> transitions;
+    std::vector<Config> transitions;
     //index of transition, in roadmap with the lower index
-    vector<int> prevRoadmapIndices;
+    std::vector<int> prevRoadmapIndices;
     //index of transition, in roadmap with the higher index
-    vector<int> nextRoadmapIndices;
+    std::vector<int> nextRoadmapIndices;
   };
 
   struct TransitionIndex
@@ -56,7 +56,7 @@ class MultiModalPRM
   TransitionIndex NodeToTransitionIndex(int mode,int roadmapIndex) const;
   void ConnectTransitions(int mode,int t1,int t2);
   void ConnectTransitions(const TransitionIndex& t1,const TransitionIndex& t2);
-  void GetTransitionNodes(int mode,vector<TransitionIndex>& transitions,vector<int>& roadmapIndices) const;
+  void GetTransitionNodes(int mode,std::vector<TransitionIndex>& transitions,std::vector<int>& roadmapIndices) const;
 
   typedef Graph::UndirectedGraph<ModeInfo,TransitionInfo> PlanningGraph;
   MultiModalCSpace<int>* space;
@@ -121,8 +121,8 @@ class IncrementalMMPRM_Search
   Fringe fringe;
   ShortestPathProblem spp;
   SearchGraph searchGraph;
-  vector<bool> reachedModes;
-  vector<bool> outputModes;
+  std::vector<bool> reachedModes;
+  std::vector<bool> outputModes;
 
   double transSampleWeight;
 };
@@ -148,7 +148,7 @@ class IncrementalMMPRM_Explicit
   bool evenRefinement;
 
   //temporary / stats
-  vector<bool> lastRefineSet;
+  std::vector<bool> lastRefineSet;
   int remainingRefineSamples;
   int expandPhaseCount,expandStepCount;
   int refinePhaseCount,refineStepCount;

@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "KinodynamicPath.h"
 #include "KinodynamicSpace.h"
 #include "InterpolatorHelpers.h"
@@ -7,7 +8,7 @@ using namespace std;
 KinodynamicMilestonePath::KinodynamicMilestonePath()
 {}
 
-KinodynamicMilestonePath::KinodynamicMilestonePath(const ControlInput& u,const SmartPointer<Interpolator>& path)
+KinodynamicMilestonePath::KinodynamicMilestonePath(const ControlInput& u,const std::shared_ptr<Interpolator>& path)
 {
   milestones.resize(2);
   controls.resize(1);
@@ -51,7 +52,7 @@ void KinodynamicMilestonePath::MakePaths(ControlSpace* space)
 
 void KinodynamicMilestonePath::MakePaths(KinodynamicSpace* space)
 {
-  MakePaths(space->controlSpace);
+  MakePaths(space->controlSpace.get());
 }
 
 void KinodynamicMilestonePath::MakeEdges(KinodynamicSpace* space)
@@ -69,7 +70,7 @@ bool KinodynamicMilestonePath::IsFeasible()
 {
   if(milestones.size()==1) return true;
   if(edges.empty()) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsFeasible(): edges are not created\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsFeasible(): edges are not created\n");
     return false;
   }
   for(size_t i=0;i<milestones.size();i++)
@@ -82,23 +83,23 @@ bool KinodynamicMilestonePath::IsFeasible()
 void KinodynamicMilestonePath::Append(const ControlInput& u,KinodynamicSpace* space)
 {
   Assert(!milestones.empty());
-  Interpolator* path = space->Simulate(milestones.back(),u);
+  InterpolatorPtr path(space->Simulate(milestones.back(),u));
   Append(u,path,space);
 }
 
-void KinodynamicMilestonePath::Append(const ControlInput& u,const SmartPointer<Interpolator>& path,KinodynamicSpace* space)
+void KinodynamicMilestonePath::Append(const ControlInput& u,const std::shared_ptr<Interpolator>& path,KinodynamicSpace* space)
 {
-  EdgePlanner* e=space->TrajectoryChecker(u,path);
+  EdgePlannerPtr e(space->TrajectoryChecker(u,path));
   Append(u,path,e);
 }
 
-void KinodynamicMilestonePath::Append(const ControlInput& u,const SmartPointer<Interpolator>& path,const SmartPointer<EdgePlanner>& e)
+void KinodynamicMilestonePath::Append(const ControlInput& u,const std::shared_ptr<Interpolator>& path,const std::shared_ptr<EdgePlanner>& e)
 {
   if(!milestones.empty()) {
     if(path->Start() != milestones.back()) {
-      cout<<"KinodynamicMilestonePath::Append: incorrect starting point"<<endl;
-      cout<<path->Start()<<endl;
-      cout<<milestones.back()<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"KinodynamicMilestonePath::Append: incorrect starting point");
+      LOG4CXX_INFO(KrisLibrary::logger(),path->Start());
+      LOG4CXX_INFO(KrisLibrary::logger(),milestones.back());
     }
   }
   Assert(path->Start() == milestones.back());
@@ -124,46 +125,46 @@ void KinodynamicMilestonePath::Concat(const KinodynamicMilestonePath& suffix)
 bool KinodynamicMilestonePath::IsValid() const
 {
   if(milestones.empty()) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: no milestones\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: no milestones\n");
     return false;
   }
   if(milestones.size() != edges.size()+1) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: wrong sized edges (%d!=%d)\n",(int)edges.size(),(int)milestones.size()-1);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: wrong sized edges ("<<(int)edges.size()<<"!="<<(int)milestones.size()-1);
     return false;
   }
   if(edges.size() != controls.size()) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: wrong sized controls (%d!=%d)\n",(int)controls.size(),(int)edges.size());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: wrong sized controls ("<<(int)controls.size()<<"!="<<(int)edges.size());
     return false;
   }
   if(edges.size() != paths.size()) {
-    fprintf(stderr,"KinodynamicMilestonePath::IsValid: wrong sized paths (%d!=%d)\n",(int)paths.size(),(int)edges.size());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: wrong sized paths ("<<(int)paths.size()<<"!="<<(int)edges.size());
     return false;
   }
   for(size_t i=0;i<paths.size();i++) {
     if(paths[i]->Start() != milestones[i]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: path %d starts at wrong milestone\n",i);
-      cerr<<paths[i]->Start()<<endl;
-      cerr<<milestones[i]<<endl;
+            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: path "<<i);
+      LOG4CXX_ERROR(KrisLibrary::logger(),paths[i]->Start());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i]);
       return false;
     }
     if(paths[i]->End() != milestones[i+1]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: path %d ends at wrong milestone\n",i);
-      cerr<<paths[i]->End()<<endl;
-      cerr<<milestones[i+1]<<endl;
+            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: path "<<i);
+      LOG4CXX_ERROR(KrisLibrary::logger(),paths[i]->End());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i+1]);
       return false;
     }
   }
   for(size_t i=0;i<edges.size();i++) {
     if(edges[i]->Start() != milestones[i]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: edge planner %d starts at wrong milestone\n",i);
-      cerr<<edges[i]->Start()<<endl;
-      cerr<<milestones[i]<<endl;
+            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: edge planner "<<i);
+      LOG4CXX_ERROR(KrisLibrary::logger(),edges[i]->Start());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i]);
       return false;
     }
     if(edges[i]->End() != milestones[i+1]) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValid: edge planner %d ends at wrong milestone\n",i);
-      cerr<<edges[i]->End()<<endl;
-      cerr<<milestones[i+1]<<endl;
+            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValid: edge planner "<<i);
+      LOG4CXX_ERROR(KrisLibrary::logger(),edges[i]->End());
+      LOG4CXX_ERROR(KrisLibrary::logger(),milestones[i+1]);
       return false;
     }
   }
@@ -197,7 +198,7 @@ int KinodynamicMilestonePath::Eval2(Real t,Config& c) const
 int KinodynamicMilestonePath::Shortcut(KinodynamicSpace* space,SteeringFunction* fn)
 {
   if(!fn || !fn->IsExact()) {
-    fprintf(stderr,"KinodynamicMilestonePath::Shortcut: steering function is not exact, cannot shortcut\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::Shortcut: steering function is not exact, cannot shortcut\n");
     return 0;
   }
   int numSplices = 0;
@@ -218,7 +219,7 @@ int KinodynamicMilestonePath::Shortcut(KinodynamicSpace* space,SteeringFunction*
 int KinodynamicMilestonePath::Reduce(KinodynamicSpace* space,SteeringFunction* fn,int numIters)
 {
   if(!fn || !fn->IsExact()) {
-    fprintf(stderr,"KinodynamicMilestonePath::Reduce: steering function is not exact, cannot shortcut\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::Reduce: steering function is not exact, cannot shortcut\n");
     return 0;
   }
   if(edges.empty()) MakeEdges(space);
@@ -274,14 +275,14 @@ void KinodynamicMilestonePath::Splice(Real u1,Real u2,const KinodynamicMilestone
     spath.milestones[1] = path.Start();
     spath.controls.push_back(controls[e1]);
     spath.controls[0] *= s1;  ///assume it the control scales
-    spath.paths.push_back( new TimeRemappedInterpolator(paths[e1],0,s1));
+    spath.paths.push_back( make_shared<TimeRemappedInterpolator>(paths[e1],0,s1));
   }
   spath.Concat(path);
   if(e2 < (int)paths.size() && s2 > 0) {
     spath.milestones.push_back(milestones[e2+1]);
     spath.controls.push_back(controls[e2]);
     spath.controls.back()[0] *= (1.0-s2);  ///assume it the control scales
-    spath.paths.push_back( new TimeRemappedInterpolator(paths[e2],s2,1));
+    spath.paths.push_back( make_shared<TimeRemappedInterpolator>(paths[e2],s2,1));
   }
   if(!edges.empty() && space) spath.MakeEdges(space);
   Splice2(e1,e2+1,spath);
@@ -348,8 +349,8 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
 {
   if(t <= milestones.front()(timeIndex) || edges.empty()) {
     if(t < milestones.front()(timeIndex)) {
-      fprintf(stderr,"Warning, can't properly split before the beginning of a path\n");
-      getchar();
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, can't properly split before the beginning of a path\n");
+      KrisLibrary::loggerWait();
     }
     before.Clear();
     before.milestones.resize(1);
@@ -359,7 +360,7 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
   }
   KinodynamicSpace* space = dynamic_cast<KinodynamicSpace*>(Space());
   Assert(space != NULL);
-  SmartPointer<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
+  std::shared_ptr<SteeringFunction> sf = space->controlSpace->GetSteeringFunction();
 
   //binary search
   TimeIndexCmp cmp(timeIndex);
@@ -386,7 +387,7 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
 	space->controlSpace->GetControlSet(before.milestones.back())->Sample(zeroControl);
 	zeroControl.setZero();
 	zeroControl(timeIndex) = t - End()(timeIndex);
-  extension = KinodynamicMilestonePath(zeroControl,space->Simulate(End(),zeroControl));
+  extension = KinodynamicMilestonePath(zeroControl,InterpolatorPtr(space->Simulate(End(),zeroControl)));
       }
       before.Concat(extension);
       
@@ -431,11 +432,11 @@ void KinodynamicMilestonePath::SplitTime(Real t,KinodynamicMilestonePath& before
     after.milestones.front() = q;
     //assume controls(timeIndex) is dt?
     before.controls.back()(timeIndex) *= u;
-    before.paths.back() = new TimeRemappedInterpolator(paths[index],0,u);
+    before.paths.back().reset(new TimeRemappedInterpolator(paths[index],0,u));
     if(!edges.empty()) before.edges.back() = space->TrajectoryChecker(before.controls.back(),before.paths.back());
 
     before.controls.front()(timeIndex) *= (1.0-u);
-    before.paths.front() = new TimeRemappedInterpolator(paths[index],u,1);
+    before.paths.front().reset(new TimeRemappedInterpolator(paths[index],u,1));
     if(!edges.empty()) before.edges.front() = space->TrajectoryChecker(after.controls.front(),after.paths.front());
 
     //sanity check
@@ -451,13 +452,13 @@ bool KinodynamicMilestonePath::IsValidTime(int timeIndex) const
 {
   for(size_t i=0;i+1<milestones.size();i++) {
     if(!(milestones[i](timeIndex) <= milestones[i+1](timeIndex))) {
-      fprintf(stderr,"KinodynamicMilestonePath::IsValidTime: Edge %d has time reversed: %g > %g\n",(int)i,milestones[i](timeIndex),milestones[i+1](timeIndex));
+            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValidTime: Edge "<<(int)i<<" has time reversed: "<<milestones[i](timeIndex)<<" > "<<milestones[i+1](timeIndex));
       return false;
     }
   }
   for(size_t i=0;i<paths.size();i++) {
     if(!(paths[i]->Start()(timeIndex) <= paths[i]->End()(timeIndex))) {
-	fprintf(stderr,"KinodynamicMilestonePath::IsValidTime: Path %d has time reversed: %g > %g\n",(int)i,paths[i]->Start()(timeIndex),paths[i]->End()(timeIndex));
+		LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicMilestonePath::IsValidTime: Path "<<(int)i<<" has time reversed: "<<paths[i]->Start()(timeIndex)<<" > "<<paths[i]->End()(timeIndex));
 	return false;
     }
   }

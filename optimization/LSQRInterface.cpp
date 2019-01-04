@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "LSQRInterface.h"
 #include <iostream>
 #include "lsqr.h"
@@ -49,8 +50,8 @@ bool LSQRInterface::Solve(const SparseMatrix& A,const Vector& b)
   if(x0.n == 0) input.sol.resize(A.n,Zero);
   else if(x0.n == A.n) input.sol.copy(x0);
   else {
-    cerr<<"Initial guess doesn't have correct dimensions"<<endl;
-    cerr<<"Using zeros for initial guess"<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Initial guess doesn't have correct dimensions");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Using zeros for initial guess");
     input.sol.resize(A.n,Zero);
   }
 
@@ -64,31 +65,31 @@ bool LSQRInterface::Solve(const SparseMatrix& A,const Vector& b)
   
   switch(output.term_flag) {
   case lsqr_output::X0Exact:
-    if(verbose) cout<<"LSQR: X0 is the exact solution!"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: X0 is the exact solution!");
     break;
   case lsqr_output::ExactSolutionRelMat:
-    if(verbose) cout<<"LSQR: Solved approximately the exact solution"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved approximately the exact solution");
     break;
   case lsqr_output::LSSolutionRelMat:
-    if(verbose) cout<<"LSQR: Solved approximately a least-squares solution"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved approximately a least-squares solution");
     break;
   case lsqr_output::IllConditioned:
-    if(verbose) cout<<"LSQR: The matrix is probably ill-conditioned"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: The matrix is probably ill-conditioned");
     return false;
   case lsqr_output::ExactSolution:
-    if(verbose) cout<<"LSQR: Solved the exact solution"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved the exact solution");
     break;
   case lsqr_output::LSSolution:
-    if(verbose) cout<<"LSQR: Solved the least-squares solution"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: Solved the least-squares solution");
     break;
   case lsqr_output::ConditionError:
-    if(verbose) cout<<"LSQR: The condition number became very large"<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: The condition number became very large");
     return false;
   case lsqr_output::MaxItersReached:
-    if(verbose) cout<<"LSQR: The max # of iterations has been reached, residual "<<residualNorm<<endl;
+    if(verbose) LOG4CXX_INFO(KrisLibrary::logger(),"LSQR: The max # of iterations has been reached, residual "<<residualNorm);
     return false;
   default:
-    cerr<<"LSQR: Unknown return value "<<output.term_flag<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"LSQR: Unknown return value "<<output.term_flag);
     return false;
   }
   return true;

@@ -13,11 +13,11 @@
 #define FILESEEKEND 2
 
 #ifdef _WIN32
-typedef unsigned int SOCKET;
+#include <basetsd.h>
+typedef UINT_PTR SOCKET;
 #else
 typedef int SOCKET;
 #endif // _WIN32
-
 
 //opaque pointer
 struct FileImpl;
@@ -112,7 +112,7 @@ private:
 	FileImpl* impl;
 };
 
-/** \file myfile.h
+/** \file File.h
  * \ingroup Standard
  * \brief A unified interface for reading/writing binary data to file.
  *

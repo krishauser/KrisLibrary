@@ -1,6 +1,7 @@
 #ifndef GRAPH_UNDIRECTED_GRAPH_H
 #define GRAPH_UNDIRECTED_GRAPH_H
 
+#include <KrisLibrary/Logger.h>
 #include "Graph.h"
 #include "Callback.h"
 
@@ -142,7 +143,7 @@ bool UndirectedGraph<Node,Edge>::IsValid() const
     ConstEdgeIterator ebegin=P::edges[i].begin(),eend=P::edges[i].end();
     for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
       if(e->first < (int)i) {
-	fprintf(stderr,"Undirected edge (%d,%d) has i > j\n",i,e->first);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Undirected edge ("<<i<<","<<e->first);
 	res=false;
       }
     }
@@ -151,7 +152,7 @@ bool UndirectedGraph<Node,Edge>::IsValid() const
     ConstEdgeIterator ebegin=P::co_edges[i].begin(),eend=P::co_edges[i].end();
     for(ConstEdgeIterator e=ebegin;e!=eend;e++) {
       if(e->first > (int)i) {
-	fprintf(stderr,"Undirected co-edge (%d,%d) has j > i\n",e->first,i);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Undirected co-edge ("<<e->first<<","<<i);
 	res=false;
       }
     }

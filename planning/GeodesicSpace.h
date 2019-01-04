@@ -60,8 +60,8 @@ class MultiGeodesicSpace : public GeodesicSpace
 {
 public:
   MultiGeodesicSpace();
-  MultiGeodesicSpace(const std::vector<SmartPointer<GeodesicSpace> >& components);
-  void Add(const SmartPointer<GeodesicSpace>& space,Real weight=1.0);
+  MultiGeodesicSpace(const std::vector<std::shared_ptr<GeodesicSpace> >& components);
+  void Add(const std::shared_ptr<GeodesicSpace>& space,Real weight=1.0);
 
   void Split(const Vector& x,std::vector<Vector>& items) const;
   void Join(const std::vector<Vector>& items,Vector& x) const;
@@ -77,7 +77,7 @@ public:
   virtual void InterpolateDeriv2(const Config& a,const Config& b,Real u,Vector& ddx);
   virtual void Integrate(const Config& a,const Vector& da,Config& b);
 
-  std::vector<SmartPointer<GeodesicSpace> > components;
+  std::vector<std::shared_ptr<GeodesicSpace> > components;
   std::vector<Real> weights;
 };
 */

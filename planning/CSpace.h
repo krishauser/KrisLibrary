@@ -1,10 +1,11 @@
 #ifndef ROBOTICS_CSPACE_H
 #define ROBOTICS_CSPACE_H
 
+
 #include <KrisLibrary/math/vector.h>
 #include <KrisLibrary/math/metric.h>
 #include <KrisLibrary/utils/PropertyMap.h>
-#include <KrisLibrary/utils/SmartPointer.h>
+#include <memory>
 #include "CSet.h"
 
 namespace Optimization {
@@ -15,7 +16,7 @@ typedef Vector Config;
 class Interpolator;
 class EdgePlanner;
 class CSpace;
-
+typedef std::shared_ptr<EdgePlanner> EdgePlannerPtr;
 
 
 /** @ingroup MotionPlanning
@@ -35,21 +36,21 @@ class CSpace
 public:
   virtual ~CSpace() {}
   void AddConstraint(const std::string& name,CSet* constraint);
-  void AddConstraint(const std::string& name,const SmartPointer<CSet>& constraint);
+  void AddConstraint(const std::string& name,const std::shared_ptr<CSet>& constraint);
   void AddConstraint(const std::string& name,CSet::CPredicate test);
   void CopyConstraints(const CSpace* space,const std::string& prefix="");
   virtual int NumDimensions();
   virtual std::string VariableName(int i);
   virtual int NumConstraints() { return (int)constraints.size(); }
   virtual std::string ConstraintName(int i) { return constraintNames[i]; }
-  virtual SmartPointer<CSet> Constraint(int i) { return constraints[i]; }
+  virtual std::shared_ptr<CSet> Constraint(int i) { return constraints[i]; }
   virtual void Sample(Config& x)=0;
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual bool IsFeasible(const Config&);
   virtual bool IsFeasible(const Config&,int constraint);
-  virtual EdgePlanner* LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b);
-  virtual EdgePlanner* PathChecker(const Config& a,const Config& b,int constraint);
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int constraint);
 
   ///optionally overrideable (default uses euclidean space)
   virtual Real Distance(const Config& x, const Config& y) { return Distance_L2(x,y); }
@@ -102,7 +103,7 @@ public:
   void PrintInfeasibleNames(const Config& q,std::ostream& out=std::cout,const char* prefix="",const char* suffix="\n");
 
   std::vector<std::string> constraintNames;
-  std::vector<SmartPointer<CSet> > constraints;
+  std::vector<std::shared_ptr<CSet> > constraints;
 };
 
 #endif

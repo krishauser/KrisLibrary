@@ -43,7 +43,7 @@ public:
   virtual double Distance(const Config& a,const Config& b);
   virtual void Interpolate(const Config& a,const Config& b,Real u,Config& x);
   virtual void Midpoint(const Config& x,const Config& y,Config& out) { Interpolate(x,y,0.5,out); }
-  virtual EdgePlanner* PathChecker(const Config& x,const Config& y);  
+  virtual EdgePlannerPtr PathChecker(const Config& x,const Config& y);  
   virtual void Properties(PropertyMap&) const;
 
   ob::SpaceInformationPtr si_;
@@ -70,8 +70,8 @@ class KrisLibraryOMPLPlanner : public ob::Planner
   virtual void getPlannerData (ob::PlannerData &data) const;
 
   MotionPlannerFactory factory;
-  SmartPointer<OMPLCSpace> cspace;
-  SmartPointer<MotionPlannerInterface> planner;
+  std::shared_ptr<OMPLCSpace> cspace;
+  std::shared_ptr<MotionPlannerInterface> planner;
 };
 
 /** @brief Adapts a CSpace into a SpaceInformation that can be used with

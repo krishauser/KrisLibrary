@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "NewtonSolver.h"
 #include <math/linalgebra.h>
 #include <math/LDL.h>
@@ -117,15 +118,16 @@ struct LogarithmicBarrierFunction : public ScalarFieldFunction
 struct InequalityBarrierNLP : public NonlinearProgram
 {
   InequalityBarrierNLP(NonlinearProgram& nlp,Real alpha=One)
-    :NonlinearProgram(&f_alpha,nlp.c),f_alpha(nlp.f,nlp.d,alpha)
+    :NonlinearProgram(NULL,nlp.c),f_alpha(new LogarithmicBarrierFunction(nlp.f.get(),nlp.d.get(),alpha))
   {
+    this->f = f_alpha;
     Assert(nlp.minimize==true);
     Assert(nlp.inequalityLess==false);
   }
 
-  void SetBarrierScale(Real alpha) { f_alpha.alpha=alpha; }
+  void SetBarrierScale(Real alpha) { f_alpha->alpha=alpha; }
 
-  LogarithmicBarrierFunction f_alpha;
+  std::shared_ptr<LogarithmicBarrierFunction> f_alpha;
 };
 
 } //namespace Optimization
@@ -163,18 +165,18 @@ void NewtonSolver::Init()
     if(!bmin.empty()) {
       Assert(bmin.n == x.n);
       Assert(bmax.n == x.n);
-      barrierProblem->f_alpha.bmin.setRef(bmin);
-      barrierProblem->f_alpha.bmin.setRef(bmax);
+      barrierProblem->f_alpha->bmin.setRef(bmin);
+      barrierProblem->f_alpha->bmin.setRef(bmax);
     }
 
     /*
     if(!TestGradient(barrierProblem->f,x,0.01,1e-3)) {
-      cerr<<"Barrier gradient is incorrect"<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Barrier gradient is incorrect");
+      KrisLibrary::loggerWait();
     }
     if(!TestHessian(barrierProblem->f,x,0.01,1e-3)) {
-      cerr<<"Barrier hessian is incorrect"<<endl;
-      getchar();
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Barrier hessian is incorrect");
+      KrisLibrary::loggerWait();
     }
     */
   }
@@ -183,8 +185,8 @@ void NewtonSolver::Init()
     problem = barrierProblem;
     Assert(bmin.n == x.n);
     Assert(bmax.n == x.n);
-    barrierProblem->f_alpha.bmin.setRef(bmin);
-    barrierProblem->f_alpha.bmin.setRef(bmax);    
+    barrierProblem->f_alpha->bmin.setRef(bmin);
+    barrierProblem->f_alpha->bmin.setRef(bmax);    
   }
   else
     problem = &origProblem;
@@ -210,18 +212,18 @@ void NewtonSolver::Init()
   MatrixEquation solvelambda(mtemp,vtemp);
   bool res=solvelambda.LeastSquares_SVD(a);
   if(!res) {
-    cerr<<"Warning, couldn't compute the SVD of the constraint Jacobian"<<endl;
-    cerr<<"Using zero for the lagrange multipliers..."<<endl;
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, couldn't compute the SVD of the constraint Jacobian");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Using zero for the lagrange multipliers...");
     a.setZero();
-    getchar();
+    KrisLibrary::loggerWait();
   }
   if(verbose >= 2) {
     Vector temp;
     solvelambda.Residual(a,temp);
-    cout<<"Constraint Jacobian is"<<endl<<MatrixPrinter(A)<<endl;
-    cout<<"Gradient of objective is "<<VectorPrinter(vtemp)<<endl;
-    cout<<"Lambda is "<<VectorPrinter(a)<<endl;
-    cout<<"Residual with lambda at start: "<<VectorPrinter(temp)<<endl;
+    LOG4CXX_INFO(KrisLibrary::logger(),"Constraint Jacobian is"<<MatrixPrinter(A)<<"\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Gradient of objective is "<<VectorPrinter(vtemp));
+    LOG4CXX_INFO(KrisLibrary::logger(),"Lambda is "<<VectorPrinter(a));
+    LOG4CXX_INFO(KrisLibrary::logger(),"Residual with lambda at start: "<<VectorPrinter(temp));
   }
   */
   a.set(One);
@@ -248,9 +250,9 @@ ConvergenceResult NewtonSolver::Solve(int& iters)
     res1.inplaceNegative();
     res2.inplaceNegative();
     if(verbose >= 1)
-      cout<<"Step "<<iters<<", function value "<<problem->f->Eval(x)<<", constraint dist "<<res2.maxAbsElement()<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Step "<<iters<<", function value "<<problem->f->Eval(x)<<", constraint dist "<<res2.maxAbsElement());
     if(verbose >= 2) {
-      cout<<"Initial: "<<VectorPrinter(x)<<", "<<VectorPrinter(a)<<endl;
+      LOG4CXX_INFO(KrisLibrary::logger(),"Initial: "<<VectorPrinter(x)<<", "<<VectorPrinter(a));
       MatrixEquationPrinter meq;
       meq.PushMatrix(H);
       meq.PushText("dx");
@@ -277,7 +279,7 @@ ConvergenceResult NewtonSolver::Solve(int& iters)
     Vector d;
     ldl.LDL.getDiagRef(0,d);
     if(d.minAbsElement() <= 1e-5) {
-      if(verbose >= 1) cerr<<"Hessian uninvertible... LDL diagonal gives "<<d.minAbsElement()<<endl;
+      if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"Hessian uninvertible... LDL diagonal gives "<<d.minAbsElement());
       for(int i=0;i<d.n;i++) {
 	if(d(i) < 0) d(i) -= 1e-3;
 	else d(i) += 1e-3;
@@ -292,7 +294,7 @@ ConvergenceResult NewtonSolver::Solve(int& iters)
     ldl2.set(AHA);
     ldl2.LDL.getDiagRef(0,d);
     if(d.minAbsElement() <= 1e-5) {
-      if(verbose >= 1) cerr<<"AHA matrix uninvertible... LDL diagonal gives "<<d.minAbsElement()<<endl;
+      if(verbose >= 1) LOG4CXX_ERROR(KrisLibrary::logger(),"AHA matrix uninvertible... LDL diagonal gives "<<d.minAbsElement());
       for(int i=0;i<d.n;i++) {
 	if(d(i) < 0) d(i) -= 1e-3;
 	else d(i) += 1e-3;
@@ -304,7 +306,7 @@ ConvergenceResult NewtonSolver::Solve(int& iters)
     vtemp.resize(x.n);
     A.mulTranspose(da,vtemp);   vtemp -= res1;  vtemp.inplaceNegative();
     Hinv.mul(vtemp,dx);
-    if(verbose >= 2) cout<<"Direction: "<<VectorPrinter(dx)<<", "<<VectorPrinter(da)<<endl;
+    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Direction: "<<VectorPrinter(dx)<<", "<<VectorPrinter(da));
 
     Real alpha = 1;
     ConvergenceResult res=LineSearch(alpha);
@@ -313,7 +315,7 @@ ConvergenceResult NewtonSolver::Solve(int& iters)
     }
 
     if(problem == barrierProblem) {
-      barrierProblem->f_alpha.alpha *= alphaScale;
+      barrierProblem->f_alpha->alpha *= alphaScale;
     }
   }
   return MaxItersReached;
@@ -328,12 +330,12 @@ ConvergenceResult NewtonSolver::LineSearch(Real& alpha)
   x0 = x;
   a0 = a;
   Real fx,fx0 = Merit(x,a);
-  if(verbose >= 2) cout<<"Initial merit="<<fx0<<endl;
+  if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Initial merit="<<fx0);
   Real t = alpha;
   Real gnorm = Max(dx.maxAbsElement(),da.maxAbsElement());
   for(int iters=0;;iters++) {
     if(Abs(t) * gnorm < tolx) {
-      if(verbose>=1) cout<<"NewtonSolver::LineSearch(): Quitting on line search iter "<<iters<<endl;
+      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"NewtonSolver::LineSearch(): Quitting on line search iter "<<iters);
       x = x0;
       a = a0;
       alpha = 0;
@@ -345,12 +347,12 @@ ConvergenceResult NewtonSolver::LineSearch(Real& alpha)
 
     problem->PreEval(x);
     fx = Merit(x,a);
-    if(verbose >= 2) cout<<"Step "<<t<<" merit="<<fx<<endl;
+    if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Step "<<t<<" merit="<<fx);
     if(fx < fx0-1e-4*gnorm*Abs(t)) break;
 
     t *= 0.5;
   }
-  if(verbose >= 2) cout<<"Decreased merit function from "<<fx0<<" to "<<fx<<" with step "<<t<<endl; 
+  if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"Decreased merit function from "<<fx0<<" to "<<fx<<" with step "<<t); 
   alpha = t;
   if(S) S->push_back(x);
 
@@ -382,17 +384,15 @@ Real NewtonSolver::Merit(const Vector& x,const Vector& a) const
   //eval |c(x)|^2
   Real dist2=Zero;
   int j=0;
-  VectorFieldFunction*c = problem->c;
-  VectorFieldFunction*d = problem->d;
-  if(c) {
-    int neq=c->NumDimensions();
+  if(problem->c) {
+    int neq=problem->c->NumDimensions();
     Vector ctemp(neq);
-    c->Eval(x,ctemp);
+    problem->c->Eval(x,ctemp);
     for(int i=0;i<neq;i++)
       dist2 += Sqr(ctemp(i));
     j += neq;
   }
-  Assert(d == NULL);
+  Assert(problem->d == NULL);
   merit += dist2;
   return merit;
 }

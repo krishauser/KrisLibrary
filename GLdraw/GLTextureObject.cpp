@@ -1,3 +1,4 @@
+#include <KrisLibrary/Logger.h>
 #include "GLTextureObject.h"
 #include "GL.h"
 #include <iostream>
@@ -26,18 +27,18 @@ bool GLTextureObject::isNull() const
 void GLTextureObject::generate()
 {
   if(glName == 0) {
-    glName = new unsigned int;
-    glGenTextures(1, glName);
+    glName.reset(new unsigned int);
+    glGenTextures(1, glName.get());
   }
   else
-    cout<<"Warning, GLTextureObject.generate() called on a non-null object"<<endl;
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, GLTextureObject.generate() called on a non-null object");
 }
 
 void GLTextureObject::cleanup()
 {
 
-  if(glName && glName.getRefCount()==1) {
-    glDeleteTextures(1, glName);
+  if(glName && glName.use_count()==1) {
+    glDeleteTextures(1, glName.get());
   }
   glName = 0;
 }
