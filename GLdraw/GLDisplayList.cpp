@@ -48,7 +48,7 @@ int DisplayListManager::Allocate(int count)
   int id = glGenLists(count);
   gNumDisplayLists += count;
   if(gNumDisplayLists > 3000)
-    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, compiling new OpenGL display list id "<<*id<<", total number "<<gNumDisplayLists);
+    LOG4CXX_WARN(KrisLibrary::logger(),"Warning, compiling new OpenGL display list id "<<id<<", total number "<<gNumDisplayLists);
   return id;
 }
 
@@ -84,7 +84,7 @@ bool GLDisplayList::isCompiled() const
 void GLDisplayList::beginCompile(int index)
 {
   if(id == NULL) {
-    id = new int;
+    id = std::make_shared<int>();
     *id = gDisplayListManager.Allocate(count);
   }
   glNewList(*id+index,GL_COMPILE);
@@ -113,12 +113,12 @@ void GLDisplayList::callAll() const
 
 void GLDisplayList::erase()
 {
-  if(id && id.getRefCount()==1) {
+  if(id && id.use_count()==1) {
     //LOG4CXX_INFO(KrisLibrary::logger(),"Erasing OpenGL display list "<<*id);
     gDisplayListManager.Deallocate(*id,count);
   }
   //else if(id)
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Not yet erasing OpenGL display list "<<*id<<" has ref count "<<id.getRefCount());
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Not yet erasing OpenGL display list "<<*id<<" has ref count "<<id.use_count());
 
   id=NULL;
 }
