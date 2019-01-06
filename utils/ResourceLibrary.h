@@ -202,10 +202,18 @@ std::vector<std::string> ResourceTypes(const std::vector<ResourcePtr>& resources
 
 
 
+///Override this to give a Type() string for a basic resource
+template <class T>
+const char* BasicResourceTypeName() { return typeid(T).name(); }
 
 /** @brief A basic data type.
  *
  * Assumes the data type has std::ostream << and std::istream >> overloads.
+ *
+ * The type T is by default represented by the string returned to by typeid(T).name().
+ * This is typically a mangled string that is compiler-dependent.
+ *
+ * To override this, you must override the template function BasicResourceTypeName<T>().
  */
 template <class T>
 class BasicResource : public ResourceBase
@@ -231,14 +239,16 @@ class BasicResource : public ResourceBase
   virtual bool Load() { return ResourceBase::Load(); }
   virtual bool Save(const std::string& fn) { return ResourceBase::Save(fn); }
   virtual bool Save() { return ResourceBase::Save(); }
-  virtual const char* Type() const { return className; }
+  virtual const char* Type() const { return BasicResourceTypeName<T>(); }
   virtual ResourceBase* Make() { return new BasicResource<T>; }
   virtual ResourceBase* Copy() { return new BasicResource<T>(data,name,fileName); }
 
   T data;
-  static const char* className;
 };
 
+template <> const char* BasicResourceTypeName<int>();
+template <> const char* BasicResourceTypeName<double>();
+template <> const char* BasicResourceTypeName<std::string>();
 typedef BasicResource<int> IntResource;
 typedef BasicResource<double> FloatResource;
 typedef BasicResource<std::string> StringResource;
@@ -296,6 +306,7 @@ template <class T>
 class BasicArrayResource : public CompoundResourceBase
 {
  public:
+  typedef BasicResource<T> BaseType;
   BasicArrayResource() {}
   BasicArrayResource(const std::vector<T>& val) : data(val) {}
   BasicArrayResource(const std::vector<T>& val,const std::string& name) : CompoundResourceBase(name),data(val) {}
@@ -327,32 +338,32 @@ class BasicArrayResource : public CompoundResourceBase
   virtual bool Save() { return ResourceBase::Save(); }
   virtual bool Load(AnyCollection& c) { return c["data"].asvector(data); }
   virtual bool Save(AnyCollection& c) { c["data"] = data; return true;}
-  virtual const char* Type() const { return className; }
+  virtual const char* Type() const { return BasicResourceTypeName<std::vector<T> >(); }
   virtual ResourceBase* Make() { return new BasicArrayResource<T>; }
   virtual ResourceBase* Copy() { return new BasicArrayResource<T>(data,name,fileName); }
 
   //CompoundResourceBase methods
-  virtual std::vector<std::string> SubTypes() const { return std::vector<std::string>(1,BasicResource<T>::className); }
+  virtual std::vector<std::string> SubTypes() const { return std::vector<std::string>(1,BasicResourceTypeName<T>()); }
   virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects) {
-    if(0==strcmp(subtype,BasicResource<T>::className))
+    if(0==strcmp(subtype,BasicResourceTypeName<T>()))
       return Unpack(subobjects);
     return false;
   }
   virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL) {
     for(size_t i=0;i<subobjects.size();i++)
-      if(typeid(*subobjects[i]) != typeid(BasicResource<T>)) {
-	if(errorMessage) *errorMessage = std::string("Subobject does not have type ")+std::string(BasicResource<T>::className);
+      if(typeid(*subobjects[i]) != typeid(BaseType)) {
+	if(errorMessage) *errorMessage = std::string("Subobject does not have type ")+std::string(BasicResourceTypeName<T>());
 	return false;
       }
     data.resize(subobjects.size());
     for(size_t i=0;i<subobjects.size();i++)    
-      data[i] = dynamic_cast<BasicResource<T>*>(&*subobjects[i])->data;
+      data[i] = dynamic_cast<BaseType*>(&*subobjects[i])->data;
     return true;
   }
   virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL) {
     subobjects.resize(data.size());
     for(size_t i=0;i<data.size();i++) {
-      subobjects[i] = std::make_shared<BasicResource<T> >(data[i]);
+      subobjects[i] = std::make_shared<BaseType>(data[i]);
       std::stringstream ss;
       ss<<"data["<<i<<"]";
       subobjects[i]->name = ss.str();
@@ -361,9 +372,11 @@ class BasicArrayResource : public CompoundResourceBase
   }
 
   std::vector<T> data;
-  static const char* className;
 };
 
+template <> const char* BasicResourceTypeName<std::vector<int> >();
+template <> const char* BasicResourceTypeName<std::vector<double> >();
+template <> const char* BasicResourceTypeName<std::vector<std::string> >();
 typedef BasicArrayResource<int> IntArrayResource;
 typedef BasicArrayResource<double> FloatArrayResource;
 typedef BasicArrayResource<std::string> StringArrayResource;

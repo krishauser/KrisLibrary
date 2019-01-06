@@ -43,7 +43,7 @@ public:
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual void Interpolate(const Config& a,const Config& b,Real u,Config& out);
   virtual Real Distance(const Config& a,const Config& b);
-  virtual void Properties(PropertyMap& pmap) const;
+  virtual void Properties(PropertyMap& pmap);
 
   static void GetRotation(const Config& x,Math3D::Matrix2& R);
   static void SetRotation(const Math3D::Matrix2& R,Config& x);
@@ -81,7 +81,7 @@ public:
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
   virtual void Interpolate(const Config& a,const Config& b,Real u,Config& out);
   virtual Real Distance(const Config& a,const Config& b);
-  virtual void Properties(PropertyMap& pmap) const;
+  virtual void Properties(PropertyMap& pmap);
 
   void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx);
   void Integrate(const Config& a,const Vector& da,Config& b);
