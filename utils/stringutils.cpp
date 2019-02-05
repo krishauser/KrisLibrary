@@ -736,13 +736,46 @@ void SplitPath(const std::string& path,std::vector<std::string>& elements)
   elements = Split(path,"\\/");
 }
 
-std::string JoinPath(const std::vector<std::string>& elements)
+std::string ReducePath(const std::string& path)
 {
+  std::vector<std::string> elements,newelements;
+  if(path.find("://") != std::string::npos) {
+    //it's a url
+    std::string protocol = path.substr(0,path.find("://")+3);
+    SplitPath(path.substr(protocol.size(),path.size()-protocol.size()),elements);
+    for(size_t i=0;i<elements.size();i++) {
+    if(elements[i] == ".") continue;
+    if(elements[i] == ".." && !newelements.empty()) {
+        newelements.pop_back();
+      }
+      else {
+        newelements.push_back(elements[i]);
+      }
+    }
+    return protocol + JoinPath(newelements,'/');
+  }
+  SplitPath(path,elements);
+  for(size_t i=0;i<elements.size();i++) {
+    if(elements[i] == ".") continue;
+    if(elements[i] == ".." && !newelements.empty()) {
+      newelements.pop_back();
+    }
+    else {
+      newelements.push_back(elements[i]);
+    }
+  }
+  return JoinPath(newelements);
+}
+
+std::string JoinPath(const std::vector<std::string>& elements,char delim)
+{
+  if(delim==0) {
 #ifdef _WIN32
-  char delim = '\\';
+    delim = '\\';
 #else
-  char delim = '/';
+    delim = '/';
 #endif
+  }
   std::string res;
   for(size_t i=0;i<elements.size();i++) {
     if(elements[i].empty()) continue;

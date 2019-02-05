@@ -56,6 +56,14 @@ std::string TranslateEscapes(const std::string& str);
 ///Returns the entire contents of a file as a string
 bool GetFileContents(const char *filename,std::string& contents);
 
+///Returns the contents of a URL as a string.
+///Requires libcurl to be available when CMake is run.
+bool GetURLContents(const char* url,std::string& contents);
+
+///Downloads the contents of a URL to a file
+///Requires libcurl to be available when CMake is run.
+bool GetURLDownload(const char* url,const char* filename);
+
 ///ReadFile() for STL vectors.  See File.h
 template <class type>
 bool ReadFile(File& f, std::vector<type>& v)

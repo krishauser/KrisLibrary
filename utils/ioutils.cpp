@@ -1,5 +1,6 @@
 #include "ioutils.h"
 #include "stringutils.h"
+#include <Logger.h>
 #include <iostream>
 #include <math/infnan.h>
 #include <fstream>
@@ -307,3 +308,98 @@ bool GetFileContents(const char *filename,std::string& contents)
   }
   return false;
 }
+
+#if HAVE_CURL
+
+size_t write_file(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    size_t written = fwrite(ptr, size, nmemb, stream);
+    return written;
+}
+
+size_t write_data(void *ptr, size_t size, size_t nmemb, File *stream) {
+  stream->WriteData(ptr,size);
+  return size;
+}
+
+#include <curl/curl.h>
+/* For older cURL versions you will also need 
+#include <curl/types.h>
+#include <curl/easy.h>
+*/
+
+bool GetURLDownload(const char* url,const char* filename)
+{
+    CURL *curl;
+    FILE *fp;
+    CURLcode res;
+    fp = fopen(filename,"wb");
+    if(!fp) {
+      LOG4CXX_WARN(KrisLibrary::logger(),"GetURLDownload: could not open file "<<filename<<" for writing");
+      return false;
+    }
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK) 
+          LOG4CXX_WARN(KrisLibrary::logger(),"GetURLContents: libcurl error "<<curl_easy_strerror(res));
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+        fclose(fp);
+        if(res != CURLE_OK) {
+          return false;
+        }
+        return true;
+    }
+    LOG4CXX_WARN(KrisLibrary::logger(),"GetURLContents: libcurl could not be initialized");
+    fclose(fp);
+    return false;
+}
+
+bool GetURLContents(const char* url,std::string& contents)
+{
+
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    if (curl) {
+        File f;
+        f.OpenData();
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &f);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK) 
+          LOG4CXX_WARN(KrisLibrary::logger(),"GetURLContents: libcurl error "<<curl_easy_strerror(res));
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+        if(res != CURLE_OK) 
+          return false;
+        contents.resize(f.Length()+1);
+        contents.copy((char*)f.GetDataBuffer(),f.Length());
+        contents[f.Length()] = 0;
+        return true;
+    }
+    LOG4CXX_WARN(KrisLibrary::logger(),"GetURLContents: libcurl could not be initialized");
+    return false;
+}
+
+#else
+
+bool GetURLDownload(const char* url,const char* filename)
+{
+  LOG4CXX_WARN(KrisLibrary::logger(),"libcurl is not available on your system, cant use GetURLDownload");
+  return false;
+}
+
+bool GetURLContents(const char* url,std::string& contents)
+{
+  LOG4CXX_WARN(KrisLibrary::logger(),"libcurl is not available on your system, cant use GetURLContents");
+  return false;  
+}
+
+#endif //HAVE_CURL

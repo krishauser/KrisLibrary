@@ -93,10 +93,14 @@ void StripExtension(std::string& str);
 ///For a path dir1/dir2/.../file, splits the path into dir1, dir2, ..., file
 ///in a cross platform manner
 void SplitPath(const std::string& path,std::vector<std::string>& elements);
+///For a path that might contain . and .. references this will take out
+///the "." and non-leading ".." elements.
+///For example, if the input is "dir/./subdir/../" this will return "dir".
+std::string ReducePath(const std::string& path);
 ///For elements dir1, dir2, ..., file, returns dir1/dir2/.../file
 ///in a cross-platform manner.  The elements may also have leading/trailing
 ///path delimiters which are ignored
-std::string JoinPath(const std::vector<std::string>& path);
+std::string JoinPath(const std::vector<std::string>& path,char delim=0);
 std::string JoinPath(const std::string& path1,const std::string& path2);
 
 #ifdef WIN32
