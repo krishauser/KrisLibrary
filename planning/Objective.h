@@ -116,7 +116,7 @@ class TimeObjective : public ObjectiveFunctionalBase
 class ConfigObjective : public ObjectiveFunctionalBase
 {
  public:
-  ConfigObjective(const Config& qgoal);
+  ConfigObjective(const Config& qgoal,CSpace* cspace=NULL);
   ConfigObjective(const Config& qgoal,const Vector& weights);
   virtual ~ConfigObjective() {}
   virtual const char* TypeString() { return "config"; }
@@ -124,6 +124,7 @@ class ConfigObjective : public ObjectiveFunctionalBase
   virtual bool PathInvariant() const { return true; }
 
   Vector qgoal,weights;
+  CSpace* cspace;
 };
 
 /** @ingroup Planning

@@ -177,22 +177,25 @@ Real TimeObjective::IncrementalCost(const Interpolator* path)
   return path->End()[timeIndex] - path->Start()[timeIndex];
 }
 
-ConfigObjective::ConfigObjective(const Config& _qgoal)
-    : qgoal(_qgoal)
+ConfigObjective::ConfigObjective(const Config& _qgoal,CSpace* _cspace)
+    : qgoal(_qgoal),cspace(_cspace)
 {
 }
 
 ConfigObjective::ConfigObjective(const Config& _qgoal,const Vector& _weights)
-:qgoal(_qgoal),weights(_weights)
+:qgoal(_qgoal),weights(_weights),cspace(NULL)
 {}
 
 Real ConfigObjective::TerminalCost(const Vector& qend)
 {
-  if(weights.empty()) return qgoal.distance(qend);
-  Real s = 0;
-  for(size_t i=0;i<qend.size();i++)
-    s += weights[i]*Sqr(qend[i]-qgoal[i]);
-  return Sqrt(s);
+  if(cspace) return cspace->Distance(qend,qgoal);
+  else if(weights.empty()) return qgoal.distance(qend);
+  else {
+    Real s = 0;
+    for(size_t i=0;i<qend.size();i++)
+      s += weights[i]*Sqr(qend[i]-qgoal[i]);
+    return Sqrt(s);
+  }
 }
 
 
