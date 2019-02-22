@@ -4,12 +4,23 @@
 #include "MotionPlanner.h"
 #include <KrisLibrary/graph/ShortestPaths.h>
 
+/** @brief Implements the asymptotically optimal kinematic motion planners
+ * PRM*, RRT* / RRG*, Lazy-PRM*, and Lazy-RRG*.  Also allows the asymptotically
+ * sub-optimal method LBT-RRG*.
+ *
+ * Compared to RRT*, RRG* only has a tiny amount of overhead to maintain edges
+ * in the graph structure.  No additional edges are collision checked.
+ *
+ * Allows unidirectional or bidirectional search.
+ */
 class PRMStarPlanner : public RoadmapPlanner
 {
  public:
   PRMStarPlanner(CSpace* space);
   ///Initialize with a start and goal configuration
   void Init(const Config& start,const Config& goal);
+  ///Define a maximum path length.  Must be called after Init.
+  void SetMaxCost(Real cmax);
   ///Erases all internal data structures
   virtual void Cleanup();
   ///Perform one planning step
