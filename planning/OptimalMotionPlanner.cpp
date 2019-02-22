@@ -138,10 +138,18 @@ void PRMStarPlanner::Init(const Config& qstart,const Config& qgoal)
   numEdgePrechecks = 0;
   tCheck=tKnn=tConnect=tLazy=tLazyCheck=tShortestPaths=0;
 }
+void PRMStarPlanner::SetMaxCost(Real cmax)
+{
+  if(goal < 0) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PRMStarPlanner::SetMaxCost(): Init() must be called first");
+    return;
+  }
+  spp.d[goal] = Min(spp.d[goal],cmax);
+}
 void PRMStarPlanner::PlanMore()
 {
   if(start < 0 || goal < 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"PRMStarPlanner::PlanMore(): Init() must be called before planning\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PRMStarPlanner::PlanMore(): Init() must be called before planning");
     return;
   }
   numPlanSteps ++;
@@ -176,7 +184,8 @@ void PRMStarPlanner::PlanMore()
     GenerateConfig(x);
 #if ELLIPSOID_PRUNING
     if((space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]))*fudgeFactor >= goalDist) {
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Ellipsoid pruned, distance "<<space->Distance(roadmap.nodes[start]      return;
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Ellipsoid pruned, distance "<<space->Distance(roadmap.nodes[start],x)+space->Distance(x,roadmap.nodes[goal]))
+      return;
     }
 #endif
     //KNN call has a bit of duplication with connectByRadius, below
@@ -634,7 +643,7 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
   if(!Graph::GetAncestorPath(spp.p,b,a,nodes)) {
     LOG4CXX_INFO(KrisLibrary::logger(),"PRMStarPlanner: Unable to find path from "<<a<<" to "<<b);
     //debugging:
-    LOG4CXX_INFO(KrisLibrary::logger(),"node,distance,parent,edge weight,edge feasible\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"node,distance,parent,edge weight,edge feasible");
     for(int i=0;i<20;i++) {
       Real w = 0;
       int feas = 0;
@@ -762,7 +771,7 @@ bool PRMStarPlanner::CheckPath(int a,int b)
   bool useSppGoal = false;
 #endif
   Assert(a==start);
-  //LOG4CXX_INFO(KrisLibrary::logger(),"Done with planning step\n");
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Done with planning step");
   while(!IsInf(sppLB.d[b])) {
     //LOG4CXX_INFO(KrisLibrary::logger(),"Lazy collision checking, existing cost "<<goalDist<<", potential "<<spp.d[b]);
     vector<int> npath;
