@@ -72,6 +72,44 @@ inline bool AABBContains(const Vector& x,const Vector& bmin,const Vector& bmax,R
   return true;
 }
 
+/// Grows an AABB to contain the vector x
+inline void AABBGrow(Vector& bmin,Vector& bmax,const Vector& x)
+{
+  Assert(x.n==bmin.n);
+  Assert(x.n==bmax.n);
+  for(int i=0;i<x.n;i++) {
+    if(x[i] < bmin[i]) bmin[i] = x[i];
+    if(x[i] > bmax[i]) bmax[i] = x[i];
+  }
+}
+
+
+/// Returns the signed distance between the AABB and x.  This is negative
+/// if x is in the AABB, positive if it is outside.
+inline Real AABBDistance(const Vector& x,const Vector& bmin,const Vector& bmax)
+{
+  Assert(x.n==bmin.n);
+  Assert(x.n==bmax.n);
+  bool inside = true;
+  Real distance2 = 0;
+  Real penetration = Inf;
+  for(int i=0;i<x.n;i++) {
+    if(x[i] <= bmin[i] and x[i] >= bmax[i]) {
+      penetration = Min(penetration,x[i]-bmin[i]);
+      penetration = Min(penetration,bmax[i]-x[i]);
+    }
+    else {
+      inside = false;
+      if(x[i] < bmin[i])
+        distance2 += Sqr(bmin[i] - x[i]);
+      if(x[i] > bmax[i])
+        distance2 += Sqr(bmax[i] - x[i]);
+    }    
+  }
+  if(inside) return -penetration;
+  else return Sqrt(distance2);
+}
+
 /// For a point inside the AABB (bmin,bmax), limits the desired step t
 /// x = x0+t*dx such that x is inside the AABB.  Returns the index responsible
 /// for this limit
