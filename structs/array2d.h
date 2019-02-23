@@ -100,10 +100,10 @@ public:
     Stripe2Indices range;
     Stripe2Indices::iterator it;
   };
-  iterator begin() { return iterator(this); }
-  iterator end() { return iterator(this,-1); }
-  iterator begin(const Range2Indices& range) { return iterator(this,range); }
-  iterator end(const Range2Indices& range) { return iterator(this,range,-1); }
+  iterator begin() const { return iterator(this); }
+  iterator end() const { return iterator(this,-1); }
+  iterator begin(const Range2Indices& range) const { return iterator(this,range); }
+  iterator end(const Range2Indices& range) const { return iterator(this,range,-1); }
   
   //READ ONLY
   int m,n;
