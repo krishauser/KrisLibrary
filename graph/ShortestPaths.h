@@ -25,7 +25,7 @@ const static Weight inf = Math::dInf;
  * distance list.
  *
  * FindPath returns when the target node t is reached.
- * The variant FindAPath takes a list of target nodes, and produces the
+ * The variant FindAPath takes a set of target nodes, and produces the
  * shortest path to one of those nodes.  It returns the node.
  * The variant FindAllPaths solves for all shortest paths.
  *
@@ -48,7 +48,7 @@ class ShortestPathProblem
   template <typename WeightFunc,typename Iterator>
   void FindPath(int t,WeightFunc w,Iterator it);
   template <typename WeightFunc,typename Iterator>
-  int FindAPath(const vector<int>& t,WeightFunc w,Iterator it);
+  int FindAPath(const set<int>& t,WeightFunc w,Iterator it);
   template <typename WeightFunc,typename Iterator>
   inline void FindAllPaths(WeightFunc w,Iterator it) { FindPath(-1,w,it); }
 
@@ -71,7 +71,7 @@ class ShortestPathProblem
     FindPath(t,w,EdgeIterator<Edge>());
   }
   template <typename WeightFunc>
-  inline int FindAPath_Directed(const vector<int>& t,WeightFunc w) {
+  inline int FindAPath_Directed(const set<int>& t,WeightFunc w) {
     return FindAPath(t,w,EdgeIterator<Edge>());
   }
   template <typename WeightFunc>
@@ -106,7 +106,7 @@ class ShortestPathProblem
     FindPath(t,w,it);
   }
   template <typename WeightFunc>
-  inline int FindAPath_Undirected(const vector<int>& t,WeightFunc w) {
+  inline int FindAPath_Undirected(const set<int>& t,WeightFunc w) {
     return FindAPath(t,w,UndirectedEdgeIterator<Edge>());
   }
   template <typename WeightFunc>
@@ -214,14 +214,11 @@ void ShortestPathProblem<Node,Edge>::FindPath(int t,WeightFunc w,Iterator it)
 
 template <class Node,class Edge>
 template <typename WeightFunc,typename Iterator>
-int ShortestPathProblem<Node,Edge>::FindAPath(const vector<int>& t,WeightFunc w,Iterator it)
+int ShortestPathProblem<Node,Edge>::FindAPath(const set<int>& targetSet,WeightFunc w,Iterator it)
 {
   int nn=g.NumNodes();
   FixedSizeHeap<Weight> H(nn);  //O(n) init, worst case log n update
   for(int i=0;i<nn;i++) H.push(i,-d[i]);
-
-  set<int> targetSet;
-  for(size_t i=0;i<t.size();i++) targetSet.insert(t[i]);
 
   while(!H.empty()) {
     //pop the smallest distance element from q
