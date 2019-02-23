@@ -1,18 +1,22 @@
 #ifndef GRID_2D_CSPACE_H
 #define GRID_2D_CSPACE_H
 
-#include "CSpace.h"
-#include "Interpolator.h"
+#include "CSpaceHelpers.h"
 #include <KrisLibrary/math3d/Circle2D.h>
 #include <KrisLibrary/math3d/Triangle2D.h>
 #include <KrisLibrary/math3d/AABB2D.h>
-#include <KrisLibrary/structs/array2d.h>
+#include "Tabular.h"
 using namespace Math3D;
 
-class Grid2DCSpace : public CSpace
+/** @brief A simple CSpace that lets you add geometric obstacles as
+ * blocked off grid cells.
+ *
+ * Can use euclidean or Linf metric, configured by euclideanSpace.
+ */
+class Grid2DCSpace : public BoxCSpace
 {
 public:
-  Grid2DCSpace(int m,int n);
+  Grid2DCSpace(int m,int n,const AABB2D& domain);
   void WorldToGrid(const Vector2& world,Vector2& grid);
   void GridToWorld(const Vector2& grid,Vector2& world);
   void Add(const Triangle2D& tri,bool obstacle=true);
@@ -22,15 +26,12 @@ public:
   void Rasterize(CSpace* space);
   void DrawGL();
 
-  virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual bool IsFeasible(const Config& x);
   virtual EdgePlannerPtr PathChecker(const InterpolatorPtr& b);
   virtual Real Distance(const Config& x, const Config& y);
-
+  
   bool euclideanSpace;
-  AABB2D domain;
-  Array2D<bool> occupied;
+  std::shared_ptr<Tabular2DSet> occupied;
 };
 
 #endif

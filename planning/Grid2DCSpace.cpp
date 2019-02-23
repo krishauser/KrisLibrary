@@ -4,27 +4,28 @@
 #include <meshing/Rasterize.h>
 #include <GLdraw/GL.h>
 #include "EdgePlanner.h"
+using namespace std;
 
-Grid2DCSpace::Grid2DCSpace(int m,int n)
+Grid2DCSpace::Grid2DCSpace(int m,int n,const AABB2D& _domain)
+:BoxCSpace(Vector(2,_domain.bmin),Vector(2,_domain.bmax))
 {
   euclideanSpace=true;
-  domain.bmin.set(0,0);
-  domain.bmax.set(1,1);
-  occupied.resize(m,n,false);
+  occupied = make_shared<Tabular2DSet>(m,n,_domain.bmin,_domain.bmax);
+  AddConstraint("occupied",occupied.get());
 }
 
 void Grid2DCSpace::WorldToGrid(const Vector2& world,Vector2& grid)
 {
-  grid.x = (world.x-domain.bmin.x)/(domain.bmax.x-domain.bmin.x);
-  grid.y = (world.y-domain.bmin.y)/(domain.bmax.y-domain.bmin.y);
-  grid.x *= (occupied.m);
-  grid.y *= (occupied.n);
+  grid.x = (world.x-occupied->bb.bmin.x)/(occupied->bb.bmax.x-occupied->bb.bmin.x);
+  grid.y = (world.y-occupied->bb.bmin.y)/(occupied->bb.bmax.y-occupied->bb.bmin.y);
+  grid.x *= (occupied->value.m);
+  grid.y *= (occupied->value.n);
 }
 
 void Grid2DCSpace::GridToWorld(const Vector2& grid,Vector2& world)
 {
-  world.x = domain.bmin.x + (grid.x/Real(occupied.m))*(domain.bmax.x-domain.bmin.x);
-  world.y = domain.bmin.y + (grid.y/Real(occupied.n))*(domain.bmax.y-domain.bmin.y);
+  world.x = occupied->bb.bmin.x + (grid.x/Real(occupied->value.m))*(occupied->bb.bmax.x-occupied->bb.bmin.x);
+  world.y = occupied->bb.bmin.y + (grid.y/Real(occupied->value.n))*(occupied->bb.bmax.y-occupied->bb.bmin.y);
 }
 
 void Grid2DCSpace::Add(const Triangle2D& tri,bool obstacle)
@@ -34,7 +35,7 @@ void Grid2DCSpace::Add(const Triangle2D& tri,bool obstacle)
   WorldToGrid(tri.b,locTri.b);
   WorldToGrid(tri.c,locTri.c);
   
-  Meshing::FillRasterizer2D<bool> filler(occupied);
+  Meshing::FillRasterizer2D<bool> filler(occupied->value);
   filler.Rasterize(locTri,obstacle);
 }
 
@@ -44,7 +45,7 @@ void Grid2DCSpace::Add(const AABB2D& bbox,bool obstacle)
   WorldToGrid(bbox.bmin,locBB.bmin);
   WorldToGrid(bbox.bmax,locBB.bmax);
   
-  Meshing::FillRasterizer2D<bool> filler(occupied);
+  Meshing::FillRasterizer2D<bool> filler(occupied->value);
   filler.Rasterize(locBB,obstacle);
 }
 
@@ -52,13 +53,13 @@ void Grid2DCSpace::Add(const AABB2D& bbox,bool obstacle)
 
 void Grid2DCSpace::Add(const Circle2D& sphere,bool obstacle)
 {
-  Real xscale = (domain.bmax.x-domain.bmin.x)/Real(occupied.m);
-  Real yscale = (domain.bmax.y-domain.bmin.y)/Real(occupied.n);
-  Real x=domain.bmin.x + 0.5*xscale;
-  for(int i=0;i<occupied.m;i++) {
-    Real y = domain.bmin.y + 0.5*yscale;
-    for(int j=0;j<occupied.n;j++) {
-      if(sphere.contains(Vector2(x,y))) occupied(i,j)=obstacle;
+  Real xscale = (occupied->bb.bmax.x-occupied->bb.bmin.x)/Real(occupied->value.m);
+  Real yscale = (occupied->bb.bmax.y-occupied->bb.bmin.y)/Real(occupied->value.n);
+  Real x=occupied->bb.bmin.x + 0.5*xscale;
+  for(int i=0;i<occupied->value.m;i++) {
+    Real y = occupied->bb.bmin.y + 0.5*yscale;
+    for(int j=0;j<occupied->value.n;j++) {
+      if(sphere.contains(Vector2(x,y))) occupied->value(i,j)=obstacle;
       y += yscale;
     }
     x += xscale;
@@ -68,15 +69,15 @@ void Grid2DCSpace::Add(const Circle2D& sphere,bool obstacle)
 void Grid2DCSpace::Rasterize(CSpace* space)
 {
   Vector q(2);
-  Real xscale = (domain.bmax.x-domain.bmin.x)/Real(occupied.m);
-  Real yscale = (domain.bmax.y-domain.bmin.y)/Real(occupied.n);
-  Real x=domain.bmin.x + 0.5*xscale;
-  for(int i=0;i<occupied.m;i++) {
-    Real y = domain.bmin.y + 0.5*yscale;
-    for(int j=0;j<occupied.n;j++) {
+  Real xscale = (occupied->bb.bmax.x-occupied->bb.bmin.x)/Real(occupied->value.m);
+  Real yscale = (occupied->bb.bmax.y-occupied->bb.bmin.y)/Real(occupied->value.n);
+  Real x=occupied->bb.bmin.x + 0.5*xscale;
+  for(int i=0;i<occupied->value.m;i++) {
+    Real y = occupied->bb.bmin.y + 0.5*yscale;
+    for(int j=0;j<occupied->value.n;j++) {
       q(0)=x;
       q(1)=y;
-      occupied(i,j) = !space->IsFeasible(q);
+      occupied->value(i,j) = !space->IsFeasible(q);
       y += yscale;
     }
     x += xscale;
@@ -85,24 +86,24 @@ void Grid2DCSpace::Rasterize(CSpace* space)
 
 void Grid2DCSpace::DrawGL()
 {
-  Real xscale = (domain.bmax.x-domain.bmin.x)/Real(occupied.m);
-  Real yscale = (domain.bmax.y-domain.bmin.y)/Real(occupied.n);
+  Real xscale = (occupied->bb.bmax.x-occupied->bb.bmin.x)/Real(occupied->value.m);
+  Real yscale = (occupied->bb.bmax.y-occupied->bb.bmin.y)/Real(occupied->value.n);
   //blank out background (light yellow)
   glColor3f(1,1,0.5);
   glBegin(GL_QUADS);
-  glVertex2f(domain.bmin.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmax.y);
-  glVertex2f(domain.bmin.x,domain.bmax.y);
+  glVertex2f(occupied->bb.bmin.x,occupied->bb.bmin.y);
+  glVertex2f(occupied->bb.bmax.x,occupied->bb.bmin.y);
+  glVertex2f(occupied->bb.bmax.x,occupied->bb.bmax.y);
+  glVertex2f(occupied->bb.bmin.x,occupied->bb.bmax.y);
   glEnd();
   //draw obstacles (dark grey)
   glColor3f(0.2,0.2,0.2);
   glBegin(GL_QUADS);
-  Real x=domain.bmin.x;
-  for(int i=0;i<occupied.m;i++) {
-    Real y = domain.bmin.y;
-    for(int j=0;j<occupied.n;j++) {
-      if(occupied(i,j)) {
+  Real x=occupied->bb.bmin.x;
+  for(int i=0;i<occupied->value.m;i++) {
+    Real y = occupied->bb.bmin.y;
+    for(int j=0;j<occupied->value.n;j++) {
+      if(occupied->value(i,j)) {
 	//draw cell
 	glVertex2f(x,y);
 	glVertex2f(x+xscale,y);
@@ -116,12 +117,6 @@ void Grid2DCSpace::DrawGL()
   glEnd();
 }
 
-void Grid2DCSpace::Sample(Config& x)
-{
-  x.resize(2);
-  x(0)=Rand(domain.bmin.x,domain.bmax.x);
-  x(1)=Rand(domain.bmin.y,domain.bmax.y);
-}
 
 void Grid2DCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
 {
@@ -131,20 +126,10 @@ void Grid2DCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
   x += c;
 }
 
-bool Grid2DCSpace::IsFeasible(const Config& x)
-{
-  Vector2 scr;
-  WorldToGrid(Vector2(x(0),x(1)),scr);
-  int i=(int)Floor(scr.x);
-  int j=(int)Floor(scr.y);
-  if(i<0 || i>=occupied.m || j<0 || j>=occupied.n) return false;
-  return !occupied(i,j);
-}
-
 EdgePlannerPtr Grid2DCSpace::PathChecker(const InterpolatorPtr& path)
 {
-  Real res = Min((domain.bmax.x-domain.bmin.x)/Real(occupied.m),
-		 (domain.bmax.y-domain.bmin.y)/Real(occupied.n));
+  Real res = Min((occupied->bb.bmax.x-occupied->bb.bmin.x)/Real(occupied->value.m),
+		 (occupied->bb.bmax.y-occupied->bb.bmin.y)/Real(occupied->value.n));
   return std::make_shared<EpsilonEdgeChecker>(this,path,res);
 }
 
