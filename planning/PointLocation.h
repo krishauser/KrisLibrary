@@ -2,8 +2,10 @@
 #define POINT_LOCATION_H
 
 #include "CSpace.h"
+//#include <KrisLibrary/geometry/Grid.h>
 #include <KrisLibrary/geometry/KDTree.h>
-#include <KrisLibrary/geometry/Grid.h>
+#include <KrisLibrary/geometry/BallTree.h>
+#include <memory>
 
 /** @brief A uniform abstract interface to point location data structures.
  * The point locator operators in-place on a vector of Vectors and does not
@@ -43,6 +45,8 @@ class PointLocationBase
   virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) { return false; }
   ///Same as close, but with a filter
   virtual bool FilteredClose(const Vector& p,Real r,bool (*filter)(int),std::vector<int>& neighbors,std::vector<Real>& distances) { return false; }
+  ///Returns any potentially interesting statistics
+  virtual void GetStats(PropertyMap& stats) {}
 
   std::vector<Vector>& points;
 };
@@ -118,18 +122,39 @@ class KDTreePointLocation : public PointLocationBase
  public:
   KDTreePointLocation(std::vector<Vector>& points);
   KDTreePointLocation(std::vector<Vector>& points,Real norm,const Vector& weights);
-  virtual ~KDTreePointLocation();
   virtual void OnBuild();
   virtual void OnAppend();
   virtual bool OnClear();
   virtual bool NN(const Vector& p,int& nn,Real& distance);
   virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
   virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances);
+  virtual void GetStats(PropertyMap& stats);
 
   Real norm;
   Vector weights;
-  Geometry::KDTree* tree;
+  std::unique_ptr<Geometry::KDTree> tree;
 };
 
+/** @brief An accelerated point location algorithm that uses a ball tree.
+ *
+ * Uses a geodessic norm (Distance(a,b) in the given cspace).
+ *
+ * Does not support deletion.
+ */
+class BallTreePointLocation : public PointLocationBase
+{
+ public:
+  BallTreePointLocation(CSpace* cspace,std::vector<Vector>& points);
+  virtual void OnBuild();
+  virtual void OnAppend();
+  virtual bool OnClear();
+  virtual bool NN(const Vector& p,int& nn,Real& distance);
+  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
+  virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances);
+  virtual void GetStats(PropertyMap& stats);
+
+  CSpace* cspace;
+  std::unique_ptr<Geometry::BallTree> tree;
+};
 
 #endif

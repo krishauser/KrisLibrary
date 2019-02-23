@@ -3,7 +3,10 @@
 #include <math/random.h>
 #include <set>
 #include <algorithm>
+#include <memory>
+#include <functional>
 using namespace std;
+
 
 PointLocationBase::PointLocationBase(vector<Vector>& _points)
   :points(_points)
@@ -246,7 +249,7 @@ bool RandomBestPointLocation::FilteredKNN(const Vector& p,int k,bool (*filter)(i
 KDTreePointLocation::KDTreePointLocation(vector<Vector>& points) 
   :PointLocationBase(points),norm(2.0)
 {
-  tree = new Geometry::KDTree;
+  tree.reset(new Geometry::KDTree());
   if(!points.empty()) OnBuild();
 }
 
@@ -254,25 +257,20 @@ KDTreePointLocation::KDTreePointLocation(vector<Vector>& points)
 KDTreePointLocation::KDTreePointLocation(vector<Vector>& points,Real _norm,const Vector& _weights) 
   :PointLocationBase(points),norm(_norm),weights(_weights)
 {
-  tree = new Geometry::KDTree;
+  tree.reset(new Geometry::KDTree());
   if(!points.empty()) OnBuild();
 }
 
-KDTreePointLocation::~KDTreePointLocation()
-{
-  delete tree;
-}
 
 void KDTreePointLocation::OnBuild()
 {
-  delete tree;
   vector<Geometry::KDTree::Point> pts(points.size());
   int k = (points.empty() ? 0 : points[0].n);
   for(size_t i=0;i<points.size();i++) {
     pts[i].pt.setRef(points[i]);
     pts[i].id = (int)i;
   }
-  tree = new Geometry::KDTree(pts, k, 100);
+  tree.reset(new Geometry::KDTree(pts, k, 100));
 }
 
 void KDTreePointLocation::OnAppend()
@@ -324,4 +322,97 @@ bool KDTreePointLocation::Close(const Vector& p,Real r,std::vector<int>& nn,std:
 { 
   tree->ClosePoints(p,r,norm,weights,distances,nn);
   return true;
+}
+
+void KDTreePointLocation::GetStats(PropertyMap& stats)
+{
+  stats.set("numNodes",tree->TreeSize());
+  stats.set("depth",tree->MaxDepth());
+  stats.set("minDepth",tree->MinDepth());
+  stats.set("maxPointsInLeaf",tree->MaxLeafSize());
+}
+
+
+
+BallTreePointLocation::BallTreePointLocation(CSpace* _cspace,vector<Vector>& points) 
+  :PointLocationBase(points),cspace(_cspace)
+{
+  PropertyMap props;
+  cspace->Properties(props);
+  
+  Geometry::BallTree::Metric metric = std::bind(&CSpace::Distance, cspace, placeholders::_1, placeholders::_2);
+  int cartesian;
+  if(!props.get("cartesian",cartesian) or !cartesian) {
+    Geometry::BallTree::Interpolator interpolator = std::bind(&CSpace::Interpolate, cspace, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4);
+    tree.reset(new Geometry::BallTree(metric,interpolator));
+  }
+  else
+    tree.reset(new Geometry::BallTree(metric));
+
+  if(!points.empty()) OnBuild();
+}
+
+
+void BallTreePointLocation::OnBuild()
+{
+  tree->Build(points,100);
+}
+
+void BallTreePointLocation::OnAppend()
+{
+  int id=(int)points.size()-1;
+  tree->Insert(points.back(),id);
+  /*
+  if(points.size() % 100 == 0)
+    LOG4CXX_INFO(KrisLibrary::logger(),"K-D Tree size "<<tree.TreeSize()<<", depth "<<tree.MaxDepth());
+  */
+}
+
+bool BallTreePointLocation::OnClear()
+{
+  tree->Clear();
+  return true;
+}
+
+bool BallTreePointLocation::NN(const Vector& p,int& nn,Real& distance)
+{ 
+  nn = tree->ClosestPoint(p,distance);
+  return (nn>=0);
+}
+
+bool BallTreePointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances) 
+{ 
+  nn.resize(k);
+  distances.resize(k);
+  tree->KClosestPoints(p,k,&distances[0],&nn[0]);
+  //may have fewer than k points
+  for(size_t i=0;i<nn.size();i++)
+    if(nn[i] < 0) {
+      nn.resize(i);
+      distances.resize(i);
+      break;
+    }
+  vector<pair<Real,int> > items(nn.size());
+  for(size_t i=0;i<nn.size();i++)
+    items[i] = pair<Real,int>(distances[i],nn[i]);
+  sort(items.begin(),items.end());
+  for(size_t i=0;i<nn.size();i++) {
+    nn[i] = items[i].second;
+    distances[i] = items[i].first;
+  }
+  return true;
+}
+
+bool BallTreePointLocation::Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances) 
+{ 
+  tree->ClosePoints(p,r,distances,nn);
+  return true;
+}
+
+void BallTreePointLocation::GetStats(PropertyMap& stats)
+{
+  stats.set("numNodes",tree->TreeSize());
+  stats.set("depth",tree->MaxDepth());
+  stats.set("minDepth",tree->MinDepth());
+  stats.set("maxPointsInLeaf",tree->MaxLeafSize());
 }

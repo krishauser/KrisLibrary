@@ -1,6 +1,8 @@
 #include <KrisLibrary/Logger.h>
 #include "KinodynamicMotionPlanner.h"
 #include "CSetHelpers.h"
+#include <KrisLibrary/geometry/KDTree.h>
+#include <KrisLibrary/geometry/BallTree.h>
 #include <KrisLibrary/math/sample.h>
 #include <KrisLibrary/graph/Callback.h>
 #include <algorithm>
@@ -62,7 +64,7 @@ void KinodynamicTree::EnablePointLocation(const char* type)
     space->Properties(props);
     int euclidean;
     if(props.get("euclidean",euclidean) && euclidean == 0)
-            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree: Warning, requesting K-D tree point location for non-euclidean space\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree: Warning, requesting K-D tree point location for non-euclidean space");
 
     vector<Real> weights;
     if(props.getArray("metricWeights",weights)) {
@@ -72,12 +74,15 @@ void KinodynamicTree::EnablePointLocation(const char* type)
       pointLocation = make_shared<KDTreePointLocation>(pointRefs);
     }
   }
+  else if(0==strcmp(type,"balltree")) {
+    pointLocation = make_shared<BallTreePointLocation>(space->GetStateSpace().get(),pointRefs);
+  }
   else if(0==strcmp(type,"random"))
     pointLocation = make_shared<RandomPointLocation>(pointRefs);
   else
     FatalError("Invalid point location method %s\n",type);
   //rebuild point location data structures
-  LOG4CXX_INFO(KrisLibrary::logger(),"Rebuilding point location data structures\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Rebuilding point location data structures");
   VectorizeCallback callback;
   if(root) root->DFS(callback);
   index = callback.nodes;
@@ -166,7 +171,7 @@ void KinodynamicTree::Reroot(Node* n)
 Node* KinodynamicTree::FindClosest(const State& x)
 {
   if(!pointLocation) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree::FindClosest: Warning, point location not enabled, now enabling it\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree::FindClosest: Warning, point location not enabled, now enabling it");
     EnablePointLocation();
   }
   int id;
@@ -178,7 +183,7 @@ Node* KinodynamicTree::FindClosest(const State& x)
 Node* KinodynamicTree::PickRandom()
 {
   if(!pointLocation) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree::PickRandom: Warning, point location not enabled, now enabling it\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"KinodynamicTree::PickRandom: Warning, point location not enabled, now enabling it");
     EnablePointLocation();
   }
   return index[RandInt(index.size())];
@@ -216,7 +221,7 @@ void KinodynamicTree::DeleteSubTree(Node* n,bool rebuild)
   delete n;  //this automatically deletes n and all children
 
   if(rebuild && pointLocation) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Rebuilding point location data structure on subtree delete..\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"Rebuilding point location data structure on subtree delete..");
     RebuildPointLocation();
   }
 }
@@ -263,8 +268,7 @@ bool RRTKinodynamicPlanner::Plan(int maxIters)
 {
   if(goalNode) return true;
   if(!goalSet) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"RRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
-        LOG4CXX_ERROR(KrisLibrary::logger(),"   Press enter to continue\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"RRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!");
     KrisLibrary::loggerWait();
   }
   for(int i=0;i<maxIters;i++) {
@@ -292,6 +296,10 @@ void RRTKinodynamicPlanner::GetStats(PropertyMap& stats) const
   stats.set("pickControlTime",pickControlTime);
   stats.set("visibleTime",visibleTime);
   stats.set("overheadTime",overheadTime);
+  PropertyMap nnstats;
+  tree.pointLocation->GetStats(nnstats);
+  if(!nnstats.empty())
+    stats.set("nnStats",nnstats);
 }
 
 void RRTKinodynamicPlanner::Init(const State& xinit,CSet* _goalSet)
@@ -313,7 +321,7 @@ void RRTKinodynamicPlanner::PickDestination(State& xdest)
   if(goalSet && goalSet->IsSampleable() && RandBool(goalSeekProbability)) {
     goalSet->Sample(xdest);
     if(!goalSet->Project(xdest)) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: goal set doesnt sample a feasible configuration\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: goal set doesnt sample a feasible configuration");
     }
   }
   else {
@@ -352,7 +360,7 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
   pickControlTime += timer.ElapsedTime();
   timer.Reset();
   if(!space->GetStateSpace()->IsFeasible(path.End())) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible");
     visibleTime += timer.ElapsedTime();
     numInfeasibleEndpoints++;
     return NULL;
@@ -376,7 +384,7 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
     return n;
   }
   else {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge is not visible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge is not visible");
     visibleTime += timer.ElapsedTime();
     return NULL;
   }
@@ -570,8 +578,7 @@ LazyRRTKinodynamicPlanner::LazyRRTKinodynamicPlanner(KinodynamicSpace* s)
 bool LazyRRTKinodynamicPlanner::Plan(int maxIters)
 {
   if(!goalSet) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"LazyRRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!\n");
-        LOG4CXX_ERROR(KrisLibrary::logger(),"   Press enter to continue\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"LazyRRTKinodynamicPlanner::Plan(): Warning, goalSet is NULL!");
     KrisLibrary::loggerWait();
   }
   if(goalNode) return true;
@@ -617,7 +624,7 @@ Node* LazyRRTKinodynamicPlanner::ExtendToward(const State& xdest)
   pickControlTime += timer.ElapsedTime();
   timer.Reset();
   if(!space->GetStateSpace()->IsFeasible(path.End())) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible\n");
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Edge endpoint is not feasible");
     visibleTime += timer.ElapsedTime();
     numInfeasibleEndpoints++;
     return NULL;
@@ -674,7 +681,7 @@ bool LazyRRTKinodynamicPlanner::CheckPath(Node* n)
     EdgePlannerPtr& e=n->edgeFromParent().checker;
     if(!e->Done()) {
       if(!e->Plan()) {
-        LOG4CXX_INFO(KrisLibrary::logger(),"Edge found infeasible, deleting\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Edge found infeasible, deleting");
 	//disconnect n from the rest of the tree
   Timer timer;
 	tree.DeleteSubTree(n);
@@ -684,7 +691,7 @@ bool LazyRRTKinodynamicPlanner::CheckPath(Node* n)
       q.push(n);
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"Path checking successful!\n");
+  LOG4CXX_INFO(KrisLibrary::logger(),"Path checking successful!");
   return true;
 }
 
