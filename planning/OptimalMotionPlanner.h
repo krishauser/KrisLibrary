@@ -57,13 +57,13 @@ class PRMStarPlanner : public RoadmapPlanner
   bool connectByRadius;
   ///Constant term gamma in the above expression. Default 1.
   Real connectRadiusConstant;
-  ///Set this value to limit the maximum distance of attempted
-  ///connections
-  Real connectionThreshold;
   ///If connectByRadius is false, the value of k* for k-nearest neighbors is
   ///chosen to be connectNeighborsConstant*e*(1+1/d)*log(n) where n is the number of
   ///milestones (default 1.1)
   Real connectNeighborsConstant;
+  ///Set this value to limit the maximum distance of attempted
+  ///connections
+  Real connectionThreshold;
   ///If lazy planning, check all edges with length greater than this threshold
   Real lazyCheckThreshold;
   ///For suboptimal planning (like LBT-RRT*), default 0
