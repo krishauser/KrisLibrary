@@ -210,7 +210,7 @@ void* MultiGridDensityEstimator::Random()
 KernelDensityEstimator::KernelDensityEstimator(Math::Real _kernelRadius,Math::Real _kernelTruncationFactor)
 :kernelType(KernelGaussian),kernelRadius(_kernelRadius),kernelTruncationFactor(_kernelTruncationFactor)
 {
-  pointLocation = make_shared<KDTreePointLocation>(pointList);;
+  pointLocation = make_shared<KDTreePointLocation>(pointList);
 }
 
 void KernelDensityEstimator::Clear()
