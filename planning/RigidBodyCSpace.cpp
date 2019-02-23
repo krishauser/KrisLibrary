@@ -72,19 +72,32 @@ void SO2CSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
 
 void SO2CSpace::Interpolate(const Config& a,const Config& b,Real u,Config& out)
 {
+  /*
+  if(a[0] != AngleNormalize(a[0]))
+    printf("SO2CSpace::Interpolate: Warning, point a is out of range: %g to %g\n",a[0],b[0]);
+  if(b[0] != AngleNormalize(b[0]))
+    printf("SO2CSpace::Interpolate: Warning, point b is out of range: %g to %g\n",a[0],b[0]);
+  */
   out.resize(1);
-  out(2)=AngleInterp(a(0),b(0),u);
+  out(0)=AngleInterp(AngleNormalize(a(0)),AngleNormalize(b(0)),u);
 }
 
 Real SO2CSpace::Distance(const Config& a,const Config& b)
 {
-  return Abs(AngleDiff(a(0),b(0)));
+  /*
+  if(a[0] != AngleNormalize(a[0]))
+    printf("SO2CSpace::Distance: Warning, point a is out of range: %g to %g\n",a[0],b[0]);
+  if(b[0] != AngleNormalize(b[0]))
+    printf("SO2CSpace::Distance: Warning, point b is out of range: %g to %g\n",a[0],b[0]);
+  */
+  return Abs(AngleDiff(AngleNormalize(a(0)),AngleNormalize(b(0))));
 }
 
 void SO2CSpace::Properties(PropertyMap& pmap)
 {
   pmap.set("cartesian",0);
   pmap.set("geodesic",1);
+  pmap.set("metric","so2");
   pmap.set("volume",TwoPi);
   pmap.setArray("minimum",vector<double>(1,0));
   pmap.setArray("maximum",vector<double>(1,TwoPi));
@@ -202,6 +215,7 @@ void SO3CSpace::Properties(PropertyMap& pmap)
 {
   pmap.set("cartesian",0);
   pmap.set("geodesic",1);
+  pmap.set("metric","so3");
   pmap.set("volume",Pow(Pi,3.0));
   pmap.setArray("minimum",vector<double>(3,-Pi));
   pmap.setArray("maximum",vector<double>(3,Pi));
