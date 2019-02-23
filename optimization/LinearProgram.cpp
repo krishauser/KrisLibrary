@@ -335,7 +335,6 @@ void LinearConstraints::ProjectDirection(Vector& v) const
   }
   LOG4CXX_ERROR(KrisLibrary::logger(),"Error: ProjectDirection didn't converge within "<<maxIters<<" iters, resulting error "<<maxErr);
   if(maxErr > 1e-3) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Press enter to continue...");
     KrisLibrary::loggerWait();
   }
 }
@@ -360,7 +359,7 @@ void LinearConstraints::Print(std::ostream& out) const
     
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      KrisLibrary::loggerWait();
+      getchar();
       lastline = numlines;
     }
   }
@@ -377,7 +376,7 @@ void LinearConstraints::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      KrisLibrary::loggerWait();
+      getchar();
       lastline = numlines;
     }
   }
@@ -745,7 +744,7 @@ void LinearConstraints_Sparse::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) >= 40) {
       out<<"Press enter to continue..."<<endl;
-      KrisLibrary::loggerWait();
+      getchar();
       lastline = numlines;
     }
     numlines += 1+(A.rows[i].numEntries()/6);
@@ -763,7 +762,7 @@ void LinearConstraints_Sparse::Print(std::ostream& out) const
 
     if((&out == &cout || &out == &cerr) && (numlines-lastline) == 40) {
       out<<"Press enter to continue..."<<endl;
-      KrisLibrary::loggerWait();
+      getchar();
       lastline = numlines;
     }
   }
