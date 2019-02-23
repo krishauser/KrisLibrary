@@ -161,8 +161,7 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real
 	grid.bb.bmin = center - 0.5*size;
 	grid.bb.bmax = center + 0.5*size;
 	if(m*n*p > 100000000) {
-				LOG4CXX_ERROR(KrisLibrary::logger(),"FitGridToBB: Warning, creating a volume grid of resolution "<<resolution<<" will create "<<m*n*p);
-				LOG4CXX_ERROR(KrisLibrary::logger(),"  Press enter to continue");
+		LOG4CXX_ERROR(KrisLibrary::logger(),"FitGridToBB: Warning, creating a volume grid of resolution "<<resolution<<" will create "<<m*n*p);
 		KrisLibrary::loggerWait();
 	}
 	grid.Resize(m,n,p);

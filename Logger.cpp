@@ -114,6 +114,7 @@ void loggerWait()
 void loggerWait(log4cxx::LoggerPtr logger)
 {
 	if(logger->isEnabledFor(log4cxx::Level::getDebug())){
+		LOG4CXX_ERROR(logger,"   Press enter to continue...");
 		getchar();	
 	} 
 }

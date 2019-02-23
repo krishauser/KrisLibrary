@@ -743,7 +743,6 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
 	if(!models.back().IsValid()) {
 	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
 	  LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
-	  //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
 	  //KrisLibrary::loggerWait();
 	}
 	

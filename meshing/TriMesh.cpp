@@ -312,7 +312,6 @@ bool LoadTriMesh(FILE* f,TriMesh& tri)
   if(!tri.IsValid()) {
     LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
     //LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
-    //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
     //KrisLibrary::loggerWait();
   }
   return true;
@@ -440,7 +439,6 @@ istream& operator >> (istream& in,TriMesh& tri)
   if(!tri.IsValid()) {
     LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
     LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
-    //LOG4CXX_ERROR(KrisLibrary::logger(),"Press enter to continue.");
     //KrisLibrary::loggerWait();
   }
   return in;
