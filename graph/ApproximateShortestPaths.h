@@ -26,7 +26,7 @@ class ApproximateShortestPathProblem
   template <typename WeightFunc,typename Iterator>
   void FindPath(int t,WeightFunc w,Iterator it);
   template <typename WeightFunc,typename Iterator>
-  int FindAPath(const vector<int>& t,WeightFunc w,Iterator it);
+  int FindAPath(const set<int>& t,WeightFunc w,Iterator it);
   template <typename WeightFunc,typename Iterator>
   inline void FindAllPaths(WeightFunc w,Iterator it) { FindPath(-1,w,it); }
 
@@ -49,7 +49,7 @@ class ApproximateShortestPathProblem
     FindPath(t,w,EdgeIterator<Edge>());
   }
   template <typename WeightFunc>
-  inline int FindAPath_Directed(const vector<int>& t,WeightFunc w) {
+  inline int FindAPath_Directed(const set<int>& t,WeightFunc w) {
     return FindAPath(t,w,EdgeIterator<Edge>());
   }
   template <typename WeightFunc>
@@ -84,7 +84,7 @@ class ApproximateShortestPathProblem
     FindPath(t,w,it);
   }
   template <typename WeightFunc>
-  inline int FindAPath_Undirected(const vector<int>& t,WeightFunc w) {
+  inline int FindAPath_Undirected(const set<int>& t,WeightFunc w) {
     return FindAPath(t,w,UndirectedEdgeIterator<Edge>());
   }
   template <typename WeightFunc>
@@ -194,14 +194,12 @@ void ApproximateShortestPathProblem<Node,Edge>::FindPath(int t,WeightFunc w,Iter
 
 template <class Node,class Edge>
 template <typename WeightFunc,typename Iterator>
-int ApproximateShortestPathProblem<Node,Edge>::FindAPath(const vector<int>& t,WeightFunc w,Iterator it)
+int ApproximateShortestPathProblem<Node,Edge>::FindAPath(const set<int>& targetSet,WeightFunc w,Iterator it)
 {
   int nn=g.NumNodes();
   FixedSizeHeap<Weight> H(nn);  //O(n) init, worst case log n update
   for(int i=0;i<nn;i++) H.push(i,-d[i]);
 
-  set<int> targetSet;
-  for(size_t i=0;i<t.size();i++) targetSet.insert(t[i]);
   Real fudgeFactor = (1.0+epsilon);
 
   while(!H.empty()) {
