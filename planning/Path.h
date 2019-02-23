@@ -5,6 +5,9 @@
 #include "EdgePlanner.h"
 #include <list>
 
+//forward declaration
+class ObjectiveFunctionalBase;
+
 /** @ingroup MotionPlanning
  * @brief A sequence of locally planned paths between milestones
  *
@@ -47,9 +50,15 @@ public:
   /// Tries to shorten the path by connecting subsequent milestones.
   /// Returns # of shortcuts made.
   int Shortcut();
+  /// Tries to reduce path cost by connecting subsequent milestones.
+  /// Returns # of shortcuts made.
+  int Shortcut(ObjectiveFunctionalBase* objective);
   /// Tries to shorten the path by connecting random points
   /// with a shortcut, for numIters iterations.  Returns # of shortcuts
   int Reduce(int numIters);
+  /// Tries to reduce the path cost by connecting random points
+  /// with a shortcut, for numIters iterations.  Returns # of shortcuts
+  int Reduce(int numIters,ObjectiveFunctionalBase* objective);
   /// Replaces the section of the path between milestones
   /// start and goal with a new path.  If the index is negative,
   /// erases the corresponding start/goal milestones too.

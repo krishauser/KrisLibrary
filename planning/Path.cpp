@@ -1,5 +1,6 @@
 #include <KrisLibrary/Logger.h>
 #include "Path.h"
+#include "Objective.h"
 #include <math/random.h>
 #include <Timer.h>
 #include <errors.h>
@@ -87,6 +88,31 @@ int MilestonePath::Shortcut()
   return numShortcuts;
 }
 
+int MilestonePath::Shortcut(ObjectiveFunctionalBase* objective)
+{
+  int numShortcuts=0;
+  size_t i=0;
+  while(i+1 < edges.size()) {
+    //try to connect milestone i to i+2
+    const Config& x1=GetMilestone(i);
+    const Config& x2=GetMilestone(i+2);
+    EdgePlannerPtr e= IsVisible(edges[i]->Space(),x1,x2);
+    if(e) {
+      if(objective->IncrementalCost(e.get()) < objective->IncrementalCost(edges[i].get()) + objective->IncrementalCost(edges[i+1].get())) {
+        edges[i] = e;
+        edges.erase(edges.begin()+i+1);
+        numShortcuts++;
+        //don't advance to next milestone, keep trying to shortcut
+        continue;
+      }
+    }
+    //advance to next milestone
+    i++; 
+  }
+  return numShortcuts;
+}
+
+
 int MilestonePath::Reduce(int numIters)
 {
   CSpace* space=Space();
@@ -122,6 +148,49 @@ int MilestonePath::Reduce(int numIters)
 	edges.insert(edges.begin()+i1,e_ax1);
 	edges.insert(edges.begin()+i1+1,e_x1x2);
 	edges.insert(edges.begin()+i1+2,e_x2b);
+      }
+    }
+  }
+  return numsplices;
+}
+
+int MilestonePath::Reduce(int numIters,ObjectiveFunctionalBase* objective)
+{
+  CSpace* space=Space();
+  //pick random points on the path, connect them if they're visible
+  Config x1,x2;
+  int i1,i2;
+  int numsplices=0;
+  for(int iters=0;iters<numIters;iters++) {
+    i1 = rand()%edges.size();
+    i2 = rand()%edges.size();
+    if(i2 < i1) swap(i1,i2);
+    else if(i1 == i2) {
+      continue;  //if they're on the same segment, forget it
+    }
+
+    Real t1=Rand();
+    Real t2=Rand();
+    edges[i1]->Eval(t1,x1);
+    edges[i2]->Eval(t2,x2);
+    const Config& a=edges[i1]->Start();
+    const Config& b=edges[i2]->End();
+    EdgePlannerPtr e_x1x2=space->LocalPlanner(x1,x2);
+    Timer timer;
+    if(e_x1x2->IsVisible()) {
+      EdgePlannerPtr e_ax1=space->LocalPlanner(a,x1);
+      EdgePlannerPtr e_x2b=space->LocalPlanner(x2,b);
+      if(e_ax1->IsVisible() && e_x2b->IsVisible()) {
+        if(objective->IncrementalCost(e_ax1.get()) + objective->IncrementalCost(e_x1x2.get()) + objective->IncrementalCost(e_x2b.get()) < objective->IncrementalCost(edges[i1].get()) + objective->IncrementalCost(edges[i2].get())) {
+          numsplices++;
+          //LOG4CXX_INFO(KrisLibrary::logger(),"Visible subsegment "<<i1<<"->"<<i2);
+          //replace edges a->a',...,b'->b with a->x1,x1->x2,x2->b
+          edges.erase(edges.begin()+i1,edges.begin()+i2+1);
+
+          edges.insert(edges.begin()+i1,e_ax1);
+          edges.insert(edges.begin()+i1+1,e_x1x2);
+          edges.insert(edges.begin()+i1+2,e_x2b);
+        }
       }
     }
   }
