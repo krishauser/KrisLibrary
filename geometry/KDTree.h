@@ -21,7 +21,8 @@ namespace Geometry {
  * - neg: the node on the negative side of val
  * - pts: if this is a leaf, the set of points contained within
  *
- * NOTE: kd-trees only store REFERENCES to the Vectors that are given as input.
+ * NOTE: To avoid unnecessary copying, kd-trees only store REFERENCES
+ * to the Vectors that are given as input.
  * As a result you must store them in some auxiliary data structure.
  */
 class KDTree
