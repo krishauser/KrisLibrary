@@ -181,7 +181,7 @@ bool Segment2D::intersects(const AABB2D& bb) const
 bool Segment2D::intersects(const AABB2D& bb, Real& u1, Real& u2) const
 {
   u1=0;
-  u2=0;
+  u2=1;
   return ClipLine(a, b-a, bb, u1,u2);
 }
 
