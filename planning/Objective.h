@@ -50,6 +50,31 @@ class ObjectiveFunctionalBase
   virtual bool LoadParams(AnyCollection& collection) { return false; }
 };
 
+/** @ingroup Planning
+ * @brief An objective that merges contributions from multiple other
+ * objective functions.
+ */
+class CompositeObjective : public ObjectiveFunctionalBase
+{
+ public:
+  CompositeObjective();
+  ~CompositeObjective();
+
+  ///Adds a new component.  Note: this takes ownership of the pointer.
+  void Add(const std::shared_ptr<ObjectiveFunctionalBase>& obj,Real weight=1.0);
+
+  virtual const char* TypeString() { return "composite"; }
+  virtual std::string Description();
+
+  virtual Real TerminalCost(const Vector& qend);
+  virtual Real IncrementalCost(const Interpolator* path);
+  virtual bool PathInvariant() const;
+
+  Real norm;
+  std::vector<std::shared_ptr<ObjectiveFunctionalBase> > components;
+  std::vector<Real> weights;
+};
+
 /** @ingroup MotionPlanning
  * @brief A cost functional of the form
  * J[x,u] = int_0^T L(x(t),u(t)) dt + Phi(x(T))
@@ -111,7 +136,7 @@ class TimeObjective : public ObjectiveFunctionalBase
 };
 
 /** @ingroup Planning
- * @brief A goal that measures distance to a goal configuration qgoal
+ * @brief A cost that measures distance to a goal configuration qgoal
  */
 class ConfigObjective : public ObjectiveFunctionalBase
 {
@@ -128,7 +153,7 @@ class ConfigObjective : public ObjectiveFunctionalBase
 };
 
 /** @ingroup Planning
- * @brief A goal that measures quadratic tracking error and control cost.
+ * @brief A cost that measures quadratic tracking error and control cost.
  * Note that the time must exist in the state.
  *
  * The error functional has differential cost
@@ -150,31 +175,6 @@ class QuadraticObjective : public IntegratorObjectiveFunctional
   InterpolatorPtr desiredPath;
   Math::Matrix stateCostMatrix,controlCostMatrix;
   Math::Matrix terminalCostMatrix;
-};
-
-/** @ingroup Planning
- * @brief An objective that merges contributions from multiple other
- * objective functions.
- */
-class CompositeObjective : public ObjectiveFunctionalBase
-{
- public:
-  CompositeObjective();
-  ~CompositeObjective();
-
-  ///Adds a new component.  Note: this takes ownership of the pointer.
-  void Add(const std::shared_ptr<ObjectiveFunctionalBase>& obj,Real weight=1.0);
-
-  virtual const char* TypeString() { return "composite"; }
-  virtual std::string Description();
-
-  virtual Real TerminalCost(const Vector& qend);
-  virtual Real IncrementalCost(const Interpolator* path);
-  virtual bool PathInvariant() const;
-
-  Real norm;
-  std::vector<std::shared_ptr<ObjectiveFunctionalBase> > components;
-  std::vector<Real> weights;
 };
 
 
