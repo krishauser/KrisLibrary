@@ -411,7 +411,7 @@ void VolumeGridTemplate<T>::Gradient(const Vector3& pt,Vector3& grad) const
   Vector3 h = GetCellSize();
   //u = x/h.x+bx, v = y/h.y+by, w = z/h.z+bz
   //res = (1-u)*w1(v,w) + u*w2(v,w)
-  if(u==0.5 || v==0.5 || v==0.5 || i1==i2 || j1==j2 || k1==k2) {
+  if(u==0.5 || v==0.5 || w==0.5 || i1==i2 || j1==j2 || k1==k2) {
     Gradient_CenteredDifference(ind,grad);
   }
   if(u != 0.5 && i1 != i2) 
