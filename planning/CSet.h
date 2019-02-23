@@ -37,7 +37,7 @@ public:
   virtual int NumDimensions() const { return -1; }
   ///Returns true if this constraint is satisfied at configuration x
   virtual bool Contains(const Config& x);
-  ///If possible, project x onto a nearby feasible configuration and return true.
+  ///If possible, project x onto a nearby configuration in the set, and return true.
   ///If not, return false.
   virtual bool Project(Config& x) { return Contains(x); }
 
@@ -54,8 +54,8 @@ public:
   ///If true, the feasible set is convex with respect to the CSpace's interpolation function
   virtual bool IsConvex() const { return false; }
 
-  ///If overloaded, return the CSpace distance from x to infeasibility.  Positive means
-  ///feasible, 0 means boundary, negative means infeasible.
+  ///If overloaded, return the CSpace signed distance from x to the set boundary. 
+  ///Positive means x is in the set, 0 means boundary, negative means x is out of the set.
   virtual Real ObstacleDistance(const Config& x) { return -Inf; }
 
   CPredicate test;
