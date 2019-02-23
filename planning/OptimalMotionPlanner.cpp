@@ -203,33 +203,33 @@ void PRMStarPlanner::PlanMore()
       Real d;
       bool res=pointLocator->FilteredNN(x,connectedToStartFilter,nn,d);
       if(!res) {
-	//this is a really inefficient way of getting the closest neighbor
-	//connected to the start
-	bool good = false;
-	for(int i=1;i<22;i+=10) {
-	  KNN(x,i,neighbors);
-	  //only connect to nodes attached to start
-	  for(size_t j=0;j<neighbors.size();j++) {
-	    nn = neighbors[j];
-	    Real dnn = (useSppLB ? sppLB.d[nn] : spp.d[nn]);
-	    //with lazy, there may be lots of good neighbors that are just poorly connected
-	    if(!lazy && HEURISTIC_PRUNING) {
-	      if((dnn+dGoal)*fudgeFactor < goalDist) {
-		good = true;
-		break;
-	      }
-	    }
-	    else {
-	      if(!IsInf(dnn)) {
-		good = true;
-		break;
-	      }
-	    }
-	  }
-	  if(good) break;
-	}
-	tKnn += timer.ElapsedTime();
-	if(!good) return;
+        //this is a really inefficient way of getting the closest neighbor
+        //connected to the start
+        bool good = false;
+        for(int i=1;i<22;i+=10) {
+          KNN(x,i,neighbors);
+          //only connect to nodes attached to start
+          for(size_t j=0;j<neighbors.size();j++) {
+            nn = neighbors[j];
+            Real dnn = (useSppLB ? sppLB.d[nn] : spp.d[nn]);
+            //with lazy, there may be lots of good neighbors that are just poorly connected
+            if(!lazy && HEURISTIC_PRUNING) {
+              if((dnn+dGoal)*fudgeFactor < goalDist) {
+                good = true;
+                break;
+              }
+            }
+            else {
+              if(!IsInf(dnn)) {
+                good = true;
+                break;
+              }
+            }
+          }
+          if(good) break;
+        }
+        tKnn += timer.ElapsedTime();
+        if(!good) return;
       }
     } //not bidirectional
     timer.Reset();
@@ -255,8 +255,8 @@ void PRMStarPlanner::PlanMore()
     if(!lazy || d > lazyCheckThreshold) {
       numEdgeChecks++;
       if(!e->IsVisible()) {
-	tConnect += timer.ElapsedTime();
-	return;
+        tConnect += timer.ElapsedTime();
+        return;
       }
       efeasible = true;
     }
@@ -297,19 +297,19 @@ void PRMStarPlanner::PlanMore()
       int n = neighbors[i];
       if(n == m) continue;
       if(useSppLB) {
-	Assert(m < (int)LBroadmap.nodes.size());
-	Assert(n < (int)LBroadmap.nodes.size());
-	if(m >= 0 && LBroadmap.HasEdge(m,n)) continue;
+        Assert(m < (int)LBroadmap.nodes.size());
+        Assert(n < (int)LBroadmap.nodes.size());
+        if(m >= 0 && LBroadmap.HasEdge(m,n)) continue;
       }
       else {
-	if(m >= 0 && roadmap.HasEdge(m,n)) continue;
+        if(m >= 0 && roadmap.HasEdge(m,n)) continue;
       }
       Real d = space->Distance(x,roadmap.nodes[n]);
       if(d > connectionThreshold) continue;
       if(useSppLB) 
-	queue.push_back(pair<Real,int>(sppLB.d[n]+d,n));
+        queue.push_back(pair<Real,int>(sppLB.d[n]+d,n));
       else
-	queue.push_back(pair<Real,int>(spp.d[n]+d,n));
+        queue.push_back(pair<Real,int>(spp.d[n]+d,n));
     }
     sort(queue.begin(),queue.end());
     neighbors.resize(queue.size());
@@ -349,21 +349,21 @@ void PRMStarPlanner::PlanMore()
       Real cm_lb = (useSppLB ? sppLB.d[m] : spp.d[m]);
       Real dGoal = space->Distance(x,roadmap.nodes[goal]);
       if((Min(cn_lb + d,cm_lb) + dGoal)*fudgeFactor < goalDist) {
-	if((cn_lb + d) < cm_lb)
-	  doConnect = true;
-	else if((cm_lb + d) < cn_lb)
-	  doConnect = true;
+        if((cn_lb + d) < cm_lb)
+          doConnect = true;
+        else if((cm_lb + d) < cn_lb)
+          doConnect = true;
       }
       if(bidirectional && !doConnect) { //allow backwards connections
-	Real cn_lb = (useSppLB ? sppLBGoal.d[n] : sppGoal.d[n]);
-	Real cm_lb = (useSppLB ? sppLBGoal.d[m] : sppGoal.d[m]);
-	Real dStart = space->Distance(x,roadmap.nodes[start]);
-	if((Min(cn_lb + d,cm_lb) + dStart)*fudgeFactor < goalDist) {
-	  if((cn_lb + d) < cm_lb)
-	    doConnect = true;
-	  else if((cm_lb + d) < cn_lb)
-	    doConnect = true;
-	}
+        Real cn_lb = (useSppLB ? sppLBGoal.d[n] : sppGoal.d[n]);
+        Real cm_lb = (useSppLB ? sppLBGoal.d[m] : sppGoal.d[m]);
+        Real dStart = space->Distance(x,roadmap.nodes[start]);
+        if((Min(cn_lb + d,cm_lb) + dStart)*fudgeFactor < goalDist) {
+          if((cn_lb + d) < cm_lb)
+            doConnect = true;
+          else if((cm_lb + d) < cn_lb)
+            doConnect = true;
+        }
       }
     }
     if(doConnect) {
@@ -376,73 +376,73 @@ void PRMStarPlanner::PlanMore()
       //  greater than the potential cost
       bool doCheck = !lazy;
       if(!lazy && suboptimalityFactor > 0) {
-	doCheck = false;
-	Real cn = spp.d[n];
-	Real cm = spp.d[m];
-	Real cn_lb = (useSppLB ? sppLB.d[n] : spp.d[n]);
-	Real cm_lb = (useSppLB ? sppLB.d[m] : spp.d[m]);
-	//LOG4CXX_INFO(KrisLibrary::logger()  ,""<<cn<<" "<<cm<<" "<<cn_lb<<" "<<cm_lb);
+        doCheck = false;
+        Real cn = spp.d[n];
+        Real cm = spp.d[m];
+        Real cn_lb = (useSppLB ? sppLB.d[n] : spp.d[n]);
+        Real cm_lb = (useSppLB ? sppLB.d[m] : spp.d[m]);
+        //LOG4CXX_INFO(KrisLibrary::logger()  ,""<<cn<<" "<<cm<<" "<<cn_lb<<" "<<cm_lb);
   if((cn_lb + d)*fudgeFactor < cm)
-	  doCheck = true;
-	else if((cm_lb + d)*fudgeFactor < cn)
-	  doCheck = true;
-	if(bidirectional && !doCheck) {
-	  Real cn = sppGoal.d[n];
-	  Real cm = sppGoal.d[m];
-	  Real cn_lb = (useSppLB ? sppLBGoal.d[n] : sppGoal.d[n]);
-	  Real cm_lb = (useSppLB ? sppLBGoal.d[m] : sppGoal.d[m]);
-	  if((cn_lb + d)*fudgeFactor < cm)
-	    doCheck = true;
-	  else if((cm_lb + d)*fudgeFactor < cn)
-	    doCheck = true;
-	}
+          doCheck = true;
+        else if((cm_lb + d)*fudgeFactor < cn)
+          doCheck = true;
+        if(bidirectional && !doCheck) {
+          Real cn = sppGoal.d[n];
+          Real cm = sppGoal.d[m];
+          Real cn_lb = (useSppLB ? sppLBGoal.d[n] : sppGoal.d[n]);
+          Real cm_lb = (useSppLB ? sppLBGoal.d[m] : sppGoal.d[m]);
+          if((cn_lb + d)*fudgeFactor < cm)
+            doCheck = true;
+          else if((cm_lb + d)*fudgeFactor < cn)
+            doCheck = true;
+        }
       }
       else if(lazy) {
 #if PRECHECK_OPTIMAL_EDGES && ! TEST_FMT
-	//if this edge will become part of an optimal lazy path -- check it now
-	//rather than waiting for the lazy update
-	if((sppLB.d[n] + d + sppLBGoal.d[m])*fudgeFactor < goalDist || (sppLB.d[m] + d + sppLBGoal.d[n])*fudgeFactor < goalDist) {
-	  //check edge leading to m, it's on the optimal path too
-	  if(!IsInf(sppLB.d[m])) {
-	    int p = sppLB.p[m];
-	    if(!roadmap.HasEdge(p,m)) {
-	      //precheck edge to m
-	      numEdgeChecks++;
-	      numEdgePrechecks ++;
-	      EdgePlannerPtr* e = LBroadmap.FindEdge(p,m);
-	      if(!(*e)->IsVisible()) {
-		LBroadmap.DeleteEdge(p,m);
-		timer.Reset();
-		sppLB.DeleteUpdate_Undirected(p,m,LB_DISTANCE_FUNC);
-		if(useSppGoal)
-		  sppLBGoal.DeleteUpdate_Undirected(p,m,LB_DISTANCE_FUNC);
-		tShortestPaths += timer.ElapsedTime();
-	      }
-	    }
-	  }
-	  //check again, the path to m may have been deleted
-	  if((sppLB.d[n] + d + sppLBGoal.d[m])*fudgeFactor < goalDist || (sppLB.d[m] + d + sppLBGoal.d[n])*fudgeFactor < goalDist) {
-	    doCheck=true;
-	    numEdgePrechecks ++;
-	  }
-	}
+        //if this edge will become part of an optimal lazy path -- check it now
+        //rather than waiting for the lazy update
+        if((sppLB.d[n] + d + sppLBGoal.d[m])*fudgeFactor < goalDist || (sppLB.d[m] + d + sppLBGoal.d[n])*fudgeFactor < goalDist) {
+          //check edge leading to m, it's on the optimal path too
+          if(!IsInf(sppLB.d[m])) {
+            int p = sppLB.p[m];
+            if(!roadmap.HasEdge(p,m)) {
+              //precheck edge to m
+              numEdgeChecks++;
+              numEdgePrechecks ++;
+              EdgePlannerPtr* e = LBroadmap.FindEdge(p,m);
+              if(!(*e)->IsVisible()) {
+                LBroadmap.DeleteEdge(p,m);
+                timer.Reset();
+                sppLB.DeleteUpdate_Undirected(p,m,LB_DISTANCE_FUNC);
+                if(useSppGoal)
+                  sppLBGoal.DeleteUpdate_Undirected(p,m,LB_DISTANCE_FUNC);
+                tShortestPaths += timer.ElapsedTime();
+              }
+            }
+          }
+          //check again, the path to m may have been deleted
+          if((sppLB.d[n] + d + sppLBGoal.d[m])*fudgeFactor < goalDist || (sppLB.d[m] + d + sppLBGoal.d[n])*fudgeFactor < goalDist) {
+            doCheck=true;
+            numEdgePrechecks ++;
+          }
+        }
 #endif
-	//long enough -- check it now
-	if(d > lazyCheckThreshold) {
-	  doCheck = true;
-	}
+        //long enough -- check it now
+        if(d > lazyCheckThreshold) {
+          doCheck = true;
+        }
       }
 
       if(doCheck) {
-	//do the check
-	numEdgeChecks++;
-	if(e->IsVisible()) {
-	  ConnectEdge(m,n,e);
-	}
+        //do the check
+        numEdgeChecks++;
+        if(e->IsVisible()) {
+          ConnectEdge(m,n,e);
+        }
       }
       else {
-	//add it now without checking, lazy style
-	ConnectEdgeLazy(m,n,e);
+        //add it now without checking, lazy style
+        ConnectEdgeLazy(m,n,e);
       }
     }
     /*else {
@@ -457,10 +457,10 @@ void PRMStarPlanner::PlanMore()
       timer.Reset();
       //LOG4CXX_INFO(KrisLibrary::logger(),"Candidate improvement to cost "<<spp.d[goal]);
       if(CheckPath(start,goal)) {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Found an improved path to goal with cost "<<spp.d[goal]<<" (before it was "<<goalDist);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Found an improved path to goal with cost "<<spp.d[goal]<<" (before it was "<<goalDist);
       }
       //else
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Failed CheckPath, going back to old distance, d="<<spp.d[goal]);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Failed CheckPath, going back to old distance, d="<<spp.d[goal]);
       tLazy += timer.ElapsedTime();
     }
   }
@@ -545,7 +545,7 @@ void PRMStarPlanner::Neighbors(const Config& x,Real rad,vector<int>& neighbors)
     for(int i=0;i<roadmap.nodes.size();i++) {
       Real d=space->Distance(roadmap.nodes[i],x);
       if(d > 0 && d < rad) {
-	nn.insert(pair<Real,int>(d,i));
+        nn.insert(pair<Real,int>(d,i));
       }
     }
   }
@@ -555,7 +555,7 @@ void PRMStarPlanner::Neighbors(const Config& x,Real rad,vector<int>& neighbors)
       int i = RandInt(roadmap.nodes.size());
       Real d=space->Distance(roadmap.nodes[i],x);
       if(d > 0 && d < rad) {
-	nn.insert(pair<Real,int>(d,i));
+        nn.insert(pair<Real,int>(d,i));
       }
     }
   }
@@ -580,11 +580,11 @@ void PRMStarPlanner::KNN(const Config& x,int k,vector<int>& neighbors)
     for(int i=0;i<roadmap.nodes.size();i++) {
       Real d=space->Distance(roadmap.nodes[i],x);
       if(d > 0 && d < dmax) {
-	pair<Real,int> idx(d,i);
-	knn.insert(idx);
-	if((int)knn.size() > k)
-	  knn.erase(--knn.end());
-	dmax = (--knn.end())->first;
+        pair<Real,int> idx(d,i);
+        knn.insert(idx);
+        if((int)knn.size() > k)
+          knn.erase(--knn.end());
+        dmax = (--knn.end())->first;
       }
     }
     neighbors.resize(0);
@@ -648,10 +648,10 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
       Real w = 0;
       int feas = 0;
       if(spp.p[b] >= 0) {
-	EdgePlannerPtr* e=roadmap.FindEdge(b,spp.p[b]);
-	Assert(e != NULL);
-	w=(*e)->Space()->Distance((*e)->Start(),(*e)->End());
-	feas = (*e)->IsVisible();
+        EdgePlannerPtr* e=roadmap.FindEdge(b,spp.p[b]);
+        Assert(e != NULL);
+        w=(*e)->Space()->Distance((*e)->Start(),(*e)->End());
+        feas = (*e)->IsVisible();
       }
       LOG4CXX_INFO(KrisLibrary::logger(),""<<b<<","<<spp.d[b]<<","<<spp.p[b]<<","<<w<<","<<feas);
       b = spp.p[b];
@@ -714,22 +714,22 @@ public:
       int t = e.target();
       double c = planner->space->Distance((*e)->Start(),(*e)->End());
       if(planner->roadmap.HasEdge(s,t)) {
-	successors.push_back(t);
-	cost.push_back(c);
+        successors.push_back(t);
+        cost.push_back(c);
       }
       else {
-	Node* nt = VisitedStateNode(t);
-	if(nt && nt->g <= VisitedStateNode(s)->g+c) 
-	  //don't check edges along suboptimal paths
-	  continue;
-	if((*e)->IsVisible()) {
-	  planner->roadmap.AddEdge(s,t,(*e));
-	  successors.push_back(t);
-	  cost.push_back(c);
-	}
-	else {
-	  todelete.push_back(pair<int,int>(s,t));
-	}
+        Node* nt = VisitedStateNode(t);
+        if(nt && nt->g <= VisitedStateNode(s)->g+c) 
+          //don't check edges along suboptimal paths
+          continue;
+        if((*e)->IsVisible()) {
+          planner->roadmap.AddEdge(s,t,(*e));
+          successors.push_back(t);
+          cost.push_back(c);
+        }
+        else {
+          todelete.push_back(pair<int,int>(s,t));
+        }
       }
     }
     for(size_t i=0;i<todelete.size();i++)
@@ -791,7 +791,7 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       e.t = npath[i+1];
       e.distanceFromEndpoint = (int)i;
       if(bidirectional && ((int)npath.size()-(int)i-1 < e.distanceFromEndpoint))
-	e.distanceFromEndpoint = (int)npath.size()-(int)i-1;
+        e.distanceFromEndpoint = (int)npath.size()-(int)i-1;
       e.e = *LBroadmap.FindEdge(npath[i],npath[i+1]);
       q.push(e);
     }
@@ -800,10 +800,10 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       RoadmapEdgeInfo temp=q.top(); q.pop();
       int cnt = ADAPTIVE_SUBDIVISION_CHECK_COUNT;
       if(!temp.e->Done() && cnt-- > 0) 
-	temp.e->Plan(); 
+        temp.e->Plan(); 
       if(!temp.e->Done()) {
-	q.push(temp);
-	continue;
+        q.push(temp);
+        continue;
       }
       bool edgeInfeasible = temp.e->Failed();
 #else
@@ -820,40 +820,40 @@ bool PRMStarPlanner::CheckPath(int a,int b)
       //it's done planning
       numEdgeChecks++;
       if(edgeInfeasible) {
-	tLazyCheck += timer.ElapsedTime();
-	//delete edge from lazy roadmap
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Deleting edge "<<npath[i]<<" "<<npath[i+1]);
-	LBroadmap.DeleteEdge(temp.s,temp.t);
+        tLazyCheck += timer.ElapsedTime();
+        //delete edge from lazy roadmap
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Deleting edge "<<npath[i]<<" "<<npath[i+1]);
+        LBroadmap.DeleteEdge(temp.s,temp.t);
 
-	//update shortest paths
-	timer.Reset();
-	sppLB.DeleteUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
-	if(useSppGoal)
-	  sppLBGoal.DeleteUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
-	tShortestPaths += timer.ElapsedTime();
-	//Assert(sppLB.HasShortestPaths_Undirected(0,distanceWeightFunc));
-	feas = false;
+        //update shortest paths
+        timer.Reset();
+        sppLB.DeleteUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
+        if(useSppGoal)
+          sppLBGoal.DeleteUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
+        tShortestPaths += timer.ElapsedTime();
+        //Assert(sppLB.HasShortestPaths_Undirected(0,distanceWeightFunc));
+        feas = false;
       }
       else {
-	roadmap.AddEdge(temp.s,temp.t,temp.e);
-	timer.Reset();
-	spp.DecreaseUpdate_Undirected(temp.s,temp.t,DISTANCE_FUNC);
-	if(useSppGoal)
-	  sppGoal.DecreaseUpdate_Undirected(temp.s,temp.t,DISTANCE_FUNC);
+        roadmap.AddEdge(temp.s,temp.t,temp.e);
+        timer.Reset();
+        spp.DecreaseUpdate_Undirected(temp.s,temp.t,DISTANCE_FUNC);
+        if(useSppGoal)
+          sppGoal.DecreaseUpdate_Undirected(temp.s,temp.t,DISTANCE_FUNC);
 
-	if(TEST_EDGE_DISCOUNTING) {
-	  //if discounted, revise LB roadmap: the cost got smaller!
-	  sppLB.DecreaseUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
-	  if(useSppGoal)
-	    sppLBGoal.DecreaseUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
-	}
-	tShortestPaths += timer.ElapsedTime();
+        if(TEST_EDGE_DISCOUNTING) {
+          //if discounted, revise LB roadmap: the cost got smaller!
+          sppLB.DecreaseUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
+          if(useSppGoal)
+            sppLBGoal.DecreaseUpdate_Undirected(temp.s,temp.t,LB_DISTANCE_FUNC);
+        }
+        tShortestPaths += timer.ElapsedTime();
       }
     }
     
     if(feas) {
       /*
-	//SANITY CHECK
+        //SANITY CHECK
       MilestonePath path;
       bool res = GetPath(path);
       Assert(res == true);
