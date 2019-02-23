@@ -476,6 +476,7 @@ void MultiCSpace::Properties(PropertyMap& map)
   //TODO: how do you combine common properties?
   Real volume = 1.0;
   Real diameter = 0.0;
+  bool cartesian = true;
   bool geodesic = true;
   bool euclidean = true;
   vector<Vector> cspaceweights(components.size());
@@ -484,9 +485,12 @@ void MultiCSpace::Properties(PropertyMap& map)
   for(size_t i=0;i<components.size();i++) {
     PropertyMap cmap;
     components[i]->Properties(cmap);
+    int ccartesian;
     int cgeodesic;
     double cvolume;
-    if(!cmap.get("geodesic",cgeodesic))
+    if(!cmap.get("cartesian",ccartesian) || ccartesian==0)
+      cartesian = false;
+    if(!cmap.get("geodesic",cgeodesic) || cgeodesic==0)
       geodesic = false;
     if(!cmap.get("volume",cvolume))
       volume = 0;
@@ -502,7 +506,7 @@ void MultiCSpace::Properties(PropertyMap& map)
     if(!cmap.get("metric",m) || m=="euclidean") {
     }
     else {
-      LOG4CXX_INFO(KrisLibrary::logger(),"MultiCSpace: component "<<i<<" (dim "<<components[i]->NumDimensions());
+      LOG4CXX_INFO(KrisLibrary::logger(),"MultiCSpace: component "<<i<<" (dim "<<components[i]->NumDimensions()<<") uses non-euclidean metric");
       euclidean = false;
     }
     vector<double> cmin,cmax;
@@ -517,8 +521,9 @@ void MultiCSpace::Properties(PropertyMap& map)
   }
   if(volume > 0) map.set("volume",volume);
   if(diameter >= 0) map.set("diameter",diameter);
+  if(cartesian) map.set("cartesian",1);
   if(geodesic) map.set("geodesic",1);
-  if(euclidean) map.set("euclidean",1);
+  if(euclidean) map.set("metric","euclidean");
   for(size_t i=0;i<cspaceweights.size();i++)
     if(cspaceweights[i].empty()) { cspaceweights.clear(); break;}
   for(size_t i=0;i<cspaceminimum.size();i++)
