@@ -88,7 +88,7 @@ public:
     inline bool operator < (const iterator& rhs) const { return it<rhs.it; }
     IntPair getElement() const {
       //translate to original coordinates
-      IntTriple i=it.getElement();
+      IntPair i=it.getElement();
       int ibase=range.base/range.istride;
       int jbase=range.base/range.jstride;
       int istride=range.istride/(range.jsize*range.jstride);
@@ -96,7 +96,7 @@ public:
       return IntPair(i.a*istride+ibase,i.b*jstride+jbase);
     }
     //private:
-    Array2D<T>* array;
+    const Array2D<T>* array;
     Stripe2Indices range;
     Stripe2Indices::iterator it;
   };
@@ -327,12 +327,12 @@ std::istream& operator >> (std::istream& in,Array2D<T>& a)
 
 template <class T>
 Array2D<T>::iterator::iterator(const Array2D<T>* _array)
-  :array(_array),range(_array->m,_array->n,_array->p),it(&range)
+  :array(_array),range(_array->m,_array->n),it(&range)
 {}
 
 template <class T>
 Array2D<T>::iterator::iterator(const Array2D<T>* _array,int invalid)
-  :array(_array),range(_array->m,_array->n,_array->p),it(range.end())
+  :array(_array),range(_array->m,_array->n),it(range.end())
 {}
 
 template <class T>
