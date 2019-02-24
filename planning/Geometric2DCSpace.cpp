@@ -22,18 +22,20 @@ Geometric2DObstacleFreeSet::Geometric2DObstacleFreeSet(const GeometricPrimitive2
 
 bool Geometric2DObstacleFreeSet::Contains(const Config& x)
 {
-  if(robot==NULL) return !obstacle.Collides(Vector2(x[0],x[1]));
+  if(robot==NULL) {
+    return !obstacle.Collides(Vector2(x[0],x[1]));
+  }
   Geometric2DCollection trobot = *robot;
   RigidTransform2D T;
   if(translationOnly) {
     T.R.setIdentity();
     T.t.set(x[0],x[1]);
-    trobot.Transform(T);
   }
   else {
     T.t.set(x[0],x[1]);
     T.R.setRotate(x[2]);
   }
+  trobot.Transform(T);
   return !trobot.Collides(obstacle);
 }
 
@@ -46,13 +48,14 @@ Real Geometric2DObstacleFreeSet::ObstacleDistance(const Config& x)
   if(translationOnly) {
     T.R.setIdentity();
     T.t.set(x[0],x[1]);
-    trobot.Transform(T);
   }
   else {
     T.t.set(x[0],x[1]);
     T.R.setRotate(x[2]);
   }
+  trobot.Transform(T);
   //return trobot.Distance(obstacle);
+  return -Inf;
 }
 
 
@@ -196,7 +199,7 @@ Real Geometric2DCollection::Distance(const Circle2D& s) const
 
 bool Geometric2DCollection::Collides(const Vector2& p) const
 {
-  for(size_t i=0;i<aabbs.size();i++)
+  for(size_t i=0;i<aabbs.size();i++) 
     if(aabbs[i].contains(p)) return true;
   for(size_t i=0;i<circles.size();i++)
     if(circles[i].contains(p)) return true;
@@ -209,6 +212,9 @@ bool Geometric2DCollection::Collides(const Vector2& p) const
 
 bool Geometric2DCollection::Collides(const Segment2D& s) const
 {
+  for(size_t i=0;i<aabbs.size();i++) {
+    if(s.intersects(aabbs[i])) return true;
+  }
   for(size_t i=0;i<triangles.size();i++) {
     if(triangles[i].intersects(s)) return true;
   }
@@ -640,10 +646,12 @@ public:
     s.b.set(_b(0),_b(1));
   }
   virtual bool IsVisible() {
-    if(obstacle < 0)
+    if(obstacle < 0) {
       return !gspace->Collides(s);
-    else
+    }
+    else {
       return !gspace->Collides(s,obstacle);
+    }
   }
   
   virtual CSpace* Space() const { return space; }
