@@ -74,6 +74,8 @@ void GridDensityEstimator::Remove(const Math::Vector& x,void* data)
   subdiv.PointToIndex(temp,index);
   bool res=subdiv.Erase(index,data);
   Assert(res == true);
+  if(subdiv.buckets.count(index)==0) //deleted, may need to futz around with flattenedBuckets
+    flattenedBuckets.resize(0);
 }
 
 double GridDensityEstimator::Density(const Config& x)
@@ -119,7 +121,7 @@ void* GridDensityEstimator::RandomNear(const Math::Vector& x)
   subdiv.PointToIndex(temp,index);
   GridSubdivision::ObjectSet* objs = subdiv.GetObjectSet(index);
   if(!objs) return NULL;
-
+  if(objs->empty()) return NULL;
   return RandomObject(*objs); 
 }
 
@@ -129,7 +131,9 @@ void* GridDensityEstimator::Random()
   Assert(n > 0);
   int k=RandInt((int)n);
   if(n != flattenedBuckets.size()) {
-    if(k >= 32 || (1<<k) > (int)n) {
+    //should we flatten buckets to make this faster?
+    //if k is greater than n/log n (probability of this is 1-log n)
+    if(k >= int(Real(n)/Log(Real(n)))) {
       flattenedBuckets.resize(n);
       GridSubdivision::HashTable::iterator bucket=subdiv.buckets.begin();
       for(size_t i=0;i<n;i++,bucket++)
@@ -139,9 +143,12 @@ void* GridDensityEstimator::Random()
       //advance
       GridSubdivision::HashTable::iterator bucket=subdiv.buckets.begin();
       for(int i=0;i<k;i++,bucket++);
+      if(bucket->second.empty()) return NULL;
       return RandomObject(bucket->second);
     }
   }
+  if(flattenedBuckets[k]->empty()) 
+    return NULL;
   return RandomObject(*flattenedBuckets[k]);
 }
 
