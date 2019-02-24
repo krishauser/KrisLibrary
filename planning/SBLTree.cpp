@@ -255,48 +255,50 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
 
       //disconnect!
       if(temp.e == bridge) {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge between connected nodes");
-	bridge = NULL;
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge between connected nodes");
+        bridge = NULL;
       }
       else if(s->HasNode(temp.s)) {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on start tree");
-	//disconnect tree from s->t
-	temp.s->detachChild(temp.t);
-	Assert(temp.t == ns || temp.t->hasDescendent(ns));
-	ns->reRoot();
-	ns->edgeFromParent() = bridge;
-	
-	//move nodes in subtree from start arrays to goal arrays
-	ChangeTreeCallback changeCallback(s,g);
-	ns->DFS(changeCallback);
-	ng->addChild(ns);
-	Assert(ns->hasAncestor(g->root));
-	Assert(s->root->getParent()==NULL);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on start tree");
+        //disconnect tree from s->t
+        temp.s->detachChild(temp.t);
+        Assert(temp.t == ns || temp.t->hasDescendent(ns));
+        ns->reRoot();
+        ns->edgeFromParent() = bridge;
+        
+        //move nodes in subtree from start arrays to goal arrays
+        ChangeTreeCallback changeCallback(s,g);
+        ns->DFS(changeCallback);
+        ng->addChild(ns);
+        Assert(ns->hasAncestor(g->root));
+        Assert(s->root->getParent()==NULL);
+        Assert(s->HasNode(temp.s));
       }
       else {     //on goal tree
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on goal tree");
-	Assert(g->HasNode(temp.t));
-	//disconnect tree from s->t
-	temp.t->detachChild(temp.s);
-	Assert(temp.s == ng || temp.s->hasDescendent(ng));
-	ng->reRoot();
-	ng->edgeFromParent() = bridge;
-	
-	//move nodes in subtree from goal arrays to start arrays
-	ChangeTreeCallback changeCallback(g,s);
-	ng->DFS(changeCallback);
-	ns->addChild(ng);
-	Assert(ng->hasAncestor(s->root));
-	Assert(g->root->getParent()==NULL);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on goal tree");
+        Assert(g->HasNode(temp.t));
+        //disconnect tree from s->t
+        temp.t->detachChild(temp.s);
+        Assert(temp.s == ng || temp.s->hasDescendent(ng));
+        ng->reRoot();
+        ng->edgeFromParent() = bridge;
+        
+        //move nodes in subtree from goal arrays to start arrays
+        ChangeTreeCallback changeCallback(g,s);
+        ng->DFS(changeCallback);
+        ns->addChild(ng);
+        Assert(ng->hasAncestor(s->root));
+        Assert(g->root->getParent()==NULL);
+        Assert(g->HasNode(temp.t));
       }
       outputPath.clear();
 
       //extend the segments
       if(space->Distance(p,*temp.s) > kMinExtensionLength) {
-	s->AddChild(temp.s,p);
+        s->AddChild(temp.s,p);
       }
       if(space->Distance(q,*temp.t) > kMinExtensionLength) {
-	g->AddChild(temp.t,q);
+        g->AddChild(temp.t,q);
       }
       //LOG4CXX_INFO(KrisLibrary::logger(),"CheckPath: Failed on edge of length "<<len);
       return false;
@@ -305,40 +307,42 @@ bool SBLTree::CheckPath(SBLTree* s,Node* ns,SBLTree* g,Node* ng,std::list<EdgeIn
     if(!temp.e->Plan()) {
       //disconnect!
       if(temp.e == bridge) {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge between connected nodes");
-	//no change in graph
-	bridge = NULL;
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge between connected nodes");
+        //no change in graph
+        bridge = NULL;
       }
       else if(s->HasNode(temp.s)) {
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on start tree");
-	//disconnect tree from s->t
-	temp.s->detachChild(temp.t);
-	Assert(temp.t == ns || temp.t->hasDescendent(ns));
-	ns->reRoot();
-	ns->edgeFromParent() = bridge;
-	
-	//move nodes in subtree from start arrays to goal arrays
-	ChangeTreeCallback changeCallback(s,g);
-	ns->DFS(changeCallback);
-	ng->addChild(ns);
-	Assert(ns->hasAncestor(g->root));
-	Assert(s->root->getParent()==NULL);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on start tree");
+        //disconnect tree from s->t
+        temp.s->detachChild(temp.t);
+        Assert(temp.t == ns || temp.t->hasDescendent(ns));
+        ns->reRoot();
+        ns->edgeFromParent() = bridge;
+        
+        //move nodes in subtree from start arrays to goal arrays
+        ChangeTreeCallback changeCallback(s,g);
+        ns->DFS(changeCallback);
+        ng->addChild(ns);
+        Assert(ns->hasAncestor(g->root));
+        Assert(s->root->getParent()==NULL);
+        Assert(s->HasNode(temp.s));
       }
       else {     //on goal tree
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on goal tree");
-	Assert(g->HasNode(temp.t));
-	//disconnect tree from s->t
-	temp.t->detachChild(temp.s);
-	Assert(temp.s == ng || temp.s->hasDescendent(ng));
-	ng->reRoot();
-	ng->edgeFromParent() = bridge;
-	
-	//move nodes in subtree from goal arrays to start arrays
-	ChangeTreeCallback changeCallback(g,s);
-	ng->DFS(changeCallback);
-	ns->addChild(ng);
-	Assert(ng->hasAncestor(s->root));
-	Assert(g->root->getParent()==NULL);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Disconnecting edge on goal tree");
+        Assert(g->HasNode(temp.t));
+        //disconnect tree from s->t
+        temp.t->detachChild(temp.s);
+        Assert(temp.s == ng || temp.s->hasDescendent(ng));
+        ng->reRoot();
+        ng->edgeFromParent() = bridge;
+        
+        //move nodes in subtree from goal arrays to start arrays
+        ChangeTreeCallback changeCallback(g,s);
+        ng->DFS(changeCallback);
+        ns->addChild(ng);
+        Assert(ng->hasAncestor(s->root));
+        Assert(g->root->getParent()==NULL);
+        Assert(g->HasNode(temp.t));
       }
       outputPath.clear();
       return false;
@@ -511,12 +515,19 @@ void SBLTreeWithGrid::RemoveMilestone(Node* n)
 
 Node* SBLTreeWithGrid::PickExpand()
 {
-  return (Node*)A.Random();
+  void* res = NULL;
+  while(!res)
+    res = A.Random();
+  //Assert(HasNode((Node*)res));
+  return (Node*)res;
 }
 
 Node* SBLTreeWithGrid::FindNearby(const Config& x)
 {
   Node* n=(Node*)A.RandomNear(x);
-  if(n) return n;
-  return (Node*)A.Random();
+  if(n) {
+    //Assert(HasNode(n));
+    return n;
+  }
+  return PickExpand();
 }
