@@ -270,7 +270,9 @@ void MultiCSpace::AddConstraint(int spaceIndex,const std::string& name,CSet* con
 
 void MultiCSpace::AddConstraint(int spaceIndex,const std::string& name,const shared_ptr<CSet>& constraint)
 {
-  assert(!constraints.empty());
+  Assert(!constraints.empty());
+  Assert(spaceIndex >= 0 && spaceIndex < (int)components.size());
+  components[spaceIndex]->AddConstraint(name,constraint);
   int n=0;
   for(int i=0;i<spaceIndex;i++) 
     n += components[i]->NumDimensions();
@@ -367,6 +369,12 @@ void MultiCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
 
 bool MultiCSpace::IsFeasible(const Config& x)
 {
+  if(constraints.empty()) return IsFeasible_Independent(x);
+  else return CSpace::IsFeasible(x);
+}
+
+bool MultiCSpace::IsFeasible_Independent(const Config& x)
+{
   vector<Config> xitems;
   SplitRef(x,xitems);
   for(size_t i=0;i<components.size();i++) 
@@ -382,12 +390,20 @@ bool MultiCSpace::ProjectFeasible(Config& x)
     if(!components[i]->ProjectFeasible(xitems[i])) return false;
   return true;
 }
+
 Optimization::NonlinearProgram* MultiCSpace::FeasibleNumeric()
 {
+  //TODO
   return NULL;
 }
 
 EdgePlannerPtr MultiCSpace::LocalPlanner(const Config& a,const Config& b)
+{
+  if(constraints.empty()) return LocalPlanner_Independent(a,b);
+  else return CSpace::LocalPlanner(a,b);
+}
+
+EdgePlannerPtr MultiCSpace::LocalPlanner_Independent(const Config& a,const Config& b)
 {
   vector<Config> aitems,bitems;
   SplitRef(a,aitems);
@@ -400,6 +416,12 @@ EdgePlannerPtr MultiCSpace::LocalPlanner(const Config& a,const Config& b)
 
 EdgePlannerPtr MultiCSpace::PathChecker(const Config& a,const Config& b)
 {
+  if(constraints.empty()) return PathChecker_Independent(a,b);
+  else return CSpace::PathChecker(a,b);
+}
+
+EdgePlannerPtr MultiCSpace::PathChecker_Independent(const Config& a,const Config& b)
+{
   vector<Config> aitems,bitems;
   SplitRef(a,aitems);
   SplitRef(b,bitems);
@@ -409,7 +431,14 @@ EdgePlannerPtr MultiCSpace::PathChecker(const Config& a,const Config& b)
   return make_shared<MultiEdgePlanner>(this,make_shared<CSpaceInterpolator>(this,a,b),items);
 }
 
-EdgePlannerPtr MultiCSpace::PathChecker(const Config& a,const Config& b,int constraint)
+
+EdgePlannerPtr MultiCSpace::PathChecker(const Config& a,const Config& b,int obstacle)
+{
+  if(constraints.empty()) return PathChecker_Independent(a,b,obstacle);
+  else return CSpace::PathChecker(a,b,obstacle);
+}
+
+EdgePlannerPtr MultiCSpace::PathChecker_Independent(const Config& a,const Config& b,int constraint)
 {
   int n=0;
   for(size_t i=0;i<components.size();i++) {

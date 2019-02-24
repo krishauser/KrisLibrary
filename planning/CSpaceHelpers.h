@@ -79,6 +79,32 @@ public:
 
 /** @ingroup MotionPlanning
  * A Cartesian product of several CSpace's.  Inherits geodesic information.
+ *
+ * Note: although this automatically sets up how the Cartesian product handles
+ * geodesic information (sampling, interpolation, distances), *you will need to
+ * customize the constraint checking behavior.* 
+ *
+ * If components interact (typical): 
+ * - Call FlattenConstraints to adapt the subspaces' constraints to the joint
+ *   C-space.
+ * - Call AddConstraint(name,constraint) (no space index) to add constraints 
+ *   on configurations in the joint C-space
+ * - Override PathChecker (both) as you see fit (e.g., return a
+ *   BisectionEpsilonEdgePlanner)
+ * - Optionally, override LocalPlanner. By default this just calls PathChecker,
+ *   which is typically the intended behavior.
+ *
+ * If you were really being clever to optimize collision checks, you might implement IsFeasible
+ * by calling IsFeasible_Independent for each of the component constraints, and then checking
+ * the joint checker for the collective constraints.  The same goes for PathChecker.
+ * 
+ * If there is no interaction between any components: just add the subspaces,
+ * The IsFeasible / LocalPlanner/ PathChecker methods are implemented by calling
+ * the corresponding X_Independent function.
+ * 
+ * In this behavior, each subspace's constraint will be tested individually, and 
+ * configurations / paths will be checked by splitting into subspaces and calling 
+ * the checkers of individual sub-spaces.  
  */
 class MultiCSpace : public GeodesicCSpace
 {
@@ -88,19 +114,39 @@ public:
   MultiCSpace(const std::vector<std::shared_ptr<CSpace> >& components);
   void Add(const std::string& name,const std::shared_ptr<CSpace>& space,Real distanceWeight=1);
 
+  ///If this returns true, no additional constraints have been added on the Cartesian product
+  ///space, and each subspace can be treated independently.
+  inline bool AreSubspacesIndependent() const { return constraints.empty(); }
+
   ///Rather than testing individual CSpace's, this flattens all the constraints so that 
-  ///they're in the constraints list.
+  ///they're in the constraints list of this object.
+  ///
+  ///After this is called, do not call componentSpaces[i]->AddConstraint(name,constraint)
+  ///directly.  Instead, call this->AddConstraint(i,name,constraint)
   void FlattenConstraints();
-  ///Works once CSpaces are flattened
+  ///If FlattenConstraints has already been called, this lets you add new single-space 
+  ///constraints.  The constraint is added to the designated component space AND this object.  
   void AddConstraint(int spaceIndex,const std::string& name,CSet* constraint);
-  ///Works once CSpaces are flattened
+  ///If FlattenConstraints has already been called, this lets you add new single-space 
+  ///constraints.  The constraint is added to the designated component space AND this object.  
   void AddConstraint(int spaceIndex,const std::string& name,const std::shared_ptr<CSet>& constraint);
-  ///Works once CSpaces are flattened
+  ///If FlattenConstraints has already been called, this lets you add new single-space 
+  ///constraints.  The constraint is added to the designated component space AND this object.  
   void AddConstraint(int spaceIndex,const std::string& name,CSet::CPredicate test);
 
   void Split(const Vector& x,std::vector<Vector>& items);
   void SplitRef(const Vector& x,std::vector<Vector>& items);
   void Join(const std::vector<Vector>& items,Vector& x);
+
+  ///Available for your use in LocalPlanner.  Can be slightly faster than IsFeasible, because the
+  ///extraction of sub-components is done only once.
+  bool IsFeasible_Independent(const Config&);
+  ///Available for your use in LocalPlanner
+  EdgePlannerPtr LocalPlanner_Independent(const Config& a,const Config& b);
+  ///Available for your use in PathChecker
+  EdgePlannerPtr PathChecker_Independent(const Config& a,const Config& b);
+  ///Available for your use in PathChecker
+  EdgePlannerPtr PathChecker_Independent(const Config& a,const Config& b,int constraint);
 
   //CSpace overloads
   virtual int NumDimensions();
@@ -111,12 +157,13 @@ public:
   virtual std::shared_ptr<CSet> Constraint(int i);
   virtual void Sample(Config& x);
   virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual bool IsFeasible(const Config&);
+  virtual bool IsFeasible(const Config& q);
   virtual bool ProjectFeasible(Config& x);
-  virtual Optimization::NonlinearProgram* FeasibleNumeric();
   virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
   virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int constraint);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
+
+  virtual Optimization::NonlinearProgram* FeasibleNumeric();
   virtual Real Distance(const Config& x, const Config& y);
   virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
   virtual void Midpoint(const Config& x,const Config& y,Config& out);

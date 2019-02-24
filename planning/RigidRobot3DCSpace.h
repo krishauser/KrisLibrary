@@ -3,9 +3,12 @@
 
 #include <KrisLibrary/geometry/AnyGeometry.h>
 
-/** @brief a translating and rotating 2D robot in a 2D workspace.
+/** @ingroup Planning
+ * @brief a translating and rotating 3D robot in a 3D workspace.
+ *
+ * Not implemented yet.
  */
-class RigidRobot3DCSpace : public SE3CSpace, ExplicitCSpace
+class RigidRobot3DCSpace : public SE3CSpace
 {
 public:
   RigidRobot3DCSpace();

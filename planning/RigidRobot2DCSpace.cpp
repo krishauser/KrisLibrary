@@ -19,6 +19,7 @@ RigidRobot2DCSpace::RigidRobot2DCSpace()
 void RigidRobot2DCSpace::InitConstraints()
 {
   SetDomain(domain.bmin,domain.bmax);
+  //printf("RigidRobot2DCSpace::InitConstraints with %d obstacles\n",obstacles.NumObstacles());
   for(int i=0;i<obstacles.NumObstacles();i++) {
     char buf[64];
     sprintf(buf,"%s[%d]",obstacles.ObstacleTypeName(i),obstacles.ObstacleIndex(i));
@@ -51,15 +52,15 @@ void RigidRobot2DCSpace::DrawRobotGL(const Config& x) const
   Geometric2DCollection temp = robot;
   temp.Transform(T);
 
-  //draw robot greyish blue
+  //draw robot in the current color
   temp.DrawGL();
-  //draw outline
+
+  //draw outline in black
   glPushAttrib(GL_CURRENT_BIT | GL_LINE_BIT);
   glLineWidth(1.0);
-  glColor3f(0,0,0);
+  glColor3f(0,0,0);  //somehow this isn't getting restored on glPopAttrib?
   temp.DrawOutlinesGL();
   glPopAttrib();
-
 }
 
 void RigidRobot2DCSpace::DrawGL(const Config& x) const
