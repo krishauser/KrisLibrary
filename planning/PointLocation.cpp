@@ -1,5 +1,6 @@
 #include <KrisLibrary/Logger.h>
 #include "PointLocation.h"
+#include <KrisLibrary/Timer.h>
 #include <math/random.h>
 #include <set>
 #include <algorithm>
@@ -307,6 +308,8 @@ bool KDTreePointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::ve
       distances.resize(i);
       break;
     }
+
+ 
   vector<pair<Real,int> > items(nn.size());
   for(size_t i=0;i<nn.size();i++)
     items[i] = pair<Real,int>(distances[i],nn[i]);
@@ -376,7 +379,23 @@ bool BallTreePointLocation::OnClear()
 
 bool BallTreePointLocation::NN(const Vector& p,int& nn,Real& distance)
 { 
+  //Timer timer;
   nn = tree->ClosestPoint(p,distance);
+  //DEBUG
+  /*
+  printf("Ball tree: %d, distance %g in time %g\n",nn,distance,timer.ElapsedTime());
+  timer.Reset();
+  printf("Brute force: ");
+  int closest = 0;
+  Real mindist = Inf;
+  for(size_t i=0;i<points.size();i++) {
+    if(cspace->Distance(points[i],p) <= mindist) {
+      closest = (int)i;
+      mindist = cspace->Distance(points[i],p);
+    }
+  }
+  printf("%d, distance %g in time %g\n",closest,mindist,timer.ElapsedTime());
+  */
   return (nn>=0);
 }
 
@@ -392,6 +411,33 @@ bool BallTreePointLocation::KNN(const Vector& p,int k,std::vector<int>& nn,std::
       distances.resize(i);
       break;
     }
+
+  /*
+  //DEBUG
+  Real dmax = distances[0];
+  for(auto d:distances)
+    dmax = Max(d,dmax);
+  for(size_t i=0;i<distances.size();i++)
+    printf("%d: %g, ",nn[i],distances[i]);
+  printf("\n");
+  printf("Brute force: ");
+  int numcloser = 0;
+  for(size_t i=0;i<points.size();i++) {
+    if(cspace->Distance(points[i],p) <= dmax) {
+      numcloser += 1;
+      printf("%d: %g, ",(int)i,cspace->Distance(points[i],p));
+    }
+  }
+  for(size_t i=0;i<points.size();i++) {
+    if(cspace->Distance(points[i],p) <= dmax) {
+      cout<<i<<" is "<<points[i]<<endl;
+    }
+  }
+  printf("\n");
+
+  printf("The number of closer items brute force is %d, vs %d\n",numcloser,k);
+  */
+
   vector<pair<Real,int> > items(nn.size());
   for(size_t i=0;i<nn.size();i++)
     items[i] = pair<Real,int>(distances[i],nn[i]);
