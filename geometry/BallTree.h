@@ -19,9 +19,11 @@ namespace Geometry {
  * - pts: the set of points contained within (not just for children)
  * - children: the list of child nodes
  *
+ * XXXXX this note doesnt apply anymore... referencing was problematic XXXXX
  * NOTE: To avoid unnecessary copying, BallTreeNodes only store REFERENCES
  * to the Vectors that are given as input.
  * As a result you must store them in some auxiliary data structure.
+ * XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
  */
 class BallTreeNode
 {

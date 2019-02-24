@@ -5,6 +5,17 @@
 using namespace Geometry;
 using namespace std;
 
+
+#define REFERENCE_VECTORS 0
+
+#if REFERENCE_VECTORS
+  #define STORE_POINT(a,b) a.setRef(b)
+#else
+  #define STORE_POINT(a,b) a = b
+#endif //REFERENCE_VECTORS
+
+
+
 BallTreeNode::BallTreeNode()
 :radius(0),parent(NULL)
 {}
@@ -66,7 +77,7 @@ void BallTree::Build(const std::vector<Vector>& p,int maxDepth)
   Clear();
   root.pts.resize(p.size());
   for(size_t i=0;i<p.size();i++) {
-    root.pts[i].pt.setRef(p[i]);
+    STORE_POINT(root.pts[i].pt,p[i]);
     root.pts[i].id = (int)i;
   }
   Fit(&root,true);
@@ -96,7 +107,7 @@ BallTreeNode* BallTree::Insert(const Vector& p,int id,int maxLeafPoints)
     n->radius = 0;
   }
   BallTreeNode::Point pt;
-  pt.pt.setRef(p);
+  STORE_POINT(pt.pt,p);
   pt.id = id;
   BallTreeNode* nodeiter = n;
   //also add to all parents

@@ -7,6 +7,14 @@
 using namespace Geometry;
 using namespace std;
 
+#define REFERENCE_VECTORS 0
+
+#if REFERENCE_VECTORS
+  #define STORE_POINT(a,b) a.setRef(b)
+#else
+  #define STORE_POINT(a,b) a = b
+#endif //REFERENCE_VECTORS
+
 Real Distance(const Vector& a,const Vector& b,Real norm,const Vector& weights)
 {
   if(weights.empty()) 
@@ -41,13 +49,13 @@ KDTree::Point::Point()
 
 KDTree::Point::Point(const Point& p)
 {
-  pt.setRef(p.pt);
+  STORE_POINT(pt,p.pt);
   id = p.id;
 }
 
 const KDTree::Point& KDTree::Point::operator = (const Point& p)
 {
-  pt.setRef(p.pt);
+  STORE_POINT(pt,p.pt);
   id = p.id;
   return *this;
 }
@@ -56,7 +64,8 @@ KDTree* KDTree::Create(const std::vector<Vector>& p, int k, int maxDepth)
 {
   std::vector<Point> pts(p.size());
   for(size_t i=0; i<p.size();i++) {
-    pts[i].pt.setRef(p[i]);
+    STORE_POINT(pts[i].pt,p[i]);
+    pts[i].pt = p[i];
     pts[i].id=(int)i;
   }
   return new KDTree(pts,k,0,maxDepth);
@@ -202,7 +211,7 @@ KDTree* KDTree::Insert(const Vector& p,int id,int maxLeafPoints)
   Assert(node->IsLeaf());
   //just add to the node
   node->pts.resize(node->pts.size()+1);
-  node->pts.back().pt.setRef(p);
+  STORE_POINT(node->pts.back().pt,p);
   node->pts.back().id = id;
   if((int)node->pts.size() >= maxLeafPoints) {
     //split
