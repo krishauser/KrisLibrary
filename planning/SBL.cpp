@@ -91,8 +91,6 @@ void SBLPlannerWithGrid::Init(const Config& qStart,const Config& qGoal)
   SBLTreeWithGrid* g= new SBLTreeWithGrid(space);
   tStart = s;
   tGoal = g;
-  s->Init(qStart);
-  g->Init(qGoal);
 
   s->A.h.resize(qStart.n,gridDivision);
   g->A.h.resize(qStart.n,gridDivision);
@@ -101,6 +99,9 @@ void SBLPlannerWithGrid::Init(const Config& qStart,const Config& qGoal)
     s->A.Randomize(qStart.n,qStart.n,gridDivision);
     g->A.Randomize(qStart.n,qStart.n,gridDivision);
   }
+
+  s->Init(qStart);
+  g->Init(qGoal);
   if(CheckPath(s->root,g->root)) {
     //LOG4CXX_INFO(KrisLibrary::logger(),"SBLPlanner::Init(): Start and goal connected!");
   }
