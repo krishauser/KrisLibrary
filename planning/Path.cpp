@@ -90,6 +90,7 @@ int MilestonePath::Shortcut()
 
 int MilestonePath::Shortcut(ObjectiveFunctionalBase* objective)
 {
+  if(!objective) return Shortcut();
   int numShortcuts=0;
   size_t i=0;
   while(i+1 < edges.size()) {
@@ -156,6 +157,7 @@ int MilestonePath::Reduce(int numIters)
 
 int MilestonePath::Reduce(int numIters,ObjectiveFunctionalBase* objective)
 {
+  if(!objective) return Reduce(numIters);
   CSpace* space=Space();
   //pick random points on the path, connect them if they're visible
   Config x1,x2;
