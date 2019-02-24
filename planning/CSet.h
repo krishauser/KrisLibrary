@@ -12,7 +12,7 @@ typedef Vector Config;
 
 /** @ingroup MotionPlanning
  * @brief A subset of a CSpace, which establishes a constraint for a configuration
- * to be feasible. 
+ * must meet.  Mathematically, this is a set S which imposes the constraint [q in S].
  *
  * You can either create a subclass of CSet for greatest functionality, or construct a
  * CSet with a function pointer that returns whether a Config is in or out.
@@ -47,7 +47,7 @@ public:
   ///If IsSampleable is true, draws a config at random from the set
   virtual void Sample(Config& x) {}
 
-  ///If possible, give the obstacle as a feasible solution to the nonlinear program
+  ///If possible, give the set as a feasible solution to the nonlinear program
   ///g(x) <= 0, h(x) = 0.
   virtual Optimization::NonlinearProgram* Numeric() { return NULL; }
 
