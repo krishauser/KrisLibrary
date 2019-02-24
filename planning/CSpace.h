@@ -25,6 +25,11 @@ typedef std::shared_ptr<EdgePlanner> EdgePlannerPtr;
  * the user will create some CSets (or predicates) and add them via the AddConstraint
  * method.
  *
+ * Note: these predicates must return true if the configuration is feasible.  In other
+ * words, return false if it hits an obstacle.  The same goes for CSet constraint
+ * representations: the cset->Contains test returns true if the configuration is
+ * feasible for that constraint.
+ *
  * At the very least, the subclass must implement the Sample() and one of the PathChecker()
  * functions. All of the other methods assume Euclidean space.
  *
