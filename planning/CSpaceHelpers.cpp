@@ -150,9 +150,16 @@ void BoxCSpace::Sample(Config& x)
     x(i) = Rand(bmin[i],bmax[i]);
 }
 
+bool BoxCSpace::ProjectFeasible(Config& x)
+{
+  AABBClamp(x,bmin,bmax);
+  return true;
+}
+
 void BoxCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
 {
   CartesianCSpace::SampleNeighborhood(c,r,x);
+  AABBClamp(x,bmin,bmax);
 }
 
 void BoxCSpace::Properties(PropertyMap& pmap)
