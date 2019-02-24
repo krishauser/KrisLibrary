@@ -57,14 +57,15 @@ void CSpace::CopyConstraints(const CSpace* space,const std::string& prefix)
 std::string CSpace::VariableName(int i)
 {
   stringstream ss;
-  ss<<"x"<<i<<endl;
+  ss<<"x"<<i;
   return ss.str();
 }
 
 bool CSpace::IsFeasible(const Config& q)
 {
-  for(size_t i=0;i<constraints.size();i++)
+  for(size_t i=0;i<constraints.size();i++) {
     if(!IsFeasible(q,i)) return false;
+  }
   return true;
 }
 
