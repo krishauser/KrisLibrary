@@ -11,6 +11,7 @@
 #include "Path.h"
 
 class PointLocationBase;
+class ObjectiveFunctionalBase;
 
 
 /** @defgroup MotionPlanning
@@ -41,7 +42,11 @@ public:
   virtual void ConnectToNeighbors(int i,Real connectionThreshold,bool ccReject=true);
   virtual void ConnectToNearestNeighbors(int i,int k,bool ccReject=true);
   virtual void Generate(int numSamples,Real connectionThreshold); 
+  ///Creates the shortest path from i to j.  These MUST be in the same connected component.
   virtual void CreatePath(int i,int j,MilestonePath& path);
+  ///Creates a minimum-cost path from i to one of the given goal nodes. Returns the best cost, 
+  ///or Inf if no path exists.
+  virtual Real OptimizePath(int i,const std::vector<int>& goals,ObjectiveFunctionalBase* cost,MilestonePath& path);
 
   CSpace* space;
   Roadmap roadmap;
@@ -63,7 +68,8 @@ class TreeRoadmapPlanner
 public:
   struct Milestone
   {
-    Config x;
+    Config x; 
+    int id;
     int connectedComponent;
   };
   
@@ -82,22 +88,31 @@ public:
   virtual EdgePlannerPtr TryConnect(Node*,Node*);
   virtual void DeleteSubtree(Node* n);
   //helpers
-  //default implementation is O(n) search
-  virtual Node* ClosestMilestone(const Config& x);
+  //default implementation uses pointLocator
+  virtual int ClosestMilestone(const Config& x);
+  //default implementation uses O(n) search
   virtual Node* ClosestMilestoneInComponent(int component,const Config& x);
   virtual Node* ClosestMilestoneInSubtree(Node* node,const Config& x);
   Node* Extend(Node* n,const Config& x);
   Node* TryExtend(Node* n,const Config& x);
   void AttachChild(Node* p, Node* c, const EdgePlannerPtr& e);   //c will become a child of p
   Node* SplitEdge(Node* p,Node* n,Real u);
+  ///Creates the unique path from a to b.  These MUST be in the same connected component.
   void CreatePath(Node* a, Node* b, MilestonePath& path);
+  ///Creates a minimum-cost path from a to one of the given goal nodes.  Returns the best cost, 
+  ///or Inf if no path exists.
+  ///
+  ///Note: not terribly efficient if there are many goals.
+  virtual Real OptimizePath(Node* a,const std::vector<Node*>& goals,ObjectiveFunctionalBase* cost,MilestonePath& path);
   
   CSpace* space;
   std::vector<Node*> connectedComponents;
   Real connectionThreshold;
   
   //temporary
-  std::vector<Node*> milestones;
+  std::vector<Vector> milestones;
+  std::vector<Node*> milestoneNodes;
+  std::shared_ptr<PointLocationBase> pointLocator;
   Config x;
 };
 

@@ -1,6 +1,7 @@
 #include <KrisLibrary/Logger.h>
 #include "MotionPlanner.h"
 #include "PointLocation.h"
+#include "Objective.h"
 #include <graph/Path.h>
 #include <graph/ShortestPaths.h>
 #include <math/random.h>
@@ -15,13 +16,31 @@ class EdgeDistance
  public:
   Real operator () (const EdgePlannerPtr& e,int s,int t)
   {
-    if(!e) return 1.0;
+    if(!e) return 1.0;  //this must be a lazy planner
     Real res = e->Length();
     if(res <= 0) {
       LOG4CXX_WARN(KrisLibrary::logger(),"RoadmapPlanner: Warning, edge has nonpositive length "<<res);
       return Epsilon;
     }
     return res;
+  }
+};
+
+class EdgeObjectiveCost
+{
+ public:
+  ObjectiveFunctionalBase* objective;
+  int terminalNode;  //the indicator for the special terminal node
+
+  EdgeObjectiveCost(ObjectiveFunctionalBase* _objective,int _terminalNode=-1)
+    :objective(_objective),terminalNode(_terminalNode)
+  {}
+  Real operator () (const EdgePlannerPtr& e,int s,int t)
+  {
+    if(!e) return 1.0;  //this must be a lazy planner
+    if(t==terminalNode)
+      return objective->TerminalCost(e->Start());
+    return objective->IncrementalCost(e.get());
   }
 };
 
@@ -117,10 +136,9 @@ void RoadmapPlanner::ConnectToNeighbors(int i,Real connectionThreshold,bool ccRe
   vector<int> nn;
   vector<Real> distances;
   if(pointLocator->Close(roadmap.nodes[i],connectionThreshold,nn,distances)) {
-    for(size_t k=0;k<nn.size();k++) {
-      int j=nn[k];
+    for(auto j:nn) {
       if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
-      else if(i==(int)j || roadmap.HasEdge(i,j)) continue;
+      else if(i==j || roadmap.HasEdge(i,j)) continue;
       TestAndConnectEdge(i,j);
     }
   }
@@ -144,8 +162,7 @@ void RoadmapPlanner::ConnectToNearestNeighbors(int i,int k,bool ccReject)
   if(pointLocator->KNN(roadmap.nodes[i],(ccReject?k*4:k),nn,distances)) {
     //assume the k nearest neighbors are sorted by distance
     int numTests=0;
-    for(size_t m=0;m<nn.size();m++) {
-      int j=nn[m];
+    for(auto j:nn) {
       if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
       else if(i==(int)j) continue;
       TestAndConnectEdge(i,j);
@@ -225,8 +242,8 @@ void RoadmapPlanner::CreatePath(int i,int j,MilestonePath& path)
   Assert(nodes.back()==j);
   path.edges.clear();
   path.edges.reserve(nodes.size());
-  for(list<int>::const_iterator p=nodes.begin();p!=--nodes.end();++p) {
-    list<int>::const_iterator n=p; ++n;
+  for(auto p=nodes.begin();p!=--nodes.end();++p) {
+    auto n=p; ++n;
     EdgePlannerPtr* e=roadmap.FindEdge(*p,*n);
     Assert(e);
     if(*e == NULL) {
@@ -248,11 +265,88 @@ void RoadmapPlanner::CreatePath(int i,int j,MilestonePath& path)
   Assert(path.IsValid());
 }
 
+Real RoadmapPlanner::OptimizePath(int i,const vector<int>& goals,ObjectiveFunctionalBase* cost,MilestonePath& path)
+{
+  path.edges.clear();
+  if(goals.empty()) 
+    return Inf;
+
+  Real optCost=0;
+  list<int> nodes;
+  if(goals.size()==1) {
+    //no need to add a special terminal node
+    EdgeObjectiveCost edgeCost(cost,-1);
+    int terminalNode = goals[0];
+    Graph::ShortestPathProblem<Config,EdgePlannerPtr > spp(roadmap);
+    spp.InitializeSource(i);
+    spp.FindPath_Undirected(terminalNode,edgeCost);
+    optCost = spp.d[terminalNode];
+    if(IsInf(spp.d[terminalNode])) {
+      return Inf;
+    }
+    bool res=Graph::GetAncestorPath(spp.p,terminalNode,i,nodes);
+    if(!res) {
+      FatalError("RoadmapPlanner::OptimizePath: GetAncestorPath returned false");
+      return Inf;
+    }
+  }
+  else {
+    //need to add a special terminal node, then delete it
+    int terminalNode = roadmap.AddNode(Vector());
+    for(auto g: goals) {
+      roadmap.AddEdge(g,terminalNode,space->PathChecker(roadmap.nodes[g],roadmap.nodes[g]));
+    }
+    EdgeObjectiveCost edgeCost(cost,terminalNode);
+    Graph::ShortestPathProblem<Config,EdgePlannerPtr > spp(roadmap);
+    spp.InitializeSource(i);
+    spp.FindPath_Undirected(terminalNode,edgeCost);
+    //delete the terminal node
+    roadmap.DeleteNode(terminalNode);
+
+    optCost = spp.d[terminalNode];
+    if(IsInf(spp.d[terminalNode])) {
+      return Inf;
+    }
+    bool res=Graph::GetAncestorPath(spp.p,terminalNode,i,nodes);
+    if(!res) {
+      FatalError("RoadmapPlanner::OptimizePath: GetAncestorPath returned false");
+      return Inf;
+    }
+    //remove terminalNode
+    nodes.pop_back();
+  }
+  path.edges.clear();
+  path.edges.reserve(nodes.size());
+  for(auto p=nodes.begin();p!=--nodes.end();++p) {
+    auto n=p; ++n;
+    EdgePlannerPtr* e=roadmap.FindEdge(*p,*n);
+    Assert(e);
+    if(*e == NULL) {
+      //edge data not stored
+      path.edges.push_back(space->LocalPlanner(roadmap.nodes[*p],roadmap.nodes[*n]));
+    }
+    else {
+      //edge data stored
+      if((*e)->Start() == roadmap.nodes[*p]) {
+  //path.edges.push_back((*e)->Copy());
+  path.edges.push_back(*e);
+      }
+      else {
+  Assert((*e)->End() == roadmap.nodes[*p]);
+  path.edges.push_back((*e)->ReverseCopy());
+      }
+    }
+  }
+  Assert(path.IsValid());
+  return optCost;
+}
+
 
 
 TreeRoadmapPlanner::TreeRoadmapPlanner(CSpace* s)
   :space(s),connectionThreshold(Inf)
 {
+  pointLocator = make_shared<NaivePointLocation>(milestones,s);
 }
 
 TreeRoadmapPlanner::~TreeRoadmapPlanner()
@@ -267,6 +361,8 @@ void TreeRoadmapPlanner::Cleanup()
     SafeDelete(connectedComponents[i]);
   connectedComponents.clear();
   milestones.clear();
+  milestoneNodes.clear();
+  pointLocator->OnClear();
 }
 
 TreeRoadmapPlanner::Node* TreeRoadmapPlanner::TestAndAddMilestone(const Config& x)
@@ -279,12 +375,15 @@ TreeRoadmapPlanner::Node* TreeRoadmapPlanner::TestAndAddMilestone(const Config& 
 
 TreeRoadmapPlanner::Node* TreeRoadmapPlanner::AddMilestone(const Config& x)
 {
+  milestones.push_back(x);
   Milestone m;
-  m.x=x;
+  m.x.setRef(milestones.back());
+  m.id = (int)milestones.size()-1;
   int n=(int)connectedComponents.size();
   m.connectedComponent=n;
   connectedComponents.push_back(new Node(m));
-  milestones.push_back(connectedComponents[n]);
+  milestoneNodes.push_back(connectedComponents[n]);
+  pointLocator->OnAppend();
   return connectedComponents[n];
 }
 
@@ -309,7 +408,7 @@ void TreeRoadmapPlanner::ConnectToNeighbors(Node* n)
     //for each other component, attempt a connection to the closest node
     for(size_t i=0;i<connectedComponents.size();i++) {
       if((int)i == n->connectedComponent) continue;
-      
+
       ClosestMilestoneCallback callback(space,n->x);
       connectedComponents[i]->DFS(callback);
       TryConnect(n,callback.closestMilestone);
@@ -318,11 +417,12 @@ void TreeRoadmapPlanner::ConnectToNeighbors(Node* n)
   else {
     //attempt a connection between this node and all others within the 
     //connection threshold
-    for(size_t i=0;i<milestones.size();i++) {
-      if(n->connectedComponent != milestones[i]->connectedComponent) {
-	if(space->Distance(n->x,milestones[i]->x) < connectionThreshold) {
-	  TryConnect(n,milestones[i]);
-	}
+    vector<int> nodes;
+    vector<Real> distances;
+    pointLocator->Close(n->x,connectionThreshold,nodes,distances);
+    for(auto i:nodes) {
+      if(n->connectedComponent != milestoneNodes[i]->connectedComponent) {
+        TryConnect(n,milestoneNodes[i]);
       }
     }
   }
@@ -372,14 +472,19 @@ void TreeRoadmapPlanner::DeleteSubtree(Node* n)
   Graph::TopologicalSortCallback<Node*> callback;
   n->DFS(callback);
   for(list<Node*>::iterator i=callback.list.begin();i!=callback.list.end();i++) {
-    for(size_t j=0;j<milestones.size();j++) {
-      if(milestones[j]==*i) {
-	milestones[j]=milestones.back();
-	milestones.resize(milestones.size()-1);
-	break;
-      }
-    }
+    int j=(*i)->id;
+    assert(milestoneNodes[j]==*i);
+  	milestoneNodes[j]=milestoneNodes.back();
+    milestones[j]=milestones.back();
+  	milestoneNodes.resize(milestoneNodes.size()-1);
+    milestones.resize(milestones.size()-1);
+    milestoneNodes[j]->id = (int)j;
+    milestoneNodes[j]->x.setRef(milestones[j]);
   }
+  //refresh the point locator
+  pointLocator->OnClear();
+  pointLocator->OnBuild();
+  //delete the items
   n->getParent()->eraseChild(n);
 }
 
@@ -431,19 +536,72 @@ void TreeRoadmapPlanner::CreatePath(Node* a, Node* b, MilestonePath& path)
   }
 }
 
-TreeRoadmapPlanner::Node* TreeRoadmapPlanner::ClosestMilestone(const Config& x)
+Real TreeRoadmapPlanner::OptimizePath(Node* a, const vector<Node*>& goals, ObjectiveFunctionalBase* objective, MilestonePath& path)
 {
-  if(milestones.empty()) return NULL;
-  Real dmin=space->Distance(milestones[0]->x,x);
-  Node* n=milestones[0];
-  for(size_t i=1;i<milestones.size();i++) {
-    Real d=space->Distance(milestones[i]->x,x);
-    if(d<dmin) {
-      dmin=d;
-      n=milestones[i];
+  //this is pretty inefficient if there are a lot of goals...
+  MilestonePath tempPath;
+  Real bestCost = Inf;
+  a->reRoot();
+  connectedComponents[a->connectedComponent] = a;
+
+  for(auto b : goals) {
+    if(a->connectedComponent != b->connectedComponent) continue;
+    Assert(b->hasAncestor(a) || b==a);
+    Assert(a->getParent()==NULL);
+
+    Real totalCost = objective->TerminalCost(b->x);
+    if(totalCost >= bestCost) continue;
+
+    //get path from a to b
+    list<Node*> atob;
+    while(b != NULL) {
+      atob.push_front(b);
+      b = b->getParent();
+    }
+
+    path.edges.resize(atob.size()-1);
+    int index=0;
+    for(auto i=++atob.begin();i!=atob.end();i++) {
+      b=*i;
+      if(b->edgeFromParent()==NULL) {
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Hmm... constructing new edge?\n");
+        //edge data not stored
+        auto p=i; --p;
+        Node* bp = *p;
+        path.edges[index]=space->LocalPlanner(bp->x,b->x);
+      }
+      else {
+        //contains edge data
+        if(b->x == b->edgeFromParent()->Start())
+          path.edges[index]=b->edgeFromParent()->ReverseCopy();
+        else {
+          Assert(b->x == b->edgeFromParent()->End());
+          //do we need a copy here?
+          //path.edges[index]=b->edgeFromParent()->Copy();
+          path.edges[index]=b->edgeFromParent();
+        }
+      }
+      totalCost += objective->IncrementalCost(path.edges[index].get());
+      if(totalCost >= bestCost) break;
+      index++;
+    }
+    if(totalCost < bestCost) {
+      bestCost = totalCost;
+      tempPath = path;
     }
   }
-  return n;
+  swap(path.edges,tempPath.edges);
+  return bestCost;
+}
+
+int TreeRoadmapPlanner::ClosestMilestone(const Config& x)
+{
+  if(milestones.empty()) return NULL;
+  int index;
+  Real distance;
+  bool successful = pointLocator->NN(x,index,distance);
+  assert(successful);
+  return index;
 }
 
 TreeRoadmapPlanner::Node* TreeRoadmapPlanner::ClosestMilestoneInComponent(int component,const Config& x)
@@ -548,7 +706,7 @@ TreeRoadmapPlanner::Node* PerturbationTreePlanner::AddMilestone(const Config& x)
 {
   Assert(milestones.size() == weights.size());
   Node* n=TreeRoadmapPlanner::AddMilestone(x);
-  Assert(n == milestones.back());
+  Assert(n == milestoneNodes.back());
   weights.push_back(1);
   Assert(milestones.size() == weights.size());
   return n;
@@ -561,7 +719,7 @@ void PerturbationTreePlanner::GenerateConfig(Config& x)
     space->Sample(x);
   }
   else {
-    Node* n = SelectMilestone(milestones);
+    Node* n = SelectMilestone(milestoneNodes);
     space->SampleNeighborhood(n->x,delta,x);
   }
 }
@@ -597,7 +755,7 @@ TreeRoadmapPlanner::Node* RRTPlanner::Extend()
   space->Sample(dest);
 
   //pick closest milestone, step in that direction
-  Node* closest=ClosestMilestone(dest);
+  Node* closest=milestoneNodes[ClosestMilestone(dest)];
   Real dist=space->Distance(closest->x,dest);
   if(dist > delta)
     space->Interpolate(closest->x,dest,delta/dist,x);
@@ -620,36 +778,36 @@ void BidirectionalRRTPlanner::Init(const Config& start, const Config& goal)
   AddMilestone(start);
   AddMilestone(goal);
   Assert(milestones.size()==2);
-  Assert(milestones[0]->x == start);
-  Assert(milestones[1]->x == goal);
+  Assert(milestones[0] == start);
+  Assert(milestones[1] == goal);
   Assert(connectedComponents.size()==2);
-  Assert(connectedComponents[0] == milestones[0]);
-  Assert(connectedComponents[1] == milestones[1]);
+  Assert(connectedComponents[0] == milestoneNodes[0]);
+  Assert(connectedComponents[1] == milestoneNodes[1]);
 }
 
 bool BidirectionalRRTPlanner::Plan()
 {
   //If we've already found a path, return true
-  if(milestones[0]->connectedComponent == milestones[1]->connectedComponent)
+  if(milestoneNodes[0]->connectedComponent == milestoneNodes[1]->connectedComponent)
     return true;
 
   Node* n=Extend();
   if(!n) return false;
 
-  if(n->connectedComponent == milestones[0]->connectedComponent) {
+  if(n->connectedComponent == milestoneNodes[0]->connectedComponent) {
     //attempt to connect to goal, if the distance is < connectionThreshold
     ClosestMilestoneCallback callback(space,n->x);
-    milestones[1]->DFS(callback);
+    milestoneNodes[1]->DFS(callback);
     if(callback.closestDistance < connectionThreshold) {
       if(TryConnect(n,callback.closestMilestone)) //connection successful!
 	return true;
     }
   }
   else {
-    Assert(n->connectedComponent == milestones[1]->connectedComponent);
+    Assert(n->connectedComponent == milestoneNodes[1]->connectedComponent);
     //attempt to connect to start, if the distance is < connectionThreshold
     ClosestMilestoneCallback callback(space,n->x);
-    milestones[0]->DFS(callback);
+    milestoneNodes[0]->DFS(callback);
     if(callback.closestDistance < connectionThreshold) {
       if(TryConnect(callback.closestMilestone,n)) //connection successful!
 	return true;
@@ -660,11 +818,11 @@ bool BidirectionalRRTPlanner::Plan()
 
 void BidirectionalRRTPlanner::CreatePath(MilestonePath& p) const
 {
-  Assert(milestones[0]->connectedComponent == milestones[1]->connectedComponent);
-  Assert(connectedComponents[0] == milestones[0]);
+  Assert(milestoneNodes[0]->connectedComponent == milestoneNodes[1]->connectedComponent);
+  Assert(connectedComponents[0] == milestoneNodes[0]);
   list<Node*> path;
-  Node* n = milestones[1];
-  while(n != milestones[0]) {
+  Node* n = milestoneNodes[1];
+  while(n != milestoneNodes[0]) {
     path.push_front(n);
     n = n->getParent();
     Assert(n != NULL);

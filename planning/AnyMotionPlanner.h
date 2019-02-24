@@ -101,19 +101,42 @@ class MotionPlannerInterface
   virtual bool IsPointToPoint() const { return true; }
   ///Returns true if this planner can optimize the path after the first solution
   virtual bool IsOptimizing() const { return false; }
+  ///Returns true if this planner can handle an objective function (in SetObjective
+  ///and GetOptimalPath)
+  virtual bool CanUseObjective() const { return false; }
+  ///Must be implemented if CanUseObjective() = true
+  virtual void SetObjective(std::shared_ptr<ObjectiveFunctionalBase> obj) {}
   ///Returns true if this planner has lazy semantics
   virtual bool IsLazy() const { return false; }
   ///If lazy semantics are used, returns true if the two milestones are
   ///connected by a likely feasible path
+  ///
+  ///Must be implemented if IsLazy()=true
   virtual bool IsLazyConnected(int ma,int mb) const { return IsConnected(ma,mb); }
   ///If lazy semantics are used, this will check for a feasible path
   /// between two lazy-connected milestones
+  ///
+  ///Must be implemented if IsLazy()=true
   virtual bool CheckPath(int ma,int mb) { return false; }
-  ///Returns a feasible path between two connected milestones
+  ///Retrieve the index of a close milestone
+  virtual int GetClosestMilestone(const Config& q);
+  ///Returns a feasible path between two connected milestones.  If
+  ///IsConnected(ma,mb)=false, this will abort.
+  ///
+  ///Must be implemented if IsLazy()=true
   virtual void GetPath(int ma,int mb,MilestonePath& path)=0;
+  ///Calculates a feasible, minimum cost path, starting at ma and terminating at some node 
+  ///in the mb set.  If SetObjective was called before, the objective function is
+  ///used as the cost.  Otherwise, the cost is up to the planner, but is typically path length.
+  ///The cost is returned.
+  ///
+  ///Must be implemented if CanUseObjective() = true.
+  virtual Real GetOptimalPath(int ma,const std::vector<int>& mb,MilestonePath& path) { return Inf; }
   ///For single-query planners, returns true if the start and goal are connected
   virtual bool IsSolved() { return IsConnected(0,1); }
-  ///For single-query planners, returns the solution path
+  ///For single-query planners (IsPointToPoint()=true), returns the solution path.
+  ///
+  ///For multi-query planners, returns the optimal solution path.
   virtual void GetSolution(MilestonePath& path) { return GetPath(0,1,path); }
   ///Returns a full-blown roadmap representation of the roadmap
   virtual void GetRoadmap(Roadmap& roadmap) const {}
@@ -135,16 +158,16 @@ class MotionPlanningProblem
   MotionPlanningProblem(CSpace* space,const Config& a,CSet* goalSet);
   ///Create a set-to-set problem
   MotionPlanningProblem(CSpace* space,CSet* startSet,CSet* goalSet);
-  ///Create an initial value problem (placeholder -- objectives not done yet)
-  MotionPlanningProblem(CSpace* space,const Config& a,void* objective);
+  ///Create an initial value problem
+  MotionPlanningProblem(CSpace* space,const Config& a,std::shared_ptr<ObjectiveFunctionalBase> objective);
 
   CSpace* space;
   ///Non-empty if the start/end point is given
   Config qstart,qgoal;
   ///Non-NULL if the start/end point must be in a given set
   CSet *startSet, *goalSet;
-  ///Placeholder -- objectives not done yet
-  void* objective;
+  ///Non-NULL if you'd like to optimize some objective function
+  std::shared_ptr<ObjectiveFunctionalBase> objective;
 };
 
 /** @brief A motion planner creator.
@@ -268,7 +291,7 @@ class MotionPlannerFactory
   bool useGrid;            ///<for SBL, SBLPRT (default true): for SBL, uses grid-based random point selection
   Real gridResolution;     ///<for SBL, SBLPRT, FMM, FMM* (default 0): if nonzero, for SBL, specifies point selection grid size (default 0.1), for FMM / FMM*, specifies resolution (default 1/8 of domain)
   int randomizeFrequency;  ///<for SBL, SBLPRT (default 50): how often the grid projection is randomly perturbed
-  std::string pointLocation;    ///<for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("random", "randombest [k]", "kdtree" supported)
+  std::string pointLocation;    ///<for PRM, RRT*, PRM*, LazyPRM*, LazyRRG* (default ""): specifies a point location data structure ("random", "randombest [k]", "kdtree", "balltree" supported)
   bool storeEdges;         ///<true if local planner data is stored during planning (false may save memory, default)
   bool shortcut;           ///<true if you wish to perform shortcutting afterwards (default false)
   bool restart;            ///<true if you wish to restart the planner to get better paths with the remaining time (default false)
