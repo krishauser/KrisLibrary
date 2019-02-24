@@ -246,15 +246,20 @@ MatrixTemplate<T>& MatrixTemplate<T>::operator = (const MyT& a)
 template <class T>
 MatrixTemplate<T>& MatrixTemplate<T>::operator =(MyT&& a)
 {
-  vals = a.vals;
-  capacity = a.capacity;
-  allocated = a.allocated;
-  base = a.base;
-  istride = a.istride;
-  m = a.m;
-  jstride = a.jstride;
-  n = a.n;
-  a.vals = NULL;
+  if(vals == NULL) {
+    ::swap(vals,a.vals);
+    ::swap(capacity,a.capacity);
+    ::swap(allocated,a.allocated);
+    ::swap(base,a.base);
+    ::swap(istride,a.istride);
+    ::swap(m,a.m);
+    ::swap(jstride,a.jstride);
+    ::swap(n,a.n);
+  }
+  else {
+    if(m!=a.m || n!=a.n) resize(a.m,a.n);
+    gen_array2d_equal(MYGENARGS,GENARGS(a),m,n);
+  }
   return *this;
 }
 

@@ -204,14 +204,20 @@ VectorTemplate<T>& VectorTemplate<T>::operator = (const MyT& a)
 }
 
 template <class T>
-VectorTemplate<T>& VectorTemplate<T>::operator = (MyT&& v)
+VectorTemplate<T>& VectorTemplate<T>::operator = (MyT&& a)
 {
-  ::swap(vals,v.vals);
-  ::swap(capacity,v.capacity);
-  ::swap(allocated,v.allocated);
-  ::swap(base,v.base);
-  ::swap(stride,v.stride);
-  ::swap(n,v.n);
+  if(vals == NULL) {
+    ::swap(vals,a.vals);
+    ::swap(capacity,a.capacity);
+    ::swap(allocated,a.allocated);
+    ::swap(base,a.base);
+    ::swap(stride,a.stride);
+    ::swap(n,a.n);
+  }
+  else {
+    if(n!=a.n) resize(a.n);
+    gen_array_equal(getStart(),stride, a.getStart(),a.stride, n);
+  }
   return *this;
 }
 
