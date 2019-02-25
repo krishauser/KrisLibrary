@@ -138,7 +138,7 @@ class PointToSetMotionPlannerAdaptor : public MotionPlannerInterface
   virtual int GetClosestMilestone(const Config& q);
   virtual void GetPath(int ma,int mb,MilestonePath& path);
   virtual Real GetOptimalPath(int ma,const std::vector<int>& mb,MilestonePath& path);
-  virtual void GetRoadmap(Roadmap& roadmap);
+  virtual void GetRoadmap(Roadmap& roadmap) const;
   virtual bool IsSolved();
   virtual void GetSolution(MilestonePath& path);
   virtual void GetStats(PropertyMap& stats) const {
@@ -429,7 +429,10 @@ class RoadmapPlannerInterface  : public MotionPlannerInterface
     return prm.OptimizePath(ma,mb,objective.get(),path);
   }
   virtual bool IsSolved() const { return IsConnected(0,1); }
-  virtual void GetSolution(MilestonePath& path) { GetPath(0,1,path); }
+  virtual void GetSolution(MilestonePath& path) { 
+    if(objective) GetOptimalPath(0,vector<int>(1,1),path);
+    else GetPath(0,1,path);
+  }
   virtual void GetRoadmap(Roadmap& roadmap) const { roadmap = prm.roadmap; }
   virtual int GetClosestMilestone(const Config& q) {
     int nn;
@@ -499,6 +502,10 @@ class RRTInterface  : public MotionPlannerInterface
   virtual int NumComponents() const { return rrt.connectedComponents.size(); }
   virtual bool IsConnected(int ma,int mb) const { return rrt.milestoneNodes[ma]->connectedComponent == rrt.milestoneNodes[mb]->connectedComponent; }
   virtual void GetPath(int ma,int mb,MilestonePath& path) { rrt.CreatePath(rrt.milestoneNodes[ma],rrt.milestoneNodes[mb],path); }
+  virtual void GetSolution(MilestonePath& path) { 
+    if(objective) GetOptimalPath(0,vector<int>(1,1),path);
+    else GetPath(0,1,path);
+  }
   virtual Real GetOptimalPath(int ma,const std::vector<int>& mb,MilestonePath& path) {
     if(!objective) objective = ObjectiveDefault(rrt.space);
     TreeRoadmapPlanner::Node* na = rrt.milestoneNodes[ma];
@@ -784,12 +791,22 @@ class PRMStarInterface  : public MotionPlannerInterface
     assert(res);
     return nn;
   }
+  virtual void GetSolution(MilestonePath& path) { 
+    if(objective) {
+      GetOptimalPath(0,vector<int>(1,1),path);
+    }
+    else {
+      GetPath(0,1,path);
+    }
+  }
   virtual void GetPath(int ma,int mb,MilestonePath& path) {
     Assert(ma==0 && mb==1);
     planner.GetPath(path);
   }
   virtual Real GetOptimalPath(int ma,const std::vector<int>& mb,MilestonePath& path) {
-    if(!objective) objective = ObjectiveDefault(planner.space);
+    if(!objective) {
+      objective = ObjectiveDefault(planner.space);
+    }
     return planner.OptimizePath(ma,mb,objective.get(),path);
   }
   virtual void GetRoadmap(Roadmap& roadmap) const { 
@@ -1181,13 +1198,16 @@ void PointToSetMotionPlanner::GetSolution(MilestonePath& path)
 {
   Assert(goalNodes.size()>0);
   if(goalNodes.size()==1) {
-    MilestonePath temp;
-    mp->GetPath(0,goalNodes[0],path);
+    if(mp->IsConnected(0,goalNodes[0])) {
+      MilestonePath temp;
+      mp->GetPath(0,goalNodes[0],path);
+    }
     return;
   }
   Real bestPathCost = Inf;
   path.edges.clear();
   for(size_t i=0;i<goalNodes.size();i++) {
+    if(!mp->IsConnected(0,goalNodes[i])) continue;
     MilestonePath temp;
     mp->GetPath(0,goalNodes[i],temp);
     if(temp.edges.empty()) continue;
@@ -1223,6 +1243,7 @@ PointToSetMotionPlannerAdaptor::PointToSetMotionPlannerAdaptor(const MotionPlann
 
 int PointToSetMotionPlannerAdaptor::PlanMore()
 {
+  //LOG4CXX_INFO(KrisLibrary::logger(),"PointToSetMotionPlannerAdaptor::PlanMore()");
   //test to see if there's work to be done on existing paths
   bool anyRemaining = false;
   for(size_t i=0;i<goalPlanners.size();i++) {
@@ -1233,15 +1254,19 @@ int PointToSetMotionPlannerAdaptor::PlanMore()
   sampleGoalCounter += 1;
   numIters += 1;
   if(!anyRemaining || sampleGoalCounter >= sampleGoalPeriod*(int)goalPlanners.size()) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"Sampling a goal configuration on iteration "<<numIters);
+    //LOG4CXX_INFO(KrisLibrary::logger(),"PointToSetMotionPlannerAdaptor::Sampling a goal configuration on iteration "<<numIters);
     sampleGoalCounter = 0;
     Config q;
-    if(goalSpace->IsSampleable())
+    if(goalSpace->IsSampleable()) {
+      //LOG4CXX_INFO(KrisLibrary::logger(),"PointToSetMotionPlannerAdaptor::Sampling goal set");
       goalSpace->Sample(q);
+    }
     else
       space->Sample(q);
-    if(goalSpace->Contains(q))
+    if(goalSpace->Contains(q)) {
+      //LOG4CXX_INFO(KrisLibrary::logger(),"PointToSetMotionPlannerAdaptor::Got a new goal milestone");
       return AddMilestone(q);
+    }
     return -1;
   }
   for(size_t i=0;i<goalPlanners.size();i++) {
@@ -1368,9 +1393,26 @@ void PointToSetMotionPlannerAdaptor::GetPath(int ma,int mb,MilestonePath& path)
   goalPlanners[i1.first]->GetPath(i1.second,i2.second,path);
 }
 
-void PointToSetMotionPlannerAdaptor::GetRoadmap(Roadmap& roadmap)
+void PointToSetMotionPlannerAdaptor::GetRoadmap(Roadmap& roadmap) const
 {
-  FatalError("TODO: get roadmap for point-to-set adaptor");
+  if(goalPlanners.empty()) return;
+  vector<Roadmap> roadmaps(goalPlanners.size());
+  vector<int> voffsets(goalPlanners.size()+1,0);
+  for(size_t i=0;i<roadmaps.size();i++) {
+    goalPlanners[i]->GetRoadmap(roadmaps[i]);
+    voffsets[i+1] = voffsets[i] + roadmaps[i].NumNodes();
+  }
+  //join these graphs together
+  roadmap = roadmaps[0];
+  for(size_t i=1;i<goalPlanners.size();i++) {
+    for(int j=0;j<roadmaps[i].NumNodes();j++) 
+      roadmap.AddNode(roadmaps[i].nodes[j]);
+    for(int j=0;j<roadmaps[i].NumNodes();j++) {
+      for(auto e:roadmaps[i].edges[j]) {
+        roadmap.AddEdge(j+voffsets[i],e.first+voffsets[i],*e.second);
+      }
+    }
+  }
 }
 
 bool PointToSetMotionPlannerAdaptor::IsSolved() 
@@ -1398,7 +1440,8 @@ int PointToSetMotionPlannerAdaptor::AddMilestone(const Config& q)
 {
   if(goalSpace->Contains(q) && space->IsFeasible(q)) {
     goalPlanners.push_back(shared_ptr<MotionPlannerInterface>(factory.Create(space,qstart,q)));
-    if(objective && goalPlanners.back()->CanUseObjective()) goalPlanners.back()->SetObjective(objective);
+    if(objective && goalPlanners.back()->CanUseObjective()) 
+      goalPlanners.back()->SetObjective(objective);
     goalCosts.push_back(Inf);
     if(goalPlanners.back()->IsConnected(0,1)) { //straight line connection
       MilestonePath path;
