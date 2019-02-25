@@ -119,6 +119,9 @@ Real ObjectiveFunctionalBase::IncrementalCost(const KinodynamicMilestonePath& pa
 
 Real ObjectiveFunctionalBase::PathCost(const MilestonePath& path)
 {
+  if(path.edges.size()==0) {
+    FatalError("ObjectiveFunctionalBase::PathCost: Asking for cost of an empty path?");
+  }
   if(PathInvariant()) return TerminalCost(path.End());
   Real c = TerminalCost(path.End());
   for(size_t i=0;i<path.edges.size();i++)
