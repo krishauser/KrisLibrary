@@ -675,6 +675,49 @@ bool PRMStarPlanner::GetPath(int a,int b,vector<int>& nodes,MilestonePath& path)
   return true;
 }
 
+Real PRMStarPlanner::OptimizePath(ObjectiveFunctionalBase* cost,MilestonePath& path)
+{
+  vector<int> goals(1,goal);
+  return OptimizePath(start,goals,cost,path);
+}
+  
+Real PRMStarPlanner::OptimizePath(int a,const vector<int>& goals,ObjectiveFunctionalBase* cost,MilestonePath& path)
+{
+  ShortestPathProblem spptemp(roadmap);
+  spptemp.InitializeSource(a);
+  set<int> goalset;
+  goalset.insert(goals.begin(),goals.end());
+  spptemp.FindAPath_Undirected(goalset,DISTANCE_FUNC);
+  Real dmin = Inf;
+  int optgoal = -1;
+  for(auto g: goals) {
+    if(spptemp.d[g] < dmin) {
+      dmin = spptemp.d[g];
+      optgoal = g;
+    }
+  }
+  path.edges.clear();
+  if(optgoal < 0) return Inf;
+
+  vector<int> nodes;
+  if(!Graph::GetAncestorPath(spptemp.p,optgoal,a,nodes)) {
+    LOG4CXX_INFO(KrisLibrary::logger(),"PRMStarPlanner: Unable to find path from "<<a<<" to "<<optgoal);
+    return Inf;
+  }
+  path.edges.resize(0);
+  for(size_t i=0;i+1<nodes.size();i++) {
+    EdgePlannerPtr* e=roadmap.FindEdge(nodes[i],nodes[i+1]);
+    Assert(e != NULL);
+    if((*e)->Start() == roadmap.nodes[nodes[i]])
+      path.edges.push_back(*e);
+    else {
+      Assert((*e)->Start() == roadmap.nodes[nodes[i+1]]);
+      path.edges.push_back((*e)->ReverseCopy());
+    }
+  }
+  return dmin;
+}
+
 struct RoadmapEdgeInfo
 {
   Real Priority() const { return e->Priority(); }

@@ -491,6 +491,7 @@ class RRTInterface  : public MotionPlannerInterface
   }
   virtual bool IsOptimizing() const { return false; }
   virtual bool CanUseObjective() const { return true; }
+  virtual void SetObjective(shared_ptr<ObjectiveFunctionalBase> obj) { objective = obj; }
   virtual void ConnectHint(int m) { rrt.ConnectToNeighbors(rrt.milestoneNodes[m]); }
   virtual bool ConnectHint(int ma,int mb) { return rrt.TryConnect(rrt.milestoneNodes[ma],rrt.milestoneNodes[mb])!=NULL; }
   virtual int NumIterations() const { return numIters; }
@@ -742,6 +743,8 @@ class PRMStarInterface  : public MotionPlannerInterface
   }
   virtual ~PRMStarInterface() {}
   virtual bool IsOptimizing() const { return true; }
+  virtual bool CanUseObjective() const { return true; }
+  virtual void SetObjective(shared_ptr<ObjectiveFunctionalBase> obj) { objective = obj; }
   virtual bool CanAddMilestone() const { if(qStart.n != 0 && qGoal.n != 0) return false; return true; }
   virtual int AddMilestone(const Config& q) {
     if(qStart.n == 0) {
@@ -785,6 +788,10 @@ class PRMStarInterface  : public MotionPlannerInterface
     Assert(ma==0 && mb==1);
     planner.GetPath(path);
   }
+  virtual Real GetOptimalPath(int ma,const std::vector<int>& mb,MilestonePath& path) {
+    if(!objective) objective = ObjectiveDefault(planner.space);
+    return planner.OptimizePath(ma,mb,objective.get(),path);
+  }
   virtual void GetRoadmap(Roadmap& roadmap) const { 
     if(planner.lazy)
       roadmap = planner.LBroadmap;
@@ -812,6 +819,7 @@ class PRMStarInterface  : public MotionPlannerInterface
 
   PRMStarPlanner planner;
   Config qStart,qGoal;
+  shared_ptr<ObjectiveFunctionalBase> objective;
 };
 
 class FMMInterface  : public MotionPlannerInterface

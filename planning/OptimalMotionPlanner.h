@@ -35,6 +35,10 @@ class PRMStarPlanner : public RoadmapPlanner
   bool GetPath(MilestonePath& path);
   ///Helper: get path from milestone a to b
   bool GetPath(int a,int b,vector<int>& nodes,MilestonePath& path);
+  ///Helper: get path from start to goal that optimizes some cost function
+  Real OptimizePath(ObjectiveFunctionalBase* cost,MilestonePath& path);
+  ///Helper: get path from milestone a to some goal node in goals that optimizes some cost function
+  Real OptimizePath(int a,const vector<int>& goals,ObjectiveFunctionalBase* cost,MilestonePath& path);
   ///Helper: check feasibility of path from milestone a to b for lazy planning
   bool CheckPath(int a,int b);
   ///Helper: add a milestone and update data structures
