@@ -2,6 +2,7 @@
 #include "OptimalMotionPlanner.h"
 #include "PointLocation.h"
 #include "GeneralizedAStar.h"
+#include "Objective.h"
 #include <math/random.h>
 #include <graph/Path.h>
 #include <Timer.h>
@@ -54,6 +55,24 @@ class EdgeDistance
       return Epsilon;
     }
     return res;
+  }
+};
+
+class EdgeObjectiveCost
+{
+ public:
+  ObjectiveFunctionalBase* objective;
+  int terminalNode;  //the indicator for the special terminal node
+
+  EdgeObjectiveCost(ObjectiveFunctionalBase* _objective,int _terminalNode=-1)
+    :objective(_objective),terminalNode(_terminalNode)
+  {}
+  Real operator () (const EdgePlannerPtr& e,int s,int t)
+  {
+    if(!e) return 1.0;  //this must be a lazy planner
+    if(t==terminalNode)
+      return objective->TerminalCost(e->Start());
+    return objective->IncrementalCost(e.get());
   }
 };
 
@@ -687,7 +706,8 @@ Real PRMStarPlanner::OptimizePath(int a,const vector<int>& goals,ObjectiveFuncti
   spptemp.InitializeSource(a);
   set<int> goalset;
   goalset.insert(goals.begin(),goals.end());
-  spptemp.FindAPath_Undirected(goalset,DISTANCE_FUNC);
+  EdgeObjectiveCost costfunc(cost);
+  spptemp.FindAPath_Undirected(goalset,costfunc);
   Real dmin = Inf;
   int optgoal = -1;
   for(auto g: goals) {
