@@ -594,9 +594,17 @@ Real TreeRoadmapPlanner::OptimizePath(Node* a, const vector<Node*>& goals, Objec
   return bestCost;
 }
 
-int TreeRoadmapPlanner::ClosestMilestone(const Config& x)
+TreeRoadmapPlanner::Node* TreeRoadmapPlanner::ClosestMilestone(const Config& x)
 {
-  if(milestones.empty()) return NULL;
+  int idx = ClosestMilestoneIndex(x);
+  if(idx < 0) return NULL;
+  Assert(idx < (int)milestones.size());
+  return milestoneNodes[idx];
+}
+  
+int TreeRoadmapPlanner::ClosestMilestoneIndex(const Config& x)
+{
+  if(milestones.empty()) return -1;
   int index;
   Real distance;
   bool successful = pointLocator->NN(x,index,distance);
@@ -755,7 +763,7 @@ TreeRoadmapPlanner::Node* RRTPlanner::Extend()
   space->Sample(dest);
 
   //pick closest milestone, step in that direction
-  Node* closest=milestoneNodes[ClosestMilestone(dest)];
+  Node* closest=ClosestMilestone(dest);
   Real dist=space->Distance(closest->x,dest);
   if(dist > delta)
     space->Interpolate(closest->x,dest,delta/dist,x);

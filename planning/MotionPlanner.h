@@ -89,7 +89,8 @@ public:
   virtual void DeleteSubtree(Node* n);
   //helpers
   //default implementation uses pointLocator
-  virtual int ClosestMilestone(const Config& x);
+  virtual Node* ClosestMilestone(const Config& x);
+  virtual int ClosestMilestoneIndex(const Config& x);
   //default implementation uses O(n) search
   virtual Node* ClosestMilestoneInComponent(int component,const Config& x);
   virtual Node* ClosestMilestoneInSubtree(Node* node,const Config& x);

@@ -515,14 +515,7 @@ class RRTInterface  : public MotionPlannerInterface
     return rrt.OptimizePath(na,nb,objective.get(),path);
   }
   virtual void GetRoadmap(Roadmap& roadmap) const { ::GetRoadmap(rrt,roadmap); }
-  virtual int GetClosestMilestone(const Config& q) {
-    int nn;
-    Real d;
-    if(!rrt.pointLocator->NN(q,nn,d)) {
-      return MotionPlannerInterface::GetClosestMilestone(q);
-    }
-    return nn;
-  }
+  virtual int GetClosestMilestone(const Config& q)  { return rrt.ClosestMilestoneIndex(q); }
 
   RRTPlanner rrt;
   shared_ptr<ObjectiveFunctionalBase> objective;
@@ -561,13 +554,7 @@ class BiRRTInterface  : public MotionPlannerInterface
     rrt.CreatePath(path);
   }
   virtual void GetRoadmap(Roadmap& roadmap) const { ::GetRoadmap(rrt,roadmap); }
-  virtual int GetClosestMilestone(const Config& q) {
-    int nn;
-    Real d;
-    bool res = rrt.pointLocator->NN(q,nn,d);
-    assert(res);
-    return nn;
-  }
+  virtual int GetClosestMilestone(const Config& q) { return rrt.ClosestMilestoneIndex(q); }
 
   BidirectionalRRTPlanner rrt;
   int numIters;
