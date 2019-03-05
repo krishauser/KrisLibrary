@@ -781,7 +781,7 @@ std::string JoinPath(const std::vector<std::string>& elements,char delim)
     if(elements[i].empty()) continue;
     size_t n=elements[i].length();
     int start = 0;
-    if(elements[i][0] == '/' || elements[i][0] == '\\') 
+    if(i > 0 && (elements[i][0] == '/' || elements[i][0] == '\\'))
       start = 1;
     if(elements[i][n-1] == '/' || elements[i][n-1] == '\\') 
       n--;
