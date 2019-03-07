@@ -111,8 +111,8 @@ public:
   Real connectionThreshold;
   
   //temporary
-  std::vector<Vector> milestones;
-  std::vector<Node*> milestoneNodes;
+  std::vector<Vector> milestoneConfigs;
+  std::vector<Node*> milestones;
   std::shared_ptr<PointLocationBase> pointLocator;
   Config x;
 };

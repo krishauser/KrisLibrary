@@ -485,7 +485,7 @@ class RRTInterface  : public MotionPlannerInterface
       return -1;
     }
   }
-  virtual void GetMilestone(int i,Config& q) { q=rrt.milestones[i]; }
+  virtual void GetMilestone(int i,Config& q) { q=rrt.milestoneConfigs[i]; }
   virtual int PlanMore() { 
     TreeRoadmapPlanner::Node* n=rrt.Extend();
     numIters++;
@@ -495,23 +495,23 @@ class RRTInterface  : public MotionPlannerInterface
   virtual bool IsOptimizing() const { return false; }
   virtual bool CanUseObjective() const { return true; }
   virtual void SetObjective(shared_ptr<ObjectiveFunctionalBase> obj) { objective = obj; }
-  virtual void ConnectHint(int m) { rrt.ConnectToNeighbors(rrt.milestoneNodes[m]); }
-  virtual bool ConnectHint(int ma,int mb) { return rrt.TryConnect(rrt.milestoneNodes[ma],rrt.milestoneNodes[mb])!=NULL; }
+  virtual void ConnectHint(int m) { rrt.ConnectToNeighbors(rrt.milestones[m]); }
+  virtual bool ConnectHint(int ma,int mb) { return rrt.TryConnect(rrt.milestones[ma],rrt.milestones[mb])!=NULL; }
   virtual int NumIterations() const { return numIters; }
   virtual int NumMilestones() const { return rrt.milestones.size(); }
   virtual int NumComponents() const { return rrt.connectedComponents.size(); }
-  virtual bool IsConnected(int ma,int mb) const { return rrt.milestoneNodes[ma]->connectedComponent == rrt.milestoneNodes[mb]->connectedComponent; }
-  virtual void GetPath(int ma,int mb,MilestonePath& path) { rrt.CreatePath(rrt.milestoneNodes[ma],rrt.milestoneNodes[mb],path); }
+  virtual bool IsConnected(int ma,int mb) const { return rrt.milestones[ma]->connectedComponent == rrt.milestones[mb]->connectedComponent; }
+  virtual void GetPath(int ma,int mb,MilestonePath& path) { rrt.CreatePath(rrt.milestones[ma],rrt.milestones[mb],path); }
   virtual void GetSolution(MilestonePath& path) { 
     if(objective) GetOptimalPath(0,vector<int>(1,1),path);
     else GetPath(0,1,path);
   }
   virtual Real GetOptimalPath(int ma,const std::vector<int>& mb,MilestonePath& path) {
     if(!objective) objective = ObjectiveDefault(rrt.space);
-    TreeRoadmapPlanner::Node* na = rrt.milestoneNodes[ma];
+    TreeRoadmapPlanner::Node* na = rrt.milestones[ma];
     vector<TreeRoadmapPlanner::Node*> nb(mb.size());
     for(size_t i=0;i<mb.size();i++)
-      nb[i] = rrt.milestoneNodes[mb[i]];
+      nb[i] = rrt.milestones[mb[i]];
     return rrt.OptimizePath(na,nb,objective.get(),path);
   }
   virtual void GetRoadmap(Roadmap& roadmap) const { ::GetRoadmap(rrt,roadmap); }
@@ -538,7 +538,7 @@ class BiRRTInterface  : public MotionPlannerInterface
       return -1;
     }
   }
-  virtual void GetMilestone(int i,Config& q) { q=rrt.milestones[i]; }
+  virtual void GetMilestone(int i,Config& q) { q=rrt.milestoneConfigs[i]; }
   virtual int PlanMore() { 
     bool res=rrt.Plan();
     numIters++;
@@ -548,7 +548,7 @@ class BiRRTInterface  : public MotionPlannerInterface
   virtual int NumIterations() const { return numIters; }
   virtual int NumMilestones() const { return rrt.milestones.size(); }
   virtual int NumComponents() const { return rrt.connectedComponents.size(); }
-  virtual bool IsConnected(int ma,int mb) const { return rrt.milestoneNodes[ma]->connectedComponent == rrt.milestoneNodes[mb]->connectedComponent; }
+  virtual bool IsConnected(int ma,int mb) const { return rrt.milestones[ma]->connectedComponent == rrt.milestones[mb]->connectedComponent; }
   virtual void GetPath(int ma,int mb,MilestonePath& path) {
     Assert(ma==0 && mb==1);
     rrt.CreatePath(path);

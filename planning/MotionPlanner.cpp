@@ -346,7 +346,7 @@ Real RoadmapPlanner::OptimizePath(int i,const vector<int>& goals,ObjectiveFuncti
 TreeRoadmapPlanner::TreeRoadmapPlanner(CSpace* s)
   :space(s),connectionThreshold(Inf)
 {
-  pointLocator = make_shared<NaivePointLocation>(milestones,s);
+  pointLocator = make_shared<NaivePointLocation>(milestoneConfigs,s);
 }
 
 TreeRoadmapPlanner::~TreeRoadmapPlanner()
@@ -361,7 +361,7 @@ void TreeRoadmapPlanner::Cleanup()
     SafeDelete(connectedComponents[i]);
   connectedComponents.clear();
   milestones.clear();
-  milestoneNodes.clear();
+  milestoneConfigs.clear();
   pointLocator->OnClear();
 }
 
@@ -375,14 +375,14 @@ TreeRoadmapPlanner::Node* TreeRoadmapPlanner::TestAndAddMilestone(const Config& 
 
 TreeRoadmapPlanner::Node* TreeRoadmapPlanner::AddMilestone(const Config& x)
 {
-  milestones.push_back(x);
+  milestoneConfigs.push_back(x);
   Milestone m;
-  m.x.setRef(milestones.back());
-  m.id = (int)milestones.size()-1;
+  m.x.setRef(milestoneConfigs.back());
+  m.id = (int)milestoneConfigs.size()-1;
   int n=(int)connectedComponents.size();
   m.connectedComponent=n;
   connectedComponents.push_back(new Node(m));
-  milestoneNodes.push_back(connectedComponents[n]);
+  milestones.push_back(connectedComponents[n]);
   pointLocator->OnAppend();
   return connectedComponents[n];
 }
@@ -421,8 +421,8 @@ void TreeRoadmapPlanner::ConnectToNeighbors(Node* n)
     vector<Real> distances;
     pointLocator->Close(n->x,connectionThreshold,nodes,distances);
     for(auto i:nodes) {
-      if(n->connectedComponent != milestoneNodes[i]->connectedComponent) {
-        TryConnect(n,milestoneNodes[i]);
+      if(n->connectedComponent != milestones[i]->connectedComponent) {
+        TryConnect(n,milestones[i]);
       }
     }
   }
@@ -473,13 +473,13 @@ void TreeRoadmapPlanner::DeleteSubtree(Node* n)
   n->DFS(callback);
   for(list<Node*>::iterator i=callback.list.begin();i!=callback.list.end();i++) {
     int j=(*i)->id;
-    assert(milestoneNodes[j]==*i);
-  	milestoneNodes[j]=milestoneNodes.back();
-    milestones[j]=milestones.back();
-  	milestoneNodes.resize(milestoneNodes.size()-1);
-    milestones.resize(milestones.size()-1);
-    milestoneNodes[j]->id = (int)j;
-    milestoneNodes[j]->x.setRef(milestones[j]);
+    assert(milestones[j]==*i);
+  	milestones[j]=milestones.back();
+    milestoneConfigs[j]=milestoneConfigs.back();
+  	milestones.resize(milestones.size()-1);
+    milestoneConfigs.resize(milestoneConfigs.size()-1);
+    milestones[j]->id = (int)j;
+    milestones[j]->x.setRef(milestoneConfigs[j]);
   }
   //refresh the point locator
   pointLocator->OnClear();
@@ -598,8 +598,8 @@ TreeRoadmapPlanner::Node* TreeRoadmapPlanner::ClosestMilestone(const Config& x)
 {
   int idx = ClosestMilestoneIndex(x);
   if(idx < 0) return NULL;
-  Assert(idx < (int)milestones.size());
-  return milestoneNodes[idx];
+  Assert(idx < (int)milestoneConfigs.size());
+  return milestones[idx];
 }
   
 int TreeRoadmapPlanner::ClosestMilestoneIndex(const Config& x)
@@ -714,7 +714,7 @@ TreeRoadmapPlanner::Node* PerturbationTreePlanner::AddMilestone(const Config& x)
 {
   Assert(milestones.size() == weights.size());
   Node* n=TreeRoadmapPlanner::AddMilestone(x);
-  Assert(n == milestoneNodes.back());
+  Assert(n == milestones.back());
   weights.push_back(1);
   Assert(milestones.size() == weights.size());
   return n;
@@ -727,7 +727,7 @@ void PerturbationTreePlanner::GenerateConfig(Config& x)
     space->Sample(x);
   }
   else {
-    Node* n = SelectMilestone(milestoneNodes);
+    Node* n = SelectMilestone(milestones);
     space->SampleNeighborhood(n->x,delta,x);
   }
 }
@@ -789,33 +789,33 @@ void BidirectionalRRTPlanner::Init(const Config& start, const Config& goal)
   Assert(milestones[0] == start);
   Assert(milestones[1] == goal);
   Assert(connectedComponents.size()==2);
-  Assert(connectedComponents[0] == milestoneNodes[0]);
-  Assert(connectedComponents[1] == milestoneNodes[1]);
+  Assert(connectedComponents[0] == milestones[0]);
+  Assert(connectedComponents[1] == milestones[1]);
 }
 
 bool BidirectionalRRTPlanner::Plan()
 {
   //If we've already found a path, return true
-  if(milestoneNodes[0]->connectedComponent == milestoneNodes[1]->connectedComponent)
+  if(milestones[0]->connectedComponent == milestones[1]->connectedComponent)
     return true;
 
   Node* n=Extend();
   if(!n) return false;
 
-  if(n->connectedComponent == milestoneNodes[0]->connectedComponent) {
+  if(n->connectedComponent == milestones[0]->connectedComponent) {
     //attempt to connect to goal, if the distance is < connectionThreshold
     ClosestMilestoneCallback callback(space,n->x);
-    milestoneNodes[1]->DFS(callback);
+    milestones[1]->DFS(callback);
     if(callback.closestDistance < connectionThreshold) {
       if(TryConnect(n,callback.closestMilestone)) //connection successful!
 	return true;
     }
   }
   else {
-    Assert(n->connectedComponent == milestoneNodes[1]->connectedComponent);
+    Assert(n->connectedComponent == milestones[1]->connectedComponent);
     //attempt to connect to start, if the distance is < connectionThreshold
     ClosestMilestoneCallback callback(space,n->x);
-    milestoneNodes[0]->DFS(callback);
+    milestones[0]->DFS(callback);
     if(callback.closestDistance < connectionThreshold) {
       if(TryConnect(callback.closestMilestone,n)) //connection successful!
 	return true;
@@ -826,11 +826,11 @@ bool BidirectionalRRTPlanner::Plan()
 
 void BidirectionalRRTPlanner::CreatePath(MilestonePath& p) const
 {
-  Assert(milestoneNodes[0]->connectedComponent == milestoneNodes[1]->connectedComponent);
-  Assert(connectedComponents[0] == milestoneNodes[0]);
+  Assert(milestones[0]->connectedComponent == milestones[1]->connectedComponent);
+  Assert(connectedComponents[0] == milestones[0]);
   list<Node*> path;
-  Node* n = milestoneNodes[1];
-  while(n != milestoneNodes[0]) {
+  Node* n = milestones[1];
+  while(n != milestones[0]) {
     path.push_front(n);
     n = n->getParent();
     Assert(n != NULL);
