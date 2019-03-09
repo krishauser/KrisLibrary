@@ -786,8 +786,8 @@ void BidirectionalRRTPlanner::Init(const Config& start, const Config& goal)
   AddMilestone(start);
   AddMilestone(goal);
   Assert(milestones.size()==2);
-  Assert(milestones[0] == start);
-  Assert(milestones[1] == goal);
+  Assert(milestoneConfigs[0] == start);
+  Assert(milestoneConfigs[1] == goal);
   Assert(connectedComponents.size()==2);
   Assert(connectedComponents[0] == milestones[0]);
   Assert(connectedComponents[1] == milestones[1]);
