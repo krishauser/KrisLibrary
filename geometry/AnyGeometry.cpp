@@ -1991,7 +1991,7 @@ AnyDistanceQueryResult Distance(const CollisionPointCloud& a,const AnyCollisionG
 AnyDistanceQueryResult Distance(vector<AnyCollisionGeometry3D>& group,AnyCollisionGeometry3D& b,const AnyDistanceQuerySettings& settings)
 {
   AnyDistanceQueryResult res;
-  AnyDistanceQuerySettings modsettings = modsettings;
+  AnyDistanceQuerySettings modsettings = settings;
   for(size_t i=0;i<group.size();i++) {
     AnyDistanceQueryResult ires=group[i].Distance(b,modsettings);
     if(ires.d < res.d) {
