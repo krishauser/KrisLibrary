@@ -54,9 +54,9 @@ bool LoadAssimp(const char* fn,TriMesh& tri,GLDraw::GeometryAppearance& appearan
 bool LoadAssimp(const char* fn,vector<TriMesh>& meshes);
 ///Loads using Assimp if available on your system, extracts individual meshes
 bool LoadAssimp(const char* fn,vector<TriMesh>& meshes,vector<GLDraw::GeometryAppearance>& appearances);
-///Saves using Assimp if available on your system (not implemented)
+///Saves using Assimp if available on your system 
 bool SaveAssimp(const char* fn,const TriMesh& tri);
-///Saves using Assimp if available on your system (not implemented)
+///Saves using Assimp if available on your system (vertex color output is experimental)
 bool SaveAssimp(const char* fn,const TriMesh& tri,const GLDraw::GeometryAppearance& appearance);
 
 } //namespace Meshing
