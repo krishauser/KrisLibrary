@@ -574,8 +574,22 @@ bool SaveOBJ(const char* fn,const TriMesh& tri)
 
 bool SaveOBJ(const char* fn,const TriMesh& tri,const GeometryAppearance& app)
 {
-  ///TODO: save vertex colors
-  return SaveOBJ(fn,tri);
+  if(!app.vertexColors.empty()) {
+    Assert(app.vertexColors.size() == tri.verts.size());
+    FILE* f=fopen(fn,"w");
+    if(!f) return false;
+    fprintf(f,"#Written by KrisLibrary TriMesh exporter. %d vertices and %d faces\n",(int)tri.verts.size(),(int)tri.tris.size());
+    for(size_t i=0;i<tri.verts.size();i++) 
+      fprintf(f,"v %f %f %f %f %f %f\n",tri.verts[i].x,tri.verts[i].y,tri.verts[i].z,app.vertexColors[i].rgba[0],app.vertexColors[i].rgba[1],app.vertexColors[i].rgba[2]);
+    for(size_t i=0;i<tri.tris.size();i++) 
+      fprintf(f,"f %d %d %d\n",tri.tris[i].a+1,tri.tris[i].b+1,tri.tris[i].c+1);
+    fclose(f);
+    return true;
+  }
+  else {
+    LOG4CXX_WARN(KrisLibrary::logger(),"SaveOBJ: Can't save materials yet");
+    return SaveOBJ(fn,tri);
+  }
 }
 
 
@@ -837,6 +851,74 @@ bool SaveAssimp(const char* fn, const TriMesh& model)
     face.mIndices[ 0 ] = model.tris[i][ 0 ];
     face.mIndices[ 1 ] = model.tris[i][ 1 ];
     face.mIndices[ 2 ] = model.tris[i][ 2 ];
+  }
+
+  Assimp::Exporter exporter;
+  auto res = exporter.Export(&scene,FileExtension(fn),fn);
+  if(res != AI_SUCCESS)
+    LOG4CXX_WARN(KrisLibrary::logger(),"Assimp Exporter failed!");
+  return (res == AI_SUCCESS);
+}
+
+bool SaveAssimp(const char* fn, const TriMesh& model,const GeometryAppearance& app)
+{
+  aiScene scene;
+
+  scene.mRootNode = new aiNode();
+
+  scene.mMaterials = new aiMaterial*[ 1 ];
+  scene.mNumMaterials = 1;
+  scene.mMaterials[ 0 ] = new aiMaterial();
+
+  scene.mMeshes = new aiMesh*[ 1 ];
+  scene.mMeshes[ 0 ] = nullptr;
+  scene.mNumMeshes = 1;
+
+  scene.mMeshes[ 0 ] = new aiMesh();
+  scene.mMeshes[ 0 ]->mMaterialIndex = 0;
+
+  scene.mRootNode->mMeshes = new unsigned int[ 1 ];
+  scene.mRootNode->mMeshes[ 0 ] = 0;
+  scene.mRootNode->mNumMeshes = 1;
+
+  auto pMesh = scene.mMeshes[ 0 ];
+
+  pMesh->mVertices = new aiVector3D[ model.verts.size() ];
+  pMesh->mNumVertices = model.verts.size();
+
+  for ( size_t i=0;i<model.verts.size();i++) 
+    pMesh->mVertices[ i ] = aiVector3D( model.verts[i].x, model.verts[i].y, model.verts[i].z );
+
+  pMesh->mFaces = new aiFace[ model.tris.size() ];
+  pMesh->mNumFaces = model.tris.size();
+
+  for(size_t i=0;i<model.tris.size();i++) {
+    aiFace& face = pMesh->mFaces[i];
+    face.mIndices = new unsigned int[ 3 ];
+    face.mNumIndices = 3;
+
+    face.mIndices[ 0 ] = model.tris[i][ 0 ];
+    face.mIndices[ 1 ] = model.tris[i][ 1 ];
+    face.mIndices[ 2 ] = model.tris[i][ 2 ];
+  }
+  
+  if(!app.vertexColors.empty()) {
+    pMesh->mColors[0] = new aiColor4D[ model.verts.size() ];
+    for ( size_t i=0;i<model.verts.size();i++) {
+      pMesh->mColors[0][i].r = app.vertexColors[i].rgba[0];
+      pMesh->mColors[0][i].g = app.vertexColors[i].rgba[1];
+      pMesh->mColors[0][i].b = app.vertexColors[i].rgba[2];
+      pMesh->mColors[0][i].a = app.vertexColors[i].rgba[3];
+    }
+  }
+  
+  scene.mMaterials[0]->AddProperty( &app.faceColor.rgba, 1, AI_MATKEY_COLOR_DIFFUSE );
+  
+  if(!app.faceColors.empty()) {
+    LOG4CXX_WARN(KrisLibrary::logger(),"Can't export per-face colors yet");
+  }
+  if(!app.tex1D || !app.tex2D) {
+    LOG4CXX_WARN(KrisLibrary::logger(),"Can't export textures yet");
   }
 
   Assimp::Exporter exporter;
