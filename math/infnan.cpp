@@ -13,7 +13,7 @@ int IsNaN(double x)
 
 int IsFinite(double x)
 {
-  std::isfinite(x);
+  return std::isfinite(x);
 }
 
 int IsInf(double x)
@@ -28,12 +28,12 @@ int IsInf(double x)
 
 int IsNaN(float x)
 {
-  std::isnan(x);
+  return std::isnan(x);
 }
 
 int IsFinite(float x)
 {
-  std::isfinite(x);
+  return std::isfinite(x);
 }
 
 int IsInf(float x)
