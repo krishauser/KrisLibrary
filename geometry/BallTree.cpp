@@ -2,6 +2,7 @@
 #include <KrisLibrary/statistics/statistics.h>
 #include <KrisLibrary/math/AABB.h>
 #include <iostream>
+#include <climits>
 using namespace Geometry;
 using namespace std;
 
