@@ -11,6 +11,8 @@
 template <class T> class ArrayND;
 template <class T> class ArrayNDRef;
 
+/** @brief An N-D array class.
+ */
 template <class T>
 class ArrayND
 {
@@ -116,6 +118,38 @@ class ArrayNDRef
   int offset;
   int curDim;
 };
+
+template <class T>
+std::ostream& operator <<(std::ostream& out,const ArrayND<T>& array)
+{
+  out<<array.dims.size()<<'\t';
+  for(size_t i=0;i<array.dims.size();i++)
+    out<<array.dims[i]<<" ";
+  out<<std::endl;
+  for(size_t i=0;i<array.values.size();i++)
+    out<<array.values[i]<<std::endl;
+  return out;
+}
+
+template <class T>
+std::istream& operator >>(std::istream& in,ArrayND<T>& array)
+{
+  std::vector<int> dims;
+  int n;
+  in >> n;
+  if(!in || n < 0) { in.setstate(std::ios::badbit); return in; }
+  dims.resize(n);
+  for(size_t i=0;i<dims.size();i++) {
+    in >> dims[i];
+    if(dims[i] < 0) { in.setstate(std::ios::badbit); return in; }
+  }
+  array.resize(dims);
+  for(size_t i=0;i<array.values.size();i++)
+    in>>array.values[i];
+  return in;
+}
+
+
 
 template <class T>
 ArrayND<T>::ArrayND()
@@ -477,6 +511,9 @@ ArrayNDRef<T> ArrayNDRef<T>::operator [] (int i)
   assert(curDim+1 < (int)obj->dims.size());
   return ArrayNDRef<T>(obj,offset+obj->strides[curDim+1]*i,curDim+1);
 }
+
+
+
 
 
 #endif // ARRAY_ND
