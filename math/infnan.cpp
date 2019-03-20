@@ -1,8 +1,55 @@
 
 #include <stdio.h>
-#include <math.h>
 #include "infnan.h"
 #include "math.h"
+
+#if HAS_STD_CMATH
+  #include <cmath>
+
+int IsNaN(double x)
+{
+  return std::isnan(x);
+}
+
+int IsFinite(double x)
+{
+  std::isfinite(x);
+}
+
+int IsInf(double x)
+{
+  if(std::isinf(x)) {
+    if(x > 0) return 1;
+    else return -1;
+  }
+  else return 0;
+}
+
+
+int IsNaN(float x)
+{
+  std::isnan(x);
+}
+
+int IsFinite(float x)
+{
+  std::isfinite(x);
+}
+
+int IsInf(float x)
+{
+  if(std::isinf(x)) {
+    if(x > 0) return 1;
+    else return -1;
+  }
+  else return 0;
+}
+
+
+
+#else
+
+#include <math.h>
 
 namespace Math {
 
@@ -14,7 +61,7 @@ int IsNaN(double x)
 #ifdef _MSC_VER
   return _isnan(x);
 #elif HAVE_DECL_ISNAN
-  return ::isnan(x);
+  return isnan(x);
 #elif HAVE_IEEE_COMPARISONS
   return (x!=x?1:0);
 #else
@@ -48,7 +95,7 @@ int IsInf(double x)
   else if(cls == _FPCLASS_NINF) return -1;
   else return 0;
 #elif HAVE_DECL_ISINF
-  if(::isinf(x)) {
+  if(isinf(x)) {
     if(x > 0) return 1;
     else return -1;
   }
@@ -72,7 +119,7 @@ int IsNaN(float x)
   return _isnan(x);
 #elif HAVE_DECL_ISNAN
   //return isnanf(x);
-  return ::isnan(x);
+  return isnan(x);
 #elif HAVE_IEEE_COMPARISONS
   return (x!=x?1:0);
 #else
@@ -107,7 +154,7 @@ int IsInf(float x)
   else return 0;
 #elif HAVE_DECL_ISINF
   //if(isinff(x)) {
-  if(::isinf(x)) {
+  if(isinf(x)) {
     if(x > 0) return 1;
     else return -1;
   }
@@ -124,3 +171,5 @@ int IsInf(float x)
 }
 
 } //namespace Math
+
+#endif
