@@ -23,7 +23,9 @@
 #include <assimp/scene.h>           // Output data structure
 #include <assimp/postprocess.h>     // Post processing flags
 
-///HACK BECAUSE ASSIMP DOESNT PROVIDE FUNCTIONALITY TO DELETE SCENES
+///HACK BECAUSE SOME VERSIONS OF ASSIMP DONT PROVIDE FUNCTIONALITY TO DELETE SCENES
+///UNCOMMENT IF YOU ARE GETTING ERRORS LIKE "undefined reference to aiScene::~aiScene"
+/*
 aiScene::aiScene()
 {
     mFlags = 0;
@@ -52,6 +54,7 @@ aiScene::~aiScene() {
   SafeArrayDelete(mLights);
   SafeArrayDelete(mCameras);
 }
+*/
 
 #endif //ASSIMP_MAJOR_VERSION
 using namespace Assimp;
