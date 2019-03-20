@@ -6,6 +6,8 @@
 #if HAS_STD_CMATH
   #include <cmath>
 
+namespace Math {
+
 int IsNaN(double x)
 {
   return std::isnan(x);
@@ -45,7 +47,7 @@ int IsInf(float x)
   else return 0;
 }
 
-
+} //namespace Math
 
 #else
 
