@@ -709,7 +709,11 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
   }
   aiColor4D col;
   if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_DIFFUSE,&col) == aiReturn_SUCCESS) {
-    app.faceColor.set(col.r,col.g,col.b,col.a);
+    app.faceColor.set(col.r,col.g,col.b,1.0);
+  }
+  float opacity = 1.0;
+  if(aiGetMaterialFloat(mat,AI_MATKEY_OPACITY,&opacity) == aiReturn_SUCCESS) {
+    app.faceColor.rgba[3] = opacity;
   }
   aiString str;
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
