@@ -212,7 +212,7 @@ void GLUINavigationProgram::DragZoom(int dx,int dy)
 
 void GLUINavigationProgram::DragTruck(int dx,int dy)
 {
-  Vector3 v = viewport.zDir();
+  Vector3 v(viewport.zDir());
   camera.tgt.madd(v,0.05*Real(dy)/viewport.scale);
   SHOW_VIEW_TARGET(0.5);
 }
