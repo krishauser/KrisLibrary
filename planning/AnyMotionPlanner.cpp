@@ -1610,7 +1610,7 @@ bool ReadPointLocation(const string& str,RoadmapPlanner& planner)
 
     vector<Real> weights;
     if(props.getArray("metricWeights",weights))
-      planner.pointLocator = make_shared<KDTreePointLocation>(planner.roadmap.nodes,2,weights);
+      planner.pointLocator = make_shared<KDTreePointLocation>(planner.roadmap.nodes,2,Vector(weights));
     else
       planner.pointLocator = make_shared<KDTreePointLocation>(planner.roadmap.nodes);
     return true;

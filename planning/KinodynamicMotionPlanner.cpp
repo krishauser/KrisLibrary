@@ -68,7 +68,7 @@ void KinodynamicTree::EnablePointLocation(const char* type)
 
     vector<Real> weights;
     if(props.getArray("metricWeights",weights)) {
-      pointLocation = make_shared<KDTreePointLocation>(pointRefs,2,weights);
+      pointLocation = make_shared<KDTreePointLocation>(pointRefs,2,Vector(weights));
     }
     else {
       pointLocation = make_shared<KDTreePointLocation>(pointRefs);
@@ -427,7 +427,7 @@ bool RRTKinodynamicPlanner::PickControl(const State& x0, const State& xDest, Kin
 
 
 ESTKinodynamicPlanner::ESTKinodynamicPlanner(KinodynamicSpace* s)
-:KinodynamicPlannerBase(s),tree(s),extensionCacheSize(0),
+:KinodynamicPlannerBase(s),tree(s),extensionCacheSize(0), goalNode(NULL),
 numIters(0),numFilteredExtensions(0),numSuccessfulExtensions(0),
 sampleTime(0),simulateTime(0),visibleTime(0),overheadTime(0)
 {

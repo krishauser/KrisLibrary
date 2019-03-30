@@ -88,10 +88,6 @@ SplineTimeBase::SplineTimeBase()
 {
 }
 
-SplineTimeBase::~SplineTimeBase()
-{
-	cleanup();
-}
 
 void SplineTimeBase::init(int nt)
 {
@@ -194,12 +190,6 @@ template <class Key,class Point>
 SplineBase<Key,Point>::SplineBase()
 //:points(NULL)
 {
-}
-
-template <class Key,class Point>
-SplineBase<Key,Point>::~SplineBase()
-{
-	cleanup();
 }
 
 template <class Key,class Point>

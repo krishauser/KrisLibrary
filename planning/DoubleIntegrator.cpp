@@ -161,7 +161,7 @@ DoubleIntegratorKinodynamicSpace::DoubleIntegratorKinodynamicSpace(std::shared_p
       vmin.resize(abset->bmin.size(),-Inf);
       vmax.resize(abset->bmax.size(),Inf);
     }
-    controlSpace->mySteeringFunction = make_shared<DoubleIntegratorBoxBoundedSteeringFunction>(abset->bmax,vmax);
+    controlSpace->mySteeringFunction = make_shared<DoubleIntegratorBoxBoundedSteeringFunction>(abset->bmax,Vector(vmax));
   }
 }
 

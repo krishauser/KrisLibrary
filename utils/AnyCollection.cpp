@@ -915,7 +915,6 @@ std::shared_ptr<AnyCollection> AnyCollection::insert(AnyKeyable key)
   }
 
   if(type == Array) {
-    int index;
     if(key.value.hastype<int>())
       return insert(*AnyCast_Raw<int>(&key.value));
     else if(key.value.hastype<unsigned int>())
@@ -924,13 +923,6 @@ std::shared_ptr<AnyCollection> AnyCollection::insert(AnyKeyable key)
       FatalError("AnyCollection: can't lookup arrays with non-integer types");
       return NULL;
     }
-    if(index >= (int)array.size()) {
-      size_t start = array.size();
-      array.resize(index+1);
-      for(size_t i=start;i<array.size();i++)
-        array[i].reset(new AnyCollection());
-    }
-    return array[index];
   }
   else if(type == Map) {
     MapType::iterator i=map.find(key);

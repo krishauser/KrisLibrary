@@ -20,7 +20,7 @@ public:
   typedef MatrixIterator<T> MyT;
   inline MatrixIterator() :ptr(NULL),rowPtr(NULL),istride(0),jstride(0) {}
   inline MatrixIterator(const MyT& i) :ptr(i.ptr),rowPtr(i.rowPtr),istride(i.istride),jstride(i.jstride) {}
-  inline MatrixIterator(T* _ptr,int _istride,int _jstride) :ptr(_ptr),rowPtr(_ptr),istride(_istride),jstride(_jstride) {}
+  inline explicit MatrixIterator(T* _ptr,int _istride,int _jstride) :ptr(_ptr),rowPtr(_ptr),istride(_istride),jstride(_jstride) {}
   inline T& operator*() { return *ptr; }
   inline T* operator->() { return ptr; }
   inline MyT& nextRow() { rowPtr+=istride; ptr=rowPtr; return *this; }

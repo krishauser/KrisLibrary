@@ -94,8 +94,6 @@ class IntegratedKinodynamicSpace : public KinodynamicSpace
 public:
   IntegratedKinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const std::shared_ptr<IntegratedControlSpace>& controlSpace);
   virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path);
-
-  std::shared_ptr<IntegratedControlSpace> controlSpace;
 };
 
 /** @ingroup MotionPlanning
@@ -145,8 +143,6 @@ class KinematicCSpaceAdaptor : public KinodynamicSpace
  public:
   KinematicCSpaceAdaptor(const std::shared_ptr<CSpace>& base,Real maxNeighborhoodRadius=0.1);
   virtual ~KinematicCSpaceAdaptor() {}
-
-  CSpace* base;
 };
 
 

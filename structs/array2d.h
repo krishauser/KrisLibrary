@@ -70,10 +70,10 @@ public:
   class iterator
   {
   public:
-    iterator(const Array2D<T>* array);
-    iterator(const Array2D<T>* array,int invalid);
-    iterator(const Array2D<T>* array,const Stripe2Indices& range);
-    iterator(const Array2D<T>* array,const Stripe2Indices& range,int invalid);
+    explicit iterator(const Array2D<T>* array);
+    explicit iterator(const Array2D<T>* array,int invalid);
+    explicit iterator(const Array2D<T>* array,const Stripe2Indices& range);
+    explicit iterator(const Array2D<T>* array,const Stripe2Indices& range,int invalid);
     iterator(const iterator& rhs);
     inline iterator& operator ++() { ++it; return *this; }
     inline iterator& operator --() { --it; return *this; }

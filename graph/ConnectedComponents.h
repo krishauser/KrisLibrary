@@ -9,6 +9,7 @@ namespace Graph {
 class ConnectedComponents
 {
  public:
+  ConnectedComponents() {}
   template <class Node,class Edge>
   void Compute(const UndirectedGraph<Node,Edge>& G) {
     sets.Initialize(G.nodes.size());

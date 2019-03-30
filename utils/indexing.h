@@ -22,8 +22,8 @@ struct MapIterator : public IterT
 {
   typedef MapIterator<T,IterT,MapT> MyT;
 
-  MapIterator(MapT& _mapping):mapping(_mapping) {}
-  MapIterator(IterT& _iter,MapT& _mapping):IterT(_iter),mapping(_mapping) {}
+  explicit MapIterator(MapT& _mapping):mapping(_mapping) {}
+  explicit MapIterator(IterT& _iter,MapT& _mapping):IterT(_iter),mapping(_mapping) {}
   inline T operator*() { return mapping(IterT::operator *()); }
   inline bool operator == (const MyT& rhs) const { return &mapping==&rhs.mapping && IterT::operator==(rhs); }
   inline bool operator != (const MyT& rhs) const { return !operator==(rhs); }
@@ -46,9 +46,9 @@ struct RangeIndices
 {
   RangeIndices();
   RangeIndices(const RangeIndices& rhs);
-  RangeIndices(int max);   //range from 0 to max-1
-  RangeIndices(int min,int max);  //range from min to max-1
-  RangeIndices(int min,int max,int stride);  //range from min to max-1, skipping stride
+  explicit RangeIndices(int max);   //range from 0 to max-1
+  explicit RangeIndices(int min,int max);  //range from min to max-1
+  explicit RangeIndices(int min,int max,int stride);  //range from min to max-1, skipping stride
   void enumerate(std::vector<int>& indices);
   int operator [] (int i) const { return start+stride*i; }
   bool contains(int index) const;
@@ -59,8 +59,8 @@ struct RangeIndices
   struct iterator
   {
     iterator();
-    iterator(const RangeIndices* range);
-    iterator(const RangeIndices*, int invalid);
+    explicit iterator(const RangeIndices* range);
+    explicit iterator(const RangeIndices*, int invalid);
     iterator(const iterator& rhs);
     inline int operator*() const { return index; }
     inline int getElement() const { return i; }
@@ -257,8 +257,8 @@ struct Stripe2Indices
 
   struct iterator
   {
-    iterator(const Stripe2Indices*);
-    iterator(const Stripe2Indices*,int invalid);
+    explicit iterator(const Stripe2Indices*);
+    explicit iterator(const Stripe2Indices*,int invalid);
     iterator(const iterator& i);
     inline int operator*() const { return index; }
     inline IntPair getElement() const { return IntPair(i,j); }
@@ -297,7 +297,7 @@ struct Stripe3Indices
   Stripe3Indices();
   Stripe3Indices(const Stripe3Indices& rhs);
   Stripe3Indices(int isize,int jsize,int ksize,int base=0,int istride=1,int jstride=1,int kstride=1);
-  Stripe3Indices(const Range3Indices& rhs);  //assigns a row-major ordering
+  explicit Stripe3Indices(const Range3Indices& rhs);  //assigns a row-major ordering
   Stripe3Indices(int isize,int jsize,int ksize,const Range3Indices& subRange);  //assigns a row-major ordering
   Stripe3Indices(const RangeIndices& irange,const RangeIndices& jrange,const RangeIndices& krange);
   void enumerate(std::vector<int>& indices);
@@ -311,8 +311,8 @@ struct Stripe3Indices
 
   struct iterator
   {
-    iterator(const Stripe3Indices*);
-    iterator(const Stripe3Indices*,int invalid);
+    explicit iterator(const Stripe3Indices*);
+    explicit iterator(const Stripe3Indices*,int invalid);
     iterator(const iterator& i);
     inline int operator*() const { return index; }
     inline IntTriple getElement() const { return IntTriple(i,j,k); }

@@ -44,8 +44,8 @@ void Octree::SplitToDepth(OctreeNode& n,int d)
 OctreeNode* Octree::SplitToDepth(OctreeNode& n,const Vector3& point,int d)
 {
   OctreeNode* c = Lookup(n,point,d);
-  d -= Depth(*c) - Depth(n);
   if(c) {
+    d -= Depth(*c) - Depth(n);
     if(d > 0) {
       int cindex = Index(*c);
       Split(cindex);
@@ -329,7 +329,12 @@ void Octree::DeleteNode(int id)
 
 OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell,Real _minCellSize)
   :Octree(bbox),maxPointsPerCell(_maxPointsPerCell),minCellSize(_minCellSize),fit(false)
-{}
+{
+  //TODO: the Octree constructor calls the virtual AddNode function, which is a no-no in C++
+  if (nodes.size() > (int)indexLists.size()) {
+    indexLists.resize(nodes.size());
+  }
+}
 
 void OctreePointSet::GetPoints(int node,vector<Vector3>& pts) const
 {

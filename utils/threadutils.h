@@ -40,7 +40,7 @@ struct Mutex
   std::mutex mutex;
 };
 struct ScopedLock{
-  ScopedLock(Mutex& _mutex) :mutex(_mutex) { mutex.lock(); }
+  explicit ScopedLock(Mutex& _mutex) :mutex(_mutex) { mutex.lock(); }
   ~ScopedLock() { mutex.unlock(); }
   Mutex& mutex;
 };

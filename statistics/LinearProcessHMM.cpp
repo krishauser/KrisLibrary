@@ -126,7 +126,7 @@ LinearProcessHMM::LinearProcessHMM(const GaussianMixtureModel& gmm)
   discretePrior = gmm.phi;
   transitionMatrix.resize(gmm.phi.size(),gmm.phi.size());
   for(size_t i=0;i<gmm.phi.size();i++)
-    transitionMatrix.copyCol(i,gmm.phi);
+    transitionMatrix.copyCol(i,Vector(gmm.phi));
   /*
   transitionMatrix *= 0.1;
   for(size_t i=0;i<gmm.phi.size();i++)
@@ -585,7 +585,7 @@ void LinearProcessHMM::Posterior(const vector<Vector>& observations,vector<Vecto
   vector<Vector> pforward(observations.size()),pbackward(observations.size());
   Matrix obsMat(observations.size(),discretePrior.n);
   for(int j=0;j<discretePrior.n;j++)
-    obsMat(0,j) = continuousPriors[j].probability(0);
+    obsMat(0,j) = continuousPriors[j].probability(observations[0]);
   for(size_t i=1;i<observations.size();i++)
     for(int j=0;j<discretePrior.n;j++)
       obsMat(i,j) = emissionModels[j].Probability(observations[i-1],observations[i]);

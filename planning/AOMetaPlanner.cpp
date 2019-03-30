@@ -50,7 +50,7 @@ public:
 
 CostSpaceRRTPlanner::CostSpaceRRTPlanner(const std::shared_ptr<KinodynamicSpace>& _baseSpace,const std::shared_ptr<ObjectiveFunctionalBase>& _objective,Real costMax)
 :LazyRRTKinodynamicPlanner(NULL),baseSpace(_baseSpace),costSpace(make_shared<StateCostKinodynamicSpace>(_baseSpace,_objective,costMax)),objective(_objective),costGoalSet(NULL),
- costSpaceDistanceWeight(1),lazy(false),bestPathCost(Inf),
+ heuristic(NULL),costSpaceDistanceWeight(1),lazy(false),bestPathCost(Inf),
  prunableNodeSampleCount(0),nodeSampleCount(0),
  numGoalsSampled(0),numPrunedNodes(0)
 {

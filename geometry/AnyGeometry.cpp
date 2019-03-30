@@ -103,7 +103,7 @@ int PointIndex(const CollisionImplicitSurface& s,const Vector3& ptworld)
 }
 
 AnyDistanceQueryResult::AnyDistanceQueryResult()
-:hasPenetration(0),hasElements(0),hasClosestPoints(0),hasDirections(0),d(Inf)
+:hasPenetration(0),hasElements(0),hasClosestPoints(0),hasDirections(0),d(Inf),elem1(-1),elem2(-1)
 {}
 
 AnyDistanceQuerySettings::AnyDistanceQuerySettings()
@@ -496,7 +496,7 @@ bool AnyGeometry3D::Load(const char* fn)
   else if(0==strcmp(ext,"geom")) {
     ifstream in(fn,ios::in);
     if(!in) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
       return false;
     }
     if(!Load(in)) return false;
@@ -506,7 +506,7 @@ bool AnyGeometry3D::Load(const char* fn)
   else {
     ifstream in(fn,ios::in);
     if(!in) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry3D::Load: File "<<fn);
       return false;
     }
     if(!Load(in)) return false;

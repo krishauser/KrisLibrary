@@ -28,7 +28,7 @@ public:
 
   inline VectorIterator() :ptr(NULL),stride(0) {}
   inline VectorIterator(const MyT& i) :ptr(i.ptr),stride(i.stride) {}
-  inline VectorIterator(T* _ptr,int _stride) :ptr(_ptr),stride(_stride) {}
+  inline explicit VectorIterator(T* _ptr,int _stride) :ptr(_ptr),stride(_stride) {}
   inline T& operator*() { return *ptr; }
   inline T* operator->() { return ptr; }
   inline MyT& operator ++() { ptr+=stride; return *this; }
@@ -130,10 +130,10 @@ public:
   VectorTemplate();
   VectorTemplate(const MyT&);
   VectorTemplate(MyT&&);
-  VectorTemplate(int n);
+  explicit VectorTemplate(int n);
   VectorTemplate(int n, T initval);
   VectorTemplate(int n, const T* vals);
-  VectorTemplate(const std::vector<T>& vals);
+  explicit VectorTemplate(const std::vector<T>& vals);
   ~VectorTemplate();
 
   inline T* getPointer() const { return vals; }

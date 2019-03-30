@@ -46,7 +46,7 @@ bool ConstrainedCalcAccel(RobotDynamics3D& robot,
 			  const Vector& t,Vector& ddq,Vector* f=NULL);
 bool ConstrainedCalcTorque(RobotDynamics3D& robot,
 			   const Vector& ddx,const Matrix& dC_dq,
-			   const Vector& t,Vector& ddq,Vector* f=NULL);
+			   const Vector& ddq,Vector& t,Vector* f=NULL);
 
 /** @ingroup Kinematics
  * @brief Returns a linearized dynamic model onto the constraints, such that

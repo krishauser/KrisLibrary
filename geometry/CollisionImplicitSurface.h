@@ -17,7 +17,7 @@ class CollisionImplicitSurface
 {
  public:
   CollisionImplicitSurface();
-  CollisionImplicitSurface(const Meshing::VolumeGrid& vg);
+  explicit CollisionImplicitSurface(const Meshing::VolumeGrid& vg);
   CollisionImplicitSurface(const CollisionImplicitSurface& vg);
   ///Sets up the collision detection data structures.  This is automatically
   ///called during initialization, and needs to be called any time the implicit

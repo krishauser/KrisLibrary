@@ -51,7 +51,7 @@ public:
 
   int n;
   EdgeListIterator e;
-  EdgeList *edges, *co_edges;
+  EdgeList *edges;
 };
 
 template <class Data>

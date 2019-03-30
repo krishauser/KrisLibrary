@@ -82,7 +82,7 @@ inline std::istream& operator >> (std::istream& in,PropertyMap& pmap)
 template <class T>
 PropertyMap::PropertyMap(const std::map<std::string,T>& rhs)
 {
-  for(typename std::map<std::string,T>::const_iterator i=rhs.begin();i!=rhs.end();i++)
+  for(auto i=rhs.begin();i!=rhs.end();++i)
     set(i->first,i->second);
 }
 

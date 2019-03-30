@@ -71,7 +71,7 @@ void RigidBodyDynamics::Advance(Real dt)
   T.t += dt*v;
   QuaternionRotation q,qw;
   q.setMatrix(T.R);
-  qw.setMoment(w*dt);
+  qw.setMoment(MomentRotation(w*dt));
   q = q*qw;
   q.inplaceNormalize();
   q.getMatrix(T.R);

@@ -3,6 +3,7 @@
 #include <KrisLibrary/math/AABB.h>
 #include <iostream>
 #include <climits>
+#include <algorithm>
 using namespace Geometry;
 using namespace std;
 

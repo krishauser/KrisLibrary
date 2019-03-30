@@ -45,7 +45,7 @@ class Vector2
   Vector2(const Vector2&);
   Vector2(Real x);
   Vector2(Real x, Real y);
-  Vector2(const Real* data);
+  explicit Vector2(const Real* data);
 
   inline bool operator == (const Vector2&) const;
   inline bool operator != (const Vector2&) const;
@@ -61,9 +61,9 @@ class Vector2
 
   inline void add(const Vector2& a, const Vector2& b);
   inline void sub(const Vector2& a, const Vector2& b);
-  inline void mul(const Vector2& a, Real);
-  inline void div(const Vector2& a, Real);
-  inline void madd(const Vector2& b, Real);
+  inline void mul(const Vector2& a, Real b);
+  inline void div(const Vector2& a, Real b);
+  inline void madd(const Vector2& a, Real b);
   inline Real dot(const Vector2& a) const;
   inline Real cross(const Vector2& a) const;   ///< 2d cross product
   inline Real distance(const Vector2& a) const;
@@ -140,7 +140,7 @@ class Vector3
   Vector3(const Vector3&);
   Vector3(Real x);
   Vector3(Real x, Real y, Real z);
-  Vector3(const Real* data);
+  explicit Vector3(const Real* data);
 
   inline bool operator == (const Vector3&) const;
   inline bool operator != (const Vector3&) const;
@@ -156,9 +156,9 @@ class Vector3
 
   inline void add(const Vector3& a, const Vector3& b);
   inline void sub(const Vector3& a, const Vector3& b);
-  inline void mul(const Vector3& a, Real);
-  inline void div(const Vector3& a, Real);
-  inline void madd(const Vector3& b, Real);
+  inline void mul(const Vector3& a, Real b);
+  inline void div(const Vector3& a, Real b);
+  inline void madd(const Vector3& a, Real b);
   inline Real dot(const Vector3& a) const;
   inline Real distance(const Vector3& a) const;
   inline Real distanceSquared(const Vector3& a) const;
@@ -189,7 +189,7 @@ class Vector3
   inline void get(Real data[3]) const;
   inline void getNegative(Vector3&) const;
   inline void getNormalized(Vector3&) const;
-  inline void getOrthogonalBasis(Vector3& xb,Vector3& yb) const;  ///< calculates two unit vectors orthogonal to this vector (and positively oriented)
+  inline void getOrthogonalBasis(Vector3& yb,Vector3& zb) const;  ///< calculates two unit vectors orthogonal to this vector (and positively oriented)
 
   inline void inplaceNegative();
   inline void inplaceMul(Real);
@@ -232,8 +232,8 @@ class Vector4
   Vector4(const Vector4&);
   Vector4(Real x);
   Vector4(Real x, Real y, Real z, Real w = One);
-  Vector4(const Real* data);
-  Vector4(const Vector3&);		//point in homogeneous coords
+  explicit Vector4(const Real* data);
+  explicit Vector4(const Vector3&);		//point in homogeneous coords
 
   inline bool operator == (const Vector4&) const;
   inline bool operator != (const Vector4&) const;
@@ -252,9 +252,9 @@ class Vector4
 
   inline void add(const Vector4& a, const Vector4& b);
   inline void sub(const Vector4& a, const Vector4& b);
-  inline void mul(const Vector4& a, Real);
-  inline void div(const Vector4& a, Real);
-  inline void madd(const Vector4& a, Real);
+  inline void mul(const Vector4& a, Real b);
+  inline void div(const Vector4& a, Real b);
+  inline void madd(const Vector4& a, Real b);
   inline void add(const Vector4& a, const Vector3& b);
   inline void sub(const Vector4& a, const Vector3& b);
   inline Real dot(const Vector4& a) const;
@@ -335,9 +335,9 @@ class Matrix2
  public:
   Matrix2();
   Matrix2(const Matrix2&);
-  Matrix2(Real);
-  Matrix2(const Real [2][2]);
-  Matrix2(const Real *);
+  explicit Matrix2(Real);
+  explicit Matrix2(const Real [2][2]);
+  explicit Matrix2(const Real *);
   Matrix2(const Vector2& xb, const Vector2& yb);
 
   bool operator == (const Matrix2&) const;
@@ -471,9 +471,9 @@ class Matrix3
  public:
   Matrix3();
   Matrix3(const Matrix3&);
-  Matrix3(Real);
-  Matrix3(const Real [3][3]);
-  Matrix3(const Real *);
+  explicit Matrix3(Real);
+  explicit Matrix3(const Real [3][3]);
+  explicit Matrix3(const Real *);
   Matrix3(const Vector3& xb, const Vector3& yb, const Vector3& zb);
 
   bool operator == (const Matrix3&) const;
@@ -628,14 +628,14 @@ class Matrix4
  public:
   Matrix4();
   Matrix4(const Matrix4&);
-  Matrix4(Real);
-  Matrix4(const Real [4][4]);
-  Matrix4(const Real *);
-  Matrix4(const Vector3& xb, const Vector3& yb, const Vector3& zb, const Vector3& trans);
-  Matrix4(const Vector4& x, const Vector4& y, const Vector4& z, const Vector4& w);
-  Matrix4(const Matrix3&);
-  Matrix4(const Matrix3&, const Vector3& trans);
-  Matrix4(const Vector3& trans);
+  explicit Matrix4(Real);
+  explicit Matrix4(const Real [4][4]);
+  explicit Matrix4(const Real *);
+  explicit Matrix4(const Vector3& xb, const Vector3& yb, const Vector3& zb, const Vector3& trans);
+  explicit Matrix4(const Vector4& x, const Vector4& y, const Vector4& z, const Vector4& w);
+  explicit Matrix4(const Matrix3&);
+  explicit Matrix4(const Matrix3&, const Vector3& trans);
+  explicit Matrix4(const Vector3& trans);
 
   bool operator == (const Matrix4&) const;
   bool operator != (const Matrix4&) const;

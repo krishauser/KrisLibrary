@@ -46,6 +46,7 @@ inline void RaiseErrorFmt(const char* func, const char* file, int line, const ch
 	va_start(args, fmt);
   char buf[1024];
 	vsnprintf(buf, 1024, fmt, args);
+  va_end(args);
     LOG4CXX_FATAL(KrisLibrary::logger(),buf);
   Abort();
 }
@@ -57,6 +58,7 @@ inline void RaiseErrorFmt(const char* fmt,...)
 	va_start(args, fmt);
 	char buf[1024];
   vsnprintf(buf, 1024, fmt, args);
+  va_end(args);
     LOG4CXX_FATAL(KrisLibrary::logger(),buf);
   Abort();
 }

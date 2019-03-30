@@ -96,7 +96,7 @@ SBLTree::SBLTree(CSpace* s)
 
 SBLTree::~SBLTree()
 {
-  Cleanup();
+  SafeDelete(root);
 }
 
 void SBLTree::Cleanup()
@@ -435,6 +435,7 @@ SBLTreeWithIndex::SBLTreeWithIndex(CSpace* space)
 void SBLTreeWithIndex::Cleanup()
 {
   index.resize(0);
+  SBLTree::Cleanup();
 }
 
 void SBLTreeWithIndex::AddMilestone(Node* n)

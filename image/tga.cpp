@@ -91,8 +91,10 @@ bool ImportImageTGA(const char* fn, Image& image)
 	int pixel_size;
 
 	BYTE hdr[18];
-	if(fread(&hdr, 1, 18, f) != 18)
-		return false;
+  if (fread(&hdr, 1, 18, f) != 18) {
+    fclose(f);
+    return false;
+  }
 
 	copy_header_data(hdr, header);
 
@@ -123,6 +125,7 @@ bool ImportImageTGA(const char* fn, Image& image)
 			break;
 		default:
 		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.bpp<<" bit targas");
+      fclose(f);
 		  return false;
 		}
 	}
@@ -141,12 +144,14 @@ bool ImportImageTGA(const char* fn, Image& image)
 			break;
 		default:
 		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.color_map_bpp<<" bit color-mapped targas");
+      fclose(f);
 		  return false;
 		}
 	}
 	else
 	{
 	  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read that format targa");
+    fclose(f);
 	  return false;
 	}
 

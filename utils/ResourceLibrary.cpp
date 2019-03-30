@@ -721,7 +721,7 @@ ResourceBase* ResourceLibraryResource::Copy()
 std::vector<std::string> ResourceLibraryResource::SubTypes() const
 { 
   std::vector<std::string> res;
-  for(ResourceLibrary::Map::const_iterator i=library.itemsByType.begin();i!=library.itemsByName.end();i++)
+  for(ResourceLibrary::Map::const_iterator i=library.itemsByType.begin();i!=library.itemsByType.end();i++)
     res.push_back(i->first);
   return res;
 }

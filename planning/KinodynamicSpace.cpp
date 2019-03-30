@@ -15,13 +15,14 @@ KinodynamicSpace::KinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const s
 
 
 IntegratedKinodynamicSpace::IntegratedKinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const std::shared_ptr<IntegratedControlSpace>& _controlSpace)
-:KinodynamicSpace(xspace,_controlSpace),controlSpace(_controlSpace)
+:KinodynamicSpace(xspace,_controlSpace)
 {}
 
 EdgePlannerPtr IntegratedKinodynamicSpace::TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path)
 {
+  auto ics = dynamic_cast<IntegratedControlSpace*>(controlSpace.get());
   Real udt = u(0);
-  int numSteps = int(controlSpace->dt / udt);
+  int numSteps = int(ics->dt / udt);
   return make_shared<EpsilonEdgeChecker>(GetStateSpace().get(),path,path->Length()/numSteps);
 }
 

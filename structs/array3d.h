@@ -71,10 +71,10 @@ class Array3D
   class iterator
   {
   public:
-    iterator(const Array3D<T>* array);
-    iterator(const Array3D<T>* array,int invalid);
-    iterator(const Array3D<T>* array,const Stripe3Indices& range);
-    iterator(const Array3D<T>* array,const Stripe3Indices& range,int invalid);
+    explicit iterator(const Array3D<T>* array);
+    explicit iterator(const Array3D<T>* array,int invalid);
+    explicit iterator(const Array3D<T>* array,const Stripe3Indices& range);
+    explicit iterator(const Array3D<T>* array,const Stripe3Indices& range,int invalid);
     iterator(const iterator& rhs);
     inline iterator& operator ++() { ++it; return *this; }
     inline iterator& operator --() { --it; return *this; }

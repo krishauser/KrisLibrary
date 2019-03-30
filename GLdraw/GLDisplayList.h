@@ -7,7 +7,7 @@ namespace GLDraw {
 
 struct GLDisplayList
 {
-  GLDisplayList(int count=1);
+  explicit GLDisplayList(int count=1);
   ~GLDisplayList();
   operator bool() const { return isCompiled(); }
   bool isCompiled() const;

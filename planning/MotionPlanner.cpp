@@ -82,7 +82,6 @@ RoadmapPlanner::RoadmapPlanner(CSpace* s)
 
 RoadmapPlanner::~RoadmapPlanner()
 {
-	Cleanup();
 }
 
 
@@ -145,8 +144,8 @@ void RoadmapPlanner::ConnectToNeighbors(int i,Real connectionThreshold,bool ccRe
   else {
     //fall back on naive point location
     for(size_t j=0;j<roadmap.nodes.size();j++) {
-      if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
-      else if(i==(int)j || roadmap.HasEdge(i,j)) continue;
+      if(ccReject) { if(ccs.SameComponent(i,(int)j)) continue; }
+      else if(i==(int)j || roadmap.HasEdge(i,(int)j)) continue;
       if(space->Distance(roadmap.nodes[i],roadmap.nodes[j]) < connectionThreshold) {
 	TestAndConnectEdge(i,j);
       }
@@ -176,10 +175,10 @@ void RoadmapPlanner::ConnectToNearestNeighbors(int i,int k,bool ccReject)
     pair<Real,int> node;
     Real worst=Inf;
     for(size_t j=0;j<roadmap.nodes.size();j++) {
-      if(ccReject) { if(ccs.SameComponent(i,j)) continue; }
+      if(ccReject) { if(ccs.SameComponent(i,(int)j)) continue; }
       else if(i==(int)j) continue;
       node.first = space->Distance(roadmap.nodes[i],roadmap.nodes[j]);
-      node.second = j;
+      node.second = (int)j;
       if(node.first < worst) {
 	knn.insert(node);
 	
@@ -351,7 +350,8 @@ TreeRoadmapPlanner::TreeRoadmapPlanner(CSpace* s)
 
 TreeRoadmapPlanner::~TreeRoadmapPlanner()
 {
-  Cleanup();
+  for (size_t i = 0; i<connectedComponents.size(); i++)
+    SafeDelete(connectedComponents[i]);
 }
 
 

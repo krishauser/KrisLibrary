@@ -16,7 +16,7 @@ using namespace Math3D;
 
 struct IndexHash
 {
-  IndexHash(size_t pow=257);
+  explicit IndexHash(size_t pow=257);
   size_t operator () (const IntTriple& x) const;
   size_t operator () (const std::vector<int>& x) const;
   size_t pow;
@@ -37,8 +37,8 @@ public:
   //called once per value in the query range, return false to stop enumerating
   typedef bool (*QueryCallback)(void* value);
 
-  GridHash3D(Real h=1);
-  GridHash3D(const Vector3& h);
+  explicit GridHash3D(Real h=1);
+  explicit GridHash3D(const Vector3& h);
   size_t GetBucketCount() const {  return buckets.bucket_count(); }
   void SetBucketCount(size_t n) {  buckets.rehash(n); }
   Vector3 GetResolution() const;
@@ -103,8 +103,8 @@ public:
   //called once per object in the query range, return false to stop enumerating
   typedef bool (*QueryCallback)(void* obj);
 
-  GridSubdivision3D(Real h=1);
-  GridSubdivision3D(const Vector3& h);
+  explicit GridSubdivision3D(Real h=1);
+  explicit GridSubdivision3D(const Vector3& h);
   size_t GetBucketCount() const {  return buckets.bucket_count(); }
   void SetBucketCount(size_t n) {  buckets.rehash(n); }
   //this doesn't work -- hash power can't currently be changed.
@@ -168,8 +168,8 @@ public:
   //called once per value in the query range, return false to stop enumerating
   typedef bool (*QueryCallback)(void* value);
 
-  GridHash(int numDims,Real h=1);
-  GridHash(const Vector& h);
+  explicit GridHash(int numDims,Real h=1);
+  explicit GridHash(const Vector& h);
   size_t GetBucketCount() const {  return buckets.bucket_count(); }
   void SetBucketCount(size_t n) {  buckets.rehash(n); }
   Vector GetResolution() const;
@@ -235,8 +235,8 @@ public:
   //called once per object in the query range, return false to stop enumerating
   typedef bool (*QueryCallback)(void* obj);
 
-  GridSubdivision(int numDims,Real h=1);
-  GridSubdivision(const Vector& h);
+  explicit GridSubdivision(int numDims,Real h=1);
+  explicit GridSubdivision(const Vector& h);
   size_t GetBucketCount() const {  return buckets.bucket_count(); }
   void SetBucketCount(size_t n) {  buckets.rehash(n); }
   //this doesn't work -- hash power can't currently be changed.

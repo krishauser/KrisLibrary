@@ -34,8 +34,8 @@ void GLView::getCurrentGL()
 	glGetFloatv(GL_MODELVIEW_MATRIX,mv);
 #endif //MATH_DOUBLE
 	x=(Real)vp[0]; y=(Real)vp[1]; w=(Real)vp[2]; h=(Real)vp[3];
-	projection=pr;
-	modelview=mv;
+	projection.set(pr);
+	modelview.set(mv);
 	updateInverses();
 }
 

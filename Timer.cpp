@@ -43,6 +43,18 @@ Timer::Timer()
   Reset();
 }
 
+Timer::Timer(const Timer& rhs)
+  :impl(new TimerImpl)
+{
+  *this = rhs;
+}
+
+const Timer& Timer::operator =(const Timer& rhs)
+{
+  *impl = *rhs.impl;
+  return *this;
+}
+
 Timer::~Timer()
 {
   delete impl;

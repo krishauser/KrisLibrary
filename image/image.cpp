@@ -542,7 +542,7 @@ void ImageOperator::unload()
 	w = h = num_pixels = 0;
 }
 
-void ImageOperator::operator = (const Image& img)
+const ImageOperator& ImageOperator::operator = (const Image& img)
 {
 	resize(img.w,img.h);
 	int psize = img.pixelSize();
@@ -559,6 +559,7 @@ void ImageOperator::operator = (const Image& img)
 		pixels[i].b = op[2];
 		pixels[i].a = op[3];
 	}
+  return *this;
 }
 
 void ImageOperator::output (Image& img, Image::PixelFormat fmt) const

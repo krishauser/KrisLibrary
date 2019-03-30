@@ -126,10 +126,9 @@ private:
   void heapifyDown(int i)
   {
     item it=h[i];
-    int child;
     int size = (int)h.size();
     while(child1(i)<size) {
-      child = child1(i);
+      int child = child1(i);
       if(child+1<size && h[child+1].p > h[child].p)
         child++;
       if(it.p < h[child].p)

@@ -20,7 +20,7 @@ template <class T>
 class NormAccumulator
 {
  public:
-  NormAccumulator(Real exponent=2.0);
+  explicit NormAccumulator(Real exponent=2.0);
   void collect(T val);
   void collect(T val,Real weight);
   T norm() const;

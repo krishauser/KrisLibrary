@@ -52,6 +52,7 @@ EZCallTrace::EZCallTrace(const char* name,const char* fmt,...)
 #else
     vsnprintf(buf, MAXBUF, fmt, args);
 #endif
+    va_end(args);
     EZTrace::curTrace->Call(name,buf);
     this->name = name;
     this->retval = "void";

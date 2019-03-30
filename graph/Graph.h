@@ -188,10 +188,11 @@ int Graph<NodeData,EdgeData>::AddNode(const NodeData& n)
 template <class NodeData,class EdgeData>
 void Graph<NodeData,EdgeData>::DeleteNode(int n)
 {
+  Assert(n >= 0 && n < (int)nodes.size());
   DeleteOutgoingEdges(n);
   DeleteIncomingEdges(n);
 
-  int rep = nodes.size()-1;
+  int rep = (int)nodes.size()-1;
   //move all references from rep to n
   nodeColor[n] = nodeColor[rep];  nodeColor.resize(nodeColor.size()-1);
   nodes[n] = nodes[rep];  nodes.resize(nodes.size()-1);

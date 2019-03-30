@@ -26,7 +26,7 @@ class Octree
 {
  public:
   ///Creates a single-node octree with the given bounding box
-  Octree(const AABB3D& bb);
+   explicit Octree(const AABB3D& bb);
   virtual ~Octree() {}
   ///Returns the number of nodes in the octree
   int NumNodes() const { return (int)nodes.size()-(int)freeNodes.size(); }
@@ -158,7 +158,7 @@ class OctreePointSet : public Octree
 class OctreeScalarField : public Octree
 {
  public:
-  OctreeScalarField(const AABB3D& bb,Real defaultValue = -Inf);
+   explicit OctreeScalarField(const AABB3D& bb,Real defaultValue = -Inf);
   virtual ~OctreeScalarField() {}
   ///Sets the value at the leaf node associated with the point pt.
   ///To set the field to a given resolution, first call SplitToDepth(pt,d) or

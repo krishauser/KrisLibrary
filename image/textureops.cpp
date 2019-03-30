@@ -116,7 +116,7 @@ void StretchSquare(Image& tex)
 {
 	if(IsSquare(tex))
 		return;
-	ImageOperator oldtex = tex;
+	ImageOperator oldtex(tex);
 	makeSquareDimensions(tex);
 	ImageOperator newtex;
 

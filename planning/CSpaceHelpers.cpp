@@ -835,6 +835,9 @@ AdaptiveCSpace::AdaptiveCSpace(CSpace* baseSpace)
 :PiggybackCSpace(baseSpace),adaptive(true),useBaseVisibleTest(true)
 {
   CopyConstraints(baseSpace);
+  baseVisibleStats.cost = 0;
+  baseVisibleStats.count = 0;
+  baseVisibleStats.probability = 0;
 }
 
 bool AdaptiveCSpace::IsFeasible(const Config& x)

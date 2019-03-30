@@ -40,7 +40,7 @@ GaussianHMM::GaussianHMM(const GaussianMixtureModel& gmm)
   discretePrior = gmm.phi;
   transitionMatrix.resize(gmm.phi.size(),gmm.phi.size());
   for(size_t i=0;i<gmm.phi.size();i++)
-    transitionMatrix.copyCol(i,gmm.phi);
+    transitionMatrix.copyCol(i,Vector(gmm.phi));
   /*
   transitionMatrix *= 0.1;
   for(size_t i=0;i<gmm.phi.size();i++)

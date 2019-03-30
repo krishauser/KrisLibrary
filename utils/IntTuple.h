@@ -18,10 +18,10 @@ struct IntTuple
   typedef std::vector<int>::iterator iterator;
 
   inline IntTuple() {}
-  inline IntTuple(int e1):elements(1,e1) {}
-  inline IntTuple(int e1,int e2) { set(e1,e2); }
-  inline IntTuple(int e1,int e2,int e3) { set(e1,e2,e3); }
-  inline IntTuple(const std::vector<int>& t):elements(t) {}
+  inline explicit IntTuple(int e1):elements(1,e1) {}
+  inline explicit IntTuple(int e1,int e2) { set(e1,e2); }
+  inline explicit IntTuple(int e1,int e2,int e3) { set(e1,e2,e3); }
+  inline explicit IntTuple(const std::vector<int>& t):elements(t) {}
   inline size_t size() const { return elements.size(); }
   inline bool empty() const { return elements.empty(); }
   inline void resize(size_t s) { elements.resize(s); }

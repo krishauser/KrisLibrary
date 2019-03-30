@@ -24,7 +24,6 @@ class SplineTimeBase
 {
  public:
   SplineTimeBase();
-  virtual ~SplineTimeBase();
 
   enum InfinityBehavior {
     InfinityEnd = 0x0,
@@ -108,7 +107,6 @@ class SplineBase : public SplineTimeBase
 {
  public:
   SplineBase();
-  virtual ~SplineBase();
   void init(int numKeys);
   void cleanup();
   int insertKey(Real time,int pos=-1);

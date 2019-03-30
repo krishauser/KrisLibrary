@@ -15,13 +15,13 @@ bool ReadString(std::istream& in,string& str,const std::string& delims)
 {
   EatWhitespace(in);
   if(!in) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: hit end of file\n");
+    LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: hit end of file");
     return false;
   }
   if(in.peek() == '"') {
     //beginning of string
     if(!InputQuotedString(in,str)) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: unable to read quoted string\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: unable to read quoted string");
       return false;
     }
     return true;
@@ -33,7 +33,7 @@ bool ReadString(std::istream& in,string& str,const std::string& delims)
     str = c;
     char end=in.get();
     if(end != '\'') {
-      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: character not delimited properly\n");
+      LOG4CXX_INFO(KrisLibrary::logger(),"ReadValue: character not delimited properly");
       return false;
     }
     return true;
@@ -71,7 +71,7 @@ bool PropertyMap::LoadJSON(istream& in)
   clear();
   EatWhitespace(in);
   if(in.peek()!='{') {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: unable to read arrays or single values\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: unable to read arrays or single values");
     return false;
   }
   in.get();
@@ -108,7 +108,7 @@ bool PropertyMap::LoadJSON(istream& in)
 bool PropertyMap::SaveJSON(ostream& out) const
 {
   out<<"{"<<endl;
-  for(map<string,string>::const_iterator i=begin();i!=end();i++) {
+  for(auto i=begin();i!=end();++i) {
     out<<"   ";
     OutputQuotedString(out,i->first);
     out<<" : ";
@@ -124,7 +124,7 @@ bool PropertyMap::SaveJSON(ostream& out) const
 void PropertyMap::Print(ostream& out) const
 {
   out<<"{"<<endl;
-  for(map<string,string>::const_iterator i=begin();i!=end();i++) {
+  for(auto i=begin();i!=end();++i) {
     out<<"   "<<i->first<<" : ";
     SafeOutputString(out,i->second);
     if(i != --end())
@@ -145,7 +145,7 @@ bool PropertyMap::Load(TiXmlElement* node)
   }
   return true;
 #else 
-    LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: Didn't compile KrisLibrary with TinyXml");
   return false;
 #endif //HAVE_TINYXML
 }
@@ -153,11 +153,11 @@ bool PropertyMap::Load(TiXmlElement* node)
 bool PropertyMap::Save(TiXmlElement* node) const
 {
 #if HAVE_TINYXML
-  for(map<string,string>::const_iterator i=begin();i!=end();i++)
+  for(auto i=begin();i!=end();++i)
     node->SetAttribute(i->first.c_str(),i->second.c_str());
   return true;
 #else 
-    LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: Didn't compile KrisLibrary with TinyXml\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PropertyMap: Didn't compile KrisLibrary with TinyXml");
   return false;
 #endif //HAVE_TINYXML
 }

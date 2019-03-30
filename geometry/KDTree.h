@@ -45,6 +45,10 @@ class KDTree
   KDTree(const std::vector<Point>& pts, int k, int depth=0, int maxDepth=100);
   ~KDTree();
 
+  ///can't use copy constructor or assignment operation
+  KDTree(const KDTree&) = delete;
+  const KDTree& operator=(const KDTree&) const = delete;
+
   inline bool IsLeaf() const { return splitDim==-1; }
   int MaxDepth() const;
   int MinDepth() const;
@@ -97,10 +101,6 @@ private:
   void _KClosestPoints(const Vector& pt,int k,Real* dist,int* idx,int& maxdist) const;
   void _ClosestPoint2(const Vector& pt,Real& dist,int& idx,Real norm,const Vector& weights) const;
   void _KClosestPoints2(const Vector& pt,int k,Real* dist,int* idx,int& maxdist,Real norm,const Vector& weights) const;
-
-  ///can't use copy constructor or assignment operation
-  KDTree(const KDTree&) {}
-  const KDTree& operator=(const KDTree&) const { return *this; }
 
   int depth;
   int splitDim;

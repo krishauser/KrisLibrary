@@ -10,7 +10,8 @@ SBLPlanner::SBLPlanner(CSpace* s)
 
 SBLPlanner::~SBLPlanner()
 {
-  Cleanup();
+  SafeDelete(tStart);
+  SafeDelete(tGoal);
 }
 
 void SBLPlanner::Cleanup()
@@ -141,7 +142,8 @@ SBLPRT::SBLPRT(CSpace* s)
 
 SBLPRT::~SBLPRT()
 {
-  Cleanup();
+  for (size_t i = 0; i<roadmap.nodes.size(); i++)
+    delete roadmap.nodes[i];
 }
 
 void SBLPRT::Cleanup()

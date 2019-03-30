@@ -23,8 +23,8 @@ public:
   /// Called for each cell in the query, return false to stop enumerating
   typedef bool (*QueryCallback)(const Index& index);
 
-  Grid(int numDims,Real h=1);
-  Grid(const Vector& h);
+  explicit Grid(int numDims,Real h=1);
+  explicit Grid(const Vector& h);
 
   //returns the index of the point
   void PointToIndex(const Vector& p,Index& i) const;

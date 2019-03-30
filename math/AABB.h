@@ -94,7 +94,7 @@ inline Real AABBDistance(const Vector& x,const Vector& bmin,const Vector& bmax)
   Real distance2 = 0;
   Real penetration = Inf;
   for(int i=0;i<x.n;i++) {
-    if(x[i] <= bmin[i] and x[i] >= bmax[i]) {
+    if(x[i] <= bmin[i] && x[i] >= bmax[i]) {
       penetration = Min(penetration,x[i]-bmin[i]);
       penetration = Min(penetration,bmax[i]-x[i]);
     }

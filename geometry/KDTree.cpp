@@ -77,6 +77,7 @@ KDTree::KDTree()
   splitDim = -1;
   splitVal = 0;
   pos = neg = NULL;
+  visits = 0;
 }
 
 KDTree::KDTree(const std::vector<Point>& _pts,int k, int _depth, int maxDepth)
@@ -109,6 +110,7 @@ KDTree::KDTree(const std::vector<Point>& _pts,int k, int _depth, int maxDepth)
   splitDim=-1;
   pos=neg=NULL;
   pts = _pts;
+  visits = 0;
 }
 
 KDTree::~KDTree()

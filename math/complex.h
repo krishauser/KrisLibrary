@@ -157,6 +157,8 @@ class Quaternion
   void mul(const Quaternion& a, const Quaternion& b);
   void div(const Quaternion& a, const Quaternion& b);
   void madd(const Quaternion& a, const Quaternion& b);
+  inline void add(const Quaternion& a, Real b);
+  inline void sub(const Quaternion& a, Real b);
   inline void mul(const Quaternion& a, Real b);
   inline void div(const Quaternion& a, Real b);
   inline void madd(const Quaternion& a, Real b);
@@ -284,6 +286,8 @@ inline void Quaternion::operator += (Real s) { w += s; }
 inline void Quaternion::operator -= (Real s) { w -= s; }
 inline void Quaternion::operator *= (Real s) { w*=s; x*=s; y*=s; z*=s; }
 inline void Quaternion::operator /= (Real s) { Real s_inv = Inv(s); operator *= (s_inv); }
+inline void Quaternion::add(const Quaternion& a, Real b) { w=a.w+b; x=a.x; y=a.y; z=a.z; }
+inline void Quaternion::sub(const Quaternion& a, Real b) { w=a.w-b; x=a.x; y=a.y; z=a.z; }
 inline void Quaternion::add(const Quaternion& a, const Quaternion& b) { w=a.w+b.w; x=a.x+b.x; y=a.y+b.y; z=a.z+b.z; }
 inline void Quaternion::sub(const Quaternion& a, const Quaternion& b) { w=a.w-b.w; x=a.x-b.x; y=a.y-b.y; z=a.z-b.z; }
 inline void Quaternion::mul(const Quaternion& a, Real b) { w=a.w*b; x=a.x*b; y=a.y*b; z=a.z*b; }

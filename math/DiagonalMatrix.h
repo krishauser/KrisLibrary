@@ -22,7 +22,7 @@ public:
 
   DiagonalMatrixTemplate();
   DiagonalMatrixTemplate(const BaseT&);
-  DiagonalMatrixTemplate(int m);
+  explicit DiagonalMatrixTemplate(int m);
   DiagonalMatrixTemplate(int m, T diagVal);
   DiagonalMatrixTemplate(int m, const T* diagVals);
   

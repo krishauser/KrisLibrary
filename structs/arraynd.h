@@ -245,6 +245,7 @@ const ArrayND<T>& ArrayND<T>::operator = (const ArrayND<T>& rhs)
   dims = rhs.dims;
   strides = rhs.strides;
   values = rhs.value;
+  return *this;
 }
 
 template <class T>
@@ -252,6 +253,7 @@ const ArrayND<T>& ArrayND<T>::operator = (const std::vector<T>& rhs)
 {
   resize(rhs.size());
   std::copy(rhs.begin(),rhs.end(),values.begin());
+  return *this;
 }
 
 template <class T>
@@ -259,6 +261,7 @@ const ArrayND<T>& ArrayND<T>::operator = (const Array2D<T>& rhs)
 {
   resize(rhs.m,rhs.n);
   std::copy(rhs.getData(),rhs.getData()+values.size(),values.begin());
+  return *this;
 }
 
 template <class T>
@@ -266,6 +269,7 @@ const ArrayND<T>& ArrayND<T>::operator = (const Array3D<T>& rhs)
 {
   resize(rhs.m,rhs.n,rhs.p);
   std::copy(rhs.getData(),rhs.getData()+values.size(),values.begin());
+  return *this;
 }
 
 template <class T>

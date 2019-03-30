@@ -26,7 +26,7 @@ public:
   typedef DiagonalMatrixTemplate<T> DiagonalMatrixT;
 
   SVDecomposition();
-  SVDecomposition(const MatrixT& A);
+  explicit SVDecomposition(const MatrixT& A);
   
   bool set(const MatrixT& A);
   void setIdentity(int m,int n);
@@ -73,7 +73,7 @@ public:
   typedef DiagonalMatrixTemplate<T> DiagonalMatrixT;
 
   RobustSVD();
-  RobustSVD(const MatrixT& A);
+  explicit RobustSVD(const MatrixT& A);
   
   bool set(const MatrixT& A);
   bool setConditioned(const MatrixT& A);

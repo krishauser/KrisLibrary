@@ -166,7 +166,7 @@ void SE2CSpace::SetDomain(const Math3D::Vector2& bmin,const Math3D::Vector2& bma
 std::string SO3CSpace::VariableName(int i)
 {
   if(i==0) return "R_x";
-  else if(i==0) return "R_y";
+  else if(i==1) return "R_y";
   return "R_z";
 }
 

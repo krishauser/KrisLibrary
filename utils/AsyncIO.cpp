@@ -125,7 +125,7 @@ SyncPipe::SyncPipe()
 
 SyncPipe::~SyncPipe()
 {
-  Stop();
+  if (transport) transport->Stop();
 }
 
 void SyncPipe::Reset()
@@ -187,7 +187,13 @@ AsyncReaderThread::AsyncReaderThread(double _timeout)
 
 AsyncReaderThread::~AsyncReaderThread()
 {
-  Stop();
+  if (initialized) {
+    double oldtimeout = timeout;
+    //signal that the thread should stop
+    timeout = 0;
+    //wait for the thread to stop
+    ThreadJoin(thread);
+  }
 }
 
 void AsyncReaderThread::Reset()
@@ -253,13 +259,17 @@ void AsyncReaderThread::Stop()
 
 
 AsyncPipeThread::AsyncPipeThread(double _timeout)
-  :AsyncPipeQueue(),initialized(false),timeout(_timeout),lastReadTime(-1)
+  :AsyncPipeQueue(),initialized(false),timeout(_timeout),lastReadTime(-1),lastWriteTime(-1)
 {
 }
 
 AsyncPipeThread::~AsyncPipeThread()
 {
-  Stop();
+  if (initialized) {
+    timeout = 0;
+    ThreadJoin(workerThread);
+    transport->Stop();
+  }
 }
 
 void AsyncPipeThread::Reset()

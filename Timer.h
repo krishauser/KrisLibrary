@@ -7,7 +7,9 @@ class Timer
 {
  public:
   Timer();
+  Timer(const Timer& rhs);
   ~Timer();
+  const Timer& operator = (const Timer&);
   void Reset();
 
   // Returns elapsed time in milliseconds,seconds respectively

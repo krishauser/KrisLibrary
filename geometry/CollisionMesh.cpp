@@ -175,6 +175,8 @@ const CollisionMeshQuery& CollisionMeshQuery::operator =(const CollisionMeshQuer
   m1 = q.m1;
   m2 = q.m2;
   //*pqpResults = *q.pqpResults;
+  pqpResults->distance.t1 = 0;
+  pqpResults->distance.t2 = 0;
   SafeDelete(penetration1);
   SafeDelete(penetration2);
   return *this;
@@ -318,11 +320,11 @@ void CollisionMeshQuery::TolerancePairs(vector<int>& t1,vector<int>& t2) const
     }
   }
   */
-  for(map<int,int>::const_iterator i=allRes.triPartner1.begin();i!=allRes.triPartner1.end();i++) {
+  for(map<int,int>::const_iterator i=allRes.triPartner1.begin();i!=allRes.triPartner1.end();++i) {
     t1.push_back(i->first);
     t2.push_back(i->second);
   }
-  for(map<int,int>::const_iterator i=allRes.triPartner2.begin();i!=allRes.triPartner2.end();i++) {
+  for(map<int,int>::const_iterator i=allRes.triPartner2.begin();i!=allRes.triPartner2.end();++i) {
     if(allRes.triPartner1.find(i->second)->second != i->first) { //avoid double counting  
       t1.push_back(i->second);
       t2.push_back(i->first);
@@ -361,19 +363,19 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
   p2.resize(0);
   //fill out pairs from the results
   /*
-  for(size_t i=0;i<allRes.triPartner1.size();i++)
+  for(size_t i=0;i<allRes.triPartner1.size();++i)
     if(allRes.triPartner1[i] >= 0) {
       p1.push_back(allRes.triCp1[i].first);
       p2.push_back(allRes.triCp1[i].second);
     }
-  for(size_t i=0;i<allRes.triPartner2.size();i++) {
+  for(size_t i=0;i<allRes.triPartner2.size();++i) {
     if(allRes.triPartner2[i] >= 0 && allRes.triPartner1[allRes.triPartner2[i]] != (int)i) { //avoid double counting  
       p1.push_back(allRes.triCp2[i].first);
       p2.push_back(allRes.triCp2[i].second);
     }
   }
   */
-  for(map<int,PQP_ClosestPoints >::const_iterator i=allRes.triCp1.begin();i!=allRes.triCp1.end();i++) {
+  for(map<int,PQP_ClosestPoints >::const_iterator i=allRes.triCp1.begin();i!=allRes.triCp1.end();++i) {
     if(allRes.triDist1.find(i->first)->second == 0) {
       //overlapping triangles
       //NOTE: if any triangles are overlapping, PQP gives junk results for the pairs of points, not the intersecting points!
@@ -388,11 +390,11 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
       }
     }
     else {
-      p1.push_back(i->second.p1);
-      p2.push_back(i->second.p2);
+      p1.push_back(Vector3(i->second.p1));
+      p2.push_back(Vector3(i->second.p2));
     }
   }
-  for(map<int,int>::const_iterator i=allRes.triPartner2.begin();i!=allRes.triPartner2.end();i++) {
+  for(map<int,int>::const_iterator i=allRes.triPartner2.begin();i!=allRes.triPartner2.end();++i) {
     if(allRes.triPartner1.find(i->second)->second != i->first) { //avoid double counting  
       if(allRes.triDist2.find(i->first)->second == 0) {
         //overlapping triangles
@@ -409,8 +411,8 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
       }
       else {
         Assert(allRes.triCp2.find(i->first) != allRes.triCp2.end());
-        p1.push_back(allRes.triCp2.find(i->first)->second.p1);
-        p2.push_back(allRes.triCp2.find(i->first)->second.p2);
+        p1.push_back(Vector3(allRes.triCp2.find(i->first)->second.p1));
+        p2.push_back(Vector3(allRes.triCp2.find(i->first)->second.p2));
       }
     }
   }
@@ -901,7 +903,7 @@ Real aabb_ray_collide(const PQP_REAL box_dims[3],const PQP_REAL s[3],const PQP_R
   Copy(s,r.source);
   Copy(d,r.direction);
   Real min=0,max=Inf;
-  if(ClipLine(s,d,b,min,max)) return min;
+  if(ClipLine(Vector3(s),Vector3(d),b,min,max)) return min;
   return Inf;
 }
 
@@ -1121,7 +1123,7 @@ struct ClosestPointCallback
   };
 
   ClosestPointCallback()
-    :normalWeight(0),dmin(Inf),dmax(Inf),closestTri(-1)
+    :normalWeight(0),dmin(Inf),dmax(Inf),closestTri(-1), numTrianglesChecked(0), numBBsChecked(0)
   {}
   void Execute(const PQP_Model& m,const Vector3& p) {
     pworld = p;
@@ -1644,7 +1646,7 @@ int ClosestPointAndNormal(const TriMesh& m,Real pWeight,Real nWeight,const Vecto
   int t=-1;
   Triangle3D tri;
   for(size_t i=0;i<m.tris.size();i++) {
-    m.GetTriangle(i,tri);
+    m.GetTriangle((int)i,tri);
     Vector3 tn=tri.normal();
     Vector3 tx=tri.closestPoint(p);
     Real d = pWeight*tx.distanceSquared(p) + nWeight*tn.distanceSquared(n);
@@ -1683,7 +1685,7 @@ Real BVRayCollision(const BV& bv,const Ray3D& r)
 struct RayCastCallback
 {
   RayCastCallback(const PQP_Model& _mesh,const Ray3D& _r)
-    :m(_mesh),r(_r)
+    :m(_mesh),r(_r),closestParam(Inf),closestTri(-1)
   {}
 
   void Compute() {
@@ -1813,8 +1815,14 @@ TriDistance(PQP_REAL R[3][3], PQP_REAL T[3], Tri *t1, Tri *t2,
   
   PQP_REAL d=TriDist(p,q,tri1,tri2);
   if(d == 0) {  //TriDistance doesn't give the right points
-    Triangle3D a(tri1[0],tri1[1],tri1[2]);
-    Triangle3D b(tri2[0],tri2[1],tri2[2]);
+    Vector3 aa(tri1[0]), ab(tri1[1]), ac(tri1[2]);
+    Triangle3D a,b;
+    a.a.set(tri1[0]);
+    a.b.set(tri1[1]);
+    a.c.set(tri1[2]);
+    b.a.set(tri2[0]);
+    b.b.set(tri2[1]);
+    b.c.set(tri2[2]);
     Segment3D s;
     bool res=a.intersects(b,s);
     if(!res) {

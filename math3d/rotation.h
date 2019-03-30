@@ -32,8 +32,8 @@ class EulerAngleRotation : public Vector3
 public:
   EulerAngleRotation();
   EulerAngleRotation(const EulerAngleRotation&);
-  EulerAngleRotation(const Vector3&);
-  EulerAngleRotation(Real a, Real b, Real c);
+  explicit EulerAngleRotation(const Vector3&);
+  explicit EulerAngleRotation(Real a, Real b, Real c);
 
   //inline operator const Vector3&() const { return *this; }
   //inline operator Vector3&()  { return *this; }
@@ -70,8 +70,8 @@ class AngleAxisRotation
 public:
   AngleAxisRotation();
   AngleAxisRotation(const AngleAxisRotation&);
-  AngleAxisRotation(Real angle, const Vector3& axis);
-  AngleAxisRotation(const MomentRotation&);
+  explicit AngleAxisRotation(Real angle, const Vector3& axis);
+  explicit AngleAxisRotation(const MomentRotation&);
 
   void set(const AngleAxisRotation&);
   void set(Real angle, const Vector3& axis);
@@ -101,9 +101,9 @@ class MomentRotation : public Vector3
 public:
   MomentRotation();
   MomentRotation(const MomentRotation&);
-  MomentRotation(Real x,Real y,Real z);
-  MomentRotation(const Vector3& v);
-  MomentRotation(const AngleAxisRotation&);
+  explicit MomentRotation(Real x,Real y,Real z);
+  explicit MomentRotation(const Vector3& v);
+  explicit MomentRotation(const AngleAxisRotation&);
 
   //inline operator const Vector3&() const { return *this; }
   //inline operator Vector3&()  { return *this; }

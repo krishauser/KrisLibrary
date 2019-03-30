@@ -268,7 +268,7 @@ bool File::OpenTCPSocket(SOCKET sockfd)
 {
   Close();
   if(sockfd == 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: socket file descriptor 0  is incompatible\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: socket file descriptor 0  is incompatible");
     return false;
   }
 
@@ -283,7 +283,7 @@ bool File::OpenUDPSocket(SOCKET sockfd)
 {
   Close();
   if(sockfd == 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: socket file descriptor 0  is incompatible\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: socket file descriptor 0  is incompatible");
     return false;
   }
 
@@ -311,13 +311,13 @@ bool File::Open(const char* fn, int openmode)
 	    listen(sockfd,1);
 	    SOCKET clientsocket = Accept(sockfd);
 	    if(clientsocket == INVALID_SOCKET) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: Accept connection to client on "<<fn);
+	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: Accept connection to client on "<<fn);
 	      perror("");
 	      SocketClose(sockfd);
 	      return false;
 	    }
 	    if(clientsocket == 0) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: Accept connection returned a 0 file descriptor, this is incompatible\n");
+	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: Accept connection returned a 0 file descriptor, this is incompatible");
 	      SocketClose(clientsocket);
 	      SocketClose(sockfd);
 	      return false;
@@ -333,12 +333,12 @@ bool File::Open(const char* fn, int openmode)
 	  else {
 	    SOCKET sockfd = Connect(fn);
 	    if (sockfd == INVALID_SOCKET) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: Connect client to "<<fn);
+	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: Connect client to "<<fn);
 	      perror("");
 	      return false;
 	    }	    
 	    if(sockfd == 0) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: socket connect returned a 0 file descriptor, this is incompatible\n");
+	      LOG4CXX_ERROR(KrisLibrary::logger(),"File::Open: socket connect returned a 0 file descriptor, this is incompatible");
 	      SocketClose(sockfd);
 	      return false;
 	    }
@@ -470,7 +470,7 @@ bool File::ReadData(void* d, int size)
 		    while(totalread < size) {
 		      int n=SocketRead(impl->socket,buffer+totalread,size-totalread);
 		      if(n == 0) {
-			LOG4CXX_INFO(KrisLibrary::logger(),"File(socket): socketRead returned 0, connection shutdown\n");
+			LOG4CXX_INFO(KrisLibrary::logger(),"File(socket): socketRead returned 0, connection shutdown");
 			return false;
 		      }
 		      if(n < 0) {
@@ -527,7 +527,7 @@ bool File::WriteData(const void* d, int size)
 			return false;
 		      }
 		      if(n == 0) {
-			LOG4CXX_INFO(KrisLibrary::logger(),"File(socket): SocketWrite returned "<<n<<", what does it mean?\n");
+			LOG4CXX_INFO(KrisLibrary::logger(),"File(socket): SocketWrite returned "<<n<<", what does it mean?");
 			ThreadSleep(0.001);
 		      }
 		      totalsent += n;
@@ -553,30 +553,30 @@ bool File::ReadString(char* str, int bufsize)
 {
 	if(mode & FILEREAD)
 	{
-		int i,c;
+		int i;
 		switch(srctype)
 		{
 		case MODE_MYFILE:
 		case MODE_EXTFILE:
 			for(i=0; i<bufsize; i++)
 			{
-				c = ReadChar(impl->file);
+				int c = ReadChar(impl->file);
 				if(c==EOF) {
-				  				  if(i != 0) LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString hit end of file without finding null character\n");
+				  if(i != 0) LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString hit end of file without finding null character");
 				  return false;
 				}
 				str[i]=c;
 				if(c==0)
 					return true;
 			}
-						LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString string length is greater than buffer size "<<bufsize);
+			LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString string length is greater than buffer size "<<bufsize);
 			break;
 		case MODE_MYDATA:
 		case MODE_EXTDATA:
 			for(i=0; i<bufsize; i++)
 			{
 			  if(impl->datapos >= impl->datasize) {
-			    			    LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString ran past end of internal buffer without finding null character\n");
+			    LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString ran past end of internal buffer without finding null character");
 			    return false;
 			  }
 			  str[i]=impl->datafile[impl->datapos];
@@ -584,26 +584,26 @@ bool File::ReadString(char* str, int bufsize)
 			  if(str[i]==0)
 			    return true;
 			}
-						LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString string length is greater than buffer size "<<bufsize);
+			LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString string length is greater than buffer size "<<bufsize);
 			break;
 		case MODE_TCPSOCKET:
 		case MODE_UDPSOCKET:
 		  {
 		    int slen;
 		    if(!ReadData(&slen,4)) {
-		      		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read length failed\n");
+		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read length failed");
 		      return false;
 		    }
 		    if(slen < 0) {
-		      		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read length "<<slen);
+		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read length "<<slen);
 		      return false;
 		    }
 		    if(slen+1 > bufsize) {
-		      		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read length "<<slen<<" is greater than buffer size "<<bufsize);
+		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read length "<<slen<<" is greater than buffer size "<<bufsize);
 		      return false;
 		    }
 		    if(!ReadData(str,slen)) {
-		      		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read string failed\n");
+		      LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString read string failed");
 		      return false;
 		    }
 		    str[slen] = 0;
@@ -615,7 +615,7 @@ bool File::ReadString(char* str, int bufsize)
 		}
 	}
 	else
-	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString: file not in FILEREAD mode\n");
+	  LOG4CXX_ERROR(KrisLibrary::logger(),"File::ReadString: file not in FILEREAD mode");
 	return false;
 }
 
@@ -625,7 +625,7 @@ bool File::WriteString(const char* str)
   case MODE_TCPSOCKET:
   case MODE_UDPSOCKET:
     if(strlen(str) > 0xffffffff) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"File::WriteString: string must be no longer than 2^32\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"File::WriteString: string must be no longer than 2^32");
       return false;
     }
     else {

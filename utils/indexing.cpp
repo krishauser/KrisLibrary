@@ -128,7 +128,7 @@ RangeIndices::iterator::iterator(const iterator& rhs)
 
 void RangeIndices::iterator::setElement(int _i)
 {
-  i=i;
+  i=_i;
   index=range->start+i*range->stride;
 }
 

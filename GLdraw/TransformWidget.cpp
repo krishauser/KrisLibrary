@@ -11,7 +11,7 @@ using namespace GLDraw;
 using namespace std;
 
 Widget::Widget()
-  :hasHighlight(false),hasFocus(false)
+  :hasHighlight(false),hasFocus(false), requestRedraw(true)
 {}
 
 WidgetSet::WidgetSet()
@@ -388,7 +388,7 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
   if(enableTranslation) {
     Vector3 axis;
     if(enableTranslationAxes[0]) {
-      axis = T.R.col1();
+      axis.set(T.R.col1());
       scale = (hasHighlight && hoverItem == 1 ? hoverScale : 1.0)*globalScale;
       glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,xAxisColor.rgba); 
       drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
@@ -399,7 +399,7 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
     }
 
     if(enableTranslationAxes[1]) {
-      axis = T.R.col2();    
+      axis.set(T.R.col2());
       scale = (hasHighlight && hoverItem == 2 ? hoverScale : 1.0)*globalScale;
       glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,yAxisColor.rgba); 
       drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
@@ -410,7 +410,7 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
     }
 
     if(enableTranslationAxes[2]) {
-      axis = T.R.col3();
+      axis.set(T.R.col3());
       scale = (hasHighlight && hoverItem == 3 ? hoverScale : 1.0)*globalScale;
       glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,zAxisColor.rgba); 
       drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);

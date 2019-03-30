@@ -251,7 +251,15 @@ KDTreePointLocation::KDTreePointLocation(vector<Vector>& points)
   :PointLocationBase(points),norm(2.0)
 {
   tree.reset(new Geometry::KDTree());
-  if(!points.empty()) OnBuild();
+  if (!points.empty()) {
+    vector<Geometry::KDTree::Point> pts(points.size());
+    int k = (points.empty() ? 0 : points[0].n);
+    for (size_t i = 0; i<points.size(); i++) {
+      pts[i].pt.setRef(points[i]);
+      pts[i].id = (int)i;
+    }
+    tree.reset(new Geometry::KDTree(pts, k, 100));
+  }
 }
 
 
@@ -259,7 +267,15 @@ KDTreePointLocation::KDTreePointLocation(vector<Vector>& points,Real _norm,const
   :PointLocationBase(points),norm(_norm),weights(_weights)
 {
   tree.reset(new Geometry::KDTree());
-  if(!points.empty()) OnBuild();
+  if (!points.empty()) {
+    vector<Geometry::KDTree::Point> pts(points.size());
+    int k = (points.empty() ? 0 : points[0].n);
+    for (size_t i = 0; i<points.size(); i++) {
+      pts[i].pt.setRef(points[i]);
+      pts[i].id = (int)i;
+    }
+    tree.reset(new Geometry::KDTree(pts, k, 100));
+  }
 }
 
 
@@ -345,14 +361,16 @@ BallTreePointLocation::BallTreePointLocation(CSpace* _cspace,vector<Vector>& poi
   
   Geometry::BallTree::Metric metric = std::bind(&CSpace::Distance, cspace, placeholders::_1, placeholders::_2);
   int cartesian;
-  if(!props.get("cartesian",cartesian) or !cartesian) {
-    Geometry::BallTree::Interpolator interpolator = std::bind(&CSpace::Interpolate, cspace, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4);
+  if(!props.get("cartesian",cartesian) || !cartesian) {
+    typename Geometry::BallTree::Interpolator interpolator = std::bind(&CSpace::Interpolate, cspace, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4);
     tree.reset(new Geometry::BallTree(metric,interpolator));
   }
-  else
+  else {
     tree.reset(new Geometry::BallTree(metric));
+  }
 
-  if(!points.empty()) OnBuild();
+  if(!points.empty()) 
+    tree->Build(points, 100);
 }
 
 

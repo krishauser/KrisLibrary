@@ -224,6 +224,7 @@ void Trace::CallFmt(const char* function,const char* fmt,...)
 #else
   vsnprintf(buf, MAXBUF, fmt, args);
 #endif
+  va_end(args);
   Call(function,buf);
 }
 
@@ -253,6 +254,7 @@ void Trace::EndCallFmt(const char* function,const char* fmt,...)
 #else
   vsnprintf(buf, MAXBUF, fmt, args);
 #endif
+  va_end(args);
   EndCall(function,buf);
 }
 

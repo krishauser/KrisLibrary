@@ -143,7 +143,6 @@ public:
   virtual EdgePlannerPtr Copy() const;
   virtual EdgePlannerPtr ReverseCopy() const;
   
-  EdgePlannerPtr e;
   bool checked,visible;
 };
 

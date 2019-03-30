@@ -910,7 +910,7 @@ void MCRPlanner::KNN(const Config& q,int k,vector<int>& neighbors,vector<Real>& 
 	}
 	*/
       if(d < dmax) {
-	pair<Real,int> idx(d,i);
+	pair<Real,int> idx(d,(int)i);
 	knn.insert(idx);
 	if((int)knn.size() > k)
 	  knn.erase(--knn.end());

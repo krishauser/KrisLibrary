@@ -121,7 +121,7 @@ void Arrangement1D::GetIntervals(vector<Interval>& segs,vector<const IDList*>& i
   ids.reserve(n);
   segs.resize(0);
   ids.resize(0);
-  for(SortedIntervals::const_iterator i=intervals.begin();i!=intervals.end();i++) {
+  for(SortedIntervals::const_iterator i=intervals.begin();i!=intervals.end();++i) {
     if(i->second.pointIDs.size() != i->second.intervalIDs.size()) {
       if(i!=intervals.begin()) {
 	SortedIntervals::const_iterator p=i; --p;
@@ -145,7 +145,7 @@ void Arrangement1D::GetAllIntervals(vector<Interval>& segs,vector<const IDList*>
   ids.reserve(n);
   segs.resize(0);
   ids.resize(0);
-  for(SortedIntervals::const_iterator i=intervals.begin();i!=intervals.end();i++) {
+  for(SortedIntervals::const_iterator i=intervals.begin();i!=intervals.end();++i) {
     if(i->second.pointIDs.size() != i->second.intervalIDs.size()) {
       if(i!=intervals.begin()) {
 	SortedIntervals::const_iterator p=i; --p;

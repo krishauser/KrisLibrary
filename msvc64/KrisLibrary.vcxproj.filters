@@ -34,6 +34,9 @@
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Arrangement1D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\BallTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionImplicitSurface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -418,6 +421,9 @@
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Triangle3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\AreaGrid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\ClosestPoint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -635,6 +641,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\SBLTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Tabular.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\TimeCSpace.cpp">

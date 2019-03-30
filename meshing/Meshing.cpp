@@ -239,7 +239,7 @@ int SplitTriangle(const Triangle2D& _t,const Plane2D& p,Vector2 newPts[2],IntTri
 }
 
 TriSplitter::TriSplitter(TriMeshWithTopology& _mesh)
-  :mesh(_mesh),tol(1e-4)
+  :mesh(_mesh),tol(1e-4), deleteNegative(false)
 {
   positive.resize(mesh.tris.size(),true);
   origTri.resize(mesh.tris.size());

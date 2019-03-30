@@ -49,7 +49,10 @@ class File
 public:
 	File();
 	~File();
-	///Opens a named file on the hard drive with the given open mode
+  ///Non-copyable
+  File(const File&) = delete;
+  const File& operator = (const File&) = delete;
+  ///Opens a named file on the hard drive with the given open mode
 	bool Open(const char*, int openmode = FILEREAD | FILEWRITE);
 	///Connects this File object to a previously opened FILE object
 	bool Open(void*, int openmode = FILEREAD | FILEWRITE);
