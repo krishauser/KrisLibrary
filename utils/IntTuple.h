@@ -25,6 +25,7 @@ struct IntTuple
   inline size_t size() const { return elements.size(); }
   inline bool empty() const { return elements.empty(); }
   inline void resize(size_t s) { elements.resize(s); }
+  inline void resize(size_t s,int fillVal) { elements.resize(s,fillVal); }
   inline int operator[](int i) const { return elements[i]; }
   inline int& operator[](int i) { return elements[i]; }
   inline operator BaseT& () { return elements; }
