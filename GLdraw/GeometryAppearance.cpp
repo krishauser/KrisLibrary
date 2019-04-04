@@ -235,6 +235,7 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
   if(in.triNeighbors.empty())
     in.CalcTriNeighbors();
   Real cosCreaseRads = Cos(creaseRads);
+
   vector<Vector3> triNormals(in.tris.size());
   for(size_t i=0;i<in.tris.size();i++)
     triNormals[i] = in.TriangleNormal(i);
@@ -345,6 +346,9 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   }
   texcoords=rhs.texcoords;
   texgen=rhs.texgen;
+  silhouetteRadius=rhs.silhouetteRadius;
+  silhouetteColor=rhs.silhouetteColor;
+  creaseAngle=rhs.creaseAngle;
 }
 
 void GeometryAppearance::Refresh()
@@ -654,6 +658,7 @@ void GeometryAppearance::DrawGL()
         Meshing::TriMeshWithTopology weldMesh;
         Meshing::TriMesh creaseMesh;
         vector<Vector3> vertexNormals;
+
         if(creaseAngle > 0 || silhouetteRadius > 0) {
           weldMesh.verts = trimesh->verts;
           weldMesh.tris = trimesh->tris;
@@ -661,44 +666,45 @@ void GeometryAppearance::DrawGL()
           if(creaseAngle > 0) {
             CreaseMesh(weldMesh,creaseMesh,creaseAngle);
             trimesh = &creaseMesh;
+            VertexNormals(creaseMesh,vertexNormals);
           }
         }
-        if(creaseAngle > 0)
-          VertexNormals(*trimesh,vertexNormals);
+
+        if(silhouetteRadius > 0) {
+          vector<Vector3> weldVertexNormals;
+          VertexNormals(weldMesh,weldVertexNormals);
+          glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
+          silhouetteColor.setCurrentGL();
+          glEnable(GL_CULL_FACE);
+          glCullFace(GL_FRONT);
+          glDisable(GL_LIGHTING);
+          glBegin(GL_TRIANGLES);
+          for(size_t i=0;i<weldMesh.tris.size();i++) {
+            const IntTriple&t=weldMesh.tris[i];
+            const Vector3& na = weldVertexNormals[t.a];
+            const Vector3& nb = weldVertexNormals[t.b];
+            const Vector3& nc = weldVertexNormals[t.c];
+            Vector3 a=weldMesh.verts[t.a] + silhouetteRadius*na;
+            Vector3 b=weldMesh.verts[t.b] + silhouetteRadius*nb;
+            Vector3 c=weldMesh.verts[t.c] + silhouetteRadius*nc;
+            glVertex3f(a.x,a.y,a.z);
+            glVertex3f(b.x,b.y,b.z);
+            glVertex3f(c.x,c.y,c.z);
+          }
+          glEnd();
+          glPopAttrib();
+        }
 
         if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
           LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, texcoords wrong size: "<<(int)texcoords.size()<<" vs "<<(int)trimesh->verts.size());
         if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
           if(vertexColors.size() != trimesh->verts.size()) {
-            if(silhouetteRadius > 0) {
-              vector<Vector3> weldVertexNormals;
-              VertexNormals(weldMesh,weldVertexNormals);
-              glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
-              silhouetteColor.setCurrentGL();
-              glEnable(GL_CULL_FACE);
-              glCullFace(GL_FRONT);
-              glDisable(GL_LIGHTING);
-              glBegin(GL_TRIANGLES);
-              for(size_t i=0;i<weldMesh.tris.size();i++) {
-                const IntTriple&t=weldMesh.tris[i];
-                const Vector3& na = weldVertexNormals[t.a];
-                const Vector3& nb = weldVertexNormals[t.b];
-                const Vector3& nc = weldVertexNormals[t.c];
-                Vector3 a=weldMesh.verts[t.a] + silhouetteRadius*na;
-                Vector3 b=weldMesh.verts[t.b] + silhouetteRadius*nb;
-                Vector3 c=weldMesh.verts[t.c] + silhouetteRadius*nc;
-                glVertex3f(a.x,a.y,a.z);
-                glVertex3f(b.x,b.y,b.z);
-                glVertex3f(c.x,c.y,c.z);
-              }
-              glEnd();
-              glPopAttrib();
-            }
             //flat shaded
             if(creaseAngle == 0)
               DrawGLTris(*trimesh);
             else {
               //smooth shaded
+              glShadeModel(GL_SMOOTH);
               glBegin(GL_TRIANGLES);
               for(size_t i=0;i<trimesh->tris.size();i++) {
                 const IntTriple&t=trimesh->tris[i];
