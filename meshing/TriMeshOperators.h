@@ -127,15 +127,21 @@ Real VertexGaussianCurvature(const TriMeshWithTopology& mesh,int v);
 ///assuming the mesh approximates an underlying smooth surface
 Real VertexAbsMeanCurvature(const TriMeshWithTopology& mesh,int v);
 
+///Merges all vertices in mesh that are closer than tolerance Linf distance from each other
+void MergeVertices(TriMesh& mesh,Real tolerance);
 
 ///Shifts the mesh's vertices by an amount that causes each adjacent triangle
 ///to be shifted along its normal by the given amount.  This is a local, approximate
 ///erosion operator that is much quicker to compute, but the approximation degrades
 ///with larger amounts of erosion.
 ///
+///If mergeFirst = true, then the points are first merged.  This helps with some
+///exploded triangle meshes.  If you know your mesh is not exploded, then you
+///can save some overhead by setting this to false.
+///
 ///Returns 0 if there were no local interpenetrations caused by the shrinking,
 ///otherwise it returns the number of detected local interpenetrations.
-int ApproximateShrink(TriMeshWithTopology& mesh,Real amount);
+int ApproximateShrink(TriMeshWithTopology& mesh,Real amount,bool mergeFirst=true);
 
   /*@}*/
 

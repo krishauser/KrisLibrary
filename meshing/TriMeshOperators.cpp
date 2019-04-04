@@ -197,15 +197,15 @@ struct Vector3Hash
   Real scale;
 };
 
-void MergeVertices(TriMeshWithTopology& mesh,Real tolerance=0)
+void MergeVertices(TriMesh& mesh,Real tolerance=0)
 {
-  mesh.ClearTopology();
   vector<Vector3> newpts;
   vector<int> newmap(mesh.verts.size(),-1);
   if(tolerance==0) {
     UNORDERED_MAP_TEMPLATE<Vector3,vector<int>,Vector3Hash> pts;
     for(size_t i=0;i<mesh.verts.size();i++)
       pts[mesh.verts[i]].push_back(i);
+    if(pts.size() == mesh.verts.size()) return;
     for(UNORDERED_MAP_TEMPLATE<Vector3,vector<int>,Vector3Hash>::iterator i=pts.begin();i!=pts.end();i++) {
       for(size_t j=0;j<i->second.size();j++)
 	newmap[i->second[j]] = (int)newpts.size();
@@ -221,6 +221,7 @@ void MergeVertices(TriMeshWithTopology& mesh,Real tolerance=0)
       index[2] = (int)(mesh.verts[i].z/tolerance);
       pts[index].push_back(i);
     }
+    if(pts.size() == mesh.verts.size()) return;
     for(UNORDERED_MAP_TEMPLATE<vector<uint32_t>,vector<int>,VectorHash>::iterator i=pts.begin();i!=pts.end();i++) {
       for(size_t j=0;j<i->second.size();j++)
 	newmap[i->second[j]] = (int)newpts.size();
@@ -248,16 +249,19 @@ void MergeVertices(TriMeshWithTopology& mesh,Real tolerance=0)
       newtris.push_back(newtri);
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"Vertex merging reduced "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris to "<<newpts.size()<<" verts and "<<newtris.size());
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Vertex merging reduced "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris to "<<newpts.size()<<" verts and "<<newtris.size());
   swap(mesh.verts,newpts);
   swap(mesh.tris,newtris);
   Assert(mesh.IsValid());
 }
 
 
-int ApproximateShrink(TriMeshWithTopology& mesh,Real amount)
+int ApproximateShrink(TriMeshWithTopology& mesh,Real amount,bool mergeFirst)
 {
-  MergeVertices(mesh,1e-6);
+  if(mergeFirst) {
+    mesh.ClearTopology();
+    MergeVertices(mesh,1e-6);
+  }
   if(mesh.incidentTris.empty()) 
     mesh.CalcIncidentTris();
   vector<Vector3> n(mesh.tris.size());
