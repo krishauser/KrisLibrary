@@ -525,6 +525,7 @@ void GeometryAppearance::DrawGL()
           glEnd();
           glPopAttrib();
         }
+        if(silhouetteRadius > 0) glDepthFunc(GL_LEQUAL);
         if(vertexColors.size()==verts->size()) {
           glBegin(GL_POINTS);
           for(size_t i=0;i<verts->size();i++) {
@@ -542,6 +543,7 @@ void GeometryAppearance::DrawGL()
           }
           glEnd();
         }
+        if(silhouetteRadius > 0) glDepthFunc(GL_LESS);
         vertexDisplayList.endCompile();
       }
       //do the drawing
