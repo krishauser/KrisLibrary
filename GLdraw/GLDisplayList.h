@@ -8,8 +8,10 @@ namespace GLDraw {
 struct GLDisplayList
 {
   explicit GLDisplayList(int count=1);
+  GLDisplayList(const GLDisplayList& rhs)=default;
   ~GLDisplayList();
   operator bool() const { return isCompiled(); }
+  GLDisplayList& operator = (const GLDisplayList& rhs)=default;
   bool isCompiled() const;
   void beginCompile(int index=0);
   void endCompile();

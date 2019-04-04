@@ -83,7 +83,13 @@ class GeometryAppearance
   ///S = c[0]^T p (p in homogeneous coordinates)
   ///T = c[1]^T p
   std::vector<Math3D::Vector4> texgen;
-
+  ///Optional: draw meshes with a crease if the angle between triangles is
+  ///greater than this threshold, in radians (default 0)
+  float creaseAngle;
+  ///Optional: draw meshes with a silhouette outline (default 0)
+  float silhouetteRadius;
+  GLColor silhouetteColor;
+  
   ///Temporary: Mesh computed for implicit surfaces
   std::shared_ptr<Meshing::TriMesh> implicitSurfaceMesh;
   ///Temporary: The display lists and texture lists for vertices and faces

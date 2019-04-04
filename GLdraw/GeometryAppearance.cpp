@@ -9,7 +9,10 @@
 #include <meshing/PointCloud.h>
 #include <meshing/VolumeGrid.h>
 #include <meshing/Expand.h>
+#include <meshing/TriMeshOperators.h>
 #include <geometry/Conversions.h>
+#include <graph/UndirectedGraph.h>
+#include <graph/ConnectedComponents.h>
 #include <KrisLibrary/Timer.h>
 
 using namespace Geometry;
@@ -51,7 +54,7 @@ namespace GLDraw {
       tex.setLuminance(img.data,n);
       break;
     default:
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format");
       break;
     }
   }
@@ -89,130 +92,215 @@ namespace GLDraw {
       tex.setLuminance(img.data,img.w,img.h);
       break;
     default:
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format");
       break;
     }
   }
 
+  void draw(const Geometry::AnyGeometry3D& geom)
+  {
+    if(geom.type == AnyGeometry3D::PointCloud) 
+      drawPoints(geom);
+    else if(geom.type == AnyGeometry3D::Group) {
+      const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
+      for(size_t i=0;i<subgeoms.size();i++)
+        draw(subgeoms[i]);
+    }
+    else
+      drawFaces(geom);
+  }
 
-void draw(const Geometry::AnyGeometry3D& geom)
-{
-  if(geom.type == AnyGeometry3D::PointCloud) 
+  void drawPoints(const Geometry::AnyGeometry3D& geom)
+  {
+    const vector<Vector3>* verts = NULL;
+    if(geom.type == AnyGeometry3D::TriangleMesh) 
+      verts = &geom.AsTriangleMesh().verts;
+    else if(geom.type == AnyGeometry3D::PointCloud) 
+      verts = &geom.AsPointCloud().points;
+    else if(geom.type == AnyGeometry3D::Group) {
+      const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
+      for(size_t i=0;i<subgeoms.size();i++)
+        drawPoints(subgeoms[i]);
+    }
+    if(verts) {
+      glBegin(GL_POINTS);
+      for(size_t i=0;i<verts->size();i++) {
+        const Vector3& v=(*verts)[i];
+        //glVertex3v();
+        glVertex3f(v.x,v.y,v.z);
+      }
+      glEnd();
+    }
+  }
+
+  void drawFaces(const Geometry::AnyGeometry3D& geom)
+  {
+    const Meshing::TriMesh* trimesh = NULL;
+    if(geom.type == AnyGeometry3D::TriangleMesh) 
+      trimesh = &geom.AsTriangleMesh();
+    else if(geom.type == AnyGeometry3D::Group) {
+      const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
+      for(size_t i=0;i<subgeoms.size();i++)
+        drawFaces(subgeoms[i]);
+    }
+    else if(geom.type == AnyGeometry3D::Primitive) 
+      draw(geom.AsPrimitive());  
+
+    //draw the mesh
+    if(trimesh) {
+      DrawGLTris(*trimesh);
+    }
+  }
+
+  void drawWorld(const Geometry::AnyCollisionGeometry3D& geom)
+  {
+    glPushMatrix();
+    glMultMatrix(Matrix4(geom.GetTransform()));
+    draw(geom);
+    glPopMatrix();
+  }
+
+  void drawPointsWorld(const Geometry::AnyCollisionGeometry3D& geom)
+  {
+    glPushMatrix();
+    glMultMatrix(Matrix4(geom.GetTransform()));
     drawPoints(geom);
-  else if(geom.type == AnyGeometry3D::Group) {
-    const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
-    for(size_t i=0;i<subgeoms.size();i++)
-      draw(subgeoms[i]);
+    glPopMatrix();
   }
-  else
+
+  void drawFacesWorld(const Geometry::AnyCollisionGeometry3D& geom)
+  {
+    glPushMatrix();
+    glMultMatrix(Matrix4(geom.GetTransform()));
     drawFaces(geom);
-}
-
-void drawPoints(const Geometry::AnyGeometry3D& geom)
-{
-  const vector<Vector3>* verts = NULL;
-  if(geom.type == AnyGeometry3D::TriangleMesh) 
-    verts = &geom.AsTriangleMesh().verts;
-  else if(geom.type == AnyGeometry3D::PointCloud) 
-    verts = &geom.AsPointCloud().points;
-  else if(geom.type == AnyGeometry3D::Group) {
-    const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
-    for(size_t i=0;i<subgeoms.size();i++)
-      drawPoints(subgeoms[i]);
+    glPopMatrix();
   }
-  if(verts) {
-    glBegin(GL_POINTS);
-    for(size_t i=0;i<verts->size();i++) {
-      const Vector3& v=(*verts)[i];
-      //glVertex3v();
-      glVertex3f(v.x,v.y,v.z);
+
+  void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
+  {
+    if(p < 0) p = geom.margin;
+    if(geom.type == Geometry::AnyCollisionGeometry3D::TriangleMesh) {
+      Meshing::TriMesh m;
+      geom.TriangleMeshCollisionData().CalcTriNeighbors();
+      geom.TriangleMeshCollisionData().CalcIncidentTris();
+      Meshing::Expand2Sided(geom.TriangleMeshCollisionData(),p,3,m);
+      DrawGLTris(m);
     }
-    glEnd();
-  }
-}
-
-void drawFaces(const Geometry::AnyGeometry3D& geom)
-{
-  const Meshing::TriMesh* trimesh = NULL;
-  if(geom.type == AnyGeometry3D::TriangleMesh) 
-    trimesh = &geom.AsTriangleMesh();
-  else if(geom.type == AnyGeometry3D::Group) {
-    const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
-    for(size_t i=0;i<subgeoms.size();i++)
-      drawFaces(subgeoms[i]);
-  }
-  else if(geom.type == AnyGeometry3D::Primitive) 
-    draw(geom.AsPrimitive());  
-
-  //draw the mesh
-  if(trimesh) {
-    DrawGLTris(*trimesh);
-  }
-}
-
-void drawWorld(const Geometry::AnyCollisionGeometry3D& geom)
-{
-  glPushMatrix();
-  glMultMatrix(Matrix4(geom.GetTransform()));
-  draw(geom);
-  glPopMatrix();
-}
-
-void drawPointsWorld(const Geometry::AnyCollisionGeometry3D& geom)
-{
-  glPushMatrix();
-  glMultMatrix(Matrix4(geom.GetTransform()));
-  drawPoints(geom);
-  glPopMatrix();
-}
-
-void drawFacesWorld(const Geometry::AnyCollisionGeometry3D& geom)
-{
-  glPushMatrix();
-  glMultMatrix(Matrix4(geom.GetTransform()));
-  drawFaces(geom);
-  glPopMatrix();
-}
-
-void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
-{
-  if(p < 0) p = geom.margin;
-  if(geom.type == Geometry::AnyCollisionGeometry3D::TriangleMesh) {
-    Meshing::TriMesh m;
-    geom.TriangleMeshCollisionData().CalcTriNeighbors();
-    geom.TriangleMeshCollisionData().CalcIncidentTris();
-    Meshing::Expand2Sided(geom.TriangleMeshCollisionData(),p,3,m);
-    DrawGLTris(m);
-  }
-  else if(geom.type == Geometry::AnyCollisionGeometry3D::PointCloud) {
-    const Meshing::PointCloud3D& pc = geom.AsPointCloud();
-    for(size_t i=0;i<pc.points.size();i++) {
-      glPushMatrix();
-      glTranslate(pc.points[i]);
-      drawSphere(p,8,4);
-      glPopMatrix();
+    else if(geom.type == Geometry::AnyCollisionGeometry3D::PointCloud) {
+      const Meshing::PointCloud3D& pc = geom.AsPointCloud();
+      for(size_t i=0;i<pc.points.size();i++) {
+        glPushMatrix();
+        glTranslate(pc.points[i]);
+        drawSphere(p,8,4);
+        glPopMatrix();
+      }
+    }
+    else if(geom.type == Geometry::AnyCollisionGeometry3D::ImplicitSurface) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw implicit surface");
+    }
+    else if(geom.type == Geometry::AnyCollisionGeometry3D::Primitive) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw expanded primitive");
+      draw(geom.AsPrimitive());
+    }
+    else if(geom.type == Geometry::AnyCollisionGeometry3D::Group) {
+      std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = geom.GroupCollisionData();
+      for(size_t i=0;i<subgeoms.size();i++)
+        drawExpanded(subgeoms[i],p);
     }
   }
-  else if(geom.type == Geometry::AnyCollisionGeometry3D::ImplicitSurface) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw implicit surface\n");
-  }
-  else if(geom.type == Geometry::AnyCollisionGeometry3D::Primitive) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw expanded primitive\n");
-    draw(geom.AsPrimitive());
-  }
-  else if(geom.type == Geometry::AnyCollisionGeometry3D::Group) {
-    std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = geom.GroupCollisionData();
-    for(size_t i=0;i<subgeoms.size();i++)
-      drawExpanded(subgeoms[i],p);
-  }
-}         
 
+
+void VertexNormals(const Meshing::TriMesh& mesh,vector<Vector3>& normals)
+{
+  normals.resize(mesh.verts.size());
+  fill(normals.begin(),normals.end(),Vector3(0.0));
+  for(size_t i=0;i<mesh.tris.size();i++) {
+    const IntTriple&t=mesh.tris[i];
+    Vector3 n = mesh.TriangleNormal(i);
+    normals[t.a] += n;
+    normals[t.b] += n;
+    normals[t.c] += n;
+  }
+  for(size_t i=0;i<mesh.verts.size();i++) {
+    Real l = normals[i].norm();
+    if(!FuzzyZero(l))
+      normals[i] /= l;
+  }
+}
+
+void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real creaseRads)
+{
+  if(in.incidentTris.empty())
+    in.CalcIncidentTris();
+  if(in.triNeighbors.empty())
+    in.CalcTriNeighbors();
+  Real cosCreaseRads = Cos(creaseRads);
+  vector<Vector3> triNormals(in.tris.size());
+  for(size_t i=0;i<in.tris.size();i++)
+    triNormals[i] = in.TriangleNormal(i);
+  out.tris.resize(in.tris.size());
+  fill(out.tris.begin(),out.tris.end(),IntTriple(-1,-1,-1));
+  vector<int> outVertToIn;
+  for(size_t i=0;i<in.verts.size();i++) {
+    //theres a potential graph of creases here
+    auto tris = in.incidentTris[i];
+    Graph::UndirectedGraph<int,int> tgraph;
+    map<int,int> triGraphIndex;
+    for(auto t: tris)
+      triGraphIndex[t] = tgraph.AddNode(t);
+    for(size_t s=0;s<tris.size();s++) {
+      int iprev,inext;
+      if(in.tris[tris[s]].a == int(i)) {
+        iprev = in.triNeighbors[tris[s]].b;
+        inext = in.triNeighbors[tris[s]].c;
+      }
+      else if(in.tris[tris[s]].b == int(i)) {
+        iprev = in.triNeighbors[tris[s]].c;
+        inext = in.triNeighbors[tris[s]].a;
+      }
+      else {
+        iprev = in.triNeighbors[tris[s]].a;
+        inext = in.triNeighbors[tris[s]].b;
+      }
+      if (iprev >= 0 && triNormals[tris[s]].dot(triNormals[iprev]) >= cosCreaseRads) {
+        int previndex = triGraphIndex[iprev];
+        if(!tgraph.HasEdge(s,previndex)) 
+          tgraph.AddEdge(s,previndex);
+      }
+      if (inext >= 0 && triNormals[tris[s]].dot(triNormals[inext]) >= cosCreaseRads) {
+        int nextindex = triGraphIndex[inext];
+        if(!tgraph.HasEdge(s,nextindex))
+          tgraph.AddEdge(s,nextindex);
+      }
+    }
+    Graph::ConnectedComponents ccs;
+    ccs.Compute(tgraph);
+    vector<int> reps;
+    ccs.GetRepresentatives(reps);
+    //add a new vertex for each cc
+    vector<int> cc;
+    for(auto r:reps) {
+      ccs.EnumerateComponent(r,cc);
+      int nvout = (int)out.verts.size();
+      outVertToIn.push_back(nvout);
+      for(auto n:cc) {
+        int t=tgraph.nodes[n];
+        Assert(in.tris[t].getIndex(i) >= 0);
+        out.tris[t][in.tris[t].getIndex(i)] = nvout;
+      }
+      out.verts.push_back(in.verts[i]);
+    }
+  }
+  for(auto t:out.tris)
+    Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
+}
 
 
 GeometryAppearance::GeometryAppearance()
   :geom(NULL),drawVertices(false),drawEdges(false),drawFaces(false),vertexSize(1.0),edgeSize(1.0),
    lightFaces(true),
-   vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),texWrap(false)
+   vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),texWrap(false),
+   creaseAngle(0),silhouetteRadius(0),silhouetteColor(0,0,0)
 {}
 
 void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
@@ -237,12 +325,12 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   faceColor=rhs.faceColor;
   if(!rhs.vertexColors.empty() && !vertexColors.empty()) {
     if(rhs.vertexColors.size() != vertexColors.size())
-      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-vertex colors?\n"); 
+      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-vertex colors?"); 
     Refresh();
   }
   if(!rhs.faceColors.empty() && !faceColors.empty()) {
     if(rhs.faceColors.size() != faceColors.size())
-      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-face colors?\n"); 
+      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of per-face colors?"); 
     Refresh();
   }
   vertexColors=rhs.vertexColors;
@@ -252,7 +340,7 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   texWrap=rhs.texWrap;
   if(!rhs.texcoords.empty() && !texcoords.empty()) {
     if(rhs.texcoords.size() != texcoords.size())
-      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of texture coordinates?\n"); 
+      LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of texture coordinates?"); 
     Refresh();
   }
   texcoords=rhs.texcoords;
@@ -423,7 +511,20 @@ void GeometryAppearance::DrawGL()
         //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling vertex display list "<<verts->size());
         vertexDisplayList.beginCompile();
         if(!vertexColors.empty() && vertexColors.size() != verts->size())
-                  LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size\n");
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size");
+        if(silhouetteRadius > 0) {
+          glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+          silhouetteColor.setCurrentGL();
+          glDisable(GL_LIGHTING);
+          glPointSize(vertexSize + Max(silhouetteRadius,2.0f));
+          glBegin(GL_POINTS);
+          for(size_t i=0;i<verts->size();i++) {
+            const Vector3& v=(*verts)[i];
+            glVertex3f(v.x,v.y,v.z);
+          }
+          glEnd();
+          glPopAttrib();
+        }
         if(vertexColors.size()==verts->size()) {
           glBegin(GL_POINTS);
           for(size_t i=0;i<verts->size();i++) {
@@ -533,26 +634,87 @@ void GeometryAppearance::DrawGL()
     
     if(!faceDisplayList) {
       faceDisplayList.beginCompile();
-  
+
       const Meshing::TriMesh* trimesh = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface) 
         trimesh = implicitSurfaceMesh.get();
       else if(geom->type == AnyGeometry3D::PointCloud) 
-  trimesh = implicitSurfaceMesh.get();
+        trimesh = implicitSurfaceMesh.get();
       else if(geom->type == AnyGeometry3D::TriangleMesh) 
         trimesh = &geom->AsTriangleMesh();
       else if(geom->type == AnyGeometry3D::Primitive) 
-  draw(geom->AsPrimitive());
+        draw(geom->AsPrimitive());
 
       //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling face display list "<<trimesh->tris.size());
 
       //draw the mesh
       if(trimesh) {
+        Meshing::TriMeshWithTopology weldMesh;
+        Meshing::TriMesh creaseMesh;
+        vector<Vector3> vertexNormals;
+        if(creaseAngle > 0 || silhouetteRadius > 0) {
+          weldMesh.verts = trimesh->verts;
+          weldMesh.tris = trimesh->tris;
+          Meshing::MergeVertices(weldMesh,1e-5);
+          if(creaseAngle > 0) {
+            CreaseMesh(weldMesh,creaseMesh,creaseAngle);
+            trimesh = &creaseMesh;
+          }
+        }
+        if(creaseAngle > 0)
+          VertexNormals(*trimesh,vertexNormals);
+
         if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
-                  LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, texcoords wrong size: "<<(int)texcoords.size()<<" vs "<<(int)trimesh->verts.size());
+          LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, texcoords wrong size: "<<(int)texcoords.size()<<" vs "<<(int)trimesh->verts.size());
         if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
           if(vertexColors.size() != trimesh->verts.size()) {
-            DrawGLTris(*trimesh);
+            if(silhouetteRadius > 0) {
+              vector<Vector3> weldVertexNormals;
+              VertexNormals(weldMesh,weldVertexNormals);
+              glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
+              silhouetteColor.setCurrentGL();
+              glEnable(GL_CULL_FACE);
+              glCullFace(GL_FRONT);
+              glDisable(GL_LIGHTING);
+              glBegin(GL_TRIANGLES);
+              for(size_t i=0;i<weldMesh.tris.size();i++) {
+                const IntTriple&t=weldMesh.tris[i];
+                const Vector3& na = weldVertexNormals[t.a];
+                const Vector3& nb = weldVertexNormals[t.b];
+                const Vector3& nc = weldVertexNormals[t.c];
+                Vector3 a=weldMesh.verts[t.a] + silhouetteRadius*na;
+                Vector3 b=weldMesh.verts[t.b] + silhouetteRadius*nb;
+                Vector3 c=weldMesh.verts[t.c] + silhouetteRadius*nc;
+                glVertex3f(a.x,a.y,a.z);
+                glVertex3f(b.x,b.y,b.z);
+                glVertex3f(c.x,c.y,c.z);
+              }
+              glEnd();
+              glPopAttrib();
+            }
+            //flat shaded
+            if(creaseAngle == 0)
+              DrawGLTris(*trimesh);
+            else {
+              //smooth shaded
+              glBegin(GL_TRIANGLES);
+              for(size_t i=0;i<trimesh->tris.size();i++) {
+                const IntTriple&t=trimesh->tris[i];
+                const Vector3& a=trimesh->verts[t.a];
+                const Vector3& b=trimesh->verts[t.b];
+                const Vector3& c=trimesh->verts[t.c];
+                const Vector3& na = vertexNormals[t.a];
+                const Vector3& nb = vertexNormals[t.b];
+                const Vector3& nc = vertexNormals[t.c];
+                glNormal3f(na.x,na.y,na.z);
+                glVertex3f(a.x,a.y,a.z);
+                glNormal3f(nb.x,nb.y,nb.z);
+                glVertex3f(b.x,b.y,b.z);
+                glNormal3f(nc.x,nc.y,nc.z);
+                glVertex3f(c.x,c.y,c.z);
+              }
+              glEnd();
+            }
             /*
             //testing vertex arrays -- not perceptibly faster.
             vector<float> vbuf(trimesh->verts.size()*3);
