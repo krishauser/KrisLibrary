@@ -65,7 +65,7 @@
     </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -87,7 +87,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -109,7 +109,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -131,7 +131,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>

@@ -78,7 +78,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -86,16 +86,16 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -109,7 +109,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -117,16 +117,16 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -140,7 +140,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -150,16 +150,16 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -173,7 +173,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -184,15 +184,15 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\glui-2.36\src\include;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
