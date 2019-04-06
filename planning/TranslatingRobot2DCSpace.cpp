@@ -19,7 +19,7 @@ void TranslatingRobot2DCSpace::InitConstraints()
   BoxCSpace::SetDomain(Vector(2,domain.bmin),Vector(2,domain.bmax));
   for(int i=0;i<obstacles.NumObstacles();i++) {
     char buf[64];
-    sprintf(buf,"%s[%d]",obstacles.ObstacleTypeName(i),obstacles.ObstacleIndex(i));
+    snprintf(buf,64,"%s[%d]",obstacles.ObstacleTypeName(i),obstacles.ObstacleIndex(i));
     AddConstraint(buf,new Geometric2DObstacleFreeSet(obstacles.Obstacle(i),robot,true));
   }
 }
@@ -27,16 +27,16 @@ void TranslatingRobot2DCSpace::InitConstraints()
 void TranslatingRobot2DCSpace::DrawWorkspaceGL() const
 {
   //blank out background (light yellow)
-  glColor3f(1,1,0.5);
+  glColor3f(1.f,1.f,0.5f);
   glBegin(GL_QUADS);
-  glVertex2f(domain.bmin.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmax.y);
-  glVertex2f(domain.bmin.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmax.y);
   glEnd();
 
   //draw obstacles (dark grey)
-  glColor3f(0.2,0.2,0.2);
+  glColor3f(0.2f,0.2f,0.2f);
   obstacles.DrawGL();
 }
 
@@ -57,7 +57,7 @@ void TranslatingRobot2DCSpace::DrawGL(const Config& x) const
   DrawWorkspaceGL();
 
   //draw robot greyish blue
-  glColor3f(0.3,0.3,0.7);
+  glColor3f(0.3f,0.3f,0.7f);
   DrawRobotGL(x);
 }
 

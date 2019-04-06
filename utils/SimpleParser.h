@@ -35,9 +35,9 @@ public:
   enum Result { Continue, Stop, Error };
   SimpleParser(istream& in);
   virtual ~SimpleParser() {}
-  virtual bool IsSpace(char c) const { return isspace(c); }
+  virtual bool IsSpace(char c) const { return (bool)isspace(c); }
   virtual bool IsComment(char c) const { return c=='#'; }
-  virtual bool IsToken(char c) const { return isalnum(c); }
+  virtual bool IsToken(char c) const { return (bool)isalnum(c); }
   virtual bool IsPunct(char c) const { return !IsSpace(c) && !IsComment(c) && !IsToken(c); }
   virtual Result InputToken(const string& word)=0;
   virtual Result InputPunct(const string& punct)=0;

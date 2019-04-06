@@ -75,8 +75,8 @@ bool ImportImageBMP(const char* fn, Image& image)
 	  return false;
 	}
 
-	image.w = bi.biWidth;
-	image.h = bi.biHeight;
+	image.w = (unsigned short)bi.biWidth;
+	image.h = (unsigned short)bi.biHeight;
 	image.num_bytes = bi.biSizeImage;
 
 

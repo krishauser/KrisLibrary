@@ -431,10 +431,10 @@ void Geometric2DCollection::DrawOutlinesGL() const
 {
   for(size_t i=0;i<aabbs.size();i++) {
     glBegin(GL_LINE_LOOP);
-    glVertex2f(aabbs[i].bmin.x,aabbs[i].bmin.y);
-    glVertex2f(aabbs[i].bmax.x,aabbs[i].bmin.y);
-    glVertex2f(aabbs[i].bmax.x,aabbs[i].bmax.y);
-    glVertex2f(aabbs[i].bmin.x,aabbs[i].bmax.y);
+    glVertex2d(aabbs[i].bmin.x,aabbs[i].bmin.y);
+    glVertex2d(aabbs[i].bmax.x,aabbs[i].bmin.y);
+    glVertex2d(aabbs[i].bmax.x,aabbs[i].bmax.y);
+    glVertex2d(aabbs[i].bmin.x,aabbs[i].bmax.y);
     glEnd();
   }
   for(size_t i=0;i<boxes.size();i++) {
@@ -453,7 +453,7 @@ void Geometric2DCollection::DrawOutlinesGL() const
     glEnd();
   }
   for(size_t i=0;i<circles.size();i++) {
-    drawWireCircle2D(circles[i].center,circles[i].radius);
+    drawWireCircle2D(circles[i].center,float(circles[i].radius));
   }
 }
 
@@ -461,10 +461,10 @@ void Geometric2DCollection::DrawGL() const
 {
   glBegin(GL_QUADS);
   for(size_t i=0;i<aabbs.size();i++) {
-    glVertex2f(aabbs[i].bmin.x,aabbs[i].bmin.y);
-    glVertex2f(aabbs[i].bmax.x,aabbs[i].bmin.y);
-    glVertex2f(aabbs[i].bmax.x,aabbs[i].bmax.y);
-    glVertex2f(aabbs[i].bmin.x,aabbs[i].bmax.y);
+    glVertex2d(aabbs[i].bmin.x,aabbs[i].bmin.y);
+    glVertex2d(aabbs[i].bmax.x,aabbs[i].bmin.y);
+    glVertex2d(aabbs[i].bmax.x,aabbs[i].bmax.y);
+    glVertex2d(aabbs[i].bmin.x,aabbs[i].bmax.y);
   }
   for(size_t i=0;i<boxes.size();i++) {
     glVertex2v(boxes[i].origin);
@@ -481,7 +481,7 @@ void Geometric2DCollection::DrawGL() const
   }
   glEnd();
   for(size_t i=0;i<circles.size();i++) {
-    drawCircle2D(circles[i].center,circles[i].radius);
+    drawCircle2D(circles[i].center,float(circles[i].radius));
   }
 }
 
@@ -539,7 +539,7 @@ void Geometric2DCSpace::InitConstraints()
   AddConstraint("y_bound",new AxisRangeSet(0,domain.bmin.y,domain.bmax.y));
   char buf[64];
   for(int i=0;i<Geometric2DCollection::NumObstacles();i++) {
-    sprintf(buf,"%s[%d]",ObstacleTypeName(i),ObstacleIndex(i));
+    snprintf(buf,64,"%s[%d]",ObstacleTypeName(i),ObstacleIndex(i));
     AddConstraint(buf,new Geometric2DObstacleFreeSet(Obstacle(i)));
   }
 }
@@ -604,18 +604,18 @@ bool Geometric2DCSpace::ObstacleOverlap(const Triangle2D& tri) const
 void Geometric2DCSpace::DrawGL() const
 {
   //blank out background (light yellow)
-  //glColor3f(1,1,0.5);
+  //glColor3f(1.f,1.f,0.5f);
   //blank out background (white)
-  glColor3f(1,1,1);
+  glColor3f(1.f,1.f,1.f);
   glBegin(GL_QUADS);
-  glVertex2f(domain.bmin.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmax.y);
-  glVertex2f(domain.bmin.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmax.y);
   glEnd();
 
   //draw obstacles (dark grey)
-  glColor3f(0.2,0.2,0.2);
+  glColor3f(0.2f,0.2f,0.2f);
   Geometric2DCollection::DrawGL();
 }
 

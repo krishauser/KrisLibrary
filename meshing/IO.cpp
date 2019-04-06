@@ -25,36 +25,89 @@
 
 ///HACK BECAUSE SOME VERSIONS OF ASSIMP DONT PROVIDE FUNCTIONALITY TO DELETE SCENES
 ///UNCOMMENT IF YOU ARE GETTING ERRORS LIKE "undefined reference to aiScene::~aiScene"
-/*
+
+#ifdef _WIN32
+
+namespace Assimp {
+  struct ScenePrivateData {
+
+    ScenePrivateData()
+      : mOrigImporter()
+      , mPPStepsApplied()
+    {}
+
+    // Importer that originally loaded the scene though the C-API
+    // If set, this object is owned by this private data instance.
+    Assimp::Importer* mOrigImporter;
+
+    // List of postprocessing steps already applied to the scene.
+    unsigned int mPPStepsApplied;
+  };
+};
+
+// ------------------------------------------------------------------------------------------------
 aiScene::aiScene()
+  : mFlags()
+  , mRootNode()
+  , mNumMeshes()
+  , mMeshes()
+  , mNumMaterials()
+  , mMaterials()
+  , mNumAnimations()
+  , mAnimations()
+  , mNumTextures()
+  , mTextures()
+  , mNumLights()
+  , mLights()
+  , mNumCameras()
+  , mCameras()
+  , mPrivate(new Assimp::ScenePrivateData())
 {
-    mFlags = 0;
-    mRootNode = NULL;
-    mNumMeshes = 0;
-    mMeshes = NULL;
-    mNumMaterials = 0;
-    mMaterials = NULL;
-    mNumAnimations = 0;
-    mAnimations = NULL;
-    mNumTextures = 0;
-    mTextures = NULL;
-    mNumLights = 0;
-    mLights = NULL;
-    mNumCameras = 0;
-    mCameras = NULL;
-    mPrivate = NULL;
 }
-aiScene::~aiScene() {
-  //NOTE: THIS MAY LEAK MEMORY
-  SafeDelete(mRootNode);
-  SafeArrayDelete(mMeshes);
-  SafeArrayDelete(mMaterials);
-  SafeArrayDelete(mAnimations);
-  SafeArrayDelete(mTextures);
-  SafeArrayDelete(mLights);
-  SafeArrayDelete(mCameras);
+
+// ------------------------------------------------------------------------------------------------
+aiScene::~aiScene()
+{
+  // delete all sub-objects recursively
+  delete mRootNode;
+
+  // To make sure we won't crash if the data is invalid it's
+  // much better to check whether both mNumXXX and mXXX are
+  // valid instead of relying on just one of them.
+  if (mNumMeshes && mMeshes)
+    for (unsigned int a = 0; a < mNumMeshes; a++)
+      delete mMeshes[a];
+  delete[] mMeshes;
+
+  if (mNumMaterials && mMaterials)
+    for (unsigned int a = 0; a < mNumMaterials; a++)
+      delete mMaterials[a];
+  delete[] mMaterials;
+
+  if (mNumAnimations && mAnimations)
+    for (unsigned int a = 0; a < mNumAnimations; a++)
+      delete mAnimations[a];
+  delete[] mAnimations;
+
+  if (mNumTextures && mTextures)
+    for (unsigned int a = 0; a < mNumTextures; a++)
+      delete mTextures[a];
+  delete[] mTextures;
+
+  if (mNumLights && mLights)
+    for (unsigned int a = 0; a < mNumLights; a++)
+      delete mLights[a];
+  delete[] mLights;
+
+  if (mNumCameras && mCameras)
+    for (unsigned int a = 0; a < mNumCameras; a++)
+      delete mCameras[a];
+  delete[] mCameras;
+
+  delete static_cast<Assimp::ScenePrivateData*>(mPrivate);
 }
-*/
+
+#endif _WIN32
 
 #endif //ASSIMP_MAJOR_VERSION
 using namespace Assimp;
@@ -392,9 +445,9 @@ bool LoadOBJMaterial(const char* path,const char* file,GeometryAppearance& app)
   if(!sf.Load(fn.c_str())) return false;
   if(sf.entries.count("Kd") != 0) {
     GLColor diffuse;
-    diffuse.rgba[1] = 1;
+    diffuse.rgba[3] = 1;
     for(size_t i=0;i<sf.entries["Kd"].size();i++) {
-      diffuse.rgba[i] = sf.entries["Kd"][i].AsDouble();
+      diffuse.rgba[i] = (float)sf.entries["Kd"][i].AsDouble();
     }
   }
   if(sf.entries.count("map_Kd") != 0) {
@@ -842,7 +895,7 @@ bool SaveAssimp(const char* fn, const TriMesh& model)
   pMesh->mNumVertices = model.verts.size();
 
   for ( size_t i=0;i<model.verts.size();i++) 
-    pMesh->mVertices[ i ] = aiVector3D( model.verts[i].x, model.verts[i].y, model.verts[i].z );
+    pMesh->mVertices[ i ] = aiVector3D( (float)model.verts[i].x, (float)model.verts[i].y, (float)model.verts[i].z );
 
   pMesh->mFaces = new aiFace[ model.tris.size() ];
   pMesh->mNumFaces = model.tris.size();
@@ -891,7 +944,7 @@ bool SaveAssimp(const char* fn, const TriMesh& model,const GeometryAppearance& a
   pMesh->mNumVertices = model.verts.size();
 
   for ( size_t i=0;i<model.verts.size();i++) 
-    pMesh->mVertices[ i ] = aiVector3D( model.verts[i].x, model.verts[i].y, model.verts[i].z );
+    pMesh->mVertices[ i ] = aiVector3D((float)model.verts[i].x, (float)model.verts[i].y, (float)model.verts[i].z );
 
   pMesh->mFaces = new aiFace[ model.tris.size() ];
   pMesh->mNumFaces = model.tris.size();

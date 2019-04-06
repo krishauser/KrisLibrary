@@ -38,7 +38,7 @@ template <class T>
 void Gaussian<T>::resize(int d)
 {
   L.resize(d,d);
-  mu.resize(d,Zero);
+  mu.resize(d,(T)Zero);
 }
 
 template <class T>
@@ -124,7 +124,7 @@ template <class T>
 void Gaussian<T>::getPrecision(MatrixT& sigma) const
 {
   sigma.resize(L.n,L.n);
-  VectorT temp(L.n,Zero),y,x;
+  VectorT temp(L.n,(T)Zero),y,x;
   for(int i=0;i<L.n;i++) {
     sigma.getColRef(i,x);  //x &= col i of A
     temp(i)=1.0;
@@ -152,7 +152,7 @@ bool Gaussian<T>::setMaximumLikelihood(const std::vector<VectorT>& examples,int 
     mu += examples[i];
   mu *= 1.0/examples.size();
 
-  MatrixT cov(mu.n,mu.n,Zero);
+  MatrixT cov(mu.n,mu.n, (T)Zero);
   VectorT temp;
   for(size_t k=0;k<examples.size();k++) {
     temp.sub(examples[k],mu);
@@ -161,7 +161,7 @@ bool Gaussian<T>::setMaximumLikelihood(const std::vector<VectorT>& examples,int 
 	cov(i,j) += temp(i)*temp(j);
     }
   }
-  cov *= 1.0/examples.size();
+  cov *= (T)(1.0/examples.size());
   return setCovariance(cov,verbose);
 }
 
@@ -172,14 +172,14 @@ bool Gaussian<T>::setMaximumLikelihood(const std::vector<VectorT>& examples,cons
   assert(examples.size() >= 1);
 
   Real sumw=weights[0];
-  mu.mul(examples[0],weights[0]);
+  mu.mul(examples[0],(T)weights[0]);
   for(size_t i=1;i<examples.size();i++) {
-    mu.madd(examples[i],weights[i]);
+    mu.madd(examples[i],(T)weights[i]);
     sumw += weights[i];
   }
   if(sumw == 0.0) {
     //degenerate
-    L.resize(mu.n,mu.n,Zero);
+    L.resize(mu.n,mu.n,(T)Zero);
     if(verbose >= 1)
       LOG4CXX_INFO(KrisLibrary::logger(),"Gaussian::setMaximumLikelihood: weights sum to zero\n");
     return false;
@@ -187,23 +187,23 @@ bool Gaussian<T>::setMaximumLikelihood(const std::vector<VectorT>& examples,cons
 
   //compute mean and covariance
   if(sumw < 1e-3)
-    mu /= sumw;
+    mu /= (T)sumw;
   else
-    mu *= 1.0/sumw;
+    mu *= (T)(1.0/sumw);
 
-  MatrixT cov(mu.n,mu.n,Zero);
+  MatrixT cov(mu.n,mu.n,(T)Zero);
   VectorT temp;
   for(size_t k=0;k<examples.size();k++) {
     temp.sub(examples[k],mu);
     for(int i=0;i<mu.n;i++) {
       for(int j=0;j<mu.n;j++)
-	cov(i,j) += temp(i)*temp(j)*weights[k];
+	cov(i,j) += temp(i)*temp(j)*(T)weights[k];
     }
   }
   if(sumw < 1e-3)
-    cov /= sumw;
+    cov /= (T)sumw;
   else
-    cov *= 1.0/sumw;
+    cov *= (T)(1.0/sumw);
   return setCovariance(cov,verbose);
 }
 
@@ -214,9 +214,9 @@ void Gaussian<T>::setMaximumLikelihoodDiagonal(const std::vector<VectorT>& examp
   mu = examples[0];
   for(size_t i=1;i<examples.size();i++)
     mu += examples[i];
-  mu *= 1.0/examples.size();
+  mu *= (T)(1.0/examples.size());
 
-  VectorT cov(mu.n,Zero);
+  VectorT cov(mu.n, (T)Zero);
   VectorT temp;
   for(size_t k=0;k<examples.size();k++) {
     temp.sub(examples[k],mu);
@@ -224,7 +224,7 @@ void Gaussian<T>::setMaximumLikelihoodDiagonal(const std::vector<VectorT>& examp
 	cov(i) += temp(i)*temp(i);
     }
   }
-  cov *= 1.0/examples.size();
+  cov *= (T)(1.0/examples.size());
   L.setZero();
   for(int i=0;i<mu.n;i++)
     L(i,i) = Sqrt(cov(i));
@@ -237,35 +237,35 @@ void Gaussian<T>::setMaximumLikelihoodDiagonal(const std::vector<VectorT>& examp
   assert(examples.size() >= 1);
 
   Real sumw=weights[0];
-  mu.mul(examples[0],weights[0]);
+  mu.mul(examples[0], (T)weights[0]);
   for(size_t i=1;i<examples.size();i++) {
-    mu.madd(examples[i],weights[i]);
+    mu.madd(examples[i], (T)weights[i]);
     sumw += weights[i];
   }
   if(sumw == 0.0) {
     //degenerate
-    L.resize(mu.n,mu.n,Zero);
+    L.resize(mu.n,mu.n, (T)Zero);
     return;
   }
 
   //compute mean and covariance
   if(sumw < 1e-3)
-    mu /= sumw;
+    mu /= (T)sumw;
   else
-    mu *= 1.0/sumw;
+    mu *= (T)(1.0/sumw);
 
-  VectorT cov(mu.n,Zero);
+  VectorT cov(mu.n, (T)Zero);
   VectorT temp;
   for(size_t k=0;k<examples.size();k++) {
     temp.sub(examples[k],mu);
     for(int i=0;i<mu.n;i++) {
-	cov(i) += temp(i)*temp(i)*weights[k];
+	cov(i) += temp(i)*temp(i)*(T)weights[k];
     }
   }
   if(sumw < 1e-3)
-    cov /= sumw;
+    cov /= (T)sumw;
   else
-    cov *= 1.0/sumw;
+    cov *= (T)(1.0/sumw);
   L.setZero();
   for(int i=0;i<mu.n;i++)
     L(i,i) = Sqrt(cov(i));
@@ -283,7 +283,7 @@ bool Gaussian<T>::setMaximumAPosteriori(const std::vector<VectorT>& examples,
   mu.mul(meanprior,meanStrength);
   for(size_t i=0;i<examples.size();i++)
     mu += examples[i];
-  mu *= 1.0/(meanStrength+T(examples.size()));
+  mu *= (T)(1.0/(meanStrength+T(examples.size())));
 
   MatrixT cov;
   cov.mul(covprior,covStrength);
@@ -295,7 +295,7 @@ bool Gaussian<T>::setMaximumAPosteriori(const std::vector<VectorT>& examples,
 	cov(i,j) += temp(i)*temp(j);
     }
   }
-  cov *= 1.0/(covStrength+T(examples.size()));
+  cov *= (T)(1.0/(covStrength+T(examples.size())));
   return setCovariance(cov,verbose);  
 }
 
@@ -312,10 +312,10 @@ bool Gaussian<T>::setMaximumAPosteriori(const std::vector<VectorT>& examples,con
   Real sumw=0.0;
   mu.mul(meanprior,meanStrength);
   for(size_t i=0;i<examples.size();i++) {
-    mu.madd(examples[i],weights[i]);
+    mu.madd(examples[i], (T)weights[i]);
     sumw += weights[i];
   }
-  mu *= 1.0/(sumw+meanStrength);
+  mu *= (T)(1.0/(sumw+meanStrength));
 
   MatrixT cov;
   cov.mul(covprior,covStrength);
@@ -324,10 +324,10 @@ bool Gaussian<T>::setMaximumAPosteriori(const std::vector<VectorT>& examples,con
     temp.sub(examples[k],mu);
     for(int i=0;i<mu.n;i++) {
       for(int j=0;j<mu.n;j++)
-	cov(i,j) += temp(i)*temp(j)*weights[k];
+	cov(i,j) += temp(i)*temp(j)*(T)weights[k];
     }
   }
-  cov *= 1.0/(sumw+covStrength);
+  cov *= (T)(1.0/(sumw+covStrength));
   return setCovariance(cov,verbose);
 }
 
@@ -341,7 +341,7 @@ void Gaussian<T>::setMaximumAPosterioriDiagonal(const std::vector<VectorT>& exam
   mu.mul(meanprior,meanStrength);
   for(size_t i=0;i<examples.size();i++)
     mu += examples[i];
-  mu *= 1.0/(meanStrength+T(examples.size()));
+  mu *= (T)(1.0/(meanStrength+T(examples.size())));
 
   VectorT cov;
   cov.mul(covprior,covStrength);
@@ -352,7 +352,7 @@ void Gaussian<T>::setMaximumAPosterioriDiagonal(const std::vector<VectorT>& exam
 	cov(i) += temp(i)*temp(i);
     }
   }
-  cov *= 1.0/(covStrength+T(examples.size()));
+  cov *= (T)(1.0/(covStrength+T(examples.size())));
   L.setZero();
   for(int i=0;i<mu.n;i++)
     L(i,i) = Sqrt(cov(i));
@@ -370,10 +370,10 @@ void Gaussian<T>::setMaximumAPosterioriDiagonal(const std::vector<VectorT>& exam
   Real sumw=0.0;
   mu.mul(meanprior,meanStrength);
   for(size_t i=0;i<examples.size();i++) {
-    mu.madd(examples[i],weights[i]);
+    mu.madd(examples[i], (T)weights[i]);
     sumw += weights[i];
   }
-  mu *= 1.0/(sumw+meanStrength);
+  mu *= (T)(1.0/(sumw+meanStrength));
 
   VectorT cov;
   cov.mul(covprior,covStrength);
@@ -381,10 +381,10 @@ void Gaussian<T>::setMaximumAPosterioriDiagonal(const std::vector<VectorT>& exam
   for(size_t k=0;k<examples.size();k++) {
     temp.sub(examples[k],mu);
     for(int i=0;i<mu.n;i++) {
-	cov(i) += temp(i)*temp(i)*weights[k];
+	cov(i) += temp(i)*temp(i)*(T)weights[k];
     }
   }
-  cov *= 1.0/(sumw+covStrength);
+  cov *= (T)(1.0/(sumw+covStrength));
   L.setZero();
   for(int i=0;i<mu.n;i++)
     L(i,i) = Sqrt(cov(i));
@@ -400,7 +400,7 @@ Real Gaussian<T>::normalizationFactor() const
     if(L(i,i) == 0.0) d--;
     else det*=L(i,i);
   }
-  T invc = Pow(2.0*Pi,0.5*T(d))*det;
+  T invc = (T)(Pow(2.0*Pi,0.5*T(d))*det);
   return invc;
 }
 
@@ -414,7 +414,7 @@ T Gaussian<T>::probability(const VectorT& x) const
     if(L(i,i) == 0.0) d--;
     else det*=L(i,i);
   }
-  T invc = Pow(2.0*Pi,0.5*T(d))*det;
+  T invc = Pow(T(2.0*Pi),T(0.5*d))*det;
   VectorT x_mu,y;
   x_mu.sub(x,mu);
   y.resize(L.n);
@@ -423,7 +423,7 @@ T Gaussian<T>::probability(const VectorT& x) const
     return 0;
   }
   assert(res);
-  return Exp(-Half*y.normSquared())/invc;
+  return Exp(-(T)Half*y.normSquared())/invc;
 }
 
 template <class T>
@@ -431,12 +431,12 @@ T Gaussian<T>::logProbability(const VectorT& x) const
 {
   //TODO: what if the determinant is zero?
   int d = numDims();
-  T logdet=Zero;
+  T logdet=(T)Zero;
   for(int i=0;i<d;i++) {
     if(L(i,i) == 0.0) d--;
     else logdet+=Log(L(i,i));
   }
-  T loginvc = 0.5*T(d)*Log(2.0*Pi)+logdet;
+  T loginvc = T(0.5*d*Log(2.0*Pi))+logdet;
   VectorT x_mu,y;
   x_mu.sub(x,mu);
   y.resize(L.n);
@@ -447,7 +447,7 @@ T Gaussian<T>::logProbability(const VectorT& x) const
   assert(res);
   //sanity check?
   //Assert(FuzzyEquals(probability(x),Exp(-Half*y.normSquared()-loginvc),1e-4));
-  return -Half*y.normSquared()-loginvc;
+  return -(T)Half*y.normSquared()-loginvc;
 }
 
 template <class T>
@@ -468,14 +468,14 @@ T Gaussian<T>::partialProbability(const VectorT& x,const std::vector<int>& eleme
   T det = 1.0;
   for(int i=0;i<D.n;i++)  det *= D(i);
 
-  T invc = Pow(2.0*Pi,0.5*T(elements.size()))*det;
+  T invc = (T)(Pow(2.0*Pi,0.5*T(elements.size()))*det);
   VectorT mu1(elements.size());
   for(int i=0;i<mu1.n;i++)
     mu1(i) = mu(elements[i]);
   VectorT x_mu,y;
   x_mu.sub(x,mu1);
   bool res=chol.backSub(x_mu,y);
-  return Exp(-Half*dot(x_mu,y))/invc;
+  return (T)Exp(-Half*dot(x_mu,y))/invc;
 }
 
 template <class T>
@@ -500,14 +500,14 @@ T Gaussian<T>::logPartialProbability(const VectorT& x,const std::vector<int>& el
     else logdet += Log(D(i));
   }
 
-  T loginvc = 0.5*T(d)*Log(2.0*Pi)+logdet;
+  T loginvc = (T)(0.5*T(d)*Log(2.0*Pi))+logdet;
   VectorT mu1(elements.size());
   for(int i=0;i<mu1.n;i++)
     mu1(i) = mu(elements[i]);
   VectorT x_mu,y;
   x_mu.sub(x,mu1);
   bool res=chol.backSub(x_mu,y);
-  return -Half*dot(x_mu,y)-loginvc;
+  return -(T)Half*dot(x_mu,y)-loginvc;
 }
 
 template <class T>
@@ -515,7 +515,7 @@ void Gaussian<T>::generate(VectorT& x) const
 {
   //generate a normalized gaussian distributed variable y
   VectorT y(numDims());
-  for(int i=0;i<y.n;i++) y(i) = RandGaussian();
+  for(int i=0;i<y.n;i++) y(i) = (T)RandGaussian();
   L.mul(y,x);
   x += mu;
 }
@@ -597,7 +597,7 @@ void Gaussian<T>::setConditional(const MyT& g,Real xi,int i)
     mean1(p)=g.mu(r);
   }
 
-  Real invC22=1.0/cov(i,i);
+  T invC22= (T)(1.0/cov(i,i));
   mu = mean1;
   mu.madd(cov12,(xi-g.mu(i))*invC22);
   for(int p=0;p<cov11.m;p++)
@@ -649,7 +649,7 @@ T Gaussian<T>::klDivergence(const Gaussian<T>& g) const
   temp1.sub(this->mu,g.mu);
   K1inv.mul(temp1,temp2);
   T ofs = temp1.dot(temp2);
-  return Half*(trK1invK2 + ofs - logdet2 + logdet1 - (d1+d2)/2);
+  return (T)Half*(trK1invK2 + ofs - logdet2 + logdet1 - (d1+d2)/2);
 }
 
 

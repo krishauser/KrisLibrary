@@ -108,7 +108,7 @@ void MCRPlanner::UpdatePathsGreedy()
 {
   numUpdatePaths++; 
 
-  FixedSizeHeap<int> q(modeGraph.nodes.size());
+  FixedSizeHeap<Real> q(modeGraph.nodes.size());
 
   //reset min covers
   for(size_t i=0;i<modeGraph.nodes.size();i++)
@@ -244,7 +244,7 @@ void MCRPlanner::UpdatePathsComplete()
 
   vector<bool> visited(modeGraph.nodes.size(),0);
   //index is a (mode index,pathSubset index) pair
-  IndexedPriorityQueue<pair<int,int>,int> q;
+  IndexedPriorityQueue<pair<int,int>,Real> q;
 
   //start from scratch
   for(size_t i=0;i<modeGraph.nodes.size();i++) {
@@ -302,7 +302,7 @@ void MCRPlanner::UpdatePathsComplete()
 	//remove all the nodes that this subset replaces
 	for(size_t i=0;i<replace.size();i++) {
 	  reducible.push_back(pair<int,int>(e.target(),replace[i]));
-	  IndexedPriorityQueue<pair<int,int>,int>::iterator it;
+	  IndexedPriorityQueue<pair<int,int>,Real>::iterator it;
 	  it=q.find(pair<int,int>(e.target(),replace[i]));
 	  if(it !=q.end())
 	    q.erase(it);

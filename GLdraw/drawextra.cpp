@@ -47,7 +47,7 @@ void drawQuad(const Vector3& a,const Vector3& b,const Vector3& c,const Vector3& 
 
 void drawWireCircle2D(const Vector2& center,float radius,int numIncrements)
 {
-	float inc=Pi*Two/numIncrements;
+	float inc=float(Pi*Two/numIncrements);
 	Complex x(radius,0),dx;
 	dx.setPolar(One,inc);
 

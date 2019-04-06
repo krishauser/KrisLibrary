@@ -22,7 +22,7 @@ void RigidRobot2DCSpace::InitConstraints()
   //printf("RigidRobot2DCSpace::InitConstraints with %d obstacles\n",obstacles.NumObstacles());
   for(int i=0;i<obstacles.NumObstacles();i++) {
     char buf[64];
-    sprintf(buf,"%s[%d]",obstacles.ObstacleTypeName(i),obstacles.ObstacleIndex(i));
+    snprintf(buf,64,"%s[%d]",obstacles.ObstacleTypeName(i),obstacles.ObstacleIndex(i));
     CSpace::AddConstraint(buf,new Geometric2DObstacleFreeSet(obstacles.Obstacle(i),robot,false));
   }
 }
@@ -31,16 +31,16 @@ void RigidRobot2DCSpace::InitConstraints()
 void RigidRobot2DCSpace::DrawWorkspaceGL() const
 {
   //blank out background (light yellow)
-  glColor3f(1,1,0.5);
+  glColor3f(1.f,1.f,0.5f);
   glBegin(GL_QUADS);
-  glVertex2f(domain.bmin.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmax.y);
-  glVertex2f(domain.bmin.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmax.y);
   glEnd();
 
   //draw obstacles (dark grey)
-  glColor3f(0.2,0.2,0.2);
+  glColor3f(0.2f,0.2f,0.2f);
   obstacles.DrawGL();
 }
 
@@ -67,7 +67,7 @@ void RigidRobot2DCSpace::DrawGL(const Config& x) const
 {
   DrawWorkspaceGL();
 
-  glColor3f(0.3,0.3,0.7);
+  glColor3f(0.3f,0.3f,0.7f);
   DrawRobotGL(x);
 }
 

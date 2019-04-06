@@ -171,7 +171,7 @@ template <class T>
 void CholeskyDecomposition<T>::getInverse(MatrixT& Ainv) const
 {
   Ainv.resize(L.n,L.n);
-  VectorT temp(L.n,Zero),y,x;
+  VectorT temp(L.n,(T)Zero),y,x;
   for(int i=0;i<L.n;i++) {
     Ainv.getColRef(i,x);  //x &= col i of A
     temp(i)=One;

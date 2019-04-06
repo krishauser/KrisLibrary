@@ -33,7 +33,7 @@ std::string VectorFunction::Label(int i) const
 {
   std::string str = Label();
   char buf[32];
-  sprintf(buf,"[%d]",i);
+  snprintf(buf,32,"[%d]",i);
   str += buf;
   return str;
 }
@@ -43,7 +43,7 @@ void VectorFunction::operator()(Real t,Vector& x) { PreEval(t); Eval(t,x); }
 std::string ScalarFieldFunction::VariableLabel(int i) const
 {
   char buf[32];
-  sprintf(buf,"x[%d]",i);
+  snprintf(buf,32,"x[%d]",i);
   return buf;
 }
 
@@ -56,7 +56,7 @@ std::string VectorFieldFunction::Label(int i) const
 {
   std::string str = Label();
   char buf[32];
-  sprintf(buf,"[%d]",i);
+  snprintf(buf,32,"[%d]",i);
   str += buf;
   return str;
 }
@@ -64,7 +64,7 @@ std::string VectorFieldFunction::Label(int i) const
 std::string VectorFieldFunction::VariableLabel(int i) const
 {
   char buf[32];
-  sprintf(buf,"x[%d]",i);
+  snprintf(buf,32,"x[%d]",i);
   return buf;
 }
 

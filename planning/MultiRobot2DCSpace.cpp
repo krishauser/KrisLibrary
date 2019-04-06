@@ -18,16 +18,16 @@ MultiRobot2DCSpace::MultiRobot2DCSpace()
 void MultiRobot2DCSpace::DrawWorkspaceGL() const
 {
   //blank out background (light yellow)
-  glColor3f(1,1,0.5);
+  glColor3f(1.f,1.f,0.5f);
   glBegin(GL_QUADS);
-  glVertex2f(domain.bmin.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmin.y);
-  glVertex2f(domain.bmax.x,domain.bmax.y);
-  glVertex2f(domain.bmin.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmin.y);
+  glVertex2d(domain.bmax.x,domain.bmax.y);
+  glVertex2d(domain.bmin.x,domain.bmax.y);
   glEnd();
 
   //draw obstacles (dark grey)
-  glColor3f(0.2,0.2,0.2);
+  glColor3f(0.2f,0.2f,0.2f);
   obstacles.DrawGL();
 }
 
@@ -39,7 +39,7 @@ void MultiRobot2DCSpace::DrawRobotGL(int index,const RigidTransform2D& T) const
 
   //draw robot interpolating from grey to blue
   Real u = Real(index) / Real(robots.size()-1);
-  glColor3f(u*0.5,u*0.5,1.0-u*0.5);
+  glColor3d(u*0.5,u*0.5,1.0-u*0.5);
   temp.DrawGL();
 }
 
@@ -51,7 +51,6 @@ void MultiRobot2DCSpace::DrawRobotGL(int index,const Config& q) const
 RigidTransform2D MultiRobot2DCSpace::GetRobotTransform(int index,const Config& x) const
 {
   int base = (allowRotation ? 3 : 2)*index;
-  int qindex;
   RigidTransform2D T;
   T.t.set(x(base),x(base+1));
   if(allowRotation)

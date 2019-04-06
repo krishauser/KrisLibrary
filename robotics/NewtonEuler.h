@@ -24,8 +24,9 @@
  * externalWrenches are given about the link's center of mass.  jointWrenches
  * are given about the joint.
  */
-struct NewtonEulerSolver
+class NewtonEulerSolver
 {
+public:
   NewtonEulerSolver(RobotDynamics3D& robot);
   //sets the external wrenches equal to gravity
   void SetGravityWrenches(const Vector3& gravity);

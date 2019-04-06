@@ -352,7 +352,7 @@ using namespace std;
 GLUINavigationProgram::GLUINavigationProgram()
   :oldmousex(0),oldmousey(0),
    clickButton(-1),clickModifiers(0),
-   stereo_mode(false),stereo_offset(.02),
+   stereo_mode(false),stereo_offset(.02f),
    show_view_target(0),t_hide_view_target(0),
    last_frame_time(0),show_frames_per_second(false),
    frames_rendered(0),

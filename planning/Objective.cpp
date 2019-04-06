@@ -195,7 +195,7 @@ Real ConfigObjective::TerminalCost(const Vector& qend)
   else if(weights.empty()) return qgoal.distance(qend);
   else {
     Real s = 0;
-    for(size_t i=0;i<qend.size();i++)
+    for(int i=0;i<qend.n;i++)
       s += weights[i]*Sqr(qend[i]-qgoal[i]);
     return Sqrt(s);
   }
@@ -256,7 +256,7 @@ string CompositeObjective::Description()
     desc += components[i]->Description();
     if(!weights.empty() && weights[i] != 1.0) {
       char buf[64];
-      sprintf(buf,"*%g\n",weights[i]);
+      snprintf(buf,64,"*%g\n",weights[i]);
       desc += buf;
     }
   }

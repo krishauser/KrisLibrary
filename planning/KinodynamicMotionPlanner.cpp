@@ -379,9 +379,9 @@ Node* RRTKinodynamicPlanner::ExtendToward(const State& xdest)
     numSuccessfulExtensions++;
     visibleTime += timer.ElapsedTime();
     timer.Reset();
-    Node * n = tree.AddMilestone(n,path,e);
+    Node *c = tree.AddMilestone(n,path,e);
     overheadTime += timer.ElapsedTime();
-    return n;
+    return c;
   }
   else {
     //LOG4CXX_INFO(KrisLibrary::logger(),"Edge is not visible");

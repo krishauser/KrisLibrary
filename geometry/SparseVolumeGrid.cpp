@@ -160,7 +160,7 @@ void SparseVolumeGrid::SetValue(int i,int j,int k,Real value,int channel)
   GetBlock(i,j,k,hashIndex);
   MakeBlock(hashIndex);
   Block* b = BlockPtr(hashIndex);
-  b->grid.channels[channel].value(modulo(i,blockSize.a),modulo(j,blockSize.b),modulo(k,blockSize.c)) = value;
+  b->grid.channels[channel].value(modulo(i,blockSize.a),modulo(j,blockSize.b),modulo(k,blockSize.c)) = (float)value;
 }
 
 void SparseVolumeGrid::SetValue(const Vector3& pt,Real value,int channel)
@@ -178,7 +178,7 @@ void SparseVolumeGrid::SetValue(int i,int j,int k,const Vector& values)
   MakeBlock(hashIndex);
   Block* b = BlockPtr(hashIndex);
   for(int c=0;c<values.n;c++) 
-    b->grid.channels[c].value(modulo(i,blockSize.a),modulo(j,blockSize.b),modulo(k,blockSize.c)) = values[i];
+    b->grid.channels[c].value(modulo(i,blockSize.a),modulo(j,blockSize.b),modulo(k,blockSize.c)) = (float)values[c];
 }
 
 void SparseVolumeGrid::SetValue(const Vector3& pt,const Vector& values)
@@ -213,7 +213,7 @@ void SparseVolumeGrid::GetValue(int i,int j,int k,Vector& values) const
   else {
     int p=modulo(i,blockSize.a),q=modulo(j,blockSize.b),r=modulo(k,blockSize.c);
     for(int d=0;d<values.n;d++)
-      b->grid.channels[d].value(p,q,r) = values[d];
+      b->grid.channels[d].value(p,q,r) = (float)values[d];
   }
 }
 
@@ -257,7 +257,7 @@ SparseVolumeGrid::Block* SparseVolumeGrid::GetMakeBlock(const IntTriple& blockIn
   Vector3 bmin,bmax;
   hash.IndexBucketBounds(blockIndex,bmin,bmax);
   for(size_t i=0;i<channelNames.size();i++) {
-    newblock->grid.channels[i].value.set(defaultValue[i]);
+    newblock->grid.channels[i].value.set((float)defaultValue[i]);
     newblock->grid.channels[i].bb.bmin = bmin;
     newblock->grid.channels[i].bb.bmax = bmax;
   }
@@ -280,7 +280,7 @@ bool SparseVolumeGrid::MakeBlock(const IntTriple& hashIndex)
   Vector3 bmin,bmax;
   hash.IndexBucketBounds(hashIndex,bmin,bmax);
   for(size_t i=0;i<channelNames.size();i++) {
-    newblock->grid.channels[i].value.set(defaultValue[i]);
+    newblock->grid.channels[i].value.set((float)defaultValue[i]);
     newblock->grid.channels[i].bb.bmin = bmin;
     newblock->grid.channels[i].bb.bmax = bmax;
   }
@@ -361,7 +361,7 @@ void SparseVolumeGrid::SetSamples(const VolumeGrid& range,int channel)
         for(int p=imin;p<imax;p++)
           for(int q=jmin;q<jmax;q++)
             for(int r=kmin;r<kmax;r++)
-              b->grid.channels[channel].value(p-imin,q-jmin,r-kmin) = range.value(p,q,r);
+              b->grid.channels[channel].value(p-imin,q-jmin,r-kmin) = (float)range.value(p,q,r);
       }
 }
 
@@ -447,27 +447,27 @@ void SparseVolumeGrid::Add(Real val,int channel)
 {
   defaultValue[channel] += val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Add(val);
+    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Add((float)val);
 }
 void SparseVolumeGrid::Multiply(Real val,int channel)
 {
   defaultValue[channel] *= val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Multiply(val);
+    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Multiply((float)val);
 }
 void SparseVolumeGrid::Max(Real val,int channel)
 {
   if(defaultValue[channel] < val)
     defaultValue[channel] = val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Max(val);
+    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Max((float)val);
 }
 void SparseVolumeGrid::Min(Real val,int channel)
 {
   if(defaultValue[channel] > val)
     defaultValue[channel] = val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Min(val);
+    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Min((float)val);
 }
 
 

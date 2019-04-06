@@ -89,15 +89,15 @@ void Grid2DCSpace::DrawGL()
   Real xscale = (occupied->bb.bmax.x-occupied->bb.bmin.x)/Real(occupied->value.m);
   Real yscale = (occupied->bb.bmax.y-occupied->bb.bmin.y)/Real(occupied->value.n);
   //blank out background (light yellow)
-  glColor3f(1,1,0.5);
+  glColor3f(1.f,1.f,0.5f);
   glBegin(GL_QUADS);
-  glVertex2f(occupied->bb.bmin.x,occupied->bb.bmin.y);
-  glVertex2f(occupied->bb.bmax.x,occupied->bb.bmin.y);
-  glVertex2f(occupied->bb.bmax.x,occupied->bb.bmax.y);
-  glVertex2f(occupied->bb.bmin.x,occupied->bb.bmax.y);
+  glVertex2d(occupied->bb.bmin.x,occupied->bb.bmin.y);
+  glVertex2d(occupied->bb.bmax.x,occupied->bb.bmin.y);
+  glVertex2d(occupied->bb.bmax.x,occupied->bb.bmax.y);
+  glVertex2d(occupied->bb.bmin.x,occupied->bb.bmax.y);
   glEnd();
   //draw obstacles (dark grey)
-  glColor3f(0.2,0.2,0.2);
+  glColor3f(0.2f,0.2f,0.2f);
   glBegin(GL_QUADS);
   Real x=occupied->bb.bmin.x;
   for(int i=0;i<occupied->value.m;i++) {
@@ -105,10 +105,10 @@ void Grid2DCSpace::DrawGL()
     for(int j=0;j<occupied->value.n;j++) {
       if(occupied->value(i,j)) {
 	//draw cell
-	glVertex2f(x,y);
-	glVertex2f(x+xscale,y);
-	glVertex2f(x+xscale,y+yscale);
-	glVertex2f(x,y+yscale);
+	glVertex2d(x,y);
+	glVertex2d(x+xscale,y);
+	glVertex2d(x+xscale,y+yscale);
+	glVertex2d(x,y+yscale);
       }
       y += yscale;
     }

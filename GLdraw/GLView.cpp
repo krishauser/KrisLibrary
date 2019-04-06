@@ -90,18 +90,18 @@ bool GLView::getViewport(Camera::Viewport& v) const
 		//m23=-(f+n)/(f-n)
 		//[f*m22-n*m22=-2  ] => [m22   -m22 ] * [f] = [-2]
 		//[f*m23-n*m23=-f-n]    [m23+1 -m23+1] * [n]   [0 ]
-		v.scale=p(0,0)*(w/2);
+		v.scale=(float)(p(0,0)*(w/2));
 		Matrix2 A;
 		A(0,0)=p(2,2); A(0,1)=-p(2,2);
 		A(1,0)=p(2,3)+1; A(1,1)=-p(2,3)+1;
 		if(!A.inplaceInverse()) error=true;
 		Vector2 nf;
 		A.mul(Vector2(-2,Zero),nf);
-		v.n=nf.x;
-		v.f=nf.y;
+		v.n=(float)nf.x;
+		v.f=(float)nf.y;
 		
 #ifdef _DEBUG
-		if(v.scale != p(1,1)*h*0.5) error=true;
+		if(v.scale != (float)(p(1,1)*h*0.5)) error=true;
 		  //no projection translation
 		if(p(0,3)!=Zero) error=true;
 		if(p(1,3)!=Zero) error=true;
@@ -129,12 +129,12 @@ bool GLView::getViewport(Camera::Viewport& v) const
 		//f=n*(m22-1)/(m22+1)=n*c
 		//so n*(c*m23-m23)=2*c*n*n
 		//c*m23-m23=2*c*n
-		v.scale=p(0,0)*Half;
+		v.scale= (float)(p(0,0)*Half);
 		if(p(2,2)-One != Zero) {
 			//solve for n
 			Real c=(p(2,2)-1)/(p(2,2)+1);
-			v.n=p(2,3)*Half-p(2,3)*Half/c;
-			v.f=v.n*c;
+			v.n= (float)(p(2,3)*Half-p(2,3)*Half/c);
+			v.f= (float)(v.n*c);
 		}
 		else error=true;
 

@@ -151,7 +151,7 @@ DenseTSDFReconstruction::DenseTSDFReconstruction(const AABB3D& volume,const IntT
 
   tsdf.bb = volume;
   tsdf.Resize(res.a,res.b,res.c);
-  tsdf.value.set(truncationDistance);
+  tsdf.value.set((float)truncationDistance);
   info.resize(res.a,res.b,res.c);
   VoxelInfo blank;
   blank.rgb[0] = blank.rgb[1] = blank.rgb[2] = 0;
@@ -166,7 +166,7 @@ DenseTSDFReconstruction::DenseTSDFReconstruction(const AABB3D& volume,const IntT
 void DenseTSDFReconstruction::SetTruncationDistance(Real _truncationDistance)
 {
   truncationDistance = _truncationDistance;
-  tsdf.value.set(truncationDistance);
+  tsdf.value.set((float)truncationDistance);
 }
 
 void DenseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransform& Tcamera,ICPParameters& params)
@@ -450,9 +450,9 @@ void DenseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const PointClou
         const IntTriple& c=cells[j];
         VoxelInfo& vox=info(c);
         if(vox.weight > 1e-3)
-          vox.weight *= Pow(oldWeightScale,scanID-vox.lastID);
+          vox.weight *= (float)Pow(oldWeightScale,scanID-vox.lastID);
         if(vox.surfaceWeight > 1e-3)
-          vox.surfaceWeight *= Pow(oldWeightScale,scanID-vox.lastID);
+          vox.surfaceWeight *= (float)Pow(oldWeightScale,scanID-vox.lastID);
       }
     }
     numChanged += (int)cells.size();
@@ -476,7 +476,7 @@ void DenseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const PointClou
       Real wscale = 1.0-Abs(dsurf+dperp)/truncationDistance;
       if(wscale <= 0) continue;
       Real u = wscale*sweight/(vox.weight+wscale*sweight);
-      dval += u*(dsurf-dval);
+      dval += (float)(u*(dsurf-dval));
       if(Abs(dsurf+dperp)*certainty < 3) {
         Real wsurf = Exp(-0.5*Sqr(dsurf+dperp)*certainty);
         Real usurf = wsurf / (vox.surfaceWeight+wsurf);
@@ -488,14 +488,14 @@ void DenseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const PointClou
             vox.rgb[c] = (unsigned char)(vox.rgb[c] + usurf*(rgb[c] - vox.rgb[c]));
         }
         for(size_t k=0;k<auxiliaryAttributes.size();k++) {
-          Real vnew = pc.properties[i][auxiliaryAttributes[k]];
+          float vnew = (float)pc.properties[i][auxiliaryAttributes[k]];
           float& v = auxiliary.channels[k].value(c);
-          v += usurf*(vnew - v);
+          v += (float)(usurf*(vnew - v));
         }
-        vox.surfaceWeight += wsurf;
+        vox.surfaceWeight += (float)wsurf;
       }
       vox.lastID = scanID;
-      vox.weight += wscale*sweight;
+      vox.weight += (float)(wscale*sweight);
     }
     if(DEBUG) 
       cellTime += timer.ElapsedTime();
@@ -582,7 +582,7 @@ void DenseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& me
 
 void DenseTSDFReconstruction::GetColor(const Vector3& point,float* color) const
 {
-  const static float cscale = 1.0/255;
+  const static float cscale = 1.0f/255;
   IntTriple c;
   Vector3 u;
   Vector3 celldims = tsdf.GetCellSize();
@@ -594,14 +594,14 @@ void DenseTSDFReconstruction::GetColor(const Vector3& point,float* color) const
   if(c.b >= tsdf.value.n-1) { c.b = tsdf.value.n-2; u.y = 1; }
   if(c.c >= tsdf.value.p-1) { c.c = tsdf.value.p-2; u.z = 1; }
   vector<const VoxelInfo*> vs;
-  vector<Real> ws;
+  vector<float> ws;
   vs.reserve(8);
   ws.reserve(8);
   for(int p=0;p<=1;p++)
     for(int q=0;q<=1;q++)
       for(int r=0;r<=1;r++) {
         vs.push_back(&info(c.a+p,c.b+q,c.c+r));
-        ws.push_back((1-p + (p*2-1)*u.x)*(1-q + (q*2-1)*u.y)*(1-r + (r*2-1)*u.z));
+        ws.push_back(float((1-p + (p*2-1)*u.x)*(1-q + (q*2-1)*u.y)*(1-r + (r*2-1)*u.z)));
       }
   for(int j=0;j<3;j++) {
     color[j] = 0.0; 
@@ -759,8 +759,8 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
   Vector3 cc;
   Vector3 fwd = Tcamera.R*Vector3(0,0,1);
   vector<IntTriple> cells;
-  Real oldWeightScale = Exp(-self->forgettingRate);
-  Real pointRgb[3];
+  float oldWeightScale = (float)Exp(-self->forgettingRate);
+  unsigned char pointRgb[3];
   data->pointTime = 0;
   data->cellTime = 0;
   data->numChangedCells = 0;
@@ -832,7 +832,7 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
         }
         //cout<<"Segment "<<s.a<<" -- "<<s.b<<endl;
         Meshing::GetSegmentCells(s,depthGrid.m,depthGrid.n,depthGrid.p,b->grid.channels[0].bb,cells);
-        if(oldWeightScale != 1.0) {
+        if(oldWeightScale != 1.0f) {
           for(auto c : cells) {
             if(c.a >= weightGrid.m) continue;
             if(c.b >= weightGrid.n) continue;
@@ -840,11 +840,11 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
             float& weight = weightGrid(c);
             float& age = ageGrid(c);
             if(weight > 1e-3)
-              weight *= Pow(float(oldWeightScale),scanFloat-age);
+              weight *= Pow(oldWeightScale,scanFloat-age);
             if(surfaceWeightGrid) {
               float& surfaceWeight = (*surfaceWeightGrid)(c);
               if(surfaceWeight > 1e-3)
-                surfaceWeight *= Pow(float(oldWeightScale),scanFloat-age);
+                surfaceWeight *= Pow(oldWeightScale,scanFloat-age);
             }
           }
         }
@@ -869,14 +869,14 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
           Real dperp = perp.norm();
           Real dsurf = dcell - p.z;
           //define a simple falloff
-          Real wscale = 1.0-Abs(dsurf+dperp)/truncationDistance;
+          float wscale = float(1.0-Abs(dsurf+dperp)/truncationDistance);
           if(wscale <= 0) continue;
-          Real u = wscale*sweight/(weight+wscale*sweight);
+          float u = wscale*sweight/(weight+wscale*sweight);
           dval += u*(dsurf-dval);
           if(self->surfaceWeightChannel>=0 && Abs(dsurf+dperp)*certainty < 3) {
             float& surfaceWeight = (*surfaceWeightGrid)(c);
-            Real wsurf = Exp(-0.5*Sqr(dsurf+dperp)*certainty);
-            Real usurf = wsurf / (surfaceWeight+wsurf);
+            float wsurf = (float)Exp(-0.5*Sqr(dsurf+dperp)*certainty);
+            float usurf = wsurf / (surfaceWeight+wsurf);
             //TODO: figure out occupancy estimate
             //Real pfree = 0.5*(Erf(dsurf*certainty)+1);
             //vox.occupancy += pfree*(-vox.occupancy);
@@ -886,7 +886,7 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
                 rgb[c] = (unsigned char)(rgb[c] + usurf*(pointRgb[c] - rgb[c]));
             }
             for(size_t k=0;k<self->auxiliaryAttributes.size();k++) {
-              Real vnew = pc.properties[i][self->auxiliaryAttributes[k]];
+              float vnew = (float)pc.properties[i][self->auxiliaryAttributes[k]];
               float& v = b->grid.channels[self->auxiliaryChannelStart+k].value(c);
               v += usurf*(vnew - v);
             }
@@ -1779,7 +1779,7 @@ void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& m
   mesh.tris.resize(0);
   mesh.verts.resize(0);
   const static int m=8,n=8,p=8;
-  float NaN = truncationDistance;
+  float NaN = (float)truncationDistance;
   TriMesh tempMesh;
   Array3D<float> expandedBlock(m+1,n+1,p+1);
   for(auto b : tsdf.hash.buckets) {
@@ -1908,8 +1908,8 @@ void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& m
 void SparseTSDFReconstruction::GetColor(const Vector3& point,float* color) const
 {
   Assert(rgbChannel >= 0);
-  const static float one_over_255 = 1.0/255;
-  float rgb = tsdf.GetValue(point,rgbChannel);
+  const static float one_over_255 = 1.0f/255;
+  float rgb = (float)tsdf.GetValue(point,rgbChannel);
   unsigned char* rgbchar = reinterpret_cast<unsigned char*>(&rgb);
   color[0] = rgbchar[0]*one_over_255;
   color[1] = rgbchar[1]*one_over_255;

@@ -171,7 +171,7 @@ void DiagonalMatrixTemplate<T>::postMultiplyInverse(const MatrixT& a,MatrixT& x)
 template <class T>
 void DiagonalMatrixTemplate<T>::setIdentity()
 {
-  this->set(One);
+  this->set((T)One);
 }
 
 template <class T>

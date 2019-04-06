@@ -40,7 +40,7 @@ int PerturbationCSpace::NumObstacles() { return (int)perturbations.size(); }
 std::string PerturbationCSpace::ObstacleName(int obstacle)
 {
   char buf[64];
-  sprintf(buf,"perturbation[%d]",obstacle);
+  snprintf(buf,64,"perturbation[%d]",obstacle);
   return buf;
 }
 

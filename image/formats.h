@@ -99,7 +99,7 @@ void a8_set (unsigned char* bits, const COLOROPTYPE col)
 }
 
 
-const static float one_over_255 = 1.0/255.0;
+const static float one_over_255 = 1.0f/255.0f;
 
 void frgb_get (const unsigned char* bits, COLOROPTYPE col)
 {

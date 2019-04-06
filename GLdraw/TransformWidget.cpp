@@ -212,8 +212,8 @@ bool TransformWidget::Hover(int x,int y,Camera::Viewport& viewport,double& dista
   int oldHoverItem = hoverItem;
   hoverItem = -1;
   Ray3D r;
-  viewport.getClickSource(x,y,r.source);
-  viewport.getClickVector(x,y,r.direction);
+  viewport.getClickSource((float)x, (float)y,r.source);
+  viewport.getClickVector((float)x, (float)y,r.direction);
   //check origin
   if(enableTranslation && enableOriginTranslation) {
     Sphere3D s;
@@ -313,7 +313,7 @@ void TransformWidget::Drag(int dx,int dy,Camera::Viewport& viewport)
   if(hoverItem < 0) return;
   else if(hoverItem == 0) {
     Vector3 v;
-    viewport.getMovementVectorAtDistance(dx,dy,clickDistance,v);
+    viewport.getMovementVectorAtDistance((float)dx, (float)dy, (float)clickDistance, v);
     T.t += v;
   }
   else if(hoverItem <= 3) { //translation
@@ -377,11 +377,11 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
   if(enableTranslation && enableOriginTranslation) {
     scale = (hasHighlight && hoverItem == 0 ? hoverScale : 1.0)*globalScale;
     glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,originColor.rgba); 
-    drawSphere(originRadius*scale,16,8);
+    drawSphere((float)originRadius*scale,16,8);
   }
   else {
     glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,originColor.rgba); 
-    drawSphere(axisRadius*globalScale,16,8);
+    drawSphere((float)axisRadius*globalScale,16,8);
   }
 
   //draw axes
@@ -394,7 +394,7 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
       drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
       glPushMatrix();
       glTranslate(axis*axisLength*globalScale);
-      drawCone(axis*arrowHeight*scale,arrowRadius*scale);
+      drawCone(axis*arrowHeight*scale, (float)arrowRadius*scale);
       glPopMatrix();
     }
 
@@ -405,7 +405,7 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
       drawCylinder(axis*axisLength*globalScale,axisRadius*scale,8);
       glPushMatrix();
       glTranslate(axis*axisLength*globalScale);
-      drawCone(axis*arrowHeight*scale,arrowRadius*scale);
+      drawCone(axis*arrowHeight*scale, (float)arrowRadius*scale);
       glPopMatrix();
     }
 
@@ -463,7 +463,7 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
       r2 = (ringOuterRadius+arrowHeight)*globalScale;
       float color[4] = {0,0,0,1};
       glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,color); 
-      drawArc(r1,r2,axis,x,0,360);
+      drawArc((float)r1, (float)r2,axis,x,0,360);
     }
     glEnable(GL_CULL_FACE);
   }
