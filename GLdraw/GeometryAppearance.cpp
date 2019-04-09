@@ -292,7 +292,7 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
       out.verts.push_back(in.verts[i]);
     }
   }
-  for(auto t:out.tris)
+  for(const auto& t:out.tris)
     Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
 }
 
