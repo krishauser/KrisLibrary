@@ -177,7 +177,7 @@ void Histogram2D::ResizeToFit(const std::vector<Point>& data,const Size dims)
       bmax[k] = max(bmax[k],data[i][k]);
     }
   }
-  for(int k=0;k<3;k++)
+  for(int k=0;k<2;k++)
     if(bmin[k]==bmax[k]) bmax[k] += 1;
   Resize(dims,bmin,bmax);
 }
