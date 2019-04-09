@@ -1712,8 +1712,8 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
     }
   if(flipped.size() > 0) {
     printf("FMM flipped triangles: ");
-    for(auto i=flipped.begin();i!=flipped.end();i++)
-      printf("%d ",*i);
+    for(auto i:flipped)
+      printf("%d ",i);
       //printf("%d ",i->first);
     printf("\n");
     /*
