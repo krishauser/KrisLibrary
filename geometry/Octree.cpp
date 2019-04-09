@@ -336,6 +336,11 @@ OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell,Real _mi
   }
 }
 
+size_t OctreePointSet::NumPoints(int node) const
+{
+  return indexLists[node].size();
+}
+
 void OctreePointSet::GetPoints(int node,vector<Vector3>& pts) const
 {
   pts.resize(indexLists[node].size());
@@ -438,8 +443,8 @@ void OctreePointSet::BoxQuery(const Vector3& bmin,const Vector3& bmax,vector<Vec
   for(size_t i=0;i<boxnodes.size();i++) {
     const vector<int>& pindices = indexLists[boxnodes[i]];
     for(size_t k=0;k<pindices.size();k++)
-      if(bb.contains(points[pindices[k]])) {
-	points.push_back(points[pindices[k]]);
+      if(bb.contains(this->points[pindices[k]])) {
+	points.push_back(this->points[pindices[k]]);
 	ids.push_back(this->ids[pindices[k]]);
       }
   }

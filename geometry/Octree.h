@@ -109,6 +109,8 @@ class OctreePointSet : public Octree
  public:
   OctreePointSet(const AABB3D& bbox,int maxPointsPerCell=1,Real minCellSize=0);
   virtual ~OctreePointSet() {}
+  size_t NumPoints(int node) const;
+  size_t NumPoints(const OctreeNode& node) const { return NumPoints(Index(node)); }
   void GetPoints(int node,vector<Vector3>& pts) const;
   void GetPoints(const OctreeNode& node,vector<Vector3>& pts) const { GetPoints(Index(node),pts); }
   void GetPointIDs(int node,vector<int>& ids) const;
