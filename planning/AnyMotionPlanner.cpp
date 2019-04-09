@@ -1395,7 +1395,7 @@ void PointToSetMotionPlannerAdaptor::GetRoadmap(Roadmap& roadmap) const
     for(int j=0;j<roadmaps[i].NumNodes();j++) 
       roadmap.AddNode(roadmaps[i].nodes[j]);
     for(int j=0;j<roadmaps[i].NumNodes();j++) {
-      for(auto e:roadmaps[i].edges[j]) {
+      for(const auto& e:roadmaps[i].edges[j]) {
         roadmap.AddEdge(j+voffsets[i],e.first+voffsets[i],*e.second);
       }
     }
