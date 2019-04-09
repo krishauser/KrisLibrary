@@ -14,8 +14,8 @@ class ConnectedComponents
   void Compute(const UndirectedGraph<Node,Edge>& G) {
     sets.Initialize(G.nodes.size());
     for(size_t i=0;i<G.nodes.size();i++) {
-      for(auto e=G.edges[i].begin();e!=G.edges[i].end();++e) {
-	sets.Union(i,e->first);
+      for(const auto& e:G.edges[i]) {
+	sets.Union(i,e.first);
       }
     }
   }
