@@ -145,7 +145,7 @@ BallTreeNode* BallTree::_LookupClosestLeaf(BallTreeNode* node,const Vector& pt,R
 
   BallTreeNode* closest = NULL;
   Real dclosest = Inf;
-  for(auto dc : searchOrder) {
+  for(const auto& dc : searchOrder) {
     BallTreeNode* c = _LookupClosestLeaf(dc.second,pt,dmin);
     if(dmin <= 0) {
       return c;
@@ -177,7 +177,7 @@ bool BallTree::Split(BallTreeNode* node)
     //just find axis with max spread
     Vector bmin,bmax;
     bmin = bmax = node->pts[0].pt;
-    for(auto pt:node->pts) {
+    for(const auto& pt:node->pts) {
       AABBGrow(bmin,bmax,pt.pt);
     }
     int index;
@@ -187,7 +187,7 @@ bool BallTree::Split(BallTreeNode* node)
       return false;
     }
     Real split = 0.5*(bmin[index]+bmax[index]);
-    for(auto pt:node->pts) {
+    for(const auto& pt:node->pts) {
       if(pt.pt[index] < split) 
         node->children[0]->pts.push_back(pt);
       else
@@ -232,7 +232,7 @@ void BallTree::Fit(BallTreeNode* node,bool tight)
       }
     }
     node->radius = 0;
-    for(auto p : node->pts)
+    for(const auto& p : node->pts)
       node->radius = Max(node->radius,metric(p.pt,node->center));
   }
   else if(node->children.empty()) {
@@ -318,7 +318,7 @@ void BallTree::_ClosestPoint(const BallTreeNode* node,const Vector& pt,Real& dis
 {
   //if leaf node, brute force it
   if(node->IsLeaf()) {
-    for(auto p:node->pts) {
+    for(const auto& p:node->pts) {
       Real d=metric(p.pt,pt);
       if(d < dist) {
         dist = d;
@@ -337,7 +337,7 @@ void BallTree::_ClosestPoint(const BallTreeNode* node,const Vector& pt,Real& dis
     }
   }
   sort(searchOrder.begin(),searchOrder.end());
-  for(auto dc : searchOrder) {
+  for(const auto& dc : searchOrder) {
     _ClosestPoint(dc.second,pt,dist,idx);
   }
 }
@@ -346,7 +346,7 @@ void BallTree::_ClosePoints(const BallTreeNode* node,const Vector& pt,Real radiu
 {
   if(metric(node->center,pt) - node->radius > radius) return;
   if(node->IsLeaf()) {
-    for(auto p:node->pts) {
+    for(const auto& p:node->pts) {
       Real d=metric(p.pt,pt);
       if(d < radius) {
         distances.push_back(d);
@@ -364,7 +364,7 @@ void BallTree::_KClosestPoints(const BallTreeNode* node,const Vector& pt,int k,R
 {
   //if leaf node, brute force it
   if(node->IsLeaf()) {
-    for(auto p:node->pts) {
+    for(const auto& p:node->pts) {
       Real d=metric(p.pt,pt);
       if(d < dist[maxdist]) {
         dist[maxdist] = d;
@@ -388,7 +388,7 @@ void BallTree::_KClosestPoints(const BallTreeNode* node,const Vector& pt,int k,R
     }
   }
   sort(searchOrder.begin(),searchOrder.end());
-  for(auto dc : searchOrder) {
+  for(const auto& dc : searchOrder) {
     _KClosestPoints(dc.second,pt,k,dist,idx,maxdist);
   }
 }
