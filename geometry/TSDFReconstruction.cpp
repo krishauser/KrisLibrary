@@ -549,7 +549,7 @@ void DenseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& me
     //extract the ROI
     Array3D<float> subvolume(amax-amin,bmax-bmin,cmax-cmin);
     auto range = Range3Indices(amin,amax,bmin,bmax,cmin,cmax);
-    for(auto i=tsdf.value.begin(range),j=subvolume.begin();i!=tsdf.value.end(range);++i) 
+    for(auto i=tsdf.value.begin(range), j=subvolume.begin();i!=tsdf.value.end(range);++i) 
       *j = *i;
     AABB3D center_bb;
     tsdf.GetCenter(IntTriple(amin,bmin,cmin),center_bb.bmin);
@@ -735,7 +735,7 @@ void DoFindBlocks(FuseThreadData* data,const vector<size_t>& pindices)
       tsdf.GetBlock((1-u)*s.a + u*s.b, b);
       bindex.insert(b);
     }
-    for(auto b : bindex) {
+    for(const auto& b : bindex) {
       data->blockToPoint[b].push_back(i);
     }
   }
@@ -785,7 +785,7 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
     center0 = b->grid.channels[0].bb.bmin + 0.5*center1;
     
     //for(auto i : blockpoints[j]) {
-    for(auto listptr : blockpoints[j]) {
+    for(auto& listptr : blockpoints[j]) {
       POINTINDEXLIST& ptlist = *listptr;
       for(auto i : ptlist) {
         assert(i >= 0 && i < pc.points.size());
@@ -833,7 +833,7 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
         //cout<<"Segment "<<s.a<<" -- "<<s.b<<endl;
         Meshing::GetSegmentCells(s,depthGrid.m,depthGrid.n,depthGrid.p,b->grid.channels[0].bb,cells);
         if(oldWeightScale != 1.0f) {
-          for(auto c : cells) {
+          for(const auto& c : cells) {
             if(c.a >= weightGrid.m) continue;
             if(c.b >= weightGrid.n) continue;
             if(c.c >= weightGrid.p) continue;
@@ -849,7 +849,7 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
           }
         }
         data->numChangedCells += (int)cells.size();
-        for(auto c : cells) {
+        for(const auto& c : cells) {
           if(c.a >= weightGrid.m) continue;
           if(c.b >= weightGrid.n) continue;
           if(c.c >= weightGrid.p) continue;
@@ -1192,7 +1192,7 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
   double findTime = 0,newTime = 0,insertTime = 0;
   for(int i=0;i<numThreads;i++) {
     FuseThreadData* data = idata[i];
-    for(auto bmap:data->blockToPoint) {
+    for(const auto& bmap:data->blockToPoint) {
       const IntTriple& b=bmap.first;
       SparseVolumeGrid::Block* bptr;
       size_t bindex;
@@ -1244,7 +1244,7 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
       tsdf.GetBlock((1-u)*s.a + u*s.b, b);
       bindex.insert(b);
     }
-    for(auto b : bindex) {
+    for(const auto& b : bindex) {
       SparseVolumeGrid::Block* bptr;
       if(tsdf.MakeBlock(b)) {
         bptr = tsdf.BlockPtr(b);
@@ -1331,7 +1331,7 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
     center1 = b->grid.GetCellSize();
     center0 = b->grid.channels[0].bb.bmin + 0.5*center1;
     
-    for(auto i : blockpoints[j]) {
+    for(const auto& i : blockpoints[j]) {
       const Vector3& p = pc.points[i];
       Real zmin = p.z - truncationDistance;
       Real zmax = p.z + truncationDistance;
@@ -1374,7 +1374,7 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
       //cout<<"Segment "<<s.a<<" -- "<<s.b<<endl;
       Meshing::GetSegmentCells(s,depthGrid.m,depthGrid.n,depthGrid.p,b->grid.channels[0].bb,cells);
       if(oldWeightScale != 1.0) {
-        for(auto c : cells) {
+        for(const auto& c : cells) {
           if(c.a >= weightGrid.m) continue;
           if(c.b >= weightGrid.n) continue;
           if(c.c >= weightGrid.p) continue;
@@ -1390,7 +1390,7 @@ void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing:
         }
       }
       numChanged += (int)cells.size();
-      for(auto c : cells) {
+      for(const auto& c : cells) {
         if(c.a >= weightGrid.m) continue;
         if(c.b >= weightGrid.n) continue;
         if(c.c >= weightGrid.p) continue;
@@ -1782,7 +1782,7 @@ void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& m
   float NaN = (float)truncationDistance;
   TriMesh tempMesh;
   Array3D<float> expandedBlock(m+1,n+1,p+1);
-  for(auto b : tsdf.hash.buckets) {
+  for(const auto& b : tsdf.hash.buckets) {
     VolumeGridTemplate<float>& depth = reinterpret_cast<SparseVolumeGrid::Block*>(b.second)->grid.channels[0];
     if(!depth.bb.intersects(roi)) continue;
     AABB3D center_bb = depth.bb;
