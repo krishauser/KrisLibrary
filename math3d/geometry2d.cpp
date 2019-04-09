@@ -82,6 +82,33 @@ Real Box2D::distanceSquared(const Point2D& pt,Point2D& out) const
   return norm2;
 }
 
+Real Box2D::signedDistance(const Point2D& pt) const
+{
+  Point2D closest;
+  return signedDistance(pt,closest);
+}
+
+Real Box2D::signedDistance(const Point2D& pt,Point2D& out) const
+{
+  Point2D loc;
+  toLocal(pt, loc);
+  out = loc;
+  bool inside = true;
+  Real dmin = Inf;
+  if(loc.x < 0) { out.x = 0; inside=false; }
+  else dmin = Min(dmin,loc.x);
+  if(loc.y < 0) { out.y = 0; inside=false; }
+  else dmin = Min(dmin,loc.y);
+  if(loc.x > dims.x) { out.x = dims.x; inside=false; }
+  else dmin = Min(dmin,dims.x-loc.x);
+  if(loc.y > dims.y) { out.y = dims.y; inside=false; }
+  else dmin = Min(dmin,dims.y-loc.y);
+  Real norm = loc.distance(out);
+  loc = out;
+  fromLocal(loc,out);
+  return norm;
+}
+
 bool Box2D::intersects(const AABB2D& b) const
 {
   Box2D temp;
@@ -626,6 +653,11 @@ bool Circle2D::Write(File& f) const
 Real Circle2D::distance(const Point2D& v) const
 {
 	return (center-v).norm() - radius;
+}
+
+Real Circle2D::signedDistance(const Point2D& v) const
+{
+    return (center-v).norm() - radius;
 }
 
 bool Circle2D::contains(const Point2D& v) const

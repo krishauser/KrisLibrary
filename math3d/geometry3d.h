@@ -25,9 +25,10 @@ namespace Meshing {
 
 namespace Math3D {
 
-/** @brief A generic geometric primitive class.
+/** @brief A generic 3D geometric primitive class.
  *
- * TODO: make the API comparable to GeometricPrimitive2D.
+ * Note: Distance() routines may actually report the signed distance,
+ * rather than 0 if there is an overlap.
  */
 class GeometricPrimitive3D
 {

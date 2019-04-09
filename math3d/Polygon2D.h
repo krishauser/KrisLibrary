@@ -67,6 +67,7 @@ struct ConvexPolygon2D : public Polygon2D
   bool withinDistance(const Point2D& v, Real dist) const;	
   bool withinEdgeDistance(const Point2D& v, Real dist) const;	
   Real distance(const Point2D& v) const;
+  ///actually the signed distance
   Real edgeDistance(const Point2D& v) const;
   bool intersects(const Line2D& l, Real& tmin, Real& tmax) const;
   bool intersects(const Line2D& l) const;

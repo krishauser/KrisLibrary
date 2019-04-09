@@ -29,6 +29,8 @@ struct Box3D : public ScaledLocalCoordinates3D
   Real distance(const Point3D& pt) const;
   Real distance(const Point3D& pt,Point3D& closestPt) const;
   Real distanceSquared(const Point3D& pt,Point3D& closestPt) const;
+  Real signedDistance(const Point3D& pt) const;
+  Real signedDistance(const Point3D& pt,Point3D& surfacePt) const;
   void getAABB(AABB3D& bb) const;
   bool intersects(const AABB3D& b) const;
   bool intersects(const Box3D& b) const;

@@ -82,6 +82,37 @@ Real Box3D::distanceSquared(const Point3D& pt,Point3D& out) const
   return norm2;
 }
 
+Real Box3D::signedDistance(const Point3D& pt) const
+{
+  Point3D closest;
+  return signedDistance(pt,closest);
+}
+
+Real Box3D::signedDistance(const Point3D& pt,Point3D& out) const
+{
+  Point3D loc;
+  toLocal(pt, loc);
+  out = loc;
+  bool inside = true;
+  Real dmin = Inf;
+  if(loc.x < 0) { out.x = 0; inside=false; }
+  else dmin = Min(dmin,loc.x);
+  if(loc.y < 0) { out.y = 0; inside=false; }
+  else dmin = Min(dmin,loc.y);
+  if(loc.z < 0) { out.z = 0; inside=false; }
+  else dmin = Min(dmin,loc.z);
+  if(loc.x > dims.x) { out.x = dims.x; inside=false; }
+  else dmin = Min(dmin,dims.x-loc.x);
+  if(loc.y > dims.y) { out.y = dims.y; inside=false; }
+  else dmin = Min(dmin,dims.y-loc.y);
+  if(loc.z > dims.z) { out.z = dims.z; inside=false; }
+  else dmin = Min(dmin,dims.z-loc.z);
+  Real norm = loc.distance(out);
+  loc = out;
+  fromLocal(loc,out);
+  return norm;
+}
+
 bool Box3D::intersects(const AABB3D& b) const
 {
   Box3D bb;

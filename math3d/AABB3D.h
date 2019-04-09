@@ -38,6 +38,8 @@ struct AABB3D
   Real distance(const Point3D&) const;
   Real distance(const Point3D& pt,Point3D& closest) const;
   Real distanceSquared(const Point3D& pt,Point3D& closest) const;
+  Real signedDistance(const Point3D&) const;
+  Real signedDistance(const Point3D& pt,Point3D& surface) const;
   Real distance(const AABB3D& bb) const;
   Real distance(const AABB3D& bb,Point3D& myclosest,Point3D& bbclosest) const;
 

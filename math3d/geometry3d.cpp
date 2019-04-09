@@ -34,6 +34,11 @@ Real Sphere3D::distance(const Point3D& v) const
 	return (center-v).norm() - radius;
 }
 
+Real Sphere3D::signedDistance(const Point3D& v) const
+{
+  return (center-v).norm() - radius;
+}
+
 bool Sphere3D::contains(const Point3D& v) const
 {
 	return DistanceLEQ(center,v,radius);
@@ -1110,13 +1115,13 @@ Real GeometricPrimitive3D::Distance(const Vector3& x) const
   case Segment:
     return AnyCast_Raw<Segment3D>(&data)->distance(x);
   case Sphere:
-    return AnyCast_Raw<Sphere3D>(&data)->distance(x);
+    return AnyCast_Raw<Sphere3D>(&data)->signedDistance(x);
   case Cylinder:
     return AnyCast_Raw<Cylinder3D>(&data)->distance(x);
   case AABB:
-    return AnyCast_Raw<AABB3D>(&data)->distance(x);
+    return AnyCast_Raw<AABB3D>(&data)->signedDistance(x);
   case Box:
-    return AnyCast_Raw<Box3D>(&data)->distance(x);
+    return AnyCast_Raw<Box3D>(&data)->signedDistance(x);
   case Triangle:
     return AnyCast_Raw<Triangle3D>(&data)->closestPoint(x).distance(x);
   default:
@@ -1151,9 +1156,9 @@ Real GeometricPrimitive3D::Distance(const AABB3D& b) const
 {
   switch(type) {
   case Point:
-    return b.distance(*AnyCast_Raw<Vector3>(&data));
+    return b.signedDistance(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
-    return Max(0.0,b.distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
+    return Max(0.0,b.signedDistance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   case AABB:
     return b.distance(*AnyCast_Raw<AABB3D>(&data));
   default:
@@ -1165,9 +1170,9 @@ Real GeometricPrimitive3D::Distance(const Box3D& b) const
 {
   switch(type) {
   case Point:
-    return b.distance(*AnyCast_Raw<Vector3>(&data));
+    return b.signedDistance(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
-    return Max(0.0,b.distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
+    return Max(0.0,b.signedDistance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   default:
     return false;
   }

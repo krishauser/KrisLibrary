@@ -124,6 +124,33 @@ Real AABB3D::distanceSquared(const Vector3& v,Vector3& out) const
   return out.distanceSquared(v);
 }
 
+Real AABB3D::signedDistance(const Point3D& pt) const
+{
+  Point3D temp;
+  return signedDistance(pt,temp);
+}
+
+Real AABB3D::signedDistance(const Point3D& pt,Point3D& out) const
+{
+  out=pt;
+  bool inside = true;
+  Real dmin = Inf;
+  if(out.x < bmin.x) { out.x=bmin.x; inside=false; }
+  else dmin = Min(dmin,out.x-bmin.x); 
+  if(out.y < bmin.y) { out.y=bmin.y; inside=false; }
+  else dmin = Min(dmin,out.y-bmin.y); 
+  if(out.z < bmin.z) { out.z=bmin.z; inside=false; }
+  else dmin = Min(dmin,out.z-bmin.z); 
+  if(out.x > bmax.x) { out.x=bmax.x; inside=false; }
+  else dmin = Min(dmin,bmax.x-out.x); 
+  if(out.y > bmax.y) { out.y=bmax.y; inside=false; }
+  else dmin = Min(dmin,bmax.y-out.y); 
+  if(out.z > bmax.z) { out.z=bmax.z; inside=false; }
+  else dmin = Min(dmin,bmax.z-out.z); 
+  if(!inside) return out.distance(pt);
+  else return -dmin;
+}
+
 Real AABB3D::distance(const AABB3D& bb) const
 {
   Point3D x,y;

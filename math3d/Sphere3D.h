@@ -20,7 +20,9 @@ struct AABB3D;
  */
 struct Sphere3D
 {
+  ///Note: this is actually the signed distance
   Real distance(const Point3D& v) const;
+  Real signedDistance(const Point3D& v) const;
   bool contains(const Point3D& v) const;
   bool contains(const Sphere3D& s) const;
   bool withinDistance(const Point3D& v, Real dist) const;

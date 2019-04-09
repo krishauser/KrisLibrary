@@ -28,6 +28,8 @@ struct Box2D : public ScaledLocalCoordinates2D
   Real distance(const Point2D& pt) const;
   Real distance(const Point2D& pt,Point2D& closestPt) const;
   Real distanceSquared(const Point2D& pt,Point2D& closestPt) const;
+  Real signedDistance(const Point2D& pt) const;
+  Real signedDistance(const Point2D& pt,Point2D& closestPt) const;
   void getAABB(AABB2D& bb) const;
   bool intersects(const AABB2D& b) const;
   bool intersects(const Box2D& b) const;

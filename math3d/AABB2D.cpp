@@ -229,3 +229,26 @@ Real AABB2D::distanceSquared(const Vector2& v,Vector2& out) const
   return out.distanceSquared(v);
 }
 
+Real AABB2D::signedDistance(const Vector2& pt) const
+{
+  Vector2 temp;
+  return signedDistance(pt,temp);
+}
+
+Real AABB2D::signedDistance(const Vector2& pt,Vector2& out) const
+{
+  out=pt;
+  bool inside = true;
+  Real dmin = Inf;
+  if(out.x < bmin.x) { out.x=bmin.x; inside=false; }
+  else dmin = Min(dmin,out.x-bmin.x); 
+  if(out.y < bmin.y) { out.y=bmin.y; inside=false; }
+  else dmin = Min(dmin,out.y-bmin.y); 
+  if(out.x > bmax.x) { out.x=bmax.x; inside=false; }
+  else dmin = Min(dmin,bmax.x-out.x); 
+  if(out.y > bmax.y) { out.y=bmax.y; inside=false; }
+  else dmin = Min(dmin,bmax.y-out.y); 
+  if(!inside) return out.distance(pt);
+  else return -dmin;
+}
+

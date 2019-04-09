@@ -15,7 +15,9 @@ namespace Math3D {
  */
 struct Circle2D
 {
+  ///Note: this is actually the signed distance
   Real distance(const Point2D& v) const;
+  Real signedDistance(const Point2D& v) const;
   bool contains(const Point2D& v) const;
   bool contains(const Circle2D& s) const;
   bool withinDistance(const Point2D& v, Real dist) const;

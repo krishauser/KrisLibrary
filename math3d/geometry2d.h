@@ -16,6 +16,11 @@
 
 namespace Math3D {
 
+/** @brief A generic 2D geometric primitive class.
+ *
+ * Note: Distance() routines may actually report the signed distance,
+ * rather than 0 if there is an overlap.
+ */
 class GeometricPrimitive2D
 {
  public:

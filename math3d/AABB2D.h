@@ -36,6 +36,8 @@ struct AABB2D
   Real distance(const Point2D&) const;
   Real distance(const Point2D& pt,Point2D& closest) const;
   Real distanceSquared(const Point2D& pt,Point2D& closest) const;
+  Real signedDistance(const Point2D&) const;
+  Real signedDistance(const Point2D& pt,Point2D& closest) const;
 
   Vector2 bmin, bmax;
 };
