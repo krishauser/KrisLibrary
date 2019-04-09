@@ -23,6 +23,7 @@ public:
   PQP_ToleranceAllResult toleranceAll;
 };
 
+DECLARE_LOGGER(Geometry)
 
 
 
@@ -277,11 +278,11 @@ Real CollisionMeshQuery::PenetrationDepth()
   if(penetration1->maxDepth <= 0 && penetration2->maxDepth <= 0) {
     Real d=Distance(1e-3,1e-2);
     if(d > 1e-3) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"PenetrationDepth(): Error, the two objects aren't penetrating?!?!");
-      LOG4CXX_INFO(KrisLibrary::logger(),"Distance "<<d);
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"PenetrationDepth(): Error, the two objects aren't penetrating?!?!");
+      LOG4CXX_INFO(GET_LOGGER(Geometry),"Distance "<<d);
       Abort();
     }
-    LOG4CXX_WARN(KrisLibrary::logger(),"PenetrationDepth(): Warning, the approximate computation failed, returning "<<Max(-d,(Real)1e-5));
+    LOG4CXX_WARN(GET_LOGGER(Geometry),"PenetrationDepth(): Warning, the approximate computation failed, returning "<<Max(-d,(Real)1e-5));
     //KrisLibrary::loggerWait();
     return Max(-d,(Real)1e-5);
   }
@@ -385,7 +386,7 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
         p2.push_back(pl2);
       }
       else {
-        LOG4CXX_WARN(KrisLibrary::logger(),"Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
+        LOG4CXX_WARN(GET_LOGGER(Geometry),"Warning, PQP detected overlapping triangles but we find they don't intersect?");
         continue;
       }
     }
@@ -405,7 +406,7 @@ void CollisionMeshQuery::TolerancePoints(vector<Vector3>& p1,vector<Vector3>& p2
           p2.push_back(pl2);
         }
         else {
-          LOG4CXX_WARN(KrisLibrary::logger(),"Warning, PQP detected overlapping triangles but we find they don't intersect?\n");
+          LOG4CXX_WARN(GET_LOGGER(Geometry),"Warning, PQP detected overlapping triangles but we find they don't intersect?");
           continue;
         }
       }
@@ -427,7 +428,7 @@ Real CollisionMeshQuery::Distance_Cached() const
 Real CollisionMeshQuery::PenetrationDepth_Cached() const
 {
   if(penetration1->maxDepth <= 0 && penetration2->maxDepth <= 0) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"PenetrationDepth_Cached(): Error, the two objects have no interior vertices!");
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"PenetrationDepth_Cached(): Error, the two objects have no interior vertices!");
     Abort();
   }
   if(penetration1->maxDepth <= 0) return penetration2->maxDepth;
@@ -524,7 +525,7 @@ void CollisionMeshQuery::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) 
   if(penetration1->maxDepth > 0) p1 = penetration1->deepestPoint;
   if(penetration2->maxDepth > 0) p2 = penetration2->deepestPoint;
   if(penetration1->maxDepth <= 0 && penetration2->maxDepth <= 0) {
-    LOG4CXX_WARN(KrisLibrary::logger(),"PenetrationPoints(): Warning, the two objects have no interior vertices!");
+    LOG4CXX_WARN(GET_LOGGER(Geometry),"PenetrationPoints(): Warning, the two objects have no interior vertices!  Results are undefined");
     //TODO : estimate penetration points/distance using collision pairs
     //closest points between m1 and m2
     Real closestDist = Inf, d;
@@ -550,7 +551,7 @@ void CollisionMeshQuery::PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) 
     
     d1 = p2-p1;
     d1.inplaceNormalize();
-    LOG4CXX_INFO(KrisLibrary::logger(),"Returning closest points "<<p1<<", "<<p2<<", dir "<<d1);
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Returning closest points "<<p1<<", "<<p2<<", dir "<<d1);
     //KrisLibrary::loggerWait();
     return;
   }
@@ -1126,7 +1127,7 @@ struct ClosestPointCallback
     :normalWeight(0),dmin(Inf),dmax(Inf),closestTri(-1), numTrianglesChecked(0), numBBsChecked(0)
   {}
   void Execute(const PQP_Model& m,const Vector3& p) {
-    pworld = p;
+    plocal = p;
     Assert(m.num_bvs != 0);
     //compute distance of random triangle -- perhaps faster pruning
     //int t = RandInt(m.num_tris);
@@ -1138,7 +1139,7 @@ struct ClosestPointCallback
     cp=tri.closestPoint(p);
     Real d=cp.distanceSquared(p);
     if(normalWeight != 0) 
-      d += normalWeight*nworld.distanceSquared(tri.normal());
+      d += normalWeight*nlocal.distanceSquared(tri.normal());
     dmax = dmin = d;
     closestTri = m.tris[t].id;
     numTrianglesChecked = 1;
@@ -1162,7 +1163,7 @@ struct ClosestPointCallback
     while(!q.empty()) {
       temp=*q.begin(); q.erase(q.begin());
       numBBsChecked++;
-      LOG4CXX_INFO(KrisLibrary::logger(),"Popped bound with min distance: "<<temp.minDist);
+      LOG4CXX_INFO(GET_LOGGER(Geometry),"Popped bound with min distance: "<<temp.minDist);
       int b=temp.index;
 
       bool prune = false;
@@ -1196,7 +1197,7 @@ struct ClosestPointCallback
 	DistanceLimitsBV(m.b[c1].d,p1,dbmin1,dbmax1);
 	DistanceLimitsBV(m.b[c2].d,p2,dbmin2,dbmax2);
 
-	LOG4CXX_INFO(KrisLibrary::logger(),"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2);
+	LOG4CXX_INFO(GET_LOGGER(Geometry),"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2);
 	Assert(dbmin1 <= dbmax1);
 	Assert(dbmin2 <= dbmax2);
 	if(dbmin1 < dmax) {
@@ -1205,7 +1206,7 @@ struct ClosestPointCallback
 	  VcV(temp.plocal,p1);
 	  q.insert(temp);
 	  if(dbmax1 < dmax) {
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Max distance set to "<<dbmax1<<" on child 1");
+	    LOG4CXX_INFO(GET_LOGGER(Geometry),"Max distance set to "<<dbmax1<<" on child 1");
 	    dmax = dbmax1;
 	    prune = true;
 	  }
@@ -1216,7 +1217,7 @@ struct ClosestPointCallback
 	  VcV(temp.plocal,p2);
 	  q.insert(temp);
 	  if(dbmax2 < dmax) {
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Max distance set to "<<dbmax2<<" on child 2");
+	    LOG4CXX_INFO(GET_LOGGER(Geometry),"Max distance set to "<<dbmax2<<" on child 2");
 	    dmax = dbmax2;
 	    prune = true;
 	  }
@@ -1227,7 +1228,7 @@ struct ClosestPointCallback
       set<ActivePair>::iterator i=q.upper_bound(temp);
       q.erase(i,q.end());
     }
-    LOG4CXX_INFO(KrisLibrary::logger(),numTrianglesChecked<<" triangles, "<<numBBsChecked<<" BBs checked");
+    LOG4CXX_INFO(GET_LOGGER(Geometry),numTrianglesChecked<<" triangles, "<<numBBsChecked<<" BBs checked");
     */
   }
 
@@ -1242,10 +1243,10 @@ struct ClosestPointCallback
       Copy(m.tris[t].p1,tri.a);
       Copy(m.tris[t].p2,tri.b);
       Copy(m.tris[t].p3,tri.c);
-      Vector3 temp=tri.closestPoint(pworld);
-      Real d=temp.distanceSquared(pworld);
+      Vector3 temp=tri.closestPoint(plocal);
+      Real d=temp.distanceSquared(plocal);
       if(normalWeight != 0) 
-	d += normalWeight*nworld.distanceSquared(tri.normal());
+	d += normalWeight*nlocal.distanceSquared(tri.normal());
       if(d < dmin) {
 	dmax = dmin = d;
 	cp = temp;
@@ -1262,8 +1263,8 @@ struct ClosestPointCallback
       Real dbmin1,dbmax1;
       Real dbmin2,dbmax2;
       Vector3 p1,p2;
-      ToLocal(m.b[c1],pworld,p1);
-      ToLocal(m.b[c2],pworld,p2);
+      ToLocal(m.b[c1],plocal,p1);
+      ToLocal(m.b[c2],plocal,p2);
       DistanceLimitsBV(m.b[c1].d,p1,dbmin1,dbmax1);
       DistanceLimitsBV(m.b[c2].d,p2,dbmin2,dbmax2);
       //increas the bounds if the normals are needed
@@ -1271,7 +1272,7 @@ struct ClosestPointCallback
 	dbmax1=dbmax1+Two*normalWeight;
 	dbmax2=dbmax2+Two*normalWeight;
       }
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2);
+      //LOG4CXX_INFO(GET_LOGGER(Geometry),"Children "<<c1<<", "<<c2<<", distances "<<dbmin1<<", "<<dbmin2);
       bool reverse=false;
       if(dbmin2 == dbmin1) { //point is in the bboxes
 	reverse = (dbmax2 < dbmax1);
@@ -1294,7 +1295,7 @@ struct ClosestPointCallback
   }
 
   Real normalWeight;
-  Vector3 pworld,nworld;
+  Vector3 plocal,nlocal;
   Real dmin,dmax;  //min squared distance, max squared distance bound
   int closestTri;
   Triangle3D tri;
@@ -1315,8 +1316,8 @@ int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp)
   //TEST
   int regularTri = mesh.ClosestPoint(p,cp);
   if(!FuzzyEquals(cb.cp.distance(p),cp.distance(p),1e-3)) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"ClosestPoint error: "<<cb.cp.distance(p)<<" != "<<cp.distance(p));
-    LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle "<<cb.closestTri<<" vs "<<regularTri);
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"ClosestPoint error: "<<cb.cp.distance(p)<<" != "<<cp.distance(p));
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Triangle "<<cb.closestTri<<" vs "<<regularTri);
   }
   Assert(FuzzyEquals(cb.cp.distance(p),cp.distance(p),1e-3));
   */
@@ -1393,7 +1394,7 @@ bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g)
   case GeometricPrimitive3D::Empty:
     return false;
   default:
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Collide: Collider for type "<<g.TypeName());
+        LOG4CXX_ERROR(GET_LOGGER(Geometry),"Collide: Collider for type "<<g.TypeName());
     return false;
   }
 }
@@ -1414,7 +1415,8 @@ bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
   case GeometricPrimitive3D::Box:
     {
       if(d != 0) {
-	FatalError("Not yet able to within-distance test of %s with a CollisionMesh\n",a.TypeName());
+	LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to within-distance test of "<<a.TypeName()<<" vs CollisionMesh");
+  return false;
       }
       return Collide(c,a);
     }
@@ -1425,7 +1427,7 @@ bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
       return Collide(c,s);
     }
   default:
-    FatalError("Not yet able to collide a primitive of type %s with a CollisionMesh\n",a.TypeName());
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to collide a primitive of type "<<a.TypeName()<<" vs CollisionMesh");
     return false;
   }
 }
@@ -1520,7 +1522,7 @@ void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector
   case GeometricPrimitive3D::Empty:
     return;
   default:
-        LOG4CXX_ERROR(KrisLibrary::logger(),"CollideAll: Collider for type "<<g.TypeName());
+        LOG4CXX_ERROR(GET_LOGGER(Geometry),"CollideAll: Collider for type "<<g.TypeName());
   }
 }
 
@@ -1575,7 +1577,8 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
   case GeometricPrimitive3D::Box:
     if(d != 0) {
       if(!g.SupportsDistance(GeometricPrimitive3D::Triangle)) {
-        FatalError("Not yet able to within-distance test of %s with a CollisionMesh\n",g.TypeName());
+        LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to within-distance test of "<<g.TypeName()<<" vs CollisionMesh");
+        return;
       }
       //compute an expanded bounding box and collide them
       Box3D bbox;
@@ -1616,7 +1619,8 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
   case GeometricPrimitive3D::Empty:
     return;
   default:
-        LOG4CXX_ERROR(KrisLibrary::logger(),"NearbyTriangles: Collider for type "<<g.TypeName());
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"NearbyTriangles: Collider for type "<<g.TypeName()<<" not available");
+    return;
   }
 }
 
@@ -1634,6 +1638,78 @@ void NearbyTriangles(const CollisionMesh& m1,const CollisionMesh& m2,Real d,vect
   else {
     q.WithinDistanceAll(d);
     q.TolerancePairs(tris1,tris2);
+  }
+}
+
+Real Distance(const CollisionMesh& c,const Vector3& pt)
+{
+  Vector3 cp;
+  ClosestPoint(c,pt,cp);
+  return pt.distance(cp);
+}
+
+Real Distance(const CollisionMesh& c,const Vector3& pt,int& closestTri,Vector3& cp,Vector3& dir)
+{
+  closestTri = ClosestPoint(c,pt,cp);
+  cp = c.currentTransform*cp;
+  dir = pt - cp;
+  Real l=dir.norm();
+  if(FuzzyZero(l)) {
+    Vector3 nlocal = c.TriangleNormal(closestTri);
+    c.currentTransform.R.mul(nlocal,dir);
+  }
+  dir /= l;
+  return l;
+}
+
+Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a)
+{
+  int closestTri;
+  Vector3 cp,dir;
+  return Distance(c,a,closestTri,cp,dir);
+}
+
+Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestTri,Vector3& cp,Vector3& dir)
+{
+  switch(a.type) {
+  case GeometricPrimitive3D::Point:
+    return Distance(c,*AnyCast_Raw<Vector3>(&a.data),closestTri,cp,dir);
+  case GeometricPrimitive3D::Segment:
+  case GeometricPrimitive3D::Triangle:
+  case GeometricPrimitive3D::AABB:
+  case GeometricPrimitive3D::Box:
+    {
+      if(!a.SupportsDistance(GeometricPrimitive3D::Triangle)) {
+        LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to within-distance test of "<<a.TypeName()<<" vs CollisionMesh");
+        return Inf;
+      }
+      LOG4CXX_DEBUG(GET_LOGGER(Geometry),"CollisionMesh-"<<a.TypeName()<<" distance uses inefficient linear search");
+      LOG4CXX_DEBUG(GET_LOGGER(Geometry),"CollisionMesh-"<<a.TypeName()<<" distance does not return correct closest point and direction");
+      RigidTransform Tlocal;
+      Tlocal.setInverse(c.currentTransform);
+      GeometricPrimitive3D alocal = a;
+      alocal.Transform(Tlocal);
+      Real d=Inf;
+      Triangle3D tri;
+      for(size_t i=0;i<c.tris.size();i++) {
+        c.GetTriangle(i,tri);
+        Real di = alocal.Distance(tri);
+        if(di < d) {
+          d = di;
+          closestTri = (int)i;
+        }
+      }
+      return d;
+    }
+  case GeometricPrimitive3D::Sphere:
+    {
+      Sphere3D s = *AnyCast_Raw<Sphere3D>(&a.data);
+      Real dcenter = Distance(c,s.center,closestTri,cp,dir);
+      return dcenter-s.radius;
+    }
+  default:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to collide a primitive of type "<<a.TypeName()<<" vs CollisionMesh");
+    return false;
   }
 }
 
@@ -1661,11 +1737,13 @@ int ClosestPointAndNormal(const TriMesh& m,Real pWeight,Real nWeight,const Vecto
 
 int ClosestPointAndNormal(const CollisionMesh& mesh,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cp)
 {
-  //TODO: take into account current transform of the mesh?
+  Vector3 plocal,nlocal;
+  mesh.currentTransform.mulInverse(p,plocal);
+  mesh.currentTransform.R.mulTranspose(n,nlocal);
   ClosestPointCallback cb;
   cb.normalWeight = nWeight;
-  cb.nworld = n;
-  cb.Execute(*mesh.pqpModel,p);
+  cb.nlocal = nlocal;
+  cb.Execute(*mesh.pqpModel,plocal);
   cp = cb.cp;
   return cb.closestTri;
 }
@@ -1826,7 +1904,7 @@ TriDistance(PQP_REAL R[3][3], PQP_REAL T[3], Tri *t1, Tri *t2,
     Segment3D s;
     bool res=a.intersects(b,s);
     if(!res) {
-      LOG4CXX_WARN(KrisLibrary::logger(),"Warning: PQP says triangles intersect, but I don't find an intersection\n");
+      LOG4CXX_WARN(GET_LOGGER(Geometry),"Warning: PQP says triangles intersect, but I don't find an intersection");
       Copy((a.a+a.b+a.c)/3.0,p);
       Copy((b.a+b.b+b.c)/3.0,q);
     }

@@ -5,6 +5,8 @@
 #include <KrisLibrary/Logger.h>
 #include <Timer.h>
 
+DECLARE_LOGGER(Geometry)
+
 //switch to brute force when # points drops below 1000
 #define DEBUG_DISTANCE_CHECKING 0
 //#define DEBUG_DISTANCE_CHECKING 1
@@ -153,18 +155,18 @@ Real Distance(const CollisionImplicitSurface& s,const Vector3& pt,Vector3& surfa
 {
   Vector3 ptlocal;
   s.currentTransform.mulInverse(pt,ptlocal);
-  Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
   Vector3 pt_clamped;
   Real d_bb = s.baseGrid.bb.distance(ptlocal,pt_clamped);
- 
+  Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
+  
   s.baseGrid.Gradient(pt_clamped,direction);
-  //cout<<"Gradient is "<<direction<<endl;
   direction.inplaceNormalize();
   surfacePt = pt_clamped - direction*sdf_value;
   if(d_bb > 0) {
     direction = surfacePt - ptlocal;
-    direction.inplaceNormalize();
-    //cout<<"External, changing direction to "<<direction<<endl;
+    sdf_value = 0;
+    d_bb = direction.norm();
+    direction /= d_bb;
   }
   else
     direction.inplaceNegative();
@@ -184,11 +186,11 @@ Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a
   else if(a.type == GeometricPrimitive3D::Sphere) {
     const Sphere3D* s=AnyCast_Raw<Sphere3D>(&a.data);
     Real d = Distance(grid,s->center,gridclosest,direction);
-    geomclosest = s->center - Min(s->radius,Max(d,-s->radius))*direction;
+    geomclosest = s->center + s->radius*direction;
     return d - s->radius;
   }
   else {
-    FatalError("Can't collide an implicit surface and a non-sphere primitive yet\n");
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can't collide an implicit surface and a non-sphere primitive yet");
     return 0;
   }
 }
@@ -206,7 +208,7 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
   sbbexpanded.origin -= margin*(sbb.xbasis+sbb.ybasis+sbb.zbasis);
   //quick reject test
   if(!pcbb.intersectsApprox(sbbexpanded)) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"0 contacts (quick reject) time "<<timer.ElapsedTime());
+    //LOG4CXX_INFO(GET_LOGGER(Geometry),"0 contacts (quick reject) time "<<timer.ElapsedTime());
     return false;
   }
   RigidTransform Tw_pc;
@@ -226,15 +228,15 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
     if(Distance(s,p_w) <= margin) {
       collidingPoints.push_back(aids[i]);
       if(collidingPoints.size() >= maxContacts) {
-        LOG4CXX_INFO(KrisLibrary::logger(),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());
+        LOG4CXX_DEBUG(GET_LOGGER(Geometry),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());
 
-        //LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Collision in time "<<timer.ElapsedTime());
         return true;
       }
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());     
-  // LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
+  LOG4CXX_DEBUG(GET_LOGGER(Geometry),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());     
+  // LOG4CXX_INFO(GET_LOGGER(Geometry),"No collision in time "<<timer.ElapsedTime());
   return !collidingPoints.empty();
 
   /*
@@ -258,16 +260,16 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
       if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
         elements2.push_back(i);
         if(elements2.size() >= maxContacts) {
-          LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
+          LOG4CXX_INFO(GET_LOGGER(Geometry),"Collision in time "<<timer.ElapsedTime());
           return true;
         }
       }
     }
-    LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"No collision in time "<<timer.ElapsedTime());
     return false;
   }
   else {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Box testing\n");
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Box testing\n");
     gWithinDistanceMargin = margin;
     gWithinDistancePC = &a;
     gWithinDistanceGeom = &b;
@@ -275,8 +277,8 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
     gWithinDistanceElements2 = &elements2;
     gWithinDistanceMaxContacts = maxContacts;
     bool collisionFree = a.grid.IndexQuery(imin,imax,withinDistance_PC_AnyGeom);
-    if(collisionFree) LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
-    else LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
+    if(collisionFree) LOG4CXX_INFO(GET_LOGGER(Geometry),"No collision in time "<<timer.ElapsedTime());
+    else LOG4CXX_INFO(GET_LOGGER(Geometry),"Collision in time "<<timer.ElapsedTime());
     return !collisionFree;
   }
   */

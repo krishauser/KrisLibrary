@@ -34,7 +34,7 @@ class CollisionPointCloud : public Meshing::PointCloud3D
   shared_ptr<OctreePointSet> octree;
 };
 
-///Returns the orientd bounding box of the point cloud
+///Returns the oriented bounding box of the point cloud
 void GetBB(const CollisionPointCloud& pc,Box3D& b);
 
 ///Computes whether any point in the pc is within tol distance of the

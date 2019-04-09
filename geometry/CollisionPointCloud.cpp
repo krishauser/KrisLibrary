@@ -2,6 +2,8 @@
 #include "CollisionPointCloud.h"
 #include <Timer.h>
 
+DECLARE_LOGGER(Geometry)
+
 namespace Geometry {
 
 CollisionPointCloud::CollisionPointCloud()
@@ -61,12 +63,12 @@ void CollisionPointCloud::InitCollisions()
       validptcount++;
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
   //print stats
   int nmax = 0;
   for(GridSubdivision3D::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
     nmax = Max(nmax,(int)i->second.size());
-  LOG4CXX_INFO(KrisLibrary::logger(),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
   timer.Reset();
 
   //initialize the octree, 10 points per cell, res is minimum cell size
@@ -75,10 +77,10 @@ void CollisionPointCloud::InitCollisions()
     if(IsFinite(points[i].x))
       octree->Add(points[i],(int)i);
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
   //TEST: should we fit to points
   octree->FitToPoints();
-  LOG4CXX_INFO(KrisLibrary::logger(),"  octree fit to points in time "<<timer.ElapsedTime());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree fit to points in time "<<timer.ElapsedTime());
   /*
   //TEST: method 2.  Turns out to be much slower
   timer.Reset();
@@ -87,7 +89,7 @@ void CollisionPointCloud::InitCollisions()
   for(size_t i=0;i<points.size();i++)
     octree->Add(points[i],(int)i);
   octree->Collapse(10);
-  LOG4CXX_INFO(KrisLibrary::logger(),"  octree 2 initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree 2 initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size());
   */
 }
 
@@ -266,7 +268,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
   pc.grid.PointToIndex(gbb.bmax,imax);
   int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
   if(numCells > (int)pc.points.size()) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Testing all points\n");
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Testing all points\n");
     //test all points, linearly
     for(size_t i=0;i<pc.points.size();i++)
       if(glocal.Distance(pc.points[i]) <= tol) {
@@ -275,7 +277,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
       }
   }
   else {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Testing points in BoxQuery\n");
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Testing points in BoxQuery\n");
     gNearbyTestThreshold = tol;
     gNearbyTestResults.resize(0);
     gNearbyTestObject = &glocal;
@@ -423,19 +425,23 @@ public:
     if(Prune(anode,bnode))
       return true;
     if(a.octree->IsLeaf(anode)) {
+      if(a.octree->NumPoints(anode)==0) return true;
       if(b.octree->IsLeaf(bnode)) {
+        if(a.octree->NumPoints(bnode)==0) return true;
         //collide the two points contained within
         vector<Vector3> apts,bpts;
         vector<int> aids,bids;
-        a.octree->GetPoints(aindex,apts);
-        b.octree->GetPoints(bindex,bpts);
         a.octree->GetPointIDs(aindex,aids);
         b.octree->GetPointIDs(bindex,bids);
+        a.octree->GetPoints(aindex,apts);
+        b.octree->GetPoints(bindex,bpts);
+        for(auto& bpt: bpts)
+          bpt = Tba*bpt;
         for(size_t i=0;i<apts.size();i++) {
           for(size_t j=0;j<bpts.size();j++) {
             if(apts[i].distanceSquared(bpts[j]) <= Sqr(margin)) {
               acollisions.push_back(aids[i]);
-              acollisions.push_back(bids[i]);
+              bcollisions.push_back(bids[j]);
               if(acollisions.size() >= maxContacts) return false;
             }
           }

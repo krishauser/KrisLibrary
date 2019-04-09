@@ -69,16 +69,22 @@ class CollisionMeshQuery
 
   Real Distance_Cached() const;
   Real PenetrationDepth_Cached() const;
+  ///Returns the closest points between the mesh after a Distance call.  Results are in in local coordinates.
   void ClosestPoints(Vector3& p1,Vector3& p2) const;
+  ///Returns the closest triangles
   void ClosestPair(int& t1,int& t2) const;
+  ///Returns a pair of points defining a true result of a WithinDistance call.  Results are in in local coordinates.
   void TolerancePoints(Vector3& p1,Vector3& p2) const;
+  ///Returns a pair of triangles triangles defining a true result of a WithinDistance call.
   void TolerancePair(int& t1,int& t2) const;
-  //d1 is the direction that m1 can move to get out of m2 (in world coords)
+  //d1 is the direction that m1 can move to get out of m2 (in world coords).  p1 and p2 are in local coordinates, while d1 is in world coordinates
   void PenetrationPoints(Vector3& p1,Vector3& p2,Vector3& d1) const;
   //extracting the pairs of interacting features
   void CollisionPairs(std::vector<int>& t1,std::vector<int>& t2) const;
-  void TolerancePairs(std::vector<int>& t1,std::vector<int>& t2) const;
+  ///Returns all pairs of points that are within the given tolerance of a WithinDistance call.  Results are in in local coordinates.
   void TolerancePoints(std::vector<Vector3>& p1,std::vector<Vector3>& t2) const;
+  ///Returns all pairs of triangles that are within the given tolerance of a WithinDistance call.
+  void TolerancePairs(std::vector<int>& t1,std::vector<int>& t2) const;
 
   const CollisionMesh *m1, *m2;
 
@@ -140,8 +146,8 @@ bool Collide(const CollisionMesh& m,const Box3D& b);
 bool Collide(const CollisionMesh& m1,const CollisionMesh& m2);
 bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g);
 
-///Casts a ray at the mesh, returns the index of the first triangle hit
-///(-1 if none) and the colliding point in pt. 
+///Casts a ray at the mesh. Returns the index of the first triangle hit
+///(-1 if none) and stores the colliding point in pt (given in world coordinates).
 int RayCast(const CollisionMesh& m,const Ray3D& r,Vector3& pt);
 
 ///Same as RayCast, but the ray (and colliding point) are in the local
@@ -167,15 +173,31 @@ void NearbyTriangles(const CollisionMesh& m,const Vector3& p,Real d,std::vector<
 void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d,std::vector<int>& tris,int max=INT_MAX);
 void NearbyTriangles(const CollisionMesh& m1,const CollisionMesh& m2,Real d,std::vector<int>& tris1,std::vector<int>& tris2,int max=INT_MAX);
 
-/// Convenience function to check distance between two meshes
+///Returns the nearest distance from any point in m to g.  O(log n) running time.
+Real Distance(const CollisionMesh& m,const Vector3& p);
+///Same as the above, but with additional outputs
+///
+///Outputs
+///- surfacePt is the closest point on the surface, in world coordinates
+///- direction is the unit normal from the surface to p, in world coordinates
+Real Distance(const CollisionMesh& m,const Vector3& p,int& closestTri,Vector3& surfacePt,Vector3& direction);
+///Returns the nearest distance from any point in m to g.  O(log n) running time for point / sphere, O(n) otherwise.
+Real Distance(const CollisionMesh& m,const GeometricPrimitive3D& g);
+///Same as the above, but with additional outputs
+///
+///Outputs
+///- surfacePt is the closest point on the surface, in world coordinates
+///- direction is the unit normal from the surface to the closest / deepest point on g, in world coordinates
+Real Distance(const CollisionMesh& m,const GeometricPrimitive3D& g,int& closestTri,Vector3& surfacePt,Vector3& direction);
+/// Checks distance between two meshes (convenience function, equivalent to m1.Distance(m2))
 Real Distance(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,Real relErr);
 
-///Finds the closest point pt to p on m and returns the triangle index. cp is given in the mesh's local frame
-int ClosestPoint(const CollisionMesh& m,const Vector3& p,Vector3& cp);
+///Finds the closest point pt to p on m and returns the triangle index. The closest point is cplocal, given in the mesh's local frame
+int ClosestPoint(const CollisionMesh& m,const Vector3& p,Vector3& cplocal);
 
 
-/// Convenience function to compute closest points between two meshes
-void ClosestPoints(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,Real relErr,Vector3& v1,Vector3& v2);
+/// Convenience function to compute closest points between two meshes.  v1 and v2 are in their respective mesh's local coordinates
+void ClosestPoints(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,Real relErr,Vector3& v1local,Vector3& v2local);
 
 ///Returns the point on the mesh that minimizes
 ///   pWeight||p-x||^2 + nWeight||n-nx||^2.
@@ -183,7 +205,11 @@ void ClosestPoints(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,R
 int ClosestPointAndNormal(const Meshing::TriMesh& m,Real pWeight,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cp);
 
 ///Same as above, but uses the PQP bounding heirarchy and assumes pWeight = 1.
-int ClosestPointAndNormal(const CollisionMesh& mesh,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cp);
+///
+///p and n are assumed given in world coordinates, with the mesh's current transform taken into account.
+///
+///The closest point is cplocal, which is given in mesh-local coordinates
+int ClosestPointAndNormal(const CollisionMesh& mesh,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cplocal);
 
 
 //should eventually implement these...
