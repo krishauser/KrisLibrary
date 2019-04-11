@@ -41,12 +41,27 @@ void GetBB(const CollisionPointCloud& pc,Box3D& b);
 ///primitive g. O(min(n,c)) running time, where c is the number of grid
 ///cells within distance tol of the bounding box of g.
 bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Real tol);
-///Returns the nearest distance from any point in pc to g.  O(n) running time.
+///Returns the nearest distance from any point in pc to g.  O(log n) running time.
+Real Distance(const CollisionPointCloud& pc,const Vector3& pt);
+///Returns the nearest distance from any point in pc to g.  O(log n) running time.
+///Saves the closest point index into ClosestPoint.
+///If upperBound is given, and if no point is closer than upperBound,
+///this may return upperBound as the return value and closestPoint=-1.
+Real Distance(const CollisionPointCloud& pc,const Vector3& pt,int& closestPoint,Real upperBound);
+///Returns the nearest distance from any point in pc to g.  O(log n) running time
+///for points and spheres, O(n) running time for everythign else.
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g);
-///Returns the nearest distance from any point in pc to g.  O(n) running time.  Saves the closest
-///point index into closestPoint, and if upperBound is given, then if no point is closer than upperBound,
+///Returns the nearest distance from any point in pc to g.  O(log n) running time
+///for points and spheres, O(n) running time for everything else.  Saves the closest
+///point index into closestPoint.
+///If upperBound is given, and if no point is closer than upperBound,
 ///this may return upperBound as the return value and closestPoint=-1.
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& closestPoint,Real upperBound=Inf);
+///Returns the nearest distance from any point in pc1 to any point in pc2.  O(n log n) running time. 
+///Saves the closest point pair into closestPoint1 and closestPoint2.
+///If upperBound is given, then if no pair of points is closer than upperBound, this may return
+///upperBound as the return distance and closestPoint1=closestPoint2=-1.
+Real Distance(const CollisionPointCloud& pc1,const CollisionPointCloud& pc2,int& closestPoint1,int& closestPoint2,Real upperBound=Inf);
 ///Computes the set of points in the pc that are within tol distance of the
 ///primitive g.  O(min(n,c)) running time, where c is the number of grid
 ///cells within distance tol of the bounding box of g.

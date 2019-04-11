@@ -269,9 +269,9 @@ public:
   {
     ///the depth of the contact, padding included
     Real depth;
-    ///the contact points on object1 and object2, in world coordinates
+    ///the contact points on the padded geometries of object1 and object2, in world coordinates
     Vector3 p1,p2;
-    ///the outward contact normal from object 2 pointing into object 1, in world coordinates
+    ///the outward contact normal from object 1 pointing into object 2, in world coordinates
     Vector3 n;
     ///the item defining the element to which this point belongs
     int elem1,elem2;
@@ -280,6 +280,7 @@ public:
   };
 
   AnyContactsQueryResult();
+  AnyContactsQueryResult(AnyContactsQueryResult&& other) = default;
   ///The list of computed contact points
   vector<ContactPair> contacts;
   ///True if clustering was performed

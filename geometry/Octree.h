@@ -125,7 +125,7 @@ class OctreePointSet : public Octree
   ///Returns the ID of the closest point for which r intersects a ball of
   ///radius radius around it
   int RayCast(const Ray3D& r,Real radius) const;
-  bool NearestNeighbor(const Vector3& c,Vector3& closest,int& id) const;
+  bool NearestNeighbor(const Vector3& c,Vector3& closest,int& id,Real upperBound=Inf) const;
   void KNearestNeighbors(const Vector3& c,int k,vector<Vector3>& closest,vector<int>& ids) const;
   ///Collapses all non-leaf nodes if the collapsed number of points per cell
   ///is less than or equal to maxSize

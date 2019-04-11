@@ -45,15 +45,15 @@ Real Distance(const CollisionImplicitSurface& s,const Vector3& pt);
 ///Returns the distance between s and pt, assuming s is a signed distance field.  Negative values
 ///indicate interior points.  
 ///
-///Outputs
+///Outputs:
 ///- surfacePt is the closest point on the surface
-///- direction is the unit normal in the direction of decreasing distance.  If pt is outside, this points
-///  toward surfacePt, but if pt is inside, this points further into s.
+///- direction is the unit normal in the direction of decreasing signed distance.  If pt is outside, 
+///  this points toward surfacePt, but if pt is inside, this points further into s.
 ///
 ///Inputs and outputs are all in world coordinates.
 Real Distance(const CollisionImplicitSurface& s,const Vector3& pt,Vector3& surfacePt,Vector3& direction);
 
-///Same as above, except that 
+///Same as above, except that:
 ///- geomPt is the closest/deepest point on geom.
 ///- direction is the unit normal of decreasing distance, in that if geom is moved in this direction, the distance decreases.
 ///

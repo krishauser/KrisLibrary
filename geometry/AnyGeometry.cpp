@@ -9,6 +9,7 @@
 #include "CollisionImplicitSurface.h"
 #include <utils/stringutils.h>
 #include <meshing/IO.h>
+#include <structs/Heap.h>
 #include <Timer.h>
 #include <fstream>
 #include <stdlib.h>
@@ -1093,18 +1094,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt)
   case PointCloud:
     {
       const CollisionPointCloud& pc = PointCloudCollisionData();
-      Vector3 ptlocal;
-      GetTransform().mulInverse(pt,ptlocal);
-      Vector3 cp;
-      int id;
-      if(!pc.octree->NearestNeighbor(ptlocal,cp,id)) return Inf;
-      return Min(cp.distance(ptlocal)-margin,0.0);
-      /*
-      Real dmin = Inf;
-      for(size_t i=0;i<pc.points.size();i++)
-	dmin = Min(dmin,ptlocal.distanceSquared(pc.points[i]));
-      return Min(Sqrt(dmin)-margin,0.0);
-      */
+      return Min(::Distance(pc,pt)-margin,0.0);
     }
   case Group:
     {
@@ -1112,7 +1102,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt)
       Real dmin = Inf;
       for(size_t i=0;i<items.size();i++)
 	dmin = Min(dmin,items[i].Distance(pt));
-      return Min(Sqrt(dmin)-margin,0.0);
+      return Min(dmin-margin,0.0);
     }
   }
   return Inf;
@@ -1397,6 +1387,7 @@ public:
   Real margin;
   size_t maxContacts;
   vector<int> pcpoints,meshtris;
+  vector<Real> pairdistances2;
   PointMeshCollider(const CollisionPointCloud& a,const CollisionMesh& b,Real _margin)
     :pc(a),mesh(b),margin(_margin),maxContacts(1)
   {
@@ -1446,15 +1437,20 @@ public:
 	vector<int> pcids;
 	pc.octree->GetPoints(pcOctreeNode,pts);
 	pc.octree->GetPointIDs(pcOctreeNode,pcids);
-	Sphere3D temp;
-	temp.radius = margin;
+	Real dmin2 = Sqr(margin);
+  int closestpt = -1;
 	for(size_t i=0;i<pts.size();i++) {
-	  temp.center = pts[i];
-	  if(Collide(tri,temp)) {
-	    pcpoints.push_back(pcids[i]);
-	    meshtris.push_back(mesh.pqpModel->tris[t].id);
-	    if(pcpoints.size() >= maxContacts) return false;
-	  }
+	  Vector3 pt = tri.closestPoint(pts[i]);
+    Real d2 = pts[i].distanceSquared(pt);
+    if(d2 < dmin2) {
+      dmin2 = d2;
+      closestpt = pcids[i];
+    }
+  }
+  if(closestpt >= 0) {
+    pcpoints.push_back(closestpt);
+    meshtris.push_back(mesh.pqpModel->tris[t].id);
+    pairdistances2.push_back(dmin2);
 	}
 	//continue
 	return true;
@@ -1502,8 +1498,36 @@ bool Collides(const CollisionPointCloud& a,Real margin,const CollisionMesh& b,
   PointMeshCollider collider(a,b,margin);
   bool res=collider.Recurse(maxContacts);
   if(res) {
-    elements1=collider.pcpoints;
-    elements2=collider.meshtris;
+    //do we want to filter by closest pairs?
+    map<int,int> closest1,closest2;
+    map<int,Real> dclosest1,dclosest2;
+    for(size_t i=0;i<collider.pcpoints.size();i++) {
+      if(closest1.count(collider.pcpoints[i]) == 0 || collider.pairdistances2[i] < dclosest1[collider.pcpoints[i]]) {
+        closest1[collider.pcpoints[i]] = collider.meshtris[i];
+        dclosest1[collider.pcpoints[i]] = collider.pairdistances2[i];
+      }
+    }
+    for(size_t i=0;i<collider.meshtris.size();i++) {
+      if(closest2.count(collider.meshtris[i]) == 0 || collider.pairdistances2[i] < dclosest2[collider.meshtris[i]]) {
+        closest2[collider.meshtris[i]] = collider.pcpoints[i];
+        dclosest2[collider.meshtris[i]] = collider.pairdistances2[i];
+      }
+    }
+    elements1.resize(0);
+    elements2.resize(0);
+    for(const auto& c1: closest1) {
+      elements1.push_back(c1.first);
+      elements2.push_back(c1.second);
+    }
+    for(const auto& c2: closest2) {
+      if(closest1[c2.second] != c2.first) {
+        elements1.push_back(c2.second);
+        elements2.push_back(c2.first);
+      }
+    }
+    //Basic version
+    //elements1=collider.pcpoints;
+    //elements2=collider.meshtris;
     return true;
   }
   return false;
@@ -1848,6 +1872,7 @@ public:
   int pcpoint;
   int meshtri;
   Vector3 meshpoint;  //note: local coordinates
+  Heap<pair<int,int>,Real> queue;
 
   PointMeshDistance(const CollisionPointCloud& a,const CollisionMesh& b,Real _absErr,Real _relErr,Real _upperBound=Inf)
     :pc(a),mesh(b),absErr(_absErr),relErr(_relErr),upperBound(_upperBound),pcpoint(-1),meshtri(-1)
@@ -1855,7 +1880,8 @@ public:
     Twa.setInverse(a.currentTransform);
     Tba.mul(Twa,b.currentTransform);
     Tab.setInverse(Tba);
-    RigidTransformToPQP(Tab,pqpRab,pqpTab);
+    //RigidTransformToPQP(Tab,pqpRab,pqpTab);
+    RigidTransformToPQP(Tba,pqpRab,pqpTab);
 
     RigidTransform ident;
     ident.setIdentity();
@@ -1874,102 +1900,168 @@ public:
       meshpoint = cp;
     }
   }
+  Real Distance(const OctreeNode& pcnode,const BV& meshnode) {
+    //Vector3 halfdims = (pcnode.bb.bmax-pcnode.bb.bmin)*0.5;
+    //Vector3 center = (pcnode.bb.bmin+pcnode.bb.bmax)*0.5;
+    //halfdims.get(pcbv.d);
+    //center.get(pcbv.Tr);
+    //PQP uses rectangle-swept-sphere to do distance calculation
+    Vector3 d = pcnode.bb.bmax - pcnode.bb.bmin;
+    pcbv.Tr[0] = pcnode.bb.bmin.x;
+    pcbv.Tr[1] = pcnode.bb.bmin.y;
+    pcbv.Tr[2] = (pcnode.bb.bmin.z+pcnode.bb.bmax.z)*0.5;
+    pcbv.l[0] = d.x;
+    pcbv.l[1] = d.y;
+    pcbv.r = d.z*0.5;
+    return BV_Distance2(pqpRab,pqpTab,&pcbv,&meshnode);
+  }
+  void UpdateLeaves(const OctreeNode& pcOctreeNode,const BV& meshnode)
+  {
+    int t = -meshnode.first_child-1;
+    Triangle3D tri;
+    Copy(mesh.pqpModel->tris[t].p1,tri.a);
+    Copy(mesh.pqpModel->tris[t].p2,tri.b);
+    Copy(mesh.pqpModel->tris[t].p3,tri.c);
+    tri.a = Tba * tri.a;
+    tri.b = Tba * tri.b;
+    tri.c = Tba * tri.c;
+    //collide the triangle and points
+    vector<Vector3> pts;
+    vector<int> pcids;
+    pc.octree->GetPoints(pcOctreeNode,pts);
+    pc.octree->GetPointIDs(pcOctreeNode,pcids);
+    Vector3 cp;
+    for(size_t i=0;i<pts.size();i++) {
+      cp = tri.closestPoint(pts[i]);
+      Real d = pts[i].distance(cp);
+      if(d < upperBound) {
+        upperBound = d;
+        pcpoint = pcids[i];
+        meshtri = t;
+        meshpoint = Tab*cp;
+      }
+    }
+  }
   bool Recurse()
   {
-    if(Distance(pc.octree->Node(0),mesh.pqpModel->b[0]) >= upperBound)
-      return false;
-    _Recurse(0,0);
-    return pcpoint >= 0;
+    int maxqueuesize = 100;
+    queue.push(make_pair(0,0),-Distance(pc.octree->Node(0),mesh.pqpModel->b[0]));
+    while(!queue.empty()) {
+      if(-queue.topPriority()*(1+relErr)+absErr >= upperBound)
+        break;
+      pair<int,int> next = queue.top(); queue.pop();
+      int pcOctreeNode = next.first;
+      int meshBVHNode = next.second;
+
+      if(queue.size() >= maxqueuesize) {
+        Recurse(pcOctreeNode,meshBVHNode);
+        continue;
+      }
+
+      const OctreeNode& pcnode = pc.octree->Node(pcOctreeNode);
+      const BV& meshnode = mesh.pqpModel->b[meshBVHNode];
+      if(pc.octree->IsLeaf(pcnode)) {
+        if(pc.octree->NumPoints(pcnode)==0)
+          continue;
+        if(meshnode.Leaf()) {
+          UpdateLeaves(pcnode,meshnode);
+          continue;
+        }
+      }
+      bool splitPC = true;
+      if(pc.octree->IsLeaf(pcnode))
+        splitPC = false;
+      else if(!meshnode.Leaf()) {
+        //determine which BVH to split
+        Real vpc = Volume(pcnode);
+        Real vmesh = Volume(meshnode);
+        if(vpc*10 < vmesh) splitPC = false;
+      }
+      if(splitPC) {
+        for(int i=0;i<8;i++) {
+          const auto& child = pc.octree->Node(pcnode.childIndices[i]);
+          if(child.bb.bmin.x > child.bb.bmax.x) continue;
+          Real d=Distance(child,meshnode);
+          if(d*(1.0+relErr)+absErr < upperBound) {
+            queue.push(pair<int,int>(pcnode.childIndices[i],meshBVHNode),-d);
+          }
+        }
+      }
+      else {
+        int c1=mesh.pqpModel->b[meshBVHNode].first_child;
+        int c2=c1+1;
+        assert(c1 >= 0);
+        Real d1 = Distance(pcnode,mesh.pqpModel->b[c1]);
+        Real d2 = Distance(pcnode,mesh.pqpModel->b[c2]);
+        if(d1*(1.0+relErr)+absErr < upperBound) {
+          queue.push(pair<int,int>(pcOctreeNode,c1),-d1);
+        }
+        if(d2*(1.0+relErr)+absErr < upperBound) {
+          queue.push(pair<int,int>(pcOctreeNode,c2),-d2);
+        }
+      }
+    }
   }
-  Real Distance(const OctreeNode& pcnode,const BV& meshnode) {
-    Vector3 halfdims = (pcnode.bb.bmin-pcnode.bb.bmax)*0.5;
-    Vector3 center = (pcnode.bb.bmin+pcnode.bb.bmax)*0.5;
-    halfdims.get(pcbv.d);
-    center.get(pcbv.To);
-    return Sqrt(BV_Distance2(pqpRab,pqpTab,&pcbv,&meshnode));
-  }
-  void _Recurse(int pcOctreeNode,int meshBVHNode) {
+  void Recurse(int pcOctreeNode,int meshBVHNode) {
     const OctreeNode& pcnode = pc.octree->Node(pcOctreeNode);
     const BV& meshnode = mesh.pqpModel->b[meshBVHNode];
     if(pc.octree->IsLeaf(pcnode)) {
       if(pc.octree->NumPoints(pcnode)==0)
         return;
       if(meshnode.Leaf()) {
-        int t = -meshnode.first_child-1;
-        Triangle3D tri;
-        Copy(mesh.pqpModel->tris[t].p1,tri.a);
-        Copy(mesh.pqpModel->tris[t].p2,tri.b);
-        Copy(mesh.pqpModel->tris[t].p3,tri.c);
-        tri.a = Tba * tri.a;
-        tri.b = Tba * tri.b;
-        tri.c = Tba * tri.c;
-        //collide the triangle and points
-        vector<Vector3> pts;
-        vector<int> pcids;
-        pc.octree->GetPoints(pcOctreeNode,pts);
-        pc.octree->GetPointIDs(pcOctreeNode,pcids);
-        Vector3 cp;
-        for(size_t i=0;i<pts.size();i++) {
-          cp = tri.closestPoint(pts[i]);
-          Real d = pts[i].distance(cp);
-          if(d*(1.0+relErr)+absErr < upperBound) {
-            upperBound = d;
-            pcpoint = pcids[i];
-            meshtri = t;
-            meshpoint = Tab*cp;
-          }
+        UpdateLeaves(pcnode,meshnode);
+        return;
+      }
+    }
+    bool splitPC = true;
+    if(pc.octree->IsLeaf(pcnode))
+      splitPC = false;
+    else if(!meshnode.Leaf()) {
+      //determine which BVH to split
+      Real vpc = Volume(pcnode);
+      Real vmesh = Volume(meshnode);
+      if(vpc*10 < vmesh) splitPC = false;
+    }
+    if(splitPC) {
+      vector<pair<Real,int> > sorter;
+      for(int i=0;i<8;i++) {
+        const auto& child = pc.octree->Node(pcnode.childIndices[i]);
+        if(child.bb.bmin.x > child.bb.bmax.x) continue;
+        Real d=Distance(child,meshnode);
+        if(d*(1.0+relErr)+absErr < upperBound) {
+          sorter.push_back(make_pair(d,pcnode.childIndices[i]));
+        }
+      }
+      sort(sorter.begin(),sorter.end());
+      for(const auto& order : sorter) {
+        if(order.first*(1.0+relErr)+absErr < upperBound)
+          Recurse(order.second,meshBVHNode);
+        else
+          break;
+      }
+    }
+    else {
+      int c1=mesh.pqpModel->b[meshBVHNode].first_child;
+      int c2=c1+1;
+      assert(c1 >= 0);
+      Real d1 = Distance(pcnode,mesh.pqpModel->b[c1]);
+      Real d2 = Distance(pcnode,mesh.pqpModel->b[c2]);
+      if(d1 < d2) {
+        if(d1*(1.0+relErr)+absErr < upperBound) {
+          Recurse(pcOctreeNode,c1);
+        }
+        if(d2*(1.0+relErr)+absErr < upperBound) {
+          Recurse(pcOctreeNode,c2);
         }
       }
       else {
-        //split mesh BVH
-        _RecurseSplitMesh(pcOctreeNode,meshBVHNode);
+        if(d2*(1.0+relErr)+absErr < upperBound) {
+          Recurse(pcOctreeNode,c2);
+        }
+        if(d1*(1.0+relErr)+absErr < upperBound) {
+          Recurse(pcOctreeNode,c1);
+        }
       }
-    }
-    else {
-      if(meshnode.Leaf()) {
-        //split octree node
-        _RecurseSplitOctree(pcOctreeNode,meshBVHNode);
-      }
-      else {
-        //determine which BVH to split
-        Real vpc = Volume(pcnode);
-        Real vmesh = Volume(meshnode);
-        if(vpc < vmesh)
-          _RecurseSplitMesh(pcOctreeNode,meshBVHNode);
-        else
-          _RecurseSplitOctree(pcOctreeNode,meshBVHNode);
-      }
-    }
-  }
-  void _RecurseSplitMesh(int pcOctreeNode,int meshBVHNode) {
-    int c1=mesh.pqpModel->b[meshBVHNode].first_child;
-    int c2=c1+1;
-    const auto& pcnode = pc.octree->Node(pcOctreeNode);
-    Real d1 = Distance(pcnode,mesh.pqpModel->b[c1]);
-    Real d2 = Distance(pcnode,mesh.pqpModel->b[c2]);
-    if(d1 < d2) {
-      if(d1*(1.0+relErr)+absErr < upperBound)
-        _Recurse(pcOctreeNode,c1);
-      if(d2*(1.0+relErr)+absErr < upperBound)
-        _Recurse(pcOctreeNode,c2);
-    }
-    else {
-      if(d2*(1.0+relErr)+absErr < upperBound)
-        _Recurse(pcOctreeNode,c2);
-      if(d1*(1.0+relErr)+absErr < upperBound)
-        _Recurse(pcOctreeNode,c1);
-    }
-  }
-  void _RecurseSplitOctree(int pcOctreeNode,int meshBVHNode) {
-    const OctreeNode& pcnode = pc.octree->Node(pcOctreeNode);
-    const auto& bvnode = mesh.pqpModel->b[meshBVHNode];
-    vector<pair<Real,int> > sorter;
-    for(int i=0;i<8;i++)
-      sorter.push_back(make_pair(Distance(pc.octree->Node(pcnode.childIndices[i]),bvnode),i));
-    std::sort(sorter.begin(),sorter.end());
-    for(const auto& order: sorter) {
-      if(order.first*(1.0+relErr)+absErr < upperBound)
-        _Recurse(pcnode.childIndices[order.second],meshBVHNode);
     }
   }
 };
@@ -1988,6 +2080,18 @@ AnyDistanceQueryResult Distance(const CollisionPointCloud& a,const CollisionMesh
   res.hasClosestPoints = true;
   return res;
 }
+
+AnyDistanceQueryResult Distance(const CollisionPointCloud& a,const CollisionPointCloud& b,const AnyDistanceQuerySettings& settings)
+{
+  AnyDistanceQueryResult res;
+  res.d = Geometry::Distance(a,b,res.elem1,res.elem2,settings.upperBound);
+  res.cp1 = a.currentTransform*a.points[res.elem1];
+  res.cp2 = b.currentTransform*b.points[res.elem2];
+  res.hasElements = true;
+  res.hasClosestPoints = true;
+  return res;
+}
+
 
 //advance declarations
 AnyDistanceQueryResult Distance(const GeometricPrimitive3D& a,const AnyCollisionGeometry3D& b,const AnyDistanceQuerySettings& settings);
@@ -2169,8 +2273,8 @@ AnyDistanceQueryResult Distance(const CollisionPointCloud& a,const AnyCollisionG
     break;
   case AnyCollisionGeometry3D::PointCloud:
     {
-      LOG4CXX_ERROR(GET_LOGGER(Geometry),"Unable to do point cloud/point cloud distance yet");
-      //return ::Distance(a,b.PointCloudCollisionData(),elem1,elem2) - (margin+b.margin);
+      res = ::Distance(a,b.PointCloudCollisionData(),modsettings);
+      Offset2(res,b.margin);
     }
     break;
   case AnyCollisionGeometry3D::ImplicitSurface:
@@ -2567,7 +2671,7 @@ Vector3 ContactNormal(CollisionMesh& m1,CollisionMesh& m2,const Vector3& p1,cons
 }
 
 //Returns a contact normal for the closest point to the triangle t.  p is the point on the triangle.
-//The direction is the one in which triangle 1 can move to get away from closestpt
+//The direction is the one in which triangle t can move to get away from closestpt
 Vector3 ContactNormal(CollisionMesh& m,const Vector3& p,int t,const Vector3& closestPt)
 {
   Triangle3D tri;
@@ -2774,10 +2878,11 @@ void MeshMeshContacts(CollisionMesh& m1,Real outerMargin1,CollisionMesh& m2,Real
   for(size_t i=0;i<cp1.size();i++) {
     Vector3 p1 = T1*cp1[i];
     Vector3 p2 = T2*cp2[i];
-    Vector3 n=p1-p2;
+    Vector3 n=p2-p1;
     Real d = n.norm();
     if(d < gNormalFromGeometryTolerance) {  //compute normal from the geometry
       n = ContactNormal(m1,m2,cp1[i],cp2[i],t1[i],t2[i]);
+      n.inplaceNegative();
     }
     else if(d > tol) {  //some penetration -- we can't trust the result of PQP
       LOG4CXX_WARN(GET_LOGGER(Geometry),"Skipping contact due to irregular distance between points "<<d);
@@ -2800,8 +2905,8 @@ void MeshMeshContacts(CollisionMesh& m1,Real outerMargin1,CollisionMesh& m2,Real
     //CopyVector(contact[k].pos,p1+utol*(p2-p1));
     size_t k=contacts.size();
     contacts.resize(k+1);
-    contacts[k].p1 = p1 - outerMargin1*n;
-    contacts[k].p2 = p2 + outerMargin2*n;
+    contacts[k].p1 = p1 + outerMargin1*n;
+    contacts[k].p2 = p2 - outerMargin2*n;
     contacts[k].n = n;
     contacts[k].depth = tol - d;
     if(contacts[k].depth < 0) contacts[k].depth = 0;
@@ -2830,12 +2935,13 @@ void MeshPointCloudContacts(CollisionMesh& m1,Real outerMargin1,CollisionPointCl
     triw.b = m1.currentTransform*tri.b;
     triw.c = m1.currentTransform*tri.c;
     Vector3 cp = triw.closestPoint(pw);
-    Vector3 n = cp - pw;
+    Vector3 n = pw - cp;
     Real d = n.length();
     if(d < gNormalFromGeometryTolerance) {  //compute normal from the geometry
       Vector3 plocal;
       m1.currentTransform.mulInverse(cp,plocal);
       n = ContactNormal(m1,plocal,tris[i],pw);
+      n.inplaceNegative();
     }
     else if(d > tol) {  //some penetration -- we can't trust the result of PQP
       continue;
@@ -2843,8 +2949,8 @@ void MeshPointCloudContacts(CollisionMesh& m1,Real outerMargin1,CollisionPointCl
     else n /= d;
     size_t k=contacts.size();
     contacts.resize(k+1);
-    contacts[k].p1 = cp - outerMargin1*n;
-    contacts[k].p2 = pw + outerMargin2*n;
+    contacts[k].p1 = cp + outerMargin1*n;
+    contacts[k].p2 = pw - outerMargin2*n;
     contacts[k].n = n;
     contacts[k].depth = tol - d;
     contacts[k].elem1 = tris[i];
@@ -2920,17 +3026,18 @@ void MeshSphereContacts(CollisionMesh& m1,Real outerMargin1,const Sphere3D& s,Re
     tri.c = m1.currentTransform*tri.c;
 
     Vector3 cp = tri.closestPoint(s.center);
-    Vector3 n = cp - s.center;
+    Vector3 n = s.center - cp;
     Real nlen = n.length();
     Real d = nlen-s.radius;
     Vector3 pw = s.center;
     if(s.radius > 0)
       //adjust pw to the sphere surface
-      pw += n*(s.radius/nlen);
+      pw -= n*(s.radius/nlen);
     if(d < gNormalFromGeometryTolerance) {  //compute normal from the geometry
       Vector3 plocal;
       m1.currentTransform.mulInverse(cp,plocal);
       n = ContactNormal(m1,plocal,tris[j],pw);
+      n.inplaceNegative();
     }
     else if(d > tol) {  //some penetration -- we can't trust the result of PQP
       continue;
@@ -2938,8 +3045,8 @@ void MeshSphereContacts(CollisionMesh& m1,Real outerMargin1,const Sphere3D& s,Re
     else n /= nlen;
     size_t k=contacts.size();
     contacts.resize(k+1);
-    contacts[k].p1 = cp - outerMargin1*n;
-    contacts[k].p2 = pw + outerMargin2*n;
+    contacts[k].p1 = cp + outerMargin1*n;
+    contacts[k].p2 = pw - outerMargin2*n;
     contacts[k].n = n;
     contacts[k].depth = tol - d;
     contacts[k].elem1 = tris[j];
@@ -2991,7 +3098,7 @@ void PointCloudPrimitiveContacts(CollisionPointCloud& pc1,Real outerMargin1,Geom
     if(dg > tol) continue;
     vector<double> u = gworld.ClosestPointParameters(pw);
     Vector3 cp = gworld.ParametersToPoint(u);
-    Vector3 n = pw - cp;
+    Vector3 n = cp - pw;
     Real d = n.length();
     if(!FuzzyEquals(d,dg)) 
       LOG4CXX_WARN(GET_LOGGER(Geometry),"Hmm... point distance incorrect? "<<dg<<" vs "<<d);
@@ -3004,8 +3111,8 @@ void PointCloudPrimitiveContacts(CollisionPointCloud& pc1,Real outerMargin1,Geom
     else n /= d;
     size_t k=contacts.size();
     contacts.resize(k+1);
-    contacts[k].p1 = pw - outerMargin1*n;
-    contacts[k].p2 = cp + outerMargin2*n;
+    contacts[k].p1 = pw + outerMargin1*n;
+    contacts[k].p2 = cp - outerMargin2*n;
     contacts[k].n = n;
     contacts[k].depth = tol - d;
     contacts[k].elem1 = points[j];
@@ -3021,6 +3128,8 @@ void PointCloudPointCloudContacts(CollisionPointCloud& pc1,Real outerMargin1,Col
   vector<int> points1,points2;
   Collides(pc1,pc2,tol,points1,points2,maxcontacts);
   
+  //this is already done in Collides
+  /*  
   map<int,int> closest1,closest2;
   map<int,Real> dclosest1,dclosest2;
   //filter by closest point 
@@ -3049,13 +3158,14 @@ void PointCloudPointCloudContacts(CollisionPointCloud& pc1,Real outerMargin1,Col
       points2.push_back(c2.first);
     }
   }
+  */
   contacts.reserve(points1.size());
   for(size_t j=0;j<points1.size();j++) {
     Vector3 p1w = pc1.currentTransform*pc1.points[points1[j]];
     Vector3 p2w = pc2.currentTransform*pc2.points[points2[j]];
     size_t k=contacts.size();
     contacts.resize(k+1);
-    contacts[k].n = p1w-p2w;
+    contacts[k].n = p2w - p1w;
     Real d = contacts[k].n.norm();
     if(!FuzzyZero(d)) {
       contacts[k].n /= d;
@@ -3065,8 +3175,8 @@ void PointCloudPointCloudContacts(CollisionPointCloud& pc1,Real outerMargin1,Col
       contacts[k].n.setZero();
       contacts[k].unreliable = true;
     }
-    contacts[k].p1 = p1w - contacts[k].n*outerMargin1;
-    contacts[k].p2 = p2w + contacts[k].n*outerMargin2;
+    contacts[k].p1 = p1w + contacts[k].n*outerMargin1;
+    contacts[k].p2 = p2w - contacts[k].n*outerMargin2;
     contacts[k].depth = tol - d;
     contacts[k].elem1 = points1[j];
     contacts[k].elem2 = points2[j];
@@ -3089,13 +3199,56 @@ void PointCloudImplicitSurfaceContacts(CollisionPointCloud& pc1,Real outerMargin
     contacts.resize(k+1);
     contacts[k].p1 = p1w + n*outerMargin1;
     contacts[k].p2 = p2w - n*outerMargin2;
-    contacts[k].n = -n;
+    contacts[k].n = n;
     contacts[k].depth = tol - d;
     contacts[k].elem1 = points[j];
     contacts[k].elem2 = PointIndex(s2,p2w);
     contacts[k].unreliable = false;
   }
 }
+
+void ImplicitSurfaceSphereContacts(CollisionImplicitSurface& s1,Real outerMargin1,const Sphere3D& s,Real outerMargin2,vector<ContactPair>& contacts,size_t maxcontacts)
+{
+  //NOTE: this does not allow for multiple points of contact, e.g., for non-convex implicit surfaces
+  contacts.resize(0);
+  Real tol = outerMargin1 + outerMargin2;
+  Vector3 cp,dir;
+  Real d = Distance(s1,s.center,cp,dir) - s.radius;
+  if(d > tol) return;
+  Vector3 pw = s.center + dir*s.radius;
+  contacts.resize(1);
+  Vector3 n;
+  n.setNegative(dir);
+  contacts[0].p1 = cp + outerMargin1*n;
+  contacts[0].p2 = pw - outerMargin2*n;
+  contacts[0].n = n;
+  contacts[0].depth = tol - d;
+  contacts[0].elem1 = PointIndex(s1,cp);
+  contacts[0].elem2 = -1;
+  contacts[0].unreliable = false;
+}
+
+void ImplicitSurfacePrimitiveContacts(CollisionImplicitSurface& s1,Real outerMargin1,GeometricPrimitive3D& g2,const RigidTransform& T2,Real outerMargin2,vector<ContactPair>& contacts,size_t maxcontacts)
+{
+  GeometricPrimitive3D gworld=g2;
+  gworld.Transform(T2);
+  
+  if(gworld.type == GeometricPrimitive3D::Point) {
+    Sphere3D s;
+    s.center = *AnyCast<Point3D>(&gworld.data);
+    s.radius = 0;
+    ImplicitSurfaceSphereContacts(s1,outerMargin1,s,outerMargin2,contacts,maxcontacts);
+  }
+  else if(gworld.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D& s = *AnyCast<Sphere3D>(&gworld.data);
+    ImplicitSurfaceSphereContacts(s1,outerMargin1,s,outerMargin2,contacts,maxcontacts);
+  }
+  else {
+    LOG4CXX_WARN(GET_LOGGER(Geometry),"Distance computations between ImplicitSurface and "<<gworld.TypeName()<<" not supported");
+    return;
+  }
+}
+
 
 void PrimitivePrimitiveContacts(GeometricPrimitive3D& g1,const RigidTransform& T1,Real outerMargin1,GeometricPrimitive3D& g2,const RigidTransform& T2,Real outerMargin2,vector<ContactPair>& contacts,size_t maxcontacts)
 {
@@ -3148,7 +3301,7 @@ void PrimitivePrimitiveContacts(GeometricPrimitive3D& g1,const RigidTransform& T
     contacts[0].depth = p1.distance(p2);
     contacts[0].p1 = p1;
     contacts[0].p2 = p2;
-    contacts[0].n = -n;
+    contacts[0].n = n;
     contacts[0].elem1 = contacts[0].elem2 = 0;
     contacts[0].unreliable = false;
   }
@@ -3280,7 +3433,7 @@ void GeometryGeometryContacts(Geometry::AnyCollisionGeometry3D& g1,Real outerMar
   case AnyGeometry3D::ImplicitSurface:
     switch(g2.type) {
     case AnyGeometry3D::Primitive:
-      LOG4CXX_ERROR(GET_LOGGER(Geometry),"TODO: implicit surface-primitive contacts");
+      ImplicitSurfacePrimitiveContacts(g1.ImplicitSurfaceCollisionData(),g1.margin+outerMargin1,g2.AsPrimitive(),g2.PrimitiveCollisionData(),g2.margin+outerMargin2,contacts,maxcontacts);
       break;
     case AnyGeometry3D::TriangleMesh:
       LOG4CXX_ERROR(GET_LOGGER(Geometry),"TODO: implicit surface-triangle mesh contacts");
@@ -3337,8 +3490,6 @@ AnyContactsQuerySettings::AnyContactsQuerySettings()
 AnyContactsQueryResult::AnyContactsQueryResult()
 :clustered(false)
 {}
-
-
 
 AnyCollisionQuery::AnyCollisionQuery()
   :a(NULL),b(NULL)

@@ -120,15 +120,26 @@ bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
 
-  AABB3D gbb = glocal.GetAABB();  
-  gbb.setIntersection(pc.bblocal);
-
   //octree overlap method
   vector<Vector3> points;
   vector<int> ids;
-  pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
-  for(size_t i=0;i<points.size();i++) 
-    if(glocal.Distance(points[i]) <= tol) return true;
+  if(glocal.type == GeometricPrimitive3D::Point) {
+    const Vector3& x = *AnyCast<Point3D>(&glocal.data);
+    pc.octree->BallQuery(x,tol,points,ids);
+    if(!points.empty()) return true;
+  }
+  else if(glocal.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D& s = *AnyCast<Sphere3D>(&glocal.data);
+    pc.octree->BallQuery(s.center,s.radius+tol,points,ids);
+    if(!points.empty()) return true;
+  }
+  else {
+    AABB3D gbb = glocal.GetAABB();  
+    gbb.setIntersection(pc.bblocal);
+    pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+    for(size_t i=0;i<points.size();i++) 
+      if(glocal.Distance(points[i]) <= tol) return true;
+  }
   return false;
 
   /*
@@ -161,6 +172,25 @@ bool distanceTest(void* obj)
   return true;
 }
 
+Real Distance(const CollisionPointCloud& pc,const Vector3& pt)
+{
+  int closestPoint;
+  return Distance(pc,pt,closestPoint);
+}
+
+Real Distance(const CollisionPointCloud& pc,const Vector3& pt,int& closestPoint,Real upperBound)
+{
+  Vector3 ptlocal;
+  pc.currentTransform.mulInverse(pt,ptlocal);
+  Vector3 closest;
+  bool res = pc.octree->NearestNeighbor(ptlocal,closest,closestPoint,upperBound);
+  if(!res) {
+    closestPoint = -1;
+    return upperBound;
+  }
+  return closest.distance(ptlocal);
+}
+
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g)
 {
   int cpoint;
@@ -169,10 +199,20 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g)
 
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& closestPoint,Real upperBound)
 {
+  if(g.type == GeometricPrimitive3D::Point) {
+    const Vector3& x = *AnyCast<Point3D>(&g.data);
+    return Distance(pc,x,closestPoint,upperBound);
+  }
+  else if(g.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D& s = *AnyCast<Sphere3D>(&g.data);
+    return Distance(pc,s.center,closestPoint,upperBound+s.radius)-s.radius; 
+  }
+
   GeometricPrimitive3D glocal = g;
   RigidTransform Tinv;
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
+
   closestPoint=-1;
   if(!IsInf(upperBound) && glocal.Distance(pc.bblocal) > upperBound) {
     return upperBound;
@@ -222,6 +262,31 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
   }
 }
 
+Real Distance(const CollisionPointCloud& pc1,const CollisionPointCloud& pc2,int& closestPoint1,int& closestPoint2,Real upperBound)
+{
+  if(pc1.points.size() > pc2.points.size())
+    return Distance(pc2,pc1,closestPoint2,closestPoint1,upperBound);
+  closestPoint1 = closestPoint2 = -1;
+  RigidTransform T12;
+  T12.mulInverseA(pc2.currentTransform,pc1.currentTransform);
+  //go linearly through the smaller point cloud
+  for(size_t i=0;i<pc1.points.size();i++) {
+    Vector3 x = T12*pc1.points[i];
+    int cp2x;
+    Vector3 xclosest;
+    bool res = pc2.octree->NearestNeighbor(x,xclosest,cp2x,upperBound);
+    if(res) {
+      Real d = x.distance(xclosest);
+      if(d < upperBound) {
+        upperBound = d;
+        closestPoint1 = (int)i;
+        closestPoint2 = cp2x;
+      }
+    }
+  }
+  return upperBound;
+}
+
 static Real gNearbyTestThreshold = 0;
 static GeometricPrimitive3D* gNearbyTestObject = NULL;
 static std::vector<Point3D*> gNearbyTestResults;
@@ -247,18 +312,37 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
 
-  AABB3D gbb = glocal.GetAABB();
-  gbb.setIntersection(pc.bblocal);
-
   //octree overlap method
   vector<Vector3> points;
   vector<int> ids;
-  pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
-  for(size_t i=0;i<points.size();i++) 
-    if(glocal.Distance(points[i]) <= tol) {
+
+  if(glocal.type == GeometricPrimitive3D::Point) {
+    const Vector3& x = *AnyCast<Point3D>(&glocal.data);
+    pc.octree->BallQuery(x,tol,points,ids);
+    for(size_t i=0;i<points.size();i++) {
       pointIds.push_back(ids[i]);
       if(pointIds.size()>=maxContacts) return;
     }
+  }
+  else if(glocal.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D& s = *AnyCast<Sphere3D>(&glocal.data);
+    pc.octree->BallQuery(s.center,s.radius+tol,points,ids);
+    for(size_t i=0;i<points.size();i++) {
+      pointIds.push_back(ids[i]);
+      if(pointIds.size()>=maxContacts) return;
+    }
+  }
+  else {
+    AABB3D gbb = glocal.GetAABB();
+    gbb.setIntersection(pc.bblocal);
+    pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+    for(size_t i=0;i<points.size();i++) {
+      if(glocal.Distance(points[i]) <= tol) {
+        pointIds.push_back(ids[i]);
+        if(pointIds.size()>=maxContacts) return;
+      }
+    }
+  }
   return;
 
   /*
@@ -427,7 +511,7 @@ public:
     if(a.octree->IsLeaf(anode)) {
       if(a.octree->NumPoints(anode)==0) return true;
       if(b.octree->IsLeaf(bnode)) {
-        if(a.octree->NumPoints(bnode)==0) return true;
+        if(b.octree->NumPoints(bnode)==0) return true;
         //collide the two points contained within
         vector<Vector3> apts,bpts;
         vector<int> aids,bids;
@@ -437,9 +521,10 @@ public:
         b.octree->GetPoints(bindex,bpts);
         for(auto& bpt: bpts)
           bpt = Tba*bpt;
+        Real margin2 = Sqr(margin);
         for(size_t i=0;i<apts.size();i++) {
           for(size_t j=0;j<bpts.size();j++) {
-            if(apts[i].distanceSquared(bpts[j]) <= Sqr(margin)) {
+            if(apts[i].distanceSquared(bpts[j]) <= margin2) {
               acollisions.push_back(aids[i]);
               bcollisions.push_back(bids[j]);
               if(acollisions.size() >= maxContacts) return false;
@@ -456,6 +541,7 @@ public:
     }
     else {
       if(b.octree->IsLeaf(bnode)) {
+        if(b.octree->NumPoints(bnode)==0) return true;
         //split a
         return _RecurseSplitA(aindex,bindex);
       }

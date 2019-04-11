@@ -532,9 +532,12 @@ int OctreePointSet::RayCast(const Ray3D& r,Real radius) const
   return -1;
 }
 
-bool OctreePointSet::NearestNeighbor(const Vector3& c,Vector3& closest,int& id) const
+bool OctreePointSet::NearestNeighbor(const Vector3& c,Vector3& closest,int& id,Real upperBound) const
 {
-  return !IsInf(_NearestNeighbor(nodes[0],c,closest,id,Inf));
+  if(IsInf(upperBound))
+    return !IsInf(_NearestNeighbor(nodes[0],c,closest,id,Inf));
+  Real upperBound2 = Sqr(upperBound);
+  return _NearestNeighbor(nodes[0],c,closest,id,upperBound2) < upperBound2;
 }
 
 Real OctreePointSet::_NearestNeighbor(const OctreeNode& n,const Vector3& c,Vector3& closest,int& id,Real minDist2) const
