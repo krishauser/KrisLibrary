@@ -934,7 +934,7 @@ void GeometryAppearance::DrawGL(Element e)
         trimesh = &geom->AsTriangleMesh();
       
       if(trimesh) {
-        Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
+        weldMesh = new Meshing::TriMeshWithTopology;
         tempMesh2.reset(weldMesh);
         weldMesh->verts = trimesh->verts;
         weldMesh->tris = trimesh->tris;
