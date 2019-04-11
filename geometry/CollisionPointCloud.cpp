@@ -521,14 +521,33 @@ public:
         b.octree->GetPoints(bindex,bpts);
         for(auto& bpt: bpts)
           bpt = Tba*bpt;
-        Real margin2 = Sqr(margin);
+        //pick only the closest point amongst these guys, not all points within the margin
+        bool doswap = false;
+        if(apts.size() > bpts.size()) {
+          swap(apts,bpts);
+          swap(aids,bids);
+          doswap= true;
+        }
         for(size_t i=0;i<apts.size();i++) {
+          Real dmin2 = Sqr(margin);
+          int bclosest = -1;
           for(size_t j=0;j<bpts.size();j++) {
-            if(apts[i].distanceSquared(bpts[j]) <= margin2) {
-              acollisions.push_back(aids[i]);
-              bcollisions.push_back(bids[j]);
-              if(acollisions.size() >= maxContacts) return false;
+            Real d2 = apts[i].distanceSquared(bpts[j]);
+            if(d2 <= dmin2) {
+              dmin2 = d2;
+              bclosest = bids[j];
             }
+          }
+          if(bclosest >= 0) {
+            if(doswap) {
+              bcollisions.push_back(aids[i]);
+              acollisions.push_back(bclosest);
+            }
+            else {
+              acollisions.push_back(aids[i]);
+              bcollisions.push_back(bclosest);
+            }
+            if(acollisions.size() >= maxContacts) return false;
           }
         }
         //continue
