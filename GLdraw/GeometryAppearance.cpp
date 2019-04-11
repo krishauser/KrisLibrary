@@ -346,6 +346,8 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   }
   texcoords=rhs.texcoords;
   texgen=rhs.texgen;
+  if(silhouetteRadius != rhs.silhouetteRadius)
+    silhouetteDisplayList.erase();
   silhouetteRadius=rhs.silhouetteRadius;
   silhouetteColor=rhs.silhouetteColor;
   creaseAngle=rhs.creaseAngle;
@@ -354,7 +356,9 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
 void GeometryAppearance::Refresh()
 {
   vertexDisplayList.erase();
+  edgeDisplayList.erase();
   faceDisplayList.erase();
+  silhouetteDisplayList.erase();
   textureObject.cleanup();
 }
 
@@ -405,8 +409,8 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   geom = &_geom;
   if(geom->type == AnyGeometry3D::ImplicitSurface) {
     const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
-    if(!implicitSurfaceMesh) implicitSurfaceMesh.reset(new Meshing::TriMesh);
-    ImplicitSurfaceToMesh(*g,*implicitSurfaceMesh);
+    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
+    ImplicitSurfaceToMesh(*g,*tempMesh);
     drawFaces = true;
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
@@ -471,14 +475,15 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     }
     drawFaces = false;
     drawVertices = true;
-    implicitSurfaceMesh = NULL;
+    tempMesh = NULL;
+    tempMesh2 = NULL;
     if(pc.IsStructured()) {
       //draw mesh rather than points
       drawFaces = true;
       drawVertices = false;
-      if(!implicitSurfaceMesh) implicitSurfaceMesh.reset(new Meshing::TriMesh);
-      //PointCloudToMesh(pc,*implicitSurfaceMesh,*this,0.02);
-      PointCloudToMesh(pc,*implicitSurfaceMesh,0.02);
+      if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
+      //PointCloudToMesh(pc,*tempMesh,*this,0.02);
+      PointCloudToMesh(pc,*tempMesh,0.02);
     }
   }
   else if(geom->type == AnyGeometry3D::Group) {
@@ -499,12 +504,42 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   Refresh();
 }
 
-void GeometryAppearance::DrawGL()
+void GeometryAppearance::DrawGL(Element e)
 {
-  if(drawVertices) {   
-    const vector<Vector3>* verts = NULL;
+  bool doDrawVertices = false;
+  bool doDrawEdges = false;
+  bool doDrawFaces = false;
+  bool doDrawSilhouette = false;
+  if(e == ALL) {
+    doDrawVertices = drawVertices;
+    doDrawEdges = drawEdges;
+    doDrawFaces = drawFaces;
+    doDrawSilhouette = drawFaces && (silhouetteRadius > 0);
+  }
+  else if(e == FACES)
+    doDrawFaces = drawFaces;
+  else if(e == EDGES)
+    doDrawEdges = drawEdges;
+  else if(e == VERTICES)
+    doDrawVertices = drawVertices;
+  else if(e == TRANSPARENT) {
+    doDrawVertices = drawVertices && (vertexColor.rgba[3] < 1.0);
+    doDrawEdges = drawEdges && (edgeColor.rgba[3] < 1.0);
+    doDrawFaces = drawFaces && (faceColor.rgba[3] < 1.0);
+    doDrawSilhouette = drawFaces && (silhouetteRadius > 0) && (faceColor.rgba[3] < 1.0 || silhouetteColor.rgba[3] < 1.0);
+  }
+  else if(e == OPAQUE) {
+    doDrawVertices = drawVertices && (vertexColor.rgba[3] >= 1.0);
+    doDrawEdges = drawEdges && (edgeColor.rgba[3] >= 1.0);
+    doDrawFaces = drawFaces && (faceColor.rgba[3] >= 1.0);
+    doDrawSilhouette = drawFaces && (silhouetteRadius > 0) && (faceColor.rgba[3] >= 1.0 && silhouetteColor.rgba[3] >= 1.0);
+  }
+  else
+    FatalError("Invalid Element specified");
+  if(doDrawVertices) {   
+    const vector<Vector3>* verts = NULL;  
     if(geom->type == AnyGeometry3D::ImplicitSurface) 
-      verts = &implicitSurfaceMesh->verts;
+      verts = &tempMesh->verts;
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
       verts = &geom->AsTriangleMesh().verts;
     else if(geom->type == AnyGeometry3D::PointCloud) 
@@ -516,20 +551,6 @@ void GeometryAppearance::DrawGL()
         vertexDisplayList.beginCompile();
         if(!vertexColors.empty() && vertexColors.size() != verts->size())
                   LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size");
-        if(silhouetteRadius > 0) {
-          glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
-          silhouetteColor.setCurrentGL();
-          glDisable(GL_LIGHTING);
-          glPointSize(vertexSize + Max(silhouetteRadius,2.0f));
-          glBegin(GL_POINTS);
-          for(size_t i=0;i<verts->size();i++) {
-            const Vector3& v=(*verts)[i];
-            glVertex3f(v.x,v.y,v.z);
-          }
-          glEnd();
-          glPopAttrib();
-        }
-        if(silhouetteRadius > 0) glDepthFunc(GL_LEQUAL);
         if(vertexColors.size()==verts->size()) {
           glBegin(GL_POINTS);
           for(size_t i=0;i<verts->size();i++) {
@@ -547,9 +568,10 @@ void GeometryAppearance::DrawGL()
           }
           glEnd();
         }
-        if(silhouetteRadius > 0) glDepthFunc(GL_LESS);
+        //if(silhouetteRadius > 0) glDepthFunc(GL_LESS);
         vertexDisplayList.endCompile();
       }
+      
       //do the drawing
       glDisable(GL_LIGHTING);
       if(vertexColor.rgba[3] != 1.0 || !vertexColors.empty()) {
@@ -568,7 +590,7 @@ void GeometryAppearance::DrawGL()
     }
   }
 
-  if(drawFaces) {
+  if(doDrawFaces) {
     if(faceColor.rgba[3] != 1.0) {
       glEnable(GL_BLEND); 
       glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -640,12 +662,11 @@ void GeometryAppearance::DrawGL()
     
     if(!faceDisplayList) {
       faceDisplayList.beginCompile();
-
       const Meshing::TriMesh* trimesh = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface) 
-        trimesh = implicitSurfaceMesh.get();
+        trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::PointCloud) 
-        trimesh = implicitSurfaceMesh.get();
+        trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::TriangleMesh) 
         trimesh = &geom->AsTriangleMesh();
       else if(geom->type == AnyGeometry3D::Primitive) 
@@ -655,44 +676,20 @@ void GeometryAppearance::DrawGL()
 
       //draw the mesh
       if(trimesh) {
-        Meshing::TriMeshWithTopology weldMesh;
         Meshing::TriMesh creaseMesh;
         vector<Vector3> vertexNormals;
 
         if(creaseAngle > 0 || silhouetteRadius > 0) {
-          weldMesh.verts = trimesh->verts;
-          weldMesh.tris = trimesh->tris;
-          Meshing::MergeVertices(weldMesh,1e-5);
+          Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
+          tempMesh2.reset(weldMesh);
+          weldMesh->verts = trimesh->verts;
+          weldMesh->tris = trimesh->tris;
+          Meshing::MergeVertices(*weldMesh,1e-5);
           if(creaseAngle > 0) {
-            CreaseMesh(weldMesh,creaseMesh,creaseAngle);
+            CreaseMesh(*weldMesh,creaseMesh,creaseAngle);
             trimesh = &creaseMesh;
             VertexNormals(creaseMesh,vertexNormals);
           }
-        }
-
-        if(silhouetteRadius > 0) {
-          vector<Vector3> weldVertexNormals;
-          VertexNormals(weldMesh,weldVertexNormals);
-          glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
-          silhouetteColor.setCurrentGL();
-          glEnable(GL_CULL_FACE);
-          glCullFace(GL_FRONT);
-          glDisable(GL_LIGHTING);
-          glBegin(GL_TRIANGLES);
-          for(size_t i=0;i<weldMesh.tris.size();i++) {
-            const IntTriple&t=weldMesh.tris[i];
-            const Vector3& na = weldVertexNormals[t.a];
-            const Vector3& nb = weldVertexNormals[t.b];
-            const Vector3& nc = weldVertexNormals[t.c];
-            Vector3 a=weldMesh.verts[t.a] + silhouetteRadius*na;
-            Vector3 b=weldMesh.verts[t.b] + silhouetteRadius*nb;
-            Vector3 c=weldMesh.verts[t.c] + silhouetteRadius*nc;
-            glVertex3f(a.x,a.y,a.z);
-            glVertex3f(b.x,b.y,b.z);
-            glVertex3f(c.x,c.y,c.z);
-          }
-          glEnd();
-          glPopAttrib();
         }
 
         if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
@@ -866,11 +863,126 @@ void GeometryAppearance::DrawGL()
     }
   }
 
-  //TODO edges?
+  if(doDrawEdges) {
+    const Meshing::TriMesh* trimesh = NULL;
+    if(geom->type == AnyGeometry3D::ImplicitSurface) 
+      trimesh = tempMesh.get();
+    else if(geom->type == AnyGeometry3D::PointCloud) 
+      trimesh = tempMesh.get();
+    else if(geom->type == AnyGeometry3D::TriangleMesh) 
+      trimesh = &geom->AsTriangleMesh();
+    else if(geom->type == AnyGeometry3D::Primitive) 
+      ;
+    if(trimesh) {
+      if(!edgeDisplayList) {
+        edgeDisplayList.beginCompile();
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
+          edgeColor.setCurrentGL();
+          glDepthFunc(GL_LEQUAL);
+          glDisable(GL_LIGHTING);
+          vector<set<int> > vneighbors(trimesh->verts.size());
+          for(size_t i=0;i<trimesh->tris.size();i++) {
+            vneighbors[trimesh->tris[i].a].insert(trimesh->tris[i].b);
+            vneighbors[trimesh->tris[i].a].insert(trimesh->tris[i].c);
+            vneighbors[trimesh->tris[i].b].insert(trimesh->tris[i].a);
+            vneighbors[trimesh->tris[i].b].insert(trimesh->tris[i].c);
+            vneighbors[trimesh->tris[i].c].insert(trimesh->tris[i].a);
+            vneighbors[trimesh->tris[i].c].insert(trimesh->tris[i].b);
+          }
+          glBegin(GL_LINES);
+          for(size_t i=0;i<vneighbors.size();i++)
+            for(auto j:vneighbors[i]) {
+              glVertex3v(trimesh->verts[i]);
+              glVertex3v(trimesh->verts[j]);
+            }
+          glEnd();
+        glPopAttrib();
+        edgeDisplayList.endCompile();
+      }
+      edgeDisplayList.call();
+    }
+  }
+
+  if(doDrawSilhouette) {
+    //TODO: do we want to try silhouettes around point clounds?
+    /*
+      if(silhouetteRadius > 0) {
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_POINT_BIT);
+        silhouetteColor.setCurrentGL();
+        glDisable(GL_LIGHTING);
+        glPointSize(vertexSize + Max(silhouetteRadius,2.0f));
+        glBegin(GL_POINTS);
+        for(size_t i=0;i<verts->size();i++) {
+          const Vector3& v=(*verts)[i];
+          glVertex3f(v.x,v.y,v.z);
+        }
+        glEnd();
+        glPopAttrib();
+      }
+      if(silhouetteRadius > 0) glDepthFunc(GL_LEQUAL);
+      */
+
+    Meshing::TriMesh* weldMesh = tempMesh2.get();
+    if(!weldMesh) {
+      //make the weld mesh from the trinagle mesh
+      const Meshing::TriMesh* trimesh = NULL;
+      if(geom->type == AnyGeometry3D::ImplicitSurface) 
+        trimesh = tempMesh.get();
+      else if(geom->type == AnyGeometry3D::PointCloud) 
+        trimesh = tempMesh.get();
+      else if(geom->type == AnyGeometry3D::TriangleMesh) 
+        trimesh = &geom->AsTriangleMesh();
+      
+      if(trimesh) {
+        Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
+        tempMesh2.reset(weldMesh);
+        weldMesh->verts = trimesh->verts;
+        weldMesh->tris = trimesh->tris;
+        Meshing::MergeVertices(*weldMesh,1e-5);
+      }
+    }
+
+    if(weldMesh) {
+      if(!silhouetteDisplayList) {
+        silhouetteDisplayList.beginCompile();
+        vector<Vector3> weldVertexNormals;
+        VertexNormals(*weldMesh,weldVertexNormals);
+
+        glPushAttrib(GL_POLYGON_BIT | GL_ENABLE_BIT);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glDisable(GL_LIGHTING);
+        glBegin(GL_TRIANGLES);
+        for(size_t i=0;i<weldMesh->tris.size();i++) {
+          const IntTriple&t=weldMesh->tris[i];
+          const Vector3& na = weldVertexNormals[t.a];
+          const Vector3& nb = weldVertexNormals[t.b];
+          const Vector3& nc = weldVertexNormals[t.c];
+          Vector3 a=weldMesh->verts[t.a] + silhouetteRadius*na;
+          Vector3 b=weldMesh->verts[t.b] + silhouetteRadius*nb;
+          Vector3 c=weldMesh->verts[t.c] + silhouetteRadius*nc;
+          glVertex3f(a.x,a.y,a.z);
+          glVertex3f(b.x,b.y,b.z);
+          glVertex3f(c.x,c.y,c.z);
+        }
+        glEnd();
+        glPopAttrib();
+        silhouetteDisplayList.endCompile();
+      }
+
+      silhouetteColor.setCurrentGL();
+      if(silhouetteColor[3] < 1.0) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+      }
+      silhouetteDisplayList.call();
+    }
+  }
+
   
   //for group geometries
   for(size_t i=0;i<subAppearances.size();i++) {
-    subAppearances[i].DrawGL();
+    subAppearances[i].DrawGL(e);
   }
 }
 

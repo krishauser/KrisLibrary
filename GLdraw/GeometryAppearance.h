@@ -42,16 +42,18 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Math::Real p=-1);
 class GeometryAppearance
 {
  public:
+  enum Element { ALL, VERTICES, EDGES, FACES, SILHOUETTE, TRANSPARENT, OPAQUE };
+
   GeometryAppearance();
   ///This copies over the "material" information but doesn't change the display lists (if possible)
   void CopyMaterial(const GeometryAppearance& rhs);
   void Set(const Geometry::AnyGeometry3D& geom);
   void Set(const Geometry::AnyCollisionGeometry3D& geom);
-  ///Call this if the underlying geometry, per-element colors, or texture
-  ///coordinates change
+  ///Call this if the underlying geometry, per-element colors, texture
+  ///coordinates, or silhouette radius change
   void Refresh();
   ///Draws the geometry using OpenGL
-  void DrawGL();
+  void DrawGL(Element e=ALL);
   ///Sets flat colors, including sub-appearances, and deletes any per-vertex
   ///or per-face colors.  Refresh() does not need to be called.
   void SetColor(float r,float g, float b, float a);
@@ -90,10 +92,10 @@ class GeometryAppearance
   float silhouetteRadius;
   GLColor silhouetteColor;
   
-  ///Temporary: Mesh computed for implicit surfaces
-  std::shared_ptr<Meshing::TriMesh> implicitSurfaceMesh;
-  ///Temporary: The display lists and texture lists for vertices and faces
-  GLDisplayList vertexDisplayList,faceDisplayList;
+  ///Temporary: Mesh computed for implicit surfaces, point clouds, silhouettes
+  std::shared_ptr<Meshing::TriMesh> tempMesh,tempMesh2;
+  ///Temporary: The display lists and texture lists for vertices, edges, faces, and silhouette
+  GLDisplayList vertexDisplayList,edgeDisplayList,faceDisplayList,silhouetteDisplayList;
   GLTextureObject textureObject;
 };
 
