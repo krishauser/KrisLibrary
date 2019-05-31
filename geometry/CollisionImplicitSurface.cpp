@@ -206,6 +206,10 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
   Box3D sbbexpanded = sbb;
   sbbexpanded.dims += Vector3(margin*2.0);
   sbbexpanded.origin -= margin*(sbb.xbasis+sbb.ybasis+sbb.zbasis);
+  if(pc.radiusIndex >= 0) {
+    sbbexpanded.dims += Vector3(pc.maxRadius*2.0);
+    sbbexpanded.origin -= pc.maxRadius*(sbb.xbasis+sbb.ybasis+sbb.zbasis);
+  }
   //quick reject test
   if(!pcbb.intersectsApprox(sbbexpanded)) {
     //LOG4CXX_INFO(GET_LOGGER(Geometry),"0 contacts (quick reject) time "<<timer.ElapsedTime());
@@ -225,7 +229,9 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
   //test all points, linearly
   for(size_t i=0;i<apoints.size();i++) {
     Vector3 p_w = pc.currentTransform*apoints[i];
-    if(Distance(s,p_w) <= margin) {
+    Real margini = margin;
+    if(pc.radiusIndex >= 0) margini += pc.properties[aids[i]][pc.radiusIndex];
+    if(Distance(s,p_w) <= margini) {
       collidingPoints.push_back(aids[i]);
       if(collidingPoints.size() >= maxContacts) {
         LOG4CXX_DEBUG(GET_LOGGER(Geometry),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());
@@ -299,13 +305,21 @@ Real DistanceLowerBound(const CollisionImplicitSurface& s,const CollisionPointCl
   return dmin+orientedBB.distance(s.baseGrid.bb) - BOUNDING_VOLUME_FUZZ;
   */
   //method2: put everything in a sphere, assume the value of the baseGrid is an SDF
+  /*
   Vector3 c=(n.bb.bmin+n.bb.bmax)*0.5;
   Vector3 dims = n.bb.bmax-n.bb.bmin;
   Real rad = dims.norm()*0.5;
+  */
+
+  const Sphere3D& spherebound = pc.octree->Ball(nindex);
   /*
+  if(spherebound.radius < rad) {
+    c = spherebound.center;
+    rad = spherebound.radius;
+  }
+  */
   const Vector3& c = pc.octree->Ball(nindex).center;
   Real rad = pc.octree->Ball(nindex).radius;
-  */
 
   Vector3 clocal;
   Mpc_s.mulPoint(c,clocal);
@@ -317,7 +331,6 @@ Real DistanceLowerBound(const CollisionImplicitSurface& s,const CollisionPointCl
 Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,int& closestPoint,Real upperBound)
 {
   //Timer timer;
-
   assert(pc.octree != NULL);
   RigidTransform Tpc_s;
   Tpc_s.mulInverseA(s.currentTransform,pc.currentTransform);
@@ -335,6 +348,8 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
       Tpc_s.mul(pc.points[i],ptlocal);
       Vector3 pt_clamped;
       Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
+      if(pc.radiusIndex >= 0)
+        sdf_value -= pc.properties[i][pc.radiusIndex];
       if(sdf_value < bruteForceDmin) {
         Real d_bb = s.baseGrid.bb.distance(ptlocal,pt_clamped);
         if(sdf_value + d_bb < bruteForceDmin) {
@@ -386,6 +401,8 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
   Real mindist = upperBound;
   closestPoint = -1;
   d = Distance(s,pc.currentTransform*pc.points[0]);
+  if(pc.radiusIndex >= 0)
+    d -= pc.properties[0][pc.radiusIndex];
   if(d < mindist) {
     mindist = d;
     closestPoint = 0;
@@ -409,12 +426,15 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
         Tpc_s.mul(pc.points[id],ptlocal);
         Vector3 pt_clamped;
         Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
+        if(pc.radiusIndex >= 0)
+          sdf_value -= pc.properties[id][pc.radiusIndex];
         if(sdf_value < mindist) {
           Real d_bb = s.baseGrid.bb.distance(ptlocal,pt_clamped);
           Real d = d_bb + sdf_value;
           if(d < mindist) {
             //debugging
-            Assert(FuzzyEquals(d,Distance(s,pc.currentTransform*pc.points[id])));
+            if(pc.radiusIndex < 0)
+              Assert(FuzzyEquals(d,Distance(s,pc.currentTransform*pc.points[id])));
             mindist = d;
             closestPoint = id;
           }

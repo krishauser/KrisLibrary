@@ -13,6 +13,9 @@ namespace Geometry {
   using namespace Math3D;
 
 /** @brief A point cloud with a fast collision detection data structure
+ *
+ * If the point cloud has radii, the octree nodes are expanded to contain
+ * the points grown by their radii.
  */
 class CollisionPointCloud : public Meshing::PointCloud3D
 {
@@ -32,6 +35,9 @@ class CollisionPointCloud : public Meshing::PointCloud3D
   Real gridResolution; ///< default value is 0, which auto-determines from point cloud
   GridSubdivision3D grid;
   shared_ptr<OctreePointSet> octree;
+
+  int radiusIndex;   ///< the index of point radii, or -1 if not defined
+  Real maxRadius;    ///< the maximum over all point radii
 };
 
 ///Returns the oriented bounding box of the point cloud
