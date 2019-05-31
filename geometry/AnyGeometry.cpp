@@ -906,6 +906,9 @@ bool AnyCollisionGeometry3D::Convert(Type restype,AnyCollisionGeometry3D& res,do
 
 AABB3D AnyCollisionGeometry3D::GetAABBTight() const
 {
+  if(collisionData.empty()) {
+    FatalError("GetAABBTight: TODO: return a tight AABB when the collision data is not yet initialized");
+  }
   switch(type) {
   case Primitive:
   case ImplicitSurface:
