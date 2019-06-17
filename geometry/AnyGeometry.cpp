@@ -245,7 +245,7 @@ bool AnyGeometry3D::Convert(Type restype,AnyGeometry3D& res,double param) const
     return true;
   }
   if(restype == Group) return false;
-  Assert(param >= 0);
+  if(type != ImplicitSurface) Assert(param >= 0);
   switch(type) {
     case Primitive:
       switch(restype) {
