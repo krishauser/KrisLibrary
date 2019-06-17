@@ -251,7 +251,7 @@ bool AnyGeometry3D::Convert(Type restype,AnyGeometry3D& res,double param) const
     return true;
   }
   if(restype == Group) return false;
-  Assert(param >= 0);
+  if(type != ImplicitSurface) Assert(param >= 0);
   switch(type) {
     case Primitive:
       switch(restype) {
@@ -373,12 +373,9 @@ bool AnyGeometry3D::Convert(Type restype,AnyGeometry3D& res,double param) const
         }
         case TriangleMesh:
         {
-          //TODO: use offset properly
           const Meshing::VolumeGrid& grid = AsImplicitSurface();
-          //if(param != 0) grid.Add(param);
           Meshing::TriMesh mesh;
-          ImplicitSurfaceToMesh(grid,mesh);
-          //if(param != 0) grid.Add(-param);
+          ImplicitSurfaceToMesh(grid,mesh,param);
           res = AnyGeometry3D(mesh);
           return true;
         }

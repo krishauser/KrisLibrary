@@ -448,14 +448,14 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 	LOG4CXX_INFO(KrisLibrary::logger(),"Volume grid has "<<inside<<" / "<<grid.value.m*grid.value.n*grid.value.p);
 }
 
-void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh)
+void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh,Real levelSet)
 {
 	AABB3D center_bb = grid.bb;
 	Vector3 celldims = grid.GetCellSize();
 	//make correction for grid cell centers
 	center_bb.bmin += celldims*0.5;
 	center_bb.bmax -= celldims*0.5;
-    MarchingCubes(grid.value,0.0,center_bb,mesh);
+    MarchingCubes(grid.value,levelSet,center_bb,mesh);
 }
 
 } //namespace Geometry
