@@ -292,8 +292,19 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
       out.verts.push_back(in.verts[i]);
     }
   }
-  for(const auto& t:out.tris)
-    Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
+  size_t validTriangles = 0;
+  for(size_t i=0;i<out.tris.size();i++) {
+    const IntTriple& t = out.tris[i];
+    if(t.a < 0 || t.b < 0 || t.c < 0) {
+      const IntTriple& tin = in.tris[i];
+      printf("CreaseMesh: Invalid triangle %d %d %d, input triangle %d %d %d\n",t.a,t.b,t.c,tin.a,tin.b,tin.c);
+      continue;
+    }
+    //Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
+    out.tris[validTriangles] = out.tris[i];
+    validTriangles++;
+  }
+  out.tris.resize(validTriangles);
 }
 
 
