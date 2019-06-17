@@ -11,7 +11,8 @@ DECLARE_LOGGER(Geometry)
 #define DEBUG_DISTANCE_CHECKING 0
 //#define DEBUG_DISTANCE_CHECKING 1
 #define BRUTE_FORCE_DISTANCE_CHECKING_NPOINTS 1000
-#define BOUNDING_VOLUME_FUZZ 1e-2
+//#define BOUNDING_VOLUME_FUZZ 1e-2
+#define BOUNDING_VOLUME_FUZZ 2e-3
 
 //only do brute force checking
 //#define DEBUG_DISTANCE_CHECKING 0
@@ -318,8 +319,8 @@ Real DistanceLowerBound(const CollisionImplicitSurface& s,const CollisionPointCl
     rad = spherebound.radius;
   }
   */
-  const Vector3& c = pc.octree->Ball(nindex).center;
-  Real rad = pc.octree->Ball(nindex).radius;
+  const Vector3& c = spherebound.center;
+  Real rad = spherebound.radius;
 
   Vector3 clocal;
   Mpc_s.mulPoint(c,clocal);
@@ -433,7 +434,7 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
           Real d = d_bb + sdf_value;
           if(d < mindist) {
             //debugging
-            if(pc.radiusIndex < 0)
+            if(DEBUG_DISTANCE_CHECKING && pc.radiusIndex < 0)
               Assert(FuzzyEquals(d,Distance(s,pc.currentTransform*pc.points[id])));
             mindist = d;
             closestPoint = id;
@@ -457,9 +458,9 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
   }
   if(DEBUG_DISTANCE_CHECKING) {
     if(bruteForceDmin != mindist && bruteForceDmin < upperBound) {
-      printf("CollisionImplicitSurface vs CollisionPointCloud Distance error");
-      printf("   Discrepancy between brute force and expedited checking: %g vs %g\n",bruteForceDmin,mindist);
-      printf("   Points %d vs %d\n",bruteForceClosestPoint,closestPoint);
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"CollisionImplicitSurface vs CollisionPointCloud Distance error");
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"   Discrepancy between brute force and expedited checking: "<<bruteForceDmin<<" vs "<<mindist);
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"   Points "<<bruteForceClosestPoint<<" vs "<<closestPoint);
       //Abort();
     }
   }
