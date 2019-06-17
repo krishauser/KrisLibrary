@@ -791,18 +791,27 @@ void OctreePointSet::FitToPoints()
         n.bb.setUnion(nodes[n.childIndices[c]].bb);
       Real sumw = 0;
       for(int c=0;c<8;c++) {
+        const OctreeNode& cn = nodes[n.childIndices[c]];
         Real w=balls[n.childIndices[c]].radius;
+        if(w == 0 && cn.bb.bmin.x <= cn.bb.bmax.x) 
+          w = cn.bb.bmin.distance(cn.bb.bmax)*0.25;
         //Real w=pow(balls[n.childIndices[c]].radius,3);
         //Real w=1;
         //if(balls[n.childIndices[c]].radius == 0) w = 0;
         s.center.madd(balls[n.childIndices[c]].center,w);
         sumw += w;
       }
-      s.center /= sumw;
+      if(sumw > 0)
+        s.center /= sumw;
+      else
+        s.center = (n.bb.bmax + n.bb.bmin)*0.5;
       Real r=0;
       for(int c=0;c<8;c++) {
-        Real d = s.center.distance(balls[n.childIndices[c]].center) + balls[n.childIndices[c]].radius;
-        r = Max(d,r);
+        const OctreeNode& cn = nodes[n.childIndices[c]];
+        if(cn.bb.bmin.x <= cn.bb.bmax.x) {
+          Real d = s.center.distance(balls[n.childIndices[c]].center) + balls[n.childIndices[c]].radius;
+          r = Max(d,r);
+        }
       }
       s.radius = r;
 
