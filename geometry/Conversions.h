@@ -71,7 +71,7 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
  * MarchingCubes.h which assume the array defines values at the cell corners... this
  * performs the necessary correction.
  */
-void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh);
+void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh,Real levelSet=0.0);
 
 
 } //namespace Geometry
