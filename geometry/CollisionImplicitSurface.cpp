@@ -11,8 +11,9 @@ DECLARE_LOGGER(Geometry)
 #define DEBUG_DISTANCE_CHECKING 0
 //#define DEBUG_DISTANCE_CHECKING 1
 #define BRUTE_FORCE_DISTANCE_CHECKING_NPOINTS 1000
-//#define BOUNDING_VOLUME_FUZZ 1e-2
-#define BOUNDING_VOLUME_FUZZ 2e-3
+//The bounding volume method is a bit inaccurate due to the discretization of the implicit surface. 
+//This value allows a little bit of slop in the pruning step so that more points are considered.
+#define BOUNDING_VOLUME_FUZZ 1e-2
 
 //only do brute force checking
 //#define DEBUG_DISTANCE_CHECKING 0
