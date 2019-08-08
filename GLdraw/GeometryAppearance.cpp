@@ -522,13 +522,13 @@ void GeometryAppearance::DrawGL(Element e)
     doDrawEdges = drawEdges;
   else if(e == VERTICES)
     doDrawVertices = drawVertices;
-  else if(e == TRANSPARENT) {
+  else if(e == ALL_TRANSPARENT) {
     doDrawVertices = drawVertices && (vertexColor.rgba[3] < 1.0);
     doDrawEdges = drawEdges && (edgeColor.rgba[3] < 1.0);
     doDrawFaces = drawFaces && (faceColor.rgba[3] < 1.0);
     doDrawSilhouette = drawFaces && (silhouetteRadius > 0) && (faceColor.rgba[3] < 1.0 || silhouetteColor.rgba[3] < 1.0);
   }
-  else if(e == OPAQUE) {
+  else if(e == ALL_OPAQUE) {
     doDrawVertices = drawVertices && (vertexColor.rgba[3] >= 1.0);
     doDrawEdges = drawEdges && (edgeColor.rgba[3] >= 1.0);
     doDrawFaces = drawFaces && (faceColor.rgba[3] >= 1.0);

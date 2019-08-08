@@ -42,7 +42,7 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Math::Real p=-1);
 class GeometryAppearance
 {
  public:
-  enum Element { ALL, VERTICES, EDGES, FACES, SILHOUETTE, TRANSPARENT, OPAQUE };
+  enum Element { ALL, VERTICES, EDGES, FACES, SILHOUETTE, ALL_TRANSPARENT, ALL_OPAQUE };
 
   GeometryAppearance();
   ///This copies over the "material" information but doesn't change the display lists (if possible)
