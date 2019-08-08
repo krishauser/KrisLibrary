@@ -1083,18 +1083,18 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt)
   case ImplicitSurface:
     {
       const CollisionImplicitSurface& vg = ImplicitSurfaceCollisionData();
-      return ::Distance(vg,pt)-margin;
+      return Geometry::Distance(vg,pt)-margin;
     }
     break;
   case TriangleMesh:
     {
       const CollisionMesh& cm = TriangleMeshCollisionData();
-      return Min(::Distance(cm,pt)-margin,0.0);
+      return Min(Geometry::Distance(cm,pt)-margin,0.0);
     }
   case PointCloud:
     {
       const CollisionPointCloud& pc = PointCloudCollisionData();
-      return Min(::Distance(pc,pt)-margin,0.0);
+      return Min(Geometry::Distance(pc,pt)-margin,0.0);
     }
   case Group:
     {
@@ -1942,7 +1942,7 @@ public:
       }
     }
   }
-  bool Recurse()
+  void Recurse()
   {
     int maxqueuesize = 100;
     queue.push(make_pair(0,0),-Distance(pc.octree->Node(0),mesh.pqpModel->b[0]));
