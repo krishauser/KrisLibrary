@@ -401,13 +401,13 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<" x y z";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" "<<propertyNames[i];
-  out;
+  out<<endl;
   out<<"TYPE";
   if(addxyz)
     out<<" F F F";
   for(size_t i=0;i<propertyNames.size();i++)
     out<<" F";
-  out;
+  out<<endl;
 
   if(!properties.empty())
     out<<"POINTS "<<properties.size();
@@ -431,7 +431,7 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<points[i]<<" ";
       for(int j=0;j<properties[i].n;j++)
     out<<properties[i][j]<<" ";
-      out;
+      out<<endl;
     }
   }
   return true;
