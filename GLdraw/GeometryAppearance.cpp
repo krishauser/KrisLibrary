@@ -829,12 +829,19 @@ void GeometryAppearance::DrawGL(Element e)
             if(faceColors.size()==trimesh->tris.size())
               faceColors[i].setCurrentGL();
             glNormal3f(n.x,n.y,n.z);
-            glTexCoord2f(texcoords[t.a].x,texcoords[t.a].y);
-            glVertex3f(a.x,a.y,a.z);
-            glTexCoord2f(texcoords[t.b].x,texcoords[t.b].y);
-            glVertex3f(b.x,b.y,b.z);
-            glTexCoord2f(texcoords[t.c].x,texcoords[t.c].y);
-            glVertex3f(c.x,c.y,c.z);
+            if(texcoords.size()==trimesh->verts.size()) {
+              glTexCoord2f(texcoords[t.a].x,texcoords[t.a].y);
+              glVertex3f(a.x,a.y,a.z);
+              glTexCoord2f(texcoords[t.b].x,texcoords[t.b].y);
+              glVertex3f(b.x,b.y,b.z);
+              glTexCoord2f(texcoords[t.c].x,texcoords[t.c].y);
+              glVertex3f(c.x,c.y,c.z);
+            }
+            else {
+              glVertex3f(a.x,a.y,a.z);
+              glVertex3f(b.x,b.y,b.z);
+              glVertex3f(c.x,c.y,c.z);
+            }
           }
           glEnd();
         }
