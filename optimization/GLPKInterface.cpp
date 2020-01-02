@@ -411,6 +411,11 @@ double GLPKInterface::GetRowDual(int i){
   return 0;
 }
 
+double GLPKInterface::GetVariableDual(int j){
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLPK not defined");
+  return 0;
+}
+
 void GLPKInterface::SetRowNonBasic(int i,bool upper)
 {
   LOG4CXX_ERROR(KrisLibrary::logger(),"Warning, GLPK not defined");
