@@ -19,6 +19,8 @@ namespace Geometry {
 
 class AnyDistanceQuerySettings;
 class AnyDistanceQueryResult;
+class AnyContactsQuerySettings;
+class AnyContactsQueryResult;
 
 /** @brief A class that stores any kind of geometry we've defined.
  *
@@ -163,6 +165,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   AnyDistanceQueryResult Distance(AnyCollisionGeometry3D& geom,const AnyDistanceQuerySettings& settings);
   bool WithinDistance(AnyCollisionGeometry3D& geom,Real d);
   bool WithinDistance(AnyCollisionGeometry3D& geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
+  AnyContactsQueryResult Contacts(AnyCollisionGeometry3D& other,const AnyContactsQuerySettings& settings);
   bool RayCast(const Ray3D& r,Real* distance=NULL,int* element=NULL);
 
   /** The collision data structure, according to the type.
@@ -240,11 +243,49 @@ public:
   ///The closest points on the two geometries, in world coordinates
   Vector3 cp1,cp2;
   ///The direction from geometry 1 to geometry 2, and the distance from geometry 2 to geometry 1, in world coordinates
+  ///These are typically proportional to cp2-cp1 and cp1-cp2, respectively, EXCEPT when the points are exactly
+  ///coincident.
   Vector3 dir1,dir2;
   ///If the item is a group, this vector will recursively define the sub-elements
   vector<int> group_elem1,group_elem2;
 };
 
+class AnyContactsQuerySettings
+{
+public:
+  AnyContactsQuerySettings();
+  ///Extra padding on the geometries, padding1 for this object and padding2 for the other other
+  Real padding1,padding2;
+  ///Maximum number of contacts queried
+  size_t maxcontacts;
+  ///True if you'd like to cluster the contacts into at most maxcontacts results
+  bool cluster;
+};
+
+class AnyContactsQueryResult
+{
+public:
+  struct ContactPair
+  {
+    ///the depth of the contact, padding included
+    Real depth;
+    ///the contact points on the padded geometries of object1 and object2, in world coordinates
+    Vector3 p1,p2;
+    ///the outward contact normal from object 1 pointing into object 2, in world coordinates
+    Vector3 n;
+    ///the item defining the element to which this point belongs
+    int elem1,elem2;
+    ///if true, the contact normal can't be estimated accurately
+    bool unreliable;
+  };
+
+  AnyContactsQueryResult();
+  AnyContactsQueryResult(AnyContactsQueryResult&& other) = default;
+  ///The list of computed contact points
+  vector<ContactPair> contacts;
+  ///True if clustering was performed
+  bool clustered;
+};
 
 } //namespace Geometry
 

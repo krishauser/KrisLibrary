@@ -153,7 +153,7 @@ void Octree::BoxLookup(const Vector3& bmin,const Vector3& bmax,vector<int>& node
       nodeIndices.push_back(n);
     else {
       for(int i=0;i<8;i++)
-	q.push_back(nodes[n].childIndices[i]);
+        q.push_front(nodes[n].childIndices[i]);
     }
   }
 }
@@ -169,7 +169,7 @@ void Octree::BoxLookup(const Box3D& b,vector<int>& nodeIndices) const
       nodeIndices.push_back(n);
     else {
       for(int i=0;i<8;i++)
-	q.push_back(nodes[n].childIndices[i]);
+        q.push_front(nodes[n].childIndices[i]);
     }
   }  
 }
@@ -188,7 +188,7 @@ void Octree::BallLookup(const Vector3& c,Real r,vector<int>& nodeIndices) const
       nodeIndices.push_back(n);
     else {
       for(int i=0;i<8;i++)
-	q.push_back(nodes[n].childIndices[i]);
+        q.push_front(nodes[n].childIndices[i]);
     }
   }
 }
@@ -227,7 +227,7 @@ void Octree::_RayLookup(int nindex,const Ray3D& ray,vector<int>& nodeindices) co
       Real tmin = 0;
       Real tmax = Inf;
       if(ray.intersects(nodes[node.childIndices[i]].bb,tmin,tmax))
-	children.push_back(pair<Real,int>(tmin,node.childIndices[i]));
+        children.push_back(pair<Real,int>(tmin,node.childIndices[i]));
     }
     //loop through children, sorted by distance
     sort(children.begin(),children.end());
@@ -255,7 +255,7 @@ void Octree::_FattenedRayLookup(int nindex,const Ray3D& ray,Real radius,vector<i
       fattened.bmin -= Vector3(radius);
       fattened.bmax += Vector3(radius);
       if(ray.intersects(fattened,tmin,tmax))
-	children.push_back(pair<Real,int>(tmin,node.childIndices[i]));
+        children.push_back(pair<Real,int>(tmin,node.childIndices[i]));
     }
     //loop through children, sorted by distance
     sort(children.begin(),children.end());
@@ -331,7 +331,7 @@ OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell,Real _mi
   :Octree(bbox),maxPointsPerCell(_maxPointsPerCell),minCellSize(_minCellSize),fit(false)
 {
   //TODO: the Octree constructor calls the virtual AddNode function, which is a no-no in C++
-  if (nodes.size() > (int)indexLists.size()) {
+  if (nodes.size() > indexLists.size()) {
     indexLists.resize(nodes.size());
   }
 }
@@ -381,15 +381,23 @@ void OctreePointSet::Add(const Vector3& pt,int id)
     for(size_t i=0;i+1<indexLists[nindex].size();i++) {
       bbox.expand(points[indexLists[nindex][i]]);
       if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
-	Split(nindex);
-	//LOG4CXX_INFO(KrisLibrary::logger(),"Split time "<<timer.ElapsedTime());
-	//KrisLibrary::loggerWait();
-	break;
+        Split(nindex);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"Split time "<<timer.ElapsedTime());
+        //KrisLibrary::loggerWait();
+        break;
       }
     }
   }
 }
 
+void OctreePointSet::AddSphere(const Vector3& pt,Real radius,int id)
+{
+  if(fit) FatalError("OctreePointSet: Cannot call AddSphere() after FitToPoints()");
+  Add(pt,id);
+  if(radii.empty())
+    radii.resize(points.size(),0.0);
+  radii.back() = radius;
+}
 
 int OctreePointSet::AddNode(int parent)
 {
@@ -440,13 +448,35 @@ void OctreePointSet::BoxQuery(const Vector3& bmin,const Vector3& bmax,vector<Vec
   vector<int> boxnodes;
   BoxLookup(bmin,bmax,boxnodes);
   AABB3D bb(bmin,bmax);
-  for(size_t i=0;i<boxnodes.size();i++) {
-    const vector<int>& pindices = indexLists[boxnodes[i]];
-    for(size_t k=0;k<pindices.size();k++)
-      if(bb.contains(this->points[pindices[k]])) {
-	points.push_back(this->points[pindices[k]]);
-	ids.push_back(this->ids[pindices[k]]);
+  if(this->radii.empty()) {
+    for(size_t i=0;i<boxnodes.size();i++) {
+      const vector<int>& pindices = indexLists[boxnodes[i]];
+      for(auto k: pindices)
+        if(bb.contains(this->points[k])) {
+          points.push_back(this->points[k]);
+          ids.push_back(this->ids[k]);
+        }
+    }
+  }
+  else {
+    Vector3 temp;
+    for(size_t i=0;i<boxnodes.size();i++) {
+      const vector<int>& pindices = indexLists[boxnodes[i]];
+      for(auto k: pindices) {
+        if(this->radii[k] == 0) {
+          if(bb.contains(this->points[k])) {
+            points.push_back(this->points[k]);
+            ids.push_back(this->ids[k]);
+          }
+        }
+        else {
+          if(bb.distanceSquared(this->points[k],temp) < Sqr(this->radii[k])) {
+            points.push_back(this->points[k]);
+            ids.push_back(this->ids[k]);
+          }
+        }
       }
+    }
   }
 }
 
@@ -456,13 +486,45 @@ void OctreePointSet::BoxQuery(const Box3D& b,vector<Vector3>& points,vector<int>
   ids.resize(0);
   vector<int> boxnodes;
   BoxLookup(b,boxnodes);
+  /*
   for(size_t i=0;i<boxnodes.size();i++) {
     const vector<int>& pindices = indexLists[boxnodes[i]];
     for(size_t k=0;k<pindices.size();k++)
       if(b.contains(this->points[pindices[k]])) {
-	points.push_back(this->points[pindices[k]]);
-	ids.push_back(this->ids[pindices[k]]);
+        points.push_back(this->points[pindices[k]]);
+        ids.push_back(this->ids[pindices[k]]);
       }
+  }
+  */
+  if(this->radii.empty()) {
+    for(size_t i=0;i<boxnodes.size();i++) {
+      const vector<int>& pindices = indexLists[boxnodes[i]];
+      for(auto k: pindices)
+        if(b.contains(this->points[k])) {
+          points.push_back(this->points[k]);
+          ids.push_back(this->ids[k]);
+        }
+    }
+  }
+  else {
+    Vector3 temp;
+    for(size_t i=0;i<boxnodes.size();i++) {
+      const vector<int>& pindices = indexLists[boxnodes[i]];
+      for(auto k: pindices) {
+        if(this->radii[k] == 0) {
+          if(b.contains(this->points[k])) {
+            points.push_back(this->points[k]);
+            ids.push_back(this->ids[k]);
+          }
+        }
+        else {
+          if(b.distanceSquared(this->points[k],temp) < Sqr(this->radii[k])) {
+            points.push_back(this->points[k]);
+            ids.push_back(this->ids[k]);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -475,13 +537,27 @@ void OctreePointSet::BallQuery(const Vector3& c,Real r,vector<Vector3>& points,v
   Sphere3D s;
   s.center = c;
   s.radius = r;
-  for(size_t i=0;i<ballnodes.size();i++) {
-    const vector<int>& pindices = indexLists[ballnodes[i]];
-    for(size_t k=0;k<pindices.size();k++)
-      if(s.contains(this->points[pindices[k]])) {
-	points.push_back(this->points[pindices[k]]);
-	ids.push_back(this->ids[pindices[k]]);
+  if(this->radii.empty()) {
+    for(size_t i=0;i<ballnodes.size();i++) {
+      const vector<int>& pindices = indexLists[ballnodes[i]];
+      for(auto k: pindices) {
+        if(s.contains(this->points[k])) {
+          points.push_back(this->points[k]);
+          ids.push_back(this->ids[k]);
+        }
       }
+    }
+  }
+  else {
+    for(size_t i=0;i<ballnodes.size();i++) {
+      const vector<int>& pindices = indexLists[ballnodes[i]];
+      for(auto k: pindices) {
+        if(s.distance(this->points[k]) <= this->radii[k]) {
+          points.push_back(this->points[k]);
+          ids.push_back(this->ids[k]);
+        }
+      }
+    }
   }
 }
 
@@ -493,14 +569,30 @@ void OctreePointSet::RayQuery(const Ray3D& r,Real radius,vector<Vector3>& points
   FattenedRayLookup(r,radius,raynodes);
   Vector3 temp;
   Real r2 = radius*radius;
-  for(size_t i=0;i<raynodes.size();i++) {
-    const vector<int>& pindices = indexLists[raynodes[i]];
-    for(size_t k=0;k<pindices.size();k++) {
-      const Vector3& pt=this->points[pindices[k]];
-      Real t=r.closestPoint(pt,temp);
-      if(pt.distanceSquared(temp) <= r2) {
-	points.push_back(pt);
-	ids.push_back(this->ids[pindices[k]]);
+  if(this->radii.empty()) {
+    for(size_t i=0;i<raynodes.size();i++) {
+      const vector<int>& pindices = indexLists[raynodes[i]];
+      for(auto k: pindices) {
+        const Vector3& pt=this->points[k];
+        Real t=r.closestPoint(pt,temp);
+        if(pt.distanceSquared(temp) <= r2) {
+          points.push_back(pt);
+          ids.push_back(this->ids[k]);
+        }
+      }
+    }
+  }
+  else {
+    //TODO: this isn't necessarily the closest with highly uneven radii
+    for(size_t i=0;i<raynodes.size();i++) {
+      const vector<int>& pindices = indexLists[raynodes[i]];
+      for(auto k: pindices) {
+        const Vector3& pt=this->points[k];
+        Real t=r.closestPoint(pt,temp);
+        if(pt.distanceSquared(temp) <= Sqr(radius+this->radii[k])) {
+          points.push_back(pt);
+          ids.push_back(this->ids[k]);
+        }
       }
     }
   }
@@ -512,29 +604,52 @@ int OctreePointSet::RayCast(const Ray3D& r,Real radius) const
   FattenedRayLookup(r,radius,raynodes);
   Vector3 temp;
   Real r2 = radius*radius;
-  for(size_t i=0;i<raynodes.size();i++) {
-    const vector<int>& pindices = indexLists[raynodes[i]];
-    Real closest = Inf;
-    int result = -1;
-    for(size_t k=0;k<pindices.size();k++) {
-      const Vector3& pt=this->points[pindices[k]];
-      Real t=r.closestPoint(pt,temp);
-      if(pt.distanceSquared(temp) <= r2) {
-	if(t < closest) {
-	  closest = t;
-	  result = ids[k];
-	}
+  Real closest = Inf;
+  int result = -1;
+  if(this->radii.empty()) {
+    for(size_t i=0;i<raynodes.size();i++) {
+      const vector<int>& pindices = indexLists[raynodes[i]];
+      for(auto k: pindices) {
+        const Vector3& pt=this->points[k];
+        Real t=r.closestPoint(pt,temp);
+        if(pt.distanceSquared(temp) <= r2) {
+          if(t < closest) {
+            closest = t;
+            result = ids[k];
+          }
+        }
       }
+      if(result >= 0)
+        return result;
     }
-    if(result >= 0)
-      return result;
+  }
+  else {
+    //TODO: this isn't necessarily the closest with highly uneven radii
+    for(size_t i=0;i<raynodes.size();i++) {
+      const vector<int>& pindices = indexLists[raynodes[i]];
+      for(auto k: pindices) {
+        const Vector3& pt=this->points[k];
+        Real t=r.closestPoint(pt,temp);
+        if(pt.distanceSquared(temp) <= Sqr(radius + this->radii[k])) {
+          if(t < closest) {
+            closest = t;
+            result = ids[k];
+          }
+        }
+      }
+      if(result >= 0)
+        return result;
+    }
   }
   return -1;
 }
 
-bool OctreePointSet::NearestNeighbor(const Vector3& c,Vector3& closest,int& id) const
+bool OctreePointSet::NearestNeighbor(const Vector3& c,Vector3& closest,int& id,Real upperBound) const
 {
-  return !IsInf(_NearestNeighbor(nodes[0],c,closest,id,Inf));
+  if(IsInf(upperBound))
+    return !IsInf(_NearestNeighbor(nodes[0],c,closest,id,Inf));
+  Real upperBound2 = Sqr(upperBound);
+  return _NearestNeighbor(nodes[0],c,closest,id,upperBound2) < upperBound2;
 }
 
 Real OctreePointSet::_NearestNeighbor(const OctreeNode& n,const Vector3& c,Vector3& closest,int& id,Real minDist2) const
@@ -547,13 +662,17 @@ Real OctreePointSet::_NearestNeighbor(const OctreeNode& n,const Vector3& c,Vecto
   }
   if(IsLeaf(n)) {
     int index = Index(n);
-    for(size_t i=0;i<indexLists[index].size();i++) {
-      const Vector3& pt=points[indexLists[index][i]];
-      Real d2 = c.distanceSquared(pt);
+    for(auto k : indexLists[index]) {
+      const Vector3& pt=points[k];
+      Real d2;
+      if(radii.empty())
+        d2 = c.distanceSquared(pt);
+      else
+        d2 = Sqr(c.distance(pt) - radii[k]);
       if(d2 < minDist2) {
-	closest = pt;
-	id = ids[indexLists[index][i]];
-	minDist2 = d2;
+        closest = pt;
+        id = ids[k];
+        minDist2 = d2;
       }
     }
   }
@@ -588,18 +707,22 @@ int OctreePointSet::_KNearestNeighbors(const OctreeNode& n,const Vector3& c,vect
   }
   if(IsLeaf(n)) {
     int index = Index(n);
-    for(size_t i=0;i<indexLists[index].size();i++) {
-      const Vector3& pt = this->points[indexLists[index][i]];
-      Real d2 = c.distanceSquared(pt);
+    for(auto k : indexLists[index]) {
+      const Vector3& pt = this->points[k];
+      Real d2;
+      if(radii.empty())
+        d2 = c.distanceSquared(pt);
+      else
+        d2 = Sqr(c.distance(pt) - radii[k]);
       if(d2 < minDist2) {
-	closest[kmin] = pt;
-	ids[kmin] = this->ids[indexLists[index][i]];
-	distances[kmin] = d2;
-	//find the next farthest point
-	for(size_t k=0;k<distances.size();k++) {
-	  if(distances[k] > d2)
-	    kmin = k;
-	}
+        closest[kmin] = pt;
+        ids[kmin] = this->ids[k];
+        distances[kmin] = d2;
+        //find the next farthest point
+        for(size_t k=0;k<distances.size();k++) {
+          if(distances[k] > d2)
+            kmin = k;
+        }
       }
     }
   }
@@ -612,7 +735,7 @@ int OctreePointSet::_KNearestNeighbors(const OctreeNode& n,const Vector3& c,vect
       kmin = _KNearestNeighbors(nodes[n.childIndices[i]],c,closest,ids,distances,kmin);
     }
   }
-    return kmin;
+  return kmin;
 }
 
 void OctreePointSet::FitToPoints()
@@ -628,17 +751,37 @@ void OctreePointSet::FitToPoints()
     s.radius=0;
     if(IsLeaf(n)) {
       const vector<int>& ptidx = indexLists[index];
-      n.bb.minimize();
-      for(size_t j=0;j<ptidx.size();j++) {
-        n.bb.expand(points[ptidx[j]]);
-        s.center += points[ptidx[j]];
+      if(!ptidx.empty())
+        n.bb.minimize();
+      for(auto j: ptidx) {
+        if(radii.empty())
+          n.bb.expand(points[j]);
+        else {
+          n.bb.expand(points[j]-Vector3(radii[j]));
+          n.bb.expand(points[j]+Vector3(radii[j]));
+        }
+        s.center += points[j];
       }
       Real r = 0;
       if(!ptidx.empty()) {
         s.center /= (Real)ptidx.size();
-        for(size_t j=0;j<ptidx.size();j++) 
-          r = Max(r,s.center.distanceSquared(points[ptidx[j]]));
-        s.radius = Sqrt(r);
+        if(radii.empty()) {
+          for(auto j: ptidx) 
+            r = Max(r,s.center.distanceSquared(points[j]));
+          s.radius = Sqrt(r);
+        }
+        else {
+          for(auto j: ptidx) 
+            s.radius = Max(s.radius,s.center.distance(points[j]) + radii[j]);
+        }
+        //sometimes the ball heuristic isn't very good
+        if(Sqr(s.radius*2) > n.bb.bmax.distanceSquared(n.bb.bmin)) {
+          s.center = (n.bb.bmax + n.bb.bmin)*0.5;
+          s.radius = 0.5*n.bb.bmin.distance(n.bb.bmax);
+        }
+      }
+      else {
+        s.center = (n.bb.bmax + n.bb.bmin)*0.5;
       }
     }
     else{
@@ -648,19 +791,35 @@ void OctreePointSet::FitToPoints()
         n.bb.setUnion(nodes[n.childIndices[c]].bb);
       Real sumw = 0;
       for(int c=0;c<8;c++) {
+        const OctreeNode& cn = nodes[n.childIndices[c]];
+        Real w=balls[n.childIndices[c]].radius;
+        if(w == 0 && cn.bb.bmin.x <= cn.bb.bmax.x) 
+          w = cn.bb.bmin.distance(cn.bb.bmax)*0.25;
         //Real w=pow(balls[n.childIndices[c]].radius,3);
-        Real w=1;
-        if(balls[n.childIndices[c]].radius == 0) w = 0;
+        //Real w=1;
+        //if(balls[n.childIndices[c]].radius == 0) w = 0;
         s.center.madd(balls[n.childIndices[c]].center,w);
         sumw += w;
       }
-      s.center /= sumw;
+      if(sumw > 0)
+        s.center /= sumw;
+      else
+        s.center = (n.bb.bmax + n.bb.bmin)*0.5;
       Real r=0;
       for(int c=0;c<8;c++) {
-        Real d = s.center.distance(balls[n.childIndices[c]].center) + balls[n.childIndices[c]].radius;
-        r = Max(d,r);
+        const OctreeNode& cn = nodes[n.childIndices[c]];
+        if(cn.bb.bmin.x <= cn.bb.bmax.x) {
+          Real d = s.center.distance(balls[n.childIndices[c]].center) + balls[n.childIndices[c]].radius;
+          r = Max(d,r);
+        }
       }
       s.radius = r;
+
+      //sometimes the ball heuristic isn't very good
+      if(Sqr(s.radius*2) > n.bb.bmax.distanceSquared(n.bb.bmin)) {
+        s.center = (n.bb.bmax + n.bb.bmin)*0.5;
+        s.radius = 0.5*n.bb.bmin.distance(n.bb.bmax);
+      }
     }
   }
 }
@@ -674,18 +833,18 @@ void OctreePointSet::Collapse(int maxSize)
       bool allempty = true;
       size_t sumsizes = 0;
       for(int c=0;c<8;c++) {
-	if(!IsLeaf(nodes[n.childIndices[c]])) {
-	  allempty = false;
-	  break;
-	}
-	sumsizes += indexLists[n.childIndices[c]].size();
-	if((int)sumsizes > maxSize) {
-	  allempty = false;
-	  break;
-	}
+        if(!IsLeaf(nodes[n.childIndices[c]])) {
+          allempty = false;
+          break;
+        }
+        sumsizes += indexLists[n.childIndices[c]].size();
+        if((int)sumsizes > maxSize) {
+          allempty = false;
+          break;
+        }
       }
       if(allempty)
-	Join(Index(n));
+        Join(Index(n));
     }
   }
 }
@@ -724,9 +883,9 @@ void OctreeScalarField::Set(const Vector3& pt,Real value,int id)
     else {
       dp->value += (d->value-oldvalue)/8.0;
       if(value < dp->valueMin)
-	dp->valueMin = value;
+        dp->valueMin = value;
       else if(value > dp->valueMax)
-	dp->valueMax = value;
+        dp->valueMax = value;
     }
     d = dp;
     oldvalue = oldpvalue;
@@ -834,7 +993,7 @@ void OctreeScalarField::BoxLookupRange(const Vector3& bmin,const Vector3& bmax,R
       nodeIndices.push_back(n);
     else {
       for(int i=0;i<8;i++)
-	q.push_back(nodes[n].childIndices[i]);
+        q.push_front(nodes[n].childIndices[i]);
     }
   }
 }
@@ -854,7 +1013,7 @@ void OctreeScalarField::Collapse(Real tolerance)
   for(size_t i=0;i<nodes.size();i++) {
     if(!IsLeaf(nodes[i])) {
       if(data[i].valueMax - data[i].valueMin <= tolerance)
-	Join(i);
+        Join(i);
     }
   }
 }

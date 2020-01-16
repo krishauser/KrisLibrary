@@ -292,8 +292,19 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
       out.verts.push_back(in.verts[i]);
     }
   }
-  for(const auto& t:out.tris)
-    Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
+  size_t validTriangles = 0;
+  for(size_t i=0;i<out.tris.size();i++) {
+    const IntTriple& t = out.tris[i];
+    if(t.a < 0 || t.b < 0 || t.c < 0) {
+      const IntTriple& tin = in.tris[i];
+      printf("CreaseMesh: Invalid triangle %d %d %d, input triangle %d %d %d\n",t.a,t.b,t.c,tin.a,tin.b,tin.c);
+      continue;
+    }
+    //Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
+    out.tris[validTriangles] = out.tris[i];
+    validTriangles++;
+  }
+  out.tris.resize(validTriangles);
 }
 
 
@@ -435,14 +446,45 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       //following PCD, this is actuall A-RGB
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
-          unsigned int col = (unsigned int)rgb[i];
-          vertexColors[i].set(((col&0xff0000)>>16) * scale,
-          ((col&0xff00)>>8) * scale,
-          (col&0xff) * scale,
-          ((col&0xff000000)>>24) * scale);
+        unsigned int col = (unsigned int)rgb[i];
+        vertexColors[i].set(((col&0xff0000)>>16) * scale,
+        ((col&0xff00)>>8) * scale,
+        (col&0xff) * scale,
+        ((col&0xff000000)>>24) * scale);
       }
     }
-    if(pc.GetProperty("opacity",rgb)) {
+    if(pc.GetProperty("r",rgb)) {
+      //this is a weird opacity in UINT byte format
+      if(!vertexColors.empty()) 
+        //already assigned color?
+        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has both r channel and either rgb or rgba channel");
+      vertexColors.resize(rgb.size(),vertexColor.rgba);
+      for(size_t i=0;i<rgb.size();i++) 
+        vertexColors[i].rgba[0] = rgb[i];
+    }
+    if(pc.GetProperty("g",rgb)) {
+      //this is a weird opacity in UINT byte format
+      if(vertexColors.empty()) {
+        //already assigned color?
+        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has g channel but not r channel?");
+      }
+      else {
+        for(size_t i=0;i<rgb.size();i++) 
+          vertexColors[i].rgba[1] = rgb[i];
+      }
+    }
+    if(pc.GetProperty("b",rgb)) {
+      //this is a weird opacity in UINT byte format
+      if(vertexColors.empty()) {
+        //already assigned color?
+        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has a channel but not r channel?");
+      }
+      else {
+        for(size_t i=0;i<rgb.size();i++) 
+          vertexColors[i].rgba[2] = rgb[i];
+      }
+    }
+    if(pc.GetProperty("opacity",rgb) || pc.GetProperty("a",rgb)) {
       if(!vertexColors.empty()) {
         //already assigned color, just get opacity
         for(size_t i=0;i<rgb.size();i++) {

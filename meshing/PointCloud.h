@@ -41,6 +41,8 @@ using namespace std;
  *   [0,255].
  * - r,g,b,a: color channels in the range [0,1]
  * - u,v: a (u,v) coordinate in range [0,1]^2 mapping into some other image (usually RGB color)
+ * - radius: a radius occupied around the point, to treat the point as a surfel
+ *   or a sphere
  * When drawn via the GeometryAppearance class, these properties will be
  * properly interpreted to color the point cloud display.
  */

@@ -5,10 +5,14 @@
 #include <KrisLibrary/Logger.h>
 #include <Timer.h>
 
+DECLARE_LOGGER(Geometry)
+
 //switch to brute force when # points drops below 1000
 #define DEBUG_DISTANCE_CHECKING 0
 //#define DEBUG_DISTANCE_CHECKING 1
 #define BRUTE_FORCE_DISTANCE_CHECKING_NPOINTS 1000
+//The bounding volume method is a bit inaccurate due to the discretization of the implicit surface. 
+//This value allows a little bit of slop in the pruning step so that more points are considered.
 #define BOUNDING_VOLUME_FUZZ 1e-2
 
 //only do brute force checking
@@ -153,18 +157,18 @@ Real Distance(const CollisionImplicitSurface& s,const Vector3& pt,Vector3& surfa
 {
   Vector3 ptlocal;
   s.currentTransform.mulInverse(pt,ptlocal);
-  Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
   Vector3 pt_clamped;
   Real d_bb = s.baseGrid.bb.distance(ptlocal,pt_clamped);
- 
+  Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
+  
   s.baseGrid.Gradient(pt_clamped,direction);
-  //cout<<"Gradient is "<<direction<<endl;
   direction.inplaceNormalize();
   surfacePt = pt_clamped - direction*sdf_value;
   if(d_bb > 0) {
     direction = surfacePt - ptlocal;
-    direction.inplaceNormalize();
-    //cout<<"External, changing direction to "<<direction<<endl;
+    sdf_value = 0;
+    d_bb = direction.norm();
+    direction /= d_bb;
   }
   else
     direction.inplaceNegative();
@@ -184,11 +188,11 @@ Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a
   else if(a.type == GeometricPrimitive3D::Sphere) {
     const Sphere3D* s=AnyCast_Raw<Sphere3D>(&a.data);
     Real d = Distance(grid,s->center,gridclosest,direction);
-    geomclosest = s->center - Min(s->radius,Max(d,-s->radius))*direction;
+    geomclosest = s->center + s->radius*direction;
     return d - s->radius;
   }
   else {
-    FatalError("Can't collide an implicit surface and a non-sphere primitive yet\n");
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can't collide an implicit surface and a non-sphere primitive yet");
     return 0;
   }
 }
@@ -204,9 +208,13 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
   Box3D sbbexpanded = sbb;
   sbbexpanded.dims += Vector3(margin*2.0);
   sbbexpanded.origin -= margin*(sbb.xbasis+sbb.ybasis+sbb.zbasis);
+  if(pc.radiusIndex >= 0) {
+    sbbexpanded.dims += Vector3(pc.maxRadius*2.0);
+    sbbexpanded.origin -= pc.maxRadius*(sbb.xbasis+sbb.ybasis+sbb.zbasis);
+  }
   //quick reject test
   if(!pcbb.intersectsApprox(sbbexpanded)) {
-    //LOG4CXX_INFO(KrisLibrary::logger(),"0 contacts (quick reject) time "<<timer.ElapsedTime());
+    //LOG4CXX_INFO(GET_LOGGER(Geometry),"0 contacts (quick reject) time "<<timer.ElapsedTime());
     return false;
   }
   RigidTransform Tw_pc;
@@ -223,18 +231,20 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
   //test all points, linearly
   for(size_t i=0;i<apoints.size();i++) {
     Vector3 p_w = pc.currentTransform*apoints[i];
-    if(Distance(s,p_w) <= margin) {
+    Real margini = margin;
+    if(pc.radiusIndex >= 0) margini += pc.properties[aids[i]][pc.radiusIndex];
+    if(Distance(s,p_w) <= margini) {
       collidingPoints.push_back(aids[i]);
       if(collidingPoints.size() >= maxContacts) {
-        LOG4CXX_INFO(KrisLibrary::logger(),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());
+        LOG4CXX_DEBUG(GET_LOGGER(Geometry),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());
 
-        //LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Collision in time "<<timer.ElapsedTime());
         return true;
       }
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());     
-  // LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
+  LOG4CXX_DEBUG(GET_LOGGER(Geometry),"PointCloud-ImplicitSurface "<<maxContacts<<" contacts time "<<timer.ElapsedTime());     
+  // LOG4CXX_INFO(GET_LOGGER(Geometry),"No collision in time "<<timer.ElapsedTime());
   return !collidingPoints.empty();
 
   /*
@@ -258,16 +268,16 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
       if(Collides(point_primitive,Tident,margin,b,temp,elements1,maxContacts)) {
         elements2.push_back(i);
         if(elements2.size() >= maxContacts) {
-          LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
+          LOG4CXX_INFO(GET_LOGGER(Geometry),"Collision in time "<<timer.ElapsedTime());
           return true;
         }
       }
     }
-    LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"No collision in time "<<timer.ElapsedTime());
     return false;
   }
   else {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Box testing\n");
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Box testing\n");
     gWithinDistanceMargin = margin;
     gWithinDistancePC = &a;
     gWithinDistanceGeom = &b;
@@ -275,8 +285,8 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
     gWithinDistanceElements2 = &elements2;
     gWithinDistanceMaxContacts = maxContacts;
     bool collisionFree = a.grid.IndexQuery(imin,imax,withinDistance_PC_AnyGeom);
-    if(collisionFree) LOG4CXX_INFO(KrisLibrary::logger(),"No collision in time "<<timer.ElapsedTime());
-    else LOG4CXX_INFO(KrisLibrary::logger(),"Collision in time "<<timer.ElapsedTime());
+    if(collisionFree) LOG4CXX_INFO(GET_LOGGER(Geometry),"No collision in time "<<timer.ElapsedTime());
+    else LOG4CXX_INFO(GET_LOGGER(Geometry),"Collision in time "<<timer.ElapsedTime());
     return !collisionFree;
   }
   */
@@ -297,13 +307,21 @@ Real DistanceLowerBound(const CollisionImplicitSurface& s,const CollisionPointCl
   return dmin+orientedBB.distance(s.baseGrid.bb) - BOUNDING_VOLUME_FUZZ;
   */
   //method2: put everything in a sphere, assume the value of the baseGrid is an SDF
+  /*
   Vector3 c=(n.bb.bmin+n.bb.bmax)*0.5;
   Vector3 dims = n.bb.bmax-n.bb.bmin;
   Real rad = dims.norm()*0.5;
-  /*
-  const Vector3& c = pc.octree->Ball(nindex).center;
-  Real rad = pc.octree->Ball(nindex).radius;
   */
+
+  const Sphere3D& spherebound = pc.octree->Ball(nindex);
+  /*
+  if(spherebound.radius < rad) {
+    c = spherebound.center;
+    rad = spherebound.radius;
+  }
+  */
+  const Vector3& c = spherebound.center;
+  Real rad = spherebound.radius;
 
   Vector3 clocal;
   Mpc_s.mulPoint(c,clocal);
@@ -315,7 +333,6 @@ Real DistanceLowerBound(const CollisionImplicitSurface& s,const CollisionPointCl
 Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,int& closestPoint,Real upperBound)
 {
   //Timer timer;
-
   assert(pc.octree != NULL);
   RigidTransform Tpc_s;
   Tpc_s.mulInverseA(s.currentTransform,pc.currentTransform);
@@ -333,6 +350,8 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
       Tpc_s.mul(pc.points[i],ptlocal);
       Vector3 pt_clamped;
       Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
+      if(pc.radiusIndex >= 0)
+        sdf_value -= pc.properties[i][pc.radiusIndex];
       if(sdf_value < bruteForceDmin) {
         Real d_bb = s.baseGrid.bb.distance(ptlocal,pt_clamped);
         if(sdf_value + d_bb < bruteForceDmin) {
@@ -384,6 +403,8 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
   Real mindist = upperBound;
   closestPoint = -1;
   d = Distance(s,pc.currentTransform*pc.points[0]);
+  if(pc.radiusIndex >= 0)
+    d -= pc.properties[0][pc.radiusIndex];
   if(d < mindist) {
     mindist = d;
     closestPoint = 0;
@@ -407,12 +428,15 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
         Tpc_s.mul(pc.points[id],ptlocal);
         Vector3 pt_clamped;
         Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
+        if(pc.radiusIndex >= 0)
+          sdf_value -= pc.properties[id][pc.radiusIndex];
         if(sdf_value < mindist) {
           Real d_bb = s.baseGrid.bb.distance(ptlocal,pt_clamped);
           Real d = d_bb + sdf_value;
           if(d < mindist) {
             //debugging
-            Assert(FuzzyEquals(d,Distance(s,pc.currentTransform*pc.points[id])));
+            if(DEBUG_DISTANCE_CHECKING && pc.radiusIndex < 0)
+              Assert(FuzzyEquals(d,Distance(s,pc.currentTransform*pc.points[id])));
             mindist = d;
             closestPoint = id;
           }
@@ -435,9 +459,9 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
   }
   if(DEBUG_DISTANCE_CHECKING) {
     if(bruteForceDmin != mindist && bruteForceDmin < upperBound) {
-      printf("CollisionImplicitSurface vs CollisionPointCloud Distance error");
-      printf("   Discrepancy between brute force and expedited checking: %g vs %g\n",bruteForceDmin,mindist);
-      printf("   Points %d vs %d\n",bruteForceClosestPoint,closestPoint);
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"CollisionImplicitSurface vs CollisionPointCloud Distance error");
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"   Discrepancy between brute force and expedited checking: "<<bruteForceDmin<<" vs "<<mindist);
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"   Points "<<bruteForceClosestPoint<<" vs "<<closestPoint);
       //Abort();
     }
   }

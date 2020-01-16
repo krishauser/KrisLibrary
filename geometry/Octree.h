@@ -103,6 +103,10 @@ class Octree
 
 /** @brief Stores a point set P on an octree grid.  Allows for O(d) adding,
  * O(d h) range queries and pseudo-O(d) nearest neighbor queries.
+ *
+ * Can also associate a nonnegative radius to each point using AddSphere.  If so, 
+ * the queries treat the points as solid spheres.  For this to work properly,
+ * FitToPoints must be called before queries are made.
  */
 class OctreePointSet : public Octree
 {
@@ -116,6 +120,7 @@ class OctreePointSet : public Octree
   void GetPointIDs(int node,vector<int>& ids) const;
   void GetPointIDs(const OctreeNode& node,vector<int>& ids) const { GetPointIDs(Index(node),ids); }
   void Add(const Vector3& pt,int id=-1);
+  void AddSphere(const Vector3& pt,Real radius,int id=-1);
   void BoxQuery(const Vector3& bmin,const Vector3& bmax,vector<Vector3>& points,vector<int>& ids) const;
   void BoxQuery(const Box3D& b,vector<Vector3>& points,vector<int>& ids) const;
   void BallQuery(const Vector3& c,Real r,vector<Vector3>& points,vector<int>& ids) const;
@@ -125,7 +130,7 @@ class OctreePointSet : public Octree
   ///Returns the ID of the closest point for which r intersects a ball of
   ///radius radius around it
   int RayCast(const Ray3D& r,Real radius) const;
-  bool NearestNeighbor(const Vector3& c,Vector3& closest,int& id) const;
+  bool NearestNeighbor(const Vector3& c,Vector3& closest,int& id,Real upperBound=Inf) const;
   void KNearestNeighbors(const Vector3& c,int k,vector<Vector3>& closest,vector<int>& ids) const;
   ///Collapses all non-leaf nodes if the collapsed number of points per cell
   ///is less than or equal to maxSize
@@ -148,10 +153,12 @@ class OctreePointSet : public Octree
   Real minCellSize;
   vector<vector<int> > indexLists;
   vector<Vector3> points;
+  vector<Real> radii;
   vector<int> ids;
   vector<Sphere3D> balls;
   bool fit;
 };
+
 
 /** @brief Stores a function f(x) on an octree grid.  Allows for O(d) setting,
  * sub O(d) testing of f(x) in range [a,b], O(d h) selection of nodes with

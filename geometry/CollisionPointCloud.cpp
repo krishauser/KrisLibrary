@@ -2,16 +2,18 @@
 #include "CollisionPointCloud.h"
 #include <Timer.h>
 
+DECLARE_LOGGER(Geometry)
+
 namespace Geometry {
 
 CollisionPointCloud::CollisionPointCloud()
-  :gridResolution(0),grid(3)
+  :gridResolution(0),grid(3),radiusIndex(-1),maxRadius(0)
 {
   currentTransform.setIdentity();
 }
 
 CollisionPointCloud::CollisionPointCloud(const Meshing::PointCloud3D& _pc)
-  :Meshing::PointCloud3D(_pc),gridResolution(0),grid(3)
+  :Meshing::PointCloud3D(_pc),gridResolution(0),grid(3),radiusIndex(-1),maxRadius(0)
 {
   currentTransform.setIdentity();
   InitCollisions();
@@ -20,11 +22,25 @@ CollisionPointCloud::CollisionPointCloud(const Meshing::PointCloud3D& _pc)
 CollisionPointCloud::CollisionPointCloud(const CollisionPointCloud& _pc)
   :Meshing::PointCloud3D(_pc),bblocal(_pc.bblocal),currentTransform(_pc.currentTransform),
    gridResolution(_pc.gridResolution),grid(_pc.grid),
-   octree(_pc.octree)
-{}
+   octree(_pc.octree),radiusIndex(_pc.radiusIndex),maxRadius(_pc.maxRadius)
+{
+
+}
 
 void CollisionPointCloud::InitCollisions()
 {
+  radiusIndex = PropertyIndex("radius");
+  if(radiusIndex >= 0) {
+    Real minRadius = 0.0;
+    maxRadius = 0.0;
+    for(auto& p:properties) {
+      maxRadius = Max(maxRadius,p[radiusIndex]);
+      minRadius = Min(minRadius,p[radiusIndex]);
+    }
+    if(minRadius < 0)
+      FatalError("Can't create a collision point cloud with negative radius?");
+  }
+
   bblocal.minimize();
   grid.buckets.clear();
   octree = NULL;
@@ -32,8 +48,16 @@ void CollisionPointCloud::InitCollisions()
     return;
   Assert(points.size() > 0);
   Timer timer;
-  for(size_t i=0;i<points.size();i++)
-    bblocal.expand(points[i]);
+  if(radiusIndex >= 0) {
+    for(size_t i=0;i<points.size();i++) {
+      bblocal.expand(points[i]-Vector3(properties[i][radiusIndex]));
+      bblocal.expand(points[i]+Vector3(properties[i][radiusIndex]));
+    }
+  }
+  else {
+    for(size_t i=0;i<points.size();i++)
+      bblocal.expand(points[i]);
+  }
   //set up the grid
   Real res = gridResolution;
   if(gridResolution <= 0) {
@@ -61,24 +85,32 @@ void CollisionPointCloud::InitCollisions()
       validptcount++;
     }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
   //print stats
   int nmax = 0;
   for(GridSubdivision3D::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
     nmax = Max(nmax,(int)i->second.size());
-  LOG4CXX_INFO(KrisLibrary::logger(),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
   timer.Reset();
 
   //initialize the octree, 10 points per cell, res is minimum cell size
   octree = make_shared<OctreePointSet>(bblocal,10,res);
-  for(size_t i=0;i<points.size();i++) {
-    if(IsFinite(points[i].x))
-      octree->Add(points[i],(int)i);
+  if(radiusIndex >= 0)  {
+    for(size_t i=0;i<points.size();i++) {
+      if(IsFinite(points[i].x))
+        octree->AddSphere(points[i],properties[i][radiusIndex],(int)i);
+    }
   }
-  LOG4CXX_INFO(KrisLibrary::logger(),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
-  //TEST: should we fit to points
+  else {
+    for(size_t i=0;i<points.size();i++) {
+      if(IsFinite(points[i].x))
+        octree->Add(points[i],(int)i);
+    }
+  }
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
+  //TEST: should we fit to points?
   octree->FitToPoints();
-  LOG4CXX_INFO(KrisLibrary::logger(),"  octree fit to points in time "<<timer.ElapsedTime());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree fit to points in time "<<timer.ElapsedTime());
   /*
   //TEST: method 2.  Turns out to be much slower
   timer.Reset();
@@ -87,7 +119,7 @@ void CollisionPointCloud::InitCollisions()
   for(size_t i=0;i<points.size();i++)
     octree->Add(points[i],(int)i);
   octree->Collapse(10);
-  LOG4CXX_INFO(KrisLibrary::logger(),"  octree 2 initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size());
+  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree 2 initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size());
   */
 }
 
@@ -118,15 +150,49 @@ bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
 
-  AABB3D gbb = glocal.GetAABB();  
-  gbb.setIntersection(pc.bblocal);
-
-  //octree overlap method
   vector<Vector3> points;
   vector<int> ids;
-  pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
-  for(size_t i=0;i<points.size();i++) 
-    if(glocal.Distance(points[i]) <= tol) return true;
+  if(pc.maxRadius > 0) {
+    //points have radii defined
+    Assert(pc.radiusIndex >= 0);
+    if(glocal.type == GeometricPrimitive3D::Point) {
+      const Vector3& x = *AnyCast<Point3D>(&glocal.data);
+      pc.octree->BallQuery(x,tol,points,ids);
+      if(!points.empty()) return true;
+    }
+    else if(glocal.type == GeometricPrimitive3D::Sphere) {
+      const Sphere3D& s = *AnyCast<Sphere3D>(&glocal.data);
+      pc.octree->BallQuery(s.center,s.radius+tol,points,ids);
+      if(!points.empty()) return true;
+    }
+    else {
+      AABB3D gbb = glocal.GetAABB();  
+      gbb.setIntersection(pc.bblocal);
+      pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+      for(size_t i=0;i<points.size();i++) 
+        if(glocal.Distance(points[i]) <= tol + pc.properties[ids[i]][pc.radiusIndex]) return true;
+    }
+    return false;
+  }
+
+  //octree overlap method
+  if(glocal.type == GeometricPrimitive3D::Point) {
+    const Vector3& x = *AnyCast<Point3D>(&glocal.data);
+    pc.octree->BallQuery(x,tol,points,ids);
+    if(!points.empty()) return true;
+  }
+  else if(glocal.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D& s = *AnyCast<Sphere3D>(&glocal.data);
+    pc.octree->BallQuery(s.center,s.radius+tol,points,ids);
+    if(!points.empty()) return true;
+  }
+  else {
+    AABB3D gbb = glocal.GetAABB();  
+    gbb.setIntersection(pc.bblocal);
+    pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+    for(size_t i=0;i<points.size();i++) 
+      if(glocal.Distance(points[i]) <= tol) return true;
+  }
   return false;
 
   /*
@@ -159,6 +225,25 @@ bool distanceTest(void* obj)
   return true;
 }
 
+Real Distance(const CollisionPointCloud& pc,const Vector3& pt)
+{
+  int closestPoint;
+  return Distance(pc,pt,closestPoint);
+}
+
+Real Distance(const CollisionPointCloud& pc,const Vector3& pt,int& closestPoint,Real upperBound)
+{
+  Vector3 ptlocal;
+  pc.currentTransform.mulInverse(pt,ptlocal);
+  Vector3 closest;
+  bool res = pc.octree->NearestNeighbor(ptlocal,closest,closestPoint,upperBound);
+  if(!res) {
+    closestPoint = -1;
+    return upperBound;
+  }
+  return closest.distance(ptlocal);
+}
+
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g)
 {
   int cpoint;
@@ -167,10 +252,20 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g)
 
 Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& closestPoint,Real upperBound)
 {
+  if(g.type == GeometricPrimitive3D::Point) {
+    const Vector3& x = *AnyCast<Point3D>(&g.data);
+    return Distance(pc,x,closestPoint,upperBound);
+  }
+  else if(g.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D& s = *AnyCast<Sphere3D>(&g.data);
+    return Distance(pc,s.center,closestPoint,upperBound+s.radius)-s.radius; 
+  }
+
   GeometricPrimitive3D glocal = g;
   RigidTransform Tinv;
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
+
   closestPoint=-1;
   if(!IsInf(upperBound) && glocal.Distance(pc.bblocal) > upperBound) {
     return upperBound;
@@ -197,6 +292,8 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
     for(size_t i=0;i<pc.points.size();i++) {
       if(sbb.contains(pc.points[i])) {
         Real d = glocal.Distance(pc.points[i]);
+        if(pc.radiusIndex >= 0)
+          d -= pc.properties[i][pc.radiusIndex];
         if(d < dmax) {
           closestPoint = (int)i;
           dmax = d;
@@ -211,6 +308,8 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
     //bounds testing not worth it
     for(size_t i=0;i<pc.points.size();i++) {
       Real d = glocal.Distance(pc.points[i]);
+      if(pc.radiusIndex >= 0)
+        d -= pc.properties[i][pc.radiusIndex];
       if(d < dmax) {
         closestPoint = (int)i;
         dmax = d;
@@ -218,6 +317,35 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
     }
     return dmax;
   }
+}
+
+Real Distance(const CollisionPointCloud& pc1,const CollisionPointCloud& pc2,int& closestPoint1,int& closestPoint2,Real upperBound)
+{
+  if(pc1.points.size() > pc2.points.size())
+    return Distance(pc2,pc1,closestPoint2,closestPoint1,upperBound);
+  closestPoint1 = closestPoint2 = -1;
+  RigidTransform T12;
+  T12.mulInverseA(pc2.currentTransform,pc1.currentTransform);
+  //go linearly through the smaller point cloud
+  for(size_t i=0;i<pc1.points.size();i++) {
+    Vector3 x = T12*pc1.points[i];
+    int cp2x;
+    Vector3 xclosest;
+    bool res = pc2.octree->NearestNeighbor(x,xclosest,cp2x,upperBound);
+    if(res) {
+      Real d = x.distance(xclosest);
+      if(pc1.radiusIndex >= 0) d -= pc1.properties[i][pc1.radiusIndex];
+      if(pc2.radiusIndex >= 0) {
+        d -= pc2.properties[cp2x][pc2.radiusIndex];
+      }
+      if(d < upperBound) {
+        upperBound = d;
+        closestPoint1 = (int)i;
+        closestPoint2 = cp2x;
+      }
+    }
+  }
+  return upperBound;
 }
 
 static Real gNearbyTestThreshold = 0;
@@ -245,18 +373,69 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
 
-  AABB3D gbb = glocal.GetAABB();
-  gbb.setIntersection(pc.bblocal);
-
   //octree overlap method
   vector<Vector3> points;
   vector<int> ids;
-  pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
-  for(size_t i=0;i<points.size();i++) 
-    if(glocal.Distance(points[i]) <= tol) {
+
+  if(pc.maxRadius > 0) {
+    //spheres, expand the search radius
+    if(glocal.type == GeometricPrimitive3D::Point) {
+      const Vector3& x = *AnyCast<Point3D>(&glocal.data);
+      pc.octree->BallQuery(x,tol,points,ids);
+      for(size_t i=0;i<points.size();i++) {
+        pointIds.push_back(ids[i]);
+        if(pointIds.size()>=maxContacts) return;
+      }
+    }
+    else if(glocal.type == GeometricPrimitive3D::Sphere) {
+      const Sphere3D& s = *AnyCast<Sphere3D>(&glocal.data);
+      pc.octree->BallQuery(s.center,s.radius+tol,points,ids);
+      for(size_t i=0;i<points.size();i++) {
+        pointIds.push_back(ids[i]);
+        if(pointIds.size()>=maxContacts) return;
+      }
+    }
+    else {
+      AABB3D gbb = glocal.GetAABB();
+      gbb.setIntersection(pc.bblocal);
+      pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+      for(size_t i=0;i<points.size();i++) {
+        if(glocal.Distance(points[i]) <= tol + pc.properties[ids[i]][pc.radiusIndex]) {
+          pointIds.push_back(ids[i]);
+          if(pointIds.size()>=maxContacts) return;
+        }
+      }
+    }
+    return;
+  }
+
+  if(glocal.type == GeometricPrimitive3D::Point) {
+    const Vector3& x = *AnyCast<Point3D>(&glocal.data);
+    pc.octree->BallQuery(x,tol,points,ids);
+    for(size_t i=0;i<points.size();i++) {
       pointIds.push_back(ids[i]);
       if(pointIds.size()>=maxContacts) return;
     }
+  }
+  else if(glocal.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D& s = *AnyCast<Sphere3D>(&glocal.data);
+    pc.octree->BallQuery(s.center,s.radius+tol,points,ids);
+    for(size_t i=0;i<points.size();i++) {
+      pointIds.push_back(ids[i]);
+      if(pointIds.size()>=maxContacts) return;
+    }
+  }
+  else {
+    AABB3D gbb = glocal.GetAABB();
+    gbb.setIntersection(pc.bblocal);
+    pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
+    for(size_t i=0;i<points.size();i++) {
+      if(glocal.Distance(points[i]) <= tol) {
+        pointIds.push_back(ids[i]);
+        if(pointIds.size()>=maxContacts) return;
+      }
+    }
+  }
   return;
 
   /*
@@ -266,7 +445,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
   pc.grid.PointToIndex(gbb.bmax,imax);
   int numCells = (imax[0]-imin[0]+1)*(imax[1]-imin[1]+1)*(imax[2]-imin[2]+1);
   if(numCells > (int)pc.points.size()) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Testing all points\n");
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Testing all points\n");
     //test all points, linearly
     for(size_t i=0;i<pc.points.size();i++)
       if(glocal.Distance(pc.points[i]) <= tol) {
@@ -275,7 +454,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
       }
   }
   else {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Testing points in BoxQuery\n");
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Testing points in BoxQuery\n");
     gNearbyTestThreshold = tol;
     gNearbyTestResults.resize(0);
     gNearbyTestObject = &glocal;
@@ -397,6 +576,8 @@ public:
     Twa.setInverse(a.currentTransform);
     Tba.mul(Twa,b.currentTransform);
     Tab.setInverse(Tba);
+    if(_a.maxRadius > 0 || _b.maxRadius > 0)
+      FatalError("Unable to do point-cloud collisions when the point clouds have point-specific radii");
   }
   bool Recurse(size_t _maxContacts=1)
   {
@@ -423,21 +604,45 @@ public:
     if(Prune(anode,bnode))
       return true;
     if(a.octree->IsLeaf(anode)) {
+      if(a.octree->NumPoints(anode)==0) return true;
       if(b.octree->IsLeaf(bnode)) {
+        if(b.octree->NumPoints(bnode)==0) return true;
         //collide the two points contained within
         vector<Vector3> apts,bpts;
         vector<int> aids,bids;
-        a.octree->GetPoints(aindex,apts);
-        b.octree->GetPoints(bindex,bpts);
         a.octree->GetPointIDs(aindex,aids);
         b.octree->GetPointIDs(bindex,bids);
+        a.octree->GetPoints(aindex,apts);
+        b.octree->GetPoints(bindex,bpts);
+        for(auto& bpt: bpts)
+          bpt = Tba*bpt;
+        //pick only the closest point amongst these guys, not all points within the margin
+        bool doswap = false;
+        if(apts.size() > bpts.size()) {
+          swap(apts,bpts);
+          swap(aids,bids);
+          doswap= true;
+        }
         for(size_t i=0;i<apts.size();i++) {
+          Real dmin2 = Sqr(margin);
+          int bclosest = -1;
           for(size_t j=0;j<bpts.size();j++) {
-            if(apts[i].distanceSquared(bpts[j]) <= Sqr(margin)) {
-              acollisions.push_back(aids[i]);
-              acollisions.push_back(bids[i]);
-              if(acollisions.size() >= maxContacts) return false;
+            Real d2 = apts[i].distanceSquared(bpts[j]);
+            if(d2 <= dmin2) {
+              dmin2 = d2;
+              bclosest = bids[j];
             }
+          }
+          if(bclosest >= 0) {
+            if(doswap) {
+              bcollisions.push_back(aids[i]);
+              acollisions.push_back(bclosest);
+            }
+            else {
+              acollisions.push_back(aids[i]);
+              bcollisions.push_back(bclosest);
+            }
+            if(acollisions.size() >= maxContacts) return false;
           }
         }
         //continue
@@ -450,6 +655,7 @@ public:
     }
     else {
       if(b.octree->IsLeaf(bnode)) {
+        if(b.octree->NumPoints(bnode)==0) return true;
         //split a
         return _RecurseSplitA(aindex,bindex);
       }

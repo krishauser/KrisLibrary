@@ -30,15 +30,8 @@
 #include <mutex>
 #include <iostream>
 typedef std::thread Thread;
-struct Mutex
-{
-  Mutex() { }
-  ~Mutex() { mutex.~mutex(); }
-  void lock() { mutex.lock(); }
-  bool trylock() { return (mutex.try_lock() == 0); }
-  void unlock() { mutex.unlock(); }
-  std::mutex mutex;
-};
+typedef std::mutex Mutex;
+//no std::scoped_lock until c++17
 struct ScopedLock{
   explicit ScopedLock(Mutex& _mutex) :mutex(_mutex) { mutex.lock(); }
   ~ScopedLock() { mutex.unlock(); }
@@ -79,7 +72,7 @@ struct Mutex
   Mutex() { mutex = PTHREAD_MUTEX_INITIALIZER; }
   ~Mutex() { pthread_mutex_destroy(&mutex); }
   void lock() { pthread_mutex_lock(&mutex);  }
-  bool trylock() { return (pthread_mutex_lock(&mutex) == 0); }
+  bool try_lock() { return (pthread_mutex_lock(&mutex) == 0); }
   void unlock() { pthread_mutex_unlock(&mutex);  }
   pthread_mutex_t mutex;
 };
