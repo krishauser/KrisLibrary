@@ -35,9 +35,20 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Math::Real p=-1);
 
 /** @brief A class for coloring, texturing, and drawing meshes in OpenGL.
  *
- * GL display lists are created on first DrawGL call.  If the appearance
- * changes geometry or vertex/face colors, Refresh() must be called to
- * rebuild the display lists.
+ * GL display lists are created on first DrawGL call.  This makes subsequent
+ * DrawGL calls very fast.  If you change the overall face color or vertex
+ * color, the calls will still be fast.  However, if the geometry changes
+ * completely, or you wish to use per-vertex/per-face colors, Refresh() must
+ * be called to rebuild the display lists.
+ *
+ * Note: because display lists are cached, copying appearances can be a
+ * bit weird.  If you use the assignment operator a = b where a is cached
+ * and b is not, then a's display lists will be clobbered, leading to 
+ * severe performance drops!  If this isn't what you intended, then
+ * you should use the CopyMaterial method.  
+ *
+ * Keep that in mind if you are, e.g., assigning vectors of
+ * GeometryAppearances.
  */
 class GeometryAppearance
 {
@@ -47,6 +58,11 @@ class GeometryAppearance
   GeometryAppearance();
   ///This copies over the "material" information but doesn't change the display lists (if possible)
   void CopyMaterial(const GeometryAppearance& rhs);
+  ///This copies over the display lists and other cached information, if rhs has it.
+  ///If if_cache_exists=true, then any existing display lists / cached information is
+  ///overridden.  If if_cache_exists=false (default), then any existing cached
+  ///information is preserved
+  void CopyCache(const GeometryAppearance& rhs,bool if_cache_exists=false);
   void Set(const Geometry::AnyGeometry3D& geom);
   void Set(const Geometry::AnyCollisionGeometry3D& geom);
   ///Call this if the underlying geometry, per-element colors, texture

@@ -364,6 +364,22 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   creaseAngle=rhs.creaseAngle;
 }
 
+void GeometryAppearance::CopyCache(const GeometryAppearance& rhs,bool if_cache_exists)
+{
+  if((if_cache_exists || rhs.faceDisplayList) && rhs.faceDisplayList)
+    faceDisplayList = rhs.faceDisplayList;
+  if((if_cache_exists || rhs.edgeDisplayList) && rhs.edgeDisplayList)
+    edgeDisplayList = rhs.edgeDisplayList;
+  if((if_cache_exists || rhs.vertexDisplayList) && rhs.vertexDisplayList)
+    vertexDisplayList = rhs.vertexDisplayList;
+  if((if_cache_exists || rhs.silhouetteDisplayList) && rhs.silhouetteDisplayList)
+    silhouetteDisplayList = rhs.silhouetteDisplayList;
+  if((if_cache_exists || rhs.tempMesh) && rhs.tempMesh)
+    tempMesh = rhs.tempMesh;
+  if((if_cache_exists || rhs.tempMesh2) && rhs.tempMesh2)
+    tempMesh2 = rhs.tempMesh2;
+}
+
 void GeometryAppearance::Refresh()
 {
   vertexDisplayList.erase();
