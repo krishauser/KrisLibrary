@@ -576,7 +576,7 @@ bool AnyGeometry3D::Load(istream& in)
       return true;
     }
     else {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Failed to load Primitive type\n");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Failed to load Primitive type");
       return false;
     }
   }
@@ -609,6 +609,7 @@ bool AnyGeometry3D::Load(istream& in)
   }
   else {
         LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr.c_str());
+        return false;
   }
   if(!in) return false;
   return true;
@@ -3649,7 +3650,7 @@ void AnyCollisionQuery::InteractingPoints(std::vector<Vector3>& p1,std::vector<V
 {
   if(points1.empty() && !elements1.empty()) {
     //need to compute points from elements
-    FatalError("TODO: compute interacting points from interacting elements\n");
+    FatalError("TODO: compute interacting points from interacting elements");
   }
   else {
     p1 = points1;
