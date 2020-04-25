@@ -583,7 +583,12 @@ bool AnyGeometry3D::Load(istream& in)
   else if(typestr == "TriangleMesh") {
     type = TriangleMesh;
     data = Meshing::TriMesh();
-    in >> this->AsTriangleMesh();
+    auto pos = in.tellg();
+    //try OFF and tri formats
+    if(!LoadOFF(in,this->AsTriangleMesh())) {
+      in.seekg(pos);
+      in >> this->AsTriangleMesh();
+    }
   }
   else if(typestr == "PointCloud") {
     type = PointCloud;
@@ -608,10 +613,13 @@ bool AnyGeometry3D::Load(istream& in)
     return true;
   }
   else {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr.c_str());
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr);
         return false;
   }
-  if(!in) return false;
+  if(!in) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Something went wrong inputting item of type "<<typestr);
+    return false;
+  }
   return true;
 }
 
