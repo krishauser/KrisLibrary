@@ -283,7 +283,9 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
     if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Descent direction "<<p);
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
-    if(g.dot(p) > 0) {
+    Real gnorm2 = g.dot(g);
+    Real gp = g.dot(p);
+    if(gp > 0) {
       if(verbose >= 2) {
 	LOG4CXX_ERROR(KrisLibrary::logger(),"  Error in slope and descent directions? Check jacobian");
 	LOG4CXX_INFO(KrisLibrary::logger(),"  g: "<<g);
@@ -295,8 +297,9 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
         cout<<endl;
       }
       //p.setNegative(g);
-      
-      //blend p and -g so that a descent direction is obtained
+    }
+    if(gp > -0.1*gnorm2) {
+      //blend p and -g so that a sufficient descent direction is obtained
       //p' = u*p - (1-u)g
       //g^T p' = -mu*g^T g
       //u*g^T p  = (1-u-mu)*g^T g
@@ -305,8 +308,6 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
       //(1+g^T g / g^T p) u = (1-mu) * g^T g / g^T p
       //u = (1-mu) * g^T g / (g^T p+g^T g)
       Real mu = 0.1;
-      Real gnorm2 = g.dot(g);
-      Real gp = g.dot(p);
       Real u = (1-mu)*gnorm2 / (gp+gnorm2);
       p *= u;
       p.madd(g,u-1);
