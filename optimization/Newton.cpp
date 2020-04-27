@@ -297,8 +297,6 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
         cout<<endl;
       }
       //p.setNegative(g);
-    }
-    if(gp > -0.1*gnorm2) {
       //blend p and -g so that a sufficient descent direction is obtained
       //p' = u*p - (1-u)g
       //g^T p' = -mu*g^T g
