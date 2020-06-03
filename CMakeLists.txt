@@ -26,6 +26,9 @@ INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
 
 LINK_DIRECTORIES(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
+add_subdirectory(geometry/HACD_Lib)
+include_directories(${HACD_LIB_INCLUDE})
+
 # KrisLibrary source subdirectories
 SET(SUBDIRS camera geometry GLdraw graph image math math3d meshing optimization planning robotics spline statistics structs utils)
 
@@ -52,6 +55,7 @@ ENDIF(WIN32)
 
 #add all compilation files to the library
 ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS})
+ADD_DEPENDENCIES(KrisLibrary HACD_LIB)
 
 
 
