@@ -141,7 +141,7 @@ Variables are lowercase.
 
 Whenever possible, objects should be able to be loaded from/saved to disk
 using the << and >> operators of the standard iostream objects.  For
-binary I/O,can implement you  the WriteFile(object,File&) and
+binary I/O, you can implement the WriteFile(object,File&) and
 ReadFile(object,File&) methods.
 
 
