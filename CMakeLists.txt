@@ -54,10 +54,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 #add all compilation files to the library
-ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS})
-ADD_DEPENDENCIES(KrisLibrary HACD_LIB)
-
-
+ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS} ${HACD_SRC_FILES})
 
 
 #Configure isinf / isnan etc using the CheckInfNan script

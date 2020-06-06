@@ -140,6 +140,7 @@ std::tuple<double, Vector3, Vector3> ConvexHull3D::closest_points(const ConvexHu
 
 //TODO: here I transform all points and this may not be efficient
 void ConvexHull3D::Transform(const Matrix4 &T) {
+  std::cout << "Transform points\n";
   int n_point = points.size() / 3;
   for(int i = 0; i < n_point; i++) {
     Vector3 temp(points[3 * i], points[3 * i + 1], points[3 * i + 2]);
@@ -170,6 +171,88 @@ Box3D ConvexHull3D::GetBB() const {  //TODO: is there a smart way to compute bb?
   Box3D b;
   b.set(ab3d);
   return b;
+}
+
+CollisionConvexHull3D::CollisionConvexHull3D(const ConvexHull3D& hull) {
+  DT_VertexBaseHandle base1 = DT_NewVertexBase(hull.points.getPointer(), (DT_Size)(3 * sizeof(double)));
+  DT_VertexBaseHandle base2 = DT_NewVertexBase(hull.points.getPointer(), (DT_Size)(3 * sizeof(double)));
+  DT_ShapeHandle cube1 = DT_NewPolytope(base1);
+  DT_VertexRange(0, hull.points.size() / 3);
+  DT_EndPolytope();
+  this->object = DT_CreateObject(NULL, cube1);
+}
+
+double CollisionConvexHull3D::Distance(const Vector3 &pnt, const RigidTransform *tran) {
+  DT_VertexBaseHandle base1 = DT_NewVertexBase(pnt.data, (DT_Size)(3 * sizeof(double)));
+  DT_ShapeHandle cube1 = DT_NewPolytope(base1);
+  DT_ObjectHandle obj1 = DT_CreateObject(NULL, cube1);
+  DT_VertexRange(0, 1);
+  DT_EndPolytope();
+  this->_update_transform(tran);
+  return std::get<0>(dist_func(this->object, obj1));
+}
+
+Real CollisionConvexHull3D::ClosestPoints(const Vector3& pnt,Vector3& cp,Vector3& direction, const RigidTransform *tran) {
+  DT_VertexBaseHandle base1 = DT_NewVertexBase(pnt.data, (DT_Size)(3 * sizeof(double)));
+  DT_ShapeHandle cube1 = DT_NewPolytope(base1);
+  DT_ObjectHandle obj1 = DT_CreateObject(NULL, cube1);
+  DT_VertexRange(0, 1);
+  DT_EndPolytope();
+  this->_update_transform(tran);
+  double dist = 0;
+  std::tie(dist, cp, direction) = dist_func(this->object, obj1);
+  auto Unit = [](const Vector3& v)
+  {
+    Real n = v.norm();
+    if(Math::FuzzyZero(n)) return Vector3(0.0);
+    else return v*(1.0/n);
+  };
+  if(dist >= 0) {
+    direction = Unit(direction - cp);
+  }
+  else{
+    direction = Unit(cp - direction);
+  }
+  return dist;
+}
+
+// compute the closest points between two convexhull3d with collision data and store results somewhere
+Real CollisionConvexHull3D::ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran, const RigidTransform *tran2){
+  this->_update_transform(tran);
+  g._update_transform(tran2);
+  double dist = 0;
+  std::tie(dist, cp, direction) = dist_func(this->object, g.object);
+  auto Unit = [](const Vector3& v)
+  {
+    Real n = v.norm();
+    if(Math::FuzzyZero(n)) return Vector3(0.0);
+    else return v*(1.0/n);
+  };
+  if(dist >= 0) {
+    direction = Unit(direction - cp);
+  }
+  else{
+    direction = Unit(cp - direction);
+  }
+  return dist;
+}
+
+void CollisionConvexHull3D::_update_transform(const RigidTransform *tranptr) {
+  if(tranptr == nullptr) {
+    for(int i = 0; i < 16; i++)
+      this->transform[i] = 0;
+    for(int i = 0; i < 4; i++)
+      this->transform[4 * i + i] = 1;
+  }
+  else{
+    const RigidTransform &tran = *tranptr;
+    this->transform[0] = tran.R.data[0][0]; this->transform[1] = tran.R.data[1][0]; this->transform[2] = tran.R.data[2][0]; this->transform[3] = 0;
+    this->transform[4] = tran.R.data[0][1]; this->transform[5] = tran.R.data[1][1]; this->transform[6] = tran.R.data[2][1]; this->transform[7] = 0;
+    this->transform[8] = tran.R.data[0][2]; this->transform[9] = tran.R.data[1][2]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
+    this->transform[12] = tran.t[0]; this->transform[13] = tran.t[1]; this->transform[14] = tran.t[2]; this->transform[15] = 1;
+  }
+  DT_SetMatrixd(this->object, this->transform);
+  return;
 }
 
 std::ostream& operator << (std::ostream& out,const ConvexHull3D& b)

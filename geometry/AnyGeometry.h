@@ -129,13 +129,13 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///Clears the current collision data
   void ClearCollisionData() { collisionData = AnyValue(); }
   const RigidTransform& PrimitiveCollisionData() const;
-  const RigidTransform& ConvexHullCollisionData() const;
+  const CollisionConvexHull3D& ConvexHullCollisionData() const;
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
   const CollisionImplicitSurface& ImplicitSurfaceCollisionData() const;
   const vector<AnyCollisionGeometry3D>& GroupCollisionData() const;
   RigidTransform& PrimitiveCollisionData();
-  RigidTransform& ConvexHullCollisionData();
+  CollisionConvexHull3D& ConvexHullCollisionData();
   CollisionMesh& TriangleMeshCollisionData();
   CollisionPointCloud& PointCloudCollisionData();
   CollisionImplicitSurface& ImplicitSurfaceCollisionData();

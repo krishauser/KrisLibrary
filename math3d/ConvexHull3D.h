@@ -8,6 +8,7 @@
 #include "AABB3D.h"
 #include "Box3D.h"
 #include <tuple>
+#include "SOLID/SOLID.h"
 
 namespace Math3D {
 
@@ -34,6 +35,24 @@ struct ConvexHull3D
   AABB3D GetAABB() const;
   Box3D GetBB() const;
   Vector points;  // points are stored as one dimension array
+};
+
+/** @ingroup Math3D
+ * @brief The collision data class for ConvexHull3D, it contains the solid3 data structure
+*/
+struct CollisionConvexHull3D
+{
+  CollisionConvexHull3D(const ConvexHull3D& hull);
+  double Distance(const Vector3 &, const RigidTransform *tran=nullptr);
+  // double Distance(CollisionConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
+  // double Distance(const ConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
+  Real ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction, const RigidTransform *tran=nullptr);
+  // Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr);
+  Real ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
+
+  void _update_transform(const RigidTransform *tran=nullptr);
+  DT_ObjectHandle object;
+  double transform[16];
 };
 
 std::ostream& operator << (std::ostream& out,const ConvexHull3D& h);

@@ -537,8 +537,12 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     }
     case ConvexHull:
     {
-      std::cout << "Cannot convert from triangle mesh to convex hull yet.";
-      break;
+      std::cout << "Current support conversion from triangle mesh to convex hull to to compute convex hull for all vertices\n";
+      const Meshing::TriMesh &mesh = AsTriangleMesh();
+      ConvexHull3D chull;
+      chull.setPoints(mesh.verts);
+      res = AnyGeometry3D(chull);
+      return true;
     }
     default:
       break;
@@ -1077,13 +1081,13 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
 }
 
 const RigidTransform &AnyCollisionGeometry3D::PrimitiveCollisionData() const { return currentTransform; }
-const RigidTransform &AnyCollisionGeometry3D::ConvexHullCollisionData() const { return currentTransform; }
+const CollisionConvexHull3D &AnyCollisionGeometry3D::ConvexHullCollisionData() const { return *AnyCast_Raw<CollisionConvexHull3D>(&collisionData);}
 const CollisionMesh &AnyCollisionGeometry3D::TriangleMeshCollisionData() const { return *AnyCast_Raw<CollisionMesh>(&collisionData); }
 const CollisionPointCloud &AnyCollisionGeometry3D::PointCloudCollisionData() const { return *AnyCast_Raw<CollisionPointCloud>(&collisionData); }
 const CollisionImplicitSurface &AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() const { return *AnyCast_Raw<CollisionImplicitSurface>(&collisionData); }
 const vector<AnyCollisionGeometry3D> &AnyCollisionGeometry3D::GroupCollisionData() const { return *AnyCast_Raw<vector<AnyCollisionGeometry3D>>(&collisionData); }
 RigidTransform &AnyCollisionGeometry3D::PrimitiveCollisionData() { return currentTransform; }
-RigidTransform &AnyCollisionGeometry3D::ConvexHullCollisionData() { return currentTransform; }
+CollisionConvexHull3D &AnyCollisionGeometry3D::ConvexHullCollisionData() { return *AnyCast_Raw<CollisionConvexHull3D>(&collisionData);}
 CollisionMesh &AnyCollisionGeometry3D::TriangleMeshCollisionData() { return *AnyCast_Raw<CollisionMesh>(&collisionData); }
 CollisionPointCloud &AnyCollisionGeometry3D::PointCloudCollisionData() { return *AnyCast_Raw<CollisionPointCloud>(&collisionData); }
 CollisionImplicitSurface &AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return *AnyCast_Raw<CollisionImplicitSurface>(&collisionData); }
@@ -1104,7 +1108,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
     collisionData = int(0);
     break;
   case ConvexHull:
-    collisionData = int(0);
+    collisionData = CollisionConvexHull3D(AsConvexHull());
     break;
   case ImplicitSurface:
     collisionData = CollisionImplicitSurface(AsImplicitSurface());
@@ -1182,6 +1186,7 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
   if (!AnyGeometry3D::Convert(restype, res, param))
     return false;
   res.SetTransform(GetTransform());
+  // res.ReinitCollisionData();
   return true;
 }
 
@@ -1266,8 +1271,8 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
   break;
   case ConvexHull :
   {
-    const RigidTransform &T = ConvexHullCollisionData();
-    const ConvexHull3D &g = AsConvexHull();
+    const RigidTransform &T = this->currentTransform;
+    const ConvexHull3D &g = this->AsConvexHull();
     ConvexHull3D gT(g);
     gT.Transform(T);
     AABB3D res = gT.GetAABB();
@@ -1322,7 +1327,7 @@ Box3D AnyCollisionGeometry3D::GetBB() const
       b.setTransformed(AsPrimitive().GetBB(), PrimitiveCollisionData());
       break;
     case ConvexHull:  //TODO: how to implement getBB function for convex hull if not axis aligned?
-      b.setTransformed(AsConvexHull().GetBB(), ConvexHullCollisionData());
+      b.setTransformed(AsConvexHull().GetBB(), this->currentTransform);
       break;
     case TriangleMesh:
       ::GetBB(TriangleMeshCollisionData(), b);
@@ -1401,7 +1406,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
   {
     Vector3 ptlocal;
     GetTransform().mulInverse(pt, ptlocal);
-    return Max(AsPrimitive().Distance(ptlocal) - margin, 0.0);
+    return Max(ConvexHullCollisionData().Distance(ptlocal, &this->currentTransform) - margin, 0.0);
   }
   case ImplicitSurface:
   {
@@ -1461,8 +1466,8 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3 &pt, const
     GetTransform().mulInverse(pt, ptlocal);
     res.elem1 = 0;
     res.hasDirections = true;
-    const ConvexHull3D &g = AsConvexHull();
-    res.d = g.ClosestPoints(ptlocal, res.cp1, res.dir1);
+    CollisionConvexHull3D &g = this->ConvexHullCollisionData();
+    res.d = g.ClosestPoints(ptlocal, res.cp1, res.dir1, &this->currentTransform);
     res.dir2.setNegative(res.dir1);
     Transform1(res, GetTransform());
     Offset1(res, margin);
@@ -2796,6 +2801,19 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D &
     result = ::Distance(GroupCollisionData(), geom, modsettings);
     Offset1(result, margin);
     return result;
+  case ConvexHull: 
+  {
+    Assert(geom.type == ConvexHull);
+    CollisionConvexHull3D &hull1 = this->ConvexHullCollisionData();
+    CollisionConvexHull3D &hull2 = geom.ConvexHullCollisionData();
+    Vector3 cp, direction;
+    Real dist = hull1.ClosestPoints(hull2, cp, direction, &this->currentTransform, &geom.currentTransform);
+    AnyDistanceQueryResult result;
+    result.hasElements = false;
+    result.d = dist;
+    Offset1(result, margin);
+    return result;
+  }
   default:
     FatalError("Invalid type");
   }
