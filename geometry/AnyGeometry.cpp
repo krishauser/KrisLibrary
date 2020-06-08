@@ -189,9 +189,9 @@ void CallBack(const char * msg, double progress, double concavity, size_t nVerti
     std::cout << msg;
 }
 
-void AnyGeometry3D::TriMeshToConvexHull(double concavity) {
+void AnyGeometry3D::TriMeshToConvexHull(AnyGeometry3D &res, double concavity) const {
   Assert(type == TriangleMesh);
-  Meshing::TriMesh &mesh = AsTriangleMesh();
+  const Meshing::TriMesh &mesh = AsTriangleMesh();
   int minClusters = 1;  // so I allow conversion directly from convex objects
 //  bool invert = false;
   bool addExtraDistPoints = true;
@@ -204,13 +204,13 @@ void AnyGeometry3D::TriMeshToConvexHull(double concavity) {
   // convert mesh into points and triangles
   int n_point = mesh.verts.size();
   points.resize(n_point);
-  for (int i=0; i < points.size(); ++i) {
+  for (size_t i=0; i < points.size(); ++i) {
     points[i].X() = mesh.verts[i].x;
     points[i].Y() = mesh.verts[i].y;
     points[i].Z() = mesh.verts[i].z;
   }
   triangles.resize(mesh.tris.size());
-  for (int i=0; i < triangles.size(); ++i) {
+  for (size_t i=0; i < triangles.size(); ++i) {
     triangles[i][0] = mesh.tris[i].a;
     triangles[i][1] = mesh.tris[i].b;
     triangles[i][2] = mesh.tris[i].c;
@@ -249,7 +249,7 @@ void AnyGeometry3D::TriMeshToConvexHull(double concavity) {
     myHACD->GetCH(i, &hullpoints[0], &hulltriangles[0]);
     ConvexHull3D hull;
     vector<Vector3> points;
-    for(int j = 0; j < nPoints; j++) {
+    for(size_t j = 0; j < nPoints; j++) {
       Vector3 pnt(hullpoints[j].X(), hullpoints[j].Y(), hullpoints[j].Z());
       points.push_back(pnt);
     }
@@ -266,16 +266,19 @@ void AnyGeometry3D::TriMeshToConvexHull(double concavity) {
     myHACD->GetCH(0, &hullpoints[0], &hulltriangles[0]);
     // I construct a ConvexHull using hullpoints
     ConvexHull3D hull = get_hull_i(0);
-    type = ConvexHull;
-    data = hull;
+    res.type = ConvexHull;
+    res.data = hull;
   }
   else{
-    type = Group;
-    std::vector<AnyGeometry3D> grp_geoms;
+    std::vector<ConvexHull3D> grp_hulls;
     for (int i=0; i < nClusters; ++i) {
-      grp_geoms.push_back(AnyGeometry3D(get_hull_i(i)));
+      grp_hulls.push_back(get_hull_i(i));
     }
-    data = grp_geoms;
+    ConvexHull3D hull;
+    hull.type = ConvexHull3D::Composite;
+    hull.data = grp_hulls;
+    res.type = ConvexHull;
+    res.data = hull;
   }
   HACD::DestroyHACD(myHACD);
   HACD::releaseHeapManager(heapManager);
@@ -313,7 +316,7 @@ bool AnyGeometry3D::Empty() const
   case Primitive:
     return AsPrimitive().type == GeometricPrimitive3D::Empty;
   case ConvexHull:
-    return AsConvexHull().points.empty();  //TODO: this is not enough...
+    return AsConvexHull().data.empty();  //TODO: this is not enough...
   case TriangleMesh:
     return AsTriangleMesh().tris.empty();
   case PointCloud:
@@ -539,9 +542,15 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     {
       std::cout << "Current support conversion from triangle mesh to convex hull to to compute convex hull for all vertices\n";
       const Meshing::TriMesh &mesh = AsTriangleMesh();
-      ConvexHull3D chull;
-      chull.setPoints(mesh.verts);
-      res = AnyGeometry3D(chull);
+      if(param <= 0) {   // In this case, just compute the convex hull
+        ConvexHull3D chull;
+        chull.setPoints(mesh.verts);
+        res = AnyGeometry3D(chull);
+        return true;
+      }
+      else{
+        this->TriMeshToConvexHull(res, param);
+      }
       return true;
     }
     default:
@@ -602,7 +611,7 @@ size_t AnyGeometry3D::NumElements() const
       return 0;
     return 1;
   case ConvexHull:
-    return AsConvexHull().points.size() / 3;
+    return AsConvexHull().points().size() / 3;
   case TriangleMesh:
     return AsTriangleMesh().tris.size();
   case PointCloud:
@@ -630,7 +639,7 @@ GeometricPrimitive3D AnyGeometry3D::GetElement(int elem) const
   }
   else if (type == ConvexHull)
   {
-    auto pnt = AsConvexHull().points;
+    auto pnt = AsConvexHull().points();
     Vector3 point(pnt[elem * 3], pnt[elem * 3 + 1], pnt[elem * 3 + 2]);
     return GeometricPrimitive3D(point);
   }
@@ -994,8 +1003,14 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const GeometricPrimitive3D &primi
   currentTransform.setIdentity();
 }
 
-AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull)
-    : AnyGeometry3D(hull), margin(0)
+AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull, bool tran)
+    : AnyGeometry3D(hull), margin(0), is_tran(tran)
+{
+  currentTransform.setIdentity();
+}
+
+AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull1, const ConvexHull3D &hull2)
+    : margin(0)
 {
   currentTransform.setIdentity();
 }
@@ -1108,7 +1123,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
     collisionData = int(0);
     break;
   case ConvexHull:
-    collisionData = CollisionConvexHull3D(AsConvexHull());
+    collisionData = CollisionConvexHull3D(AsConvexHull(), is_tran);
     break;
   case ImplicitSurface:
     collisionData = CollisionImplicitSurface(AsImplicitSurface());
@@ -1389,6 +1404,12 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
     break;
     }
   }
+}
+
+void AnyCollisionGeometry3D::SetRelativeTransform(const RigidTransform &T) {
+  assert(this->type == AnyGeometry3D::ConvexHull);
+  //std::cout << "KL set relative\n";
+  ConvexHullCollisionData()._update_relative_transform(&T);
 }
 
 Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
@@ -2808,6 +2829,7 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D &
     CollisionConvexHull3D &hull2 = geom.ConvexHullCollisionData();
     Vector3 cp, direction;
     Real dist = hull1.ClosestPoints(hull2, cp, direction, &this->currentTransform, &geom.currentTransform);
+    //std::cout << "Call closest point and get " << dist << "\n";
     AnyDistanceQueryResult result;
     result.hasElements = false;
     result.d = dist;
@@ -2936,6 +2958,11 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
     if (distance)
       *distance = closest;
     return !IsInf(closest);
+  }
+  default:
+  {
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't ray-cast convex hull yet");
+    break;
   }
   }
   return false;
