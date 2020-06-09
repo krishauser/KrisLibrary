@@ -107,8 +107,8 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
  public:
   AnyCollisionGeometry3D();
   AnyCollisionGeometry3D(const GeometricPrimitive3D& primitive);
-  AnyCollisionGeometry3D(const ConvexHull3D& primitive, bool is_tran=false);
-  AnyCollisionGeometry3D(const ConvexHull3D& primitive, const ConvexHull3D&);
+  AnyCollisionGeometry3D(const ConvexHull3D& primitive);
+  AnyCollisionGeometry3D(const ConvexHull3D& primitive, const ConvexHull3D&, bool is_free);
   AnyCollisionGeometry3D(const Meshing::TriMesh& mesh);
   AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc);
   AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid);
@@ -167,6 +167,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///called.
   void SetTransform(const RigidTransform& T);
   void SetRelativeTransform(const RigidTransform& T);
+  void SetFreeRelativeTransform(const RigidTransform& T);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);
@@ -191,7 +192,6 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///The current transform, used if the collision data is not initialized yet
   ///or the data type is Primitive / VolumeGrid.
   RigidTransform currentTransform;
-  bool is_tran = false;
 };
 
 /** @brief A class that stores information regarding a collision query.

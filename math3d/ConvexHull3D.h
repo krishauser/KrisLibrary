@@ -61,12 +61,14 @@ struct ConvexHull3D
   typedef std::pair<ConvexHull3D, ConvexHull3D> prch3d;
   //end of definition
   // Tran means transform one shape to form the hull
-  // Hull means the hull of two objects...
-  enum Type { Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, Hull, Composite };
+  // Hull means the hull of two objects with fixed relative transform..
+  // HullFree means hull of two objects with free relative transform, they both store a pair of Hulls but creates different collision data
+  enum Type { Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, Hull, HullFree, Composite };
   void setPoints(const Vector& a);
   void setPoints(const std::vector<double>& a);
   void setPoints(const std::vector<Vector3> & a);
   void setPoints(const std::vector<Vector> & a);
+  void from_hulls(const ConvexHull3D &hull1, const ConvexHull3D &hull2, bool is_free);
   // void setTransformed(const ConvexHull3D&, const Matrix4& xform);
   double distance(const ConvexHull3D &);
   double Distance(const Vector3 &);
@@ -90,7 +92,7 @@ struct ConvexHull3D
 struct CollisionConvexHull3D
 {
   CollisionConvexHull3D(const ConvexHull3D& hull);
-  CollisionConvexHull3D(const ConvexHull3D& hull, const ConvexHull3D &hull2);
+  CollisionConvexHull3D(const ConvexHull3D& hull, const ConvexHull3D &hull2, bool is_free);
   double Distance(const Vector3 &, const RigidTransform *tran=nullptr);
   // double Distance(CollisionConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
   // double Distance(const ConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
@@ -100,12 +102,12 @@ struct CollisionConvexHull3D
 
   void _update_transform(const RigidTransform *tran=nullptr);
   void _update_relative_transform(const RigidTransform *tran);
+  void _update_free_relative_transform(const RigidTransform *tran);
   DT_ObjectHandle& object();
   std::vector<DT_ObjectHandle> & objects();
   // DT_ObjectHandle object;
   AnyValue data;
   ConvexHull3D::Type type;
-  bool is_hull_tran;
   double transform[16];
 };
 

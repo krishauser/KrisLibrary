@@ -1003,16 +1003,20 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const GeometricPrimitive3D &primi
   currentTransform.setIdentity();
 }
 
-AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull, bool tran)
-    : AnyGeometry3D(hull), margin(0), is_tran(tran)
+AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull)
+    : AnyGeometry3D(hull), margin(0)
 {
   currentTransform.setIdentity();
 }
 
-AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull1, const ConvexHull3D &hull2)
+AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull1, const ConvexHull3D &hull2, bool is_free)
     : margin(0)
 {
-  currentTransform.setIdentity();
+  ConvexHull3D hull;
+  hull.from_hulls(hull1, hull2, is_free);
+  this->type = AnyGeometry3D::ConvexHull;
+  this->data = hull;
+  this->currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::TriMesh &mesh)
@@ -1123,7 +1127,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
     collisionData = int(0);
     break;
   case ConvexHull:
-    collisionData = CollisionConvexHull3D(AsConvexHull(), is_tran);
+    collisionData = CollisionConvexHull3D(AsConvexHull());
     break;
   case ImplicitSurface:
     collisionData = CollisionImplicitSurface(AsImplicitSurface());
@@ -1214,7 +1218,19 @@ AABB3D AnyCollisionGeometry3D::GetAABBTight() const
   switch (type)
   {
   case Primitive:  // TODO: so no aabb for primitive?
-  case ConvexHull: // TODO: what is this supposed to do
+  case ConvexHull:{ // TODO: what is this supposed to do
+    const CollisionConvexHull3D &cdata = this->ConvexHullCollisionData();
+    CollisionConvexHull3D &data = *const_cast<CollisionConvexHull3D*>(&cdata);;
+    DT_ObjectHandle &object = data.object();
+    DT_Vector3 bmin, bmax;
+    DT_GetBBox(object, bmin, bmax);
+    AABB3D res;
+    for(int i = 0; i < 3; i++){
+      res.bmin[i] = bmin[i];
+      res.bmax[i] = bmax[i];
+    }
+    return res;
+  }
   case ImplicitSurface:
     return GetAABB();
     break;
@@ -1286,15 +1302,25 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
   break;
   case ConvexHull :
   {
-    const RigidTransform &T = this->currentTransform;
-    const ConvexHull3D &g = this->AsConvexHull();
-    ConvexHull3D gT(g);
-    gT.Transform(T);
-    AABB3D res = gT.GetAABB();
-    {
-      res.bmin -= Vector3(margin);
-      res.bmax += Vector3(margin);
+    const CollisionConvexHull3D &cdata = this->ConvexHullCollisionData();
+    CollisionConvexHull3D &data = *const_cast<CollisionConvexHull3D*>(&cdata);;
+    DT_ObjectHandle &object = data.object();
+    DT_Vector3 bmin, bmax;
+    DT_GetBBox(object, bmin, bmax);
+    AABB3D res;
+    for(int i = 0; i < 3; i++){
+      res.bmin[i] = bmin[i];
+      res.bmax[i] = bmax[i];
     }
+    // const RigidTransform &T = this->currentTransform;
+    // const ConvexHull3D &g = this->AsConvexHull();
+    // ConvexHull3D gT(g);
+    // gT.Transform(T);
+    // AABB3D res = gT.GetAABB();
+    // {
+    //   res.bmin -= Vector3(margin);
+    //   res.bmax += Vector3(margin);
+    // }
     return res;
   }
   case TriangleMesh:
@@ -1385,6 +1411,7 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
     case Primitive:
       break;
     case ConvexHull:  //TODO: so do nothing here? yeah, the collision data is just the transformation.
+      ConvexHullCollisionData()._update_transform(&T);
       break;
     case ImplicitSurface:
       ImplicitSurfaceCollisionData().currentTransform = T;
@@ -1408,8 +1435,12 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
 
 void AnyCollisionGeometry3D::SetRelativeTransform(const RigidTransform &T) {
   assert(this->type == AnyGeometry3D::ConvexHull);
-  //std::cout << "KL set relative\n";
   ConvexHullCollisionData()._update_relative_transform(&T);
+}
+
+void AnyCollisionGeometry3D::SetFreeRelativeTransform(const RigidTransform &T) {
+  assert(this->type == AnyGeometry3D::ConvexHull);
+  ConvexHullCollisionData()._update_free_relative_transform(&T);
 }
 
 Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
@@ -2825,14 +2856,35 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D &
   case ConvexHull: 
   {
     Assert(geom.type == ConvexHull);
+    // use AABB to exclude them
+    AABB3D aabb1 = this->GetAABB();
+    AABB3D aabb2 = geom.GetAABB();
+    // std::cout << "BBox1 " << aabb1.bmin.x << " " << aabb1.bmin.y << " " << aabb1.bmin.z << " and " << aabb1.bmax.x << " " << aabb1.bmax.y << " " << aabb1.bmax.z << "\n";
+    // std::cout << "BBox2 " << aabb2.bmin.x << " " << aabb2.bmin.y << " " << aabb2.bmin.z << " and " << aabb2.bmax.x << " " << aabb2.bmax.y << " " << aabb2.bmax.z << "\n";
+    double d = aabb1.distance(aabb2);
+    // std::cout << "d = " << d << std::endl;
+    if(d > modsettings.upperBound) {
+      result.d = d;
+      result.hasElements = false;
+      result.hasClosestPoints = false;
+      result.hasPenetration = false;
+      result.hasDirections = false;
+      return result;
+    }
     CollisionConvexHull3D &hull1 = this->ConvexHullCollisionData();
     CollisionConvexHull3D &hull2 = geom.ConvexHullCollisionData();
     Vector3 cp, direction;
     Real dist = hull1.ClosestPoints(hull2, cp, direction, &this->currentTransform, &geom.currentTransform);
     //std::cout << "Call closest point and get " << dist << "\n";
-    AnyDistanceQueryResult result;
     result.hasElements = false;
+    result.hasPenetration = true;
+    result.hasClosestPoints = true;
+    result.hasDirections = true;
     result.d = dist;
+    result.dir1 = direction;
+    result.dir2 = -direction;
+    result.cp1 = cp;
+    result.cp2 = cp + dist * direction;
     Offset1(result, margin);
     return result;
   }

@@ -63,9 +63,20 @@ void ConvexHull3D::setPoints(const std::vector<Vector> & a) {
   data = points;
 }
 
+
+void ConvexHull3D::from_hulls(const ConvexHull3D &hull1, const ConvexHull3D &hull2, bool is_free) {
+  if(is_free) {
+    this->type = ConvexHull3D::HullFree;
+  }
+  else{
+    this->type = ConvexHull3D::Hull;
+  }
+  data = std::make_pair(hull1, hull2);
+}
+
 std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_ObjectHandle object2) {
-    DT_SetAccuracy((DT_Scalar)1e-10);
-    DT_SetTolerance((DT_Scalar)(1e-10));
+    DT_SetAccuracy((DT_Scalar)1e-6);
+    DT_SetTolerance((DT_Scalar)(1e-6));
     DT_Vector3 point1, point2, point3, point4;
     DT_Scalar dist = DT_GetClosestPair(object1, object2, point1, point2);
     Vector3 p1, p2;
@@ -88,6 +99,9 @@ std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_Objec
         p2.z = point4[2];
         if(is_pene) {
           dist = -(p1 - p2).norm();
+          if(dist == 0) {
+            std::cout << "------!!!!!!Potential distance computation error at ispene, return 0!!!!!!------\n";
+          }
           return {dist, p1, p2};
         }
         else{
@@ -97,6 +111,26 @@ std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_Objec
           p2.x = point2[0];
           p2.y = point2[1];
           p2.z = point2[2];
+          if(dist == 0){
+            std::cout << "------!!!!!!Potential distance computation error, return 0, use workaround!!!!!!------\n";
+            if(object1 == object2) {
+              std::cout << "Work around is not feasible, oops\n";
+              return {dist, p1, p2};
+            }
+            // a workaround is to temporarily move one object for some distance, compute it and move it back
+            double m[16];
+            DT_GetMatrixd(object1, m);
+            m[12] += 1e-5;
+            m[13] += 1e-5;
+            m[14] += 1e-5;
+            DT_SetMatrixd(object1, m);
+            auto rst = dist_func(object1, object2);
+            m[12] -= 1e-5;
+            m[13] -= 1e-5;
+            m[14] -= 1e-5;
+            DT_SetMatrixd(object1, m);
+            return rst;
+          }
           return {dist, p1, p2};
         }
     }
@@ -214,7 +248,21 @@ DT_ShapeHandle ConvexHull3D::shape_handle() const{
       DT_ShapeHandle handle2 = prdata.second.shape_handle();
       return DT_NewHull(handle1, handle2);
     }
+    case HullFree : {
+      const prch3d &prdata = *AnyCast<prch3d>(&this->data);
+      DT_ShapeHandle handle1 = prdata.first.shape_handle();
+      DT_ShapeHandle handle2 = prdata.second.shape_handle();
+      return DT_NewHullFree(handle1, handle2);
+    }
     case Polytope: {
+      std::vector<double> points = this->points();
+      DT_VertexBaseHandle base1 = DT_NewVertexBase(points.data(), (DT_Size)(3 * sizeof(double)));
+      DT_ShapeHandle cube1 = DT_NewPolytope(base1);
+      DT_VertexRange(0, points.size() / 3);
+      DT_EndPolytope();
+      return cube1;
+    }
+    case Trans: {
       std::vector<double> points = this->points();
       DT_VertexBaseHandle base1 = DT_NewVertexBase(points.data(), (DT_Size)(3 * sizeof(double)));
       DT_ShapeHandle cube1 = DT_NewPolytope(base1);
@@ -247,27 +295,44 @@ CollisionConvexHull3D::CollisionConvexHull3D(const ConvexHull3D& hull) {
       data = DT_CreateObject(nullptr, shape);
       break;
     }
+    case ConvexHull3D::HullFree:
+    {
+      DT_ShapeHandle shape = hull.shape_handle();
+      data = DT_CreateObject(nullptr, shape);
+      break;
+    }
     case ConvexHull3D::Polytope:
     {
       DT_ShapeHandle shape = hull.shape_handle();
-      if(!with_tran) {
-        data = DT_CreateObject(nullptr, shape);
-      }
-      else{ // in this case, data is gonna be a pair of Object and a transformation
-        //std::cout << "Create hull tran here\n";
-        DT_ShapeHandle hull_handle = DT_NewHullTran(shape);
-        data = DT_CreateObject(nullptr, hull_handle);
-      }
+      data = DT_CreateObject(nullptr, shape);
       break;
     }
     case ConvexHull3D::Trans:
     {
-
+      DT_ShapeHandle shape = hull.shape_handle();
+      DT_ShapeHandle hull_handle = DT_NewHullTran(shape);
+      data = DT_CreateObject(nullptr, hull_handle);
+      break;
     }
     default:
     {
       FatalError("CollisionConvexHull3D initialization currently only support Polytope and Hull\n");
     }
+  }
+}
+
+CollisionConvexHull3D::CollisionConvexHull3D(const ConvexHull3D& hull1, const ConvexHull3D& hull2, bool is_free) {
+  assert(hull1.type == ConvexHull3D::Polytope && hull2.type == ConvexHull3D::Polytope);
+  type = ConvexHull3D::HullFree;
+  DT_ShapeHandle handle1 = hull1.shape_handle();
+  DT_ShapeHandle handle2 = hull2.shape_handle();
+  if(is_free){
+    DT_ShapeHandle shape = DT_NewHullFree(handle1, handle2);
+    data = DT_CreateObject(nullptr, shape);
+  }
+  else{
+    DT_ShapeHandle shape = DT_NewHull(handle1, handle2);
+    data = DT_CreateObject(nullptr, shape);
   }
 }
 
@@ -421,7 +486,7 @@ void CollisionConvexHull3D::_update_transform(const RigidTransform *tranptr) {
 }
 
 void CollisionConvexHull3D::_update_relative_transform(const RigidTransform *tranptr) {
-  Assert(this->is_hull_tran);
+  Assert(this->type == ConvexHull3D::Trans);
   const RigidTransform &tran = *tranptr;
   DT_ObjectHandle &object = this->object();
   double transform[16];  // this overwrites the other one
@@ -431,6 +496,19 @@ void CollisionConvexHull3D::_update_relative_transform(const RigidTransform *tra
   transform[12] = tran.t[0]; transform[13] = tran.t[1]; transform[14] = tran.t[2]; transform[15] = 1;
   //std::cout << "Hull3D update transform\n";
   DT_SetRelativeMatrixd(object, transform);
+}
+
+void CollisionConvexHull3D::_update_free_relative_transform(const RigidTransform *tranptr) {
+  Assert(this->type == ConvexHull3D::HullFree);
+  const RigidTransform &tran = *tranptr;
+  DT_ObjectHandle &object = this->object();
+  double transform[16];  // this overwrites the other one
+  transform[0] = tran.R.data[0][0]; transform[1] = tran.R.data[1][0]; transform[2] = tran.R.data[2][0]; transform[3] = 0;
+  transform[4] = tran.R.data[0][1]; transform[5] = tran.R.data[1][1]; transform[6] = tran.R.data[2][1]; transform[7] = 0;
+  transform[8] = tran.R.data[0][2]; transform[9] = tran.R.data[1][2]; transform[10] = tran.R.data[2][2]; transform[11] = 0;
+  transform[12] = tran.t[0]; transform[13] = tran.t[1]; transform[14] = tran.t[2]; transform[15] = 1;
+  //std::cout << "Hull3D update transform\n";
+  DT_SetFreeRelativeMatrixd(object, transform);
 }
 
 std::ostream& operator << (std::ostream& out,const ConvexHull3D& b)
