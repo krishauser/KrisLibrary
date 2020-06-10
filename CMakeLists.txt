@@ -115,6 +115,8 @@ add_custom_target(uninstall
 install(TARGETS KrisLibrary
   ARCHIVE
   DESTINATION lib
+  LIBRARY
+  DESTINATION lib
   COMPONENT libraries)
 file(GLOB KrisLibrary_HDRS  ${PROJECT_SOURCE_DIR}/*.h )
 install(FILES ${KrisLibrary_HDRS}

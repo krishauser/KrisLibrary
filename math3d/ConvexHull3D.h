@@ -103,6 +103,9 @@ struct CollisionConvexHull3D
   void _update_transform(const RigidTransform *tran=nullptr);
   void _update_relative_transform(const RigidTransform *tran);
   void _update_free_relative_transform(const RigidTransform *tran);
+
+  void _find_support(const double *, double *);
+
   DT_ObjectHandle& object();
   std::vector<DT_ObjectHandle> & objects();
   // DT_ObjectHandle object;

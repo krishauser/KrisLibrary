@@ -1404,13 +1404,14 @@ RigidTransform AnyCollisionGeometry3D::GetTransform() const
 void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
 {
   currentTransform = T;
+  this->InitCollisionData();
   if (!collisionData.empty())
   {
     switch (type)
     {
     case Primitive:
       break;
-    case ConvexHull:  //TODO: so do nothing here? yeah, the collision data is just the transformation.
+    case ConvexHull:
       ConvexHullCollisionData()._update_transform(&T);
       break;
     case ImplicitSurface:
@@ -1441,6 +1442,13 @@ void AnyCollisionGeometry3D::SetRelativeTransform(const RigidTransform &T) {
 void AnyCollisionGeometry3D::SetFreeRelativeTransform(const RigidTransform &T) {
   assert(this->type == AnyGeometry3D::ConvexHull);
   ConvexHullCollisionData()._update_free_relative_transform(&T);
+}
+
+void AnyCollisionGeometry3D::FindSupport(const double *dir, double *out) {
+  this->InitCollisionData();
+  Assert(this->type == AnyGeometry3D::ConvexHull);
+  CollisionConvexHull3D &chull = this->ConvexHullCollisionData();
+  chull._find_support(dir, out);
 }
 
 Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)

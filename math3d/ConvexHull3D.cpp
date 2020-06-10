@@ -79,6 +79,7 @@ std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_Objec
     DT_SetTolerance((DT_Scalar)(1e-6));
     DT_Vector3 point1, point2, point3, point4;
     DT_Scalar dist = DT_GetClosestPair(object1, object2, point1, point2);
+    //std::cout << "dist = " << dist << std::endl;
     Vector3 p1, p2;
     if(dist > 1e-3) {  // consider not colliding
       p1.x = point1[0];
@@ -470,9 +471,12 @@ void CollisionConvexHull3D::_update_transform(const RigidTransform *tranptr) {
   }
   else{
     const RigidTransform &tran = *tranptr;
-    this->transform[0] = tran.R.data[0][0]; this->transform[1] = tran.R.data[1][0]; this->transform[2] = tran.R.data[2][0]; this->transform[3] = 0;
-    this->transform[4] = tran.R.data[0][1]; this->transform[5] = tran.R.data[1][1]; this->transform[6] = tran.R.data[2][1]; this->transform[7] = 0;
-    this->transform[8] = tran.R.data[0][2]; this->transform[9] = tran.R.data[1][2]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
+    // this->transform[0] = tran.R.data[0][0]; this->transform[1] = tran.R.data[1][0]; this->transform[2] = tran.R.data[2][0]; this->transform[3] = 0;
+    // this->transform[4] = tran.R.data[0][1]; this->transform[5] = tran.R.data[1][1]; this->transform[6] = tran.R.data[2][1]; this->transform[7] = 0;
+    // this->transform[8] = tran.R.data[0][2]; this->transform[9] = tran.R.data[1][2]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
+    this->transform[0] = tran.R.data[0][0]; this->transform[1] = tran.R.data[0][1]; this->transform[2] = tran.R.data[0][2]; this->transform[3] = 0;
+    this->transform[4] = tran.R.data[1][0]; this->transform[5] = tran.R.data[1][1]; this->transform[6] = tran.R.data[1][2]; this->transform[7] = 0;
+    this->transform[8] = tran.R.data[2][0]; this->transform[9] = tran.R.data[2][1]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
     this->transform[12] = tran.t[0]; this->transform[13] = tran.t[1]; this->transform[14] = tran.t[2]; this->transform[15] = 1;
   }
   if(this->type == ConvexHull3D::Composite) {
@@ -490,9 +494,9 @@ void CollisionConvexHull3D::_update_relative_transform(const RigidTransform *tra
   const RigidTransform &tran = *tranptr;
   DT_ObjectHandle &object = this->object();
   double transform[16];  // this overwrites the other one
-  transform[0] = tran.R.data[0][0]; transform[1] = tran.R.data[1][0]; transform[2] = tran.R.data[2][0]; transform[3] = 0;
-  transform[4] = tran.R.data[0][1]; transform[5] = tran.R.data[1][1]; transform[6] = tran.R.data[2][1]; transform[7] = 0;
-  transform[8] = tran.R.data[0][2]; transform[9] = tran.R.data[1][2]; transform[10] = tran.R.data[2][2]; transform[11] = 0;
+  transform[0] = tran.R.data[0][0]; transform[1] = tran.R.data[0][1]; transform[2] = tran.R.data[0][2]; transform[3] = 0;
+  transform[4] = tran.R.data[1][0]; transform[5] = tran.R.data[1][1]; transform[6] = tran.R.data[1][2]; transform[7] = 0;
+  transform[8] = tran.R.data[2][0]; transform[9] = tran.R.data[2][1]; transform[10] = tran.R.data[2][2]; transform[11] = 0;
   transform[12] = tran.t[0]; transform[13] = tran.t[1]; transform[14] = tran.t[2]; transform[15] = 1;
   //std::cout << "Hull3D update transform\n";
   DT_SetRelativeMatrixd(object, transform);
@@ -503,12 +507,17 @@ void CollisionConvexHull3D::_update_free_relative_transform(const RigidTransform
   const RigidTransform &tran = *tranptr;
   DT_ObjectHandle &object = this->object();
   double transform[16];  // this overwrites the other one
-  transform[0] = tran.R.data[0][0]; transform[1] = tran.R.data[1][0]; transform[2] = tran.R.data[2][0]; transform[3] = 0;
-  transform[4] = tran.R.data[0][1]; transform[5] = tran.R.data[1][1]; transform[6] = tran.R.data[2][1]; transform[7] = 0;
-  transform[8] = tran.R.data[0][2]; transform[9] = tran.R.data[1][2]; transform[10] = tran.R.data[2][2]; transform[11] = 0;
+  transform[0] = tran.R.data[0][0]; transform[1] = tran.R.data[0][1]; transform[2] = tran.R.data[0][2]; transform[3] = 0;
+  transform[4] = tran.R.data[1][0]; transform[5] = tran.R.data[1][1]; transform[6] = tran.R.data[1][2]; transform[7] = 0;
+  transform[8] = tran.R.data[2][0]; transform[9] = tran.R.data[2][1]; transform[10] = tran.R.data[2][2]; transform[11] = 0;
   transform[12] = tran.t[0]; transform[13] = tran.t[1]; transform[14] = tran.t[2]; transform[15] = 1;
   //std::cout << "Hull3D update transform\n";
   DT_SetFreeRelativeMatrixd(object, transform);
+}
+
+void CollisionConvexHull3D::_find_support(const double *dir, double *out) {
+  DT_ObjectHandle object = this->object();
+  DT_GetSupport(object, dir, out);
 }
 
 std::ostream& operator << (std::ostream& out,const ConvexHull3D& b)
