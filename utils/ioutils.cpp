@@ -74,9 +74,12 @@ bool InputQuotedString(std::istream& in, char* out, int n)
 	return true;
       }
       else if(c=='\\') {
-	c=in.get();
-	c=in.peek();
+        //TODO: why was this here? I'm guessing there was a reason...
+  if(i>=n) return false;
+	//c=in.get();
+	//c=in.peek();
 	out[i] = c;
+  i++;
       }
       else {
 	if(i>=n) return false;
@@ -106,8 +109,9 @@ bool InputQuotedString(std::istream& in, std::string& out)
     case 1:
       if(c=='\"') { in.get(); return true; }
       else if(c=='\\') {
-	c=in.get();
-	c=in.peek();
+        //TODO: why was this here? I'm guessing there was a reason...
+	//c=in.get();
+	//c=in.peek();
 	out+= c;
       }
       else

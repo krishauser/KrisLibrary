@@ -260,8 +260,8 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
     //to be constrained
     if(bmin.n != 0) {
       for(int i=0;i<x.n;i++) {
-	if(x(i) == bmin(i) && g(i) > 0) fJx.setCol(i,0.0);
-	if(x(i) == bmax(i) && g(i) < 0) fJx.setCol(i,0.0);
+	if(x(i) == bmin(i) && g(i) > 0) { fJx.setCol(i,0.0); g(i) = 0; }
+	if(x(i) == bmax(i) && g(i) < 0) { fJx.setCol(i,0.0); g(i) = 0; }
       }
     }
 
@@ -278,13 +278,15 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
     }
     p.inplaceNegative();
     //TEST: make length of step decrease with larger error?
-    p *= 1.0 / (1.0 + fx.norm()/fx.n);
+    //p *= 1.0 / (1.0 + fx.norm()/fx.n);
     //LOG4CXX_INFO(KrisLibrary::logger(),"Step size: "<<1.0 / (1.0 + fx.norm());
     if(verbose >= 2) LOG4CXX_INFO(KrisLibrary::logger(),"  Descent direction "<<p);
     Real sum = p.norm();  //Scale if attempted step is too big
     if (sum > stpmax) p.inplaceMul(stpmax/sum);
-    if(verbose >= 2) {
-      if(g.dot(p) > 0) {
+    Real gnorm2 = g.dot(g);
+    Real gp = g.dot(p);
+    if(gp > 0) {
+      if(verbose >= 2) {
 	LOG4CXX_ERROR(KrisLibrary::logger(),"  Error in slope and descent directions? Check jacobian");
 	LOG4CXX_INFO(KrisLibrary::logger(),"  g: "<<g);
 	LOG4CXX_INFO(KrisLibrary::logger(),"  p: "<<p);
@@ -292,7 +294,22 @@ ConvergenceResult NewtonRoot::Solve(int& iters)
 	MatrixPrinter printer(fJx);
 	LOG4CXX_INFO(KrisLibrary::logger(),"  Jacobian: ");
 	printer.Print(cout,4);
+        cout<<endl;
       }
+      //p.setNegative(g);
+      //blend p and -g so that a sufficient descent direction is obtained
+      //p' = u*p - (1-u)g
+      //g^T p' = -mu*g^T g
+      //u*g^T p  = (1-u-mu)*g^T g
+      //u  = (1-u-mu) * g^T g / g^T p
+      //u  = (1-mu) * g^T g / g^T p - u g^T g / g^T p
+      //(1+g^T g / g^T p) u = (1-mu) * g^T g / g^T p
+      //u = (1-mu) * g^T g / (g^T p+g^T g)
+      Real mu = 0.1;
+      Real u = (1-mu)*gnorm2 / (gp+gnorm2);
+      p *= u;
+      p.madd(g,u-1);
+      Assert(g.dot(p) < 0);
     }
     check = LineMinimization(g,p,&f); //lnsrch returns new x and f. It also calculates fx at the new x when it calls Merit()
     //LOG4CXX_INFO(KrisLibrary::logger(),"New value of f after lnsrch: "<<f);

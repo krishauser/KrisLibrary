@@ -841,7 +841,12 @@ bool AnyGeometry3D::Load(istream &in)
   {
     type = TriangleMesh;
     data = Meshing::TriMesh();
-    in >> this->AsTriangleMesh();
+    auto pos = in.tellg();
+    //try OFF and tri formats
+    if(!LoadOFF(in,this->AsTriangleMesh())) {
+      in.seekg(pos);
+      in >> this->AsTriangleMesh();
+    }
   }
   else if (typestr == "PointCloud")
   {
@@ -871,12 +876,14 @@ bool AnyGeometry3D::Load(istream &in)
     data = grp;
     return true;
   }
-  else
-  {
-    LOG4CXX_ERROR(KrisLibrary::logger(), "AnyGeometry::Load(): Unknown type " << typestr.c_str());
+  else {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr);
+        return false;
   }
-  if (!in)
+  if(!in) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Something went wrong inputting item of type "<<typestr);
     return false;
+  }
   return true;
 }
 
@@ -4338,7 +4345,7 @@ void AnyCollisionQuery::InteractingPoints(std::vector<Vector3> &p1, std::vector<
   if (points1.empty() && !elements1.empty())
   {
     //need to compute points from elements
-    FatalError("TODO: compute interacting points from interacting elements\n");
+    FatalError("TODO: compute interacting points from interacting elements");
   }
   else
   {

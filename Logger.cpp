@@ -85,7 +85,7 @@ log4cxx::LoggerPtr logger(const char* s)
 			    log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
 			    myLogger->addAppender(defaultAppender);
 			    myLogger->setLevel(log4cxx::Level::getInfo());
-				printf("KrisLibrary::logger(): configured as default\n");
+				printf("KrisLibrary::logger(): %s configured as default\n",s);
 				//log4cxx::BasicConfigurator::configure();
 			}
 
