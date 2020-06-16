@@ -1,0 +1,9 @@
+/usr/local/lib/cmake/solid3/solid3-config.cmake
+/usr/local/lib/cmake/solid3/solid3-config-version.cmake
+/usr/local/lib/cmake/solid3/solid3-export.cmake
+/usr/local/lib/cmake/solid3/solid3-export-release.cmake
+/usr/local/lib/libsolid3.so.3.5.8
+/usr/local/lib/libsolid3.so
+/usr/local/include/SOLID/SOLID.h
+/usr/local/include/SOLID/SOLID_broad.h
+/usr/local/include/SOLID/SOLID_types.h

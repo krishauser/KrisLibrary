@@ -9,7 +9,7 @@
 #include "AABB3D.h"
 #include "Box3D.h"
 #include <tuple>
-#include "SOLID/SOLID.h"
+#include "SOLID.h"
 
 namespace Math3D {
 

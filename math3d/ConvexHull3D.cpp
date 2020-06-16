@@ -1,5 +1,4 @@
 #include "ConvexHull3D.h"
-#include "SOLID/SOLID.h"
 #include <iostream>
 #include <limits>
 #include <KrisLibrary/utils/AnyValue.h>
