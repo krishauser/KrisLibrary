@@ -13,11 +13,80 @@ include_directories(${PROJECT_SOURCE_DIR}/src/broad)
 include_directories(${PROJECT_SOURCE_DIR}/src/convex)
 include_directories(${PROJECT_SOURCE_DIR}/src/complex)
 
+set(SOLID_INCLUDE_DIR_MORE ${PROJECT_SOURCE_DIR}/src 
+${PROJECT_SOURCE_DIR}/src/broad ${PROJECT_SOURCE_DIR}/src/convex ${PROJECT_SOURCE_DIR}/src/complex PARENT_SCOPE)
+
 set(SOLID_PUBLIC_HEADERS 
   ${PROJECT_SOURCE_DIR}/include/SOLID.h
   ${PROJECT_SOURCE_DIR}/include/SOLID_broad.h
   ${PROJECT_SOURCE_DIR}/include/SOLID_types.h
 )
+
+set(SOLID3_SRC_FILES
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_C-api.cpp
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_Endpoint.h
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_EndpointList.cpp
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_EndpointList.h
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_Proxy.cpp
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_Proxy.h
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_ProxyList.h
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_Scene.cpp
+  ${PROJECT_SOURCE_DIR}/src/broad/BP_Scene.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Accuracy.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Accuracy.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Array.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Box.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Box.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Cone.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Cone.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Convex.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Convex.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Cylinder.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Cylinder.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_GJK.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Hull.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_IndexArray.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_LineSegment.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_LineSegment.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Minkowski.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_PenDepth.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_PenDepth.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Point.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Point.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Polyhedron.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Polyhedron.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Polytope.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Polytope.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Shape.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Sphere.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Sphere.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Transform.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Triangle.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_Triangle.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_TriEdge.cpp
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_TriEdge.h
+  ${PROJECT_SOURCE_DIR}/src/convex/DT_VertexBase.h
+  ${PROJECT_SOURCE_DIR}/src/complex/DT_BBoxTree.cpp
+  ${PROJECT_SOURCE_DIR}/src/complex/DT_BBoxTree.h
+  ${PROJECT_SOURCE_DIR}/src/complex/DT_CBox.h
+  ${PROJECT_SOURCE_DIR}/src/complex/DT_Complex.cpp
+  ${PROJECT_SOURCE_DIR}/src/complex/DT_Complex.h
+  ${PROJECT_SOURCE_DIR}/src/DT_AlgoTable.h
+  ${PROJECT_SOURCE_DIR}/src/DT_C-api.cpp
+  ${PROJECT_SOURCE_DIR}/src/DT_Encounter.cpp
+  ${PROJECT_SOURCE_DIR}/src/DT_Encounter.h
+  ${PROJECT_SOURCE_DIR}/src/DT_Object.cpp
+  ${PROJECT_SOURCE_DIR}/src/DT_Object.h
+  ${PROJECT_SOURCE_DIR}/src/DT_Response.h
+  ${PROJECT_SOURCE_DIR}/src/DT_RespTable.cpp
+  ${PROJECT_SOURCE_DIR}/src/DT_RespTable.h
+  ${PROJECT_SOURCE_DIR}/src/DT_Scene.cpp
+  ${PROJECT_SOURCE_DIR}/src/DT_Scene.h
+  ${QHULL_SRC_FILES}
+
+  PARENT_SCOPE
+)
+
 
 add_library(solid3 OBJECT
   ${SOLID_PUBLIC_HEADERS}

@@ -1,3 +1,4 @@
+project(QHULL_LIB CXX C)
 add_library(qhull OBJECT
 	geom.c
 	geom.h
@@ -21,6 +22,14 @@ add_library(qhull OBJECT
 	stat.h
 	user.c
 	user.h
+)
+
+file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.c ${RPOJECT_SOURCE_DIR}/*.h)
+set(QHULL_INCLUDE_DIR ${PROJECT_SOURCE_DIR} PARENT_SCOPE)
+
+set(QHULL_SRC_FILES
+	${SRC_FILES}
+	PARENT_SCOPE
 )
 
 
