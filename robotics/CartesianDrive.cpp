@@ -130,16 +130,16 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     for(size_t i=0;i<links.size();i++) {
       tempGoals[i].link = links[i];
       if(IsFiniteV(driveVel[i])) {
-	tempGoals[i].localPosition = endEffectorOffsets[i];
-	tempGoals[i].SetFixedPosition(desiredTransforms[i].t);
+        tempGoals[i].localPosition = endEffectorOffsets[i];
+        tempGoals[i].SetFixedPosition(desiredTransforms[i].t);
       }
       else {
-	tempGoals[i].SetFreePosition();
+        tempGoals[i].SetFreePosition();
       }
       if(IsFiniteV(driveAngVel[i])) 
-	tempGoals[i].SetFixedRotation(desiredTransforms[i].R);
+        tempGoals[i].SetFixedRotation(desiredTransforms[i].R);
       else
-	tempGoals[i].SetFreeRotation();
+        tempGoals[i].SetFreeRotation();
       /*
       Real poserr[3]={0,0,0},orierr[3]={0,0,0};
       tempGoals[i].GetError(originalTransforms[i],poserr,orierr);
@@ -226,15 +226,15 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       if(robot->q[k] < tempqmin[k] || robot->q[k] > tempqmax[k]) {
         //the IK solver normalizer doesn't care about absolute
         //values for joints that wrap around 2pi
-	if(tempqmin[k] <= robot->q[k] + TwoPi && robot->q[k] + TwoPi <= tempqmax[k])
-	  robot->q[k] += TwoPi;
-	else if(tempqmin[k] <= robot->q[k] - TwoPi && robot->q[k] - TwoPi <= tempqmax[k])
-	  robot->q[k] -= TwoPi;
-	else {
-	  LOG4CXX_WARN(KrisLibrary::logger(),"CartesianDriveSolver: Warning, result from IK solve is out of bounds: index "<<k<<", "<<tempqmin[k]<<" <= "<<robot->q[k]<<" <= "<<tempqmax[k]);
-	  robot->q[k] = Clamp(robot->q[k],tempqmin[k],tempqmax[k]);
-	  robot->UpdateFrames();
-	}
+        if(tempqmin[k] <= robot->q[k] + TwoPi && robot->q[k] + TwoPi <= tempqmax[k])
+          robot->q[k] += TwoPi;
+        else if(tempqmin[k] <= robot->q[k] - TwoPi && robot->q[k] - TwoPi <= tempqmax[k])
+          robot->q[k] -= TwoPi;
+        else {
+          LOG4CXX_WARN(KrisLibrary::logger(),"CartesianDriveSolver: Warning, result from IK solve is out of bounds: index "<<k<<", "<<tempqmin[k]<<" <= "<<robot->q[k]<<" <= "<<tempqmax[k]);
+          robot->q[k] = Clamp(robot->q[k],tempqmin[k],tempqmax[k]);
+          robot->UpdateFrames();
+        }
       }
     }
   }
@@ -288,26 +288,26 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
       
       //adjust drive transform along screw to minimize distance to the achieved transform      
       if(IsFiniteV(driveVel[i])) {
-	Vector3 trel = achievedTransforms[i].t - driveTransforms[i].t;
-	Vector3 axis = driveVel[i] / Max(driveVel[i].length(),Epsilon);
-	Real ut = driveVel[i].length();
-	Real tdistance = trel.dot(axis);
-	//LOG4CXX_INFO(KrisLibrary::logger(),"  translation vector"<<trel);
-	//LOG4CXX_INFO(KrisLibrary::logger(),"  Translation amount: "<<tdistance);
-	tdistance = Clamp(tdistance,0.0,dt*driveVel[i].length());
-	numerator += ut*tdistance;
-	denominator += Sqr(ut);
+        Vector3 trel = achievedTransforms[i].t - driveTransforms[i].t;
+        Vector3 axis = driveVel[i] / Max(driveVel[i].length(),Epsilon);
+        Real ut = driveVel[i].length();
+        Real tdistance = trel.dot(axis);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"  translation vector"<<trel);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"  Translation amount: "<<tdistance);
+        tdistance = Clamp(tdistance,0.0,dt*driveVel[i].length());
+        numerator += ut*tdistance;
+        denominator += Sqr(ut);
       }
       if(IsFiniteV(driveAngVel[i])) {
-	Matrix3 Rrel;
-	Rrel.mulTransposeB(achievedTransforms[i].R,driveTransforms[i].R);
-	Vector3 rotaxis = driveAngVel[i] / Max(driveAngVel[i].length(),Epsilon);
-	Real Rdistance = AxisRotationMagnitude(Rrel,rotaxis);
-	//LOG4CXX_INFO(KrisLibrary::logger(),"  Rotation amount: "<<Rdistance<<" (desired "<<dt*driveAngVel[i].length());
-	Rdistance = Clamp(Rdistance,0.0,dt*driveAngVel[i].length());
-	Real uR = driveAngVel[i].length();
-	numerator += uR*Rdistance;
-	denominator += Sqr(uR);
+        Matrix3 Rrel;
+        Rrel.mulTransposeB(achievedTransforms[i].R,driveTransforms[i].R);
+        Vector3 rotaxis = driveAngVel[i] / Max(driveAngVel[i].length(),Epsilon);
+        Real Rdistance = AxisRotationMagnitude(Rrel,rotaxis);
+        //LOG4CXX_INFO(KrisLibrary::logger(),"  Rotation amount: "<<Rdistance<<" (desired "<<dt*driveAngVel[i].length());
+        Rdistance = Clamp(Rdistance,0.0,dt*driveAngVel[i].length());
+        Real uR = driveAngVel[i].length();
+        numerator += uR*Rdistance;
+        denominator += Sqr(uR);
       }
     }
     Real distance = numerator / Max(denominator,Epsilon);
@@ -316,19 +316,19 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
     //computed error-minimizing distance along screw motion
     for(size_t i=0;i<links.size();i++) {
       if(IsFiniteV(driveVel[i])) 
-	driveTransforms[i].t.madd(driveVel[i],distance);
+        driveTransforms[i].t.madd(driveVel[i],distance);
       else
-	driveTransforms[i].t = achievedTransforms[i].t;
+        driveTransforms[i].t = achievedTransforms[i].t;
       if(IsFiniteV(driveAngVel[i])) {
-	MomentRotation m;
-	Matrix3 Rincrement;
-	m.set(driveAngVel[i]*distance);
-	m.getMatrix(Rincrement);
-	driveTransforms[i].R = Rincrement * driveTransforms[i].R;
-	NormalizeRotation(driveTransforms[i].R);
+        MomentRotation m;
+        Matrix3 Rincrement;
+        m.set(driveAngVel[i]*distance);
+        m.getMatrix(Rincrement);
+        driveTransforms[i].R = Rincrement * driveTransforms[i].R;
+        NormalizeRotation(driveTransforms[i].R);
       }
       else
-	driveTransforms[i].R = achievedTransforms[i].R;
+        driveTransforms[i].R = achievedTransforms[i].R;
     }
 
     //increase drive velocity
@@ -351,12 +351,12 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 }
 
 void CartesianDriveSolver::GetTrajectory(const Config& qcur,
-					 const vector<Vector3>& angVel,
-					 const vector<Vector3>& vel,
-					 Real dt,
-					 int numSteps,
-					 vector<Config>& qout,
-					 bool reset)
+                                         const vector<Vector3>& angVel,
+                                         const vector<Vector3>& vel,
+                                         Real dt,
+                                         int numSteps,
+                                         vector<Config>& qout,
+                                         bool reset)
 {
   vector<RigidTransform> startDriveTransforms;
   Real startDriveSpeedAdjustment;
@@ -372,8 +372,8 @@ void CartesianDriveSolver::GetTrajectory(const Config& qcur,
     if(frac == 0) {
       //done, just stop
       while(i < numSteps) {
-	qout[i+1] = qout[i];
-	i++;
+        qout[i+1] = qout[i];
+        i++;
       }
       break;
     }
