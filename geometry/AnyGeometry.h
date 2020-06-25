@@ -164,9 +164,11 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///modify the geometry using Transform(), ReinitCollisions() should be
   ///called.
   void SetTransform(const RigidTransform& T);
+  ///GAO: you need to define these better. I have no idea what these mean from context
   void SetRelativeTransform(const RigidTransform& T);
   void SetFreeRelativeTransform(const RigidTransform& T);
-  void FindSupport(const double *dir, double *);
+  ///Computes the furthest point on the geometry in the direction dir
+  double FindSupport(const Vector3& dir);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);

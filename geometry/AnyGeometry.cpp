@@ -1349,11 +1349,22 @@ void AnyCollisionGeometry3D::SetFreeRelativeTransform(const RigidTransform &T) {
   ConvexHullCollisionData()._update_free_relative_transform(&T);
 }
 
-void AnyCollisionGeometry3D::FindSupport(const double *dir, double *out) {
+Real AnyCollisionGeometry3D::FindSupport(const Vector3& dir) {
   this->InitCollisionData();
-  Assert(this->type == AnyGeometry3D::ConvexHull);
-  CollisionConvexHull3D &chull = this->ConvexHullCollisionData();
-  chull._find_support(dir, out);
+  switch(type)
+  {
+  case AnyCollisionGeometry3D::ConvexHull:
+  {
+    CollisionConvexHull3D &chull = this->ConvexHullCollisionData();
+    double out;
+    chull._find_support(dir, &out);
+    return out;
+  }
+  default:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Find support not yet implemented for most types");
+    return -Inf;
+  }
+
 }
 
 Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
@@ -2863,6 +2874,7 @@ bool AnyCollisionGeometry3D::WithinDistance(AnyCollisionGeometry3D &geom, Real t
     return ::Collides(GroupCollisionData(), margin + tol, geom, elements1, elements2, maxContacts);
   case ConvexHull:
     LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do within-distance for convex hulls yet");
+    break;
   default:
     FatalError("Invalid type");
   }
