@@ -4,10 +4,11 @@
 #include <KrisLibrary/utils/AnyValue.h>
 
 using namespace std;
+using namespace Math3D;
 
-namespace Math3D {
+namespace Geometry {
 
-/** @ingroup Math3D
+/** @ingroup Geometry
  * @brief A 3D convex hull class
  *
  * This class usess SOLID3 library as backend and not so many function are exposed to the user.
@@ -81,41 +82,29 @@ std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_Objec
     //std::cout << "dist = " << dist << std::endl;
     Vector3 p1, p2;
     if(dist > 1e-3) {  // consider not colliding
-      p1.x = point1[0];
-      p1.y = point1[1];
-      p1.z = point1[2];
-      p2.x = point2[0];
-      p2.y = point2[1];
-      p2.z = point2[2];
-      return {dist, p1, p2};
+      p1.set(point1);
+      p2.set(point2);
+      return std::make_tuple(dist, p1, p2);
     }
     else{
         DT_Bool is_pene = DT_GetPenDepth(object1, object2, point3, point4);
-        p1.x = point3[0];
-        p1.y = point3[1];
-        p1.z = point3[2];
-        p2.x = point4[0];
-        p2.y = point4[1];
-        p2.z = point4[2];
+        p1.set(point3);
+        p2.set(point4);
         if(is_pene) {
           dist = -(p1 - p2).norm();
           if(dist == 0) {
             std::cout << "------!!!!!!Potential distance computation error at ispene, return 0!!!!!!------\n";
           }
-          return {dist, p1, p2};
+          return std::make_tuple(dist, p1, p2);
         }
         else{
-          p1.x = point1[0];
-          p1.y = point1[1];
-          p1.z = point1[2];
-          p2.x = point2[0];
-          p2.y = point2[1];
-          p2.z = point2[2];
+          p1.set(point1);
+          p2.set(point2);
           if(dist == 0){
             std::cout << "------!!!!!!Potential distance computation error, return 0, use workaround!!!!!!------\n";
             if(object1 == object2) {
               std::cout << "Work around is not feasible, oops\n";
-              return {dist, p1, p2};
+              return std::make_tuple(dist, p1, p2);
             }
             // a workaround is to temporarily move one object for some distance, compute it and move it back
             double m[16];
@@ -131,7 +120,7 @@ std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_Objec
             DT_SetMatrixd(object1, m);
             return rst;
           }
-          return {dist, p1, p2};
+          return std::make_tuple(dist, p1, p2);
         }
     }
 }
@@ -278,7 +267,6 @@ DT_ShapeHandle ConvexHull3D::shape_handle() const{
 
 CollisionConvexHull3D::CollisionConvexHull3D(const ConvexHull3D& hull) {
   type = hull.type;
-  bool is_tran = type == ConvexHull3D::Trans;
   switch(hull.type){
     case ConvexHull3D::Composite:
     {
@@ -542,4 +530,4 @@ std::istream& operator >> (std::istream& in, ConvexHull3D& b)
   return in;
 }
 
-} //namespace Math3D
+} //namespace Geometry

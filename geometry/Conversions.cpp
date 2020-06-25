@@ -1,6 +1,7 @@
 #include <KrisLibrary/Logger.h>
 #include "Conversions.h"
 #include "CollisionMesh.h"
+#include "ConvexHull3D.h"
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
 #include <KrisLibrary/meshing/VolumeGrid.h>
 #include <KrisLibrary/meshing/PointCloud.h>
@@ -10,6 +11,9 @@
 #include <KrisLibrary/math3d/random.h>
 #include <KrisLibrary/math3d/basis.h>
 #include <KrisLibrary/Timer.h>
+
+#include <hacdHACD.h>
+
 
 namespace Geometry {
 	
@@ -457,5 +461,108 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
 	center_bb.bmax -= celldims*0.5;
     MarchingCubes(grid.value,levelSet,center_bb,mesh);
 }
+
+void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.setPoints(mesh.verts); }
+
+void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) { ch.setPoints(pc.points); }
+
+void _HACD_CallBack(const char * msg, double progress, double concavity, size_t nVertices)
+{
+    LOG4CXX_INFO(KrisLibrary::logger(),msg);
+}
+
+void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Real concavity)
+{
+    if(concavity <= 0) {
+        MeshToConvexHull(mesh,ch);
+        return;
+    }
+  int minClusters = 1;  // so I allow conversion directly from convex objects
+//  bool invert = false;
+  bool addExtraDistPoints = true;
+  bool addFacesPoints = true;
+  float ccConnectDist = 30;
+  int targetNTrianglesDecimatedMesh = 3000;
+
+  vector<HACD::Vec3<Real> > points;
+  vector<HACD::Vec3<long> > triangles;
+  // convert mesh into points and triangles
+  int n_point = mesh.verts.size();
+  points.resize(n_point);
+  for (size_t i=0; i < points.size(); ++i) {
+    points[i].X() = mesh.verts[i].x;
+    points[i].Y() = mesh.verts[i].y;
+    points[i].Z() = mesh.verts[i].z;
+  }
+  triangles.resize(mesh.tris.size());
+  for (size_t i=0; i < triangles.size(); ++i) {
+    triangles[i][0] = mesh.tris[i].a;
+    triangles[i][1] = mesh.tris[i].b;
+    triangles[i][2] = mesh.tris[i].c;
+  }
+
+  HACD::HeapManager * heapManager = HACD::createHeapManager(65536*(1000));
+
+  HACD::HACD * const myHACD = HACD::CreateHACD(heapManager);
+  myHACD->SetPoints(&points[0]);
+  myHACD->SetNPoints(points.size());
+  myHACD->SetTriangles(&triangles[0]);
+  myHACD->SetNTriangles(triangles.size());
+  myHACD->SetCompacityWeight(0.0001);
+  myHACD->SetVolumeWeight(0.0);
+  myHACD->SetConnectDist(ccConnectDist);               // if two connected components are seperated by distance < ccConnectDist
+                                                      // then create a virtual edge between them so the can be merged during
+                                                      // the simplification process
+
+  myHACD->SetNClusters(minClusters);                     // minimum number of clusters
+  myHACD->SetNVerticesPerCH(100);                      // max of 100 vertices per convex-hull
+  myHACD->SetConcavity(concavity);                     // maximum concavity
+  myHACD->SetSmallClusterThreshold(0.25);              // threshold to detect small clusters
+  myHACD->SetNTargetTrianglesDecimatedMesh(targetNTrianglesDecimatedMesh); // # triangles in the decimated mesh
+  myHACD->SetCallBack(&_HACD_CallBack);
+  myHACD->SetAddExtraDistPoints(addExtraDistPoints);
+  myHACD->SetAddFacesPoints(addFacesPoints);
+
+  myHACD->Compute();
+  int nClusters = myHACD->GetNClusters();
+
+  auto get_hull_i = [myHACD](int i) {
+    size_t nPoints = myHACD->GetNPointsCH(i);
+    size_t nTriangles = myHACD->GetNTrianglesCH(i);
+    vector <HACD::Vec3<Real> > hullpoints(nPoints);
+    vector <HACD::Vec3<long> > hulltriangles(nTriangles);
+    myHACD->GetCH(i, &hullpoints[0], &hulltriangles[0]);
+    ConvexHull3D hull;
+    vector<Vector3> points;
+    for(size_t j = 0; j < nPoints; j++) {
+      Vector3 pnt(hullpoints[j].X(), hullpoints[j].Y(), hullpoints[j].Z());
+      points.push_back(pnt);
+    }
+    hull.setPoints(points);
+    return hull;
+  };
+
+  // we use hull if only one cluster exists
+  if(nClusters == 1) {
+    size_t nPoints = myHACD->GetNPointsCH(0);
+    size_t nTriangles = myHACD->GetNTrianglesCH(0);
+    vector <HACD::Vec3<Real> > hullpoints(nPoints);
+    vector <HACD::Vec3<long> > hulltriangles(nTriangles);
+    myHACD->GetCH(0, &hullpoints[0], &hulltriangles[0]);
+    // I construct a ConvexHull using hullpoints
+    ch = get_hull_i(0);
+  }
+  else{
+    std::vector<ConvexHull3D> grp_hulls;
+    for (int i=0; i < nClusters; ++i) {
+      grp_hulls.push_back(get_hull_i(i));
+    }
+    ch.type = ConvexHull3D::Composite;
+    ch.data = grp_hulls;
+  }
+  HACD::DestroyHACD(myHACD);
+  HACD::releaseHeapManager(heapManager);
+}
+
 
 } //namespace Geometry

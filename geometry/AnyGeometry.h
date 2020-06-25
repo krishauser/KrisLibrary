@@ -2,15 +2,14 @@
 #define ANY_GEOMETRY_H
 
 #include <KrisLibrary/utils/AnyValue.h>
-#include <KrisLibrary/math3d/ConvexHull3D.h>
 #include "CollisionMesh.h"
 
 class TiXmlElement;
 
 //forward declarations
 namespace Meshing { template <class T> class VolumeGridTemplate; typedef VolumeGridTemplate<Real> VolumeGrid; class PointCloud3D; }
-namespace Geometry { class CollisionPointCloud; class CollisionImplicitSurface; }
-namespace Math3D { class GeometricPrimitive3D; class ConvexHull3D;}
+namespace Geometry { class CollisionPointCloud; class CollisionImplicitSurface; class ConvexHull3D; class CollisionConvexHull3D; }
+namespace Math3D { class GeometricPrimitive3D; }
 namespace GLDraw { class GeometryAppearance; }
 
 namespace Geometry {
@@ -72,7 +71,6 @@ class AnyGeometry3D
   Meshing::PointCloud3D& AsPointCloud();
   Meshing::VolumeGrid& AsImplicitSurface();
   vector<AnyGeometry3D>& AsGroup();
-  void TriMeshToConvexHull(AnyGeometry3D &res, double concavity) const;
   GLDraw::GeometryAppearance* TriangleMeshAppearanceData();
   const GLDraw::GeometryAppearance* TriangleMeshAppearanceData() const;
   static bool CanLoadExt(const char* ext);

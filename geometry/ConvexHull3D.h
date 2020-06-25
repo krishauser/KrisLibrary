@@ -1,21 +1,22 @@
 
-#ifndef MATH3D_CONVEXHULL3D_H
-#define MATH3D_CONVECHULL3D_H
+#ifndef GEOMETRY_CONVEXHULL3D_H
+#define GEOMETRY_CONVEXHULL3D_H
 
 #include <KrisLibrary/utils/AnyValue.h>
 #include <KrisLibrary/math/math.h>
 #include <KrisLibrary/math/vector.h>
-#include "primitives.h"
-#include "AABB3D.h"
-#include "Box3D.h"
+#include <KrisLibrary/math3d/primitives.h>
+#include <KrisLibrary/math3d/AABB3D.h>
+#include <KrisLibrary/math3d/Box3D.h>
 #include <tuple>
 #include "SOLID.h"
 
-namespace Math3D {
+namespace Geometry {
 
 using namespace Math; 
+using namespace Math3D;
 
-/** @ingroup Math3D
+/** @ingroup Geometry
  * @brief A 3D convex hull class
  *
  * This class usess SOLID3 library as backend and not so many function are exposed to the user.
@@ -86,7 +87,7 @@ struct ConvexHull3D
   Type type;
 };
 
-/** @ingroup Math3D
+/** @ingroup Geometry
  * @brief The collision data class for ConvexHull3D, it contains the solid3 data structure
 */
 struct CollisionConvexHull3D
@@ -117,6 +118,6 @@ struct CollisionConvexHull3D
 std::ostream& operator << (std::ostream& out,const ConvexHull3D& h);
 std::istream& operator >> (std::istream& in,ConvexHull3D& h);
 
-} //namespace Math3D
+} //namespace Geometry
 
 #endif

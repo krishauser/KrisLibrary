@@ -73,6 +73,23 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
  */
 void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh,Real levelSet=0.0);
 
+/** @ingroup Geometry
+ * @brief Computes a convex hull from a mesh. 
+ */
+void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch);
+
+/** @ingroup Geometry
+ * @brief Computes a convex hull from a point cloud.  
+ */
+void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch);
+
+/** @ingroup Geometry
+ * @brief Computes a convex decomposition of the mesh.  concavity can be set to > 0 to compute an
+ * approximate convex decomposition using the HACD algorithm.
+ * 
+ * Note: the ConvexHull3D class can store a composite of convex hulls.
+ */
+void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Real concavity);
 
 } //namespace Geometry
 

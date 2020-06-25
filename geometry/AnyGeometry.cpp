@@ -7,6 +7,7 @@
 #include <GLdraw/GeometryAppearance.h>
 #include "CollisionPointCloud.h"
 #include "CollisionImplicitSurface.h"
+#include "ConvexHull3D.h"
 #include <utils/stringutils.h>
 #include <meshing/IO.h>
 #include <structs/Heap.h>
@@ -14,9 +15,6 @@
 #include <fstream>
 #include <stdlib.h>
 #include <string.h>
-
-#include <hacdHACD.h>
-
 
 #include "PQP/include/PQP.h"
 
@@ -184,105 +182,6 @@ Meshing::PointCloud3D &AnyGeometry3D::AsPointCloud() { return *AnyCast_Raw<Meshi
 Meshing::VolumeGrid &AnyGeometry3D::AsImplicitSurface() { return *AnyCast_Raw<Meshing::VolumeGrid>(&data); }
 vector<AnyGeometry3D> &AnyGeometry3D::AsGroup() { return *AnyCast_Raw<vector<AnyGeometry3D>>(&data); }
 
-void CallBack(const char * msg, double progress, double concavity, size_t nVertices)
-{
-    std::cout << msg;
-}
-
-void AnyGeometry3D::TriMeshToConvexHull(AnyGeometry3D &res, double concavity) const {
-  Assert(type == TriangleMesh);
-  const Meshing::TriMesh &mesh = AsTriangleMesh();
-  int minClusters = 1;  // so I allow conversion directly from convex objects
-//  bool invert = false;
-  bool addExtraDistPoints = true;
-  bool addFacesPoints = true;
-  float ccConnectDist = 30;
-  int targetNTrianglesDecimatedMesh = 3000;
-
-  vector<HACD::Vec3<Real> > points;
-  vector<HACD::Vec3<long> > triangles;
-  // convert mesh into points and triangles
-  int n_point = mesh.verts.size();
-  points.resize(n_point);
-  for (size_t i=0; i < points.size(); ++i) {
-    points[i].X() = mesh.verts[i].x;
-    points[i].Y() = mesh.verts[i].y;
-    points[i].Z() = mesh.verts[i].z;
-  }
-  triangles.resize(mesh.tris.size());
-  for (size_t i=0; i < triangles.size(); ++i) {
-    triangles[i][0] = mesh.tris[i].a;
-    triangles[i][1] = mesh.tris[i].b;
-    triangles[i][2] = mesh.tris[i].c;
-  }
-
-  HACD::HeapManager * heapManager = HACD::createHeapManager(65536*(1000));
-
-  HACD::HACD * const myHACD = HACD::CreateHACD(heapManager);
-  myHACD->SetPoints(&points[0]);
-  myHACD->SetNPoints(points.size());
-  myHACD->SetTriangles(&triangles[0]);
-  myHACD->SetNTriangles(triangles.size());
-  myHACD->SetCompacityWeight(0.0001);
-  myHACD->SetVolumeWeight(0.0);
-  myHACD->SetConnectDist(ccConnectDist);               // if two connected components are seperated by distance < ccConnectDist
-                                                      // then create a virtual edge between them so the can be merged during
-                                                      // the simplification process
-
-  myHACD->SetNClusters(minClusters);                     // minimum number of clusters
-  myHACD->SetNVerticesPerCH(100);                      // max of 100 vertices per convex-hull
-  myHACD->SetConcavity(concavity);                     // maximum concavity
-  myHACD->SetSmallClusterThreshold(0.25);              // threshold to detect small clusters
-  myHACD->SetNTargetTrianglesDecimatedMesh(targetNTrianglesDecimatedMesh); // # triangles in the decimated mesh
-  myHACD->SetCallBack(&CallBack);
-  myHACD->SetAddExtraDistPoints(addExtraDistPoints);
-  myHACD->SetAddFacesPoints(addFacesPoints);
-
-  myHACD->Compute();
-  int nClusters = myHACD->GetNClusters();
-
-  auto get_hull_i = [myHACD](int i) {
-    size_t nPoints = myHACD->GetNPointsCH(i);
-    size_t nTriangles = myHACD->GetNTrianglesCH(i);
-    vector <HACD::Vec3<Real> > hullpoints(nPoints);
-    vector <HACD::Vec3<long> > hulltriangles(nTriangles);
-    myHACD->GetCH(i, &hullpoints[0], &hulltriangles[0]);
-    ConvexHull3D hull;
-    vector<Vector3> points;
-    for(size_t j = 0; j < nPoints; j++) {
-      Vector3 pnt(hullpoints[j].X(), hullpoints[j].Y(), hullpoints[j].Z());
-      points.push_back(pnt);
-    }
-    hull.setPoints(points);
-    return hull;
-  };
-
-  // we use hull if only one cluster exists
-  if(nClusters == 1) {
-    size_t nPoints = myHACD->GetNPointsCH(0);
-    size_t nTriangles = myHACD->GetNTrianglesCH(0);
-    vector <HACD::Vec3<Real> > hullpoints(nPoints);
-    vector <HACD::Vec3<long> > hulltriangles(nTriangles);
-    myHACD->GetCH(0, &hullpoints[0], &hulltriangles[0]);
-    // I construct a ConvexHull using hullpoints
-    ConvexHull3D hull = get_hull_i(0);
-    res.type = ConvexHull;
-    res.data = hull;
-  }
-  else{
-    std::vector<ConvexHull3D> grp_hulls;
-    for (int i=0; i < nClusters; ++i) {
-      grp_hulls.push_back(get_hull_i(i));
-    }
-    ConvexHull3D hull;
-    hull.type = ConvexHull3D::Composite;
-    hull.data = grp_hulls;
-    res.type = ConvexHull;
-    res.data = hull;
-  }
-  HACD::DestroyHACD(myHACD);
-  HACD::releaseHeapManager(heapManager);
-}
 
 //appearance casts
 GLDraw::GeometryAppearance *AnyGeometry3D::TriangleMeshAppearanceData() { return AnyCast<GLDraw::GeometryAppearance>(&appearanceData); }
@@ -489,8 +388,11 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
       return false;
     }
     case ConvexHull: {
-      std::cout << "Cannot convert from point cloud to convex hull\n";
-      break;
+      ConvexHull3D chull;
+      PointCloudToConvexHull(AsPointCloud(),chull);
+      res.type = ConvexHull;
+      res.data = chull;
+      return true;
     }
     default:
       break;
@@ -540,17 +442,11 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     }
     case ConvexHull:
     {
-      std::cout << "Current support conversion from triangle mesh to convex hull to to compute convex hull for all vertices\n";
       const Meshing::TriMesh &mesh = AsTriangleMesh();
-      if(param <= 0) {   // In this case, just compute the convex hull
-        ConvexHull3D chull;
-        chull.setPoints(mesh.verts);
-        res = AnyGeometry3D(chull);
-        return true;
-      }
-      else{
-        this->TriMeshToConvexHull(res, param);
-      }
+      ConvexHull3D chull;
+      MeshConvexDecomposition(mesh,chull,param);
+      res.type = ConvexHull;
+      res.data = chull;
       return true;
     }
     default:
@@ -579,8 +475,10 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     }
     case ConvexHull:
     {
-      std::cout << "Cannot convert from implicit surface to convex hull yet.";
-      break;
+      AnyGeometry3D mesh;
+      Convert(TriangleMesh, mesh, param);
+      mesh.Convert(ConvexHull,res,0);
+      return true;
     }
     default:
       break;
@@ -2024,6 +1922,9 @@ bool Collides(const GeometricPrimitive3D &a, Real margin, AnyCollisionGeometry3D
       return true;
     }
     return false;
+  case AnyCollisionGeometry3D::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do primitive-convex hull collisions yet");
+    break;
   case AnyCollisionGeometry3D::Group:
   {
     vector<AnyCollisionGeometry3D> &bitems = b.GroupCollisionData();
@@ -2108,6 +2009,9 @@ bool Collides(const CollisionMesh &a, Real margin, AnyCollisionGeometry3D &b,
     return ::Collides(a, b.TriangleMeshCollisionData(), margin + b.margin, elements1, elements2, maxContacts);
   case AnyCollisionGeometry3D::PointCloud:
     return ::Collides(b.PointCloudCollisionData(), margin + b.margin, a, elements2, elements1, maxContacts);
+  case AnyCollisionGeometry3D::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do convex hull-anything collision yet");
+    break;
   case AnyCollisionGeometry3D::Group:
   {
     vector<AnyCollisionGeometry3D> &bitems = b.GroupCollisionData();
@@ -2150,6 +2054,9 @@ bool Collides(const CollisionPointCloud &a, Real margin, AnyCollisionGeometry3D 
     bool res = ::Collides(a, margin, b.ImplicitSurfaceCollisionData(), elements1, elements2, maxContacts);
     return res;
   }
+  case AnyCollisionGeometry3D::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do point cloud-convex hull collisions yet");
+    break;
   case AnyCollisionGeometry3D::Group:
   {
     vector<AnyCollisionGeometry3D> &bitems = b.GroupCollisionData();
@@ -2210,6 +2117,9 @@ bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D &geom,
     return ::Collides(PointCloudCollisionData(), margin, geom, elements1, elements2, maxContacts);
   case Group:
     return ::Collides(GroupCollisionData(), margin, geom, elements1, elements2, maxContacts);
+  case ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do element-wise collision detection with convex hulls yet");
+    break;
   default:
     FatalError("Invalid type");
   }
@@ -2661,6 +2571,9 @@ AnyDistanceQueryResult Distance(const GeometricPrimitive3D &a, const AnyCollisio
     Offset2(res, b.margin);
   }
   break;
+  case AnyCollisionGeometry3D::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do primitive-convex hull distance yet");
+    break;
   case AnyCollisionGeometry3D::Group:
   {
     const vector<AnyCollisionGeometry3D> &bitems = b.GroupCollisionData();
@@ -2702,6 +2615,9 @@ AnyDistanceQueryResult Distance(const CollisionImplicitSurface &a, const AnyColl
     Offset2(res, b.margin);
   }
   break;
+  case AnyCollisionGeometry3D::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do implicit surface-convex hull distance yet");
+    break;
   case AnyCollisionGeometry3D::Group:
   {
     const vector<AnyCollisionGeometry3D> &bitems = b.GroupCollisionData();
@@ -2747,6 +2663,9 @@ AnyDistanceQueryResult Distance(const CollisionMesh &a, const AnyCollisionGeomet
     Offset2(res, b.margin);
   }
   break;
+  case AnyCollisionGeometry3D::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do mesh-convex hull distance yet");
+    break;
   case AnyCollisionGeometry3D::Group:
   {
     const vector<AnyCollisionGeometry3D> &bitems = b.GroupCollisionData();
@@ -2803,6 +2722,9 @@ AnyDistanceQueryResult Distance(const CollisionPointCloud &a, const AnyCollision
     Offset2(res, b.margin);
   }
   break;
+  case AnyCollisionGeometry3D::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do point cloud-convex hull distance yet");
+    break;
   default:
     FatalError("Invalid type");
   }
@@ -2870,38 +2792,43 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D &
     return result;
   case ConvexHull: 
   {
-    Assert(geom.type == ConvexHull);
-    // use AABB to exclude them
-    AABB3D aabb1 = this->GetAABB();
-    AABB3D aabb2 = geom.GetAABB();
-    // std::cout << "BBox1 " << aabb1.bmin.x << " " << aabb1.bmin.y << " " << aabb1.bmin.z << " and " << aabb1.bmax.x << " " << aabb1.bmax.y << " " << aabb1.bmax.z << "\n";
-    // std::cout << "BBox2 " << aabb2.bmin.x << " " << aabb2.bmin.y << " " << aabb2.bmin.z << " and " << aabb2.bmax.x << " " << aabb2.bmax.y << " " << aabb2.bmax.z << "\n";
-    double d = aabb1.distance(aabb2);
-    // std::cout << "d = " << d << std::endl;
-    if(d > modsettings.upperBound) {
-      result.d = d;
+    if(geom.type != ConvexHull) {
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't compute distance for convex hulls to anything else yet");
+      return AnyDistanceQueryResult();
+    }
+    else {
+      // use AABB to exclude them
+      AABB3D aabb1 = this->GetAABB();
+      AABB3D aabb2 = geom.GetAABB();
+      // std::cout << "BBox1 " << aabb1.bmin.x << " " << aabb1.bmin.y << " " << aabb1.bmin.z << " and " << aabb1.bmax.x << " " << aabb1.bmax.y << " " << aabb1.bmax.z << "\n";
+      // std::cout << "BBox2 " << aabb2.bmin.x << " " << aabb2.bmin.y << " " << aabb2.bmin.z << " and " << aabb2.bmax.x << " " << aabb2.bmax.y << " " << aabb2.bmax.z << "\n";
+      double d = aabb1.distance(aabb2);
+      // std::cout << "d = " << d << std::endl;
+      if(d > modsettings.upperBound) {
+        result.d = d;
+        result.hasElements = false;
+        result.hasClosestPoints = false;
+        result.hasPenetration = false;
+        result.hasDirections = false;
+        return result;
+      }
+      CollisionConvexHull3D &hull1 = this->ConvexHullCollisionData();
+      CollisionConvexHull3D &hull2 = geom.ConvexHullCollisionData();
+      Vector3 cp, direction;
+      Real dist = hull1.ClosestPoints(hull2, cp, direction, &this->currentTransform, &geom.currentTransform);
+      //std::cout << "Call closest point and get " << dist << "\n";
       result.hasElements = false;
-      result.hasClosestPoints = false;
-      result.hasPenetration = false;
-      result.hasDirections = false;
+      result.hasPenetration = true;
+      result.hasClosestPoints = true;
+      result.hasDirections = true;
+      result.d = dist;
+      result.dir1 = direction;
+      result.dir2 = -direction;
+      result.cp1 = cp;
+      result.cp2 = cp + dist * direction;
+      Offset1(result, margin);
       return result;
     }
-    CollisionConvexHull3D &hull1 = this->ConvexHullCollisionData();
-    CollisionConvexHull3D &hull2 = geom.ConvexHullCollisionData();
-    Vector3 cp, direction;
-    Real dist = hull1.ClosestPoints(hull2, cp, direction, &this->currentTransform, &geom.currentTransform);
-    //std::cout << "Call closest point and get " << dist << "\n";
-    result.hasElements = false;
-    result.hasPenetration = true;
-    result.hasClosestPoints = true;
-    result.hasDirections = true;
-    result.d = dist;
-    result.dir1 = direction;
-    result.dir2 = -direction;
-    result.cp1 = cp;
-    result.cp2 = cp + dist * direction;
-    Offset1(result, margin);
-    return result;
   }
   default:
     FatalError("Invalid type");
@@ -2934,6 +2861,8 @@ bool AnyCollisionGeometry3D::WithinDistance(AnyCollisionGeometry3D &geom, Real t
     return ::Collides(PointCloudCollisionData(), margin + tol, geom, elements1, elements2, maxContacts);
   case Group:
     return ::Collides(GroupCollisionData(), margin + tol, geom, elements1, elements2, maxContacts);
+  case ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do within-distance for convex hulls yet");
   default:
     FatalError("Invalid type");
   }
@@ -2966,7 +2895,6 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
     }
     return false;
   }
-  break;
   case ImplicitSurface:
     LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't ray-cast implicit surfaces yet");
     break;
@@ -3026,7 +2954,7 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
       *distance = closest;
     return !IsInf(closest);
   }
-  default:
+  case ConvexHull:
   {
     LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't ray-cast convex hull yet");
     break;
@@ -4002,6 +3930,9 @@ void PrimitiveGeometryContacts(GeometricPrimitive3D &g1, const RigidTransform &T
   case AnyGeometry3D::ImplicitSurface:
     LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: primitive-implicit surface contacts");
     break;
+  case AnyGeometry3D::ConvexHull:
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: primitive-convex hull contacts");
+    break;
   case AnyGeometry3D::Group:
   {
     vector<Geometry::AnyCollisionGeometry3D> &items = g2.GroupCollisionData();
@@ -4043,6 +3974,9 @@ void MeshGeometryContacts(CollisionMesh &m1, Real outerMargin1, Geometry::AnyCol
     return;
   case AnyGeometry3D::ImplicitSurface:
     LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: triangle mesh-implicit surface contacts");
+    break;
+  case AnyGeometry3D::ConvexHull:
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: triangle mesh-convex hull contacts");
     break;
   case AnyGeometry3D::Group:
   {
@@ -4097,6 +4031,9 @@ void GeometryGeometryContacts(Geometry::AnyCollisionGeometry3D &g1, Real outerMa
     case AnyGeometry3D::Group:
       LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: point cloud-group contacts");
       break;
+    case AnyGeometry3D::ConvexHull:
+      LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: point cloud-convex hull contacts");
+      break;
     }
     break;
   case AnyGeometry3D::ImplicitSurface:
@@ -4109,19 +4046,25 @@ void GeometryGeometryContacts(Geometry::AnyCollisionGeometry3D &g1, Real outerMa
       LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-triangle mesh contacts");
       break;
     case AnyGeometry3D::PointCloud:
-    {
-      PointCloudImplicitSurfaceContacts(g2.PointCloudCollisionData(), g2.margin + outerMargin2, g1.ImplicitSurfaceCollisionData(), g1.margin + outerMargin1, contacts, maxcontacts);
-      for (auto &c : contacts)
-        ReverseContact(c);
-    }
-    break;
+      {
+        PointCloudImplicitSurfaceContacts(g2.PointCloudCollisionData(), g2.margin + outerMargin2, g1.ImplicitSurfaceCollisionData(), g1.margin + outerMargin1, contacts, maxcontacts);
+        for (auto &c : contacts)
+          ReverseContact(c);
+      }
+      break;
     case AnyGeometry3D::ImplicitSurface:
       LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-implicit surface contacts");
       break;
     case AnyGeometry3D::Group:
       LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-group contacts");
       break;
+    case AnyGeometry3D::ConvexHull:
+      LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: implicit surface-convex hull contacts");
+      break;
     }
+    break;
+  case AnyGeometry3D::ConvexHull:
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: convex hull-anything contacts");
     break;
   case AnyGeometry3D::Group:
   {
