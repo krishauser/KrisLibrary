@@ -354,7 +354,7 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     }
     case ConvexHull:
     {
-      std::cout << "Cannot convert from primitive to convex hull yet.\n";
+      LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from primitive to convex hull yet");
       break;
     }
     default:
@@ -363,7 +363,7 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     break;
   case ConvexHull:
   {
-    std::cout << "Cannot convert from ConvexHull to anything else\n";
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from ConvexHull to anything else");
     break;
   }
   case PointCloud:
@@ -628,7 +628,7 @@ bool AnyGeometry3D::Load(const char *fn)
     ifstream in(fn, ios::in);
     if (!in)
     {
-      LOG4CXX_ERROR(KrisLibrary::logger(), "AnyGeometry3D::Load: File " << fn);
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "AnyGeometry3D::Load: File " << fn);
       return false;
     }
     if (!Load(in))
@@ -641,7 +641,7 @@ bool AnyGeometry3D::Load(const char *fn)
     ifstream in(fn, ios::in);
     if (!in)
     {
-      LOG4CXX_ERROR(KrisLibrary::logger(), "AnyGeometry3D::Load: File " << fn);
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "AnyGeometry3D::Load: File " << fn);
       return false;
     }
     if (!Load(in))
@@ -669,7 +669,7 @@ bool AnyGeometry3D::Save(const char *fn) const
     }
     else
     {
-      LOG4CXX_WARN(KrisLibrary::logger(), "AnyGeometry3D::Save: Unknown mesh file extension " << fn);
+      LOG4CXX_WARN(GET_LOGGER(Geometry), "AnyGeometry3D::Save: Unknown mesh file extension " << fn);
     }
     break;
   case PointCloud:
@@ -679,7 +679,7 @@ bool AnyGeometry3D::Save(const char *fn) const
     }
     else
     {
-      LOG4CXX_WARN(KrisLibrary::logger(), "AnyGeometry3D::Save: Unknown point cloud file extension " << fn);
+      LOG4CXX_WARN(GET_LOGGER(Geometry), "AnyGeometry3D::Save: Unknown point cloud file extension " << fn);
     }
     break;
   case ImplicitSurface:
@@ -722,7 +722,7 @@ bool AnyGeometry3D::Load(istream &in)
     }
     else
     {
-      LOG4CXX_ERROR(KrisLibrary::logger(), "Failed to load Primitive type\n");
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "Failed to load Primitive type\n");
       return false;
     }
   }
@@ -775,11 +775,11 @@ bool AnyGeometry3D::Load(istream &in)
     return true;
   }
   else {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Unknown type "<<typestr);
+        LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyGeometry::Load(): Unknown type "<<typestr);
         return false;
   }
   if(!in) {
-    LOG4CXX_ERROR(KrisLibrary::logger(),"AnyGeometry::Load(): Something went wrong inputting item of type "<<typestr);
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyGeometry::Load(): Something went wrong inputting item of type "<<typestr);
     return false;
   }
   return true;
@@ -1629,7 +1629,7 @@ bool withinDistance_PC_AnyGeom(void* obj)
   RigidTransform Tident; Tident.R.setIdentity(); Tident.t = pw;
   vector<int> temp;
   if(Collides(point_primitive,Tident,gWithinDistanceMargin,*gWithinDistanceGeom,temp,*gWithinDistanceElements1,gWithinDistanceMaxContacts)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Colliding point "<<pw.x<<" "<<pw.y<<" "<<pw.z<<" distance "<<gWithinDistanceGeom->Distance(pw));
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"Colliding point "<<pw.x<<" "<<pw.y<<" "<<pw.z<<" distance "<<gWithinDistanceGeom->Distance(pw));
     gWithinDistanceElements2->push_back(p-&gWithinDistancePC->points[0]);
     if(gWithinDistanceElements1->size() >= gWithinDistanceMaxContacts) 
       return false;
