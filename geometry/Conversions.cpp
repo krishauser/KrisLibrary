@@ -12,6 +12,7 @@
 #include <KrisLibrary/math3d/basis.h>
 #include <KrisLibrary/Timer.h>
 
+#include "SOLID.h"
 #include <hacdHACD.h>
 
 

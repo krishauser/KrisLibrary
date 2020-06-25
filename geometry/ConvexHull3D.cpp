@@ -2,6 +2,7 @@
 #include <iostream>
 #include <limits>
 #include <KrisLibrary/utils/AnyValue.h>
+#include "SOLID.h"
 
 using namespace std;
 using namespace Math3D;

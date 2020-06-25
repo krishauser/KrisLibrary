@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "PQP/include/PQP.h"
+#include "SOLID.h"
 
 DEFINE_LOGGER(Geometry)
 
@@ -1349,20 +1350,20 @@ void AnyCollisionGeometry3D::SetFreeRelativeTransform(const RigidTransform &T) {
   ConvexHullCollisionData()._update_free_relative_transform(&T);
 }
 
-Real AnyCollisionGeometry3D::FindSupport(const Vector3& dir) {
+Vector3 AnyCollisionGeometry3D::FindSupport(const Vector3& dir) {
   this->InitCollisionData();
   switch(type)
   {
   case AnyCollisionGeometry3D::ConvexHull:
   {
     CollisionConvexHull3D &chull = this->ConvexHullCollisionData();
-    double out;
-    chull._find_support(dir, &out);
+    Vector3 out;
+    chull._find_support(dir, out);
     return out;
   }
   default:
     LOG4CXX_ERROR(GET_LOGGER(Geometry),"Find support not yet implemented for most types");
-    return -Inf;
+    return Vector3(-Inf);
   }
 
 }

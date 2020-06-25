@@ -168,7 +168,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   void SetRelativeTransform(const RigidTransform& T);
   void SetFreeRelativeTransform(const RigidTransform& T);
   ///Computes the furthest point on the geometry in the direction dir
-  double FindSupport(const Vector3& dir);
+  Vector3 FindSupport(const Vector3& dir);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);

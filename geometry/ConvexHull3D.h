@@ -9,7 +9,9 @@
 #include <KrisLibrary/math3d/AABB3D.h>
 #include <KrisLibrary/math3d/Box3D.h>
 #include <tuple>
-#include "SOLID.h"
+
+typedef struct DT_ShapeHandle__* DT_ShapeHandle;
+typedef struct DT_ObjectHandle__* DT_ObjectHandle;
 
 namespace Geometry {
 
