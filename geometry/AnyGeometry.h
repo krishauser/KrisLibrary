@@ -3,6 +3,7 @@
 
 #include <KrisLibrary/utils/AnyValue.h>
 #include "CollisionMesh.h"
+#include "ConvexHull3D.h"
 
 class TiXmlElement;
 
@@ -106,7 +107,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   AnyCollisionGeometry3D();
   AnyCollisionGeometry3D(const GeometricPrimitive3D& primitive);
   AnyCollisionGeometry3D(const ConvexHull3D& primitive);
-  AnyCollisionGeometry3D(const ConvexHull3D& primitive, const ConvexHull3D&, bool is_free);
+  AnyCollisionGeometry3D(const ConvexHull3D& primitive, const ConvexHull3D&);
   AnyCollisionGeometry3D(const Meshing::TriMesh& mesh);
   AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc);
   AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid);
@@ -165,10 +166,10 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///called.
   void SetTransform(const RigidTransform& T);
   ///GAO: you need to define these better. I have no idea what these mean from context
-  void SetRelativeTransform(const RigidTransform& T);
-  void SetFreeRelativeTransform(const RigidTransform& T);
+  // void SetRelativeTransform(const RigidTransform& T);
+  // void SetFreeRelativeTransform(const RigidTransform& T);
   ///Computes the furthest point on the geometry in the direction dir
-  Vector3 FindSupport(const Vector3& dir);
+  // Vector3 FindSupport(const Vector3& dir);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);

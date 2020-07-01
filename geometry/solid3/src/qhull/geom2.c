@@ -1563,35 +1563,35 @@ void qh_projectpoints (signed char *project, int n, realT *points,
 */
 int qh_rand_seed= 1;  /* define as global variable instead of using qh */
 
-int qh_rand( void) {
-#define qh_rand_a 16807
-#define qh_rand_m 2147483647
-#define qh_rand_q 127773  /* m div a */
-#define qh_rand_r 2836    /* m mod a */
-  int lo, hi, test;
-  int seed = qh_rand_seed;
-
-  hi = seed / qh_rand_q;  /* seed div q */
-  lo = seed % qh_rand_q;  /* seed mod q */
-  test = qh_rand_a * lo - qh_rand_r * hi;
-  if (test > 0)
-    seed= test;
-  else
-    seed= test + qh_rand_m;
-  qh_rand_seed= seed;
-  /* seed = seed < qh_RANDOMmax/2 ? 0 : qh_RANDOMmax;  for testing */
-  /* seed = qh_RANDOMmax;  for testing */
-  return seed;
-} /* rand */
-
-void qh_srand( int seed) {
-  if (seed < 1)
-    qh_rand_seed= 1;
-  else if (seed >= qh_rand_m)
-    qh_rand_seed= qh_rand_m - 1;
-  else
-    qh_rand_seed= seed;
-} /* qh_srand */
+// int qh_rand( void) {
+// #define qh_rand_a 16807
+// #define qh_rand_m 2147483647
+// #define qh_rand_q 127773  /* m div a */
+// #define qh_rand_r 2836    /* m mod a */
+//   int lo, hi, test;
+//   int seed = qh_rand_seed;
+// 
+//   hi = seed / qh_rand_q;  /* seed div q */
+//   lo = seed % qh_rand_q;  /* seed mod q */
+//   test = qh_rand_a * lo - qh_rand_r * hi;
+//   if (test > 0)
+//     seed= test;
+//   else
+//     seed= test + qh_rand_m;
+//   qh_rand_seed= seed;
+//   /* seed = seed < qh_RANDOMmax/2 ? 0 : qh_RANDOMmax;  for testing */
+//   /* seed = qh_RANDOMmax;  for testing */
+//   return seed;
+// } /* rand */
+// 
+// void qh_srand( int seed) {
+//   if (seed < 1)
+//     qh_rand_seed= 1;
+//   else if (seed >= qh_rand_m)
+//     qh_rand_seed= qh_rand_m - 1;
+//   else
+//     qh_rand_seed= seed;
+// } /* qh_srand */
 
 /*-<a                             href="qh-geom.htm#TOC"
   >-------------------------------</a><a name="randomfactor">-</a>

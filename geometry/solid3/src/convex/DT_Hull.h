@@ -51,7 +51,7 @@ private:
 	const DT_Convex& m_rchild;
 };
 
-// construct a convex hull from one object and rigidtransform it
+// construct a convex hull from one object and rigid transform of it
 class DT_HullTran : public DT_Convex {
 public:
 	DT_HullTran(const DT_Convex& lchild) :
@@ -79,7 +79,7 @@ public:
 		return v.dot(lpnt) > v.dot(rpnt) ? lpnt : rpnt;
 	}
 
-	void _update_transform(const double *pointer) {
+	void UpdateTransform(const double *pointer) {
 		//
 		//std::cout << "update transform here\n";
 		m_xform.setValue(pointer);
@@ -114,7 +114,7 @@ public:
 		return v.dot(lpnt) > v.dot(rpnt) ? lpnt : rpnt;
 	}
 
-	void _update_transform(const double *pointer) {
+	void UpdateTransform(const double *pointer) {
 		m_xform.setValue(pointer);
 	}
 

@@ -21,12 +21,11 @@ using namespace Math3D;
 /** @ingroup Geometry
  * @brief A 3D convex hull class
  *
- * This class usess SOLID3 library as backend and not so many function are exposed to the user.
+ * This class uses SOLID3 library as backend and not so many function are exposed to the user.
  * To use the full capability of SOLID3, I allow this class to support many PrimitiveShape
  * and complex stuff like polytope (from points), Minkowski (sum of shape), Hull (hull of two shapes), Composite (vector of Hull3D)
  * This makes things much harder and I'm excited to see them.
  */
-struct ConvexHull3D;
 // define stored data for various stuff
 // struct Solid_Polytope {
 //   std::vector<double> points;
@@ -66,12 +65,12 @@ struct ConvexHull3D
   // Tran means transform one shape to form the hull
   // Hull means the hull of two objects with fixed relative transform..
   // HullFree means hull of two objects with free relative transform, they both store a pair of Hulls but creates different collision data
-  enum Type { Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, Hull, HullFree, Composite };
+  enum Type { Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, HullFree};
   void setPoints(const Vector& a);
   void setPoints(const std::vector<double>& a);
   void setPoints(const std::vector<Vector3> & a);
   void setPoints(const std::vector<Vector> & a);
-  void from_hulls(const ConvexHull3D &hull1, const ConvexHull3D &hull2, bool is_free);
+  void fromHulls(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
   // void setTransformed(const ConvexHull3D&, const Matrix4& xform);
   double distance(const ConvexHull3D &);
   double Distance(const Vector3 &);
@@ -95,7 +94,10 @@ struct ConvexHull3D
 struct CollisionConvexHull3D
 {
   CollisionConvexHull3D(const ConvexHull3D& hull);
-  CollisionConvexHull3D(const ConvexHull3D& hull, const ConvexHull3D &hull2, bool is_free);
+  CollisionConvexHull3D(const ConvexHull3D& hull, const ConvexHull3D &hull2);
+  CollisionConvexHull3D();  // no value, waiting to be initialized
+  void FromTransform(CollisionConvexHull3D&);
+  void FromHull(CollisionConvexHull3D&, CollisionConvexHull3D &);
   double Distance(const Vector3 &, const RigidTransform *tran=nullptr);
   // double Distance(CollisionConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
   // double Distance(const ConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
@@ -103,11 +105,10 @@ struct CollisionConvexHull3D
   // Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr);
   Real ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
 
-  void _update_transform(const RigidTransform *tran=nullptr);
-  void _update_relative_transform(const RigidTransform *tran);
-  void _update_free_relative_transform(const RigidTransform *tran);
+  void UpdateTransform(const RigidTransform *tran=nullptr);
+  void UpdateRelativeTransform(const RigidTransform *tran);
 
-  void _find_support(const double *, double *);
+  void FindSupport(const double *, double *);
 
   DT_ObjectHandle& object();
   std::vector<DT_ObjectHandle> & objects();
