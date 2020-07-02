@@ -3,21 +3,149 @@
 #include <limits>
 #include <KrisLibrary/utils/AnyValue.h>
 #include "SOLID.h"
+extern "C" {
+#include <qhull/qhull_a.h>
+}
+#include <stdio.h>
 
 using namespace std;
 using namespace Math3D;
 
+Vector3 __Unit__(const Vector3& v)
+{
+  Real n = v.norm();
+  if(Math::FuzzyZero(n)) return Vector3(0.0);
+  else return v*(1.0/n);
+};
+
 namespace Geometry {
 
-/** @ingroup Geometry
- * @brief A 3D convex hull class
- *
- * This class usess SOLID3 library as backend and not so many function are exposed to the user.
- * 
- */
+static char qhull_options[] = "qhull Qts i Tv";
 
-void ConvexHull3D::setPoints(const Vector& a) {
-  type = Polytope;
+
+bool ConvexHull3D_Qhull(const vector<Vector3>& points,vector<vector<int> >& facets)
+{
+  int curlong, totlong, exitcode;
+  
+    facetT *facet;
+    vertexT *vertex;
+    vertexT **vertexp;
+
+    qh_init_A(stdin, stdout, stderr, 0, NULL);
+    if ((exitcode = setjmp(qh errexit))) 
+    {
+      return false;
+    }
+    qh_initflags(qhull_options);
+    qh_init_B(const_cast<double*>(&points[0].x), points.size(), 3, False);
+    qh_qhull();
+    qh_check_output();
+    
+    facets.resize(0);
+    FORALLfacets 
+    {
+      setT *vertices = qh_facet3vertex(facet);
+
+      vector<int> facet;  
+      FOREACHvertex_(vertices) 
+      {
+        facet.push_back(qh_pointid(vertex->point));
+      }
+      facets.push_back(facet);
+    }
+
+    qh NOerrexit = True;
+    qh_freeqhull(!qh_ALL);
+    qh_memfreeshort(&curlong, &totlong);
+
+  return true;
+}
+
+bool ConvexHull3D_Qhull(const vector<double>& points,vector<vector<int> >& facets)
+{
+  int curlong, totlong, exitcode;
+  
+    facetT *facet;
+    vertexT *vertex;
+    vertexT **vertexp;
+
+    qh_init_A(stdin, stdout, stderr, 0, NULL);
+    if ((exitcode = setjmp(qh errexit))) 
+    {
+      return false;
+    }
+    qh_initflags(qhull_options);
+    qh_init_B(const_cast<double*>(&points[0]), points.size()/3, 3, False);
+    qh_qhull();
+    qh_check_output();
+    
+    facets.resize(0);
+    FORALLfacets 
+    {
+      setT *vertices = qh_facet3vertex(facet);
+
+      vector<int> facet;  
+      FOREACHvertex_(vertices) 
+      {
+        facet.push_back(qh_pointid(vertex->point));
+      }
+      facets.push_back(facet);
+    }
+
+    qh NOerrexit = True;
+    qh_freeqhull(!qh_ALL);
+    qh_memfreeshort(&curlong, &totlong);
+
+  return true;
+}
+
+bool ConvexHull3D_Qhull(const std::vector<Vector3>& points,std::vector<IntTriple>& tris)
+{
+  vector<vector<int> > facets;
+  if(!ConvexHull3D_Qhull(points,facets)) return false;
+  tris.resize(0);
+  for(size_t i=0;i<facets.size();i++) {
+    const auto& f = facets[i];
+    assert(f.size() >= 3);
+    for(size_t j=1;j+1<f.size();j++) 
+      tris.push_back(IntTriple(f[0],f[j],f[j+1]));
+  }
+  return true;
+}
+
+
+ConvexHull3D::ShapeHandleContainer::ShapeHandleContainer(DT_ShapeHandle _data)
+:data(_data)
+{}
+
+ConvexHull3D::ShapeHandleContainer::~ShapeHandleContainer()
+{
+  if(data) DT_DeleteShape(data);
+}
+
+
+ConvexHull3D::ConvexHull3D()
+:type(Empty)
+{}
+
+DT_ShapeHandle _MakePolytope(const vector<double>& points)
+{
+  DT_VertexBaseHandle base1 = DT_NewVertexBase(points.data(), (DT_Size)(3 * sizeof(double)));
+  DT_ShapeHandle cube1 = DT_NewPolytope(base1);
+  DT_VertexRange(0, points.size() / 3);
+  DT_EndPolytope();
+  return cube1;
+}
+
+void ConvexHull3D::SetPoint(const Vector3& a) {
+  type = Point;
+  data = a;
+  DT_Vector3 data;
+  a.get(data);
+  shapeHandle = make_shared<ShapeHandleContainer>(DT_NewPoint(data));
+}
+
+void ConvexHull3D::SetPoints(const Vector& a) {
   int asize = a.size();
   std::vector<double> points;
   if(asize % 3 != 0) {
@@ -28,17 +156,16 @@ void ConvexHull3D::setPoints(const Vector& a) {
   else{
     points = a;
   }
-  data = points;
+  SetPoints(points);
 }
 
-void ConvexHull3D::setPoints(const std::vector<double>& a) {
+void ConvexHull3D::SetPoints(const std::vector<double>& points) {
   type = Polytope;
-  std::vector<double> points(a.begin(), a.end());
   data = points;
+  shapeHandle = make_shared<ShapeHandleContainer>(_MakePolytope(points));
 }
 
-void ConvexHull3D::setPoints(const std::vector<Vector3> & a) {
-  type = Polytope;
+void ConvexHull3D::SetPoints(const std::vector<Vector3> & a) {
   std::vector<double> points;
   points.resize(a.size() * 3);
   int idx = 0;
@@ -47,11 +174,10 @@ void ConvexHull3D::setPoints(const std::vector<Vector3> & a) {
     points[idx++] = ai.y;
     points[idx++] = ai.z;
   }
-  data = points;
+  SetPoints(points);
 }
 
-void ConvexHull3D::setPoints(const std::vector<Vector> & a) {
-  type = Polytope;
+void ConvexHull3D::SetPoints(const std::vector<Vector> & a) {
   std::vector<double> points;
   points.resize(a.size() * 3);
   int idx = 0;
@@ -60,16 +186,26 @@ void ConvexHull3D::setPoints(const std::vector<Vector> & a) {
     points[idx++] = ai[1];
     points[idx++] = ai[2];
   }
-  data = points;
+  SetPoints(points);
 }
 
+void ConvexHull3D::SetTrans(const ConvexHull3D &hull, const RigidTransform& xform)
+{
+  this->type = ConvexHull3D::Trans;
+  data = std::make_pair(hull,xform);
+  double xform_data[16];
+  Matrix4(xform).get(xform_data);
+  shapeHandle = make_shared<ShapeHandleContainer>(DT_NewTransform(hull.shapeHandle->data,xform_data));
+}
 
-void ConvexHull3D::fromHulls(const ConvexHull3D &hull1, const ConvexHull3D &hull2) {
-  this->type = ConvexHull3D::HullFree;
+void ConvexHull3D::SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2)
+{
+  this->type = ConvexHull3D::Hull;
   data = std::make_pair(hull1, hull2);
+  shapeHandle = make_shared<ShapeHandleContainer>(DT_NewHullFree(hull1.shapeHandle->data, hull2.shapeHandle->data));
 }
 
-std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_ObjectHandle object2) {
+std::tuple<Real, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_ObjectHandle object2) {
     DT_SetAccuracy((DT_Scalar)1e-6);
     DT_SetTolerance((DT_Scalar)(1e-6));
     DT_Vector3 point1, point2, point3, point4;
@@ -121,64 +257,53 @@ std::tuple<double, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_Objec
 }
 
 // compute the distance from a hull to another hull
-double ConvexHull3D::distance(const ConvexHull3D &h) {
-    return std::get<0>(closest_points(h));
+Real ConvexHull3D::Distance(const ConvexHull3D &h) {
+    return std::get<0>(ClosestPoints(h));
 }
 
-double ConvexHull3D::Distance(const Vector3 &pnt) {
+Real ConvexHull3D::Distance(const Vector3 &pnt) {
   ConvexHull3D pnt_hull;
-  std::vector<Vector3> vpoint{pnt};
-  pnt_hull.setPoints(vpoint);
-  return distance(pnt_hull);
+  pnt_hull.SetPoint(pnt);
+  return Distance(pnt_hull);
 }
 
 Real ConvexHull3D::ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction) const {
   // first create hull and compute a lot
   ConvexHull3D pnt_hull;
   std::vector<Vector3> vpoint{pt};
-  pnt_hull.setPoints(vpoint);
+  pnt_hull.SetPoints(vpoint);
   return ClosestPoints(pnt_hull, cp, direction);
 }
 
 Real ConvexHull3D::ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction) const {
-  double dist = 0;
-  std::tie(dist, cp, direction) = closest_points(g);
-  auto Unit = [](const Vector3& v)
-  {
-    Real n = v.norm();
-    if(Math::FuzzyZero(n)) return Vector3(0.0);
-    else return v*(1.0/n);
-  };
+  Real dist = 0;
+  std::tie(dist, cp, direction) = ClosestPoints(g);
   if(dist >= 0) {
-    direction = Unit(direction - cp);
+    direction = __Unit__(direction - cp);
   }
   else{
-    direction = Unit(cp - direction);
+    direction = __Unit__(cp - direction);
   }
   return dist;
 }
 
-std::tuple<double, Vector3, Vector3> ConvexHull3D::closest_points(const ConvexHull3D &h) const {
-  auto &points = this->points();
-  auto &hpoints = h.points();
-  DT_VertexBaseHandle base1 = DT_NewVertexBase(points.data(), (DT_Size)(3 * sizeof(double)));
-  DT_VertexBaseHandle base2 = DT_NewVertexBase(hpoints.data(), (DT_Size)(3 * sizeof(double)));
-  DT_ShapeHandle cube1 = DT_NewPolytope(base1);
-  DT_VertexRange(0, points.size() / 3);
-  DT_EndPolytope();
-  DT_ShapeHandle cube2 = DT_NewPolytope(base2);
-  DT_VertexRange(0, hpoints.size() / 3);
-  DT_EndPolytope();
+std::tuple<Real, Vector3, Vector3> ConvexHull3D::ClosestPoints(const ConvexHull3D &h) const {
+  if(!shapeHandle || !h.shapeHandle) return std::make_tuple(Inf,Vector3(0.0),Vector3(0.0));
+  DT_ShapeHandle cube1 = shapeHandle->data;
+  DT_ShapeHandle cube2 = h.shapeHandle->data;
   DT_ObjectHandle object1 = DT_CreateObject(NULL, cube1);
   DT_ObjectHandle object2 = DT_CreateObject(NULL, cube2);
-  return dist_func(object1, object2);
+  auto res = dist_func(object1, object2);
+  DT_DestroyObject(object1);
+  DT_DestroyObject(object2);
+  return res;
 }
 
 //TODO: here I transform all points and this may not be efficient
 void ConvexHull3D::Transform(const Matrix4 &T) {
-  Assert(type == Polytope);
+  if(type != Polytope) FatalError("TODO: Implement Transform for types other than Polytope");
   //std::cout << "Transform points\n";
-  auto points = this->points();
+  auto points = this->AsPolytope();
   int n_point = points.size() / 3;
   for(int i = 0; i < n_point; i++) {
     Vector3 temp(points[3 * i], points[3 * i + 1], points[3 * i + 2]);
@@ -188,11 +313,12 @@ void ConvexHull3D::Transform(const Matrix4 &T) {
     points[3 * i + 1] = rst.y;
     points[3 * i + 2] = rst.z;
   }
+  SetPoints(points);
 }
 
 AABB3D ConvexHull3D::GetAABB() const {
-  Assert(type == Polytope);
-  auto &points = this->points();
+  if(type != Polytope) FatalError("TODO: Implement GetAABB for types other than Polytope");
+  const auto &points = this->AsPolytope();
   int n_point = points.size() / 3;
   Vector3 bmin(points.data()), bmax(points.data());
   for(int i = 0; i < n_point; i++) {
@@ -213,145 +339,114 @@ Box3D ConvexHull3D::GetBB() const {  //TODO: is there a smart way to compute bb?
   return b;
 }
 
-std::vector<double> &ConvexHull3D::points() {
+ConvexHull3D::PolytopeData& ConvexHull3D::AsPolytope() {
   Assert(type == Polytope);
-  return *AnyCast<std::vector<double> >(&this->data);
+  return *AnyCast<PolytopeData>(&this->data);
 }
 
-const std::vector<double> &ConvexHull3D::points() const {
+const ConvexHull3D::PolytopeData&ConvexHull3D::AsPolytope() const {
   Assert(type == Polytope);
-  return *AnyCast<std::vector<double> >(&this->data);
+  return *AnyCast<PolytopeData>(&this->data);
 }
 
-// create the shape handle...
-DT_ShapeHandle ConvexHull3D::shape_handle() const{
-  switch(type) {
-    case HullFree : {
-      const prch3d &prdata = *AnyCast<prch3d>(&this->data);
-      DT_ShapeHandle handle1 = prdata.first.shape_handle();
-      DT_ShapeHandle handle2 = prdata.second.shape_handle();
-      return DT_NewHullFree(handle1, handle2);
-    }
-    case Polytope: {
-      std::vector<double> points = this->points();
-      DT_VertexBaseHandle base1 = DT_NewVertexBase(points.data(), (DT_Size)(3 * sizeof(double)));
-      DT_ShapeHandle cube1 = DT_NewPolytope(base1);
-      DT_VertexRange(0, points.size() / 3);
-      DT_EndPolytope();
-      return cube1;
-    }
-    case Trans: {
-      std::vector<double> points = this->points();
-      DT_VertexBaseHandle base1 = DT_NewVertexBase(points.data(), (DT_Size)(3 * sizeof(double)));
-      DT_ShapeHandle cube1 = DT_NewPolytope(base1);
-      DT_VertexRange(0, points.size() / 3);
-      DT_EndPolytope();
-      return cube1;
-    }
-    default: {
-      FatalError("Not implemented for shape other than Hull and Polytope\n");
-    }
+const ConvexHull3D::TransData& ConvexHull3D::AsTrans() const {
+  Assert(type == Trans);
+  return *AnyCast<TransData>(&this->data);
+}
+
+const ConvexHull3D::PointData& ConvexHull3D::AsPoint() const {
+  Assert(type == Point);
+  return *AnyCast<PointData>(&this->data);
+}
+
+const ConvexHull3D::HullData& ConvexHull3D::AsHull() const {
+  Assert(type == Hull);
+  return *AnyCast<HullData>(&this->data);
+}
+
+size_t ConvexHull3D::NumPrimitives() const
+{
+  if(type == Polytope)
+    return AsPolytope().size() / 3;
+  else if(type == Hull) {
+    auto items = AsHull();
+    return items.first.NumPrimitives() + items.second.NumPrimitives();
   }
+  else if(type == Trans)
+    return AsTrans().first.NumPrimitives();
+  else if(type == Empty)
+    return 0;
+  else
+    return 1;
 }
+
+GeometricPrimitive3D ConvexHull3D::GetPrimitive(int elem) const
+{
+  if(type == Polytope) {
+    auto pnt = AsPolytope();
+    Vector3 point(pnt[elem * 3], pnt[elem * 3 + 1], pnt[elem * 3 + 2]);
+    return GeometricPrimitive3D(point);
+  }
+  else if(type == Hull) {
+    auto items = AsHull();
+    if(elem < (int)items.first.NumPrimitives())
+      return items.first.GetPrimitive(elem);
+    else
+      return items.second.GetPrimitive(elem-items.first.NumPrimitives());
+  }
+  else if(type == Trans) {
+    auto data = AsTrans();
+    auto g = data.first.GetPrimitive(elem);
+    g.Transform(data.second);
+    return g;
+  } 
+  else if(type == Point)
+    return GeometricPrimitive3D(AsPoint());
+  else
+    FatalError("Can't get primitive of this type yet");
+  return GeometricPrimitive3D();
+}
+
 
 CollisionConvexHull3D::CollisionConvexHull3D(const ConvexHull3D& hull) {
   type = hull.type;
-  switch(hull.type){
-    case ConvexHull3D::HullFree:
-    {
-      DT_ShapeHandle shape = hull.shape_handle();
-      data = DT_CreateObject(nullptr, shape);
-      break;
-    }
-    case ConvexHull3D::Polytope:
-    {
-      DT_ShapeHandle shape = hull.shape_handle();
-      data = DT_CreateObject(nullptr, shape);
-      break;
-    }
-    case ConvexHull3D::Trans:
-    {
-      DT_ShapeHandle shape = hull.shape_handle();
-      DT_ShapeHandle hull_handle = DT_NewHullTran(shape);
-      data = DT_CreateObject(nullptr, hull_handle);
-      break;
-    }
-    default:
-    {
-      FatalError("CollisionConvexHull3D initialization currently only support Polytope and Hull\n");
-    }
-  }
-}
-
-CollisionConvexHull3D::CollisionConvexHull3D(const ConvexHull3D& hull1, const ConvexHull3D& hull2) {
-  assert(hull1.type == ConvexHull3D::Polytope && hull2.type == ConvexHull3D::Polytope);
-  type = ConvexHull3D::HullFree;
-  DT_ShapeHandle handle1 = hull1.shape_handle();
-  DT_ShapeHandle handle2 = hull2.shape_handle();
-  DT_ShapeHandle shape = DT_NewHullFree(handle1, handle2);
-  data = DT_CreateObject(nullptr, shape);
+  DT_ShapeHandle shape = hull.shapeHandle->data;
+  objectHandle = DT_CreateObject(nullptr, shape);
 }
 
 CollisionConvexHull3D::CollisionConvexHull3D()  // no value, waiting to be initialized
 {
-
-}
-void CollisionConvexHull3D::FromTransform(CollisionConvexHull3D&hull) {
-  type = ConvexHull3D::Trans;
-  DT_ShapeHandle shape = DT_GetShapeFromObject(hull.object());
-  DT_ShapeHandle hull_handle = DT_NewHullTran(shape);
-  data = DT_CreateObject(nullptr, hull_handle);
+  objectHandle = NULL;
 }
 
-void CollisionConvexHull3D::FromHull(CollisionConvexHull3D& hull1, CollisionConvexHull3D &hull2) {
-  type = ConvexHull3D::HullFree;
-  // auto obj = hull1.object();
-  auto obj =  *AnyCast<DT_ObjectHandle>(&hull1.data);
-  DT_ShapeHandle shape1 = DT_GetShapeFromObject(obj);
-  auto obj2 =  *AnyCast<DT_ObjectHandle>(&hull2.data);
-  DT_ShapeHandle shape2 = DT_GetShapeFromObject(obj2);
-  DT_ShapeHandle shape = DT_NewHullFree(shape1, shape2);
-  data = DT_CreateObject(nullptr, shape);
-}
-
-DT_ObjectHandle& CollisionConvexHull3D::object() {
-  return *AnyCast<DT_ObjectHandle>(&this->data);
-}
-
-std::vector<DT_ObjectHandle> & CollisionConvexHull3D::objects() {
-  return *AnyCast<std::vector<DT_ObjectHandle> >(&this->data);
-}
-
-Vector3 __Unit__(const Vector3& v)
+CollisionConvexHull3D::~CollisionConvexHull3D()
 {
-  Real n = v.norm();
-  if(Math::FuzzyZero(n)) return Vector3(0.0);
-  else return v*(1.0/n);
-};
+  if(objectHandle) DT_DestroyObject(objectHandle);
+}
+
+
 
 double CollisionConvexHull3D::Distance(const Vector3 &pnt, const RigidTransform *tran) {
-  DT_VertexBaseHandle base1 = DT_NewVertexBase(pnt.data, (DT_Size)(3 * sizeof(double)));
-  DT_ShapeHandle cube1 = DT_NewPolytope(base1);
-  DT_ObjectHandle obj1 = DT_CreateObject(NULL, cube1);
-  DT_VertexRange(0, 1);
-  DT_EndPolytope();
+  ConvexHull3D cpt;
+  cpt.SetPoint(pnt);
+  CollisionConvexHull3D ccpt(cpt);
   this->UpdateTransform(tran);
-  return std::get<0>(dist_func(this->object(), obj1));
+  return std::get<0>(dist_func(objectHandle, ccpt.objectHandle));
 }
 
 Real CollisionConvexHull3D::ClosestPoints(const Vector3& pnt,Vector3& cp,Vector3& direction, const RigidTransform *tran) {
-  DT_VertexBaseHandle base1 = DT_NewVertexBase(pnt.data, (DT_Size)(3 * sizeof(double)));
-  DT_ShapeHandle cube1 = DT_NewPolytope(base1);
-  DT_ObjectHandle obj1 = DT_CreateObject(NULL, cube1);
-  DT_VertexRange(0, 1);
-  DT_EndPolytope();
-  this->UpdateTransform(tran);
-  double dist = std::numeric_limits<double>::infinity();
-  std::tie(dist, cp, direction) = dist_func(this->object(), obj1);
-  if(dist >= 0)
+  ConvexHull3D cpt;
+  cpt.SetPoint(pnt);
+  CollisionConvexHull3D ccpt(cpt);
+  Real dist;
+  std::tie(dist, cp, direction) = dist_func(objectHandle, ccpt.objectHandle);
+  // change direction based on distance
+  if(dist >= 0) {
     direction = __Unit__(direction - cp);
-  else
+  }
+  else{
     direction = __Unit__(cp - direction);
+  }
   return dist;
 }
 
@@ -359,10 +454,8 @@ Real CollisionConvexHull3D::ClosestPoints(const Vector3& pnt,Vector3& cp,Vector3
 Real CollisionConvexHull3D::ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran, const RigidTransform *tran2){
   this->UpdateTransform(tran);
   g.UpdateTransform(tran2);
-  double dist = std::numeric_limits<double>::infinity();
-  double _dist;
-  Vector3 _cp, _direction;
-  std::tie(dist, cp, direction) = dist_func(this->object(), g.object());
+  double dist;
+  std::tie(dist, cp, direction) = dist_func(this->objectHandle, g.objectHandle);
   // change direction based on distance
   if(dist >= 0) {
     direction = __Unit__(direction - cp);
@@ -390,33 +483,32 @@ void CollisionConvexHull3D::UpdateTransform(const RigidTransform *tranptr) {
     this->transform[8] = tran.R.data[2][0]; this->transform[9] = tran.R.data[2][1]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
     this->transform[12] = tran.t[0]; this->transform[13] = tran.t[1]; this->transform[14] = tran.t[2]; this->transform[15] = 1;
   }
-  DT_SetMatrixd(this->object(), this->transform);
+  DT_SetMatrixd(objectHandle, this->transform);
   return;
 }
 
-void CollisionConvexHull3D::UpdateRelativeTransform(const RigidTransform *tranptr) {
+void CollisionConvexHull3D::UpdateHullSecondRelativeTransform(const RigidTransform *tranptr) {
   const RigidTransform &tran = *tranptr;
-  DT_ObjectHandle &object = this->object();
   double transform[16];  // this overwrites the other one
   transform[0] = tran.R.data[0][0]; transform[1] = tran.R.data[0][1]; transform[2] = tran.R.data[0][2]; transform[3] = 0;
   transform[4] = tran.R.data[1][0]; transform[5] = tran.R.data[1][1]; transform[6] = tran.R.data[1][2]; transform[7] = 0;
   transform[8] = tran.R.data[2][0]; transform[9] = tran.R.data[2][1]; transform[10] = tran.R.data[2][2]; transform[11] = 0;
   transform[12] = tran.t[0]; transform[13] = tran.t[1]; transform[14] = tran.t[2]; transform[15] = 1;
   //std::cout << "Hull3D update transform\n";
-  if(this->type == ConvexHull3D::Trans)
-    DT_SetRelativeMatrixd(object, transform);
-  else if(this->type == ConvexHull3D::HullFree)
-    DT_SetFreeRelativeMatrixd(object, transform);
+  if(this->type == ConvexHull3D::Hull)
+    DT_SetChildRelativeMatrixd(objectHandle, 1, transform);
 }
 
-void CollisionConvexHull3D::FindSupport(const double *dir, double *out) {
-  DT_ObjectHandle object = this->object();
-  DT_GetSupport(object, dir, out);
+Vector3 CollisionConvexHull3D::FindSupport(const Vector3& dir) const {
+  double out[3];
+  DT_GetSupport(objectHandle, dir, out);
+  return Vector3(out);
 }
 
 std::ostream& operator << (std::ostream& out,const ConvexHull3D& b)
 {
-  vector<double> points = *AnyCast<vector<double> >(&b.data);
+  if(b.type != ConvexHull3D::Polytope) FatalError("TODO: output << any type but Polytope");
+  const vector<double>& points = b.AsPolytope();
   out<<points.size() / 3<<"    ";
   for(size_t i=0;i<points.size();i++){
     out<<points[i]<<"  ";
