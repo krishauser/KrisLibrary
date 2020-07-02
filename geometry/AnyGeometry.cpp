@@ -355,11 +355,9 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     }
     case ConvexHull:
     {
-      Meshing::TriMesh mesh;
-      PrimitiveToMesh(AsPrimitive(), mesh, int(param));
-      ConvexHull3D ch;
-      MeshToConvexHull(mesh,ch);
-      res = AnyGeometry3D(ch);
+      AnyGeometry3D mesh;
+      Convert(TriangleMesh,mesh,param);
+      mesh.Convert(ConvexHull,res,param);
       return true;
     }
     default:
@@ -1208,7 +1206,7 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
   {
     const CollisionConvexHull3D &cdata = this->ConvexHullCollisionData();
     DT_Vector3 bmin, bmax;
-    DT_GetBBox(cdata.objectHandle, bmin, bmax);
+    DT_GetBBox(cdata.objectHandle->data, bmin, bmax);
     AABB3D res;
     for(int i = 0; i < 3; i++){
       res.bmin[i] = bmin[i];
@@ -1314,7 +1312,7 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
     case Primitive:
       break;
     case ConvexHull:
-      ConvexHullCollisionData().UpdateTransform(&T);
+      ConvexHullCollisionData().UpdateTransform(T);
       break;
     case ImplicitSurface:
       ImplicitSurfaceCollisionData().currentTransform = T;
@@ -1336,33 +1334,6 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
   }
 }
 
-// void AnyCollisionGeometry3D::SetRelativeTransform(const RigidTransform &T) {
-//   assert(this->type == AnyGeometry3D::ConvexHull);
-//   ConvexHullCollisionData().UpdateRelativeTransform(&T);
-// }
-// 
-// void AnyCollisionGeometry3D::SetFreeRelativeTransform(const RigidTransform &T) {
-//   assert(this->type == AnyGeometry3D::ConvexHull);
-//   ConvexHullCollisionData().UpdateFreeRelativeTransform(&T);
-// }
-// 
-// Vector3 AnyCollisionGeometry3D::FindSupport(const Vector3& dir) {
-//   this->InitCollisionData();
-//   switch(type)
-//   {
-//   case AnyCollisionGeometry3D::ConvexHull:
-//   {
-//     CollisionConvexHull3D &chull = this->ConvexHullCollisionData();
-//     Vector3 out;
-//     chull.FindSupport(dir, out);
-//     return out;
-//   }
-//   default:
-//     LOG4CXX_ERROR(GET_LOGGER(Geometry),"Find support not yet implemented for most types");
-//     return Vector3(-Inf);
-//   }
-// 
-// }
 
 Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
 {
@@ -1379,7 +1350,7 @@ Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
   {
     Vector3 ptlocal;
     GetTransform().mulInverse(pt, ptlocal);
-    return Max(ConvexHullCollisionData().Distance(ptlocal, &this->currentTransform) - margin, 0.0);
+    return Max(ConvexHullCollisionData().Distance(ptlocal) - margin, 0.0);
   }
   case ImplicitSurface:
   {
@@ -1440,7 +1411,7 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3 &pt, const
     res.elem1 = 0;
     res.hasDirections = true;
     CollisionConvexHull3D &g = this->ConvexHullCollisionData();
-    res.d = g.ClosestPoints(ptlocal, res.cp1, res.dir1, &this->currentTransform);
+    res.d = g.ClosestPoint(ptlocal, res.cp1, res.dir1);
     res.dir2.setNegative(res.dir1);
     Transform1(res, GetTransform());
     Offset1(res, margin);
@@ -2076,6 +2047,48 @@ bool Collides(const CollisionPointCloud &a, Real margin, AnyCollisionGeometry3D 
   return false;
 }
 
+bool Collides(const CollisionConvexHull3D &a, Real margin, AnyCollisionGeometry3D &b,
+              vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
+{
+  switch (b.type)
+  {
+  case AnyCollisionGeometry3D::Primitive:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do convex hull-primitive collisions yet");
+    return false;
+  case AnyCollisionGeometry3D::TriangleMesh:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do convex hull-triangle mesh collisions yet");
+    return false;
+  case AnyCollisionGeometry3D::PointCloud:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do convex hull-point cloud collisions yet");
+    return false;
+  case AnyCollisionGeometry3D::ImplicitSurface:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do convex hull-implicit surface collisions yet");
+    return false;
+  case AnyCollisionGeometry3D::ConvexHull:
+    if(a.Collides(b.ConvexHullCollisionData())) {
+      elements1.push_back(0);
+      elements2.push_back(0);
+      return true;
+    }
+    return false;
+  case AnyCollisionGeometry3D::Group:
+  {
+    vector<AnyCollisionGeometry3D> &bitems = b.GroupCollisionData();
+    for(size_t i=0;i<bitems.size();i++) {
+      vector<int> temp1,temp2;
+      if(Collides(a,margin+b.margin,bitems[i],temp1,temp2,maxContacts)) {
+        elements1.push_back(0);
+        elements2.push_back(int(i));
+      }
+    }
+    return !elements1.empty();
+  }
+  default:
+    FatalError("Invalid type");
+  }
+  return false;
+}
+
 bool Collides(vector<AnyCollisionGeometry3D> &group, Real margin, AnyCollisionGeometry3D &b,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
 {
@@ -2126,7 +2139,7 @@ bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D &geom,
   case Group:
     return ::Collides(GroupCollisionData(), margin, geom, elements1, elements2, maxContacts);
   case ConvexHull:
-    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do element-wise collision detection with convex hulls yet");
+    return ::Collides(ConvexHullCollisionData(), margin, geom, elements1, elements2, maxContacts);
     break;
   default:
     FatalError("Invalid type");
@@ -2823,7 +2836,7 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(AnyCollisionGeometry3D &
       CollisionConvexHull3D &hull1 = this->ConvexHullCollisionData();
       CollisionConvexHull3D &hull2 = geom.ConvexHullCollisionData();
       Vector3 cp, direction;
-      Real dist = hull1.ClosestPoints(hull2, cp, direction, &this->currentTransform, &geom.currentTransform);
+      Real dist = hull1.ClosestPoints(hull2, cp, direction);
       //std::cout << "Call closest point and get " << dist << "\n";
       result.hasElements = false;
       result.hasPenetration = true;

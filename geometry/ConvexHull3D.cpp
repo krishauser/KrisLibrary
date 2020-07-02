@@ -2,11 +2,15 @@
 #include <iostream>
 #include <limits>
 #include <KrisLibrary/utils/AnyValue.h>
+#include <KrisLibrary/Logger.h>
+#include <KrisLibrary/Timer.h>
 #include "SOLID.h"
 extern "C" {
 #include <qhull/qhull_a.h>
 }
 #include <stdio.h>
+
+DECLARE_LOGGER(Geometry)
 
 using namespace std;
 using namespace Math3D;
@@ -69,6 +73,8 @@ bool ConvexHull3D_Qhull(const vector<Vector3>& points,vector<vector<int> >& face
     vertexT *vertex;
     vertexT **vertexp;
 
+    Timer timer;
+
     qh_init_A(stdin, stdout, stderr, 0, NULL);
     if ((exitcode = setjmp(qh errexit))) 
     {
@@ -91,6 +97,7 @@ bool ConvexHull3D_Qhull(const vector<Vector3>& points,vector<vector<int> >& face
       }
       facets.push_back(facet);
     }
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"QHull determined "<<facets.size()<<" facets for "<<points.size()<<" points in "<<timer.ElapsedTime()<<"s");
 
     qh NOerrexit = True;
     qh_freeqhull(!qh_ALL);
@@ -106,6 +113,8 @@ bool ConvexHull3D_Qhull(const vector<double>& points,vector<vector<int> >& facet
     facetT *facet;
     vertexT *vertex;
     vertexT **vertexp;
+
+    Timer timer;
 
     qh_init_A(stdin, stdout, stderr, 0, NULL);
     if ((exitcode = setjmp(qh errexit))) 
@@ -129,6 +138,8 @@ bool ConvexHull3D_Qhull(const vector<double>& points,vector<vector<int> >& facet
       }
       facets.push_back(facet);
     }
+
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"QHull determined"<<facets.size()<<" facets for "<<points.size()<<" points in "<<timer.ElapsedTime()<<"s");
 
     qh NOerrexit = True;
     qh_freeqhull(!qh_ALL);
@@ -154,11 +165,16 @@ bool ConvexHull3D_Qhull(const std::vector<Vector3>& points,std::vector<IntTriple
 
 ConvexHull3D::ShapeHandleContainer::ShapeHandleContainer(DT_ShapeHandle _data)
 :data(_data)
-{}
+{
+  //printf("CREATING SHAPE HANDLE CONTAINER\n");
+}
 
 ConvexHull3D::ShapeHandleContainer::~ShapeHandleContainer()
 {
-  if(data) DT_DeleteShape(data);
+  if(data) {
+    //printf("DELETING SHAPE HANDLE IN CONTAINER\n");
+    DT_DeleteShape(data);
+  }
 }
 
 
@@ -200,7 +216,7 @@ void ConvexHull3D::SetPoints(const Vector& a) {
 void ConvexHull3D::SetPoints(const std::vector<double>& points) {
   type = Polytope;
   data = points;
-  shapeHandle = make_shared<ShapeHandleContainer>(_MakePolytope(points));
+  shapeHandle = make_shared<ShapeHandleContainer>(_MakePolytope(AsPolytope()));
 }
 
 void ConvexHull3D::SetPoints(const std::vector<Vector3> & a) {
@@ -241,6 +257,29 @@ void ConvexHull3D::SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2)
   this->type = ConvexHull3D::Hull;
   data = std::make_pair(hull1, hull2);
   shapeHandle = make_shared<ShapeHandleContainer>(DT_NewHullFree(hull1.shapeHandle->data, hull2.shapeHandle->data));
+}
+
+bool ConvexHull3D::Contains(const Vector3& pnt)
+{
+  if(!shapeHandle) return false;
+  ConvexHull3D pnt_hull;
+  pnt_hull.SetPoint(pnt);
+  return Collides(pnt_hull);
+}
+
+bool ConvexHull3D::Collides(const ConvexHull3D& g,Vector3* common_point)
+{
+  DT_SetAccuracy((DT_Scalar)1e-6);
+  DT_SetTolerance((DT_Scalar)(1e-6));
+  DT_Vector3 point1;
+  DT_ObjectHandle object1 = DT_CreateObject(NULL, shapeHandle->data);
+  DT_ObjectHandle object2 = DT_CreateObject(NULL, g.shapeHandle->data);
+  DT_Bool collide = DT_GetCommonPoint(object1, object2, point1);
+  DT_DestroyObject(object1);
+  DT_DestroyObject(object2);
+  if(collide && common_point) 
+    common_point->set(point1);
+  return collide;
 }
 
 std::tuple<Real, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_ObjectHandle object2) {
@@ -305,7 +344,7 @@ Real ConvexHull3D::Distance(const Vector3 &pnt) {
   return Distance(pnt_hull);
 }
 
-Real ConvexHull3D::ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction) const {
+Real ConvexHull3D::ClosestPoint(const Vector3& pt,Vector3& cp,Vector3& direction) const {
   // first create hull and compute a lot
   ConvexHull3D pnt_hull;
   std::vector<Vector3> vpoint{pt};
@@ -327,10 +366,8 @@ Real ConvexHull3D::ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& di
 
 std::tuple<Real, Vector3, Vector3> ConvexHull3D::ClosestPoints(const ConvexHull3D &h) const {
   if(!shapeHandle || !h.shapeHandle) return std::make_tuple(Inf,Vector3(0.0),Vector3(0.0));
-  DT_ShapeHandle cube1 = shapeHandle->data;
-  DT_ShapeHandle cube2 = h.shapeHandle->data;
-  DT_ObjectHandle object1 = DT_CreateObject(NULL, cube1);
-  DT_ObjectHandle object2 = DT_CreateObject(NULL, cube2);
+  DT_ObjectHandle object1 = DT_CreateObject(NULL, shapeHandle->data);
+  DT_ObjectHandle object2 = DT_CreateObject(NULL, h.shapeHandle->data);
   auto res = dist_func(object1, object2);
   DT_DestroyObject(object1);
   DT_DestroyObject(object2);
@@ -446,38 +483,68 @@ GeometricPrimitive3D ConvexHull3D::GetPrimitive(int elem) const
 }
 
 
+CollisionConvexHull3D::ObjectHandleContainer::ObjectHandleContainer(DT_ObjectHandle _data)
+:data(_data)
+{
+  //printf("CREATING OBJECT HANDLE CONTAINER\n");
+}
+
+CollisionConvexHull3D::ObjectHandleContainer::~ObjectHandleContainer()
+{
+  if(data) {
+    //printf("DESTROYING OBJECT HANDLE IN CONTAINER\n");
+    DT_DestroyObject(data);
+  }
+}
+
+
 CollisionConvexHull3D::CollisionConvexHull3D(const ConvexHull3D& hull) {
   type = hull.type;
-  DT_ShapeHandle shape = hull.shapeHandle->data;
-  objectHandle = DT_CreateObject(nullptr, shape);
+  shapeHandle = hull.shapeHandle->data;
+  objectHandle = make_shared<ObjectHandleContainer>(DT_CreateObject(nullptr, shapeHandle));
+  for(int i=0;i<16;i++) transform[i] = 0;
+  for(int i=0;i<4;i++) transform[i*4+i] = 1;
+  DT_SetMatrixd(objectHandle->data, this->transform);
 }
 
 CollisionConvexHull3D::CollisionConvexHull3D()  // no value, waiting to be initialized
 {
-  objectHandle = NULL;
+  shapeHandle = NULL;
 }
 
-CollisionConvexHull3D::~CollisionConvexHull3D()
+bool CollisionConvexHull3D::Contains(const Vector3& pnt) const
 {
-  if(objectHandle) DT_DestroyObject(objectHandle);
-}
-
-
-
-double CollisionConvexHull3D::Distance(const Vector3 &pnt, const RigidTransform *tran) {
   ConvexHull3D cpt;
   cpt.SetPoint(pnt);
   CollisionConvexHull3D ccpt(cpt);
-  this->UpdateTransform(tran);
-  return std::get<0>(dist_func(objectHandle, ccpt.objectHandle));
+  return Collides(ccpt);
 }
 
-Real CollisionConvexHull3D::ClosestPoints(const Vector3& pnt,Vector3& cp,Vector3& direction, const RigidTransform *tran) {
+bool CollisionConvexHull3D::Collides(CollisionConvexHull3D& geometry, Vector3* common_point) const
+{
+  DT_SetAccuracy((DT_Scalar)1e-6);
+  DT_SetTolerance((DT_Scalar)(1e-6));
+  DT_Vector3 point1;
+  DT_Bool collide = DT_GetCommonPoint(objectHandle->data, geometry.objectHandle->data, point1);
+  if(collide && common_point)
+    common_point->set(point1);
+  return collide;
+}
+
+double CollisionConvexHull3D::Distance(const Vector3 &pnt) const {
+  ConvexHull3D cpt;
+  cpt.SetPoint(pnt);
+  CollisionConvexHull3D ccpt(cpt);
+  return std::get<0>(dist_func(objectHandle->data, ccpt.objectHandle->data));
+}
+
+Real CollisionConvexHull3D::ClosestPoint(const Vector3& pnt,Vector3& cp,Vector3& direction) const
+{
   ConvexHull3D cpt;
   cpt.SetPoint(pnt);
   CollisionConvexHull3D ccpt(cpt);
   Real dist;
-  std::tie(dist, cp, direction) = dist_func(objectHandle, ccpt.objectHandle);
+  std::tie(dist, cp, direction) = dist_func(objectHandle->data, ccpt.objectHandle->data);
   // change direction based on distance
   if(dist >= 0) {
     direction = __Unit__(direction - cp);
@@ -489,11 +556,9 @@ Real CollisionConvexHull3D::ClosestPoints(const Vector3& pnt,Vector3& cp,Vector3
 }
 
 // compute the closest points between two convexhull3d with collision data and store results somewhere
-Real CollisionConvexHull3D::ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran, const RigidTransform *tran2){
-  this->UpdateTransform(tran);
-  g.UpdateTransform(tran2);
+Real CollisionConvexHull3D::ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction) const {
   double dist;
-  std::tie(dist, cp, direction) = dist_func(this->objectHandle, g.objectHandle);
+  std::tie(dist, cp, direction) = dist_func(this->objectHandle->data, g.objectHandle->data);
   // change direction based on distance
   if(dist >= 0) {
     direction = __Unit__(direction - cp);
@@ -504,29 +569,16 @@ Real CollisionConvexHull3D::ClosestPoints(CollisionConvexHull3D& g, Vector3& cp,
   return dist;
 }
 
-void CollisionConvexHull3D::UpdateTransform(const RigidTransform *tranptr) {
-  if(tranptr == nullptr) {
-    for(int i = 0; i < 16; i++)
-      this->transform[i] = 0;
-    for(int i = 0; i < 4; i++)
-      this->transform[4 * i + i] = 1;
-  }
-  else{
-    const RigidTransform &tran = *tranptr;
-    // this->transform[0] = tran.R.data[0][0]; this->transform[1] = tran.R.data[1][0]; this->transform[2] = tran.R.data[2][0]; this->transform[3] = 0;
-    // this->transform[4] = tran.R.data[0][1]; this->transform[5] = tran.R.data[1][1]; this->transform[6] = tran.R.data[2][1]; this->transform[7] = 0;
-    // this->transform[8] = tran.R.data[0][2]; this->transform[9] = tran.R.data[1][2]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
-    this->transform[0] = tran.R.data[0][0]; this->transform[1] = tran.R.data[0][1]; this->transform[2] = tran.R.data[0][2]; this->transform[3] = 0;
-    this->transform[4] = tran.R.data[1][0]; this->transform[5] = tran.R.data[1][1]; this->transform[6] = tran.R.data[1][2]; this->transform[7] = 0;
-    this->transform[8] = tran.R.data[2][0]; this->transform[9] = tran.R.data[2][1]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
-    this->transform[12] = tran.t[0]; this->transform[13] = tran.t[1]; this->transform[14] = tran.t[2]; this->transform[15] = 1;
-  }
-  DT_SetMatrixd(objectHandle, this->transform);
+void CollisionConvexHull3D::UpdateTransform(const RigidTransform &tran) {
+  this->transform[0] = tran.R.data[0][0]; this->transform[1] = tran.R.data[0][1]; this->transform[2] = tran.R.data[0][2]; this->transform[3] = 0;
+  this->transform[4] = tran.R.data[1][0]; this->transform[5] = tran.R.data[1][1]; this->transform[6] = tran.R.data[1][2]; this->transform[7] = 0;
+  this->transform[8] = tran.R.data[2][0]; this->transform[9] = tran.R.data[2][1]; this->transform[10] = tran.R.data[2][2]; this->transform[11] = 0;
+  this->transform[12] = tran.t[0]; this->transform[13] = tran.t[1]; this->transform[14] = tran.t[2]; this->transform[15] = 1;
+  DT_SetMatrixd(objectHandle->data, this->transform);
   return;
 }
 
-void CollisionConvexHull3D::UpdateHullSecondRelativeTransform(const RigidTransform *tranptr) {
-  const RigidTransform &tran = *tranptr;
+void CollisionConvexHull3D::UpdateHullSecondRelativeTransform(const RigidTransform &tran) {
   double transform[16];  // this overwrites the other one
   transform[0] = tran.R.data[0][0]; transform[1] = tran.R.data[0][1]; transform[2] = tran.R.data[0][2]; transform[3] = 0;
   transform[4] = tran.R.data[1][0]; transform[5] = tran.R.data[1][1]; transform[6] = tran.R.data[1][2]; transform[7] = 0;
@@ -534,12 +586,14 @@ void CollisionConvexHull3D::UpdateHullSecondRelativeTransform(const RigidTransfo
   transform[12] = tran.t[0]; transform[13] = tran.t[1]; transform[14] = tran.t[2]; transform[15] = 1;
   //std::cout << "Hull3D update transform\n";
   if(this->type == ConvexHull3D::Hull)
-    DT_SetChildRelativeMatrixd(objectHandle, 1, transform);
+    DT_SetChildRelativeMatrixd(objectHandle->data, 1, transform);
+  else
+    FatalError("Invalid call to UpdateHullSecondRelativeTransform, not a hull object");
 }
 
 Vector3 CollisionConvexHull3D::FindSupport(const Vector3& dir) const {
   double out[3];
-  DT_GetSupport(objectHandle, dir, out);
+  DT_GetSupport(objectHandle->data, dir, out);
   return Vector3(out);
 }
 

@@ -10,7 +10,10 @@
 #include <KrisLibrary/meshing/Voxelize.h>
 #include <KrisLibrary/math3d/random.h>
 #include <KrisLibrary/math3d/basis.h>
+#include <KrisLibrary/Logger.h>
 #include <KrisLibrary/Timer.h>
+
+DECLARE_LOGGER(Geometry)
 
 #include "SOLID.h"
 #include <hacdHACD.h>
@@ -613,22 +616,49 @@ void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh)
 		AppendPoints(ch,points);
 	}
 	ConvexHull3D_Qhull(points,facets);
-	map<int,int> vertex_map;
-	for(const auto& f:facets) {
-		for(auto i:f) {
-			if(vertex_map.count(i) == 0) {
-				vertex_map[i] = (int)vertex_map.size();
-			}
-		}
-	}
-	mesh.verts.resize(0);
-	mesh.tris.resize(0);
-	for(auto i:vertex_map) {
-		mesh.verts.push_back(points[i.first]);
-	}
+	/*
+	mesh.verts = points;
 	for(const auto& f:facets) {
 		for(size_t i=1;i+1<f.size();i++)
-			mesh.tris.push_back(IntTriple(vertex_map[f[0]],vertex_map[f[i]],vertex_map[f[i+1]]));
+			mesh.tris.push_back(IntTriple(f[0],f[i],f[i+1]));
+	}
+	return;
+	*/
+	map<int,int> vertex_map;
+	for(const auto& f:facets) {
+		//printf("Facet: ");
+		for(auto i:f) {
+			//printf("%d ",i);
+			assert(i >= 0 && i < (int)points.size());
+			if(vertex_map.count(i) == 0) {
+				int cnt = (int)vertex_map.size();
+				vertex_map[i] = cnt;
+			}
+		}
+		//printf("\n");
+	}
+	/*
+	printf("ConvexHullToMesh: reducing from %d to %d vertices\n",points.size(),vertex_map.size());
+	for(auto i:vertex_map) {
+		printf("  %d -> %d\n",i.first,i.second);
+	}
+	*/
+	mesh.verts.resize(vertex_map.size());
+	mesh.tris.resize(0);
+	for(auto i:vertex_map) {
+		assert(i.first >= 0 && i.first < (int)points.size());
+		assert(i.second >= 0 && i.second < (int)vertex_map.size());
+		mesh.verts[i.second] = points[i.first];
+	}
+	assert(mesh.verts.size() == vertex_map.size());
+	for(const auto& f:facets) {
+		for(size_t i=1;i+1<f.size();i++)
+			mesh.tris.push_back(IntTriple(vertex_map[f[0]],vertex_map[f[i+1]],vertex_map[f[i]]));
+	}
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		assert(mesh.tris[i].a >= 0 && mesh.tris[i].a < (int)mesh.verts.size());
+		assert(mesh.tris[i].b >= 0 && mesh.tris[i].b < (int)mesh.verts.size());
+		assert(mesh.tris[i].c >= 0 && mesh.tris[i].c < (int)mesh.verts.size());
 	}
 }
 

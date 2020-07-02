@@ -83,11 +83,13 @@ public:
   ///Sets this as a transformed version of hull
   void SetTrans(const ConvexHull3D &hull, const RigidTransform& xform);
   void SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
-  Real Distance(const ConvexHull3D &);
-  Real Distance(const Vector3 &);
+  bool Contains(const Vector3& pt);
+  Real Distance(const Vector3& pt);
+  bool Collides(const ConvexHull3D& g,Vector3* common_point=NULL);
+  Real Distance(const ConvexHull3D & g);
   ///Returns distance, point on this geometry, and point on the other geometry
   std::tuple<Real, Vector3, Vector3> ClosestPoints(const ConvexHull3D & other) const;
-  Real ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoint(const Vector3& pt,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction) const;
   void Transform(const Matrix4 &T);
   AABB3D GetAABB() const;
@@ -124,22 +126,26 @@ class CollisionConvexHull3D
 public:
   CollisionConvexHull3D(const ConvexHull3D& hull);
   CollisionConvexHull3D();  // no value, waiting to be initialized
-  ~CollisionConvexHull3D();
-  Real Distance(const Vector3 &pt, const RigidTransform *tran=nullptr);
-  // double Distance(CollisionConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
-  // double Distance(const ConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
-  Real ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction, const RigidTransform *tran=nullptr);
-  // Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr);
-  Real ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
+  bool Contains(const Vector3& pt) const;
+  Real Distance(const Vector3 &pt) const;
+  bool Collides(CollisionConvexHull3D& geometry, Vector3* common_point=nullptr) const;
+  Real ClosestPoint(const Vector3& pt,Vector3& cp,Vector3& direction) const;
+  Real ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction) const;
 
-  void UpdateTransform(const RigidTransform *tran=nullptr);
+  void UpdateTransform(const RigidTransform& tran);
   ///For Hull objects, updates the relative transform of the second object
-  void UpdateHullSecondRelativeTransform(const RigidTransform *tran);
+  void UpdateHullSecondRelativeTransform(const RigidTransform& tran);
 
   Vector3 FindSupport(const Vector3& dir) const;
 
   ConvexHull3D::Type type;
-  DT_ObjectHandle objectHandle;
+  struct ObjectHandleContainer {
+    ObjectHandleContainer(DT_ObjectHandle data);
+    ~ObjectHandleContainer();
+    DT_ObjectHandle data;
+  };
+  std::shared_ptr<ObjectHandleContainer> objectHandle;
+  DT_ShapeHandle shapeHandle;
   double transform[16];
 };
 
