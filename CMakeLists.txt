@@ -60,7 +60,7 @@ ENDIF(WIN32)
 #add all compilation files to the library
 # message(critical "HACD SRC FILES" ${HACD_SRC_FILES})
 # message(critical "SOLID SRC FILES" ${SOLID3_SRC_FILES})
-ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS} ${HACD_SRC_FILES} ${SOLID3_SRC_FILES})
+ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS} ${HACD_SRC_FILES} $<TARGET_OBJECTS:solid3> $<TARGET_OBJECTS:qhull>)
 
 
 #Configure isinf / isnan etc using the CheckInfNan script

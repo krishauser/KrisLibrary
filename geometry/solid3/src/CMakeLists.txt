@@ -149,7 +149,6 @@ add_library(solid3 OBJECT
   DT_RespTable.h
   DT_Scene.cpp
   DT_Scene.h
-  $<TARGET_OBJECTS:qhull>
 )
 
 target_include_directories(solid3 INTERFACE $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>)
