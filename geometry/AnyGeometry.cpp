@@ -915,11 +915,11 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull)
   currentTransform.setIdentity();
 }
 
-AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull1, const ConvexHull3D &hull2, bool is_free)
+AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull1, const ConvexHull3D &hull2)
     : margin(0)
 {
   ConvexHull3D hull;
-  hull.from_hulls(hull1, hull2, is_free);
+  hull.fromHulls(hull1, hull2);
   this->type = AnyGeometry3D::ConvexHull;
   this->data = hull;
   this->currentTransform.setIdentity();
@@ -1318,7 +1318,7 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
     case Primitive:
       break;
     case ConvexHull:
-      ConvexHullCollisionData()._update_transform(&T);
+      ConvexHullCollisionData().UpdateTransform(&T);
       break;
     case ImplicitSurface:
       ImplicitSurfaceCollisionData().currentTransform = T;
@@ -1340,33 +1340,33 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
   }
 }
 
-void AnyCollisionGeometry3D::SetRelativeTransform(const RigidTransform &T) {
-  assert(this->type == AnyGeometry3D::ConvexHull);
-  ConvexHullCollisionData()._update_relative_transform(&T);
-}
-
-void AnyCollisionGeometry3D::SetFreeRelativeTransform(const RigidTransform &T) {
-  assert(this->type == AnyGeometry3D::ConvexHull);
-  ConvexHullCollisionData()._update_free_relative_transform(&T);
-}
-
-Vector3 AnyCollisionGeometry3D::FindSupport(const Vector3& dir) {
-  this->InitCollisionData();
-  switch(type)
-  {
-  case AnyCollisionGeometry3D::ConvexHull:
-  {
-    CollisionConvexHull3D &chull = this->ConvexHullCollisionData();
-    Vector3 out;
-    chull._find_support(dir, out);
-    return out;
-  }
-  default:
-    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Find support not yet implemented for most types");
-    return Vector3(-Inf);
-  }
-
-}
+// void AnyCollisionGeometry3D::SetRelativeTransform(const RigidTransform &T) {
+//   assert(this->type == AnyGeometry3D::ConvexHull);
+//   ConvexHullCollisionData().UpdateRelativeTransform(&T);
+// }
+// 
+// void AnyCollisionGeometry3D::SetFreeRelativeTransform(const RigidTransform &T) {
+//   assert(this->type == AnyGeometry3D::ConvexHull);
+//   ConvexHullCollisionData().UpdateFreeRelativeTransform(&T);
+// }
+// 
+// Vector3 AnyCollisionGeometry3D::FindSupport(const Vector3& dir) {
+//   this->InitCollisionData();
+//   switch(type)
+//   {
+//   case AnyCollisionGeometry3D::ConvexHull:
+//   {
+//     CollisionConvexHull3D &chull = this->ConvexHullCollisionData();
+//     Vector3 out;
+//     chull.FindSupport(dir, out);
+//     return out;
+//   }
+//   default:
+//     LOG4CXX_ERROR(GET_LOGGER(Geometry),"Find support not yet implemented for most types");
+//     return Vector3(-Inf);
+//   }
+// 
+// }
 
 Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
 {

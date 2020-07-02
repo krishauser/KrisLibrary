@@ -154,6 +154,7 @@ extern "C" {
 
 	DECLSPEC void DT_GetSupport(DT_ObjectHandle object, const double *dir, double*);
 
+	DECLSPEC DT_ShapeHandle DT_GetShapeFromObject(DT_ObjectHandle object);
 
 /* This next command returns the distance between the objects. De returned
    closest points are given in world coordinates.

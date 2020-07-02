@@ -558,7 +558,7 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
     for (int i=0; i < nClusters; ++i) {
       grp_hulls.push_back(get_hull_i(i));
     }
-    ch.type = ConvexHull3D::Composite;
+    //ch.type = ConvexHull3D::Composite;
     ch.data = grp_hulls;
   }
   HACD::DestroyHACD(myHACD);

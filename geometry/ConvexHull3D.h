@@ -8,7 +8,15 @@
 #include <KrisLibrary/math3d/primitives.h>
 #include <KrisLibrary/math3d/AABB3D.h>
 #include <KrisLibrary/math3d/Box3D.h>
+#include <KrisLibrary/math3d/geometry3d.h>
+#include <KrisLibrary/utils/IntTriple.h>
 #include <tuple>
+#include <memory>
+
+/** @file ConvexHull3D.h
+ * @ingroup Geometry
+ * @brief 3D-D convex hull routines
+ */
 
 typedef struct DT_ShapeHandle__* DT_ShapeHandle;
 typedef struct DT_ObjectHandle__* DT_ObjectHandle;
@@ -19,104 +27,119 @@ using namespace Math;
 using namespace Math3D;
 
 /** @ingroup Geometry
- * @brief A 3D convex hull class
+ * @brief Computes the convex hull of the point set using the Qhull library.
  *
- * This class usess SOLID3 library as backend and not so many function are exposed to the user.
- * To use the full capability of SOLID3, I allow this class to support many PrimitiveShape
- * and complex stuff like polytope (from points), Minkowski (sum of shape), Hull (hull of two shapes), Composite (vector of Hull3D)
- * This makes things much harder and I'm excited to see them.
+ * The result is a set of facets of the convex hull, indexed into the points list.
+ *
+ * Returns true if successful.
  */
-struct ConvexHull3D;
-// define stored data for various stuff
-// struct Solid_Polytope {
-//   std::vector<double> points;
-// };
-// struct Solid_Box {
-//   Vector3 sizes;
-// };
-// struct Solid_Cone {
-//   Vector2 r_h;
-// };
-// struct Solid_Cylinder {
-//   Vector2 r_h;
-// };
-// struct Sphere {
-//   double radius;
-// };
-// struct Solid_Point {
-//   Vector3 point;
-// };
-// struct Solid_Line {
-//   Vector3 source, target;
-// };
-// struct Solid_Minkowski {
-//   ConvexHull3D shape1, shape2;
-// };
-// struct Solid_Hull {
-//   ConvexHull3D shape1, shape2;
-// };
-// struct Solid_Composite {
-//   std::vector<ConvexHull3D> shapes;
-// };
+bool ConvexHull3D_Qhull(const std::vector<Vector3>& points,std::vector<std::vector<int> >& facets);
+bool ConvexHull3D_Qhull(const std::vector<double>& points,std::vector<std::vector<int> >& facets);
 
-struct ConvexHull3D
+/** @ingroup Geometry
+ * @brief Computes the convex hull of the point set using the Qhull library.
+ *
+ * The result is triangulated arbitrarily.
+ * 
+ * Returns true if successful.
+ */
+
+bool ConvexHull3D_Qhull(const std::vector<Vector3>& points,std::vector<IntTriple>& tris);
+
+
+/** @ingroup Geometry
+ * @brief A 3D convex hull class
+ * 
+ * Author: Gao Tang
+ *
+ * This class uses SOLID3 library as backend and not so many function are exposed to the user.
+ * To use the full capability of SOLID3, I allow this class to support many PrimitiveShape
+ * and complex stuff like polytope (from points), Minkowski (sum of shape), and Hull (hull of
+ * two shapes).
+ *
+ * Distance() returns the signed distance.
+ */
+class ConvexHull3D
 {
-  typedef std::pair<ConvexHull3D, ConvexHull3D> prch3d;
+public:
+  typedef std::vector<double> PolytopeData;
+  typedef Vector3 PointData;
+  typedef std::pair<ConvexHull3D, ConvexHull3D> MinkowskiData;
+  typedef std::pair<ConvexHull3D, RigidTransform> TransData;
+  typedef std::pair<ConvexHull3D, ConvexHull3D> HullData;
+  //typedef std::vector<ConvexHull3D> CompositeData;
   
   /// Polytope, Box, Cone, Cylinder, Sphere, Point, Line, correspond to SOLID basic data types
-  /// Minkowski means the minkowski sum of two convex objects
-  /// Tran means a transform of one shape.
+  /// Minkowski means the minkowski sum of two ConvexHull3D's (not implemented yet)
+  /// Tran means a transformed version of another ConvexHull3D.
   /// Hull means the hull of two objects.
-  /// Composite means the hull of multiple objects (not implemented)
-  enum Type { Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, Hull, Composite };
-  void setPoints(const Vector& a);
-  void setPoints(const std::vector<double>& a);
-  void setPoints(const std::vector<Vector3> & a);
-  void setPoints(const std::vector<Vector> & a);
-  void setTrans(const ConvexHull3D &hull, const RigidTransform& xform);
-  void setHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
-  // void setTransformed(const ConvexHull3D&, const Matrix4& xform);
-  double distance(const ConvexHull3D &);
-  double Distance(const Vector3 &);
-  std::tuple<double, Vector3, Vector3> closest_points(const ConvexHull3D &) const;
+  enum Type { Empty, Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, Hull};
+  ConvexHull3D();
+  void SetPoint(const Vector3& a);
+  void SetPoints(const Vector& a);
+  void SetPoints(const std::vector<double>& a);
+  void SetPoints(const std::vector<Vector3> & a);
+  void SetPoints(const std::vector<Vector> & a);
+  ///Sets this as a transformed version of hull
+  void SetTrans(const ConvexHull3D &hull, const RigidTransform& xform);
+  void SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
+  Real Distance(const ConvexHull3D &);
+  Real Distance(const Vector3 &);
+  ///Returns distance, point on this geometry, and point on the other geometry
+  std::tuple<Real, Vector3, Vector3> ClosestPoints(const ConvexHull3D & other) const;
   Real ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction) const;
   void Transform(const Matrix4 &T);
   AABB3D GetAABB() const;
   Box3D GetBB() const;
-  std::vector<double> &points();
-  const std::vector<double> &points() const;
-  DT_ShapeHandle shape_handle() const;  // create the shape handle...
+  PolytopeData& AsPolytope();
+  const PolytopeData& AsPolytope() const;
+  const PointData& AsPoint() const;
+  const TransData& AsTrans() const;
+  const HullData& AsHull() const;
+  size_t NumPrimitives() const;
+  GeometricPrimitive3D GetPrimitive(int index) const;
 
   AnyValue data;  // Stored in the same format as the Solid_X structs listed above
   Type type;
+
+  struct ShapeHandleContainer {
+    ShapeHandleContainer(DT_ShapeHandle data);
+    ~ShapeHandleContainer();
+    DT_ShapeHandle data;
+  };
+  std::shared_ptr<ShapeHandleContainer> shapeHandle; //internal SOLID data
 };
 
 /** @ingroup Geometry
- * @brief The collision data class for ConvexHull3D, it contains the solid3 data structure
-*/
-struct CollisionConvexHull3D
+ * @brief The collision data class for ConvexHull3D that contains the solid3 data
+ * structure moved by some rigid transform.
+ *
+ * This also lets you update the relative transform for a Hull ConvexHull3D datatype.
+ * 
+ * Author: Gao Tang
+ */
+class CollisionConvexHull3D
 {
+public:
   CollisionConvexHull3D(const ConvexHull3D& hull);
-  CollisionConvexHull3D(const ConvexHull3D& hull, const ConvexHull3D &hull2, bool is_free);
-  double Distance(const Vector3 &, const RigidTransform *tran=nullptr);
+  CollisionConvexHull3D();  // no value, waiting to be initialized
+  ~CollisionConvexHull3D();
+  Real Distance(const Vector3 &pt, const RigidTransform *tran=nullptr);
   // double Distance(CollisionConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
   // double Distance(const ConvexHull3D &, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
   Real ClosestPoints(const Vector3& pt,Vector3& cp,Vector3& direction, const RigidTransform *tran=nullptr);
   // Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr);
   Real ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction, const RigidTransform *tran=nullptr, const RigidTransform *tran2=nullptr);
 
-  void _update_transform(const RigidTransform *tran=nullptr);
-  void _update_relative_transform(const RigidTransform *tran);
-  void _update_free_relative_transform(const RigidTransform *tran);
+  void UpdateTransform(const RigidTransform *tran=nullptr);
+  ///For Hull objects, updates the relative transform of the second object
+  void UpdateHullSecondRelativeTransform(const RigidTransform *tran);
 
-  void _find_support(const double *, double *);
+  Vector3 FindSupport(const Vector3& dir) const;
 
-  DT_ObjectHandle& object();
-  std::vector<DT_ObjectHandle> & objects();
-  // DT_ObjectHandle object;
-  AnyValue data;
   ConvexHull3D::Type type;
+  DT_ObjectHandle objectHandle;
   double transform[16];
 };
 

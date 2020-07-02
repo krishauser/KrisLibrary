@@ -413,6 +413,11 @@ void DT_GetSupport(DT_ObjectHandle object, const double* dir, double *out) {
     reinterpret_cast<DT_Object *>(object)->get_support(dir, out);
 }
 
+DT_ShapeHandle DT_GetShapeFromObject(DT_ObjectHandle object) {
+    assert(object);
+    return (DT_ShapeHandle)(&(reinterpret_cast<DT_Object *>(object))->get_shape());
+}
+
 void DT_GetMatrixd(DT_ObjectHandle object, double *m) 
 {
 	assert(object);
