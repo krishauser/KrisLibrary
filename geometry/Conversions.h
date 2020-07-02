@@ -74,12 +74,12 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh,Real levelSet=0.0);
 
 /** @ingroup Geometry
- * @brief Computes a convex hull from a mesh. 
+ * @brief Creates a convex hull from a mesh. 
  */
 void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch);
 
 /** @ingroup Geometry
- * @brief Computes a convex hull from a point cloud.  
+ * @brief Creates a convex hull from a point cloud.  
  */
 void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch);
 
@@ -90,6 +90,11 @@ void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch);
  * Note: the ConvexHull3D class can store a composite of convex hulls.
  */
 void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Real concavity);
+
+/** @ingroup geometry
+ * Computes a mesh from a ConvexHull.  Uses Qhull.
+ */
+void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh);
 
 } //namespace Geometry
 

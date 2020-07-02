@@ -463,9 +463,9 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
     MarchingCubes(grid.value,levelSet,center_bb,mesh);
 }
 
-void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.setPoints(mesh.verts); }
+void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.SetPoints(mesh.verts); }
 
-void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) { ch.setPoints(pc.points); }
+void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) { ch.SetPoints(pc.points); }
 
 void _HACD_CallBack(const char * msg, double progress, double concavity, size_t nVertices)
 {
@@ -539,7 +539,7 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
       Vector3 pnt(hullpoints[j].X(), hullpoints[j].Y(), hullpoints[j].Z());
       points.push_back(pnt);
     }
-    hull.setPoints(points);
+    hull.SetPoints(points);
     return hull;
   };
 
@@ -565,5 +565,71 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
   HACD::releaseHeapManager(heapManager);
 }
 
+void AppendPoints(const ConvexHull3D& ch,vector<Vector3>& points)
+{
+	if(ch.type==ConvexHull3D::Polytope) {
+		const auto& pts = ch.AsPolytope();
+		for(size_t i=0;i<pts.size();i+=3) {
+			points.push_back(Vector3(pts[i],pts[i+1],pts[i+2]));
+		}
+	}
+	else if(ch.type == ConvexHull3D::Point)
+		points.push_back(ch.AsPoint());
+	else if(ch.type == ConvexHull3D::Trans) {
+		const auto& data = ch.AsTrans();
+		vector<Vector3> temp;
+		AppendPoints(data.first,temp);
+		for(const auto& p:temp) {
+			points.push_back(data.second*p);
+		}
+	}
+	else if(ch.type == ConvexHull3D::Hull) {
+		const auto& data = ch.AsHull();
+		AppendPoints(data.first,points);
+		AppendPoints(data.second,points);
+	}
+	else {
+		FatalError("Can't do that type of ConvexHull3D yet");
+	}
+}
+
+void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh)
+{
+	vector<Vector3> points;
+	vector<vector<int> > facets;
+	if(ch.type == ConvexHull3D::Point) {
+		mesh.verts.resize(1);
+		mesh.tris.resize(0);
+		mesh.verts[0] = ch.AsPoint();
+		return;
+	}
+	else if(ch.type == ConvexHull3D::Trans) {
+		const auto& data = ch.AsTrans();
+		ConvexHullToMesh(data.first,mesh);
+		mesh.Transform(data.second);
+		return;
+	}
+	else {
+		AppendPoints(ch,points);
+	}
+	ConvexHull3D_Qhull(points,facets);
+	map<int,int> vertex_map;
+	for(const auto& f:facets) {
+		for(auto i:f) {
+			if(vertex_map.count(i) == 0) {
+				vertex_map[i] = (int)vertex_map.size();
+			}
+		}
+	}
+	mesh.verts.resize(0);
+	mesh.tris.resize(0);
+	for(auto i:vertex_map) {
+		mesh.verts.push_back(points[i.first]);
+	}
+	for(const auto& f:facets) {
+		for(size_t i=1;i+1<f.size();i++)
+			mesh.tris.push_back(IntTriple(vertex_map[f[0]],vertex_map[f[i]],vertex_map[f[i+1]]));
+	}
+}
 
 } //namespace Geometry
