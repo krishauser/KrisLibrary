@@ -62,16 +62,19 @@ struct ConvexHull3D;
 struct ConvexHull3D
 {
   typedef std::pair<ConvexHull3D, ConvexHull3D> prch3d;
-  //end of definition
-  // Tran means transform one shape to form the hull
-  // Hull means the hull of two objects with fixed relative transform..
-  // HullFree means hull of two objects with free relative transform, they both store a pair of Hulls but creates different collision data
-  enum Type { Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, Hull, HullFree, Composite };
+  
+  /// Polytope, Box, Cone, Cylinder, Sphere, Point, Line, correspond to SOLID basic data types
+  /// Minkowski means the minkowski sum of two convex objects
+  /// Tran means a transform of one shape.
+  /// Hull means the hull of two objects.
+  /// Composite means the hull of multiple objects (not implemented)
+  enum Type { Polytope, Box, Cone, Cylinder, Sphere, Point, Line, Minkowski, Trans, Hull, Composite };
   void setPoints(const Vector& a);
   void setPoints(const std::vector<double>& a);
   void setPoints(const std::vector<Vector3> & a);
   void setPoints(const std::vector<Vector> & a);
-  void from_hulls(const ConvexHull3D &hull1, const ConvexHull3D &hull2, bool is_free);
+  void setTrans(const ConvexHull3D &hull, const RigidTransform& xform);
+  void setHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
   // void setTransformed(const ConvexHull3D&, const Matrix4& xform);
   double distance(const ConvexHull3D &);
   double Distance(const Vector3 &);
@@ -85,7 +88,7 @@ struct ConvexHull3D
   const std::vector<double> &points() const;
   DT_ShapeHandle shape_handle() const;  // create the shape handle...
 
-  AnyValue data;  // points are stored as one dimension array
+  AnyValue data;  // Stored in the same format as the Solid_X structs listed above
   Type type;
 };
 
