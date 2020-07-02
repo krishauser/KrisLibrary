@@ -398,6 +398,9 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
   else if(geom->type == AnyGeometry3D::PointCloud) {
     Set(*geom);
   }
+  else if(geom->type == AnyGeometry3D::ConvexHull) {
+    Set(*geom);
+  }
   else if(geom->type == AnyGeometry3D::Group) {
     if(!_geom.CollisionDataInitialized()) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
@@ -544,6 +547,12 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       PointCloudToMesh(pc,*tempMesh,0.02);
     }
   }
+  else if(geom->type == AnyGeometry3D::ConvexHull) {
+    const Geometry::ConvexHull3D* g = &geom->AsConvexHull();
+    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
+    ConvexHullToMesh(*g,*tempMesh);
+    drawFaces = true;
+  }
   else if(geom->type == AnyGeometry3D::Group) {
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
     subAppearances.resize(subgeoms.size());
@@ -596,7 +605,7 @@ void GeometryAppearance::DrawGL(Element e)
     FatalError("Invalid Element specified");
   if(doDrawVertices) {   
     const vector<Vector3>* verts = NULL;  
-    if(geom->type == AnyGeometry3D::ImplicitSurface) 
+    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::ConvexHull) 
       verts = &tempMesh->verts;
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
       verts = &geom->AsTriangleMesh().verts;
@@ -721,9 +730,7 @@ void GeometryAppearance::DrawGL(Element e)
     if(!faceDisplayList) {
       faceDisplayList.beginCompile();
       const Meshing::TriMesh* trimesh = NULL;
-      if(geom->type == AnyGeometry3D::ImplicitSurface) 
-        trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::PointCloud) 
+      if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
         trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::TriangleMesh) 
         trimesh = &geom->AsTriangleMesh();
@@ -930,14 +937,12 @@ void GeometryAppearance::DrawGL(Element e)
 
   if(doDrawEdges) {
     const Meshing::TriMesh* trimesh = NULL;
-    if(geom->type == AnyGeometry3D::ImplicitSurface) 
-      trimesh = tempMesh.get();
-    else if(geom->type == AnyGeometry3D::PointCloud) 
+    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
       trimesh = tempMesh.get();
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
       trimesh = &geom->AsTriangleMesh();
     else if(geom->type == AnyGeometry3D::Primitive) 
-      ;
+      ; //TODO: draw edges of primitives? May be useful for points and rays
     if(trimesh) {
       if(!edgeDisplayList) {
         edgeDisplayList.beginCompile();
