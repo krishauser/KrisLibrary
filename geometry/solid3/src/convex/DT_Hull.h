@@ -51,44 +51,6 @@ private:
 	const DT_Convex& m_rchild;
 };
 
-// construct a convex hull from one object and rigid transform of it
-class DT_HullTran : public DT_Convex {
-public:
-	DT_HullTran(const DT_Convex& lchild) :
-		m_child(lchild)
-	{
-		m_xform.setIdentity();
-	}
-
-	virtual MT_Scalar supportH(const MT_Vector3& v) const 
-	{
-		MT_Scalar v1 = m_child.supportH(v);
-		MT_Scalar v2 = m_child.supportH(v * m_xform.getBasis()) + v.dot(m_xform.getOrigin());
-		//std::cout << "Tran supportH v = " << v[0] << " " << v[1] << " " << v[2] << " ";
-		//std::cout << "v1 = " << v1 << " v2 = " << v2 << std::endl;
-		return GEN_max(v1, v2);
-	}
-
-	virtual MT_Point3 support(const MT_Vector3& v) const 
-	{
-		MT_Point3 lpnt = m_child.support(v);
-		MT_Point3 rpnt = m_xform(m_child.support(v * m_xform.getBasis()));
-		//std::cout << "Tran support v = " << v[0] << " " << v[1] << " " << v[2] << std::endl;
-		//std::cout << "lpnt = " << lpnt[0] << " " << lpnt[1] << " " << lpnt[2] << std::endl;
-		//std::cout << "rpnt = " << rpnt[0] << " " << rpnt[1] << " " << rpnt[2] << std::endl;
-		return v.dot(lpnt) > v.dot(rpnt) ? lpnt : rpnt;
-	}
-
-	void UpdateTransform(const double *pointer) {
-		//
-		//std::cout << "update transform here\n";
-		m_xform.setValue(pointer);
-	}
-
-private:
-	const DT_Convex& m_child;
-	MT_Transform m_xform;
-};
 
 // construct a convex hull from two shapes where the second shape freely transforms
 class DT_HullFree : public DT_Convex {

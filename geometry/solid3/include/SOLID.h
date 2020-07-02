@@ -89,7 +89,9 @@ extern "C" {
 	DECLSPEC DT_ShapeHandle DT_NewLineSegment(const DT_Vector3 source, const DT_Vector3 target);
 	DECLSPEC DT_ShapeHandle DT_NewMinkowski(DT_ShapeHandle shape1, DT_ShapeHandle shape2);
 	DECLSPEC DT_ShapeHandle DT_NewHull(DT_ShapeHandle shape1, DT_ShapeHandle shape2);
-	DECLSPEC DT_ShapeHandle DT_NewHullTran(DT_ShapeHandle shape1);
+	//Gao Tang: added new function. 
+	DECLSPEC DT_ShapeHandle DT_NewTransform(DT_ShapeHandle shape, const double* m);
+	//Gao Tang: added new function.  Accepts calls to DT_SetChildRelativeMatrix
 	DECLSPEC DT_ShapeHandle DT_NewHullFree(DT_ShapeHandle shape1, DT_ShapeHandle shape2);
 
 	DECLSPEC DT_ShapeHandle DT_OldPolytope(const DT_VertexBaseHandle vertexBase, DT_Count count, const DT_Index *indice);
@@ -147,8 +149,16 @@ extern "C" {
 	DECLSPEC void DT_SetMatrixd(DT_ObjectHandle object, const double *m); 
 	DECLSPEC void DT_GetMatrixd(DT_ObjectHandle object, double *m); 
 
-	DECLSPEC void DT_SetRelativeMatrixd(DT_ObjectHandle object, const double *m); 
-	DECLSPEC void DT_SetFreeRelativeMatrixd(DT_ObjectHandle object, const double *m); 
+	//Gao Tang: added new function
+	//
+	//For objects that support children (HullFree), this allows updating the transform of each child
+	//object.  Index is 0 based. 
+	//
+	//Note that the transform is set inside the underlying DT_ShapeHandle, so if two DT_ObjectHandles 
+	//point to the same object, then both of their data will be updated.
+	//
+	//HullFree currently only supports updating child 1, not child 0
+	DECLSPEC void DT_SetChildRelativeMatrixd(DT_ObjectHandle object, int child, const double *m); 
 
 	DECLSPEC void DT_GetBBox(DT_ObjectHandle object, DT_Vector3 min, DT_Vector3 max);
 

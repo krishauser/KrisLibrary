@@ -49,5 +49,28 @@ private:
 	const DT_Convex&    m_child;
 };
 
+class DT_TransformWithStorage : public DT_Convex {
+public:
+	DT_TransformWithStorage(const MT_Transform& xform, const DT_Convex& child) :
+		m_xform(xform), 
+		m_child(child)
+	{}
+
+	virtual MT_Scalar supportH(const MT_Vector3& v) const
+	{
+		return m_child.supportH(v * m_xform.getBasis()) + 
+			   v.dot(m_xform.getOrigin());
+	}
+
+	virtual MT_Point3 support(const MT_Vector3& v) const
+	{
+		return m_xform(m_child.support(v * m_xform.getBasis()));
+	}
+
+private:
+	MT_Transform m_xform;
+	const DT_Convex&    m_child;
+};
+
 
 #endif

@@ -139,12 +139,10 @@ public:
 		}
 	}
 
-	void update_shape_transform(const double *m) {
-		reinterpret_cast<DT_HullTran*>(const_cast<DT_Shape*>(&this->m_shape))->UpdateTransform(m);
-        setBBox();
-	}
-
-	void update_free_transform(const double *m) {
+    //Gao Tang: added
+    //TODO: make more general
+	void setChildMatrix(int child,const double *m) {
+        assert(child == 1);
 		reinterpret_cast<DT_HullFree*>(const_cast<DT_Shape*>(&this->m_shape))->UpdateTransform(m);
         setBBox();
 	}

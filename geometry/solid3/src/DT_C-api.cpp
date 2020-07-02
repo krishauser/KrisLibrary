@@ -36,6 +36,7 @@
 #include "DT_Triangle.h"
 #include "DT_Minkowski.h"
 #include "DT_Hull.h"
+#include "DT_Transform.h"
 
 #include "DT_Response.h"
 #include "DT_RespTable.h"
@@ -148,15 +149,17 @@ DT_ShapeHandle DT_NewHull(DT_ShapeHandle shape1, DT_ShapeHandle shape2)
     return (DT_ShapeHandle)new DT_Hull(*reinterpret_cast<DT_Convex *>(shape1), *reinterpret_cast<DT_Convex *>(shape2));
 }
 
-DT_ShapeHandle DT_NewHullTran(DT_ShapeHandle shape1)
-{
-    assert(shape1);
-    if ((reinterpret_cast<DT_Shape *>(shape1)->getType() & CONVEX) != CONVEX) 
+DT_ShapeHandle DT_NewTransform(DT_ShapeHandle shape, const double * m) {
+    assert(shape);
+    if ((reinterpret_cast<DT_Shape *>(shape)->getType() & CONVEX) != CONVEX) 
     {
         return 0;
     }
-    return (DT_ShapeHandle)new DT_HullTran(*reinterpret_cast<DT_Convex *>(shape1));
+    MT_Transform trans;
+    trans.setValue(m);
+    return (DT_ShapeHandle)new DT_TransformWithStorage(trans,*reinterpret_cast<DT_Convex *>(shape));
 }
+
 
 DT_ShapeHandle DT_NewHullFree(DT_ShapeHandle shape1, DT_ShapeHandle shape2) {
 	assert(shape1);
@@ -399,13 +402,9 @@ void DT_SetMatrixd(DT_ObjectHandle object, const double *m)
     reinterpret_cast<DT_Object *>(object)->setMatrix(m);
 }
 
-void DT_SetRelativeMatrixd(DT_ObjectHandle object, const double *m) {
+void DT_SetChildRelativeMatrixd(DT_ObjectHandle object, int child, const double *m) {
 	assert(object);
-    reinterpret_cast<DT_Object *>(object)->update_shape_transform(m);
-}
-void DT_SetFreeRelativeMatrixd(DT_ObjectHandle object, const double *m) {
-	assert(object);
-    reinterpret_cast<DT_Object *>(object)->update_free_transform(m);
+    reinterpret_cast<DT_Object *>(object)->setChildMatrix(child,m);
 }
 
 void DT_GetSupport(DT_ObjectHandle object, const double* dir, double *out) {
