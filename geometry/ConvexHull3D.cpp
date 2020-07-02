@@ -18,6 +18,44 @@ Vector3 __Unit__(const Vector3& v)
   else return v*(1.0/n);
 };
 
+/*-------------------------------------------------
+-rand & srand- generate pseudo-random number between 1 and 2^31 -2
+  from Park & Miller's minimimal standard random number generator
+  Communications of the ACM, 31:1192-1201, 1988.
+notes:
+  does not use 0 or 2^31 -1
+  this is silently enforced by qh_srand()
+  copied from geom2.c
+*/
+static int seed = 1;  /* global static */
+
+extern "C" int qh_rand( void) {
+#define qh_rand_a 16807
+#define qh_rand_m 2147483647
+#define qh_rand_q 127773  /* m div a */
+#define qh_rand_r 2836    /* m mod a */
+  int lo, hi, test;
+
+  hi = seed / qh_rand_q;  /* seed div q */
+  lo = seed % qh_rand_q;  /* seed mod q */
+  test = qh_rand_a * lo - qh_rand_r * hi;
+  if (test > 0)
+    seed= test;
+  else
+    seed= test + qh_rand_m;
+  return seed;
+} /* rand */
+
+extern "C" void qh_srand( int newseed) {
+  if (newseed < 1)
+    seed= 1;
+  else if (newseed >= qh_rand_m)
+    seed= qh_rand_m - 1;
+  else
+    seed= newseed;
+} /* qh_srand */
+
+
 namespace Geometry {
 
 static char qhull_options[] = "qhull Qts i Tv";
