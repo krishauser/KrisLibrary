@@ -49,11 +49,11 @@ class AnyGeometry3D
 
   AnyGeometry3D();
   AnyGeometry3D(const GeometricPrimitive3D& primitive);
-  AnyGeometry3D(const ConvexHull3D& cvxhull);
   AnyGeometry3D(const Meshing::VolumeGrid& grid);
   AnyGeometry3D(const Meshing::TriMesh& mesh);
   AnyGeometry3D(const Meshing::PointCloud3D& pc);
   AnyGeometry3D(const vector<AnyGeometry3D>& items);
+  AnyGeometry3D(const ConvexHull3D& cvxhull);
   AnyGeometry3D(const AnyGeometry3D& geom) = default;
   AnyGeometry3D(AnyGeometry3D&& geom) = default;
   AnyGeometry3D& operator = (const AnyGeometry3D& rhs) = default;
@@ -61,16 +61,16 @@ class AnyGeometry3D
   static const char* TypeName(Type type);
   const char* TypeName() const { return AnyGeometry3D::TypeName(type); }
   const GeometricPrimitive3D& AsPrimitive() const;
-  const ConvexHull3D& AsConvexHull() const;
   const Meshing::TriMesh& AsTriangleMesh() const;
   const Meshing::PointCloud3D& AsPointCloud() const;
   const Meshing::VolumeGrid& AsImplicitSurface() const;
+  const ConvexHull3D& AsConvexHull() const;
   const vector<AnyGeometry3D>& AsGroup() const;
   GeometricPrimitive3D& AsPrimitive();
-  ConvexHull3D& AsConvexHull();
   Meshing::TriMesh& AsTriangleMesh();
   Meshing::PointCloud3D& AsPointCloud();
   Meshing::VolumeGrid& AsImplicitSurface();
+  ConvexHull3D& AsConvexHull();
   vector<AnyGeometry3D>& AsGroup();
   GLDraw::GeometryAppearance* TriangleMeshAppearanceData();
   const GLDraw::GeometryAppearance* TriangleMeshAppearanceData() const;
@@ -106,12 +106,11 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
  public:
   AnyCollisionGeometry3D();
   AnyCollisionGeometry3D(const GeometricPrimitive3D& primitive);
-  AnyCollisionGeometry3D(const ConvexHull3D& primitive);
-  AnyCollisionGeometry3D(const ConvexHull3D& primitive, const ConvexHull3D&);
   AnyCollisionGeometry3D(const Meshing::TriMesh& mesh);
   AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc);
   AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid);
   AnyCollisionGeometry3D(const AnyGeometry3D& geom);
+  AnyCollisionGeometry3D(const ConvexHull3D& primitive);
   AnyCollisionGeometry3D(const vector<AnyGeometry3D>& group);
   AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom);
   AnyCollisionGeometry3D(AnyCollisionGeometry3D&& geom) = default;
@@ -129,16 +128,16 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///Clears the current collision data
   void ClearCollisionData() { collisionData = AnyValue(); }
   const RigidTransform& PrimitiveCollisionData() const;
-  const CollisionConvexHull3D& ConvexHullCollisionData() const;
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
   const CollisionImplicitSurface& ImplicitSurfaceCollisionData() const;
+  const CollisionConvexHull3D& ConvexHullCollisionData() const;
   const vector<AnyCollisionGeometry3D>& GroupCollisionData() const;
   RigidTransform& PrimitiveCollisionData();
-  CollisionConvexHull3D& ConvexHullCollisionData();
   CollisionMesh& TriangleMeshCollisionData();
   CollisionPointCloud& PointCloudCollisionData();
   CollisionImplicitSurface& ImplicitSurfaceCollisionData();
+  CollisionConvexHull3D& ConvexHullCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
   ///Performs a type conversion, also copying the active transform.  May be a bit faster than
   ///AnyGeometry3D.Convert for some conversions (TriangleMesh->VolumeGrid, specifically)

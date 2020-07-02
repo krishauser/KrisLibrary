@@ -355,18 +355,37 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     }
     case ConvexHull:
     {
-      LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from primitive to convex hull yet");
-      break;
+      Meshing::TriMesh mesh;
+      PrimitiveToMesh(AsPrimitive(), mesh, int(param));
+      ConvexHull3D ch;
+      MeshToConvexHull(mesh,ch);
+      res = AnyGeometry3D(ch);
+      return true;
     }
     default:
       break;
     }
     break;
   case ConvexHull:
-  {
-    LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from ConvexHull to anything else");
-    break;
-  }
+    switch(restype) {
+      case TriangleMesh:
+      {
+        Meshing::TriMesh mesh;
+        ConvexHullToMesh(AsConvexHull(),mesh);
+        res = AnyGeometry3D(mesh);
+        return true;
+      }
+      case PointCloud:
+      {
+        AnyGeometry3D mesh;
+        Convert(TriangleMesh,mesh,param);
+        if (param == 0) param = Inf;
+        mesh.Convert(PointCloud, res, param);
+      }
+      default:
+        LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from ConvexHull to anything except for TriangleMesh and PointCloud");
+        break;
+    }
   case PointCloud:
     switch (restype)
     {
@@ -510,7 +529,9 @@ size_t AnyGeometry3D::NumElements() const
       return 0;
     return 1;
   case ConvexHull:
-    return AsConvexHull().points().size() / 3;
+  {
+    return AsConvexHull().NumPrimitives();
+  }
   case TriangleMesh:
     return AsTriangleMesh().tris.size();
   case PointCloud:
@@ -538,9 +559,7 @@ GeometricPrimitive3D AnyGeometry3D::GetElement(int elem) const
   }
   else if (type == ConvexHull)
   {
-    auto pnt = AsConvexHull().points();
-    Vector3 point(pnt[elem * 3], pnt[elem * 3 + 1], pnt[elem * 3 + 2]);
-    return GeometricPrimitive3D(point);
+    return AsConvexHull().GetPrimitive(elem);
   }
   else if (type == PointCloud)
   {
@@ -915,16 +934,6 @@ AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull)
   currentTransform.setIdentity();
 }
 
-AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull1, const ConvexHull3D &hull2)
-    : margin(0)
-{
-  ConvexHull3D hull;
-  hull.fromHulls(hull1, hull2);
-  this->type = AnyGeometry3D::ConvexHull;
-  this->data = hull;
-  this->currentTransform.setIdentity();
-}
-
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::TriMesh &mesh)
     : AnyGeometry3D(mesh), margin(0)
 {
@@ -1124,22 +1133,11 @@ AABB3D AnyCollisionGeometry3D::GetAABBTight() const
   switch (type)
   {
   case Primitive:  // TODO: so no aabb for primitive?
-  case ConvexHull:{ // TODO: what is this supposed to do
-    const CollisionConvexHull3D &cdata = this->ConvexHullCollisionData();
-    CollisionConvexHull3D &data = *const_cast<CollisionConvexHull3D*>(&cdata);;
-    DT_ObjectHandle &object = data.object();
-    DT_Vector3 bmin, bmax;
-    DT_GetBBox(object, bmin, bmax);
-    AABB3D res;
-    for(int i = 0; i < 3; i++){
-      res.bmin[i] = bmin[i];
-      res.bmax[i] = bmax[i];
-    }
-    return res;
-  }
+    return GetAABB();
+  case ConvexHull: // TODO: what is this supposed to do
+    return GetAABB();
   case ImplicitSurface:
     return GetAABB();
-    break;
   case TriangleMesh:
   {
     const CollisionMesh &m = TriangleMeshCollisionData();
@@ -1206,13 +1204,11 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
     return res;
   }
   break;
-  case ConvexHull :
+  case ConvexHull:
   {
     const CollisionConvexHull3D &cdata = this->ConvexHullCollisionData();
-    CollisionConvexHull3D &data = *const_cast<CollisionConvexHull3D*>(&cdata);;
-    DT_ObjectHandle &object = data.object();
     DT_Vector3 bmin, bmax;
-    DT_GetBBox(object, bmin, bmax);
+    DT_GetBBox(cdata.objectHandle, bmin, bmax);
     AABB3D res;
     for(int i = 0; i < 3; i++){
       res.bmin[i] = bmin[i];
