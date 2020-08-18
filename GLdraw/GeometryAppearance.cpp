@@ -473,7 +473,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       }
     }
     if(pc.GetProperty("r",rgb)) {
-      //this is a weird opacity in UINT byte format
       if(!vertexColors.empty()) 
         //already assigned color?
         LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has both r channel and either rgb or rgba channel");
@@ -482,7 +481,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
         vertexColors[i].rgba[0] = rgb[i];
     }
     if(pc.GetProperty("g",rgb)) {
-      //this is a weird opacity in UINT byte format
       if(vertexColors.empty()) {
         //already assigned color?
         LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has g channel but not r channel?");
@@ -493,7 +491,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       }
     }
     if(pc.GetProperty("b",rgb)) {
-      //this is a weird opacity in UINT byte format
       if(vertexColors.empty()) {
         //already assigned color?
         LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has a channel but not r channel?");
@@ -619,6 +616,7 @@ void GeometryAppearance::DrawGL(Element e)
         if(!vertexColors.empty() && vertexColors.size() != verts->size())
                   LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size");
         if(vertexColors.size()==verts->size()) {
+          glDisable(GL_LIGHTING);
           glBegin(GL_POINTS);
           for(size_t i=0;i<verts->size();i++) {
             const Vector3& v=(*verts)[i];
@@ -626,6 +624,7 @@ void GeometryAppearance::DrawGL(Element e)
             glVertex3f(v.x,v.y,v.z);
           }
           glEnd();
+          glEnable(GL_LIGHTING);
         }
         else {
           glBegin(GL_POINTS);
@@ -864,6 +863,7 @@ void GeometryAppearance::DrawGL(Element e)
           else {
             //vertex colors given!
             glDisable(GL_LIGHTING);
+            glShadeModel(GL_SMOOTH);
             glBegin(GL_TRIANGLES);
             for(size_t i=0;i<trimesh->tris.size();i++) {
               const IntTriple&t=trimesh->tris[i];
@@ -881,9 +881,14 @@ void GeometryAppearance::DrawGL(Element e)
             }
             glEnd();
             glEnable(GL_LIGHTING);
+            glShadeModel(GL_FLAT);
           }
         }
         else {
+          bool useFaceColors = (faceColors.size()==trimesh->tris.size());
+          bool useTexCoords = (texcoords.size()==trimesh->verts.size());
+          if(useFaceColors)
+            glDisable(GL_LIGHTING);
           glBegin(GL_TRIANGLES);
           for(size_t i=0;i<trimesh->tris.size();i++) {
             const IntTriple&t=trimesh->tris[i];
@@ -891,10 +896,10 @@ void GeometryAppearance::DrawGL(Element e)
             const Vector3& b=trimesh->verts[t.b];
             const Vector3& c=trimesh->verts[t.c];
             Vector3 n = trimesh->TriangleNormal(i);
-            if(faceColors.size()==trimesh->tris.size())
+            if(useFaceColors)
               faceColors[i].setCurrentGL();
             glNormal3f(n.x,n.y,n.z);
-            if(texcoords.size()==trimesh->verts.size()) {
+            if(useTexCoords) {
               glTexCoord2f(texcoords[t.a].x,texcoords[t.a].y);
               glVertex3f(a.x,a.y,a.z);
               glTexCoord2f(texcoords[t.b].x,texcoords[t.b].y);
@@ -909,6 +914,8 @@ void GeometryAppearance::DrawGL(Element e)
             }
           }
           glEnd();
+          if(useFaceColors)
+            glEnable(GL_LIGHTING);
         }
       }
       else if(geom->type == AnyGeometry3D::Primitive) {
