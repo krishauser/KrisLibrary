@@ -2,6 +2,7 @@
 #include "GLView.h"
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/errors.h>
+#include <KrisLibrary/Timer.h>
 #include <memory.h>
 #if HAVE_GLEW
 #include <GL/glew.h>
@@ -20,6 +21,7 @@ using namespace GLDraw;
   #endif //GL_BGRA
 #endif // HAVE_GLEW
 
+#define DEBUG_TIMING 0
 
 GLRenderToImage::GLRenderToImage()
   :width(0),height(0),color_tex(0),fb(0),depth_rb(0)
@@ -212,10 +214,16 @@ void GLRenderToImage::GetRGBA(Image& image)
 void GLRenderToImage::GetZBuffer(vector<float>& image)
 {
 #if HAVE_GLEW
+  #if DEBUG_TIMING
+    Timer timer;
+  #endif //DEBUG_TIMING
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb); 
   image.resize(width*height);
   glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, &image[0]);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
+  #if DEBUG_TIMING
+    printf("glReadPixels time %f\n",timer.ElapsedTime());
+  #endif //DEBUG_TIMING
 
   int rowsize = sizeof(float)*width;
   int stride = width;
@@ -232,21 +240,28 @@ void GLRenderToImage::GetZBuffer(vector<float>& image)
 void GLRenderToImage::GetDepth(const Camera::Viewport& vp,vector<float>& image)
 {
   GetZBuffer(image);
+  #if DEBUG_TIMING
+    Timer timer;
+  #endif //DEBUG_TIMING
   //don't forget to flip vertically
-  Real zmininv = 1.0/vp.n;
-  Real zscale = (1.0/vp.n-1.0/vp.f);
+  float zmininv = float(1.0/vp.n);
+  float zscale = float(1.0/vp.n-1.0/vp.f);
+  float f = (float)vp.f;
   //nonlinear depth normalization
   //normal linear interpolation would give u = (z - zmin)/(zmax-zmin)
   //instead we gt u = (1/zmin-1/z)/(1/zmin-1/zmax)
   //so 1/z = 1/zmin - u(1/zmin-1/zmax)
   for(size_t i=0;i<image.size();i++) {
-    if(image[i] == 1.0) { //nothing seen
-      image[i] = vp.f;
+    if(image[i] == 1.0f) { //nothing seen
+      image[i] = f;
     }
     else {
-      image[i] = float(1.0/(zmininv - image[i]*zscale));
+      image[i] = (1.0f/(zmininv - image[i]*zscale));
     }
   }
+  #if DEBUG_TIMING
+    printf("Zbuffer to depth conversion %f\n",timer.ElapsedTime());
+  #endif //DEBUG_TIMING
 }
 
 void GLRenderToImage::GetDepth(const Camera::Viewport& vp,vector<vector<float> >& image)
