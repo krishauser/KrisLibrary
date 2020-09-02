@@ -759,7 +759,7 @@ void TSDFMarchingCubes(const Array3D<T>& input,T isoLevel,T truncationDistance,c
         //if there's a negative value next to the truncation distance, this is an internal edge
         bool internal = false;
         for(int c=0;c<8;c++)
-          if(vals[c] >= truncationDistance) {
+          if(!(vals[c] < truncationDistance && vals[c] > -truncationDistance)) {
             internal=true;
             break;
           }
