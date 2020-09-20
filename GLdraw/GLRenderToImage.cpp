@@ -70,7 +70,8 @@ bool GLRenderToImage::Setup(int w,int h)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     //NULL means reserve texture memory, but texels are undefined
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
   }
   if(fb == 0) {
     //-------------------------
@@ -106,6 +107,7 @@ bool GLRenderToImage::Setup(int w,int h)
     color_tex = 0;
     depth_rb = 0;
     fb = 0;
+    LOG4CXX_WARN(KrisLibrary::logger(),"GLRenderToImage: Some error setting up the framebuffer?");
     return false;
   }
   return true;
@@ -144,6 +146,7 @@ void GLRenderToImage::GetRGBA(vector<unsigned int>& image)
   image.resize(width*height);
   glBindTexture(GL_TEXTURE_2D, color_tex);
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,&image[0]);
+  glBindTexture(GL_TEXTURE_2D,0);
   //OpenGL images start in lower left, so flip vertically
   int rowsize = 4*width;
   int stride = width;
@@ -168,6 +171,7 @@ void GLRenderToImage::GetRGBA(vector<unsigned char>& image)
   image.resize(4*width*height);
   glBindTexture(GL_TEXTURE_2D, color_tex);
   glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,&image[0]);
+  glBindTexture(GL_TEXTURE_2D,0);
   //OpenGL images start in lower left, so flip vertically
   int rowsize = 4*width;
   int stride = 4*width;
