@@ -1098,20 +1098,20 @@ Real AnyCollisionGeometry3D::Distance(const Vector3& pt)
   case TriangleMesh:
     {
       const CollisionMesh& cm = TriangleMeshCollisionData();
-      return Min(Geometry::Distance(cm,pt)-margin,0.0);
+      return Geometry::Distance(cm,pt)-margin;
     }
   case PointCloud:
     {
       const CollisionPointCloud& pc = PointCloudCollisionData();
-      return Min(Geometry::Distance(pc,pt)-margin,0.0);
+      return Geometry::Distance(pc,pt)-margin;
     }
   case Group:
     {
       vector<AnyCollisionGeometry3D>& items = GroupCollisionData();
       Real dmin = Inf;
       for(size_t i=0;i<items.size();i++)
-	dmin = Min(dmin,items[i].Distance(pt));
-      return Min(dmin-margin,0.0);
+	      dmin = Min(dmin,items[i].Distance(pt));
+      return dmin-margin;
     }
   }
   return Inf;
@@ -1156,7 +1156,7 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3& pt,const 
     {
       int tri = ClosestPoint(TriangleMeshCollisionData(),pt,res.cp1);
       res.elem2 = tri;
-      res.d = Min(pt.distance(res.cp1)-margin,0.0);
+      res.d = pt.distance(res.cp1)-margin;
       return res;
     }
   case PointCloud:

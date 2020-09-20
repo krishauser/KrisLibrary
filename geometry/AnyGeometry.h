@@ -96,6 +96,14 @@ class AnyGeometry3D
 
 
 /** @brief An AnyGeometry with collision detection information.  
+ * 
+ * Because collision detection information is slow to initialize, this will
+ * only initialize it when needed to answer a collision query.
+ *
+ * Note: Distance() returns the distance to the other geometry. If
+ * the result is <= 0, the two objects are in collision. A geometry type
+ * may support returning a signed distance if the objects are penetrating, i.e.
+ * Distance() < 0.
  */
 class AnyCollisionGeometry3D : public AnyGeometry3D
 {
