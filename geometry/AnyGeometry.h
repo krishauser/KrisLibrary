@@ -100,6 +100,14 @@ class AnyGeometry3D
 
 
 /** @brief An AnyGeometry with collision detection information.  
+ * 
+ * Because collision detection information is slow to initialize, this will
+ * only initialize it when needed to answer a collision query.
+ *
+ * Note: Distance() returns the distance to the other geometry. If
+ * the result is <= 0, the two objects are in collision. A geometry type
+ * may support returning a signed distance if the objects are penetrating, i.e.
+ * Distance() < 0.
  */
 class AnyCollisionGeometry3D : public AnyGeometry3D
 {
@@ -164,10 +172,8 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///modify the geometry using Transform(), ReinitCollisions() should be
   ///called.
   void SetTransform(const RigidTransform& T);
-  ///GAO: you need to define these better. I have no idea what these mean from context
-  // void SetRelativeTransform(const RigidTransform& T);
-  // void SetFreeRelativeTransform(const RigidTransform& T);
-  ///Computes the furthest point on the geometry in the direction dir
+  //Computes the furthest point on the geometry in the direction dir
+  //TODO: is this useful to implement outside of ConvexHull types?
   // Vector3 FindSupport(const Vector3& dir);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
