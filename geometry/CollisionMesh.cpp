@@ -1140,8 +1140,10 @@ struct ClosestPointCallback
     Real d=cp.distanceSquared(p);
     if(normalWeight != 0) 
       d += normalWeight*nlocal.distanceSquared(tri.normal());
-    dmax = dmin = d;
-    closestTri = m.tris[t].id;
+    if(d < dmin) {
+      dmax = dmin = d;
+      closestTri = m.tris[t].id;
+    }
     numTrianglesChecked = 1;
     numBBsChecked = 0;
     if(normalWeight != 0) {
@@ -1304,11 +1306,13 @@ struct ClosestPointCallback
   int numTrianglesChecked,numBBsChecked;
 };
 
-int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp)
+int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp,Real bound)
 {
   Vector3 plocal;
   mesh.currentTransform.mulInverse(p,plocal);
   ClosestPointCallback cb;
+  cb.dmin = bound*bound;
+  cb.dmax = bound*bound;
   cb.Execute(*mesh.pqpModel,plocal);
   cp = cb.cp;
 
@@ -1641,16 +1645,18 @@ void NearbyTriangles(const CollisionMesh& m1,const CollisionMesh& m2,Real d,vect
   }
 }
 
-Real Distance(const CollisionMesh& c,const Vector3& pt)
+Real Distance(const CollisionMesh& c,const Vector3& pt,Real bound)
 {
   Vector3 cp;
-  ClosestPoint(c,pt,cp);
+  int res=ClosestPoint(c,pt,cp,bound);
+  if(res < 0) return bound;
   return pt.distance(cp);
 }
 
-Real Distance(const CollisionMesh& c,const Vector3& pt,int& closestTri,Vector3& cp,Vector3& dir)
+Real Distance(const CollisionMesh& c,const Vector3& pt,int& closestTri,Vector3& cp,Vector3& dir,Real bound)
 {
-  closestTri = ClosestPoint(c,pt,cp);
+  closestTri = ClosestPoint(c,pt,cp,bound);
+  if(closestTri < 0) return bound;
   cp = c.currentTransform*cp;
   dir = pt - cp;
   Real l=dir.norm();
@@ -1662,18 +1668,18 @@ Real Distance(const CollisionMesh& c,const Vector3& pt,int& closestTri,Vector3& 
   return l;
 }
 
-Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a)
+Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real bound)
 {
   int closestTri;
   Vector3 cp,dir;
-  return Distance(c,a,closestTri,cp,dir);
+  return Distance(c,a,closestTri,cp,dir,bound);
 }
 
-Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestTri,Vector3& cp,Vector3& dir)
+Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestTri,Vector3& cp,Vector3& dir,Real bound)
 {
   switch(a.type) {
   case GeometricPrimitive3D::Point:
-    return Distance(c,*AnyCast_Raw<Vector3>(&a.data),closestTri,cp,dir);
+    return Distance(c,*AnyCast_Raw<Vector3>(&a.data),closestTri,cp,dir,bound);
   case GeometricPrimitive3D::Segment:
   case GeometricPrimitive3D::Triangle:
   case GeometricPrimitive3D::AABB:
@@ -1689,7 +1695,8 @@ Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestT
       Tlocal.setInverse(c.currentTransform);
       GeometricPrimitive3D alocal = a;
       alocal.Transform(Tlocal);
-      Real d=Inf;
+      Real d=bound;
+      closestTri = -1;
       Triangle3D tri;
       for(size_t i=0;i<c.tris.size();i++) {
         c.GetTriangle(i,tri);
@@ -1704,7 +1711,7 @@ Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestT
   case GeometricPrimitive3D::Sphere:
     {
       Sphere3D s = *AnyCast_Raw<Sphere3D>(&a.data);
-      Real dcenter = Distance(c,s.center,closestTri,cp,dir);
+      Real dcenter = Distance(c,s.center,closestTri,cp,dir,bound+s.radius);
       return dcenter-s.radius;
     }
   default:

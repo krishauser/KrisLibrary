@@ -1431,9 +1431,12 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3 &pt, const
   }
   case TriangleMesh:
   {
-    int tri = ClosestPoint(TriangleMeshCollisionData(), pt, res.cp1);
-    res.elem2 = tri;
-    res.d = pt.distance(res.cp1) - margin;
+    int tri = ClosestPoint(TriangleMeshCollisionData(), pt, res.cp1, settings.upperBound + margin);
+    if(tri<0) res.d = settings.upperBound;
+    else {
+      res.elem2 = tri;
+      res.d = pt.distance(res.cp1) - margin;
+    }
     return res;
   }
   case PointCloud:
@@ -1441,8 +1444,10 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3 &pt, const
     Vector3 ptlocal;
     GetTransform().mulInverse(pt, ptlocal);
     const CollisionPointCloud &pc = PointCloudCollisionData();
-    if (!pc.octree->NearestNeighbor(ptlocal, res.cp1, res.elem1))
+    if (!pc.octree->NearestNeighbor(ptlocal, res.cp1, res.elem1, settings.upperBound + margin)) {
+      res.d = settings.upperBound;
       return res;
+    }
     res.d = res.cp1.distance(ptlocal) - margin;
     Transform1(res, GetTransform());
     return res;
@@ -2188,7 +2193,7 @@ AnyDistanceQueryResult Distance(const GeometricPrimitive3D &a, const CollisionMe
   res.hasClosestPoints = true;
   res.hasDirections = true;
   res.elem1 = 0;
-  res.d = Geometry::Distance(b, a, res.elem2, res.cp2, res.dir2);
+  res.d = Geometry::Distance(b, a, res.elem2, res.cp2, res.dir2, settings.upperBound);
   res.dir1.setNegative(res.dir2);
   res.cp1 = res.cp2 + res.d * res.dir2;
   return res;
