@@ -228,7 +228,7 @@ void VertexNormals(const Meshing::TriMesh& mesh,vector<Vector3>& normals)
   }
 }
 
-void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real creaseRads)
+void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real creaseRads,bool dropDegenerate=true)
 {
   if(in.incidentTris.empty())
     in.CalcIncidentTris();
@@ -292,19 +292,29 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
       out.verts.push_back(in.verts[i]);
     }
   }
-  size_t validTriangles = 0;
-  for(size_t i=0;i<out.tris.size();i++) {
-    const IntTriple& t = out.tris[i];
-    if(t.a < 0 || t.b < 0 || t.c < 0) {
-      const IntTriple& tin = in.tris[i];
-      printf("CreaseMesh: Invalid triangle %d %d %d, input triangle %d %d %d\n",t.a,t.b,t.c,tin.a,tin.b,tin.c);
-      continue;
+  if(dropDegenerate) {
+    size_t validTriangles = 0;
+    for(size_t i=0;i<out.tris.size();i++) {
+      const IntTriple& t = out.tris[i];
+      if(t.a < 0 || t.b < 0 || t.c < 0) {
+        const IntTriple& tin = in.tris[i];
+        printf("CreaseMesh: Invalid triangle %d %d %d, input triangle %d %d %d\n",t.a,t.b,t.c,tin.a,tin.b,tin.c);
+        continue;
+      }
+      //Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
+      out.tris[validTriangles] = out.tris[i];
+      validTriangles++;
     }
-    //Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
-    out.tris[validTriangles] = out.tris[i];
-    validTriangles++;
+    printf("CreaseMesh: dropping from %d to %d triangles\n",out.tris.size(),validTriangles);
+    out.tris.resize(validTriangles);
   }
-  out.tris.resize(validTriangles);
+  else {
+    for(size_t i=0;i<out.tris.size();i++) {
+      IntTriple& t = out.tris[i];
+      if(t.a < 0 || t.b < 0 || t.c < 0)
+        t.a = t.b = t.c = 0;
+    }
+  }
 }
 
 
@@ -743,21 +753,26 @@ void GeometryAppearance::DrawGL(Element e)
         Meshing::TriMesh creaseMesh;
         vector<Vector3> vertexNormals;
 
-        if(creaseAngle > 0 || silhouetteRadius > 0) {
+        if(vertexColors.size() != trimesh->verts.size() && (creaseAngle > 0 || silhouetteRadius > 0)) {
           Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
           tempMesh2.reset(weldMesh);
           weldMesh->verts = trimesh->verts;
           weldMesh->tris = trimesh->tris;
-          Meshing::MergeVertices(*weldMesh,1e-5);
+          bool drop = faceColors.empty();
+          Meshing::MergeVertices(*weldMesh,1e-5,drop);
           if(creaseAngle > 0) {
-            CreaseMesh(*weldMesh,creaseMesh,creaseAngle);
-            trimesh = &creaseMesh;
+            CreaseMesh(*weldMesh,creaseMesh,creaseAngle,drop);
             VertexNormals(creaseMesh,vertexNormals);
+            if(!faceColors.empty())
+              assert(trimesh->tris.size() == creaseMesh.tris.size());
+            trimesh = &creaseMesh;
           }
         }
 
         if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
           LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, texcoords wrong size: "<<(int)texcoords.size()<<" vs "<<(int)trimesh->verts.size());
+        if(!faceColors.empty() && faceColors.size()!=trimesh->tris.size())
+          LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, faceColors wrong size: "<<(int)faceColors.size()<<" vs "<<(int)trimesh->tris.size());
         if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
           if(vertexColors.size() != trimesh->verts.size()) {
             //flat shaded
