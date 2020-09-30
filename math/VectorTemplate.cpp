@@ -295,7 +295,7 @@ void VectorTemplate<T>::copySubVector(int i,const MyT& a)
 {
   Assert(this != &a);
   Assert(isValidIndex(i));
-  Assert(isValidIndex(i+a.n-1));
+  Assert(a.n==0 || isValidIndex(i+a.n-1));
 	gen_array_equal(getStart()+i*stride,stride, a.getStart(),a.stride, a.n);
 }
 
@@ -492,7 +492,7 @@ void VectorTemplate<T>::getSubVectorCopy(int i,MyT& a) const
 {
   Assert(&a != this);
   Assert(isValidIndex(i));
-  Assert(isValidIndex(i+a.n-1));
+  Assert(a.n==0 || isValidIndex(i+a.n-1));
   gen_array_equal(a.getStart(),a.stride, getStart()+stride*i,stride, a.n);
 }
 
