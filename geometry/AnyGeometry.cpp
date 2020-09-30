@@ -1154,7 +1154,9 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3& pt,const 
     }
   case TriangleMesh:
     {
-      int tri = ClosestPoint(TriangleMeshCollisionData(),pt,res.cp1);
+      const CollisionMesh& cm = TriangleMeshCollisionData();
+      int tri = ClosestPoint(cm,pt,res.cp1);
+      res.cp1 = cm.currentTransform * res.cp1;
       res.elem2 = tri;
       res.d = pt.distance(res.cp1)-margin;
       return res;
