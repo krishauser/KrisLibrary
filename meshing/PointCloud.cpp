@@ -673,14 +673,17 @@ void PointCloud3D::SetNormals(const vector<Vector3>& normals)
   if(nx < 0) {
     vector<Real> items(points.size());
     SetProperty("normal_x",items);
+    nx = (int)propertyNames.size()-1;
   }
   if(ny < 0) {
     vector<Real> items(points.size());
     SetProperty("normal_y",items);
+    ny = (int)propertyNames.size()-1;
   }
   if(nz < 0) {
     vector<Real> items(points.size());
     SetProperty("normal_z",items);
+    nz = (int)propertyNames.size()-1;
   }
   for(size_t i=0;i<properties.size();i++)
     normals[i].get(properties[i][nx],properties[i][ny],properties[i][nz]);
@@ -983,6 +986,8 @@ void PointCloud3D::SetProperty(const string& name,const vector<Real>& items)
   else {
     //add it
     propertyNames.push_back(name);
+    if(properties.empty())
+      properties.resize(points.size());
     for(size_t k=0;k<properties.size();k++) {
       Vector oldval = properties[k];
       properties[k].resize(propertyNames.size());
