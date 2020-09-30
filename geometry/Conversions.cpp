@@ -55,17 +55,38 @@ void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersi
 
 void MeshToPointCloud(const Meshing::TriMesh& mesh,Meshing::PointCloud3D& pc,Real maxDispersion,bool wantNormals)
 {
-	if(wantNormals) FatalError("Sampling normals not done yet");
 	pc.Clear();
 	pc.points = mesh.verts;
-	if(IsInf(maxDispersion)) return;
-
-	Real maxDispersion2 = Sqr(maxDispersion);
-	for(size_t i=0;i<mesh.tris.size();i++) {
-		Triangle3D t;
-		mesh.GetTriangle(i,t);
-		SubdivideAdd(t,pc,maxDispersion2);
+	vector<Vector3> normals;
+	if(wantNormals) {
+		normals.resize(mesh.verts.size());
+		std::fill(normals.begin(),normals.end(),Vector3(0.0));
+		for(size_t i=0;i<mesh.tris.size();i++) {
+			Vector3 n = mesh.TriangleNormal(i);
+			normals[mesh.tris[i].a] += n;
+			normals[mesh.tris[i].b] += n;
+			normals[mesh.tris[i].c] += n;
+		}
+		for(size_t i=0;i<normals.size();i++)
+			normals[i].inplaceNormalize();
 	}
+	if(!IsInf(maxDispersion)) {
+		Real maxDispersion2 = Sqr(maxDispersion);
+		for(size_t i=0;i<mesh.tris.size();i++) {
+			Triangle3D t;
+			mesh.GetTriangle(i,t);
+			size_t np = pc.points.size();
+			SubdivideAdd(t,pc,maxDispersion2);
+			if(wantNormals) {
+				Vector3 n = t.normal();
+				size_t np2 = pc.points.size();
+				for(size_t j=np;j<np2;j++)
+					normals.push_back(n);
+			}
+		}
+	}
+	if(wantNormals)
+		pc.SetNormals(normals);
 }
 
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& appearance,Real depthDiscontinuity)

@@ -336,7 +336,7 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
       Meshing::PointCloud3D pc;
       if (param == 0)
         param = Inf;
-      MeshToPointCloud(mesh.AsTriangleMesh(), pc, param);
+      MeshToPointCloud(mesh.AsTriangleMesh(), pc, param, true);
       res = AnyGeometry3D(pc);
       return true;
     }
@@ -423,7 +423,7 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
       if (param == 0)
         param = Inf;
       Meshing::PointCloud3D pc;
-      MeshToPointCloud(AsTriangleMesh(), pc, param);
+      MeshToPointCloud(AsTriangleMesh(), pc, param, true);
       res = AnyGeometry3D(pc);
       return true;
     }
@@ -479,7 +479,7 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
       AnyGeometry3D mesh;
       Convert(TriangleMesh, mesh, param);
       Meshing::PointCloud3D pc;
-      MeshToPointCloud(mesh.AsTriangleMesh(), pc);
+      MeshToPointCloud(mesh.AsTriangleMesh(), pc, true);
       res = AnyGeometry3D(pc);
       return true;
     }
