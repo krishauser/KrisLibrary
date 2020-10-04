@@ -58,6 +58,7 @@ bool GLRenderToImage::Setup(int w,int h)
       
     }
     if(!GLEW_EXT_framebuffer_object) {
+      LOG4CXX_WARN(KrisLibrary::logger(),"GLRenderToImage: GLEW finds that framebuffer objects not supported.");
       return false;
     }
   }
@@ -108,6 +109,7 @@ bool GLRenderToImage::Setup(int w,int h)
     color_tex = 0;
     depth_rb = 0;
     fb = 0;
+    LOG4CXX_WARN(KrisLibrary::logger(),"GLRenderToImage: framebuffer was not complete?");
     return false;
   }
   return true;
@@ -210,6 +212,47 @@ void GLRenderToImage::GetRGBA(Image& image)
     argb[3] = a;
   }
 }
+
+void GLRenderToImage::GetRGB(vector<unsigned char>& image)
+{
+  image.resize(3*width*height);
+  glBindTexture(GL_TEXTURE_2D, color_tex);
+  glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_UNSIGNED_BYTE,&image[0]);
+  //OpenGL images start in lower left, so flip vertically
+  int rowsize = 3*width;
+  int stride = 3*width;
+  vector<unsigned char> temp(rowsize);
+  for(int i=0;i<height/2;i++) {
+    int iflip = height-1-i;
+    memcpy(&temp[0],&image[i*stride],rowsize);
+    memcpy(&image[i*stride],&image[iflip*stride],rowsize);
+    memcpy(&image[iflip*stride],&temp[0],rowsize);
+  }
+}
+
+void GLRenderToImage::GetRGB(Image& image)
+{
+  image.initialize(width,height,Image::R8G8B8);
+  /*
+  vector<unsigned char> bytes;
+  GetRGB(bytes);
+  Assert(bytes.size() == image.num_bytes);
+  memcpy(image.data,&bytes[0],image.num_bytes);
+  */
+  glBindTexture(GL_TEXTURE_2D, color_tex);
+  glGetTexImage(GL_TEXTURE_2D,0,GL_RGB,GL_UNSIGNED_BYTE,image.data);
+  //OpenGL images start in lower left, so flip vertically
+  int rowsize = 3*width;
+  int stride = 3*width;
+  vector<unsigned char> temp(rowsize);
+  for(int i=0;i<height/2;i++) {
+    int iflip = height-1-i;
+    memcpy(&temp[0],&image.data[i*stride],rowsize);
+    memcpy(&image.data[i*stride],&image.data[iflip*stride],rowsize);
+    memcpy(&image.data[iflip*stride],&temp[0],rowsize);
+  }
+}
+
 
 void GLRenderToImage::GetZBuffer(vector<float>& image)
 {

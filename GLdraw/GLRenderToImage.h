@@ -46,8 +46,12 @@ public:
   void GetRGBA(std::vector<unsigned char>& image);
   ///pixels in matrix order, top left to bottom right
   void GetRGBA(std::vector<std::vector<unsigned int> >& image); 
-  ///converts to KrisLibrary Image
+  ///converts to KrisLibrary Image in A8R8G8B8 format
   void GetRGBA(Image& image); 
+  ///pixels in scan line order in RGB format, top left to bottom right
+  void GetRGB(std::vector<unsigned char>& image);
+  ///converts to KrisLibrary Image in R8G8B8 format
+  void GetRGB(Image& image); 
 
   ///scan line order, top left to bottom right
   void GetDepth(const Camera::Viewport& vp,std::vector<float>& image);
