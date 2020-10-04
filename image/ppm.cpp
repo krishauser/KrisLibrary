@@ -341,3 +341,21 @@ bool ImportImagePPM(const char* fn, Image& img)
   }
   return false;
 }
+
+bool ExportImagePPM(const char* fn, Image& img,bool binary)
+{
+  if(img.format == Image::R8G8B8) {
+    if(binary)
+      return WritePPM_RGB_Binary(img.data,img.w,img.h,fn);
+    else
+      return WritePPM_RGB_ASCII(img.data,img.w,img.h,fn);
+  }
+  else if(img.format == Image::A8) {
+    if(binary)
+      return WritePPM_Grayscale_Binary(img.data,img.w,img.h,fn);
+    else
+      return WritePPM_Grayscale_ASCII(img.data,img.w,img.h,fn);
+  }
+  LOG4CXX_ERROR(KrisLibrary::logger(),"ExportImagePPM: invalid image type, must be RGB8 or A8\n");
+  return false;
+}
