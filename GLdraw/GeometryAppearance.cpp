@@ -305,7 +305,7 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
       out.tris[validTriangles] = out.tris[i];
       validTriangles++;
     }
-    printf("CreaseMesh: dropping from %d to %d triangles\n",out.tris.size(),validTriangles);
+    //printf("CreaseMesh: dropping from %d to %d triangles\n",out.tris.size(),validTriangles);
     out.tris.resize(validTriangles);
   }
   else {
