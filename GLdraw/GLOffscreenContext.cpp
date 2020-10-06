@@ -12,6 +12,7 @@ using namespace GLDraw;
 //#include <GL/glxew.h>
 #include <GL/glx.h>
 
+#define OPENGL2_HACK 1
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
@@ -75,14 +76,6 @@ bool GLOffscreenContext::setup()
         None
     };
 
-    /*
-    int context_attribs[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-        None
-    };
-    */
-    
     dpy = XOpenDisplay(0);
     int fbcount = 0;
     GLXFBConfig* fbc = NULL;
@@ -108,31 +101,48 @@ bool GLOffscreenContext::setup()
         return false;
     }
 
-    /* create a context using glXCreateContextAttribsARB */
-    /*
-    if ( !( ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs)) ){
-        fprintf(stderr, "Failed to create opengl context\n");
-        XFree(fbc);
-        return false;
-    }
-    */
-    static int  sngBuf[] = {    GLX_RGBA,
-                GLX_RED_SIZE, 1,
-                GLX_GREEN_SIZE, 1,
-                GLX_BLUE_SIZE, 1,
-                GLX_DEPTH_SIZE, 12,
-                None };
-    XVisualInfo* vi;
-    if(!(vi = glXChooseVisual(dpy, DefaultScreen(dpy), sngBuf))) {
-        fprintf(stderr, "Failed to get visual info\n");
-        XFree(fbc);
-        return false;
-    }
-    if ( !( ctx = glXCreateContext(dpy, vi, 0, True)) ){
-        fprintf(stderr, "Failed to create opengl context\n");
-        XFree(fbc);
-        return false;
-    }
+    #if OPENGL2_HACK
+        /*
+        static int  sngBuf[] = {    GLX_RGBA,
+                    GLX_RED_SIZE, 1,
+                    GLX_GREEN_SIZE, 1,
+                    GLX_BLUE_SIZE, 1,
+                    GLX_DEPTH_SIZE, 12,
+                    None };
+        XVisualInfo* vi;
+        if(!(vi = glXChooseVisual(dpy, DefaultScreen(dpy), sngBuf))) {
+            fprintf(stderr, "Failed to get visual info\n");
+            XFree(fbc);
+            return false;
+        }
+        */
+        XVisualInfo *vi = glXGetVisualFromFBConfig( dpy, fbc[0] );
+        if ( !vi )
+        {
+            fprintf(stderr, "Failed to get visual info\n");
+            XFree(fbc);
+            return false;
+        }
+        if ( !( ctx = glXCreateContext(dpy, vi, 0, True)) ){
+            fprintf(stderr, "Failed to create opengl context\n");
+            XFree(fbc);
+            XFree( vi ); 
+            return false;
+        }
+        XFree( vi ); 
+    #else
+        int context_attribs[] = {
+            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+            GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+            None
+        };
+        /* create a context using glXCreateContextAttribsARB */
+        if ( !( ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs)) ){
+            fprintf(stderr, "Failed to create opengl context\n");
+            XFree(fbc);
+            return false;
+        }
+    #endif // OPENGL2_HACK
 
     /* create temporary pbuffer */
     int pbuffer_attribs[] = {
@@ -175,6 +185,8 @@ bool GLOffscreenContext::setup()
         }
     }
     */
+    glewInit();
+    printf("%p\n",glGenRenderbuffers);
     return true;
 }
 
@@ -200,6 +212,8 @@ bool GLOffscreenContext::makeCurrent()
 }
 
 #else
+
+#include "GLUTProgram.h"
 
 GLOffscreenContext::GLOffscreenContext()
 {

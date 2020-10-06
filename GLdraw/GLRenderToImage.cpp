@@ -23,6 +23,9 @@ using namespace GLDraw;
 
 #define DEBUG_TIMING 0
 
+//whether to use the EXT version or the ARB version
+static bool use_ext = false;
+
 GLRenderToImage::GLRenderToImage()
   :width(0),height(0),color_tex(0),fb(0),depth_rb(0)
 {}
@@ -31,8 +34,14 @@ GLRenderToImage::~GLRenderToImage()
 {
   if(color_tex) glDeleteTextures(1, &color_tex);
 #if HAVE_GLEW
-  if(depth_rb) glDeleteRenderbuffersEXT(1, &depth_rb);
-  if(fb) glDeleteFramebuffersEXT(1, &fb);
+  if(use_ext) {
+    if(depth_rb) glDeleteRenderbuffersEXT(1, &depth_rb);
+    if(fb) glDeleteFramebuffersEXT(1, &fb);
+  }
+  else {
+    if(depth_rb) glDeleteRenderbuffers(1, &depth_rb);
+    if(fb) glDeleteFramebuffers(1, &fb);
+  }
 #endif //HAVE_GLEW
   color_tex = 0;
   depth_rb = 0;
@@ -42,7 +51,7 @@ GLRenderToImage::~GLRenderToImage()
 bool GLRenderToImage::Setup(int w,int h)
 {
 #if HAVE_GLEW
-  if(!GLEW_EXT_framebuffer_object) {
+  if(!GLEW_ARB_framebuffer_object && !GLEW_EXT_framebuffer_object) {
     GLenum err = glewInit();
     if (err != GLEW_OK)
     {
@@ -57,10 +66,11 @@ bool GLRenderToImage::Setup(int w,int h)
       }
       
     }
-    if(!GLEW_EXT_framebuffer_object) {
+    if(!GLEW_ARB_framebuffer_object && !GLEW_EXT_framebuffer_object) {
       LOG4CXX_WARN(KrisLibrary::logger(),"GLRenderToImage: GLEW finds that framebuffer objects not supported.");
       return false;
     }
+    use_ext = !GLEW_ARB_framebuffer_object;
   }
   width = w;
   height = h;
@@ -76,25 +86,44 @@ bool GLRenderToImage::Setup(int w,int h)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
   }
   if(fb == 0) {
-    //-------------------------
-    glGenFramebuffersEXT(1, &fb);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
-    //Attach 2D texture to this FBO
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color_tex, 0);
+    if(use_ext) {
+      //-------------------------
+      glGenFramebuffersEXT(1, &fb);
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
+      //Attach 2D texture to this FBO
+      glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color_tex, 0);
+    }
+    else {
+      glGenFramebuffers(1, &fb);
+      glBindFramebuffer(GL_FRAMEBUFFER, fb);
+      //Attach 2D texture to this FBO
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
+    }
   }
   if(depth_rb == 0) {
-    //-------------------------
-    glGenRenderbuffersEXT(1, &depth_rb);
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth_rb);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, w, h);
-    //-------------------------
-    //Attach depth buffer to FBO
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth_rb);
+    if(use_ext) {
+      //-------------------------
+      glGenRenderbuffersEXT(1, &depth_rb);
+      glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth_rb);
+      glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, w, h);
+      //-------------------------
+      //Attach depth buffer to FBO
+      glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth_rb);
+    }
+    else {
+      glGenRenderbuffers(1, &depth_rb);
+      glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
+    }
   }
   //-------------------------
   //Does the GPU support current FBO configuration?
   GLenum status;
-  status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+  if(use_ext)
+    status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+  else
+    status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   switch(status)
   {
   case GL_FRAMEBUFFER_COMPLETE_EXT:
@@ -102,10 +131,18 @@ bool GLRenderToImage::Setup(int w,int h)
   default:
     //Delete resources
     glDeleteTextures(1, &color_tex);
-    glDeleteRenderbuffersEXT(1, &depth_rb);
-    //Bind 0, which means render to back buffer, as a result, fb is unbound
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
-    glDeleteFramebuffersEXT(1, &fb);
+    if(use_ext) {
+      glDeleteRenderbuffersEXT(1, &depth_rb);
+      //Bind 0, which means render to back buffer, as a result, fb is unbound
+      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
+      glDeleteFramebuffersEXT(1, &fb);
+    }
+    else {
+      glDeleteRenderbuffers(1, &depth_rb);
+      //Bind 0, which means render to back buffer, as a result, fb is unbound
+      glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+      glDeleteFramebuffers(1, &fb);
+    }
     color_tex = 0;
     depth_rb = 0;
     fb = 0;
@@ -131,7 +168,10 @@ void GLRenderToImage::Begin()
   if(!fb) return;
 #if HAVE_GLEW
   //and now you can render to GL_TEXTURE_2D
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
+  if(use_ext)
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb);
+  else
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
 }
@@ -139,7 +179,10 @@ void GLRenderToImage::Begin()
 void GLRenderToImage::End()
 {
 #if HAVE_GLEW
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  if(use_ext)
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  else
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #endif 
 }
 
@@ -260,10 +303,17 @@ void GLRenderToImage::GetZBuffer(vector<float>& image)
   #if DEBUG_TIMING
     Timer timer;
   #endif //DEBUG_TIMING
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb); 
+  if(use_ext)
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb); 
+  else
+    glBindFramebuffer(GL_FRAMEBUFFER, fb); 
   image.resize(width*height);
   glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, &image[0]);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
+  if(use_ext)
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
+  else
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+  
   #if DEBUG_TIMING
     printf("glReadPixels time %f\n",timer.ElapsedTime());
   #endif //DEBUG_TIMING
