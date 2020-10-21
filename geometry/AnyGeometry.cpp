@@ -781,6 +781,7 @@ AnyCollisionGeometry3D& AnyCollisionGeometry3D::operator =(const AnyCollisionGeo
   if(!geom.collisionData.empty()) {
     switch(type) {
     case Primitive:
+      break;
     case ImplicitSurface:
       {
         const CollisionImplicitSurface& cmesh = geom.ImplicitSurfaceCollisionData();
