@@ -979,6 +979,7 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
     {
     case Primitive:  // TODO: what happens here??? Is this function ever called?
     case ConvexHull:
+    break;
     case ImplicitSurface:
     {
       const CollisionImplicitSurface &cmesh = geom.ImplicitSurfaceCollisionData();
