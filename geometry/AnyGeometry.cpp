@@ -2929,9 +2929,12 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
   {
     const auto& surf = ImplicitSurfaceCollisionData();
     Real dist = ::RayCast(surf,r,margin);
-    if(distance) *distance = dist;
-    if(element) *element = PointIndex(surf,r.source+dist*r.direction);
-    break;
+    if(!IsInf(dist)) {
+      if(distance) *distance = dist;
+      if(element) *element = PointIndex(surf,r.source+dist*r.direction);
+      return true;
+    }
+    return false;
   }
   case TriangleMesh:
   {
