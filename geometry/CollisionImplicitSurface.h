@@ -67,6 +67,18 @@ bool Collides(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,Re
 ///Returns the distance and closest point to a CollisionPointCloud
 Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,int& closestPoint,Real upperBound=Inf);
 
+///Returns the distance to the closest point on the implicit surface defined at the given level set.
+///tmax will be returned if no collision is found.
+///
+///The algorithm marches along cells intersected by the ray until a zero-crossing is met (O(n))
+///where n is the resolution of the grid.
+Real RayCast(const Meshing::VolumeGrid& grid,const Ray3D& ray,Real levelSet=0,Real tmax=Inf);
+
+///Returns the distance to the closest point on the implicit surface defined at the given level set.
+///tmax will be returned if no collision is found.
+///
+///The algorithm uses the collision hierarchy (O(log n) where n is the resolution of the grid.
+Real RayCast(const CollisionImplicitSurface& s,const Ray3D& ray,Real levelSet=0,Real tmax=Inf);
 
 } //namespace Geometry
 

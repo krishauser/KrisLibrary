@@ -2926,8 +2926,13 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
     return false;
   }
   case ImplicitSurface:
-    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't ray-cast implicit surfaces yet");
+  {
+    const auto& surf = ImplicitSurfaceCollisionData();
+    Real dist = ::RayCast(surf,r,margin);
+    if(distance) *distance = dist;
+    if(element) *element = PointIndex(surf,r.source+dist*r.direction);
     break;
+  }
   case TriangleMesh:
   {
     Vector3 worldpt;
