@@ -70,9 +70,18 @@ class VolumeGridTemplate
   void GetCell(int i,int j,int k,AABB3D& cell) const;
   void GetCellCenter(int i,int j,int k,Vector3& center) const;
   Vector3 GetCellSize() const;
+  ///Note: does not clamp to valid cells
   void GetIndex(const Vector3& pt,int& i,int& j,int& k) const;
+  ///Note: does not clamp to valid cells
   void GetIndexAndParams(const Vector3& pt,IntTriple& index,Vector3& params) const;
+  ///Note: does not clamp to valid cells
   void GetIndexRange(const AABB3D& range,IntTriple& imin,IntTriple& imax) const;
+  ///Note: checks whether cell is valid, returns false if cell invalid
+  bool GetIndexChecked(const Vector3& pt,int& i,int& j,int& k) const;
+  ///Note: checks whether cell is valid, returns false if cell invalid
+  bool GetIndexAndParamsChecked(const Vector3& pt,IntTriple& index,Vector3& params) const;
+  ///Note: clamps to valid cells, returns false if no cells overlapped
+  bool GetIndexRangeClamped(const AABB3D& range,IntTriple& imin,IntTriple& imax) const;
   inline void GetCell(const IntTriple& index,AABB3D& cell) const { GetCell(index.a,index.b,index.c,cell); }
   inline void GetCenter(const IntTriple& index,Vector3& center) const { GetCellCenter(index.a,index.b,index.c,center); }
   inline void GetIndex(const Vector3& pt,IntTriple& index) const { GetIndex(pt,index.a,index.b,index.c); }

@@ -94,6 +94,45 @@ void VolumeGridTemplate<T>::GetIndexRange(const AABB3D& range,IntTriple& imin,In
 }
 
 template <class T>
+bool VolumeGridTemplate<T>::GetIndexChecked(const Vector3& pt,int& i,int& j,int& k) const
+{
+  GetIndex(pt,i,j,k);
+  if(i < 0 || i >= value.m) return false;
+  if(j < 0 || j >= value.n) return false;
+  if(k < 0 || k >= value.p) return false;
+  return true;
+}
+
+template <class T>
+bool VolumeGridTemplate<T>::GetIndexAndParamsChecked(const Vector3& pt,IntTriple& index,Vector3& params) const
+{
+  GetIndexAndParams(pt,index,params);
+  if(index.a < 0 || index.a >= value.m) return false;
+  if(index.b < 0 || index.b >= value.n) return false;
+  if(index.c < 0 || index.c >= value.p) return false;
+  return true;
+}
+
+template <class T>
+bool VolumeGridTemplate<T>::GetIndexRangeClamped(const AABB3D& range,IntTriple& imin,IntTriple& imax) const
+{
+  GetIndexRange(range,imin,imax);
+  if(imax.a < 0) imax.a = 0;
+  else if(imax.a >= value.m) return false;
+  if(imin.a >= value.m) imin.a = value.m-1;
+  else if(imin.a < 0) return false;
+  if(imax.b < 0) imax.b = 0;
+  else if(imax.b >= value.n) return false;
+  if(imin.b >= value.n) imin.b = value.n-1;
+  else if(imin.b < 0) return false;
+  if(imax.c < 0) imax.c = 0;
+  else if(imax.c >= value.p) return false;
+  if(imin.c >= value.p) imin.c = value.p-1;
+  else if(imin.c < 0) return false;
+  return true;
+}
+
+template <class T>
 T VolumeGridTemplate<T>::TrilinearInterpolate(const Vector3& pt) const
 {
   Real u=(pt.x - bb.bmin.x)/(bb.bmax.x-bb.bmin.x)*value.m;
@@ -267,21 +306,7 @@ template <class T>
 T VolumeGridTemplate<T>::Average(const AABB3D& range) const
 {
   IntTriple imin,imax;
-  GetIndexRange(range,imin,imax);
-  //check range
-  if(imax.a < 0 || imax.b < 0 || imax.c < 0) {
-    return 0;
-  }
-  if(imin.a >= value.m || imin.b >= value.n || imax.c >= value.p) {
-    return 0;
-  }
-  //limit range
-  if(imin.a < 0) imin.a=0;
-  if(imin.b < 0) imin.b=0;
-  if(imin.c < 0) imin.c=0;
-  if(imax.a >= value.m) imax.a=value.m-1;
-  if(imax.b >= value.n) imax.b=value.n-1;
-  if(imax.c >= value.p) imax.c=value.p-1;
+  if(!GetIndexRangeClamped(range,imin,imax)) return 0;
 
   bool ignoreX=(range.bmin.x==range.bmax.x),ignoreY=(range.bmin.y==range.bmax.y),ignoreZ=(range.bmin.z==range.bmax.z);
 
