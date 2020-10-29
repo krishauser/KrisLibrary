@@ -465,7 +465,7 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
   return mindist;
 }
 
-Real RayGridCellIntersect(const Ray3D& ray,const Meshing::VolumeGrid& grid,const IntTriple& c,Real levelSet,Real tmax,Real vtol=1e-3)
+Real RayGridCellIntersect(const Ray3D& ray,const Meshing::VolumeGrid& grid,const IntTriple& c,Real umin,Real umax,Real levelSet,Real vtol=1e-3)
 {
   Real v000 = grid.value(c.a,c.b,c.c);
   Real v001 = grid.value(c.a,c.b,c.c+1);
@@ -485,34 +485,37 @@ Real RayGridCellIntersect(const Ray3D& ray,const Meshing::VolumeGrid& grid,const
   if(v110 < levelSet) numIn++;
   if(v111 < levelSet) numIn++;
   if(numIn == 0) return -1;
-  AABB3D cell;
-  grid.GetCell(c,cell);
-  Real umin,umax;
-  if(!ray.intersects(cell,umin,umax)) //numerical error?
-    return -1;
   if(numIn == 8) //popped into interior?
     return umin;
-  if(umax > tmax) umax = tmax;
   //use secant method to find point at which levelset is intersected
   Real vmin = grid.TrilinearInterpolate(ray.source+umin*ray.direction);
   Real vmax = grid.TrilinearInterpolate(ray.source+umax*ray.direction);
   if(FuzzyEquals(vmin,levelSet,vtol)) return umin;
   if(FuzzyEquals(vmax,levelSet,vtol)) return umax;
   if((vmin < levelSet) == (vmax < levelSet)) return -1;
+  //printf("Beginning secant method at u in range [%f,%f], v in range [%f,%f]\n",umin,umax,vmin,vmax);
+  int numIters = 0;
   while(umax > umin + 1e-4) {
+    numIters += 1;
+    if(numIters > 1000) {
+      printf("RayGridCellIntersect: Uh... secant method taking forever?\n");
+      break;
+    }
     //v(s) = vmin + s*(vmax-vmin)
-    //v(s) = levelSet with s = (vmin - levelSet)/(vmax-vmin)
-    Real umid = umin + (vmin - levelSet) / (vmax-vmin)*(umax-umin);
+    //v(s) = levelSet with s = -(vmin - levelSet)/(vmax-vmin)
+    Real s = -(vmin - levelSet) / (vmax-vmin);
+    Real umid = umin + s*(umax-umin);
+    //printf("Level set at s=%f, umid = %f\n",s,umid);
     Assert(umid > umin && umid < umax);
     Real vmid = grid.TrilinearInterpolate(ray.source+umid*ray.direction);
     if(FuzzyEquals(vmid,levelSet,vtol)) return umid;
     if((vmin < levelSet) == (vmid < levelSet)) {
       vmin = vmid;
-      umin = vmid;
+      umin = umid;
     }
     else {
       vmax = vmid;
-      umax = vmid;
+      umax = umid;
     }
   }
   return -1;
@@ -523,13 +526,15 @@ Real RayGridCellIntersect(const Ray3D& ray,const Meshing::VolumeGrid& grid,const
 ///where n is the resolution of the grid.
 Real RayCast(const Meshing::VolumeGrid& grid,const Ray3D& ray,Real levelSet,Real tmax)
 {
-  Real umin,umax;
+  Real umin=0,umax=tmax;
   AABB3D center_bb = grid.bb;
   Vector3 celldims = grid.GetCellSize();
   //make correction for grid cell centers
   center_bb.bmin += celldims*0.5;
   center_bb.bmax -= celldims*0.5;
-  if(!ray.intersects(center_bb,umin,umax)) return tmax;
+  if(!ray.intersects(center_bb,umin,umax)) {
+    return tmax;
+  }
   if(umin >= tmax) return tmax;
   if(umax > tmax) umax = tmax;
   Segment3D overlap;
@@ -537,11 +542,13 @@ Real RayCast(const Meshing::VolumeGrid& grid,const Ray3D& ray,Real levelSet,Real
   overlap.b = ray.source + umax*ray.direction;
   if(grid.TrilinearInterpolate(overlap.a) < levelSet) return 0; //already inside
   vector<IntTriple> cells;
+  vector<Real> params;
   //grid values are interpreted at their centers
-  Meshing::GetSegmentCells(overlap,grid.value.m-1,grid.value.n-1,grid.value.p-1,center_bb,cells);
-  for(const auto& c:cells) {
+  Real segscale = (umax-umin);
+  Meshing::GetSegmentCells(overlap,grid.value.m-1,grid.value.n-1,grid.value.p-1,center_bb,cells,&params);
+  for(size_t i=0;i<cells.size();i++) {
     //determine whether there's a possibility with hitting a levelset value in the cell whose lower corner is value(c)
-    Real res = RayGridCellIntersect(ray,grid,c,levelSet,tmax);
+    Real res = RayGridCellIntersect(ray,grid,cells[i],umin+params[i]*segscale,umin+params[i+1]*segscale,levelSet);
     if(res >= 0) return res;
   }
   return tmax;
@@ -556,8 +563,11 @@ Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelS
   s.currentTransform.R.mulTranspose(rayWorld.direction,ray.direction);
   if(s.resolutionMap.empty())
     return RayCast(s.baseGrid,ray,levelSet,tmax);
+  return RayCast(s.baseGrid,ray,levelSet,tmax);
 
-  Real umin,umax;
+  //TODO: make this experimental code work
+
+  Real umin=0,umax=tmax;
   AABB3D center_bb = s.baseGrid.bb;
   Vector3 celldims = s.baseGrid.GetCellSize();
   //make correction for grid cell centers
@@ -583,6 +593,7 @@ Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelS
         if(smin.value(c) <= levelSet && smax.value(c) >= levelSet)
           lastLevelCells.push_back(c);
       }
+      printf("%d cells at top level (res %f)\n",lastLevelCells.size(),s.resolutionMap[level]);
     }
     else {
       const Meshing::VolumeGrid& snmin = s.minHierarchy[level+1];
@@ -611,6 +622,7 @@ Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelS
           temp.push_back(i.second);
       }
       lastLevelCells = temp;
+      printf("%d cells at level res %f\n",lastLevelCells.size(),s.resolutionMap[level]);
     }
   }
   const Meshing::VolumeGrid& snmin = s.minHierarchy[0];
@@ -622,7 +634,16 @@ Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelS
     for(int i=imin.a;i<=imax.a;i++) {
       for(int j=imin.b;j<=imax.b;j++) {
         for(int k=imin.c;k<=imax.c;k++) {
-          Real res = RayGridCellIntersect(ray,s.baseGrid,IntTriple(i,j,k),levelSet,tmax);
+          IntTriple c2(i,j,k);
+          AABB3D cell2;
+          s.baseGrid.GetCell(c2,cell2);
+          cell2.bmin += celldims*0.5;
+          cell2.bmax += celldims*0.5;
+          umin = 0;
+          umax = tmax;
+          if(!ray.intersects(cell2,umin,umax))
+            continue;
+          Real res = RayGridCellIntersect(ray,s.baseGrid,c2,umin,umax,levelSet,tmax);
           if(res >= 0) dmin = Min(dmin,res);
         }
       }
