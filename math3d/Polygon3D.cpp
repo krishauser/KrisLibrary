@@ -214,6 +214,7 @@ std::istream& operator >> (std::istream& in, Polygon3D& b)
 {
   size_t n;
   in>>n;
+  if(!in) return in;
   b.vertices.resize(n);
   for(size_t i=0;i<b.vertices.size();i++)
     in >> b.vertices[i];
