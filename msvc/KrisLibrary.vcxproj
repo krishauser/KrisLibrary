@@ -78,7 +78,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -92,10 +92,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -109,7 +109,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -123,10 +123,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -140,7 +140,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -156,10 +156,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -173,7 +173,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -189,10 +189,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -279,6 +279,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionPointCloud.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Conversions.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull3D.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Fitting.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Grid.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\GridSubdivision.cpp"  />
@@ -303,6 +304,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLFog.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLLight.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLMaterial.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLOffscreenContext.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLRenderToImage.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLScreenshot.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLTexture1D.cpp"  />
@@ -599,10 +601,59 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\BV.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\PQP.cpp"  />
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\TriDist.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdGraph.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdHACD.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdICHull.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdManifoldMesh.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMeshDecimator.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMicroAllocator.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdRaycastMesh.cpp"  />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\BP_C-api.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\BP_EndpointList.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\BP_Proxy.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\BP_Scene.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Accuracy.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Box.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Cone.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Convex.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Cylinder.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_LineSegment.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_PenDepth.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Point.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Polyhedron.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Polytope.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Sphere.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Triangle.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_TriEdge.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_BBoxTree.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Complex.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_C-api.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Encounter.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Object.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_RespTable.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Scene.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\geom.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\geom2.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\global.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\io.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\mem.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\merge.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\poly.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\poly2.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\qhull.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\qset.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\stat.obj" />
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\user.obj" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="D:/Klampt/Cpp/Dependencies/KrisLibrary/msvc/ZERO_CHECK.vcxproj">
       <Project>E8878ADB-04F1-3A47-BFF9-62A789BAB39E</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/Klampt/Cpp/Dependencies/KrisLibrary/msvc/geometry/solid3/src/qhull/qhull.vcxproj">
+      <Project>15EA9BC4-4CD5-34C8-804D-5F612C324832</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:/Klampt/Cpp/Dependencies/KrisLibrary/msvc/geometry/solid3/src/solid3.vcxproj">
+      <Project>307A52EC-09FD-3EF6-BA25-1E9EC838F738</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

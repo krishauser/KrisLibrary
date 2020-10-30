@@ -52,6 +52,9 @@
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Fitting.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -122,6 +125,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLMaterial.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLOffscreenContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLRenderToImage.cpp">
@@ -928,13 +934,150 @@
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\TriDist.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdHACD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdICHull.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdManifoldMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMeshDecimator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMicroAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdRaycastMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\BP_C-api.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\BP_EndpointList.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\BP_Proxy.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\BP_Scene.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Accuracy.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Box.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Cone.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Convex.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Cylinder.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_LineSegment.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_PenDepth.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Point.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Polyhedron.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Polytope.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Sphere.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Triangle.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_TriEdge.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_BBoxTree.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Complex.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_C-api.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Encounter.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Object.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_RespTable.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\solid3.dir\$(Configuration)\DT_Scene.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\geom.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\geom2.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\global.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\io.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\mem.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\merge.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\poly.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\poly2.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\qhull.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\qset.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\stat.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+    <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc64\geometry\solid3\src\qhull\qhull.dir\$(Configuration)\user.obj">
+      <Filter>Object Libraries</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{7687F66B-96FA-3DD6-B72E-D9DD53D74BC1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Object Files">
+      <UniqueIdentifier>{345B0ADD-6242-3681-B9A0-F10A11D35804}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Object Libraries">
+      <UniqueIdentifier>{0C1BD948-E23C-37CF-B6D4-711CC6E3DA9F}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
