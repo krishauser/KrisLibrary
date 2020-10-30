@@ -32,6 +32,9 @@ add_subdirectory(geometry/solid3)
 # message(CRITICAL "SOLID INCLUDE" ${SOLID_INCLUDE_DIR})
 include_directories(${SOLID_INCLUDE_DIR})
 include_directories(${SOLID3_INCLUDE_DIR})
+if(WIN32)
+  add_definitions(-DSOLID_STATIC)
+endif(WIN32)
 
 # KrisLibrary source subdirectories
 SET(SUBDIRS camera geometry GLdraw graph image math math3d meshing optimization planning robotics spline statistics structs utils)
