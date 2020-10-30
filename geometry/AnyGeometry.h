@@ -3,12 +3,13 @@
 
 #include <KrisLibrary/utils/AnyValue.h>
 #include "CollisionMesh.h"
+#include "ConvexHull3D.h"
 
 class TiXmlElement;
 
 //forward declarations
 namespace Meshing { template <class T> class VolumeGridTemplate; typedef VolumeGridTemplate<Real> VolumeGrid; class PointCloud3D; }
-namespace Geometry { class CollisionPointCloud; class CollisionImplicitSurface; }
+namespace Geometry { class CollisionPointCloud; class CollisionImplicitSurface; class ConvexHull3D; class CollisionConvexHull3D; }
 namespace Math3D { class GeometricPrimitive3D; }
 namespace GLDraw { class GeometryAppearance; }
 
@@ -44,14 +45,15 @@ class AnyGeometry3D
    * - ImplicitSurface: VolumeGrid
    * - Group: vector<AnyGeometry3D>
    */
-  enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface, Group };
+  enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface, ConvexHull, Group };
 
   AnyGeometry3D();
   AnyGeometry3D(const GeometricPrimitive3D& primitive);
+  AnyGeometry3D(const Meshing::VolumeGrid& grid);
   AnyGeometry3D(const Meshing::TriMesh& mesh);
   AnyGeometry3D(const Meshing::PointCloud3D& pc);
-  AnyGeometry3D(const Meshing::VolumeGrid& grid);
   AnyGeometry3D(const vector<AnyGeometry3D>& items);
+  AnyGeometry3D(const ConvexHull3D& cvxhull);
   AnyGeometry3D(const AnyGeometry3D& geom) = default;
   AnyGeometry3D(AnyGeometry3D&& geom) = default;
   AnyGeometry3D& operator = (const AnyGeometry3D& rhs) = default;
@@ -62,11 +64,13 @@ class AnyGeometry3D
   const Meshing::TriMesh& AsTriangleMesh() const;
   const Meshing::PointCloud3D& AsPointCloud() const;
   const Meshing::VolumeGrid& AsImplicitSurface() const;
+  const ConvexHull3D& AsConvexHull() const;
   const vector<AnyGeometry3D>& AsGroup() const;
   GeometricPrimitive3D& AsPrimitive();
   Meshing::TriMesh& AsTriangleMesh();
   Meshing::PointCloud3D& AsPointCloud();
   Meshing::VolumeGrid& AsImplicitSurface();
+  ConvexHull3D& AsConvexHull();
   vector<AnyGeometry3D>& AsGroup();
   GLDraw::GeometryAppearance* TriangleMeshAppearanceData();
   const GLDraw::GeometryAppearance* TriangleMeshAppearanceData() const;
@@ -114,6 +118,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc);
   AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid);
   AnyCollisionGeometry3D(const AnyGeometry3D& geom);
+  AnyCollisionGeometry3D(const ConvexHull3D& primitive);
   AnyCollisionGeometry3D(const vector<AnyGeometry3D>& group);
   AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom);
   AnyCollisionGeometry3D(AnyCollisionGeometry3D&& geom) = default;
@@ -134,11 +139,13 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
   const CollisionImplicitSurface& ImplicitSurfaceCollisionData() const;
+  const CollisionConvexHull3D& ConvexHullCollisionData() const;
   const vector<AnyCollisionGeometry3D>& GroupCollisionData() const;
   RigidTransform& PrimitiveCollisionData();
   CollisionMesh& TriangleMeshCollisionData();
   CollisionPointCloud& PointCloudCollisionData();
   CollisionImplicitSurface& ImplicitSurfaceCollisionData();
+  CollisionConvexHull3D& ConvexHullCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
   ///Performs a type conversion, also copying the active transform.  May be a bit faster than
   ///AnyGeometry3D.Convert for some conversions (TriangleMesh->VolumeGrid, specifically)
@@ -165,6 +172,9 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///modify the geometry using Transform(), ReinitCollisions() should be
   ///called.
   void SetTransform(const RigidTransform& T);
+  //Computes the furthest point on the geometry in the direction dir
+  //TODO: is this useful to implement outside of ConvexHull types?
+  // Vector3 FindSupport(const Vector3& dir);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);

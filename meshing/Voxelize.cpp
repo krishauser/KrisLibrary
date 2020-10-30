@@ -211,7 +211,7 @@ void GetTriangleBuckets(const TriMesh& m,const AABB3D& bb,Array3D<list<int> >& t
   }
 }
 
-void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells)
+void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells,vector<Real>* params)
 {
   cells.resize(0);
   Vector3 d=s.b-s.a;
@@ -227,6 +227,7 @@ void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells)
   Real param=0;  //goes from 0 to 1
   while(param < 1) {
     cells.push_back(i);
+    if(params) params->push_back(param);
     //see which cell face is hit next
     int closest=0;  //1=+x,-1=-x,2=+y,-2=-y,3=+z,-3=-z
     param=Inf;
@@ -272,9 +273,10 @@ void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells)
     case -3: i.c--; cellCorner.z-=1.0; break;
     }
   }
+  if(params) params->push_back(1);
 }
 
-void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vector<IntTriple>& cells)
+void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vector<IntTriple>& cells,vector<Real>* params)
 {
   cells.resize(0);
 
@@ -310,6 +312,7 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
   Real param=tmin;
   while(param < tmax) {
     cells.push_back(i);
+    if(params) params->push_back(param);
     //see which cell face is hit next
     int closest=0;  //1=+x,-1=-x,2=+y,-2=-y,3=+z,-3=-z
     param=Inf;
@@ -358,6 +361,7 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
     if(i.b < 0 || i.b >= n) break;
     if(i.c < 0 || i.c >= p) break;
   }
+  if(params) params->push_back(tmax);
 }
 
 

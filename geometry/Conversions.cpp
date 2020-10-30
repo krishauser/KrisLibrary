@@ -1,6 +1,7 @@
 #include <KrisLibrary/Logger.h>
 #include "Conversions.h"
 #include "CollisionMesh.h"
+#include "ConvexHull3D.h"
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
 #include <KrisLibrary/meshing/VolumeGrid.h>
 #include <KrisLibrary/meshing/PointCloud.h>
@@ -9,7 +10,14 @@
 #include <KrisLibrary/meshing/Voxelize.h>
 #include <KrisLibrary/math3d/random.h>
 #include <KrisLibrary/math3d/basis.h>
+#include <KrisLibrary/Logger.h>
 #include <KrisLibrary/Timer.h>
+
+DECLARE_LOGGER(Geometry)
+
+#include "SOLID.h"
+#include <hacdHACD.h>
+
 
 namespace Geometry {
 	
@@ -47,17 +55,38 @@ void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersi
 
 void MeshToPointCloud(const Meshing::TriMesh& mesh,Meshing::PointCloud3D& pc,Real maxDispersion,bool wantNormals)
 {
-	if(wantNormals) FatalError("Sampling normals not done yet");
 	pc.Clear();
 	pc.points = mesh.verts;
-	if(IsInf(maxDispersion)) return;
-
-	Real maxDispersion2 = Sqr(maxDispersion);
-	for(size_t i=0;i<mesh.tris.size();i++) {
-		Triangle3D t;
-		mesh.GetTriangle(i,t);
-		SubdivideAdd(t,pc,maxDispersion2);
+	vector<Vector3> normals;
+	if(wantNormals) {
+		normals.resize(mesh.verts.size());
+		std::fill(normals.begin(),normals.end(),Vector3(0.0));
+		for(size_t i=0;i<mesh.tris.size();i++) {
+			Vector3 n = mesh.TriangleNormal(i);
+			normals[mesh.tris[i].a] += n;
+			normals[mesh.tris[i].b] += n;
+			normals[mesh.tris[i].c] += n;
+		}
+		for(size_t i=0;i<normals.size();i++)
+			normals[i].inplaceNormalize();
 	}
+	if(!IsInf(maxDispersion)) {
+		Real maxDispersion2 = Sqr(maxDispersion);
+		for(size_t i=0;i<mesh.tris.size();i++) {
+			Triangle3D t;
+			mesh.GetTriangle(i,t);
+			size_t np = pc.points.size();
+			SubdivideAdd(t,pc,maxDispersion2);
+			if(wantNormals) {
+				Vector3 n = t.normal();
+				size_t np2 = pc.points.size();
+				for(size_t j=np;j<np2;j++)
+					normals.push_back(n);
+			}
+		}
+	}
+	if(wantNormals)
+		pc.SetNormals(normals);
 }
 
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& appearance,Real depthDiscontinuity)
@@ -456,6 +485,202 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
 	center_bb.bmin += celldims*0.5;
 	center_bb.bmax -= celldims*0.5;
     MarchingCubes(grid.value,levelSet,center_bb,mesh);
+}
+
+void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.SetPoints(mesh.verts); }
+
+void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) { ch.SetPoints(pc.points); }
+
+void _HACD_CallBack(const char * msg, double progress, double concavity, size_t nVertices)
+{
+    LOG4CXX_INFO(KrisLibrary::logger(),msg);
+}
+
+void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Real concavity)
+{
+    if(concavity <= 0) {
+        MeshToConvexHull(mesh,ch);
+        return;
+    }
+  int minClusters = 1;  // so I allow conversion directly from convex objects
+//  bool invert = false;
+  bool addExtraDistPoints = true;
+  bool addFacesPoints = true;
+  float ccConnectDist = 30;
+  int targetNTrianglesDecimatedMesh = 3000;
+
+  vector<HACD::Vec3<Real> > points;
+  vector<HACD::Vec3<long> > triangles;
+  // convert mesh into points and triangles
+  int n_point = mesh.verts.size();
+  points.resize(n_point);
+  for (size_t i=0; i < points.size(); ++i) {
+    points[i].X() = mesh.verts[i].x;
+    points[i].Y() = mesh.verts[i].y;
+    points[i].Z() = mesh.verts[i].z;
+  }
+  triangles.resize(mesh.tris.size());
+  for (size_t i=0; i < triangles.size(); ++i) {
+    triangles[i][0] = mesh.tris[i].a;
+    triangles[i][1] = mesh.tris[i].b;
+    triangles[i][2] = mesh.tris[i].c;
+  }
+
+  HACD::HeapManager * heapManager = HACD::createHeapManager(65536*(1000));
+
+  HACD::HACD * const myHACD = HACD::CreateHACD(heapManager);
+  myHACD->SetPoints(&points[0]);
+  myHACD->SetNPoints(points.size());
+  myHACD->SetTriangles(&triangles[0]);
+  myHACD->SetNTriangles(triangles.size());
+  myHACD->SetCompacityWeight(0.0001);
+  myHACD->SetVolumeWeight(0.0);
+  myHACD->SetConnectDist(ccConnectDist);               // if two connected components are seperated by distance < ccConnectDist
+                                                      // then create a virtual edge between them so the can be merged during
+                                                      // the simplification process
+
+  myHACD->SetNClusters(minClusters);                     // minimum number of clusters
+  myHACD->SetNVerticesPerCH(100);                      // max of 100 vertices per convex-hull
+  myHACD->SetConcavity(concavity);                     // maximum concavity
+  myHACD->SetSmallClusterThreshold(0.25);              // threshold to detect small clusters
+  myHACD->SetNTargetTrianglesDecimatedMesh(targetNTrianglesDecimatedMesh); // # triangles in the decimated mesh
+  myHACD->SetCallBack(&_HACD_CallBack);
+  myHACD->SetAddExtraDistPoints(addExtraDistPoints);
+  myHACD->SetAddFacesPoints(addFacesPoints);
+
+  myHACD->Compute();
+  int nClusters = myHACD->GetNClusters();
+
+  auto get_hull_i = [myHACD](int i) {
+    size_t nPoints = myHACD->GetNPointsCH(i);
+    size_t nTriangles = myHACD->GetNTrianglesCH(i);
+    vector <HACD::Vec3<Real> > hullpoints(nPoints);
+    vector <HACD::Vec3<long> > hulltriangles(nTriangles);
+    myHACD->GetCH(i, &hullpoints[0], &hulltriangles[0]);
+    ConvexHull3D hull;
+    vector<Vector3> points;
+    for(size_t j = 0; j < nPoints; j++) {
+      Vector3 pnt(hullpoints[j].X(), hullpoints[j].Y(), hullpoints[j].Z());
+      points.push_back(pnt);
+    }
+    hull.SetPoints(points);
+    return hull;
+  };
+
+  // we use hull if only one cluster exists
+  if(nClusters == 1) {
+    size_t nPoints = myHACD->GetNPointsCH(0);
+    size_t nTriangles = myHACD->GetNTrianglesCH(0);
+    vector <HACD::Vec3<Real> > hullpoints(nPoints);
+    vector <HACD::Vec3<long> > hulltriangles(nTriangles);
+    myHACD->GetCH(0, &hullpoints[0], &hulltriangles[0]);
+    // I construct a ConvexHull using hullpoints
+    ch = get_hull_i(0);
+  }
+  else{
+    std::vector<ConvexHull3D> grp_hulls;
+    for (int i=0; i < nClusters; ++i) {
+      grp_hulls.push_back(get_hull_i(i));
+    }
+    //ch.type = ConvexHull3D::Composite;
+    ch.data = grp_hulls;
+  }
+  HACD::DestroyHACD(myHACD);
+  HACD::releaseHeapManager(heapManager);
+}
+
+void AppendPoints(const ConvexHull3D& ch,vector<Vector3>& points)
+{
+	if(ch.type==ConvexHull3D::Polytope) {
+		const auto& pts = ch.AsPolytope();
+		for(size_t i=0;i<pts.size();i+=3) {
+			points.push_back(Vector3(pts[i],pts[i+1],pts[i+2]));
+		}
+	}
+	else if(ch.type == ConvexHull3D::Point)
+		points.push_back(ch.AsPoint());
+	else if(ch.type == ConvexHull3D::Trans) {
+		const auto& data = ch.AsTrans();
+		vector<Vector3> temp;
+		AppendPoints(data.first,temp);
+		for(const auto& p:temp) {
+			points.push_back(data.second*p);
+		}
+	}
+	else if(ch.type == ConvexHull3D::Hull) {
+		const auto& data = ch.AsHull();
+		AppendPoints(data.first,points);
+		AppendPoints(data.second,points);
+	}
+	else {
+		FatalError("Can't do that type of ConvexHull3D yet");
+	}
+}
+
+void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh)
+{
+	vector<Vector3> points;
+	vector<vector<int> > facets;
+	if(ch.type == ConvexHull3D::Point) {
+		mesh.verts.resize(1);
+		mesh.tris.resize(0);
+		mesh.verts[0] = ch.AsPoint();
+		return;
+	}
+	else if(ch.type == ConvexHull3D::Trans) {
+		const auto& data = ch.AsTrans();
+		ConvexHullToMesh(data.first,mesh);
+		mesh.Transform(data.second);
+		return;
+	}
+	else {
+		AppendPoints(ch,points);
+	}
+	ConvexHull3D_Qhull(points,facets);
+	/*
+	mesh.verts = points;
+	for(const auto& f:facets) {
+		for(size_t i=1;i+1<f.size();i++)
+			mesh.tris.push_back(IntTriple(f[0],f[i],f[i+1]));
+	}
+	return;
+	*/
+	map<int,int> vertex_map;
+	for(const auto& f:facets) {
+		//printf("Facet: ");
+		for(auto i:f) {
+			//printf("%d ",i);
+			assert(i >= 0 && i < (int)points.size());
+			if(vertex_map.count(i) == 0) {
+				int cnt = (int)vertex_map.size();
+				vertex_map[i] = cnt;
+			}
+		}
+		//printf("\n");
+	}
+	/*
+	printf("ConvexHullToMesh: reducing from %d to %d vertices\n",points.size(),vertex_map.size());
+	for(auto i:vertex_map) {
+		printf("  %d -> %d\n",i.first,i.second);
+	}
+	*/
+	mesh.verts.resize(vertex_map.size());
+	mesh.tris.resize(0);
+	for(auto i:vertex_map) {
+		assert(i.first >= 0 && i.first < (int)points.size());
+		assert(i.second >= 0 && i.second < (int)vertex_map.size());
+		mesh.verts[i.second] = points[i.first];
+	}
+	assert(mesh.verts.size() == vertex_map.size());
+	for(const auto& f:facets) {
+		for(size_t i=1;i+1<f.size();i++)
+			mesh.tris.push_back(IntTriple(vertex_map[f[0]],vertex_map[f[i+1]],vertex_map[f[i]]));
+	}
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		assert(mesh.tris[i].a >= 0 && mesh.tris[i].a < (int)mesh.verts.size());
+		assert(mesh.tris[i].b >= 0 && mesh.tris[i].b < (int)mesh.verts.size());
+		assert(mesh.tris[i].c >= 0 && mesh.tris[i].c < (int)mesh.verts.size());
+	}
 }
 
 } //namespace Geometry

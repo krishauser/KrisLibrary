@@ -228,7 +228,7 @@ void VertexNormals(const Meshing::TriMesh& mesh,vector<Vector3>& normals)
   }
 }
 
-void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real creaseRads)
+void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real creaseRads,bool dropDegenerate=true)
 {
   if(in.incidentTris.empty())
     in.CalcIncidentTris();
@@ -292,19 +292,29 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
       out.verts.push_back(in.verts[i]);
     }
   }
-  size_t validTriangles = 0;
-  for(size_t i=0;i<out.tris.size();i++) {
-    const IntTriple& t = out.tris[i];
-    if(t.a < 0 || t.b < 0 || t.c < 0) {
-      const IntTriple& tin = in.tris[i];
-      printf("CreaseMesh: Invalid triangle %d %d %d, input triangle %d %d %d\n",t.a,t.b,t.c,tin.a,tin.b,tin.c);
-      continue;
+  if(dropDegenerate) {
+    size_t validTriangles = 0;
+    for(size_t i=0;i<out.tris.size();i++) {
+      const IntTriple& t = out.tris[i];
+      if(t.a < 0 || t.b < 0 || t.c < 0) {
+        const IntTriple& tin = in.tris[i];
+        printf("CreaseMesh: Invalid triangle %d %d %d, input triangle %d %d %d\n",t.a,t.b,t.c,tin.a,tin.b,tin.c);
+        continue;
+      }
+      //Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
+      out.tris[validTriangles] = out.tris[i];
+      validTriangles++;
     }
-    //Assert(t.a >= 0 && t.b >= 0 && t.c >= 0);
-    out.tris[validTriangles] = out.tris[i];
-    validTriangles++;
+    //printf("CreaseMesh: dropping from %d to %d triangles\n",out.tris.size(),validTriangles);
+    out.tris.resize(validTriangles);
   }
-  out.tris.resize(validTriangles);
+  else {
+    for(size_t i=0;i<out.tris.size();i++) {
+      IntTriple& t = out.tris[i];
+      if(t.a < 0 || t.b < 0 || t.c < 0)
+        t.a = t.b = t.c = 0;
+    }
+  }
 }
 
 
@@ -398,6 +408,9 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
   else if(geom->type == AnyGeometry3D::PointCloud) {
     Set(*geom);
   }
+  else if(geom->type == AnyGeometry3D::ConvexHull) {
+    Set(*geom);
+  }
   else if(geom->type == AnyGeometry3D::Group) {
     if(!_geom.CollisionDataInitialized()) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
@@ -470,7 +483,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       }
     }
     if(pc.GetProperty("r",rgb)) {
-      //this is a weird opacity in UINT byte format
       if(!vertexColors.empty()) 
         //already assigned color?
         LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has both r channel and either rgb or rgba channel");
@@ -479,7 +491,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
         vertexColors[i].rgba[0] = rgb[i];
     }
     if(pc.GetProperty("g",rgb)) {
-      //this is a weird opacity in UINT byte format
       if(vertexColors.empty()) {
         //already assigned color?
         LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has g channel but not r channel?");
@@ -490,7 +501,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       }
     }
     if(pc.GetProperty("b",rgb)) {
-      //this is a weird opacity in UINT byte format
       if(vertexColors.empty()) {
         //already assigned color?
         LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has a channel but not r channel?");
@@ -544,6 +554,12 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       PointCloudToMesh(pc,*tempMesh,0.02);
     }
   }
+  else if(geom->type == AnyGeometry3D::ConvexHull) {
+    const Geometry::ConvexHull3D* g = &geom->AsConvexHull();
+    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
+    ConvexHullToMesh(*g,*tempMesh);
+    drawFaces = true;
+  }
   else if(geom->type == AnyGeometry3D::Group) {
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
     subAppearances.resize(subgeoms.size());
@@ -596,7 +612,7 @@ void GeometryAppearance::DrawGL(Element e)
     FatalError("Invalid Element specified");
   if(doDrawVertices) {   
     const vector<Vector3>* verts = NULL;  
-    if(geom->type == AnyGeometry3D::ImplicitSurface) 
+    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::ConvexHull) 
       verts = &tempMesh->verts;
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
       verts = &geom->AsTriangleMesh().verts;
@@ -610,6 +626,7 @@ void GeometryAppearance::DrawGL(Element e)
         if(!vertexColors.empty() && vertexColors.size() != verts->size())
                   LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size");
         if(vertexColors.size()==verts->size()) {
+          glDisable(GL_LIGHTING);
           glBegin(GL_POINTS);
           for(size_t i=0;i<verts->size();i++) {
             const Vector3& v=(*verts)[i];
@@ -617,6 +634,7 @@ void GeometryAppearance::DrawGL(Element e)
             glVertex3f(v.x,v.y,v.z);
           }
           glEnd();
+          glEnable(GL_LIGHTING);
         }
         else {
           glBegin(GL_POINTS);
@@ -721,9 +739,7 @@ void GeometryAppearance::DrawGL(Element e)
     if(!faceDisplayList) {
       faceDisplayList.beginCompile();
       const Meshing::TriMesh* trimesh = NULL;
-      if(geom->type == AnyGeometry3D::ImplicitSurface) 
-        trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::PointCloud) 
+      if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
         trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::TriangleMesh) 
         trimesh = &geom->AsTriangleMesh();
@@ -737,21 +753,26 @@ void GeometryAppearance::DrawGL(Element e)
         Meshing::TriMesh creaseMesh;
         vector<Vector3> vertexNormals;
 
-        if(creaseAngle > 0 || silhouetteRadius > 0) {
+        if(vertexColors.size() != trimesh->verts.size() && (creaseAngle > 0 || silhouetteRadius > 0)) {
           Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
           tempMesh2.reset(weldMesh);
           weldMesh->verts = trimesh->verts;
           weldMesh->tris = trimesh->tris;
-          Meshing::MergeVertices(*weldMesh,1e-5);
+          bool drop = faceColors.empty();
+          Meshing::MergeVertices(*weldMesh,1e-5,drop);
           if(creaseAngle > 0) {
-            CreaseMesh(*weldMesh,creaseMesh,creaseAngle);
-            trimesh = &creaseMesh;
+            CreaseMesh(*weldMesh,creaseMesh,creaseAngle,drop);
             VertexNormals(creaseMesh,vertexNormals);
+            if(!faceColors.empty())
+              assert(trimesh->tris.size() == creaseMesh.tris.size());
+            trimesh = &creaseMesh;
           }
         }
 
         if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
           LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, texcoords wrong size: "<<(int)texcoords.size()<<" vs "<<(int)trimesh->verts.size());
+        if(!faceColors.empty() && faceColors.size()!=trimesh->tris.size())
+          LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, faceColors wrong size: "<<(int)faceColors.size()<<" vs "<<(int)trimesh->tris.size());
         if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
           if(vertexColors.size() != trimesh->verts.size()) {
             //flat shaded
@@ -857,6 +878,7 @@ void GeometryAppearance::DrawGL(Element e)
           else {
             //vertex colors given!
             glDisable(GL_LIGHTING);
+            glShadeModel(GL_SMOOTH);
             glBegin(GL_TRIANGLES);
             for(size_t i=0;i<trimesh->tris.size();i++) {
               const IntTriple&t=trimesh->tris[i];
@@ -874,9 +896,14 @@ void GeometryAppearance::DrawGL(Element e)
             }
             glEnd();
             glEnable(GL_LIGHTING);
+            glShadeModel(GL_FLAT);
           }
         }
         else {
+          bool useFaceColors = (faceColors.size()==trimesh->tris.size());
+          bool useTexCoords = (texcoords.size()==trimesh->verts.size());
+          if(useFaceColors)
+            glDisable(GL_LIGHTING);
           glBegin(GL_TRIANGLES);
           for(size_t i=0;i<trimesh->tris.size();i++) {
             const IntTriple&t=trimesh->tris[i];
@@ -884,10 +911,10 @@ void GeometryAppearance::DrawGL(Element e)
             const Vector3& b=trimesh->verts[t.b];
             const Vector3& c=trimesh->verts[t.c];
             Vector3 n = trimesh->TriangleNormal(i);
-            if(faceColors.size()==trimesh->tris.size())
+            if(useFaceColors)
               faceColors[i].setCurrentGL();
             glNormal3f(n.x,n.y,n.z);
-            if(texcoords.size()==trimesh->verts.size()) {
+            if(useTexCoords) {
               glTexCoord2f(texcoords[t.a].x,texcoords[t.a].y);
               glVertex3f(a.x,a.y,a.z);
               glTexCoord2f(texcoords[t.b].x,texcoords[t.b].y);
@@ -902,6 +929,8 @@ void GeometryAppearance::DrawGL(Element e)
             }
           }
           glEnd();
+          if(useFaceColors)
+            glEnable(GL_LIGHTING);
         }
       }
       else if(geom->type == AnyGeometry3D::Primitive) {
@@ -930,14 +959,12 @@ void GeometryAppearance::DrawGL(Element e)
 
   if(doDrawEdges) {
     const Meshing::TriMesh* trimesh = NULL;
-    if(geom->type == AnyGeometry3D::ImplicitSurface) 
-      trimesh = tempMesh.get();
-    else if(geom->type == AnyGeometry3D::PointCloud) 
+    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
       trimesh = tempMesh.get();
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
       trimesh = &geom->AsTriangleMesh();
     else if(geom->type == AnyGeometry3D::Primitive) 
-      ;
+      ; //TODO: draw edges of primitives? May be useful for points and rays
     if(trimesh) {
       if(!edgeDisplayList) {
         edgeDisplayList.beginCompile();

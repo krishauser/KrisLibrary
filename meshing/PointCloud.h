@@ -15,9 +15,10 @@ using namespace std;
 
 /** @brief A 3D point cloud class.
  *
- * Points may have optional associated floating point properties
- * like ID, color, normal, etc.  These are named in propertyNames and
- * each property is an entry of a property vector attached to each point.
+ * Points may have optional associated floating point properties like ID,
+ * color, normal, etc.  These are named in propertyNames and each element of
+ * the properties vector is a Vector of length propertyNames.size().  A user
+ * needs to manually maintain properties.size()==points.size().
  *
  * The point cloud itself may also have associated settings, as given by
  * the settings map. Standard properties include:
@@ -88,8 +89,21 @@ class PointCloud3D
   void SetViewpoint(const RigidTransform& T);
   int PropertyIndex(const string& name) const;
   bool HasProperty(const string& name) const { return PropertyIndex(name) >= 0; }
+  /** @brief Returns a vector giving all of the points' values of the given property.
+   * 
+   * If the property doesn't exist, returns false.
+   *
+   * Result has length points.size().
+   */
   bool GetProperty(const string& name,vector<Real>& items) const;
-  void SetProperty(const string& name,const vector<Real>& items);
+  /** @brief Sets property from a vector giving all of the points' values of the given property.
+   *
+   * If the property doesn't exist, then it will be added.  The index of the given property is returned.
+   *
+   * items must have size points.size().
+   */
+  int SetProperty(const string& name,const vector<Real>& items);
+  ///Removes a property and its channel.  Relatively expensive (O(nm)).
   void RemoveProperty(const string& name);
   ///Extracts all points within the bounding box [bmin,bmax]
   void GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud);

@@ -16,14 +16,20 @@ namespace Meshing {
 /** @ingroup Meshing
  * @brief Returns a list of cells that the segment overlaps, given
  * an infinite unit grid.
+ *
+ * If params is not null, the segment parameters that indicate the
+ * beginnings / endings of each overlap are output in params.
  */
-void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells);
+void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells,vector<Real>* params=NULL);
 
 /** @ingroup Meshing
  * @brief Returns a list of cells that the segment overlaps, given
  * a grid of size m,n,p over range bb.
+ *
+ * If params is not null, the segment parameters that indicate the
+ * beginnings / endings of each overlap are output in params.
  */
-void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vector<IntTriple>& cells);
+void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vector<IntTriple>& cells,vector<Real>* params=NULL);
 
 /** @ingroup Meshing
  * @brief Returns a list of cells that the triangle overlaps, given

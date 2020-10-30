@@ -26,6 +26,16 @@ INCLUDE_DIRECTORIES(${INCLUDE_DIRS})
 
 LINK_DIRECTORIES(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
+add_subdirectory(geometry/HACD_Lib)
+include_directories(${HACD_LIB_INCLUDE})
+add_subdirectory(geometry/solid3)
+# message(CRITICAL "SOLID INCLUDE" ${SOLID_INCLUDE_DIR})
+include_directories(${SOLID_INCLUDE_DIR})
+include_directories(${SOLID3_INCLUDE_DIR})
+if(WIN32)
+  add_definitions(-DSOLID_STATIC)
+endif(WIN32)
+
 # KrisLibrary source subdirectories
 SET(SUBDIRS camera geometry GLdraw graph image math math3d meshing optimization planning robotics spline statistics structs utils)
 
@@ -51,9 +61,9 @@ IF(WIN32)
 ENDIF(WIN32)
 
 #add all compilation files to the library
-ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS})
-
-
+# message(critical "HACD SRC FILES" ${HACD_SRC_FILES})
+# message(critical "SOLID SRC FILES" ${SOLID3_SRC_FILES})
+ADD_LIBRARY( KrisLibrary STATIC ${KrisLibrary_SRCS} ${HACD_SRC_FILES} $<TARGET_OBJECTS:solid3> $<TARGET_OBJECTS:qhull>)
 
 
 #Configure isinf / isnan etc using the CheckInfNan script
@@ -113,6 +123,8 @@ add_custom_target(uninstall
 #install targets
 install(TARGETS KrisLibrary
   ARCHIVE
+  DESTINATION lib
+  LIBRARY
   DESTINATION lib
   COMPONENT libraries)
 file(GLOB KrisLibrary_HDRS  ${PROJECT_SOURCE_DIR}/*.h )

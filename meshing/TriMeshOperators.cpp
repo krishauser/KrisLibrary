@@ -197,7 +197,7 @@ struct Vector3Hash
   Real scale;
 };
 
-void MergeVertices(TriMesh& mesh,Real tolerance=0)
+void MergeVertices(TriMesh& mesh,Real tolerance,bool dropDegenerate)
 {
   vector<Vector3> newpts;
   vector<int> newmap(mesh.verts.size(),-1);
@@ -242,7 +242,7 @@ void MergeVertices(TriMesh& mesh,Real tolerance=0)
     Assert(newtri.a >= 0 && newtri.a < (int)newpts.size());
     Assert(newtri.b >= 0 && newtri.b < (int)newpts.size());
     Assert(newtri.c >= 0 && newtri.c < (int)newpts.size());
-    if(newtri.a == newtri.b || newtri.b == newtri.c || newtri.c == newtri.a) {
+    if(dropDegenerate && (newtri.a == newtri.b || newtri.b == newtri.c || newtri.c == newtri.a)) {
       //degenerate
     }
     else {
@@ -252,7 +252,8 @@ void MergeVertices(TriMesh& mesh,Real tolerance=0)
   //LOG4CXX_INFO(KrisLibrary::logger(),"Vertex merging reduced "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris to "<<newpts.size()<<" verts and "<<newtris.size());
   swap(mesh.verts,newpts);
   swap(mesh.tris,newtris);
-  Assert(mesh.IsValid());
+  if(dropDegenerate)
+    Assert(mesh.IsValid());
 }
 
 

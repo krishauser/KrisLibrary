@@ -669,22 +669,21 @@ bool PointCloud3D::GetNormals(vector<Vector3>& normals) const
 
 void PointCloud3D::SetNormals(const vector<Vector3>& normals)
 {
+  Assert(normals.size() == points.size());
   int nx=PropertyIndex("normal_x"),ny=PropertyIndex("normal_y"),nz=PropertyIndex("normal_z");
   if(nx < 0) {
     vector<Real> items(points.size());
-    SetProperty("normal_x",items);
-    nx = (int)propertyNames.size()-1;
+    nx = SetProperty("normal_x",items);
   }
   if(ny < 0) {
     vector<Real> items(points.size());
-    SetProperty("normal_y",items);
-    ny = (int)propertyNames.size()-1;
+    ny = SetProperty("normal_y",items);
   }
   if(nz < 0) {
     vector<Real> items(points.size());
-    SetProperty("normal_z",items);
-    nz = (int)propertyNames.size()-1;
+    nz = SetProperty("normal_z",items);
   }
+  Assert(properties.size() == points.size());
   for(size_t i=0;i<properties.size();i++)
     normals[i].get(properties[i][nx],properties[i][ny],properties[i][nz]);
 }
@@ -974,26 +973,29 @@ bool PointCloud3D::GetProperty(const string& name,vector<Real>& items) const
   return true;
 }
 
-void PointCloud3D::SetProperty(const string& name,const vector<Real>& items)
+int PointCloud3D::SetProperty(const string& name,const vector<Real>& items)
 {
+  Assert(items.size() == points.size());
   int i = PropertyIndex(name);
   if(i >= 0) {
     for(size_t k=0;k<properties.size();k++) {
       properties[k][i] = items[k];
     }
-    return;
+    return i;
   }
   else {
     //add it
+    int m = (int)propertyNames.size();
     propertyNames.push_back(name);
     if(properties.empty())
       properties.resize(points.size());
     for(size_t k=0;k<properties.size();k++) {
       Vector oldval = properties[k];
-      properties[k].resize(propertyNames.size());
+      properties[k].resize(m+1);
       properties[k].copySubVector(0,oldval);
-      properties[k][propertyNames.size()-1] = items[k];
+      properties[k][m] = items[k];
     }
+    return m;
   }
 }
 void PointCloud3D::RemoveProperty(const string& name)
