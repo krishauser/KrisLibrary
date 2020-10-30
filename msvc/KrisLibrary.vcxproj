@@ -86,12 +86,12 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -117,12 +117,12 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -150,12 +150,12 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -184,11 +184,11 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
