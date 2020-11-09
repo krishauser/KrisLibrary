@@ -8,6 +8,7 @@
 #include <KrisLibrary/meshing/MeshPrimitives.h>
 #include <KrisLibrary/meshing/MarchingCubes.h>
 #include <KrisLibrary/meshing/Voxelize.h>
+#include <KrisLibrary/meshing/TriMeshOperators.h>
 #include <KrisLibrary/math3d/random.h>
 #include <KrisLibrary/math3d/basis.h>
 #include <KrisLibrary/Logger.h>
@@ -485,6 +486,7 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
 	center_bb.bmin += celldims*0.5;
 	center_bb.bmax -= celldims*0.5;
     MarchingCubes(grid.value,levelSet,center_bb,mesh);
+    MergeVertices(mesh,0,true);
 }
 
 void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.SetPoints(mesh.verts); }
