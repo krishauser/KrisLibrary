@@ -105,6 +105,8 @@ class PointCloud3D
   int SetProperty(const string& name,const vector<Real>& items);
   ///Removes a property and its channel.  Relatively expensive (O(nm)).
   void RemoveProperty(const string& name);
+    ///Extracts just the given points
+  void GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud);
   ///Extracts all points within the bounding box [bmin,bmax]
   void GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud);
   ///Extracts all points with the named property = value

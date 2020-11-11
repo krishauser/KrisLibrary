@@ -134,11 +134,12 @@ public:
           streampos fsize = in.tellg() - fcur;
           in.seekg( fcur );
           if(fsize-streampos(pointsize*numPoints) != 0) {
-            cout<<"Size of point "<<pointsize<<" x "<<numPoints<<" points"<<endl;
-            cout<<"Remaining bytes left: "<<fsize<<", we'll probably have "<<fsize-streampos(pointsize*numPoints)<<" left?"<<endl;
+            LOG4CXX_WARN(KrisLibrary::logger(),"PCD parser: DATA binary seems too large?")
+            LOG4CXX_WARN(KrisLibrary::logger(),"  Size of point "<<pointsize<<" x "<<numPoints<<" points")
+            LOG4CXX_WARN(KrisLibrary::logger(),"  Remaining bytes left: "<<fsize<<", we'll probably have "<<fsize-streampos(pointsize*numPoints)<<" left?")
             for(int i=0;i<int(fsize)-pointsize*numPoints;i++) {
               if(in.peek() != 0) {
-                cout<<"Hmmm... what's this wasted space? stopped on "<<i<<endl;
+                LOG4CXX_WARN(KrisLibrary::logger(),"  Hmmm... what's this wasted space? stopped on "<<i);
               }
               in.get();
             }
@@ -1014,12 +1015,32 @@ void PointCloud3D::RemoveProperty(const string& name)
         LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::RemoveProperty: warning, property "<<name.c_str());
 }
 
+void PointCloud3D::GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud)
+{
+  subcloud.Clear();
+  subcloud.propertyNames = propertyNames;
+  subcloud.settings = settings;
+  if(settings.count("width"))
+    subcloud.settings.erase(subcloud.settings.find("width"));
+  if(settings.count("height"))
+    subcloud.settings.erase(subcloud.settings.find("height"));
+  for(size_t i=0;i<indices.size();i++) {
+    Assert(indices[i] >= 0 && indices[i] < (int)points.size());
+    subcloud.points.push_back(points[indices[i]]);
+    subcloud.properties.push_back(properties[indices[i]]);
+  }
+}
+
 void PointCloud3D::GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud)
 {
   AABB3D bb(bmin,bmax);
   subcloud.Clear();
   subcloud.propertyNames = propertyNames;
   subcloud.settings = settings;
+  if(settings.count("width"))
+    subcloud.settings.erase(subcloud.settings.find("width"));
+  if(settings.count("height"))
+    subcloud.settings.erase(subcloud.settings.find("height"));
   for(size_t i=0;i<points.size();i++)
     if(bb.contains(points[i])) {
       subcloud.points.push_back(points[i]);
@@ -1037,6 +1058,10 @@ void PointCloud3D::GetSubCloud(const string& property,Real minValue,Real maxValu
   subcloud.Clear();
   subcloud.propertyNames = propertyNames;
   subcloud.settings = settings;
+  if(settings.count("width"))
+    subcloud.settings.erase(subcloud.settings.find("width"));
+  if(settings.count("height"))
+    subcloud.settings.erase(subcloud.settings.find("height"));
   if(property == "x") {
     for(size_t i=0;i<points.size();i++)
       if(minValue <= points[i].x && points[i].x <= maxValue) {
