@@ -414,14 +414,15 @@ bool PointCloud3D::SavePCL(ostream& out) const
     out<<"POINTS "<<properties.size();
   else 
     out<<"POINTS "<<points.size();
+  out<<endl;
 
   for(map<string,string>::const_iterator i=settings.begin();i!=settings.end();i++) {
     if(i->first == "pcd_version" || i->first == "file") continue;
     string key = i->first;
     Uppercase(key);
-    out<<key<<" "<<i->second;
+    out<<key<<" "<<i->second<<endl;
   }
-  out<<"DATA ascii";  
+  out<<"DATA ascii"<<endl;  
   if(propertyNames.empty()) {
     for(size_t i=0;i<points.size();i++) 
       out<<points[i];
@@ -429,9 +430,9 @@ bool PointCloud3D::SavePCL(ostream& out) const
   else {
     for(size_t i=0;i<properties.size();i++) {
       if(addxyz)
-    out<<points[i]<<" ";
+        out<<points[i]<<" ";
       for(int j=0;j<properties[i].n;j++)
-    out<<properties[i][j]<<" ";
+        out<<properties[i][j]<<" ";
       out<<endl;
     }
   }
