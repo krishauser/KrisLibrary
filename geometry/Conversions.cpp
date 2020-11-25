@@ -386,7 +386,7 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
 	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
 	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
 	if(expansion != 0)
-		grid.Add(expansion);
+		grid.Add(-expansion);
 }
 
 void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews,Real expansion)
@@ -485,7 +485,7 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 		}
 	}
 	if(expansion != 0)
-		grid.Add(expansion);
+		grid.Add(-expansion);
 	LOG4CXX_INFO(KrisLibrary::logger(),"Volume grid has "<<inside<<" / "<<grid.value.m*grid.value.n*grid.value.p);
 }
 
