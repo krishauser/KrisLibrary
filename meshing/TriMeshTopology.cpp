@@ -116,22 +116,42 @@ bool TriMeshWithTopology::IsConsistent()
     vector<vector<int> > tempVertexNeighbors;
     swap(vertexNeighbors,tempVertexNeighbors);
     CalcVertexNeighbors();
-    if(vertexNeighbors != tempVertexNeighbors)
+    if(vertexNeighbors != tempVertexNeighbors) {
+      printf("Error in vertex neighbors\n");
       return false;
+    }
   }
   if(!incidentTris.empty()) {
     vector<vector<int> > tempIncidentTris;
     swap(incidentTris,tempIncidentTris);
     CalcIncidentTris();
-    if(incidentTris != tempIncidentTris)
+    if(incidentTris.size() != tempIncidentTris.size()) {
+      LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: consistency error in incident tris size "<<incidentTris.size()<<" should be "<<tempIncidentTris.size());
       return false;
+    }
+    for(size_t i=0;i<incidentTris.size();i++) {
+      sort(tempIncidentTris[i].begin(),tempIncidentTris[i].end());
+      if(incidentTris[i] != tempIncidentTris[i]) {
+        printf("Incident tris: ");
+        for(auto j:tempIncidentTris[i])
+          printf("%d ",j);
+        printf("Should be: ");
+        for(auto j:incidentTris[i])
+          printf("%d ",j);
+        printf("\n");
+        LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: consistency error in incident tris of vertex "<<i);
+        return false;
+      }
+    }
   }
   if(!triNeighbors.empty()) {
     vector<TriNeighbors> tempTriNeighbors;
     swap(triNeighbors,tempTriNeighbors);
     CalcTriNeighbors();
-    if(triNeighbors != tempTriNeighbors)
+    if(triNeighbors != tempTriNeighbors) {
+      LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: consistency error in tri neighbors");
       return false;
+    }
   }
   return true;
 }
@@ -150,37 +170,74 @@ void TriMeshWithTopology::SplitEdge(int tri,int e,const Vector3& newPt)
   int v=(int)verts.size();
   verts.push_back(newPt);
   
+  // printf("Splitting edge %d of tri %d=(%d,%d,%d)\n",e,tri,tris[tri].a,tris[tri].b,tris[tri].c);
   int adj=triNeighbors[tri][e];
   int a,b,c,d;
-  a=tris[tri].a;
+  a=tris[tri][e];
   tris[tri].getCompliment(e,b,c);
-  int ind1,ind2;
-  if(!tris[adj].contains(b,ind1)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Internal inconsistency!");
-    abort();
+  // printf("Apex of triangle %d, split edge %d %d\n",a,b,c);
+  int ea=-1; //vertex index of apex of adjacent triangle
+  if(adj >= 0) {
+    int ind1,ind2;
+    if(!tris[adj].contains(b,ind1)) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TriMeshWithTopology: internal inconsistency!");
+      abort();
+    }
+    if(!tris[adj].contains(c,ind2)) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TriMeshWithTopology: internal inconsistency!");
+      abort();
+    }
+    ea=3-ind1-ind2;
+    d=tris[adj][ea];
+    // printf("Apex of adjacent triangle %d\n",d);
   }
-  if(!tris[adj].contains(c,ind2)) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"Internal inconsistency!");
-    abort();
-  }
-  int ea=3-ind1-ind2;
-  d=tris[adj][ea];
+  else
+    d = -1;
   int t1 = triNeighbors[tri][(e+1)%3];
   int t2 = triNeighbors[tri][(e+2)%3];
-  int t3 = triNeighbors[adj][(ea+1)%3];
-  int t4 = triNeighbors[adj][(ea+2)%3];
+  // printf("Non-edge neighbors of triangle: %d %d\n",t1,t2);
   
-  int r1=tri,r2=tris.size(),r3=tris.size(),r4=tris.size()+1;
+  int r1=tri,r2=tris.size(),r3=-1,r4=-1;
+  if(adj >= 0) {
+    r3=adj;
+    r4=tris.size()+1;
+  }
   tris[tri].set(v,c,a);
   tris.push_back(IntTriple(v,a,b));
-  tris[adj].set(v,b,d);
-  tris.push_back(IntTriple(v,d,c));
-
+  triNeighbors.push_back(IntTriple(-1,-1,-1));
   //set the adjacencies
   triNeighbors[r1].set(t1,r2,r4);
   triNeighbors[r2].set(t2,r3,r1);
-  triNeighbors[r3].set(t3,r4,r2);
-  triNeighbors[r4].set(t4,r1,r3);
+  if(t2 >= 0) {
+    int t2ind=triNeighbors[t2].getIndex(r1);
+    Assert(t2ind >= 0);
+    triNeighbors[t2][t2ind] = r2; // replace neighbor with new triangle
+  }
+  // printf("New vertex %d\n",v);
+  // printf("New triangle 1 (%d): %d %d %d\n",r1,tris[tri].a,tris[tri].b,tris[tri].c);
+  // printf("New triangle 2 (%d): %d %d %d\n",r2,tris[r2].a,tris[r2].b,tris[r2].c);
+  // printf("New triangle 1 neighbors: %d %d %d\n",triNeighbors[r1].a,triNeighbors[r1].b,triNeighbors[r1].c);
+  // printf("New triangle 2 neighbors: %d %d %d\n",triNeighbors[r2].a,triNeighbors[r2].b,triNeighbors[r2].c);
+  
+  if(adj >= 0) {
+    int t3 = triNeighbors[adj][(ea+1)%3];
+    int t4 = triNeighbors[adj][(ea+2)%3];
+    // printf("Non-edge neighbors of adjacent: %d %d\n",t3,t4);
+    tris[adj].set(v,b,d);
+    tris.push_back(IntTriple(v,d,c));
+    // printf("New triangle 3 (%d): %d %d %d\n",r3,tris[r3].a,tris[r3].b,tris[r3].c);
+    // printf("New triangle 4 (%d): %d %d %d\n",r4,tris[r4].a,tris[r4].b,tris[r4].c);
+    triNeighbors.push_back(IntTriple(-1,-1,-1));
+    triNeighbors[r3].set(t3,r4,r2);
+    triNeighbors[r4].set(t4,r1,r3);
+    if(t4 >= 0) {
+      int t4ind=triNeighbors[t4].getIndex(r3);
+      Assert(t4ind >= 0);
+      triNeighbors[t4][t4ind] = r4; // replace neighbor with new triangle
+    }
+    // printf("New triangle 3 neighbors: %d %d %d\n",triNeighbors[r3].a,triNeighbors[r3].b,triNeighbors[r3].c);
+    // printf("New triangle 4 neighbors: %d %d %d\n",triNeighbors[r4].a,triNeighbors[r4].b,triNeighbors[r4].c);
+  }
 
   if(!incidentTris.empty()) {
     //indcidence changes
@@ -195,10 +252,17 @@ void TriMeshWithTopology::SplitEdge(int tri,int e,const Vector3& newPt)
     //d: += r4
     incidentTris[a].push_back(r2);
     replace(incidentTris[b],tri,r2);
-    replace(incidentTris[c],adj,r4);
-    incidentTris[d].push_back(r4);
-    vector<int> vn(4);
-    vn[0]=r1; vn[1]=r2; vn[2]=r3; vn[3]=r4;
+    if(adj >= 0) {
+      replace(incidentTris[c],adj,r4);
+      incidentTris[d].push_back(r4);
+    }
+    vector<int> vn(2);
+    vn.reserve(4);
+    vn[0]=r1; vn[1]=r2;
+    if(r3 >= 0) {
+      vn.push_back(r3);
+      vn.push_back(r4);
+    }
     incidentTris.push_back(vn);
   }
 
@@ -206,13 +270,14 @@ void TriMeshWithTopology::SplitEdge(int tri,int e,const Vector3& newPt)
     vertexNeighbors[a].push_back(v);
     vertexNeighbors[b].push_back(v);
     vertexNeighbors[c].push_back(v);
-    vertexNeighbors[d].push_back(v);
+    if(d >= 0)
+      vertexNeighbors[d].push_back(v);
     vector<int> vn(4);
     vn[0]=a; vn[1]=b; vn[2]=c; vn[3]=d;
     vertexNeighbors.push_back(vn);
   }
 
-  Assert(IsConsistent());
+  //Assert(IsConsistent());
 }
 
 //flags for tri walk
