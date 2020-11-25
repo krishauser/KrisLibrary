@@ -176,10 +176,11 @@ void PrimitiveToMesh(const GeometricPrimitive3D& primitive,Meshing::TriMesh& mes
 	Meshing::MakeTriMesh(primitive,mesh,numDivs);
 }
 
+//expansion pads the box by expansion*resolution
 void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0.5)
 {
 	Vector3 size=bb.bmax-bb.bmin;
-	size += expansion*2*resolution;
+	size += (expansion*resolution)*2;
 	int m = (int)Ceil(size.x/resolution)+2;
 	int n = (int)Ceil(size.y/resolution)+2;
 	int p = (int)Ceil(size.z/resolution)+2;
@@ -200,6 +201,8 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real
 void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
 {
 	AABB3D aabb = primitive.GetAABB();
+	aabb.bmin -= Vector3(expansion);
+	aabb.bmax += Vector3(expansion);
 	FitGridToBB(aabb,grid,resolution);
 	Meshing::VolumeGrid::iterator it = grid.getIterator();
 	Vector3 c;
@@ -371,21 +374,27 @@ void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
 	fclose(f);
 }
 
-void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution)
+void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
 {
 	AABB3D aabb;
 	mesh.GetAABB(aabb.bmin,aabb.bmax);
-	FitGridToBB(aabb,grid,resolution);
+	aabb.bmin -= Vector3(expansion);
+	aabb.bmax += Vector3(expansion);
+	FitGridToBB(aabb,grid,resolution,0.5);
 	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
 	vector<IntTriple> surfaceCells;
 	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
 	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
+	if(expansion != 0)
+		grid.Add(expansion);
 }
 
-void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews)
+void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews,Real expansion)
 {
 	AABB3D aabb;
 	mesh.GetAABB(aabb.bmin,aabb.bmax);
+	aabb.bmin -= Vector3(expansion);
+	aabb.bmax += Vector3(expansion);
 	FitGridToBB(aabb,grid,resolution);
 	Array3D<Real> occupancy(grid.value.m,grid.value.n,grid.value.p);
 	double defaultValue = -aabb.size().maxAbsElement();
@@ -475,6 +484,8 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 			depth = grid.TrilinearInterpolate(mesh.verts[i]);
 		}
 	}
+	if(expansion != 0)
+		grid.Add(expansion);
 	LOG4CXX_INFO(KrisLibrary::logger(),"Volume grid has "<<inside<<" / "<<grid.value.m*grid.value.n*grid.value.p);
 }
 

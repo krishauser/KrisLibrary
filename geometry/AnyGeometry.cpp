@@ -1237,19 +1237,56 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     CollisionMesh &mesh = TriangleMeshCollisionData();
     mesh.GetTransform(Torig);
     mesh.UpdateTransform(Tident);
-    MeshToImplicitSurface_FMM(mesh, grid, param);
+    MeshToImplicitSurface_FMM(mesh, grid, param, margin);
     //MeshToImplicitSurface_SpaceCarving(TriangleMeshCollisionData(),grid,param,40);
     mesh.UpdateTransform(Torig);
     res = AnyCollisionGeometry3D(grid);
-    LOG4CXX_INFO(GET_LOGGER(Geometry), "Grid bb " << grid.bb);
+    //LOG4CXX_INFO(GET_LOGGER(Geometry), "Grid bb " << grid.bb);
     res.SetTransform(GetTransform());
+    res.margin = 0; //margins are taken care off in the MeshToImplicitSurface_FMM call
     return true;
   }
-  if (!AnyGeometry3D::Convert(restype, res, param))
-    return false;
-  res.SetTransform(GetTransform());
-  // res.ReinitCollisionData();
-  return true;
+  else if (type == Primitive && restype == ImplicitSurface)
+  {
+    if (param == 0)
+    {
+      AABB3D bb = GetAABB();
+      Real w = (bb.bmax - bb.bmin).maxAbsElement();
+      param = w * 0.05;
+    }
+    Meshing::VolumeGrid grid;
+    PrimitiveToImplicitSurface(AsPrimitive(), grid, param, margin);
+    res = AnyCollisionGeometry3D(grid);
+    res.SetTransform(GetTransform());
+    res.margin = 0; //margins are taken care off in the PrimitiveToImplicitSurface call
+    return true;
+  }
+  else if(type == Group) {
+    vector<AnyCollisionGeometry3D> &items = GroupCollisionData();
+    vector<AnyCollisionGeometry3D> resitems(items.size());
+    res = AnyCollisionGeometry3D();
+    res.type = Group;
+    for(size_t i=0;i<items.size();i++) {
+      if(!items[i].Convert(restype,resitems[i],param)) return false;
+    }
+    res.collisionData = resitems;
+    vector<AnyGeometry3D> resgeoms(resitems.size());
+    for(size_t i=0;i<items.size();i++) 
+      resgeoms[i] = resitems[i];
+    res.data = resgeoms;
+    res.SetTransform(GetTransform());
+    res.margin = margin;
+    return true;
+  }
+  else {
+    //generic conversion types 
+    if (!AnyGeometry3D::Convert(restype, res, param))
+      return false;
+    res.SetTransform(GetTransform());
+    res.margin = margin;
+    // res.ReinitCollisionData();
+    return true;
+  }
 }
 
 AABB3D AnyCollisionGeometry3D::GetAABBTight() const

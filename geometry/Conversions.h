@@ -52,7 +52,7 @@ void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::V
  * Note: the mesh's current transform is NOT taken into account (i.e., the resulting grid
  * is in local coordinates)
  */
-void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution);
+void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
 
 /** @ingroup Geometry
  * @brief Creates an implicit surface for a mesh using a space-carving technique.
@@ -63,7 +63,7 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
  * Note: the mesh's current transform is NOT taken into account (i.e., the resulting grid
  * is in local coordinates)
  */
-void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews=20);
+void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews=20,Real expansion=0);
 
 /** @ingroup Geometry
  * @brief Creates a mesh from an implicit surface via Marching Cubes.  This assumes

@@ -168,8 +168,9 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   CollisionImplicitSurface& ImplicitSurfaceCollisionData();
   CollisionConvexHull3D& ConvexHullCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
-  ///Performs a type conversion, also copying the active transform.  May be a bit faster than
-  ///AnyGeometry3D.Convert for some conversions (TriangleMesh->VolumeGrid, specifically)
+  ///Performs a type conversion, also copying the active transform and collision margin.
+  ///May be a bit faster than AnyGeometry3D.Convert for some conversions
+  ///(TriangleMesh->VolumeGrid, specifically) and will respect collision margins
   bool Convert(Type restype,AnyCollisionGeometry3D& res,Real param=0);
   ///Returns an axis-aligned bounding box in the world coordinate frame
   ///containing the transformed geometry.  Note: if collision data is
