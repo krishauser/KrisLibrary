@@ -4,6 +4,7 @@
 #include <math3d/geometry3d.h>
 #include <meshing/VolumeGrid.h>
 #include <meshing/Voxelize.h>
+#include <meshing/Meshing.h>
 #include <GLdraw/GeometryAppearance.h>
 #include "CollisionPointCloud.h"
 #include "CollisionImplicitSurface.h"
@@ -293,7 +294,7 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D> &geoms)
   }
 }
 
-bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) const
+bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
 {
   if (type == restype)
   {
@@ -516,6 +517,128 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, double param) cons
     break;
   }
   return false;
+}
+
+bool AnyGeometry3D::Remesh(Real resolution,AnyGeometry3D& res,bool refine,bool coarsen) const
+{
+  switch(type)
+  {
+  case Primitive:
+  case ConvexHull:
+    res.type = type;
+    res.data = data;
+    res.appearanceData = appearanceData;
+    return true;
+  case TriangleMesh:
+    {
+      if(resolution <= 0) return false;
+      Meshing::TriMeshWithTopology mesh;
+      mesh.verts = AsTriangleMesh().verts;
+      mesh.tris = AsTriangleMesh().tris;
+      if(refine)
+        Meshing::SubdivideToResolution(mesh,resolution);
+      res = AnyGeometry3D(mesh);
+      return true;
+    }
+  case PointCloud:
+    {
+      if(resolution <= 0) return false;
+      const Meshing::PointCloud3D& pc = AsPointCloud();
+      Meshing::PointCloud3D output;
+      if(coarsen) {
+        GridSubdivision3D grid(resolution);
+        GridSubdivision3D::Index index;
+        for(size_t i=0;i<pc.points.size();i++) {
+          grid.PointToIndex(pc.points[i],index);
+          grid.Insert(index,(void*)&pc.points[i]);
+        }
+        output.points.reserve(grid.buckets.size());
+        output.properties.reserve(grid.buckets.size());
+        output.propertyNames = pc.propertyNames;
+        output.settings = pc.settings;
+        if(pc.IsStructured()) {
+          output.settings.erase(output.settings.find("width")); 
+          output.settings.erase(output.settings.find("height")); 
+        }
+        for(auto i=grid.buckets.begin();i!=grid.buckets.end();i++) {
+          Vector3 ptavg(Zero);
+          int n=(int)i->second.size();
+          Real scale = 1.0/n;
+          for(auto pt:i->second) {
+            int ptindex = (const Vector3*)pt - &pc.points[0];
+            ptavg += pc.points[ptindex];
+          }
+          output.points.push_back(ptavg*scale);
+          output.properties.push_back(Vector(pc.propertyNames.size()));
+          for(size_t j=0;j<pc.propertyNames.size();j++) {
+            if(pc.propertyNames[j]=="rgb" || pc.propertyNames[j]=="rgba" || pc.propertyNames[j]=="c") {
+              //int numchannels = (int)pc.propertyNames[j].length();
+              int propavg[4] = {0,0,0,0};
+              for(auto pt:i->second) {
+                int ptindex = (const Vector3*)pt - &pc.points[0];
+                int prop = (int)pc.properties[ptindex][j];
+                propavg[0] += (prop&0xff);
+                propavg[1] += ((prop>>8)&0xff);
+                propavg[2] += ((prop>>16)&0xff);
+                propavg[3] += ((prop>>24)&0xff);
+              }
+              for(int k=0;k<4;k++)
+                propavg[k] = (propavg[k]/n)&0xff;
+              output.properties.back()[j] = (Real)(propavg[0] | (propavg[1] << 8) | (propavg[2] << 16) | (propavg[3] << 24));
+            }
+            else {
+              Real propavg = 0;
+              for(auto pt:i->second) {
+                int ptindex = (const Vector3*)pt - &pc.points[0];
+                propavg += pc.properties[ptindex][j];
+              }
+              output.properties.back()[j] = propavg*scale;
+            }
+          }
+        }
+      }
+      else
+        output = pc;
+      res = AnyGeometry3D(output);
+      return true;
+    }
+  case ImplicitSurface:
+    {
+      const Meshing::VolumeGrid& grid =AsImplicitSurface();
+      Vector3 size=grid.GetCellSize();
+      if((resolution < size.x && refine) || (resolution > size.x && coarsen) ||
+        (resolution < size.y && refine) || (resolution > size.y && coarsen) ||
+        (resolution < size.z && refine) || (resolution > size.z && coarsen)) {
+        int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
+        int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
+        int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
+        Meshing::VolumeGrid output;
+        output.Resize(m,n,p);
+        output.bb = grid.bb;
+        output.ResampleTrilinear(grid);
+        res = AnyGeometry3D(output);
+        return true;
+      }
+      else {
+        res = *this;
+        return true;
+      }
+    }
+    break;
+  case Group:
+    {
+      if(resolution <= 0) return false;
+      const vector<AnyGeometry3D> &items = AsGroup();
+      vector<AnyGeometry3D> converted(items.size());
+      for (size_t i = 0; i < items.size(); i++)
+        items[i].Remesh(resolution, converted[i], refine, coarsen);
+      res = AnyGeometry3D(items);
+      return true;
+    }
+  default:
+    FatalError("Unhandled type?");
+    return false;
+  }
 }
 
 size_t AnyGeometry3D::NumElements() const
@@ -1080,13 +1203,13 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   assert(!collisionData.empty());
 }
 
-// TODO: only one conversion is allowed?
-bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, double param)
+bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, Real param)
 {
   if (type == TriangleMesh && restype == ImplicitSurface)
   {
-    Assert(CollisionDataInitialized());
-    Assert(!TriangleMeshCollisionData().triNeighbors.empty());
+    InitCollisionData();
+    if(TriangleMeshCollisionData().triNeighbors.empty())
+      TriangleMeshCollisionData().CalcTriNeighbors();
     if (param == 0)
     {
       const Meshing::TriMesh &mesh = AsTriangleMesh();

@@ -89,7 +89,28 @@ class AnyGeometry3D
   void Transform(const RigidTransform& T);
   void Transform(const Matrix4& mat);
   void Merge(const vector<AnyGeometry3D>& geoms);
-  bool Convert(Type restype,AnyGeometry3D& res,double param=0) const;
+  ///Converts to another geometry type, storing the result in res and returning true
+  ///if the conversion is available. 
+  ///
+  ///If restype==type, returns a copy of this.
+  ///
+  ///param is interpreted as follows, with 0 being a "reasonable" default value:
+  ///- Primitive -> TriangleMesh: desired resolution of mesh
+  ///- Primitive -> PointCloud: desired resolution of point cloud
+  ///- TriangleMesh -> PointCloud: desired resolution of point cloud
+  ///- TriangleMesh -> ImplicitSurface: desired width of volume grid cells
+  ///- ImplicitSurface -> TriangleMesh: level set to be extracted
+  ///- ImplicitSurface -> PointCloud: level set to be extracted
+  bool Convert(Type restype,AnyGeometry3D& res,Real param=0) const;
+  ///Re-meshes the geometry at the desired resolution, storing the result into res.
+  ///
+  ///Resolution is interpreted as
+  ///- Primitive, ConvexHull: ignored
+  ///- TriangleMesh: desired length of triangle edges.  Refinement only.
+  ///- PointCloud: desire 1 point per grid cell of width resolution.  Coarsen only.
+  ///- ImplicitSurface: new surface cell width.
+  ///- Group: sent to each sub-geometry
+  bool Remesh(Real resolution,AnyGeometry3D& res,bool refine=true,bool coarsen=true) const;
 
   Type type;
   ///The data, according to the type
@@ -149,7 +170,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
   ///Performs a type conversion, also copying the active transform.  May be a bit faster than
   ///AnyGeometry3D.Convert for some conversions (TriangleMesh->VolumeGrid, specifically)
-  bool Convert(Type restype,AnyCollisionGeometry3D& res,double param=0);
+  bool Convert(Type restype,AnyCollisionGeometry3D& res,Real param=0);
   ///Returns an axis-aligned bounding box in the world coordinate frame
   ///containing the transformed geometry.  Note: if collision data is
   ///initialized, this returns a bound around the transformed bounding
