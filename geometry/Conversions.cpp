@@ -491,7 +491,27 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
 
 void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.SetPoints(mesh.verts); }
 
-void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) { ch.SetPoints(pc.points); }
+void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) {
+	bool allvalid = true;
+	for(const auto& pt:pc.points) {
+		if(!IsFinite(pt.x) || !IsFinite(pt.y) || !IsFinite(pt.z)) {
+			allvalid =false;
+			break;
+		}
+	}
+	if(allvalid) 
+		ch.SetPoints(pc.points);
+	else {
+		vector<Vector3> temp;
+		temp.reserve(pc.points.size());
+		for(const auto& pt:pc.points) {
+			if(IsFinite(pt.x) && IsFinite(pt.y) & IsFinite(pt.z)) {
+				temp.push_back(pt);
+			}
+		}
+		ch.SetPoints(temp);
+	}
+}
 
 void _HACD_CallBack(const char * msg, double progress, double concavity, size_t nVertices)
 {
