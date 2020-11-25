@@ -60,6 +60,9 @@ void GetCoplanarTris(const TriMesh& mesh,int t,Real tol,vector<int>& tris);
 void GetConnectedCoplanarTris(const TriMeshWithTopology& mesh,int t,Real tol,vector<int>& tris);
 //void GetConnectedCoplanarTris(const TriMeshWithTopology& mesh,int t,Real tol,PolygonWithHoles2D& poly);
 
+///Subdivides a mesh until it reaches max edge length res
+void SubdivideToResolution(TriMeshWithTopology& mesh,Real res);
+
 /*@}*/
 
 } //namespace Meshing;

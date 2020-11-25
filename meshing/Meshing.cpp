@@ -3,7 +3,11 @@
 #include <math3d/interpolate.h>
 #include <math3d/Plane3D.h>
 #include <math3d/Plane2D.h>
+#include <math3d/Segment3D.h>
 #include <utils/shift.h>
+#include <utils/IntPair.h>
+#include <structs/Heap.h>
+#include <structs/FastFindHeap.h>
 #include <iostream>
 #include <errors.h>
 #include <queue>
@@ -480,5 +484,144 @@ void GetConnectedCoplanarTris(TriMeshWithTopology& mesh,int t,Real tol,PolygonWi
   abort();
 }
 */
+
+void SubdivideRecurse(TriMeshWithTopology& mesh,int tri,Real res2)
+{
+  Triangle3D t;
+  mesh.GetTriangle(tri,t);
+  Real ab = t.a.distanceSquared(t.b);
+  Real bc = t.b.distanceSquared(t.c);
+  Real ca = t.c.distanceSquared(t.a);   
+  int maxEdge = 0;
+  Real maxLen = bc;
+  if(ab > maxLen) {
+    maxEdge = 2;
+    maxLen = bc;
+  }
+  if(ca > maxLen) {
+    maxEdge = 1;
+    maxLen = ca;
+  }
+  if(maxLen <= res2) return;
+
+  //split and recurse
+  Segment3D s = t.edge(maxEdge);
+  Vector3 center = (s.a+s.b)*0.5;
+  size_t newTri = mesh.tris.size();
+  mesh.SplitEdge(tri,maxEdge,center);
+  SubdivideRecurse(mesh,tri,res2);
+  SubdivideRecurse(mesh,newTri,res2);
+}
+
+void SubdivideToResolution(TriMeshWithTopology& mesh,Real res)
+{
+  if(mesh.triNeighbors.empty())
+    mesh.CalcTriNeighbors();
+  if(mesh.incidentTris.empty())
+    mesh.CalcIncidentTris();
+  Real res2=Sqr(res);
+  Heap<IntPair,Real> heap;
+  for(size_t i=0;i<mesh.tris.size();i++) {
+    const auto& t=mesh.tris[i];
+    if(t.a < t.b || mesh.triNeighbors[i][2] < 0) {
+      Real d2 = mesh.verts[t.a].distanceSquared(mesh.verts[t.b]);
+      if(d2 > res2) {
+        heap.push(IntPair(t.a,t.b),d2);
+      }
+    }
+    if(t.b < t.c || mesh.triNeighbors[i][0] < 0) {
+      Real d2 = mesh.verts[t.b].distanceSquared(mesh.verts[t.c]);
+      if(d2 > res2) {
+        heap.push(IntPair(t.b,t.c),d2);
+      }
+    }
+    if(t.c < t.a || mesh.triNeighbors[i][1] < 0) {
+      Real d2 = mesh.verts[t.c].distanceSquared(mesh.verts[t.a]);
+      if(d2 > res2) {
+        heap.push(IntPair(t.c,t.a),d2);
+      }
+    }
+  }
+  while(!heap.empty()) {
+    int a=heap.top().a;
+    int b=heap.top().b;
+    Real d2orig = heap.topPriority();
+    //printf("Largest edge size %f: %d %d\n",Sqrt(heap.topPriority()),a,b);
+    heap.pop();
+    
+    //find triangle
+    int tri = -1;
+    for(int t : mesh.incidentTris[a]) {
+      if(find(mesh.incidentTris[b].begin(),mesh.incidentTris[b].end(),t) != mesh.incidentTris[b].end()) {
+        tri = t;
+        break;
+      }
+    }
+    if(tri < 0) {
+      printf("Can't find triangle on edge?\n");
+      printf("Incident tris %d: ",a);
+      for(auto t:mesh.incidentTris[a])
+        printf("%d ",t);
+      printf("\n");
+      printf("Incident tris %d: ",b);
+      for(auto t:mesh.incidentTris[b])
+        printf("%d ",t);
+      printf("\n");
+    }
+    Assert(tri >= 0);
+    //find edge
+    int e1=mesh.tris[tri].getIndex(a);
+    int e2=mesh.tris[tri].getIndex(b);
+    Assert(e1 >= 0 && e2 >= 0);
+    int e=3-e1-e2;
+
+    Triangle3D t;
+    mesh.GetTriangle(tri,t);
+    Segment3D s = t.edge(e);
+    Vector3 center = (s.a+s.b)*0.5;
+    int apex = mesh.tris[tri][e];
+    int newTri = (int)mesh.tris.size();
+    int newVert = (int)mesh.verts.size();
+    int adj = mesh.triNeighbors[tri][e];
+    int adjapex = -1;
+    if(adj >= 0) {
+      int ea = mesh.triNeighbors[adj].getIndex(tri);
+      adjapex = mesh.tris[adj][ea];
+    }
+    mesh.SplitEdge(tri,e,center);
+    //add up to three new edges
+    Real d2 = t.vertex(e).distanceSquared(center);
+    if(d2 >= d2orig) {
+      cout<<"No shrink? orig distance "<<Sqrt(d2orig)<<" new distance "<<Sqrt(d2)<<endl;
+      cout<<t.vertex(e)<<" = "<<mesh.verts[apex]<<endl;
+      cout<<t.vertex(e)<<" != "<<mesh.verts[a]<<endl;
+      cout<<t.vertex(e)<<" != "<<mesh.verts[b]<<endl;
+      cout<<"Split point "<<center<<endl;
+    }
+    Assert(d2 < d2orig);
+    if(d2 > res2) {
+      heap.push(IntPair(apex,newVert),d2);
+    }
+    d2 = mesh.verts[a].distanceSquared(center);
+    Assert(d2 < d2orig);
+    if(d2 > res2) {
+      heap.push(IntPair(a,newVert),d2);
+    }
+    d2 = mesh.verts[b].distanceSquared(center);
+    Assert(d2 < d2orig);
+    if(d2 > res2) {
+      heap.push(IntPair(b,newVert),d2);
+    }
+    //and a fourth, if there was an adjacent tri
+    if(adj >= 0) {
+      const Vector3& apex = mesh.verts[adjapex];
+      d2 = apex.distanceSquared(center);
+      Assert(d2 < d2orig);
+      if(d2 > res2) {
+        heap.push(IntPair(adjapex,newVert),d2);
+      }
+    }
+  }
+}
 
 } //namespace Meshing
