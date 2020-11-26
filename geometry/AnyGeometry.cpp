@@ -22,6 +22,8 @@
 
 DEFINE_LOGGER(Geometry)
 
+#define POINT_CLOUD_MESH_COLLIDE_ALL_POINTS 1
+
 using namespace Geometry;
 
 namespace Geometry
@@ -332,14 +334,37 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
     }
     case PointCloud:
     {
-      AnyGeometry3D mesh;
-      Convert(TriangleMesh, mesh, param);
-      Meshing::PointCloud3D pc;
-      if (param == 0)
-        param = Inf;
-      MeshToPointCloud(mesh.AsTriangleMesh(), pc, param, true);
-      res = AnyGeometry3D(pc);
-      return true;
+      if(AsPrimitive().type == GeometricPrimitive3D::Segment) {
+        //special-purpose construction for segments
+        const Math3D::Segment3D& s = *AnyCast<Math3D::Segment3D>(&AsPrimitive().data);
+        Meshing::PointCloud3D pc;
+        if(param == 0) {
+          pc.points.push_back(s.a);
+          pc.points.push_back(s.b);
+        }
+        else {
+          Real len = s.a.distance(s.b);
+          int numSegs = (int)Ceil(len / param);
+          pc.points.push_back(s.a);
+          for(int i=0;i<numSegs-1;i++) {
+            Real u = Real(i+1)/Real(numSegs+1);
+            pc.points.push_back(s.a+u*(s.b-s.a));
+          }
+          pc.points.push_back(s.b);
+        }
+        res = AnyGeometry3D(pc);
+        return true;
+      }
+      else {
+        AnyGeometry3D mesh;
+        Convert(TriangleMesh, mesh, param);
+        Meshing::PointCloud3D pc;
+        if (param == 0)
+          param = Inf;
+        MeshToPointCloud(mesh.AsTriangleMesh(), pc, param, true);
+        res = AnyGeometry3D(pc);
+        return true;
+      }
     }
     case ImplicitSurface:
     {
@@ -1643,35 +1668,11 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3 &pt, const
   return res;
 }
 
-bool Collides(const CollisionImplicitSurface &grid, const GeometricPrimitive3D &a, Real margin,
-              vector<int> &gridelements, size_t maxContacts)
-{
-  if (a.type != GeometricPrimitive3D::Point && a.type != GeometricPrimitive3D::Sphere)
-  {
-    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't collide an implicit surface and a non-sphere primitive yet");
-    return false;
-  }
-  Vector3 gclosest, aclosest, grad;
-  if (::Distance(grid, a, gclosest, aclosest, grad) <= margin)
-  {
-    gridelements.resize(1);
-    gridelements[0] = PointIndex(grid, gclosest);
-    return true;
-  }
-  return false;
-}
-
 bool Collides(const GeometricPrimitive3D &a, const GeometricPrimitive3D &b, Real margin)
 {
   if (margin == 0)
     return a.Collides(b);
   return a.Distance(b) <= margin;
-}
-
-bool Collides(const GeometricPrimitive3D &a, const CollisionImplicitSurface &b, Real margin,
-              vector<int> &gridelements, size_t maxContacts)
-{
-  return Collides(b, a, margin, gridelements, maxContacts);
 }
 
 bool Collides(const GeometricPrimitive3D &a, const CollisionMesh &c, Real margin,
@@ -1884,8 +1885,9 @@ public:
     const OctreeNode &pcnode = pc.octree->Node(pcOctreeNode);
     const BV &meshnode = mesh.pqpModel->b[meshBVHNode];
     //returns true to keep recursing
-    if (Prune(pcnode, meshnode))
+    if (Prune(pcnode, meshnode)) {
       return true;
+    }
     if (pc.octree->IsLeaf(pcnode))
     {
       if (pc.octree->NumPoints(pcnode) == 0)
@@ -1913,16 +1915,31 @@ public:
           Real d2 = pts[i].distanceSquared(pt);
           if (d2 < dmin2)
           {
-            dmin2 = d2;
-            closestpt = pcids[i];
+            //only use the closest point in a leaf?
+            #if !POINT_CLOUD_MESH_COLLIDE_ALL_POINTS
+              dmin2 = d2;
+              closestpt = pcids[i];
+            #else 
+              //Use all points in a batch
+              pcpoints.push_back(pcids[i]);
+              meshtris.push_back(mesh.pqpModel->tris[t].id);
+              pairdistances2.push_back(d2);
+              if(pcpoints.size() >= maxContacts)
+                return false;
+            #endif // !POINT_CLOUD_MESH_COLLIDE_ALL_POINTS
           }
         }
-        if (closestpt >= 0)
-        {
-          pcpoints.push_back(closestpt);
-          meshtris.push_back(mesh.pqpModel->tris[t].id);
-          pairdistances2.push_back(dmin2);
-        }
+        //only use the closest point in a leaf?
+        #if !POINT_CLOUD_MESH_COLLIDE_ALL_POINTS
+          if (closestpt >= 0)
+          {
+            pcpoints.push_back(closestpt);
+            meshtris.push_back(mesh.pqpModel->tris[t].id);
+            pairdistances2.push_back(dmin2);
+            if(pcpoints.size() >= maxContacts)
+                return false; //stop
+          }
+        #endif // !POINT_CLOUD_MESH_COLLIDE_ALL_POINTS
         //continue
         return true;
       }
@@ -1991,7 +2008,24 @@ bool Collides(const CollisionPointCloud &a, Real margin, const CollisionMesh &b,
     }
     for (size_t i = 0; i < collider.meshtris.size(); i++)
     {
-      if (closest2.count(collider.meshtris[i]) == 0 || collider.pairdistances2[i] < dclosest2[collider.meshtris[i]])
+      Real dclosest = Inf;
+      if(closest2.count(collider.meshtris[i])) 
+        dclosest = dclosest2[collider.meshtris[i]];
+      if(!b.triNeighbors.empty()) {
+        //filter out closest points on edges 
+        IntTriple neighbors = b.triNeighbors[collider.meshtris[i]];
+        if(neighbors.getIndex(closest1[collider.pcpoints[i]]) >= 0) {
+          continue;
+        }
+        Real temp=dclosest;
+        if(neighbors.a >= 0 && closest2.count(neighbors.a))
+          dclosest = Min(dclosest,dclosest2[neighbors.a]);
+        if(neighbors.b >= 0 && closest2.count(neighbors.b))
+          dclosest = Min(dclosest,dclosest2[neighbors.b]);
+        if(neighbors.c >= 0 && closest2.count(neighbors.c))
+          dclosest = Min(dclosest,dclosest2[neighbors.c]);
+      }
+      if (collider.pairdistances2[i] < dclosest)
       {
         closest2[collider.meshtris[i]] = collider.pcpoints[i];
         dclosest2[collider.meshtris[i]] = collider.pairdistances2[i];
@@ -2055,12 +2089,17 @@ bool Collides(const GeometricPrimitive3D &a, Real margin, AnyCollisionGeometry3D
     return false;
   }
   case AnyCollisionGeometry3D::ImplicitSurface:
-    if (::Collides(b.ImplicitSurfaceCollisionData(), a, margin + b.margin, elements2, maxContacts))
+  {
+    Vector3 pt;
+    if (Geometry::Collides(b.ImplicitSurfaceCollisionData(), a, margin + b.margin, pt))
     {
+      elements2.resize(1);
+      elements2[0] = PointIndex(b.ImplicitSurfaceCollisionData(),pt);
       elements1.push_back(0);
       return true;
     }
     return false;
+  }
   case AnyCollisionGeometry3D::TriangleMesh:
     if (::Collides(a, b.TriangleMeshCollisionData(), margin + b.margin, elements2, maxContacts))
     {
@@ -2108,8 +2147,11 @@ bool Collides(const CollisionImplicitSurface &a, Real margin, AnyCollisionGeomet
   {
     GeometricPrimitive3D bw = b.AsPrimitive();
     bw.Transform(b.GetTransform());
-    if (::Collides(a, bw, margin + b.margin, elements1, maxContacts))
+    Vector3 cpa;
+    if (Geometry::Collides(a, bw, margin + b.margin, cpa))
     {
+      elements1.resize(1);
+      elements1[0] = PointIndex(a, cpa);
       elements2.push_back(0);
       return true;
     }
@@ -4011,6 +4053,27 @@ void ImplicitSurfaceSphereContacts(CollisionImplicitSurface &s1, Real outerMargi
   contacts[0].unreliable = false;
 }
 
+void ImplicitSurfaceSegmentContacts(CollisionImplicitSurface &s1, Real outerMargin1, const Segment3D &s, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  //NOTE: this does not allow for multiple points of contact, e.g., for non-convex implicit surfaces
+  contacts.resize(0);
+  Real tol = outerMargin1 + outerMargin2;
+  Vector3 cpgrid, cpseg, dir;
+  Real d = Geometry::Distance(s1, GeometricPrimitive3D(s), cpgrid, cpseg, dir);
+  if (d > tol)
+    return;
+  contacts.resize(1);
+  Vector3 n;
+  n.setNegative(dir);
+  contacts[0].p1 = cpgrid + outerMargin1 * n;
+  contacts[0].p2 = cpseg - outerMargin2 * n;
+  contacts[0].n = n;
+  contacts[0].depth = tol - d;
+  contacts[0].elem1 = PointIndex(s1, cpgrid);
+  contacts[0].elem2 = -1;
+  contacts[0].unreliable = false;
+}
+
 void ImplicitSurfacePrimitiveContacts(CollisionImplicitSurface &s1, Real outerMargin1, GeometricPrimitive3D &g2, const RigidTransform &T2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
 {
   GeometricPrimitive3D gworld = g2;
@@ -4028,9 +4091,14 @@ void ImplicitSurfacePrimitiveContacts(CollisionImplicitSurface &s1, Real outerMa
     const Sphere3D &s = *AnyCast<Sphere3D>(&gworld.data);
     ImplicitSurfaceSphereContacts(s1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
   }
+  else if (gworld.type == GeometricPrimitive3D::Segment)
+  {
+    const Segment3D &s = *AnyCast<Segment3D>(&gworld.data);
+    ImplicitSurfaceSegmentContacts(s1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
+  }
   else
   {
-    LOG4CXX_WARN(GET_LOGGER(Geometry), "Distance computations between ImplicitSurface and " << gworld.TypeName() << " not supported");
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "Contact computations between ImplicitSurface and " << gworld.TypeName() << " not supported");
     return;
   }
 }

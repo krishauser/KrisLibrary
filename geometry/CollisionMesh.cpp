@@ -108,6 +108,7 @@ void CollisionMesh::InitCollisions()
     pqpModel = new PQP_Model;
     ConvertTriToPQP(*this,*pqpModel);
     CalcVertexNeighbors();
+    CalcTriNeighbors();
   }
 }
 
