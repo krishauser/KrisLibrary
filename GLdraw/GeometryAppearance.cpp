@@ -402,7 +402,10 @@ void GeometryAppearance::Refresh()
 void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 {
   geom = &_geom;
-  if(geom->type == AnyGeometry3D::ImplicitSurface) {
+  if(geom->type == AnyGeometry3D::Primitive) {
+    Set(*geom);
+  }
+  else if(geom->type == AnyGeometry3D::ImplicitSurface) {
     Set(*geom);
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
@@ -447,7 +450,27 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 {
   geom = &_geom;
-  if(geom->type == AnyGeometry3D::ImplicitSurface) {
+  if(geom->type == AnyGeometry3D::Primitive) {
+    const Math3D::GeometricPrimitive3D* g = &geom->AsPrimitive();
+    drawFaces = true;
+    if(g->type == Math3D::GeometricPrimitive3D::Empty) 
+      drawFaces = false;
+    else if(g->type == Math3D::GeometricPrimitive3D::Point) {
+      drawFaces = false;
+      drawVertices = true;
+    }
+    else if(g->type == Math3D::GeometricPrimitive3D::Segment) {
+      drawFaces = false;
+      drawEdges = true;
+    }
+    else if(g->type == Math3D::GeometricPrimitive3D::Triangle) {
+      drawEdges = true;
+    }
+    else if(g->type == Math3D::GeometricPrimitive3D::Polygon) {
+      drawEdges = true;
+    }
+  }
+  else if(geom->type == AnyGeometry3D::ImplicitSurface) {
     const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
     ImplicitSurfaceToMesh(*g,*tempMesh);
@@ -963,13 +986,23 @@ void GeometryAppearance::DrawGL(Element e)
       trimesh = tempMesh.get();
     else if(geom->type == AnyGeometry3D::TriangleMesh) 
       trimesh = &geom->AsTriangleMesh();
-    else if(geom->type == AnyGeometry3D::Primitive) 
-      ; //TODO: draw edges of primitives? May be useful for points and rays
+    else if(geom->type == AnyGeometry3D::Primitive) {
+      if(!edgeDisplayList) {
+        edgeDisplayList.beginCompile();
+        glDisable(GL_LIGHTING);
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
+          glDepthFunc(GL_LEQUAL);
+          draw(geom->AsPrimitive());
+        glPopAttrib();
+        edgeDisplayList.endCompile();
+      }
+      edgeColor.setCurrentGL();
+      edgeDisplayList.call();
+    }
     if(trimesh) {
       if(!edgeDisplayList) {
         edgeDisplayList.beginCompile();
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
-          edgeColor.setCurrentGL();
           glDepthFunc(GL_LEQUAL);
           glDisable(GL_LIGHTING);
           vector<set<int> > vneighbors(trimesh->verts.size());
@@ -991,6 +1024,7 @@ void GeometryAppearance::DrawGL(Element e)
         glPopAttrib();
         edgeDisplayList.endCompile();
       }
+      edgeColor.setCurrentGL();
       edgeDisplayList.call();
     }
   }
