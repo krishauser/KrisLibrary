@@ -163,12 +163,12 @@ T VolumeGridTemplate<T>::TrilinearInterpolate(const Vector3& pt) const
   if(w > 0.5) { k2=k1+1; w = w-0.5; }
   else { k2=k1; k1--; w = 0.5+w; }
 
-  if(i1 < 0) i1=0; if(i1 >= value.m) i1=value.m-1;
-  if(i2 < 0) i2=0; if(i2 >= value.m) i2=value.m-1;
-  if(j1 < 0) j1=0; if(j1 >= value.n) j1=value.n-1;
-  if(j2 < 0) j2=0; if(j2 >= value.n) j2=value.n-1;
-  if(k1 < 0) k1=0; if(k1 >= value.p) k1=value.p-1;
-  if(k2 < 0) k2=0; if(k2 >= value.p) k2=value.p-1;
+  if(i1 < 0) i1=0; else if(i1 >= value.m) i1=value.m-1;
+  if(i2 < 0) i2=0; else if(i2 >= value.m) i2=value.m-1;
+  if(j1 < 0) j1=0; else if(j1 >= value.n) j1=value.n-1;
+  if(j2 < 0) j2=0; else if(j2 >= value.n) j2=value.n-1;
+  if(k1 < 0) k1=0; else if(k1 >= value.p) k1=value.p-1;
+  if(k2 < 0) k2=0; else if(k2 >= value.p) k2=value.p-1;
   T v11 = (1-w)*value(i1,j1,k1) + w*value(i1,j1,k2);
   T v12 = (1-w)*value(i1,j2,k1) + w*value(i1,j2,k2);
   T v21 = (1-w)*value(i2,j1,k1) + w*value(i2,j1,k2);

@@ -48,7 +48,7 @@ struct VolumeGridIterator
  *
  * Cells can be quickly iterated over using the iterator class.
  * 
- * Values are interpreted so they are defined over an entire cell,
+ * Values are interpreted so they are defined at the centers of each cell,
  * *not* the vertices.
  *
  * Most methods just clamp their arguments to the domain rather than
