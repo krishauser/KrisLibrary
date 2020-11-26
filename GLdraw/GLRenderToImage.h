@@ -31,8 +31,9 @@ public:
   GLRenderToImage();
   ~GLRenderToImage();
 
-  ///Call this first to see if render to image is supported
-  bool Setup(int w,int h);
+  ///Call this first to see if render to image is supported. 
+  ///Turning off want_color_tex and want_depth-tex may be slightly faster?
+  bool Setup(int w,int h,bool want_color_tex=true,bool want_depth_tex=true);
   ///Call Begin before rendering
   void Begin(const Camera::Viewport& vp);
   ///Call Begin before rendering
@@ -64,7 +65,9 @@ public:
   void GetZBuffer(std::vector<float>& image);
 
   int width,height;
-  unsigned int color_tex,fb,depth_rb;
+  unsigned int fb;
+  unsigned int color_tex,color_rb;
+  unsigned int depth_tex,depth_rb;
 };
 
 } 
