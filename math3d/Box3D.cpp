@@ -133,9 +133,9 @@ bool Box3D::intersects(const Box3D& b) const
   Vector3 halfdims = dims*0.5;
   Vector3 bhalfdims = b.dims*0.5;
   PQP_REAL B[3][3],T[3],AD[3],BD[3];
-  bxlocal.get(B[0]);
-  bylocal.get(B[1]);
-  bzlocal.get(B[2]);
+  bxlocal.get(B[0][0],B[1][0],B[2][0]);
+  bylocal.get(B[0][1],B[1][1],B[2][1]);
+  bzlocal.get(B[0][2],B[1][2],B[2][2]);
   bclocal.get(T);
   halfdims.get(AD);
   bhalfdims.get(BD);
