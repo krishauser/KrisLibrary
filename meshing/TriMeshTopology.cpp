@@ -67,22 +67,22 @@ void TriMeshWithTopology::CalcTriNeighbors()
       const TriMesh::Tri& t2=tris[k];
       Assert(t2.contains(t.a));
       if(t2.contains(t.b)) {
-	//edge ba
-	if(triNeighbors[i].c!=-1) {
-    numDuplicateNeighbors += 1;
-    duplicateNeighborMin = Min(duplicateNeighborMin,i);
-    duplicateNeighborMax = Max(duplicateNeighborMax,i);
-	}
-	triNeighbors[i].c=k;
+        //edge ba
+        if(triNeighbors[i].c!=-1) {
+          numDuplicateNeighbors += 1;
+          duplicateNeighborMin = Min(duplicateNeighborMin,i);
+          duplicateNeighborMax = Max(duplicateNeighborMax,i);
+        }
+        triNeighbors[i].c=k;
       }
       if(t2.contains(t.c)) {
-	//edge ac
-	if(triNeighbors[i].b!=-1) {
-	  numDuplicateNeighbors += 1;
-    duplicateNeighborMin = Min(duplicateNeighborMin,i);
-    duplicateNeighborMax = Max(duplicateNeighborMax,i);
-	}
-	triNeighbors[i].b=k;
+        //edge ac
+        if(triNeighbors[i].b!=-1) {
+          numDuplicateNeighbors += 1;
+          duplicateNeighborMin = Min(duplicateNeighborMin,i);
+          duplicateNeighborMax = Max(duplicateNeighborMax,i);
+        }
+        triNeighbors[i].b=k;
       }
     }
     //vertex b => edge bc
@@ -92,13 +92,13 @@ void TriMeshWithTopology::CalcTriNeighbors()
       const TriMesh::Tri& t2=tris[k];
       Assert(t2.contains(t.b));
       if(t2.contains(t.c)) {
-	//edge bc
-	if(triNeighbors[i].a!=-1) {
-	  numDuplicateNeighbors += 1;
-    duplicateNeighborMin = Min(duplicateNeighborMin,i);
-    duplicateNeighborMax = Max(duplicateNeighborMax,i);
-	}
-	triNeighbors[i].a=k;
+        //edge bc
+        if(triNeighbors[i].a!=-1) {
+          numDuplicateNeighbors += 1;
+          duplicateNeighborMin = Min(duplicateNeighborMin,i);
+          duplicateNeighborMax = Max(duplicateNeighborMax,i);
+        }
+        triNeighbors[i].a=k;
       }
     }
   }
