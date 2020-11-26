@@ -42,6 +42,10 @@ class CollisionImplicitSurface
 ///indicate interior points.  Input is in world coordinates.
 Real Distance(const CollisionImplicitSurface& s,const Vector3& pt);
 
+///Returns true if the primitive is within margin distance of the geometry represented by s.
+///If so, a colliding point (in world coordinates) is returned in pt.
+bool Collides(const CollisionImplicitSurface& s,const GeometricPrimitive3D& geom,Real margin,Vector3& pt);
+
 ///Returns the distance between s and pt, assuming s is a signed distance field.  Negative values
 ///indicate interior points.  
 ///

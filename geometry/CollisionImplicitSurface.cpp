@@ -5,6 +5,7 @@
 #include <structs/Heap.h>
 #include <KrisLibrary/Logger.h>
 #include <Timer.h>
+#include <tuple>
 
 DECLARE_LOGGER(Geometry)
 
@@ -147,29 +148,36 @@ Real Distance(const CollisionImplicitSurface& s,const Vector3& pt)
   return sdf_value + d_bb;
 }
 
+Real DistanceLocal(const Meshing::VolumeGrid& grid,const Vector3& pt,Vector3* surfacePt=NULL,Vector3* direction=NULL)
+{
+  Vector3 pt_clamped;
+  Real d_bb = grid.bb.distance(pt,pt_clamped);
+  Real sdf_value = grid.TrilinearInterpolate(pt);
+  if(surfacePt || direction) {
+    grid.Gradient(pt_clamped,*direction);
+    direction->inplaceNormalize();
+    *surfacePt = pt_clamped - (*direction)*sdf_value;
+    if(d_bb > 0) {
+      *direction = *surfacePt - pt;
+      d_bb = direction->norm();
+      *direction /= d_bb;
+      return d_bb;
+    }
+    else
+      direction->inplaceNegative();
+  } 
+  return d_bb + sdf_value;
+}
 
 Real Distance(const CollisionImplicitSurface& s,const Vector3& pt,Vector3& surfacePt,Vector3& direction)
 {
   Vector3 ptlocal;
   s.currentTransform.mulInverse(pt,ptlocal);
-  Vector3 pt_clamped;
-  Real d_bb = s.baseGrid.bb.distance(ptlocal,pt_clamped);
-  Real sdf_value = s.baseGrid.TrilinearInterpolate(ptlocal);
-  
-  s.baseGrid.Gradient(pt_clamped,direction);
-  direction.inplaceNormalize();
-  surfacePt = pt_clamped - direction*sdf_value;
-  if(d_bb > 0) {
-    direction = surfacePt - ptlocal;
-    sdf_value = 0;
-    d_bb = direction.norm();
-    direction /= d_bb;
-  }
-  else
-    direction.inplaceNegative();
+
+  Real d=DistanceLocal(s.baseGrid,ptlocal,&surfacePt,&direction);
   surfacePt = s.currentTransform*surfacePt;
   direction = s.currentTransform.R*direction;
-  return sdf_value + d_bb;
+  return d;
 }
 
 Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a,Vector3& gridclosest,Vector3& geomclosest,Vector3& direction)
@@ -185,6 +193,182 @@ Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a
     Real d = Distance(grid,s->center,gridclosest,direction);
     geomclosest = s->center + s->radius*direction;
     return d - s->radius;
+  }
+  else if(a.type == GeometricPrimitive3D::Segment) {
+    const Segment3D* s=AnyCast_Raw<Segment3D>(&a.data);
+    Segment3D slocal;
+    grid.currentTransform.mulInverse(s->a,slocal.a);
+    grid.currentTransform.mulInverse(s->b,slocal.b);
+    Vector3 cellsize = grid.baseGrid.GetCellSize();
+    Real cellbnd = Max(cellsize.x,cellsize.y,cellsize.z)*0.5;
+    Segment3D sgrid;
+    sgrid.a.x = (slocal.a.x - grid.baseGrid.bb.bmin.x) / cellsize.x;
+    sgrid.a.y = (slocal.a.y - grid.baseGrid.bb.bmin.y) / cellsize.y;
+    sgrid.a.z = (slocal.a.z - grid.baseGrid.bb.bmin.z) / cellsize.z;
+    sgrid.b.x = (slocal.b.x - grid.baseGrid.bb.bmin.x) / cellsize.x;
+    sgrid.b.y = (slocal.b.y - grid.baseGrid.bb.bmin.y) / cellsize.y;
+    sgrid.b.z = (slocal.b.z - grid.baseGrid.bb.bmin.z) / cellsize.z;
+    vector<Real> params;
+    vector<IntTriple> cells;
+    Meshing::GetSegmentCells(sgrid,cells,&params);
+    cells.push_back(cells.back());
+    vector<tuple<Real,IntTriple,Real> > candidates;
+    for(size_t i=0;i<cells.size();i++) {
+      IntTriple c = cells[i];
+      if(c.a < 0) c.a=0; else if(c.a >= grid.baseGrid.value.m) c.a = grid.baseGrid.value.m-1;
+      if(c.b < 0) c.b=0; else if(c.b >= grid.baseGrid.value.n) c.b = grid.baseGrid.value.n-1;
+      if(c.c < 0) c.c=0; else if(c.c >= grid.baseGrid.value.p) c.c = grid.baseGrid.value.p-1;
+      Real d=grid.baseGrid.value(c);
+      if(candidates.empty() || get<1>(candidates.back()) != c) {
+        candidates.push_back(make_tuple(d,c,params[i]));
+        candidates.push_back(make_tuple(d,c,(params[i]+params[i+1])*0.5));
+      }
+      else if(!candidates.empty()) {
+        ///same grid cell -- start in middle
+        get<2>(candidates.back()) = 0.5*(get<2>(candidates.back())+params[i]);
+      }
+    }
+    Assert(candidates.size() > 0);
+    Real dmin=Inf;
+    Real tmin=0;
+    sort(candidates.begin(),candidates.end());
+    Vector3 disp=slocal.b-slocal.a;
+    for(size_t i=0;i<candidates.size();i++) {
+      Real d = get<0>(candidates[i]);
+      if(d - cellbnd >= dmin) break;
+      Real t = get<2>(candidates[i]);
+      Vector3 x = slocal.a + t*disp;
+      Vector3 xclamped;
+      Real d_bb = grid.baseGrid.bb.distance(x,xclamped);
+      if(d_bb >= dmin) continue;
+      if(d_bb + d - cellbnd >= dmin) continue;
+      Real sdf_value = grid.baseGrid.TrilinearInterpolate(xclamped);
+      if(d_bb + sdf_value < dmin) {
+        tmin = t;
+        dmin = d_bb + sdf_value;
+      }
+    }
+    geomclosest = slocal.a + tmin*disp;
+    Vector3 pt_clamped;
+    Real d_bb = grid.baseGrid.bb.distance(geomclosest,pt_clamped);
+    Real sdf_value = grid.baseGrid.TrilinearInterpolate(pt_clamped);
+    grid.baseGrid.Gradient(pt_clamped,direction);
+    direction.inplaceNormalize();
+    gridclosest = pt_clamped - direction*sdf_value;
+    if(d_bb > 0) {
+      direction = gridclosest - geomclosest;
+      direction.inplaceNormalize();
+    }
+    else
+      direction.inplaceNegative();
+
+    geomclosest = grid.currentTransform*geomclosest;
+    gridclosest = grid.currentTransform*gridclosest;
+    direction = grid.currentTransform.R*direction;
+    return geomclosest.distance(gridclosest);
+  }
+  else {
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can't collide an implicit surface and a non-sphere primitive yet");
+    return 0;
+  }
+}
+
+bool Collides(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a,Real margin,Vector3& gridclosest)
+{
+  if(a.type == GeometricPrimitive3D::Point || a.type == GeometricPrimitive3D::Sphere) {
+    Vector3 temp,temp2;
+    return Distance(grid,a,gridclosest,temp,temp2) <= margin;
+  }
+  else if(a.type == GeometricPrimitive3D::Segment) {
+    const Segment3D* s=AnyCast_Raw<Segment3D>(&a.data);
+    Segment3D slocal;
+    grid.currentTransform.mulInverse(s->a,slocal.a);
+    grid.currentTransform.mulInverse(s->b,slocal.b);
+    if(slocal.distance(grid.baseGrid.bb) > margin) {
+      return false;
+    }
+
+    //shrink the range considered by examining the endpoint distances
+    Real da = DistanceLocal(grid.baseGrid,slocal.a);
+    Real db = DistanceLocal(grid.baseGrid,slocal.b);
+    Real t1,t2;
+    Real slength = slocal.a.distance(slocal.b);
+    if(da <= margin) t1=0;
+    else {
+      if(da - slength > margin) {
+        return false;
+      }
+      t1 = (da - margin)/slength;
+    }
+    if(db <= margin) t2=1;
+    else {
+      if(db - slength > margin) {
+        return false;
+      }
+      t2 = 1 - (db - margin)/slength;
+    }
+    Vector3 a,b;
+    a = slocal.a + t1*(slocal.b-slocal.a);
+    b = slocal.a + t2*(slocal.b-slocal.a);
+    slocal.a = a;
+    slocal.b = b;
+
+    Vector3 cellsize = grid.baseGrid.GetCellSize();
+    Real cellbnd = Max(cellsize.x,cellsize.y,cellsize.z)*0.5;
+    Segment3D sgrid;
+    sgrid.a.x = (slocal.a.x - grid.baseGrid.bb.bmin.x) / cellsize.x;
+    sgrid.a.y = (slocal.a.y - grid.baseGrid.bb.bmin.y) / cellsize.y;
+    sgrid.a.z = (slocal.a.z - grid.baseGrid.bb.bmin.z) / cellsize.z;
+    sgrid.b.x = (slocal.b.x - grid.baseGrid.bb.bmin.x) / cellsize.x;
+    sgrid.b.y = (slocal.b.y - grid.baseGrid.bb.bmin.y) / cellsize.y;
+    sgrid.b.z = (slocal.b.z - grid.baseGrid.bb.bmin.z) / cellsize.z;
+    vector<Real> params;
+    vector<IntTriple> cells;
+    Meshing::GetSegmentCells(sgrid,cells,&params);
+    cells.push_back(cells.back());
+    vector<tuple<Real,IntTriple,Real> > candidates;
+    for(size_t i=0;i<cells.size();i++) {
+      IntTriple c = cells[i];
+      if(c.a < 0) c.a=0; else if(c.a >= grid.baseGrid.value.m) c.a = grid.baseGrid.value.m-1;
+      if(c.b < 0) c.b=0; else if(c.b >= grid.baseGrid.value.n) c.b = grid.baseGrid.value.n-1;
+      if(c.c < 0) c.c=0; else if(c.c >= grid.baseGrid.value.p) c.c = grid.baseGrid.value.p-1;
+      Real d=grid.baseGrid.value(c);
+      if(d - cellbnd >= margin) continue;
+      if(candidates.empty() || get<1>(candidates.back()) != c) {
+        candidates.push_back(make_tuple(d,c,params[i]));
+        candidates.push_back(make_tuple(d,c,(params[i]+params[i+1])*0.5));
+      }
+      else if(!candidates.empty()) {
+        ///same grid cell -- start in middle
+        get<2>(candidates.back()) = 0.5*(get<2>(candidates.back())+params[i]);
+      }
+    }
+    if(candidates.empty()) return false;
+    Real dmin=Max(margin+1e-7,1e-5);
+    Real tmin=0;
+    sort(candidates.begin(),candidates.end());
+    Vector3 disp=slocal.b-slocal.a;
+    for(size_t i=0;i<candidates.size();i++) {
+      Real d = get<0>(candidates[i]);
+      if(d - cellbnd >= dmin) break;
+      Real t = get<2>(candidates[i]);
+      Vector3 x = slocal.a + t*disp;
+      Vector3 xclamped;
+      Real d_bb = grid.baseGrid.bb.distance(x,xclamped);
+      if(d_bb >= dmin) continue;
+      if(d_bb + d - cellbnd >= dmin) continue;
+      Real sdf_value = grid.baseGrid.TrilinearInterpolate(xclamped);
+      if(d_bb + sdf_value < dmin) {
+        tmin = t;
+        dmin = d_bb + sdf_value;
+      }
+    }
+    Vector3 geomclosest = slocal.a + tmin*disp;
+    Vector3 direction;
+    DistanceLocal(grid.baseGrid,geomclosest,&gridclosest,&direction);
+
+    gridclosest = grid.currentTransform*gridclosest;
+    return (dmin < Max(margin+1e-6,1e-5));
   }
   else {
     LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can't collide an implicit surface and a non-sphere primitive yet");
