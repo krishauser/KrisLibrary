@@ -3863,6 +3863,30 @@ void MeshSphereContacts(CollisionMesh &m1, Real outerMargin1, const Sphere3D &s,
     contacts[k].elem2 = -1;
     contacts[k].unreliable = false;
   }
+  //filter by neighboring triangles
+  if(!m1.triNeighbors.empty()) {
+    //TODO: if the mesh is super fine, this may miss some duplicates. Instead should look for local minima?
+    map<int,int> triToContact;
+    for(size_t i=0;i<contacts.size();i++) {
+      int t = contacts[i].elem1;
+      triToContact[t] = (int)i;
+    }
+    for(size_t i=0;i<contacts.size();i++) {
+      int t = contacts[i].elem1;
+      const IntTriple& neighbors = m1.triNeighbors[t];
+      if((triToContact.count(neighbors.a) && contacts[triToContact[neighbors.a]].depth > contacts[i].depth) ||
+        (triToContact.count(neighbors.b) && contacts[triToContact[neighbors.b]].depth > contacts[i].depth) ||
+        (triToContact.count(neighbors.c) && contacts[triToContact[neighbors.c]].depth > contacts[i].depth))
+      {
+        triToContact.erase(triToContact.find(t));
+        int replaceT = contacts.back().elem1;
+        triToContact[replaceT] = i;
+        contacts[i] = contacts.back();
+        contacts.resize(contacts.size()-1);
+        i--;
+      }
+    }
+  }
 }
 
 void MeshPrimitiveContacts(CollisionMesh &m1, Real outerMargin1, GeometricPrimitive3D &g2, const RigidTransform &T2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
