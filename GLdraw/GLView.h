@@ -15,7 +15,7 @@ class GLView
 {
 public:
 	GLView();
-	void setCurrentGL();
+	void setCurrentGL() const;
 	void getCurrentGL();
 	void updateInverses();  //must call this after each change of modelview/projection matrices to update the inverse transforms
 

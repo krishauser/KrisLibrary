@@ -10,7 +10,7 @@ GLView::GLView()
 :x(0),y(0),w(1),h(1)
 {}
 
-void GLView::setCurrentGL()
+void GLView::setCurrentGL() const
 {
 	glViewport((GLint)x,(GLint)y,(GLsizei)w,(GLsizei)h);
 	glMatrixMode(GL_PROJECTION);
@@ -135,6 +135,9 @@ bool GLView::getViewport(Camera::Viewport& v) const
 			Real c=(p(2,2)-1)/(p(2,2)+1);
 			v.n= (float)(p(2,3)*Half-p(2,3)*Half/c);
 			v.f= (float)(v.n*c);
+			//for some reason forgot a negative sign
+			v.n =-v.n;
+			v.f =-v.f;
 		}
 		else error=true;
 
