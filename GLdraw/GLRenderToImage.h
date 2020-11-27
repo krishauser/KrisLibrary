@@ -3,6 +3,7 @@
 
 #include <KrisLibrary/camera/viewport.h>
 #include <KrisLibrary/image/image.h>
+#include "GLView.h"
 #include <vector>
 
 namespace GLDraw {
@@ -36,6 +37,7 @@ public:
   bool Setup(int w,int h,bool want_color_tex=true,bool want_depth_tex=true);
   ///Call Begin before rendering
   void Begin(const Camera::Viewport& vp);
+  void Begin(const GLView& vp);
   ///Call Begin before rendering
   void Begin();
   ///Call End after rendering
@@ -56,10 +58,13 @@ public:
 
   ///scan line order, top left to bottom right
   void GetDepth(const Camera::Viewport& vp,std::vector<float>& image);
+  void GetDepth(const GLView& vp,std::vector<float>& image);
   ///pixels in matrix order, top left to bottom right
   void GetDepth(const Camera::Viewport& vp,std::vector<std::vector<float> >& image);
+  void GetDepth(const GLView& vp,std::vector<std::vector<float> >& image);
   ///converts to KrisLibrary Image
   void GetDepth(const Camera::Viewport& vp,Image& image);
+  void GetDepth(const GLView& vp,Image& image);
 
   ///this is the raw value in the z buffer
   void GetZBuffer(std::vector<float>& image);

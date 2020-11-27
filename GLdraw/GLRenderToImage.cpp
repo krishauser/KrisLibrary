@@ -218,6 +218,13 @@ void GLRenderToImage::Begin(const Camera::Viewport& vp)
   view.setCurrentGL();
 }
 
+void GLRenderToImage::Begin(const GLView& vp)
+{
+  Begin();
+  vp.setCurrentGL();
+}
+
+
 void GLRenderToImage::Begin()
 {
   if(!fb) return;
@@ -518,4 +525,25 @@ void GLRenderToImage::GetDepth(const Camera::Viewport& vp,Image& image)
   GetDepth(vp,pix);
   Assert(pix.size()*sizeof(float) == image.num_bytes);
   memcpy(image.data,&pix[0],image.num_bytes);
+}
+
+void GLRenderToImage::GetDepth(const GLView& vp,vector<float>& image)
+{
+  Camera::Viewport view;
+  vp.getViewport(view);
+  GetDepth(view,image);
+}
+
+void GLRenderToImage::GetDepth(const GLView& vp,vector<vector<float> >& image)
+{
+  Camera::Viewport view;
+  vp.getViewport(view);
+  GetDepth(view,image);
+}
+
+void GLRenderToImage::GetDepth(const GLView& vp,Image& image)
+{
+  Camera::Viewport view;
+  vp.getViewport(view);
+  GetDepth(view,image);
 }
