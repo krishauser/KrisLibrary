@@ -22,7 +22,7 @@
 
 DEFINE_LOGGER(Geometry)
 
-#define POINT_CLOUD_MESH_COLLIDE_ALL_POINTS 1
+#define POINT_CLOUD_MESH_COLLIDE_ALL_POINTS 0
 
 using namespace Geometry;
 
