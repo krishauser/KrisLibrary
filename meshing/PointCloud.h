@@ -64,6 +64,7 @@ class PointCloud3D
    * - invalidDepth: a depth value that indicates a bad reading
    */
   void FromDepthImage(int w,int h,float wfov,float hfov,const std::vector<float>& depths,const std::vector<unsigned int>& rgb,float invalidDepth=0.0);
+  void FromDepthImage(int w,int h,float wfov,float hfov,const float* depths,const unsigned int* rgb,float invalidDepth=0.0);
   /** @brief Converts a w x h depth image to a structured point cloud.  The camera frame is x right, y down, z forward.
    *
    * - w,h: width and height 
@@ -74,6 +75,7 @@ class PointCloud3D
    * - invalidDepth: a depth value that indicates a bad reading
    */
   void FromDepthImage(int w,int h,float wfov,float hfov,float depthscale,const std::vector<unsigned short>& depths,const std::vector<unsigned int>& rgb,unsigned short invalidDepth=0);
+  void FromDepthImage(int w,int h,float wfov,float hfov,float depthscale,const unsigned short* depths,const unsigned int* rgb,unsigned short invalidDepth=0);
   ///Returns the bounding box of the point set
   void GetAABB(Vector3& bmin,Vector3& bmax) const;
   ///Transforms all points and, if present, normals

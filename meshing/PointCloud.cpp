@@ -425,7 +425,7 @@ bool PointCloud3D::SavePCL(ostream& out) const
   out<<"DATA ascii"<<endl;  
   if(propertyNames.empty()) {
     for(size_t i=0;i<points.size();i++) 
-      out<<points[i];
+      out<<points[i]<<endl;
   }
   else {
     for(size_t i=0;i<properties.size();i++) {
@@ -441,10 +441,17 @@ bool PointCloud3D::SavePCL(ostream& out) const
 
 void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const std::vector<float>& depths,const std::vector<unsigned int>& rgb,float invalidDepth)
 {
+  Assert(depths.size() == w*h);
+  if(!rgb.empty())
+    Assert(rgb.size() == w*h);
+  FromDepthImage(w,h,wfov,hfov,&depths[0],&rgb[0],invalidDepth);
+}
+
+void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const float* depths,const unsigned int* rgb,float invalidDepth)
+{
   SetStructured(w,h);
   Real xscale = Tan(wfov/2)*(2.0/w);
   Real yscale = Tan(hfov/2)*(2.0/h);
-  Assert(depths.size()==points.size());
   Real xc = Real(w)/2;
   Real yc = Real(h)/2;
   int k=0;
@@ -463,8 +470,7 @@ void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const std::v
       }
     }
   }
-  if(!rgb.empty()) {
-    Assert(rgb.size()==depths.size());
+  if(rgb) {
     propertyNames.resize(1);
     propertyNames[0] = "rgb";
     properties.resize(points.size());
@@ -481,6 +487,14 @@ void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,float depths
   for(size_t i=0;i<depths.size();i++)
     fdepth[i] = depths[i]*depthscale;
   FromDepthImage(w,h,wfov,hfov,fdepth,rgb,invalidDepth*depthscale);
+}
+
+void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,float depthscale,const unsigned short* depths,const unsigned int* rgb,unsigned short invalidDepth)
+{
+  vector<float> fdepth(w*h);
+  for(int i=0;i<w*h;i++)
+    fdepth[i] = depths[i]*depthscale;
+  FromDepthImage(w,h,wfov,hfov,&fdepth[0],rgb,invalidDepth*depthscale);
 }
 
 bool PointCloud3D::IsStructured() const
