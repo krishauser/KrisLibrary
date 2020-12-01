@@ -24,6 +24,7 @@ struct GLOffscreenContextXData
     Display* dpy;
     GLXContext ctx;
     GLXPbuffer pbuf;
+    GLXContext priorCtx;
 };
 
 GLOffscreenContext::GLOffscreenContext()
@@ -60,6 +61,7 @@ bool GLOffscreenContext::setup()
     Display*& dpy = xdata->dpy;
     GLXContext& ctx = xdata->ctx;
     GLXPbuffer& pbuf = xdata->pbuf;
+    xdata->priorCtx = glXGetCurrentContext();
 
     //what do these do?
     int pbuffer_width = 32;
@@ -211,6 +213,11 @@ bool GLOffscreenContext::makeCurrent()
     return true;
 }
 
+bool GLOffscreenContext::hasGLContext()
+{
+    return glXGetCurrentContext() != NULL;
+}
+
 #else
 
 #include "GLUTProgram.h"
@@ -234,6 +241,11 @@ bool GLOffscreenContext::setup()
 }
 
 bool GLOffscreenContext::makeCurrent()
+{
+    return false;
+}
+
+bool GLOffscreenContext::hasGLContext()
 {
     return false;
 }
