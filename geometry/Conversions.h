@@ -43,6 +43,9 @@ void PrimitiveToMesh(const GeometricPrimitive3D& primitive,Meshing::TriMesh& mes
 /** @ingroup Geometry
  * @brief Creates an implicit surface for a geometric primitive.  The grid has
  * resolution no more than resolution on each axis. 
+ *
+ * expansion grows the domain of the grid by this many units.  This helps extract
+ * a larger level set from the remaining implicit surface.
  */
 void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
 
@@ -51,6 +54,9 @@ void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::V
  *
  * Note: the mesh's current transform is NOT taken into account (i.e., the resulting grid
  * is in local coordinates)
+ *
+ * expansion grows the domain of the grid by this many units.  This helps extract
+ * a larger level set from the remaining implicit surface.
  */
 void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
 
@@ -62,6 +68,9 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
  *
  * Note: the mesh's current transform is NOT taken into account (i.e., the resulting grid
  * is in local coordinates)
+ *
+ * expansion grows the domain of the grid by this many units.  This helps extract
+ * a larger level set from the remaining implicit surface.
  */
 void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews=20,Real expansion=0);
 

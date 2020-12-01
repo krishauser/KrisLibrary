@@ -1268,7 +1268,7 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     res = AnyCollisionGeometry3D(grid);
     //LOG4CXX_INFO(GET_LOGGER(Geometry), "Grid bb " << grid.bb);
     res.SetTransform(GetTransform());
-    res.margin = 0; //margins are taken care off in the MeshToImplicitSurface_FMM call
+    res.margin = margin;
     return true;
   }
   else if (type == Primitive && restype == ImplicitSurface)
@@ -1283,7 +1283,7 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     PrimitiveToImplicitSurface(AsPrimitive(), grid, param, margin);
     res = AnyCollisionGeometry3D(grid);
     res.SetTransform(GetTransform());
-    res.margin = 0; //margins are taken care off in the PrimitiveToImplicitSurface call
+    res.margin = margin;
     return true;
   }
   else if(type == Group) {
