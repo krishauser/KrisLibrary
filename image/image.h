@@ -3,6 +3,9 @@
 
 class File;
 
+/** @brief A simple image class.
+ *
+ */
 class Image
 {
 public:
