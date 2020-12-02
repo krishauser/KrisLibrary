@@ -346,7 +346,8 @@ void GLRenderToImage::GetRGBA(vector<vector<unsigned int> >& image)
 
 void GLRenderToImage::GetRGBA(Image& image)
 {
-  image.initialize(width,height,Image::A8R8G8B8);
+  if(width != image.w || height != image.h || Image::A8R8G8B8 != image.format)
+    image.initialize(width,height,Image::A8R8G8B8);
   vector<unsigned char> bytes;
   GetRGBA(bytes);
   Assert(bytes.size() == image.num_bytes);
@@ -400,7 +401,8 @@ void GLRenderToImage::GetRGB(vector<unsigned char>& image)
 
 void GLRenderToImage::GetRGB(Image& image)
 {
-  image.initialize(width,height,Image::R8G8B8);
+  if(width != image.w || height != image.h || Image::R8G8B8 != image.format)
+    image.initialize(width,height,Image::R8G8B8);
   /*
   vector<unsigned char> bytes;
   GetRGB(bytes);
@@ -520,7 +522,8 @@ void GLRenderToImage::GetDepth(const Camera::Viewport& vp,vector<vector<float> >
 
 void GLRenderToImage::GetDepth(const Camera::Viewport& vp,Image& image)
 {
-  image.initialize(width,height,Image::FloatA);
+  if(width != image.w || height != image.h || Image::FloatA != image.format)
+    image.initialize(width,height,Image::FloatA);
   vector<float> pix;
   GetDepth(vp,pix);
   Assert(pix.size()*sizeof(float) == image.num_bytes);
