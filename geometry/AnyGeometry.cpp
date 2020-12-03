@@ -1496,7 +1496,7 @@ RigidTransform AnyCollisionGeometry3D::GetTransform() const
 void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
 {
   currentTransform = T;
-  this->InitCollisionData();
+  //this->InitCollisionData();
   if (!collisionData.empty())
   {
     switch (type)
