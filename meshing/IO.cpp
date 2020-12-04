@@ -769,6 +769,11 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
   if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_DIFFUSE,&col) == aiReturn_SUCCESS) {
     app.faceColor.set(col.r,col.g,col.b,1.0);
   }
+  if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_EMISSIVE,&col) == aiReturn_SUCCESS) {
+    printf("Emissive color %f %f %f\n",col.r,col.g,col.b);
+    if(col.r == 1 && col.g == 1 && col.b == 1)
+      app.lightFaces = false;
+  }
   float opacity = 1.0;
   if(aiGetMaterialFloat(mat,AI_MATKEY_OPACITY,&opacity) == aiReturn_SUCCESS) {
     app.faceColor.rgba[3] = opacity;
