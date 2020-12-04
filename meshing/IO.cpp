@@ -671,7 +671,6 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
     app = apps[0];
     size_t numVerts = models[0].verts.size();
     size_t numTris = models[0].tris.size();
-    printf("Base color %f %f %f %f\n",app.faceColor.rgba[0],app.faceColor.rgba[1],app.faceColor.rgba[2],app.faceColor.rgba[3]);
     for(size_t i=1;i<apps.size();i++) {
       if(app.texcoords.empty() != apps[i].texcoords.empty()) {
         if(app.texcoords.empty()) {
@@ -787,7 +786,6 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
     app.faceColor.rgba[3] = opacity;
   }
   if(aiGetMaterialFloat(mat,AI_MATKEY_TRANSPARENCYFACTOR,&opacity) == aiReturn_SUCCESS) {
-    printf("TRANSPARENCYFACTOR %f\n",opacity);
     app.faceColor.rgba[3] = 1.0-opacity;
   }
   aiString str;
