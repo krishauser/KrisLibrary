@@ -331,8 +331,8 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
       ss>>nv>>nf>>ne;
       if(ss.bad()) {
                 LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: unable to read first line\n");
-	in.setstate(ios::badbit);
-	return false;
+        in.setstate(ios::badbit);
+        return false;
       }
       tri.verts.resize(nv);
       tri.tris.resize(0);
@@ -497,22 +497,22 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
         app.texcoords.push_back(Vector2(pt.x,pt.y));
       }
       else if(isspace(c)) { ///just vertex
-	int n=fscanf(f," %lf %lf %lf",&pt.x,&pt.y,&pt.z);
-	if(n != 3) {
-	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: erroneous v line on line "<<lineno);
-	  return false;
-	}
-	tri.verts.push_back(pt);
-	fgetline(f,buf,1024);
-	n=sscanf(buf,"%f %f %f %f",&col.rgba[0],&col.rgba[1],&col.rgba[2],&col.rgba[3]);
-	if(n == 3) col.rgba[3]=1;
-	if(n >= 3) {
-	  app.vertexColors.push_back(col);
-	  if(app.vertexColors.size() != tri.verts.size()) {
-	    	    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: number of vertex colors not equal to number of vertices\n");
-	    return false;
-	  }
-	}
+        int n=fscanf(f," %lf %lf %lf",&pt.x,&pt.y,&pt.z);
+        if(n != 3) {
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: erroneous v line on line "<<lineno);
+          return false;
+        }
+        tri.verts.push_back(pt);
+        fgetline(f,buf,1024);
+        n=sscanf(buf,"%f %f %f %f",&col.rgba[0],&col.rgba[1],&col.rgba[2],&col.rgba[3]);
+        if(n == 3) col.rgba[3]=1;
+        if(n >= 3) {
+          app.vertexColors.push_back(col);
+          if(app.vertexColors.size() != tri.verts.size()) {
+                    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: number of vertex colors not equal to number of vertices\n");
+            return false;
+          }
+        }
       }
     }
     else if(c=='f') {
@@ -522,46 +522,46 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
       fgetline(f,buf,1024);
       bool readingspace = true;
       for(int i=0;i<1024;i++) {
-	if(!buf[i]) break;
-	if(readingspace) {
-	  if(isspace(buf[i])) buf[i]=0;
-	  else {
-	    readingspace = false;
-	    elements.push_back(&buf[i]);
-	  }
-	}
-	else {
-	  if(isspace(buf[i])) {
-	    buf[i]=0;
-	    readingspace = true;
-	  }
-	}
+        if(!buf[i]) break;
+        if(readingspace) {
+          if(isspace(buf[i])) buf[i]=0;
+          else {
+            readingspace = false;
+            elements.push_back(&buf[i]);
+          }
+        }
+        else {
+          if(isspace(buf[i])) {
+            buf[i]=0;
+            readingspace = true;
+          }
+        }
       }
       //elements can be of form %d, %d/%d, or %d/%d/%d. 
       //We only care about the first
       face.resize(elements.size());
       int f;
       for(size_t i=0;i<elements.size();i++) {
-	char* c = elements[i];
-	while(*c) { if(*c=='/') { *c=0; break; }c++; }
-	int n=sscanf(elements[i],"%d",&f);
-	if(n != 1) {
-	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid vertex on f line "<<lineno<<", element "<<i);
-	  return false;
-	}
-	f-=1;   //1 based
-	if(f < 0 || f >= (int)tri.verts.size()) {
-	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: vertex "<<f<<" on f line "<<lineno<<" is out of bounds 0,...,"<<(int)tri.verts.size());
-	  return false;
-	}
-	face[i] = f;
+        char* c = elements[i];
+        while(*c) { if(*c=='/') { *c=0; break; }c++; }
+        int n=sscanf(elements[i],"%d",&f);
+        if(n != 1) {
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid vertex on f line "<<lineno<<", element "<<i);
+          return false;
+        }
+        f-=1;   //1 based
+        if(f < 0 || f >= (int)tri.verts.size()) {
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: vertex "<<f<<" on f line "<<lineno<<" is out of bounds 0,...,"<<(int)tri.verts.size());
+          return false;
+        }
+        face[i] = f;
       }
       if(face.size() < 3) {
-		LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid f line "<<lineno);
-	return false;
+                LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid f line "<<lineno);
+        return false;
       }
       for(size_t i=2;i<face.size();i++) 
-	tri.tris.push_back(IntTriple(face[0],face[i-1],face[i]));
+        tri.tris.push_back(IntTriple(face[0],face[i-1],face[i]));
     }
     else if(c=='m') {
       int i=0;
@@ -652,75 +652,76 @@ bool SaveOBJ(const char* fn,const TriMesh& tri,const GeometryAppearance& app)
 
 bool LoadAssimp(const char* fn, TriMesh& mesh)
 {
-	vector<TriMesh> models;
-	if(!LoadAssimp(fn,models)) return false;
-	mesh.Merge(models);
-	LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris");
-	return true;
+        vector<TriMesh> models;
+        if(!LoadAssimp(fn,models)) return false;
+        mesh.Merge(models);
+        LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris");
+        return true;
 }
 
 
 bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
 {
-	vector<TriMesh> models;
-	vector<GeometryAppearance> apps;
-	if(!LoadAssimp(fn,models,apps)) return false;
-	mesh.Merge(models);
-	if(!apps.empty()) {
-	  //need to merge appearance information
-	  app = apps[0];
-	  size_t numVerts = models[0].verts.size();
-	  size_t numTris = models[0].tris.size();
-	  for(size_t i=1;i<apps.size();i++) {
-	    if(app.texcoords.empty() != apps[i].texcoords.empty()) {
-	      if(app.texcoords.empty()) {
-		app.texcoords.resize(numVerts,Vector2(0.0));
-	      }
-	      else {
-		apps[i].texcoords.resize(models[i].verts.size(),Vector2(0.0));
-	      }
-	    }
-	    if(!app.texcoords.empty())
-	      app.texcoords.insert(app.texcoords.end(),apps[i].texcoords.begin(),apps[i].texcoords.end());
-	    if(app.tex2D != apps[i].tex2D) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces");
-	      if(app.tex2D == NULL)
-		app.tex2D = apps[i].tex2D;
-	    }
-	    if(app.tex1D != apps[i].tex1D) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces");
-	      if(app.tex1D == NULL)
-		app.tex1D = apps[i].tex1D;
-	    }
-	    if(app.vertexColors.empty() != apps[i].vertexColors.empty()) {
-	      if(app.vertexColors.empty()) 
-		app.vertexColors.resize(numVerts,app.vertexColor);
-	      else
-		apps[i].vertexColors.resize(models[i].verts.size(),apps[i].vertexColor);
-	    }
-	    if(!app.vertexColors.empty())
-	      app.vertexColors.insert(app.vertexColors.end(),apps[i].vertexColors.begin(),apps[i].vertexColors.end());
-	    if(app.faceColors.empty() != apps[i].faceColors.empty()) {
-	      if(app.faceColors.empty()) 
-		app.faceColors.resize(numTris,app.faceColor);
-	      else
-		apps[i].faceColors.resize(models[i].tris.size(),apps[i].faceColor);
-	    }
-	    if(!app.faceColors.empty())
-	      app.faceColors.insert(app.faceColors.end(),apps[i].faceColors.begin(),apps[i].faceColors.end());
-	    else {
-	      if(app.faceColor != apps[i].faceColor) {
-		//need to construct per-face colors
-		app.faceColors.resize(numTris,app.faceColor);
-		app.faceColors.resize(numTris+models[i].tris.size(),apps[i].faceColor);
-	      }
-	    }
-	    numVerts += models[i].verts.size();
-	    numTris += models[i].tris.size();
-	  }
-	}
-	LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris");
-	return true;
+  vector<TriMesh> models;
+  vector<GeometryAppearance> apps;
+  if(!LoadAssimp(fn,models,apps)) return false;
+  mesh.Merge(models);
+  if(!apps.empty()) {
+    //need to merge appearance information
+    app = apps[0];
+    size_t numVerts = models[0].verts.size();
+    size_t numTris = models[0].tris.size();
+    printf("Base color %f %f %f %f\n",app.faceColor.rgba[0],app.faceColor.rgba[1],app.faceColor.rgba[2],app.faceColor.rgba[3]);
+    for(size_t i=1;i<apps.size();i++) {
+      if(app.texcoords.empty() != apps[i].texcoords.empty()) {
+        if(app.texcoords.empty()) {
+          app.texcoords.resize(numVerts,Vector2(0.0));
+        }
+        else {
+          apps[i].texcoords.resize(models[i].verts.size(),Vector2(0.0));
+        }
+      }
+      if(!app.texcoords.empty())
+        app.texcoords.insert(app.texcoords.end(),apps[i].texcoords.begin(),apps[i].texcoords.end());
+      if(app.tex2D != apps[i].tex2D) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces");
+        if(app.tex2D == NULL)
+          app.tex2D = apps[i].tex2D;
+      }
+      if(app.tex1D != apps[i].tex1D) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces");
+        if(app.tex1D == NULL)
+          app.tex1D = apps[i].tex1D;
+      }
+      if(app.vertexColors.empty() != apps[i].vertexColors.empty()) {
+        if(app.vertexColors.empty()) 
+          app.vertexColors.resize(numVerts,app.vertexColor);
+        else
+          apps[i].vertexColors.resize(models[i].verts.size(),apps[i].vertexColor);
+      }
+      if(!app.vertexColors.empty())
+        app.vertexColors.insert(app.vertexColors.end(),apps[i].vertexColors.begin(),apps[i].vertexColors.end());
+      if(app.faceColors.empty() != apps[i].faceColors.empty()) {
+        if(app.faceColors.empty()) 
+          app.faceColors.resize(numTris,app.faceColor);
+        else
+          apps[i].faceColors.resize(models[i].tris.size(),apps[i].faceColor);
+      }
+      if(!app.faceColors.empty())
+        app.faceColors.insert(app.faceColors.end(),apps[i].faceColors.begin(),apps[i].faceColors.end());
+      else {
+        if(app.faceColor != apps[i].faceColor) {
+          //need to construct per-face colors
+          app.faceColors.resize(numTris,app.faceColor);
+          app.faceColors.resize(numTris+models[i].tris.size(),apps[i].faceColor);
+        }
+      }
+      numVerts += models[i].verts.size();
+      numTris += models[i].tris.size();
+    }
+  }
+  LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model with "<<mesh.verts.size()<<" verts and "<<mesh.tris.size()<<" tris");
+  return true;
 }
 
 void Cast(const aiMatrix4x4& a,Matrix4& out)
@@ -750,16 +751,16 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
     app.vertexColors.resize(mesh->mNumVertices);
     for(unsigned int i=0;i<mesh->mNumVertices;i++)
       app.vertexColors[i].set(mesh->mColors[0][i].r,
-			      mesh->mColors[0][i].g,
-			      mesh->mColors[0][i].b,
-			      mesh->mColors[0][i].a);
+                              mesh->mColors[0][i].g,
+                              mesh->mColors[0][i].b,
+                              mesh->mColors[0][i].a);
   }
   if(mesh->mTextureCoords[0]) {
     //texture coordinates
     app.texcoords.resize(mesh->mNumVertices);
     for(unsigned int i=0;i<mesh->mNumVertices;i++)
       app.texcoords[i].set(mesh->mTextureCoords[0][i].x,
-			    mesh->mTextureCoords[0][i].y);
+                            mesh->mTextureCoords[0][i].y);
   }
   aiColor4D col;
   if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_DIFFUSE,&col) == aiReturn_SUCCESS) {
@@ -768,10 +769,26 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
   if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_EMISSIVE,&col) == aiReturn_SUCCESS) {
     if(col.r == 1 && col.g == 1 && col.b == 1)
       app.lightFaces = false;
+    app.emissiveColor.set(col.r,col.g,col.b,1.0);
+  }
+  if(aiGetMaterialFloat(mat,AI_MATKEY_SHININESS,&app.shininess) == aiReturn_SUCCESS) {
+    //read in already
+  }
+  else {
+    app.shininess = 0;
+  }
+  if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_SPECULAR,&col) == aiReturn_SUCCESS) {
+    app.specularColor.set(col.r,col.g,col.b,1.0);
   }
   float opacity = 1.0;
   if(aiGetMaterialFloat(mat,AI_MATKEY_OPACITY,&opacity) == aiReturn_SUCCESS) {
+    if(opacity == 0) //interpret as transparency?
+      opacity = 1.0;
     app.faceColor.rgba[3] = opacity;
+  }
+  if(aiGetMaterialFloat(mat,AI_MATKEY_TRANSPARENCYFACTOR,&opacity) == aiReturn_SUCCESS) {
+    printf("TRANSPARENCYFACTOR %f\n",opacity);
+    app.faceColor.rgba[3] = 1.0-opacity;
   }
   aiString str;
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
@@ -788,15 +805,16 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
           if(0==strcmp(tex->achFormatHint,"jpg") || 0==strcmp(tex->achFormatHint,"png") || 0==strcmp(tex->achFormatHint,"tif") || 0==strcmp(tex->achFormatHint,"bmp")) {
             stringstream ss;
             ss<<"_assimp_img_temp."<<tex->achFormatHint;
-            FILE* out = fopen(ss.str().c_str(),"wb");
+            const char* tempfn = ss.str().c_str();
+            FILE* out = fopen(tempfn,"wb");
             fwrite(tex->pcData,tex->mWidth,1,out);
             fclose(out);
-            if(ImportImage(ss.str().c_str(),*img)) {
+            if(ImportImage(tempfn,*img)) {
               app.tex2D = img;
-              FileUtils::Delete(ss.str().c_str());
+              FileUtils::Delete(tempfn);
             }
             else {
-              LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: can't load compressed embedded texture, saved to "<<ss.str()<<" for inspection");
+              LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: can't load compressed embedded texture, saved to "<<tempfn<<" for inspection");
             }
             ///this is a hack for facebook Habitat scenes
             app.lightFaces = false;
@@ -852,30 +870,30 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
     unsigned int m = node->mMeshes[i];
     if (scene->mMeshes && scene->mMeshes[m]) {
       if (scene->mMeshes[m]->HasFaces()) {
-	int nfaces = scene->mMeshes[m]->mNumFaces;
-	int nverts = scene->mMeshes[m]->mNumVertices;
-	apps.resize(apps.size()+1);
-	AssimpMaterialToAppearance(scene->mMaterials[scene->mMeshes[m]->mMaterialIndex],scene->mMeshes[m],scene,apps.back());
-	models.resize(models.size()+1);
-	models.back().tris.resize(nfaces);
-	models.back().verts.resize(nverts);
-	for (int j = 0; j < nfaces; j++) {
-	  const aiFace& face = scene->mMeshes[m]->mFaces[j];
-	  Assert(face.mNumIndices == 3);
-	  models.back().tris[j].set(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
-	}
-	for (int j = 0; j < nverts; j++) {
-	  const aiVector3D& vert = scene->mMeshes[m]->mVertices[j];
-	  T.mulPoint(Vector3((double)vert.x, (double)vert.y, (double)vert.z),models.back().verts[j]);
-	}
-	if(!models.back().IsValid()) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
-	  //KrisLibrary::loggerWait();
-	}
-	
+        int nfaces = scene->mMeshes[m]->mNumFaces;
+        int nverts = scene->mMeshes[m]->mNumVertices;
+        apps.resize(apps.size()+1);
+        AssimpMaterialToAppearance(scene->mMaterials[scene->mMeshes[m]->mMaterialIndex],scene->mMeshes[m],scene,apps.back());
+        models.resize(models.size()+1);
+        models.back().tris.resize(nfaces);
+        models.back().verts.resize(nverts);
+        for (int j = 0; j < nfaces; j++) {
+          const aiFace& face = scene->mMeshes[m]->mFaces[j];
+          Assert(face.mNumIndices == 3);
+          models.back().tris[j].set(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
+        }
+        for (int j = 0; j < nverts; j++) {
+          const aiVector3D& vert = scene->mMeshes[m]->mVertices[j];
+          T.mulPoint(Vector3((double)vert.x, (double)vert.y, (double)vert.z),models.back().verts[j]);
+        }
+        if(!models.back().IsValid()) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Warning: the triangle mesh is invalid or has degenerate triangles.");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Continuing may have unexpected results.");
+          //KrisLibrary::loggerWait();
+        }
+        
       } else {
-	LOG4CXX_WARN(KrisLibrary::logger(), "AssimpImporter: Warning, " << fn << ", mesh "<<m<<" has no faces" << "\n");
+        LOG4CXX_WARN(KrisLibrary::logger(), "AssimpImporter: Warning, " << fn << ", mesh "<<m<<" has no faces" << "\n");
       }
     } else {
       LOG4CXX_WARN(KrisLibrary::logger(), "AssimpImporter: Warning, " << fn << " has no mesh" << "\n");
@@ -894,32 +912,32 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 
 bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearance>& apps)
 {
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
-	// If the import failed, report it
-	if (!scene) {
-		LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter error: "<<importer.GetErrorString() << " while loading "<< fn << "\n");
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+    // If the import failed, report it
+    if (!scene) {
+            LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter error: "<<importer.GetErrorString() << " while loading "<< fn << "\n");
     return false;
   }
   if(scene->mNumMeshes == 0) {
-		LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter: Error processing " << fn << "!" << "\n");
-		return false;
-	}
-	models.resize(0);
-	Matrix4 Tident; Tident.setIdentity();
-	/*
-	Matrix4 Tyz; 
-	Tyz.setZero();
-	Tyz(0,0) = 1;
-	Tyz(1,2) = -1;
-	Tyz(2,1) = 1;
-	Tyz(3,3) = 1;
-	*/
-	if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tident,models,apps)) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter:"<<"Error Processing " << fn << "!" << "\n");
-	  return false;
-	}
-	return true;
+    LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter: Error processing " << fn << "!" << "\n");
+    return false;
+  }
+  models.resize(0);
+  Matrix4 Tident; Tident.setIdentity();
+  /*
+  Matrix4 Tyz; 
+  Tyz.setZero();
+  Tyz(0,0) = 1;
+  Tyz(1,2) = -1;
+  Tyz(2,1) = 1;
+  Tyz(3,3) = 1;
+  */
+  if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Tident,models,apps)) {
+    LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter:"<<"Error Processing " << fn << "!" << "\n");
+    return false;
+  }
+  return true;
 }
 
 bool SaveAssimp(const char* fn, const TriMesh& model)
@@ -1043,20 +1061,20 @@ bool SaveAssimp(const char* fn, const TriMesh& model,const GeometryAppearance& a
 
 bool LoadAssimp(const char* fn, TriMesh& mesh)
 {
-	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!");
-	return false;
+  LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!");
+  return false;
 }
 
 bool LoadAssimp(const char* fn, vector<TriMesh>& meshes)
 {
-	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!");
-	return false;
+  LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Importer defined!");
+  return false;
 }
 
 bool SaveAssimp(const char* fn, const TriMesh& mesh)
 {
-	LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Exporter defined!");
-	return false;
+  LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Exporter defined!");
+  return false;
 }
 
 

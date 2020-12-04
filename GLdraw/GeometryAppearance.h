@@ -58,6 +58,9 @@ class GeometryAppearance
   GeometryAppearance();
   ///This copies over the "material" information but doesn't change the display lists (if possible)
   void CopyMaterial(const GeometryAppearance& rhs);
+  ///This copies over the "material" information except for vertex and face-specific info (colors and texcoords).
+  ///It also doesn't change the display lists.
+  void CopyMaterialFlat(const GeometryAppearance& rhs);
   ///This copies over the display lists and other cached information, if rhs has it.
   ///If if_cache_exists=true, then any existing display lists / cached information is
   ///overridden.  If if_cache_exists=false (default), then any existing cached
@@ -91,6 +94,13 @@ class GeometryAppearance
   GLColor vertexColor,edgeColor,faceColor;
   ///Optional: per-element colors
   std::vector<GLColor> vertexColors,faceColors;
+  ///Optional: emissive color; only used if lightFaces=true.  (default (0,0,0))
+  GLColor emissiveColor;
+  ///Optional: specular coefficient and color; only used if lightFaces=true.
+  ///(default 0 indicating no shininess, and 10% white).
+  ///Recommended values for metal or smooth plastic are 20 and (0.1,0.1,0.1).
+  float shininess;
+  GLColor specularColor;
   ///Optional: set to non-null if you want to texture the object
   std::shared_ptr<Image> tex1D,tex2D;
   ///If true, the texture will wrap.  Default false
@@ -102,9 +112,9 @@ class GeometryAppearance
   ///T = c[1]^T p
   std::vector<Math3D::Vector4> texgen;
   ///Optional: draw meshes with a crease if the angle between triangles is
-  ///greater than this threshold, in radians (default 0)
+  ///greater than this threshold, in radians (default 0, indicating disabled)
   float creaseAngle;
-  ///Optional: draw meshes with a silhouette outline (default 0)
+  ///Optional: draw meshes with a silhouette outline (default 0, indicating disabled)
   float silhouetteRadius;
   GLColor silhouetteColor;
   

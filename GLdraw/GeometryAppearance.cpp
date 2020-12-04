@@ -323,12 +323,14 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
 GeometryAppearance::GeometryAppearance()
   :geom(NULL),drawVertices(false),drawEdges(false),drawFaces(false),vertexSize(1.0),edgeSize(1.0),
    lightFaces(true),
-   vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),texWrap(false),
+   vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),emissiveColor(0,0,0),shininess(0),specularColor(0.1,0.1,0.1),
+   texWrap(false),
    creaseAngle(0),silhouetteRadius(0),silhouetteColor(0,0,0)
 {}
 
 void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
 {
+  if(this == &rhs) return;
   if(subAppearances.size() == rhs.subAppearances.size()) {
     for(size_t i=0;i<subAppearances.size();i++)
       subAppearances[i].CopyMaterial(rhs.subAppearances[i]);
@@ -369,6 +371,9 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   }
   texcoords=rhs.texcoords;
   texgen=rhs.texgen;
+  emissiveColor=rhs.emissiveColor;
+  shininess=rhs.shininess;
+  specularColor=rhs.specularColor;
   if(silhouetteRadius != rhs.silhouetteRadius)
     silhouetteDisplayList.erase();
   silhouetteRadius=rhs.silhouetteRadius;
@@ -376,8 +381,45 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   creaseAngle=rhs.creaseAngle;
 }
 
+void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
+{
+  if(this == &rhs) return;
+  if(subAppearances.size() == rhs.subAppearances.size()) {
+    for(size_t i=0;i<subAppearances.size();i++)
+      subAppearances[i].CopyMaterialFlat(rhs.subAppearances[i]);
+  }
+  else if(rhs.subAppearances.empty()) {
+    for(size_t i=0;i<subAppearances.size();i++)
+      subAppearances[i].CopyMaterialFlat(rhs);
+  }
+
+  drawVertices=rhs.drawVertices;
+  drawEdges=rhs.drawEdges;
+  drawFaces=rhs.drawFaces;
+  vertexSize=rhs.vertexSize;
+  edgeSize=rhs.edgeSize;
+  lightFaces=rhs.lightFaces;
+  vertexColor=rhs.vertexColor;
+  edgeColor=rhs.edgeColor;
+  faceColor=rhs.faceColor;
+  tex1D=rhs.tex1D;
+  tex2D=rhs.tex2D;
+  texWrap=rhs.texWrap;
+  texgen=rhs.texgen;
+  emissiveColor=rhs.emissiveColor;
+  shininess=rhs.shininess;
+  specularColor=rhs.specularColor;
+  if(silhouetteRadius != rhs.silhouetteRadius)
+    silhouetteDisplayList.erase();
+  silhouetteRadius=rhs.silhouetteRadius;
+  silhouetteColor=rhs.silhouetteColor;
+  creaseAngle=rhs.creaseAngle;
+}
+
+
 void GeometryAppearance::CopyCache(const GeometryAppearance& rhs,bool if_cache_exists)
 {
+  if(this == &rhs) return;
   if((if_cache_exists || rhs.faceDisplayList) && rhs.faceDisplayList)
     faceDisplayList = rhs.faceDisplayList;
   if((if_cache_exists || rhs.edgeDisplayList) && rhs.edgeDisplayList)
@@ -422,12 +464,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
         subAppearances[i].Set(subgeoms[i]);
-        subAppearances[i].vertexSize = vertexSize;
-        subAppearances[i].edgeSize = edgeSize;
-        subAppearances[i].lightFaces = lightFaces;
-        subAppearances[i].vertexColor = vertexColor;
-        subAppearances[i].edgeColor = edgeColor;
-        subAppearances[i].faceColor = faceColor;
+        subAppearances[i].CopyMaterialFlat(*this);
       }
     }
     else {
@@ -435,12 +472,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
         subAppearances[i].Set(subgeoms[i]);
-        subAppearances[i].vertexSize = vertexSize;
-        subAppearances[i].edgeSize = edgeSize;
-        subAppearances[i].lightFaces = lightFaces;
-        subAppearances[i].vertexColor = vertexColor;
-        subAppearances[i].edgeColor = edgeColor;
-        subAppearances[i].faceColor = faceColor;
+        subAppearances[i].CopyMaterialFlat(*this);
       }
     }
   }
@@ -590,12 +622,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     subAppearances.resize(subgeoms.size());
     for(size_t i=0;i<subAppearances.size();i++) {
       subAppearances[i].Set(subgeoms[i]);
-      subAppearances[i].vertexSize = vertexSize;
-      subAppearances[i].edgeSize = edgeSize;
-      subAppearances[i].lightFaces = lightFaces;
-      subAppearances[i].vertexColor = vertexColor;
-      subAppearances[i].edgeColor = edgeColor;
-      subAppearances[i].faceColor = faceColor;
+      subAppearances[i].CopyMaterialFlat(*this);
     }
   }
   else 
@@ -700,6 +727,14 @@ void GeometryAppearance::DrawGL(Element e)
     if(lightFaces) {
       glEnable(GL_LIGHTING);
       glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,faceColor.rgba);
+      glMaterialfv(GL_FRONT,GL_EMISSION,emissiveColor.rgba);
+      glMaterialf(GL_FRONT,GL_SHININESS,shininess);
+      if(shininess != 0)
+        glMaterialfv(GL_FRONT,GL_SPECULAR,specularColor.rgba);
+      else {
+        float zeros[4]={0,0,0,0};
+        glMaterialfv(GL_FRONT,GL_SPECULAR,zeros);
+      }
     }
     else {
       glDisable(GL_LIGHTING);
