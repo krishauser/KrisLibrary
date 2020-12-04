@@ -131,7 +131,7 @@ bool ImportImage(const char* fn, Image& img)
 		FreeImage_Unload(fimg);
 		return true;
 	}
-	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Load result is NULL");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Load "<<fn<<" result is NULL");
 #else 
 	const char* ext = FileExtension(fn);
 	if(!ext) {
