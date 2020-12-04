@@ -665,11 +665,8 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
 	vector<TriMesh> models;
 	vector<GeometryAppearance> apps;
 	if(!LoadAssimp(fn,models,apps)) return false;
-  for(size_t i=0;i<models.size();i++)
-    printf("Model %d verts and %d texcoords\n",models[i].verts.size(),apps[i].texcoords.size());
 	mesh.Merge(models);
 	if(!apps.empty()) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Merging "<<apps.size()<<" models into one");
 	  //need to merge appearance information
 	  app = apps[0];
 	  size_t numVerts = models[0].verts.size();
@@ -763,14 +760,12 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
     for(unsigned int i=0;i<mesh->mNumVertices;i++)
       app.texcoords[i].set(mesh->mTextureCoords[0][i].x,
 			    mesh->mTextureCoords[0][i].y);
-    printf("Reading %d texcoords\n",mesh->mNumVertices);
   }
   aiColor4D col;
   if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_DIFFUSE,&col) == aiReturn_SUCCESS) {
     app.faceColor.set(col.r,col.g,col.b,1.0);
   }
   if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_EMISSIVE,&col) == aiReturn_SUCCESS) {
-    printf("Emissive color %f %f %f\n",col.r,col.g,col.b);
     if(col.r == 1 && col.g == 1 && col.b == 1)
       app.lightFaces = false;
   }
@@ -803,6 +798,8 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
             else {
               LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: can't load compressed embedded texture, saved to "<<ss.str()<<" for inspection");
             }
+            ///this is a hack for facebook Habitat scenes
+            app.lightFaces = false;
           }
           else 
             LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: can't load compressed embedded textures yet, format is "<<tex->achFormatHint);
