@@ -1,14 +1,15 @@
 #include <KrisLibrary/Logger.h>
 #include "IO.h"
 #include <locale.h>
-#include <utils/AnyValue.h>
-#include <utils/stringutils.h>
-#include <GLdraw/GeometryAppearance.h>
-#include <image/import.h>
+#include <KrisLibrary/utils/AnyValue.h>
+#include <KrisLibrary/utils/stringutils.h>
+#include <KrisLibrary/utils/fileutils.h>
+#include <KrisLibrary/GLdraw/GeometryAppearance.h>
+#include <KrisLibrary/image/import.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include <utils/SimpleFile.h>
+#include <KrisLibrary/utils/SimpleFile.h>
 #include <string.h>
 #include <errors.h>
 
@@ -107,7 +108,7 @@ aiScene::~aiScene()
   delete static_cast<Assimp::ScenePrivateData*>(mPrivate);
 }
 
-#endif _WIN32
+#endif //_WIN32
 
 #endif //ASSIMP_MAJOR_VERSION
 using namespace Assimp;
@@ -664,8 +665,11 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
 	vector<TriMesh> models;
 	vector<GeometryAppearance> apps;
 	if(!LoadAssimp(fn,models,apps)) return false;
+  for(size_t i=0;i<models.size();i++)
+    printf("Model %d verts and %d texcoords\n",models[i].verts.size(),apps[i].texcoords.size());
 	mesh.Merge(models);
 	if(!apps.empty()) {
+    LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Merging "<<apps.size()<<" models into one");
 	  //need to merge appearance information
 	  app = apps[0];
 	  size_t numVerts = models[0].verts.size();
@@ -682,12 +686,12 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
 	    if(!app.texcoords.empty())
 	      app.texcoords.insert(app.texcoords.end(),apps[i].texcoords.begin(),apps[i].texcoords.end());
 	    if(app.tex2D != apps[i].tex2D) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces\n");
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces");
 	      if(app.tex2D == NULL)
 		app.tex2D = apps[i].tex2D;
 	    }
 	    if(app.tex1D != apps[i].tex1D) {
-	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces\n");
+	      	      LOG4CXX_ERROR(KrisLibrary::logger(),"LoadAssimp: Warning, merging textured / non textured surfaces");
 	      if(app.tex1D == NULL)
 		app.tex1D = apps[i].tex1D;
 	    }
@@ -742,7 +746,7 @@ void Cast(const aiMatrix4x4& a,Matrix4& out)
   out(3,3) = a.d4;
 }
 
-void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,GeometryAppearance& app)
+void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const aiScene* scene,GeometryAppearance& app)
 {
   if(mesh->mColors[0]) {
     //per-vertex coloring
@@ -759,6 +763,7 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
     for(unsigned int i=0;i<mesh->mNumVertices;i++)
       app.texcoords[i].set(mesh->mTextureCoords[0][i].x,
 			    mesh->mTextureCoords[0][i].y);
+    printf("Reading %d texcoords\n",mesh->mNumVertices);
   }
   aiColor4D col;
   if(aiGetMaterialColor(mat,AI_MATKEY_COLOR_DIFFUSE,&col) == aiReturn_SUCCESS) {
@@ -770,14 +775,61 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,Geometr
   }
   aiString str;
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
-    //string filename = gTexturePath+str.C_str();
-    string filename = gTexturePath+string(str.data);
-    shared_ptr<Image> img(new Image);
-    if(ImportImage(filename.c_str(),*img)) {
-      app.tex2D = img;
+    if(str.data[0] == '*') {
+      //this is an embedded texture
+      int index=atoi(&str.data[1]);
+      if(index < 0 || index >= (int)scene->mNumTextures) {
+        LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: invalid texture "<<str.data);
+      }
+      else {
+        aiTexture* tex = scene->mTextures[index];
+        shared_ptr<Image> img(new Image);  
+        if(tex->mHeight == 0) {
+          if(0==strcmp(tex->achFormatHint,"jpg") || 0==strcmp(tex->achFormatHint,"png") || 0==strcmp(tex->achFormatHint,"tif") || 0==strcmp(tex->achFormatHint,"bmp")) {
+            stringstream ss;
+            ss<<"_assimp_img_temp."<<tex->achFormatHint;
+            FILE* out = fopen(ss.str().c_str(),"wb");
+            fwrite(tex->pcData,tex->mWidth,1,out);
+            fclose(out);
+            if(ImportImage(ss.str().c_str(),*img)) {
+              app.tex2D = img;
+              FileUtils::Delete(ss.str().c_str());
+            }
+            else {
+              LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: can't load compressed embedded texture, saved to "<<ss.str()<<" for inspection");
+            }
+          }
+          else 
+            LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: can't load compressed embedded textures yet, format is "<<tex->achFormatHint);
+        }
+        else {
+          Image::PixelFormat format=Image::None;
+          if(0==strcmp(tex->achFormatHint,"rgba8888"))
+            format=Image::A8R8G8B8;
+          else if(0==strcmp(tex->achFormatHint,"argb8888"))
+            format=Image::A8R8G8B8;
+          else if(0==strcmp(tex->achFormatHint,"rgba5650"))
+            format=Image::A8R8G8B8;
+          else
+            LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: Don't know yet how to handle texture of type "<<tex->achFormatHint); 
+          if(format != Image::None) {
+            img->initialize(tex->mWidth,tex->mHeight,format);
+            memcpy(img->data,tex->pcData,4*tex->mWidth*tex->mHeight);
+            app.tex2D = img;
+          }
+        }
+      }
     }
     else {
-      LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: couldn't load image "<<filename.c_str());
+      //string filename = gTexturePath+str.C_str();
+      string filename = gTexturePath+string(str.data);
+      shared_ptr<Image> img(new Image);
+      if(ImportImage(filename.c_str(),*img)) {
+        app.tex2D = img;
+      }
+      else {
+        LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: couldn't load image "<<filename.c_str());
+      }
     }
   }
 }
@@ -801,7 +853,7 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
 	int nfaces = scene->mMeshes[m]->mNumFaces;
 	int nverts = scene->mMeshes[m]->mNumVertices;
 	apps.resize(apps.size()+1);
-	AssimpMaterialToAppearance(scene->mMaterials[scene->mMeshes[m]->mMaterialIndex],scene->mMeshes[m],apps.back());
+	AssimpMaterialToAppearance(scene->mMaterials[scene->mMeshes[m]->mMaterialIndex],scene->mMeshes[m],scene,apps.back());
 	models.resize(models.size()+1);
 	models.back().tris.resize(nfaces);
 	models.back().verts.resize(nverts);
