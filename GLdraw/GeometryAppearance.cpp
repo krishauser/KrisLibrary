@@ -74,6 +74,7 @@ namespace GLDraw {
           buf[i*3+2] = img.data[i*3];
         }
         tex.setRGB(buf,img.w,img.h);
+        delete [] buf;
       }
       break;
     case Image::A8R8G8B8:
@@ -86,6 +87,7 @@ namespace GLDraw {
           buf[i*3+3] = img.data[i*3+0];
         }
         tex.setRGBA(buf,img.w,img.h);
+        delete [] buf;
       }
       break;
     case Image::A8:
@@ -776,7 +778,7 @@ void GeometryAppearance::DrawGL(Element e)
         Meshing::TriMesh creaseMesh;
         vector<Vector3> vertexNormals;
 
-        if(vertexColors.size() != trimesh->verts.size() && (creaseAngle > 0 || silhouetteRadius > 0)) {
+        if(vertexColors.size() != trimesh->verts.size() && texcoords.size() != trimesh->verts.size() && (creaseAngle > 0 || silhouetteRadius > 0)) {
           Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
           tempMesh2.reset(weldMesh);
           weldMesh->verts = trimesh->verts;
