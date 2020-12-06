@@ -97,6 +97,9 @@
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\UnboundedPolytope2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\BoxWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\ColorGradient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -160,7 +163,13 @@
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\SphereWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\TransformWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\Widget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\graph\IO.cpp">
