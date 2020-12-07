@@ -1026,15 +1026,13 @@ void GeometryAppearance::DrawGL(Element e)
     else if(geom->type == AnyGeometry3D::Primitive) {
       if(!edgeDisplayList) {
         edgeDisplayList.beginCompile();
-        glDisable(GL_LIGHTING);
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
+          glDisable(GL_LIGHTING);
           glDepthFunc(GL_LEQUAL);
           draw(geom->AsPrimitive());
         glPopAttrib();
         edgeDisplayList.endCompile();
       }
-      edgeColor.setCurrentGL();
-      edgeDisplayList.call();
     }
     if(trimesh) {
       if(!edgeDisplayList) {
@@ -1061,8 +1059,15 @@ void GeometryAppearance::DrawGL(Element e)
         glPopAttrib();
         edgeDisplayList.endCompile();
       }
-      edgeColor.setCurrentGL();
-      edgeDisplayList.call();
+    }
+    if(edgeColor.rgba[3] != 1.0) {
+      glEnable(GL_BLEND); 
+      glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    }
+    edgeColor.setCurrentGL();
+    edgeDisplayList.call();
+    if(edgeColor.rgba[3] != 1.0) {
+      glDisable(GL_BLEND);
     }
   }
 
