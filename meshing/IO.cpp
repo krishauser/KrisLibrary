@@ -785,9 +785,11 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
       opacity = 1.0;
     app.faceColor.rgba[3] = opacity;
   }
+  #ifdef AI_MATKEY_TRANSPARENCYFACTOR
   if(aiGetMaterialFloat(mat,AI_MATKEY_TRANSPARENCYFACTOR,&opacity) == aiReturn_SUCCESS) {
     app.faceColor.rgba[3] = 1.0-opacity;
   }
+  #endif // AI_MATKEY_TRANSPARENCYFACTOR
   aiString str;
   if(aiGetMaterialString(mat,AI_MATKEY_TEXTURE_DIFFUSE(0),&str) == aiReturn_SUCCESS) {
     if(str.data[0] == '*') {
