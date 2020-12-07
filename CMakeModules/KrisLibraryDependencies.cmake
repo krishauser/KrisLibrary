@@ -173,10 +173,9 @@ ENDIF(TINYXML_FOUND)
 # Assimp
 OPTION(USE_ASSIMP "Build with ASSIMP support" ON)
 IF(USE_ASSIMP)
-  SET(ASSIMP_ROOT "${KRISLIBRARY_ROOT}/assimp--3.0.1270-sdk" 
+  SET(ASSIMP_ROOT "${KRISLIBRARY_ROOT}/assimp" 
      CACHE PATH
      "Root of Assimp package"
-     FORCE
   )
   FIND_PACKAGE(Assimp)
   IF(ASSIMP_FOUND)
