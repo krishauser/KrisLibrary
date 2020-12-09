@@ -151,11 +151,12 @@ class OctreePointSet : public Octree
 
   int maxPointsPerCell;
   Real minCellSize;
-  vector<vector<int> > indexLists;
+  vector<vector<int> > indexLists;  ///<stores indices of points contained in each leaf node (empty for non-leaf nodes)
   vector<Vector3> points;
   vector<Real> radii;
   vector<int> ids;
-  vector<Sphere3D> balls;
+  vector<AABB3D> bbs;               ///<stores bounding box of points contained in each leaf node (minimized for non-leaf nodes)
+  vector<Sphere3D> balls;           ///<stores bounding balls of points contained in each leaf node (empty if fit=false)
   bool fit;
 };
 

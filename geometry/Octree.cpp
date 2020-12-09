@@ -333,6 +333,9 @@ OctreePointSet::OctreePointSet(const AABB3D& bbox,int _maxPointsPerCell,Real _mi
   //TODO: the Octree constructor calls the virtual AddNode function, which is a no-no in C++
   if (nodes.size() > indexLists.size()) {
     indexLists.resize(nodes.size());
+    AABB3D bb;
+    bb.minimize();
+    bbs.resize(nodes.size(),bb);
   }
 }
 
@@ -372,20 +375,20 @@ void OctreePointSet::Add(const Vector3& pt,int id)
   if(nindex >= (int)indexLists.size()) {
     indexLists.push_back(vector<int>());
     indexLists[nindex].reserve(maxPointsPerCell);
+    AABB3D bb;
+    bb.minimize();
+    bbs.push_back(bb);
   }
   indexLists[nindex].push_back(pindex);
+  bbs[nindex].expand(pt);
   //timer.Reset();
   if((int)indexLists[nindex].size() > maxPointsPerCell) {
     //split, if bounding box containing points is greater than the maximum cell size
-    AABB3D bbox(pt,pt);
-    for(size_t i=0;i+1<indexLists[nindex].size();i++) {
-      bbox.expand(points[indexLists[nindex][i]]);
-      if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
-        Split(nindex);
-        //LOG4CXX_INFO(KrisLibrary::logger(),"Split time "<<timer.ElapsedTime());
-        //KrisLibrary::loggerWait();
-        break;
-      }
+    const AABB3D& bbox = bbs[nindex];
+    if(bbox.bmin.x + minCellSize < bbox.bmax.x || bbox.bmin.y + minCellSize < bbox.bmax.y || bbox.bmin.z + minCellSize < bbox.bmax.z) {
+      Split(nindex);
+      //LOG4CXX_INFO(KrisLibrary::logger(),"Split time "<<timer.ElapsedTime());
+      //KrisLibrary::loggerWait();
     }
   }
 }
@@ -404,6 +407,9 @@ int OctreePointSet::AddNode(int parent)
   int res=Octree::AddNode(parent);
   if(res >= (int)indexLists.size()) {
     indexLists.resize(res+1);
+    AABB3D bb;
+    bb.minimize();
+    bbs.resize(res+1,bb);
   }
   return res;
 }
@@ -412,6 +418,7 @@ void OctreePointSet::DeleteNode(int id)
 {
   Octree::DeleteNode(id);
   indexLists[id].resize(0);
+  bbs[id].minimize();
 }
 
 void OctreePointSet::Split(int nindex)
@@ -426,16 +433,20 @@ void OctreePointSet::Split(int nindex)
     const Vector3& pt = points[indexLists[nindex][i]];
     int cindex = node.childIndices[Child(node,pt)];
     indexLists[cindex].push_back(indexLists[nindex][i]);
+    bbs[cindex].expand(pt);
   }
   indexLists[nindex].clear();
+  bbs[nindex].minimize();
 }
 
 void OctreePointSet::Join(int nindex)
 {
   if(IsLeaf(nodes[nindex])) return;
+  bbs[nindex].minimize();
   for(int c=0;c<8;c++) {
     int cindex = nodes[nindex].childIndices[c];
     indexLists[nindex].insert(indexLists[nindex].end(),indexLists[cindex].begin(),indexLists[cindex].end());
+    bbs[nindex].setUnion(bbs[cindex]);
   }
   Octree::Join(nindex);
 }
