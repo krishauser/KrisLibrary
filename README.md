@@ -4,7 +4,7 @@ Basic C++ math, geometry, robotics, I/O, and other routines used in projects
 from Kris Hauser's lab. 
 
 Authors:
-- Kris Hauser (kris.hauser@duke.edu)
+- Kris Hauser (kkhauser@illinois.edu)
 
 
 ## Building
@@ -72,7 +72,7 @@ if you have trouble building on your system.
 - An "any" datatype that can contain objects of arbitrary type (based on boost::any).
 - JSON loading and saving via AnyCollection.
 - 2D and 3D math library, including many types of rotation representations (rotation matrix, quaternions, axis-angle).
-- Wide variety of geometries supported: triangle meshes, point clouds, volume grids, and geometric primitives.  Supports loading, saving, collision detection, and conversion between types.
+- Wide variety of geometries supported: triangle meshes, point clouds, volume grids, convex hulls, and geometric primitives.  Supports loading, saving, collision detection, and conversion between types.
 - 
 
 ## Known "cruft"
@@ -147,18 +147,29 @@ ReadFile(object,File&) methods.
 
 ## History
 
-* 12/14/2018 (Latest version): upgraded to take out Boost dependencies, officially using C++11, optional LOG4CXX support, bug fixes.
+* 12/07/2020 (Latest version): new collision detection class ConvexHull.
+
+* 12/14/2018: upgraded to take out Boost dependencies, officially using C++11, optional LOG4CXX support, bug fixes.
 
 ... prior to that, there is a long and undocumented history stretching back over a decade!
+
 
 ## Questions for future development
 
 - Most of the vector / matrix operations could be replaced with another library e.g., Eigen.  But this means replacing a lot of 
-  legacy code in the optimization, robotics, and statistics packages. Is this worth doing?
+  legacy code in the optimization, robotics, and statistics packages. Is this worth doing?  Experiments show that vectorized Eigen 
+  helps performance by about 2-10x for medium-sized matrix/vector operations, so it may be worth it for the Vector and Matrix classes.
 
 - When this was first developed in the 2000's, there were few cross-platform C++ libraries for doing OS, I/O, and numerical
   operations, so the routines here filled a need.  This has changed significantly with libraries like POCO, Boost, and language 
   upgrades to C++11 and beyond.
 
 - Many functions don't take advantage of the move semantics introduced in C++11.  So almost all method signatures are like
-  `void get(Output& result)` rather than `Output get()`.  Should this be changed to make it the code more modern?
+  `void get(Output& result)` rather than `Output get()`.  Should this be changed and move (&&) semantics introduced to make 
+  the code more modern?
+
+- Everything should probably be put into a global namespace, like "KL".
+
+- Missing a lot of proximity query code, basically ConvexHull - anything else, TriangleMesh - ImplicitSurface.
+
+- Collision detection can be accelerated for structured point clouds.
