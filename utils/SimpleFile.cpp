@@ -36,15 +36,18 @@ bool SimpleFile::Load(const char* fn)
 {
   ifstream in(fn);
   if(!in) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load(): Unable to open file "<<fn);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load(): Unable to open file "<<fn);
     loaded = false;
     return false;
   }
-  return Load(in);
+  bool res = Load(in);
+  this->fn = fn;
+  return res;
 }
 
 bool SimpleFile::Load(istream& in)
 {
+  this->fn = "Untitled istream";
   string name;
   string line;
   char buf[1025];
@@ -74,18 +77,18 @@ bool SimpleFile::Load(istream& in)
     if(name[0]=='#') continue;  //ignore comment up to end of line
     if(!validItems.empty()) {
       if(validItems.count(name) == 0) {
-	string temp=name;
-	Lowercase(temp);
-	if(validItems.count(temp) != 0) {
-	  if(validItems[temp] == true) { //case sensitive
-	    	    LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load: unsupported item "<<name.c_str()<<" on line "<<lineno);
-	    return false;
-	  }
-	}
-	else {
-	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load: unsupported item "<<name.c_str()<<" on line "<<lineno);
-	  return false;
-	}
+        string temp=name;
+        Lowercase(temp);
+        if(validItems.count(temp) != 0) {
+          if(validItems[temp] == true) { //case sensitive
+            LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load: unsupported item "<<name.c_str()<<" on line "<<lineno);
+            return false;
+          }
+        }
+        else {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load: unsupported item "<<name.c_str()<<" on line "<<lineno);
+          return false;
+        }
       }
     }
 
@@ -101,7 +104,7 @@ bool SimpleFile::Load(istream& in)
   }
   loaded=true;
   if(in.bad()) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load() Bad value on line "<<lineno);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile::Load() Bad value on line "<<lineno);
     loaded=false;
   }
   return !in.bad();
@@ -125,34 +128,49 @@ bool SimpleFile::Save(ostream& out)
   return true;
 }
 
-bool SimpleFile::CheckSize(const string& name,int size,const char* errorString)
+bool SimpleFile::CheckSize(const string& name,int size,const char* errorString,int verbose)
 {
   const char* title=errorString;
-  if(errorString==NULL) title = "Untitled file";
+  if(errorString==NULL) {
+    if(fn.empty())
+      title = "Untitled file";
+    else
+      title = fn.c_str();
+  }
   if(entries.count(name) == 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile("<<title<<") Wrong number of items in "<< name.c_str()<<", entry not present\n");
-        return false;
+    if(verbose)
+      LOG4CXX_INFO(KrisLibrary::logger(),"SimpleFile("<<title<<") Wrong number of items in "<< name.c_str()<<", entry not present\n");
+    return false;
   }
   if((int)entries[name].size() != size) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile("<<title<<"): Wrong number of items in "<<name.c_str()<<".  Need "<<size<<", have "<<entries[name].size());
+    if(verbose)
+      LOG4CXX_INFO(KrisLibrary::logger(),"SimpleFile("<<title<<"): Wrong number of items in "<<name.c_str()<<".  Need "<<size<<", have "<<entries[name].size());
     return false;
   }
   return true;
 }
 
-bool SimpleFile::CheckType(const string& name,int type,const char* errorString)
+bool SimpleFile::CheckType(const string& name,int type,const char* errorString,int verbose)
 {
   const char* title=errorString;
-  if(errorString==NULL) title = "Untitled file";
+  if(errorString==NULL) {
+    if(fn.empty())
+      title = "Untitled file";
+    else
+      title = fn.c_str();
+  }
   if(entries.count(name) == 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile("<<title<<"): Wrong entry type in "<<name.c_str() <<" entry not present\n");
-          return false;
+    if(verbose)
+      LOG4CXX_INFO(KrisLibrary::logger(),"SimpleFile("<<title<<"): Wrong entry type in "<<name.c_str() <<" entry not present\n");
+    return false;
   }
   vector<PrimitiveValue>& items = entries[name];
   for(size_t i=0;i<items.size();i++) {
     if(!items[i].CanCast(type)) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"SimpleFile("<<title<<"): Wrong entry type in "<<name.c_str()<<".  Need "<<type<<", have "<<items[i].type);
-      LOG4CXX_ERROR(KrisLibrary::logger(),"   Item "<<i<<": "<<items[i]);
+      if(verbose) {
+        LOG4CXX_INFO(KrisLibrary::logger(),"SimpleFile("<<title<<"): Wrong entry type in "<<name.c_str()<<".  Need "<<type<<", have "<<items[i].type);
+        LOG4CXX_INFO(KrisLibrary::logger(),"   Item "<<i<<": "<<items[i]);
+      }
       return false;
     }
   }

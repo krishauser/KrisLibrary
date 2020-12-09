@@ -36,13 +36,14 @@ class SimpleFile
   inline std::vector<PrimitiveValue>& operator [] (const char* name) { return entries[string(name)]; }
 
   //size and type-checking utilities
-  bool CheckSize(const string& name,int size,const char* errorString=NULL);
-  bool CheckType(const string& name,int type,const char* errorString=NULL);
+  bool CheckSize(const string& name,int size,const char* errorString=NULL,int verbose=1);
+  bool CheckType(const string& name,int type,const char* errorString=NULL,int verbose=1);
   std::vector<int> AsInteger(const string& name);
   std::vector<double> AsDouble(const string& name);
   std::vector<std::string> AsString(const string& name);
 
   bool loaded;
+  std::string fn;
   std::map<std::string,std::vector<PrimitiveValue> > entries;
   std::map<std::string,bool> validItems;
 };
