@@ -488,21 +488,10 @@ void GLRenderToImage::GetDepth(const Camera::Viewport& vp,vector<float>& image)
   #if DEBUG_TIMING
     Timer timer;
   #endif //DEBUG_TIMING
-  //don't forget to flip vertically
-  float zmininv = float(1.0/vp.n);
-  float zscale = float(1.0/vp.n-1.0/vp.f);
-  float f = (float)vp.f;
-  //nonlinear depth normalization
-  //normal linear interpolation would give u = (z - zmin)/(zmax-zmin)
-  //instead we gt u = (1/zmin-1/z)/(1/zmin-1/zmax)
-  //so 1/z = 1/zmin - u(1/zmin-1/zmax)
+  float num = vp.n*vp.f;
+  float dist = vp.f-vp.n;
   for(size_t i=0;i<image.size();i++) {
-    if(image[i] == 1.0f) { //nothing seen
-      image[i] = f;
-    }
-    else {
-      image[i] = (1.0f/(zmininv - image[i]*zscale));
-    }
+    image[i] = num/(vp.f - image[i]*dist);
   }
   #if DEBUG_TIMING
     printf("Zbuffer to depth conversion %f\n",timer.ElapsedTime());
