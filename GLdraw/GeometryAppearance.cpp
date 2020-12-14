@@ -378,6 +378,8 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
     silhouetteDisplayList.erase();
   silhouetteRadius=rhs.silhouetteRadius;
   silhouetteColor=rhs.silhouetteColor;
+  if(creaseAngle != rhs.creaseAngle)
+    faceDisplayList.erase();
   creaseAngle=rhs.creaseAngle;
 }
 
@@ -385,7 +387,7 @@ void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
 {
   if(this == &rhs) return;
   if(subAppearances.size() == rhs.subAppearances.size()) {
-    for(size_t i=0;i<subAppearances.size();i++)
+    for(size_t i=0;i<subAppearances.size();i++) 
       subAppearances[i].CopyMaterialFlat(rhs.subAppearances[i]);
   }
   else if(rhs.subAppearances.empty()) {
@@ -413,6 +415,8 @@ void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
     silhouetteDisplayList.erase();
   silhouetteRadius=rhs.silhouetteRadius;
   silhouetteColor=rhs.silhouetteColor;
+  if(creaseAngle != rhs.creaseAngle)
+    faceDisplayList.erase();
   creaseAngle=rhs.creaseAngle;
 }
 
@@ -459,20 +463,23 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
     Set(*geom);
   }
   else if(geom->type == AnyGeometry3D::Group) {
+    drawFaces = true;
+    drawEdges = true;
+    drawVertices = true;
     if(!_geom.CollisionDataInitialized()) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
-        subAppearances[i].Set(subgeoms[i]);
         subAppearances[i].CopyMaterialFlat(*this);
+        subAppearances[i].Set(subgeoms[i]);        
       }
     }
     else {
       const std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = _geom.GroupCollisionData();
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
-        subAppearances[i].Set(subgeoms[i]);
         subAppearances[i].CopyMaterialFlat(*this);
+        subAppearances[i].Set(subgeoms[i]);
       }
     }
   }
@@ -487,6 +494,8 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   if(geom->type == AnyGeometry3D::Primitive) {
     const Math3D::GeometricPrimitive3D* g = &geom->AsPrimitive();
     drawFaces = true;
+    drawEdges = false;
+    drawVertices = false;
     if(g->type == Math3D::GeometricPrimitive3D::Empty) 
       drawFaces = false;
     else if(g->type == Math3D::GeometricPrimitive3D::Point) {
@@ -509,10 +518,14 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
     ImplicitSurfaceToMesh(*g,*tempMesh);
     drawFaces = true;
+    drawEdges = false;
+    drawVertices = false;
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
     Timer timer;
     drawVertices = true;
+    drawEdges = false;
+    drawFaces = false;
     vector<Real> rgb;
     const Meshing::PointCloud3D& pc = geom->AsPointCloud();
     const static Real scale = 1.0/255.0;
@@ -520,7 +533,6 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       //convert real to hex to GLcolor
       vertexColors.resize(rgb.size());
       for(size_t i=0;i<rgb.size();i++) {
-        if(pc.points[i].z <= 0) continue;
         unsigned int col = (unsigned int)rgb[i];
         vertexColors[i].set(((col&0xff0000)>>16) * scale,
         ((col&0xff00)>>8) * scale,
@@ -616,13 +628,18 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
     ConvexHullToMesh(*g,*tempMesh);
     drawFaces = true;
+    drawEdges = false;
+    drawVertices = false;
   }
   else if(geom->type == AnyGeometry3D::Group) {
+    drawFaces = true;
+    drawEdges = true;
+    drawVertices = true;
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
     subAppearances.resize(subgeoms.size());
     for(size_t i=0;i<subAppearances.size();i++) {
-      subAppearances[i].Set(subgeoms[i]);
       subAppearances[i].CopyMaterialFlat(*this);
+      subAppearances[i].Set(subgeoms[i]);
     }
   }
   else 
@@ -1150,7 +1167,17 @@ void GeometryAppearance::DrawGL(Element e)
   
   //for group geometries
   for(size_t i=0;i<subAppearances.size();i++) {
+    bool iDrawFaces=subAppearances[i].drawFaces;
+    bool iDrawEdges=subAppearances[i].drawEdges;
+    bool iDrawVertices=subAppearances[i].drawVertices;
+    subAppearances[i].CopyMaterialFlat(*this);
+    subAppearances[i].drawFaces = iDrawFaces && drawFaces;
+    subAppearances[i].drawEdges = iDrawEdges && drawEdges;
+    subAppearances[i].drawVertices = iDrawVertices && drawVertices;
     subAppearances[i].DrawGL(e);
+    subAppearances[i].drawFaces = iDrawFaces;
+    subAppearances[i].drawEdges = iDrawEdges;
+    subAppearances[i].drawVertices = iDrawVertices;
   }
 }
 
