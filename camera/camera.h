@@ -22,7 +22,7 @@ using namespace Math3D;
 // camera coords by the Orientation enum.  It basically defines the
 // y axis of the camera for the yaw.
 //
-// Orientation ABC denotes A=left in world coordinates,B=up,C=backward(!!).
+// Orientation ABC denotes A=right in world coordinates,B=up,C=backward(!!).
 // An 'n' denotes the negative direction.
 //
 // Target cameras explicitly give the up direction in world coordinates
