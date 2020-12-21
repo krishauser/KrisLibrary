@@ -478,8 +478,15 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       const std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = _geom.GroupCollisionData();
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
-        subAppearances[i].CopyMaterialFlat(*this);
         subAppearances[i].Set(subgeoms[i]);
+        ///want item to inherit color of this, but don't want to inherit primitive drawing settings
+        bool iDrawFaces = subAppearances[i].drawFaces;
+        bool iDrawEdges = subAppearances[i].drawEdges;
+        bool iDrawVertices = subAppearances[i].drawVertices;
+        subAppearances[i].CopyMaterialFlat(*this);
+        subAppearances[i].drawFaces = iDrawFaces;
+        subAppearances[i].drawEdges = iDrawEdges;
+        subAppearances[i].drawVertices = iDrawVertices;
       }
     }
   }
@@ -638,8 +645,15 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
     subAppearances.resize(subgeoms.size());
     for(size_t i=0;i<subAppearances.size();i++) {
-      subAppearances[i].CopyMaterialFlat(*this);
       subAppearances[i].Set(subgeoms[i]);
+      ///want item to inherit color of this, but don't want to inherit primitive drawing settings
+      bool iDrawFaces = subAppearances[i].drawFaces;
+      bool iDrawEdges = subAppearances[i].drawEdges;
+      bool iDrawVertices = subAppearances[i].drawVertices;
+      subAppearances[i].CopyMaterialFlat(*this);
+      subAppearances[i].drawFaces = iDrawFaces;
+      subAppearances[i].drawEdges = iDrawEdges;
+      subAppearances[i].drawVertices = iDrawVertices;
     }
   }
   else 
