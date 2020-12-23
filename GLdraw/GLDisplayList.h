@@ -14,6 +14,7 @@ struct GLDisplayList
   GLDisplayList& operator = (const GLDisplayList& rhs)=default;
   bool isCompiled() const;
   void beginCompile(int index=0);
+  void beginCompileAndExecute(int index=0);
   void endCompile();
   void call(int index=0) const;
   void callAll() const;

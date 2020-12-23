@@ -702,10 +702,20 @@ void GeometryAppearance::DrawGL(Element e)
     else if(geom->type == AnyGeometry3D::PointCloud) 
       verts = &geom->AsPointCloud().points;
     if(verts) {
+      //do the drawing
+      glDisable(GL_LIGHTING);
+      if(vertexColor.rgba[3] != 1.0 || !vertexColors.empty()) {
+        glEnable(GL_BLEND); 
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+      }
+      if(vertexColors.size()!=verts->size())
+        vertexColor.setCurrentGL();
+      glPointSize(vertexSize);
+
       //compile the vertex display list
       if(!vertexDisplayList) {
         //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling vertex display list "<<verts->size());
-        vertexDisplayList.beginCompile();
+        vertexDisplayList.beginCompileAndExecute();
         if(!vertexColors.empty() && vertexColors.size() != verts->size())
                   LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size");
         if(vertexColors.size()==verts->size()) {
@@ -730,18 +740,8 @@ void GeometryAppearance::DrawGL(Element e)
         //if(silhouetteRadius > 0) glDepthFunc(GL_LESS);
         vertexDisplayList.endCompile();
       }
-      
-      //do the drawing
-      glDisable(GL_LIGHTING);
-      if(vertexColor.rgba[3] != 1.0 || !vertexColors.empty()) {
-        glEnable(GL_BLEND); 
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-      }
-      if(vertexColors.size()!=verts->size())
-        vertexColor.setCurrentGL();
-      glPointSize(vertexSize);
-
-      vertexDisplayList.call();
+      else
+        vertexDisplayList.call();
 
       if(vertexColor.rgba[3] != 1.0 || !vertexColors.empty()) {
         glDisable(GL_BLEND); 
@@ -828,7 +828,7 @@ void GeometryAppearance::DrawGL(Element e)
     }
     
     if(!faceDisplayList) {
-      faceDisplayList.beginCompile();
+      faceDisplayList.beginCompileAndExecute();
       const Meshing::TriMesh* trimesh = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
         trimesh = tempMesh.get();
@@ -1029,8 +1029,10 @@ void GeometryAppearance::DrawGL(Element e)
       }
       faceDisplayList.endCompile();
     }
-    //Timer timer;
-    faceDisplayList.call();
+    else {
+      //Timer timer;
+      faceDisplayList.call();
+    }
 
     //cleanup, reset GL state
     if(tex1D) {
@@ -1142,8 +1144,14 @@ void GeometryAppearance::DrawGL(Element e)
     }
 
     if(weldMesh) {
+      silhouetteColor.setCurrentGL();
+      if(silhouetteColor[3] < 1.0) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+      }
+
       if(!silhouetteDisplayList) {
-        silhouetteDisplayList.beginCompile();
+        silhouetteDisplayList.beginCompileAndExecute();
         vector<Vector3> weldVertexNormals;
         VertexNormals(*weldMesh,weldVertexNormals);
 
@@ -1168,13 +1176,9 @@ void GeometryAppearance::DrawGL(Element e)
         glPopAttrib();
         silhouetteDisplayList.endCompile();
       }
-
-      silhouetteColor.setCurrentGL();
-      if(silhouetteColor[3] < 1.0) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+      else {
+        silhouetteDisplayList.call();
       }
-      silhouetteDisplayList.call();
     }
   }
 

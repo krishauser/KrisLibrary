@@ -9,6 +9,9 @@ using namespace GLDraw;
 
 static int gNumDisplayLists = 0;
 const static int MAX_STALE_DISPLAY_LISTS = 100;
+///for some systems GL_COMPILE_AND_EXECUTE is slower than separate GL_COMPILE and glCallList calls
+const static bool ALLOW_COMPILE_AND_EXECUTE = false;
+static int gNeedExecute = -1;
 
 class DisplayListManager
 {
@@ -90,11 +93,29 @@ void GLDisplayList::beginCompile(int index)
   glNewList(*id+index,GL_COMPILE);
 }
 
+void GLDisplayList::beginCompileAndExecute(int index)
+{
+  if(id == NULL) {
+    id = std::make_shared<int>();
+    *id = gDisplayListManager.Allocate(count);
+  }
+  if(ALLOW_COMPILE_AND_EXECUTE)
+    glNewList(*id+index,GL_COMPILE_AND_EXECUTE);
+  else {
+    glNewList(*id+index,GL_COMPILE);
+    gNeedExecute = index;
+  }
+}
+
 void GLDisplayList::endCompile()
 {
   if(!id) return;
   //LOG4CXX_INFO(KrisLibrary::logger(),"End compile,  list "<<*id);
   glEndList();
+  if(gNeedExecute >= 0) {
+    call(gNeedExecute);
+    gNeedExecute = -1;
+  }
 }
 
 void GLDisplayList::call(int index) const
