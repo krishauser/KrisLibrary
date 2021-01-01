@@ -97,6 +97,7 @@ inline cv::Mat toMat(const Image& img)
             }
         }
     }
+    return res;
 }
 
 ///Converts an OpenCV Mat to an Image, returning true if successful
