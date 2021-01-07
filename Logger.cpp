@@ -58,17 +58,16 @@ log4cxx::LoggerPtr logger(const char* s)
 	if(rootLoggerDefined){
 		//we have read the file or at least set a root logger previously
 		try{
-			printf("KrisLibrary::logger(): trying to find logger %s\n", s);
 			myLogger = log4cxx::Logger::getLogger(s);
 			if(myLogger->getAllAppenders().empty()){
-				printf("  Logger %s has no appenders. Returning root logger.\n", s);
+				printf("KrisLibrary::logger(): Logger %s has no appenders, using root logger.\n", s);
 				return rootLogger;
 			}
 			return myLogger;
 		}
 		catch(...){
 			//logger i
-			printf("  Logger %s is not defined. Returning root logger.\n", s);
+			printf("KrisLibrary::logger(): Logger %s is not defined, using root logger.\n", s);
 			return rootLogger;
 		}
 	}else{
