@@ -42,7 +42,7 @@ FreeImageInitializer _free_image_initializer;
 void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 {
 	int w=FreeImage_GetWidth(fimg);
-	int h=FreeImage_GetWidth(fimg);
+	int h=FreeImage_GetHeight(fimg);
 	Image::PixelFormat fmt;
 	FREE_IMAGE_TYPE imgtype = FreeImage_GetImageType(fimg);
 	FREE_IMAGE_COLOR_TYPE coltype = FreeImage_GetColorType(fimg);
@@ -60,45 +60,49 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 		fmt = Image::R8G8B8;
 		break;
 	case FIC_RGBALPHA:
-		fmt = Image::A8R8G8B8;
+		fmt = Image::R8G8B8A8;
 		break;
 	case FIC_CMYK:
 		fmt = Image::R8G8B8;
 		break;
 	}
 	img.initialize(w,h,fmt);
+	//Important! Freeimage stores images from bottom up
 	if(fmt == Image::R8G8B8) {
 		RGBQUAD rgb;
 		for(int i=0;i<h;i++) {
+			unsigned char* d = img.getData(0,h-1-i);
 			for(int j=0;j<w;j++) {
 				FreeImage_GetPixelColor(fimg,j,i,&rgb);
-				unsigned char* d=img.getData(j,i);
-				d[0] = rgb.rgbBlue;
+				d[0] = rgb.rgbRed;
 				d[1] = rgb.rgbGreen;
-				d[2] = rgb.rgbRed;
+				d[2] = rgb.rgbBlue;
+				d += 3;
 			}
 		}
 	}
-	else if(fmt == Image::A8R8G8B8) {
+	else if(fmt == Image::R8G8B8A8) {
 		RGBQUAD rgb;
 		for(int i=0;i<h;i++) {
+			unsigned char* d = img.getData(0,h-1-i);
 			for(int j=0;j<w;j++) {
 				FreeImage_GetPixelColor(fimg,j,i,&rgb);
-				unsigned char* d=img.getData(j,i);
-				d[0] = rgb.rgbBlue;
+				d[0] = rgb.rgbRed;
 				d[1] = rgb.rgbGreen;
-				d[2] = rgb.rgbRed;
+				d[2] = rgb.rgbBlue;
 				d[3] = 0xff;
+				d += 4;
 			}
 		}
 	}
 	else {
 		RGBQUAD rgb;
 		for(int i=0;i<h;i++) {
+			unsigned char* d = img.getData(0,h-1-i);
 			for(int j=0;j<w;j++) {
-				FreeImage_GetPixelColor(fimg,j,i,&rgb);
-				unsigned char* d=img.getData(j,i);
+				FreeImage_GetPixelColor(fimg,j,h-i-1,&rgb);
 				d[0] = rgb.rgbBlue;
+				d ++;
 			}
 		}
 	}
@@ -132,6 +136,7 @@ bool ImportImage(const char* fn, Image& img)
 		return true;
 	}
 	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Load "<<fn<<" result is NULL");
+	return false;
 #else 
 	const char* ext = FileExtension(fn);
 	if(!ext) {

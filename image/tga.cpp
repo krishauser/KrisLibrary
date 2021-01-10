@@ -115,13 +115,13 @@ bool ImportImageTGA(const char* fn, Image& image)
 		switch(header.bpp)
 		{
 		case 16:
-			image.format = Image::X1R5G5B5;
+			image.format = Image::R5G5B5X1;
 			break;
 		case 24:
 			image.format = Image::R8G8B8;
 			break;
 		case 32:
-			image.format = Image::A8R8G8B8;
+			image.format = Image::R8G8B8A8;
 			break;
 		default:
 		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.bpp<<" bit targas");
@@ -134,13 +134,13 @@ bool ImportImageTGA(const char* fn, Image& image)
 		switch(header.color_map_bpp)
 		{
 		case 16:
-			image.format = Image::X1R5G5B5;
+			image.format = Image::R5G5B5X1;
 			break;
 		case 24:
 			image.format = Image::R8G8B8;
 			break;
 		case 32:
-			image.format = Image::A8R8G8B8;
+			image.format = Image::R8G8B8A8;
 			break;
 		default:
 		  LOG4CXX_ERROR(KrisLibrary::logger(),"Dont know how to read "<<header.color_map_bpp<<" bit color-mapped targas");

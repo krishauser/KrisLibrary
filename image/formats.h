@@ -12,16 +12,16 @@ struct r5g6b5
 	unsigned int b :5;
 };
 
-struct x1r5g5b5
+struct r5g5b5x1
 {
-	unsigned int x :1;
 	unsigned int r :5;
 	unsigned int g :5;
 	unsigned int b :5;
+	unsigned int x :1;
 };
 
 
-void argb_get (const unsigned char* bits, COLOROPTYPE col)
+void rgba_get (const unsigned char* bits, COLOROPTYPE col)
 {
 	col[0] = *bits;
 	col[1] = *(bits+1);
@@ -29,7 +29,7 @@ void argb_get (const unsigned char* bits, COLOROPTYPE col)
 	col[3] = *(bits+3);
 }
 
-void argb_set (unsigned char* bits, const COLOROPTYPE col)
+void rgba_set (unsigned char* bits, const COLOROPTYPE col)
 {
 	*bits     = col[0];
 	*(bits+1) = col[1];
@@ -51,6 +51,37 @@ void rgb8_set (unsigned char* bits, const COLOROPTYPE col)
 	*(bits+2) = col[2];
 }
 
+void bgra_get (const unsigned char* bits, COLOROPTYPE col)
+{
+	col[2] = *bits;
+	col[1] = *(bits+1);
+	col[0] = *(bits+2);
+	col[3] = *(bits+3);
+}
+
+void bgra_set (unsigned char* bits, const COLOROPTYPE col)
+{
+	*bits     = col[2];
+	*(bits+1) = col[1];
+	*(bits+2) = col[0];
+	*(bits+3) = col[3];
+}
+
+void bgr8_get (const unsigned char* bits, COLOROPTYPE col)
+{
+	col[2] = *bits;
+	col[1] = *(bits+1);
+	col[0] = *(bits+2);
+}
+
+void bgr8_set (unsigned char* bits, const COLOROPTYPE col)
+{
+	*bits     = col[2];
+	*(bits+1) = col[1];
+	*(bits+2) = col[0];
+}
+
+
 void r5g6b5_get (const unsigned char* bits, COLOROPTYPE col)
 {
 	r5g6b5 b;
@@ -69,18 +100,18 @@ void r5g6b5_set (unsigned char* bits, const COLOROPTYPE col)
 	memcpy(bits, &c, sizeof(short));
 }
 
-void x1r5g5b5_get (const unsigned char* bits, COLOROPTYPE col)
+void r5g5b5x1_get (const unsigned char* bits, COLOROPTYPE col)
 {
-	x1r5g5b5 c;
+	r5g5b5x1 c;
 	memcpy(&c, bits, sizeof(short));
 	col[0] = c.r;
 	col[1] = c.g;
 	col[2] = c.b;
 }
 
-void x1r5g5b5_set (unsigned char* bits, const COLOROPTYPE col)
+void r5g5b5x1_set (unsigned char* bits, const COLOROPTYPE col)
 {
-	x1r5g5b5 c;
+	r5g5b5x1 c;
 	c.r = col[0];
 	c.g = col[1];
 	c.b = col[2];

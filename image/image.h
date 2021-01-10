@@ -17,19 +17,21 @@ public:
 
   enum PixelFormat {
     None,
-    R8G8B8,				//24 bit, 1 byte per channel
-    A8R8G8B8,			//32 bit, 1 byte per channel
+    R8G8B8,				//24 bit, 1 byte per channel, red in first byte, green in 2nd, blue in 3rd
+    B8G8R8,       //24 bit, 1 byte per channel, blue in first byte, green in 2nd, red in 3rd
+    R8G8B8A8,			//32 bit, 1 byte per channel, red in first byte ... alpha in 4th
+    B8G8R8A8,     //32 bit, 1 byte per channel, blue in first byte ... alpha in 4th
     R5G6B5,				//16 bit, green has 6 bits
-    X1R5G5B5,			//15 bit, 1 padding
+    R5G5B5X1,			//15 bit, 1 padding
     A8,					//8 bits of alpha
-    FloatRGB,			//floating point rgb
-    FloatRGBA,			//floating point rgba
+    FloatRGB,			//floating point rgb, with r in the first 4 bytes, g in the 2nd 4, and b in the 3rd 4
+    FloatRGBA,			//floating point rgba, with r in the first 4 bytes ... alpha in the 4rd 4 bytes
     FloatA,				//floating point alpha
   };
   static bool isValidFormat(PixelFormat);
   static unsigned int pixelFormatSize(PixelFormat);
 
-  //returns -1 on failure, returns size of image on success
+  ///Returns -1 on failure, returns size of image on success
   virtual int initialize(int w, int h, PixelFormat format);
   virtual void unload();
 
@@ -38,20 +40,22 @@ public:
   virtual bool Read(File& f);
   virtual bool Write(File& f) const;
 
-  //fills in all pixels with the given color
+  ///Fills in all pixels with the given color
   void clear(int dat = 0);
-  //copies this image, with rect (sx,sy,w,h), onto the dest at dx, dy
+  ///copies this image, with rect (sx,sy,w,h), onto the dest at dx, dy. 
+  ///Default arguments just copy the image to the destination format, which
+  ///makes this an easy way to convert formats.
   void blit(Image& dest, int sx = 0, int sy = 0, int w = -1, int h = -1, int dx = 0, int dy = 0) const;
 
   inline unsigned int pixelSize() const { return pixelFormatSize(format); }  //size in bytes
   inline unsigned int pixelBPP() const { return pixelSize()<<3; }
-  inline unsigned int pitch() const;
-  unsigned char* getData(int x, int y) const;
+  inline unsigned int pitch() const { return pixelSize()*w; }
+  unsigned char* getData(int x, int y) const;   ///< x is the number of pixels from left to right, y is from top to bottom
 
-  PixelFormat format;			//format of image
-  unsigned short w,h;			//width and height, in pixels
+  PixelFormat format;			///<format of image
+  unsigned short w,h;			///<width and height, in pixels
 
-  //the image data
+  ///the image data, stored from left to right, top to bottom
   unsigned char* data;
   unsigned int num_bytes;
 };

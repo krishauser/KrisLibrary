@@ -22,14 +22,18 @@ PIXELGETPROC pixel_get_proc(Image::PixelFormat format)
 {
 	switch(format)
 	{
-	case Image::A8R8G8B8:
-		return argb_get;
+	case Image::R8G8B8A8:
+		return rgba_get;
 	case Image::R8G8B8:
 		return rgb8_get;
+	case Image::B8G8R8A8:
+		return bgra_get;
+	case Image::B8G8R8:
+		return bgr8_get;
 	case Image::R5G6B5:
 		return r5g6b5_get;
-	case Image::X1R5G5B5:
-		return x1r5g5b5_get;
+	case Image::R5G5B5X1:
+		return r5g5b5x1_get;
 	case Image::A8:
 		return a8_get;
 	case Image::FloatRGB:
@@ -48,14 +52,18 @@ PIXELSETPROC pixel_set_proc(Image::PixelFormat format)
 {
 	switch(format)
 	{
-	case Image::A8R8G8B8:
-		return argb_set;
+	case Image::R8G8B8A8:
+		return rgba_set;
 	case Image::R8G8B8:
 		return rgb8_set;
 	case Image::R5G6B5:
 		return r5g6b5_set;
-	case Image::X1R5G5B5:
-		return x1r5g5b5_set;
+	case Image::B8G8R8A8:
+		return bgra_set;
+	case Image::B8G8R8:
+		return bgr8_set;
+	case Image::R5G5B5X1:
+		return r5g5b5x1_set;
 	case Image::A8:
 		return a8_set;
 	case Image::FloatRGB:
@@ -314,11 +322,6 @@ bool Image::Write(File& f) const
 	if(!WriteFile(f, tmp)) return false;
 	if(!f.WriteData(data, num_bytes)) return false;
 	return true;
-}
-
-unsigned int Image::pitch() const
-{
-	return pixelSize() * w;
 }
 
 unsigned char* Image::getData(int x, int y) const
