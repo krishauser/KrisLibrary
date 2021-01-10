@@ -6,6 +6,7 @@
 #include <KrisLibrary/utils/fileutils.h>
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
 #include <KrisLibrary/image/import.h>
+#include <KrisLibrary/image/ppm.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -172,7 +173,7 @@ bool Import(const char* fn,TriMesh& tri)
   else {
 #if HAVE_ASSIMP
     if(!LoadAssimp(fn,tri)) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn);
       return false;
     }
     else {
@@ -186,7 +187,7 @@ bool Import(const char* fn,TriMesh& tri)
     }
     
     else {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file extension "<<ext);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file extension "<<ext);
       return false;
     }
 #endif
@@ -201,6 +202,21 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
     return LoadMultipleTriMeshes(fn,tri);
   }
   else {
+#if HAVE_ASSIMP
+    //setup texture path to same directory as fn
+    char* buf = new char[strlen(fn)+1];
+    GetFilePath(fn,buf);
+    gTexturePath = buf;
+    delete [] buf;
+    //do the loading
+    if(!LoadAssimp(fn,tri,app)) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn);
+      return false;
+    }
+    else {
+      return true;
+    }
+#else
     if(0==strcmp(ext,"obj")) {
       if(LoadOBJ(fn,tri,app)) 
         return true;
@@ -210,21 +226,6 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
       if(!in) return false;
       return LoadOFF(in,tri);
     }
-#if HAVE_ASSIMP
-    //setup texture path to same directory as fn
-    char* buf = new char[strlen(fn)+1];
-    GetFilePath(fn,buf);
-    gTexturePath = buf;
-    delete [] buf;
-    //do the loading
-    if(!LoadAssimp(fn,tri,app)) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn);
-      return false;
-    }
-    else {
-      return true;
-    }
-#else
     if(0==strcmp(ext,"wrl")) {
       ifstream in(fn,ios::in);
       if(!in) return false;
@@ -232,7 +233,7 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
     }
 
     else {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file extension "<<ext);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file extension "<<ext);
       return false;
     }
 #endif
@@ -261,7 +262,7 @@ bool Export(const char* fn,const TriMesh& tri)
 #if HAVE_ASSIMP 
     //right now SaveAssimp is not working yet...
     if(!SaveAssimp(fn,tri)) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
       return false;
     }
     else {
@@ -274,7 +275,7 @@ bool Export(const char* fn,const TriMesh& tri)
       return SaveVRML(out,tri);
     }
     else {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file extension "<<ext);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file extension "<<ext);
       return false;
     }
 #endif
@@ -450,6 +451,30 @@ bool LoadOBJMaterial(const char* path,const char* file,GeometryAppearance& app)
     for(size_t i=0;i<sf.entries["Kd"].size();i++) {
       diffuse.rgba[i] = (float)sf.entries["Kd"][i].AsDouble();
     }
+    app.SetColor(diffuse);
+  }
+  if(sf.entries.count("Ks") != 0) {
+    GLColor specular;
+    specular.rgba[3] = 1;
+    for(size_t i=0;i<sf.entries["Ks"].size();i++) {
+      specular.rgba[i] = (float)sf.entries["Ks"][i].AsDouble();
+    }
+    app.specularColor = specular;
+  }
+  if(sf.entries.count("Ka") != 0) {
+    GLColor emissive;
+    emissive.rgba[3] = 1;
+    for(size_t i=0;i<sf.entries["Ka"].size();i++) {
+      emissive.rgba[i] = (float)sf.entries["Ka"][i].AsDouble();
+    }
+    app.emissiveColor = emissive;
+  }
+  if(sf.entries.count("d") != 0) {  //opacity
+    app.faceColor.rgba[3] = (float)sf.entries["d"][0].AsDouble();
+    app.vertexColor.rgba[3] = app.faceColor.rgba[3];
+  }
+  if(sf.entries.count("Ns") != 0) {
+    app.shininess = (float)sf.entries["Ns"][0].AsDouble();
   }
   if(sf.entries.count("map_Kd") != 0) {
     string textureMap = sf.entries["map_Kd"][0].AsString();
@@ -470,12 +495,14 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
   setlocale(LC_NUMERIC, "en_US.UTF-8");
   tri.verts.resize(0);
   tri.tris.resize(0);
+  vector<IntTriple> tri_texcoord;
   app.vertexColors.resize(0);
   char buf[1025];
   buf[1024]=0;
   string line,item,vmf;
   vector<char*> elements;
   vector<int> face;
+  vector<int> face_texcoord;
   int lineno = 0;
   Vector3 pt;
   GLColor col;
@@ -491,7 +518,7 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
       else if(c == 't') { //texture coordinate
         int n=fscanf(f," %lf %lf",&pt.x,&pt.y);
         if(n != 2) {
-                    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: erroneous vt line on line "<<lineno);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: erroneous vt line on line "<<lineno);
           return false;
         }
         app.texcoords.push_back(Vector2(pt.x,pt.y));
@@ -499,7 +526,7 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
       else if(isspace(c)) { ///just vertex
         int n=fscanf(f," %lf %lf %lf",&pt.x,&pt.y,&pt.z);
         if(n != 3) {
-                  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: erroneous v line on line "<<lineno);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: erroneous v line on line "<<lineno);
           return false;
         }
         tri.verts.push_back(pt);
@@ -509,15 +536,17 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
         if(n >= 3) {
           app.vertexColors.push_back(col);
           if(app.vertexColors.size() != tri.verts.size()) {
-                    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: number of vertex colors not equal to number of vertices\n");
+            LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: number of vertex colors not equal to number of vertices\n");
             return false;
           }
         }
       }
     }
     else if(c=='f') {
-      if(tri.tris.size()==0) tri.tris.reserve(tri.verts.size()/3);
+      if(tri.tris.empty()) tri.tris.reserve(tri.verts.size()/3);
+      if(tri_texcoord.empty()) tri_texcoord.reserve(tri.tris.size());
       face.resize(0);
+      face_texcoord.resize(0);
       elements.resize(0);
       fgetline(f,buf,1024);
       bool readingspace = true;
@@ -538,30 +567,51 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
         }
       }
       //elements can be of form %d, %d/%d, or %d/%d/%d. 
-      //We only care about the first
+      //We only care about the first and possibly the second
       face.resize(elements.size());
+      face_texcoord.resize(elements.size(),-1);
       int f;
       for(size_t i=0;i<elements.size();i++) {
         char* c = elements[i];
-        while(*c) { if(*c=='/') { *c=0; break; }c++; }
+        char* ctexcoord = NULL;
+        while(*c) { if(*c=='/') { *c=0; ctexcoord=c+1; break; }c++; }
         int n=sscanf(elements[i],"%d",&f);
         if(n != 1) {
-                  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid vertex on f line "<<lineno<<", element "<<i);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid vertex on f line "<<lineno<<", element "<<i);
           return false;
         }
         f-=1;   //1 based
         if(f < 0 || f >= (int)tri.verts.size()) {
-                  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: vertex "<<f<<" on f line "<<lineno<<" is out of bounds 0,...,"<<(int)tri.verts.size());
+          LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: vertex "<<f<<" on f line "<<lineno<<" is out of bounds 0,...,"<<(int)tri.verts.size());
           return false;
         }
         face[i] = f;
+        if(ctexcoord) {
+          c=ctexcoord;
+          while(*c) { if(*c=='/') { *c=0; break; }c++; }
+          int n=sscanf(ctexcoord,"%d",&f);
+          if(n != 1) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid texcoord index on f line "<<lineno<<", element "<<i);
+            return false;
+          }
+          f-=1;   //1 based
+          if(f < 0 || f >= (int)app.texcoords.size()) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: texcoord index "<<f<<" on f line "<<lineno<<" is out of bounds 0,...,"<<(int)app.texcoords.size());
+            return false;
+          }
+          face_texcoord[i] = f;
+        }
       }
       if(face.size() < 3) {
-                LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid f line "<<lineno);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: invalid f line "<<lineno);
         return false;
       }
       for(size_t i=2;i<face.size();i++) 
         tri.tris.push_back(IntTriple(face[0],face[i-1],face[i]));
+      if(face_texcoord[0] >= 0) {
+        for(size_t i=2;i<face.size();i++) 
+          tri_texcoord.push_back(IntTriple(face_texcoord[0],face_texcoord[i-1],face_texcoord[i]));
+      }
     }
     else if(c=='m') {
       int i=0;
@@ -572,7 +622,7 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
       }
       if(i>=63) {
         buf[64]=0;
-                LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: unsupported command \""<<buf<<"\" on line "<<lineno);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: unsupported command \""<<buf<<"\" on line "<<lineno);
         return false;
       }
       buf[i]=0;
@@ -581,19 +631,48 @@ bool LoadOBJ(const char* fn,FILE* f,TriMesh& tri,GeometryAppearance& app)
         char* path = new char [strlen(fn)];
         GetFilePath(fn,path);
         if(!LoadOBJMaterial(path,buf,app)) {
-                    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: error loading material file \""<<(string(path)+"/"+string(buf)).c_str()<<"\" on line "<<lineno);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: error loading material file \""<<(string(path)+"/"+string(buf)).c_str()<<"\" on line "<<lineno);
           return false;
         }
       }
       else {
-                LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: unsupported command \""<<buf<<"\" on line "<<lineno);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: unsupported command \""<<buf<<"\" on line "<<lineno);
         return false;
       }
     }
     else {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: unsupported start character \""<<c<<"\" on line "<<lineno);
+      LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: unsupported start character \""<<c<<"\" on line "<<lineno);
       return false;
     }
+  }
+  LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOBJ: Read "<<tri.verts.size()<<" vertices, "<<app.texcoords.size()<<" texcoords, "<<app.vertexColors.size()<<" vertex colors");
+  if(!tri_texcoord.empty()) {
+    //need to remap per-vertex-face texcoords to per-vertex texcoords
+    vector<Vector2> merged_texcoords(tri.verts.size(),Vector2(0.0));
+    vector<int> texcoord_count(tri.verts.size(),0);
+    for(size_t i=0;i<tri_texcoord.size();i++) {
+      const IntTriple& t=tri.tris[i];
+      const IntTriple& tx=tri_texcoord[i];
+      /*
+      texcoord_count[t.a] += 1;
+      texcoord_count[t.b] += 1;
+      texcoord_count[t.c] += 1;
+      merged_texcoords[t.a] += app.texcoords[tx.a];
+      merged_texcoords[t.b] += app.texcoords[tx.b];
+      merged_texcoords[t.c] += app.texcoords[tx.c];
+      */
+      texcoord_count[t.a] = 1;
+      texcoord_count[t.b] = 1;
+      texcoord_count[t.c] = 1;
+      merged_texcoords[t.a] = app.texcoords[tx.a];
+      merged_texcoords[t.b] = app.texcoords[tx.b];
+      merged_texcoords[t.c] = app.texcoords[tx.c];
+    }
+    for(size_t i=0;i<tri.verts.size();i++)
+      if(texcoord_count[i] > 1)
+        merged_texcoords[i] /= texcoord_count[i];
+    app.texcoords = merged_texcoords;
+    app.faceColor.set(1,1,1,app.faceColor.rgba[3]);
   }
   return true;
 }
@@ -825,11 +904,11 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
         else {
           Image::PixelFormat format=Image::None;
           if(0==strcmp(tex->achFormatHint,"rgba8888"))
-            format=Image::A8R8G8B8;
+            format=Image::R8G8B8A8;
           else if(0==strcmp(tex->achFormatHint,"argb8888"))
-            format=Image::A8R8G8B8;
+            format=Image::R8G8B8A8;
           else if(0==strcmp(tex->achFormatHint,"rgba5650"))
-            format=Image::A8R8G8B8;
+            format=Image::R5G6B5;
           else
             LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: Don't know yet how to handle texture of type "<<tex->achFormatHint); 
           if(format != Image::None) {
@@ -846,6 +925,8 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
       shared_ptr<Image> img(new Image);
       if(ImportImage(filename.c_str(),*img)) {
         app.tex2D = img;
+        //TODO detect whether the texture should replace or modulate the face color
+        app.faceColor.set(1,1,1,app.faceColor[3]);
       }
       else {
         LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: couldn't load image "<<filename.c_str());
