@@ -131,6 +131,10 @@ Real VertexAbsMeanCurvature(const TriMeshWithTopology& mesh,int v);
 ///If dropDegenerate = true, then all triangles that are now degenerate will be dropped.
 void MergeVertices(TriMesh& mesh,Real tolerance,bool dropDegenerate=true);
 
+///Merges all vertices in mesh that are closer than tolerance Linf distance from each other
+///If dropDegenerate = true, then all triangles that are now degenerate will be dropped.
+void MergeVertices(TriMeshWithTopology& mesh,Real tolerance,bool dropDegenerate=true);
+
 ///Shifts the mesh's vertices by an amount that causes each adjacent triangle
 ///to be shifted along its normal by the given amount.  This is a local, approximate
 ///erosion operator that is much quicker to compute, but the approximation degrades
