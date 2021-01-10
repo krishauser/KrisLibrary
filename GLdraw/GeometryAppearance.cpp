@@ -14,6 +14,7 @@
 #include <graph/UndirectedGraph.h>
 #include <graph/ConnectedComponents.h>
 #include <KrisLibrary/Timer.h>
+#include <memory.h>
 
 using namespace Geometry;
 
@@ -26,35 +27,22 @@ namespace GLDraw {
     int n=img.w*img.h;
     switch(img.format) {
     case Image::R8G8B8:
-      {
-        unsigned char* buf = new unsigned char[img.num_bytes];
-        for(int i=0;i<n;i++) {
-          buf[i*3] = img.data[i*3+2];
-          buf[i*3+1] = img.data[i*3+1];
-          buf[i*3+2] = img.data[i*3];
-        }
-        tex.setRGB(buf,n);
-        delete [] buf;
-      }
+      tex.setRGB(img.data,n);
       break;
-    case Image::A8R8G8B8:
-      {
-        unsigned char* buf = new unsigned char[img.num_bytes];
-        for(int i=0;i<n;i++) {
-          buf[i*3] = img.data[i*3+3];
-          buf[i*3+1] = img.data[i*3+2];
-          buf[i*3+2] = img.data[i*3+1];
-          buf[i*3+3] = img.data[i*3+0];
-        }
-        tex.setRGBA(buf,n);
-        delete [] buf;
-      }
+    case Image::R8G8B8A8:
+      tex.setRGBA(img.data,n);
+      break;
+    case Image::B8G8R8:
+      tex.setBGR(img.data,n);
+      break;
+    case Image::B8G8R8A8:
+      tex.setBGRA(img.data,n);
       break;
     case Image::A8:
       tex.setLuminance(img.data,n);
       break;
     default:
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format");
       break;
     }
   }
@@ -64,39 +52,35 @@ namespace GLDraw {
   {
     GLTexture2D tex;
     tex.texObj = obj;
+    //OpenGL stores images from bottom left, Image has them from top left
+    int pixelsize = img.pixelSize();
+    int stride = pixelsize*img.w;
+    unsigned char* buf = new unsigned char[img.w*img.h*pixelsize];
+    for(int i=0;i<img.h;i++) {
+      int iflip = img.h-1-i;
+      memcpy(&buf[iflip*stride],&img.data[i*stride],stride);
+    }
     switch(img.format) {
     case Image::R8G8B8:
-      {
-        unsigned char* buf = new unsigned char[img.num_bytes];
-        for(int i=0;i<img.w*img.h;i++) {
-          buf[i*3] = img.data[i*3+2];
-          buf[i*3+1] = img.data[i*3+1];
-          buf[i*3+2] = img.data[i*3];
-        }
-        tex.setRGB(buf,img.w,img.h);
-        delete [] buf;
-      }
+      tex.setRGB(buf,img.w,img.h);
       break;
-    case Image::A8R8G8B8:
-      {
-        unsigned char* buf = new unsigned char[img.num_bytes];
-        for(int i=0;i<img.w*img.h;i++) {
-          buf[i*3] = img.data[i*3+3];
-          buf[i*3+1] = img.data[i*3+2];
-          buf[i*3+2] = img.data[i*3+1];
-          buf[i*3+3] = img.data[i*3+0];
-        }
-        tex.setRGBA(buf,img.w,img.h);
-        delete [] buf;
-      }
+    case Image::R8G8B8A8:
+      tex.setRGBA(buf,img.w,img.h);
+      break;
+    case Image::B8G8R8:
+      tex.setBGR(buf,img.w,img.h);
+      break;
+    case Image::B8G8R8A8:
+      tex.setBGRA(buf,img.w,img.h);
       break;
     case Image::A8:
-      tex.setLuminance(img.data,img.w,img.h);
+      tex.setLuminance(buf,img.w,img.h);
       break;
     default:
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format");
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Texture image doesn't match a supported GL format");
       break;
     }
+    delete [] buf;
   }
 
   void draw(const Geometry::AnyGeometry3D& geom)
@@ -492,12 +476,14 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
   }
   else
     drawFaces = true;
+  collisionGeom = &_geom;
   Refresh();
 }
 
 void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 {
   geom = &_geom;
+  collisionGeom = NULL;
   if(geom->type == AnyGeometry3D::Primitive) {
     const Math3D::GeometricPrimitive3D* g = &geom->AsPrimitive();
     drawFaces = true;
@@ -830,10 +816,14 @@ void GeometryAppearance::DrawGL(Element e)
     if(!faceDisplayList) {
       faceDisplayList.beginCompileAndExecute();
       const Meshing::TriMesh* trimesh = NULL;
+      const Meshing::TriMeshWithTopology* trimesh_topology = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
         trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::TriangleMesh) 
+      else if(geom->type == AnyGeometry3D::TriangleMesh) {
         trimesh = &geom->AsTriangleMesh();
+        if(collisionGeom)
+          trimesh_topology = &collisionGeom->TriangleMeshCollisionData();
+      }
       else if(geom->type == AnyGeometry3D::Primitive) 
         draw(geom->AsPrimitive());
 
@@ -846,11 +836,17 @@ void GeometryAppearance::DrawGL(Element e)
 
         if(vertexColors.size() != trimesh->verts.size() && texcoords.size() != trimesh->verts.size() && (creaseAngle > 0 || silhouetteRadius > 0)) {
           Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
-          tempMesh2.reset(weldMesh);
           weldMesh->verts = trimesh->verts;
           weldMesh->tris = trimesh->tris;
+          tempMesh2.reset(weldMesh);
           bool drop = faceColors.empty();
           Meshing::MergeVertices(*weldMesh,1e-5,drop);
+          if(weldMesh->verts.size() == trimesh->verts.size() && trimesh_topology) {
+            //copy topology
+            weldMesh->vertexNeighbors = trimesh_topology->vertexNeighbors;
+            weldMesh->incidentTris = trimesh_topology->incidentTris;
+            weldMesh->triNeighbors = trimesh_topology->triNeighbors;
+          }
           if(creaseAngle > 0) {
             CreaseMesh(*weldMesh,creaseMesh,creaseAngle,drop);
             VertexNormals(creaseMesh,vertexNormals);
@@ -1125,7 +1121,7 @@ void GeometryAppearance::DrawGL(Element e)
 
     Meshing::TriMesh* weldMesh = tempMesh2.get();
     if(!weldMesh) {
-      //make the weld mesh from the trinagle mesh
+      //make the weld mesh from the triangle mesh
       const Meshing::TriMesh* trimesh = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface) 
         trimesh = tempMesh.get();

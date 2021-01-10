@@ -83,6 +83,7 @@ class GeometryAppearance
 
   ///Geometry pointer
   const Geometry::AnyGeometry3D* geom;
+  const Geometry::AnyCollisionGeometry3D* collisionGeom;
   ///For group geometries
   std::vector<GeometryAppearance> subAppearances;
 
