@@ -11,6 +11,8 @@ void GLTexture2D::setLuminance(const unsigned char* data,int m,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_2D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage2D(GL_TEXTURE_2D,0,GL_LUMINANCE,m,n,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -23,6 +25,8 @@ void GLTexture2D::setRGB(const unsigned char* data,int m,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_2D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGB8,m,n,0,GL_RGB,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -35,7 +39,37 @@ void GLTexture2D::setRGBA(const unsigned char* data,int m,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_2D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,m,n,0,GL_RGBA,GL_UNSIGNED_BYTE,data);  
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+  texObj.unbind(GL_TEXTURE_2D);
+}
+
+void GLTexture2D::setBGR(const unsigned char* data,int m,int n)
+{
+  if(texObj.isNull()) texObj.generate();
+  texObj.bind(GL_TEXTURE_2D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  glTexImage2D(GL_TEXTURE_2D,0,GL_RGB8,m,n,0,GL_BGR,GL_UNSIGNED_BYTE,data);  
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+  texObj.unbind(GL_TEXTURE_2D);
+}
+
+void GLTexture2D::setBGRA(const unsigned char* data,int m,int n)
+{
+  if(texObj.isNull()) texObj.generate();
+  texObj.bind(GL_TEXTURE_2D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,m,n,0,GL_BGRA,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
@@ -47,6 +81,8 @@ void GLTexture2D::setAlpha(const unsigned char* data,int m,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_2D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage2D(GL_TEXTURE_2D,0,GL_ALPHA,m,n,0,GL_ALPHA,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);

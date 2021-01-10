@@ -15,6 +15,8 @@ class GLTexture2D
   void setLuminance(const unsigned char* data,int m,int n);
   void setRGB(const unsigned char* data,int m,int n);
   void setRGBA(const unsigned char* data,int m,int n);
+  void setBGR(const unsigned char* data,int m,int n);
+  void setBGRA(const unsigned char* data,int m,int n);
   void setAlpha(const unsigned char* data,int m,int n);
   void setFilterLinear();
   void setFilterNearest();

@@ -70,6 +70,8 @@ void GLTexture1D::setLuminance(const unsigned char* data,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_1D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage1D(GL_TEXTURE_1D,0,GL_LUMINANCE,n,0,GL_LUMINANCE,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -81,6 +83,8 @@ void GLTexture1D::setRGB(const unsigned char* data,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_1D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage1D(GL_TEXTURE_1D,0,GL_RGB8,n,0,GL_RGB,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -92,7 +96,35 @@ void GLTexture1D::setRGBA(const unsigned char* data,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_1D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA8,n,0,GL_RGBA,GL_UNSIGNED_BYTE,data);  
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+  texObj.unbind(GL_TEXTURE_1D);
+}
+
+void GLTexture1D::setBGR(const unsigned char* data,int n)
+{
+  if(texObj.isNull()) texObj.generate();
+  texObj.bind(GL_TEXTURE_1D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  glTexImage1D(GL_TEXTURE_1D,0,GL_RGB8,n,0,GL_BGR,GL_UNSIGNED_BYTE,data);  
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+  texObj.unbind(GL_TEXTURE_1D);
+}
+
+void GLTexture1D::setBGRA(const unsigned char* data,int n)
+{
+  if(texObj.isNull()) texObj.generate();
+  texObj.bind(GL_TEXTURE_1D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  glTexImage1D(GL_TEXTURE_1D,0,GL_RGBA8,n,0,GL_BGRA,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
@@ -103,6 +135,8 @@ void GLTexture1D::setAlpha(const unsigned char* data,int n)
 {
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_1D);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glTexImage1D(GL_TEXTURE_1D,0,GL_ALPHA,n,0,GL_ALPHA,GL_UNSIGNED_BYTE,data);  
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);

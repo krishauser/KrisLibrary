@@ -16,6 +16,8 @@ class GLTexture1D
   void setLuminance(const unsigned char* data,int n);
   void setRGB(const unsigned char* data,int n);
   void setRGBA(const unsigned char* data,int n);
+  void setBGR(const unsigned char* data,int n);
+  void setBGRA(const unsigned char* data,int n);
   void setAlpha(const unsigned char* data,int n);
   void setLuminance(const ColorGradient& grad,int n);
   void setRGB(const ColorGradient& grad,int n);

@@ -346,21 +346,12 @@ void GLRenderToImage::GetRGBA(vector<vector<unsigned int> >& image)
 
 void GLRenderToImage::GetRGBA(Image& image)
 {
-  if(width != image.w || height != image.h || Image::A8R8G8B8 != image.format)
-    image.initialize(width,height,Image::A8R8G8B8);
+  if(width != image.w || height != image.h || Image::R8G8B8A8 != image.format)
+    image.initialize(width,height,Image::R8G8B8A8);
   vector<unsigned char> bytes;
   GetRGBA(bytes);
   Assert(bytes.size() == image.num_bytes);
   memcpy(image.data,&bytes[0],image.num_bytes);
-  //switch the red and the blue
-  for(int i=0;i<width*height;i++) {
-    unsigned char* argb = image.data + i*4;
-    unsigned char a=argb[0],r=argb[1],g=argb[2],b=argb[3];
-    argb[0] = b;
-    argb[1] = g;
-    argb[2] = r;
-    argb[3] = a;
-  }
 }
 
 void GLRenderToImage::GetRGB(vector<unsigned char>& image)
