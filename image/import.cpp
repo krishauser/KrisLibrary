@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errors.h>
 #include <utils/stringutils.h>
+#include <utils/fileutils.h>
 #if HAVE_FREE_IMAGE
 #include "FreeImage.h"
 #endif //HAVE_FREE_IMAGE
@@ -129,13 +130,18 @@ bool ImportImage(const char* fn, Image& img)
 		else if(0==strcmp(ext,"tif") || 0==strcmp(ext,"tiff")) 
 			fif_type = FIF_TIFF;
 	}
+	if(!FileUtils::Exists(fn)) {
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Unable to load image from \""<<fn<<"\", file does not exist");
+		return false;
+	}
+
 	FIBITMAP* fimg = FreeImage_Load(fif_type,fn);
 	if(fimg != NULL) {
 		FreeImageBitmapToImage(fimg,img);
 		FreeImage_Unload(fimg);
 		return true;
 	}
-	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Load "<<fn<<" result is NULL");
+	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Load \""<<fn<<"\" result is NULL");
 	return false;
 #else 
 	const char* ext = FileExtension(fn);

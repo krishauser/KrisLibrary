@@ -478,7 +478,7 @@ bool LoadOBJMaterial(const char* path,const char* file,GeometryAppearance& app)
   }
   if(sf.entries.count("map_Kd") != 0) {
     string textureMap = sf.entries["map_Kd"][0].AsString();
-    string fullpath = string(path)+textureMap;
+    string fullpath = string(path)+Strip(textureMap);
     app.tex2D.reset(new Image);
     if(!ImportImage(fullpath.c_str(),*app.tex2D)) {
       app.tex2D = NULL;
@@ -921,7 +921,7 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
     }
     else {
       //string filename = gTexturePath+str.C_str();
-      string filename = gTexturePath+string(str.data);
+      string filename = gTexturePath+Strip(string(str.data));
       shared_ptr<Image> img(new Image);
       if(ImportImage(filename.c_str(),*img)) {
         app.tex2D = img;
