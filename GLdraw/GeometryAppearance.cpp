@@ -821,7 +821,7 @@ void GeometryAppearance::DrawGL(Element e)
         trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::TriangleMesh) {
         trimesh = &geom->AsTriangleMesh();
-        if(collisionGeom)
+        if(collisionGeom && collisionGeom->CollisionDataInitialized())
           trimesh_topology = &collisionGeom->TriangleMeshCollisionData();
       }
       else if(geom->type == AnyGeometry3D::Primitive) 
