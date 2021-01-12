@@ -375,7 +375,7 @@ void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
       subAppearances[i].CopyMaterialFlat(rhs.subAppearances[i]);
   }
   else if(rhs.subAppearances.empty()) {
-    for(size_t i=0;i<subAppearances.size();i++)
+    for(size_t i=0;i<subAppearances.size();i++) 
       subAppearances[i].CopyMaterialFlat(rhs);
   }
 
@@ -454,8 +454,14 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
+        subAppearances[i].Set(subgeoms[i]);
+        bool iDrawFaces = subAppearances[i].drawFaces;
+        bool iDrawEdges = subAppearances[i].drawEdges;
+        bool iDrawVertices = subAppearances[i].drawVertices;
         subAppearances[i].CopyMaterialFlat(*this);
-        subAppearances[i].Set(subgeoms[i]);        
+        subAppearances[i].drawFaces = iDrawFaces;
+        subAppearances[i].drawEdges = iDrawEdges;
+        subAppearances[i].drawVertices = iDrawVertices;
       }
     }
     else {
@@ -703,7 +709,7 @@ void GeometryAppearance::DrawGL(Element e)
         //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling vertex display list "<<verts->size());
         vertexDisplayList.beginCompileAndExecute();
         if(!vertexColors.empty() && vertexColors.size() != verts->size())
-                  LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, vertexColors wrong size");
         if(vertexColors.size()==verts->size()) {
           glDisable(GL_LIGHTING);
           glBegin(GL_POINTS);
