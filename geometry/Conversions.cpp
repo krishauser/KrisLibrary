@@ -665,7 +665,12 @@ void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh)
 	else {
 		AppendPoints(ch,points);
 	}
-	ConvexHull3D_Qhull(points,facets);
+	if(!ConvexHull3D_Qhull(points,facets)) {
+		LOG4CXX_ERROR(KrisLibrary::logger(),"ConvexHullToMesh: QHull failed");
+		mesh.verts.resize(0);
+		mesh.tris.resize(0);
+		return;
+	}
 	/*
 	mesh.verts = points;
 	for(const auto& f:facets) {
