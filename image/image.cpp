@@ -83,6 +83,8 @@ static unsigned int pfsizes [] =
 {
 	0,
 	3,
+	3,
+	4,
 	4,
 	2,
 	2,
