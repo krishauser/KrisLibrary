@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -56,25 +56,25 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">KrisLibrary.dir\Debug\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">KrisLibraryd</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">KrisLibrary.dir\Release\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">KrisLibrary</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\MinSizeRel\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">KrisLibrary.dir\MinSizeRel\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">KrisLibrary</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\RelWithDebInfo\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">KrisLibrary.dir\RelWithDebInfo\</IntDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">KrisLibrary</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.lib</TargetExt>
-  </PropertyGroup>
+    <PropertyGroup>
+      <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\Debug\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">KrisLibrary.dir\Debug\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">KrisLibraryd</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\Release\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">KrisLibrary.dir\Release\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">KrisLibrary</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\MinSizeRel\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">KrisLibrary.dir\MinSizeRel\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">KrisLibrary</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.lib</TargetExt>
+      <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\lib\RelWithDebInfo\</OutDir>
+      <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">KrisLibrary.dir\RelWithDebInfo\</IntDir>
+      <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">KrisLibrary</TargetName>
+      <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.lib</TargetExt>
+    </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -88,15 +88,14 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
+      <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -120,15 +119,14 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
+      <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;WIN32;_WINDOWS;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -142,7 +140,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -154,15 +152,14 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
+      <DebugInformationFormat></DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -176,7 +173,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
     <ClCompile>
       <AdditionalOptions> -std=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <CompileAs>CompileAsCpp</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -192,10 +189,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;SOLID_STATIC;USE_CPP_THREADS;HAVE_GLEW=1;HAVE_GLPK=1;HAVE_CURL=1;CURL_STATICLIB;HAVE_TINYXML=1;TIXML_USE_STL;HAVE_ASSIMP=1;ASSIMP_MAJOR_VERSION=3;NOMINMAX;GLUI_NO_LIB_PRAGMA;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp--3.0.1270-sdk\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Klampt\Cpp\Dependencies\KrisLibrary;D:\Klampt\Cpp\Dependencies\KrisLibrary\..;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\inc;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\include;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\broad;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\convex;D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\solid3\src\complex;D:\Klampt\Cpp\Dependencies;D:\Klampt\Cpp\Dependencies\glew-2.0.0\include;D:\Klampt\Cpp\Dependencies\glpk-4.61\src;D:\Klampt\Cpp\Dependencies\tinyxml;D:\Klampt\Cpp\Dependencies\assimp\include;D:\Klampt\Cpp\Dependencies\curl-7.64.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -263,357 +260,357 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\errors.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\File.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\Logger.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\Timer.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\camera.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\clip.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\errors.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\File.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\Logger.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\Timer.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\camera.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\clip.cpp" >
       <ObjectFileName>$(IntDir)/camera/clip.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\frustum.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\transform.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\viewport.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\AnyGeometry.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Arrangement1D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\BallTree.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionImplicitSurface.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionMesh.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionPointCloud.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Conversions.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Fitting.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Grid.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\GridSubdivision.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\KDTree.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\MonotoneChain.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\MultiVolumeGrid.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\NeighborGraph.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Octree.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PenetrationDepth.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PolytopeProjection.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\SegmentOverlay.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\SparseVolumeGrid.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\TSDFReconstruction.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\UnboundedPolytope2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\BoxWidget.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\ColorGradient.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\drawextra.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\drawgeometry.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GeometryAppearance.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLColor.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLDisplayList.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLError.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLFog.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLLight.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLMaterial.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLOffscreenContext.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLRenderToImage.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLScreenshot.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLTexture1D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLTexture2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLTextureObject.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUINavigationProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUIProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUTNavigationProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUTProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLView.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\SphereWidget.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\TransformWidget.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\Widget.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\graph\IO.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\frustum.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\transform.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\camera\viewport.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\AnyGeometry.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Arrangement1D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\BallTree.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionImplicitSurface.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionMesh.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\CollisionPointCloud.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Conversions.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\ConvexHull3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Fitting.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Grid.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\GridSubdivision.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\KDTree.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\MonotoneChain.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\MultiVolumeGrid.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\NeighborGraph.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\Octree.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PenetrationDepth.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PolytopeProjection.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\SegmentOverlay.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\SparseVolumeGrid.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\TSDFReconstruction.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\UnboundedPolytope2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\BoxWidget.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\ColorGradient.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\drawextra.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\drawgeometry.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GeometryAppearance.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLColor.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLDisplayList.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLError.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLFog.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLLight.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLMaterial.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLOffscreenContext.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLRenderToImage.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLScreenshot.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLTexture1D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLTexture2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLTextureObject.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUINavigationProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUIProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUTNavigationProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLUTProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\GLView.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\SphereWidget.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\TransformWidget.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\GLdraw\Widget.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\graph\IO.cpp" >
       <ObjectFileName>$(IntDir)/graph/IO.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\bmp.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\gdi.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\image.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\import.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\ppm.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\textureops.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\tga.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\AABB.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\angle.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\AngleSet.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\ASCIIShade.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\backsubstitute.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BLASInterface.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BlockPrinter.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BlockTridiagonalMatrix.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BlockVector.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\brent.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\CholeskyDecomposition.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\complex.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\ConditionedConstraint.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\Conditioner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\DiagonalMatrix.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\diffeq.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\differentiation.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\function.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\gaussian.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\GramSchmidt.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\Householder.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\InequalityConstraint.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\infnan.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\IntervalSet.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LAPACKInterface.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LDL.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\linalgebra.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LinearlyDependent.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\bmp.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\gdi.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\image.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\import.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\ppm.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\textureops.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\image\tga.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\AABB.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\angle.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\AngleSet.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\ASCIIShade.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\backsubstitute.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BLASInterface.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BlockPrinter.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BlockTridiagonalMatrix.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\BlockVector.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\brent.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\CholeskyDecomposition.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\complex.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\ConditionedConstraint.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\Conditioner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\DiagonalMatrix.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\diffeq.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\differentiation.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\function.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\gaussian.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\GramSchmidt.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\Householder.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\InequalityConstraint.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\infnan.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\IntervalSet.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LAPACKInterface.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LDL.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\linalgebra.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LinearlyDependent.cpp" >
       <ObjectFileName>$(IntDir)/math/LinearlyDependent.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LinearPath.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LUDecomposition.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\MatrixEquationPrinter.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\MatrixPrinter.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\MatrixTemplate.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\metric.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\misc.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\QRDecomposition.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\quadrature.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\QuasiNewton.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\random.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LinearPath.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\LUDecomposition.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\MatrixEquationPrinter.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\MatrixPrinter.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\MatrixTemplate.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\metric.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\misc.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\QRDecomposition.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\quadrature.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\QuasiNewton.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\random.cpp" >
       <ObjectFileName>$(IntDir)/math/random.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\realfunction.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\root.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\RowEchelon.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\sample.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SelfTest.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\realfunction.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\root.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\RowEchelon.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\sample.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SelfTest.cpp" >
       <ObjectFileName>$(IntDir)/math/SelfTest.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SparseMatrixTemplate.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SparseVectorTemplate.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SVDecomposition.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\vectorfunction.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\VectorPrinter.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\VectorTemplate.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\AABB2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\AABB3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Box3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Circle3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\clip.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SparseMatrixTemplate.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SparseVectorTemplate.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\SVDecomposition.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\vectorfunction.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\VectorPrinter.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math\VectorTemplate.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\AABB2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\AABB3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Box3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Circle3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\clip.cpp" >
       <ObjectFileName>$(IntDir)/math3d/clip.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Cylinder3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\geometry2d.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\geometry3d.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\interpolate.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Line2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Line3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LinearAlgebra.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LinearlyDependent.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Cylinder3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\geometry2d.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\geometry3d.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\interpolate.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Line2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Line3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LinearAlgebra.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LinearlyDependent.cpp" >
       <ObjectFileName>$(IntDir)/math3d/LinearlyDependent.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LocalCoordinates2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LocalCoordinates3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Plane3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\polar.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Polygon2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Polygon3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Polyhedron3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\primitives.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\quatinline.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\random.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LocalCoordinates2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\LocalCoordinates3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Plane3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\polar.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Polygon2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Polygon3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Polyhedron3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\primitives.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\quatinline.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\random.cpp" >
       <ObjectFileName>$(IntDir)/math3d/random.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Ray3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\rotation.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Ray3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\rotation.cpp" >
       <ObjectFileName>$(IntDir)/math3d/rotation.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\rotationfit.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Segment2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Segment3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Triangle2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Triangle3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\AreaGrid.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\ClosestPoint.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Expand.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Geodesic.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\IO.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\rotationfit.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Segment2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Segment3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Triangle2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\math3d\Triangle3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\AreaGrid.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\ClosestPoint.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Expand.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Geodesic.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\IO.cpp" >
       <ObjectFileName>$(IntDir)/meshing/IO.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\LSConformalMapping.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\MarchingCubes.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Meshing.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\MeshPrimitives.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\PointCloud.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Rasterize.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\TriMesh.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\TriMeshOperators.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\TriMeshTopology.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\VolumeGrid.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Voxelize.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\BoundedLSQRSolver.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\GLPKInterface.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LCP.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LeastSquares.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LinearProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LPOptimumFunction.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LPRobust.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LP_InteriorPoint.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\lsqr.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LSQRInterface.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\Minimization.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\MinNormProblem.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\Newton.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\NewtonSolver.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\NonlinearProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\QuadProgPPInterface.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\QuadraticProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\RegularizedLinearProgram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\SelfTest.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\LSConformalMapping.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\MarchingCubes.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Meshing.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\MeshPrimitives.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\PointCloud.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Rasterize.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\TriMesh.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\TriMeshOperators.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\TriMeshTopology.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\VolumeGrid.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\meshing\Voxelize.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\BoundedLSQRSolver.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\GLPKInterface.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LCP.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LeastSquares.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LinearProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LPOptimumFunction.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LPRobust.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LP_InteriorPoint.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\lsqr.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\LSQRInterface.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\Minimization.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\MinNormProblem.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\Newton.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\NewtonSolver.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\NonlinearProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\QuadProgPPInterface.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\QuadraticProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\RegularizedLinearProgram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\optimization\SelfTest.cpp" >
       <ObjectFileName>$(IntDir)/optimization/SelfTest.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\AnyMotionPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\AOMetaPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\ControlSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CostSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSetHelpers.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSpaceAnalysis.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSpaceHelpers.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CVSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\DensityEstimator.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\DisplacementPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\DoubleIntegrator.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\EdgePlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\FMM.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\FMMMotionPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\GeneralizedBezierCurve.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Geometric2DCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Grid2DCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Interpolator.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicMotionPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicOptimizer.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicPath.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MCRPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MCRPlannerGoalSet.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MotionPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MultiModalPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MultiRobot2DCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Objective.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\OMPLInterface.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\OptimalMotionPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\ParabolicRamp.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Path.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\AnyMotionPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\AOMetaPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\ControlSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CostSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSetHelpers.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSpaceAnalysis.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CSpaceHelpers.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\CVSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\DensityEstimator.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\DisplacementPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\DoubleIntegrator.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\EdgePlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\FMM.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\FMMMotionPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\GeneralizedBezierCurve.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Geometric2DCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Grid2DCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Interpolator.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicMotionPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicOptimizer.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicPath.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\KinodynamicSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MCRPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MCRPlannerGoalSet.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MotionPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MultiModalPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\MultiRobot2DCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Objective.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\OMPLInterface.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\OptimalMotionPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\ParabolicRamp.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Path.cpp" >
       <ObjectFileName>$(IntDir)/planning/Path.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\PerturbationCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\PointLocation.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\RigidBodyCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\RigidRobot2DCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\SBL.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\SBLTree.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Tabular.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\TimeCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\TimedPath.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\TranslatingRobot2DCSpace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\VisibilityGraphPlanner.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\AnalyticIK.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\AngleBracket.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\CartesianDrive.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Chain.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\ConstrainedDynamics.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Contact.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\DenavitHartenberg.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\DynamicChain.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\DynamicChain3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Geometry.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\IK.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\IKFunctions.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Inertia.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\JointStructure.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\KinematicChain.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\KinematicChain3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Kinematics.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\NewtonEuler.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RigidBodyDynamics.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RLG.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotDynamics3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotKinematics3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotLink3D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotWithGeometry.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Rotation.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\PerturbationCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\PointLocation.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\RigidBodyCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\RigidRobot2DCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\SBL.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\SBLTree.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\Tabular.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\TimeCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\TimedPath.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\TranslatingRobot2DCSpace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\planning\VisibilityGraphPlanner.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\AnalyticIK.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\AngleBracket.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\CartesianDrive.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Chain.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\ConstrainedDynamics.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Contact.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\DenavitHartenberg.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\DynamicChain.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\DynamicChain3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Geometry.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\IK.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\IKFunctions.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Inertia.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\JointStructure.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\KinematicChain.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\KinematicChain3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Kinematics.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\NewtonEuler.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RigidBodyDynamics.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RLG.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotDynamics3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotKinematics3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotLink3D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\RobotWithGeometry.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Rotation.cpp" >
       <ObjectFileName>$(IntDir)/robotics/Rotation.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\SelfTest.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\SelfTest.cpp" >
       <ObjectFileName>$(IntDir)/robotics/SelfTest.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Simulate.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Stability.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\TorqueSolver.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\WorkspaceBound.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\basis.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\BSpline.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\Hermite.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\MonotonicSpline.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\path.cpp">
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Simulate.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\Stability.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\TorqueSolver.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\robotics\WorkspaceBound.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\basis.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\BSpline.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\Hermite.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\MonotonicSpline.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\path.cpp" >
       <ObjectFileName>$(IntDir)/spline/path.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\PiecewisePolynomial.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\spline.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\BetaDistribution.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\CategoricalDistribution.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\DataSet.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\DistributionCollector.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\GaussianDistribution.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\GaussianHMM.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\GaussianMixtureModel.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\HierarchicalClustering.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\Histogram.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\HistogramND.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\KMeans.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\LinearModel.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\LinearProcessHMM.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\LogisticModel.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\OLS.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\OnlineMoments.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\OnlineOLS.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\statistics.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\UniformDistribution.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\AnyCollection.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\AnyMapper.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\apputils.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\AsyncIO.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\CommandLine.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\CoverSet.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\EZTrace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\fileutils.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\indexing.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\IndexSet.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\IntPair.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\IntTriple.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ioutils.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ParamList.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\PrimitiveValue.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ProgressPrinter.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\PropertyMap.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\RangeSet.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\RangeSet2D.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ResourceLibrary.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\SignalHandler.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\SimpleFile.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\SimpleParser.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\socketutils.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\StatCollector.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\stringutils.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\Subset.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\threadutils.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\Trace.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\unionfind.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\Build.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\BV.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\PQP.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\TriDist.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdGraph.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdHACD.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdICHull.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdManifoldMesh.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMeshDecimator.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMicroAllocator.cpp" />
-    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdRaycastMesh.cpp" />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\PiecewisePolynomial.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\spline\spline.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\BetaDistribution.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\CategoricalDistribution.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\DataSet.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\DistributionCollector.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\GaussianDistribution.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\GaussianHMM.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\GaussianMixtureModel.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\HierarchicalClustering.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\Histogram.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\HistogramND.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\KMeans.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\LinearModel.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\LinearProcessHMM.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\LogisticModel.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\OLS.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\OnlineMoments.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\OnlineOLS.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\statistics.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\statistics\UniformDistribution.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\AnyCollection.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\AnyMapper.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\apputils.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\AsyncIO.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\CommandLine.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\CoverSet.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\EZTrace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\fileutils.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\indexing.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\IndexSet.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\IntPair.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\IntTriple.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ioutils.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ParamList.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\PrimitiveValue.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ProgressPrinter.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\PropertyMap.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\RangeSet.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\RangeSet2D.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\ResourceLibrary.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\SignalHandler.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\SimpleFile.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\SimpleParser.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\socketutils.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\StatCollector.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\stringutils.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\Subset.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\threadutils.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\Trace.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\utils\unionfind.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\Build.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\BV.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\PQP.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\PQP\src\TriDist.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdGraph.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdHACD.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdICHull.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdManifoldMesh.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMeshDecimator.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdMicroAllocator.cpp"  />
+    <ClCompile Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\geometry\HACD_Lib\src\hacdRaycastMesh.cpp"  />
     <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\BP_C-api.obj" />
     <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\BP_EndpointList.obj" />
     <Object Include="D:\Klampt\Cpp\Dependencies\KrisLibrary\msvc\geometry\solid3\src\solid3.dir\$(Configuration)\BP_Proxy.obj" />
