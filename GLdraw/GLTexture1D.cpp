@@ -5,6 +5,18 @@ using namespace GLDraw;
 
 #define FLOAT_TO_UCHAR(x) (unsigned char)(x*255.0)
 
+#ifndef GL_BGR
+#ifdef GL_BGR_EXT
+#define GL_BGR GL_BGR_EXT
+#endif //GL_BGR_EXT
+#endif
+
+#ifndef GL_BGRA
+#ifdef GL_BGRA_EXT
+#define GL_BGRA GL_BGRA_EXT
+#endif //GL_BGRA_EXT
+#endif
+
 GLTexture1D::GLTexture1D()
 {
 }
@@ -107,6 +119,9 @@ void GLTexture1D::setRGBA(const unsigned char* data,int n)
 
 void GLTexture1D::setBGR(const unsigned char* data,int n)
 {
+#ifndef GL_BGR
+  fprintf(stderr, "GL_BGR is not defined on your system?\n");
+#else
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_1D);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -116,10 +131,14 @@ void GLTexture1D::setBGR(const unsigned char* data,int n)
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   texObj.unbind(GL_TEXTURE_1D);
+#endif
 }
 
 void GLTexture1D::setBGRA(const unsigned char* data,int n)
 {
+#ifndef GL_BGRA
+  fprintf(stderr, "GL_BGRA is not defined on your system?\n");
+#else
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_1D);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -129,6 +148,7 @@ void GLTexture1D::setBGRA(const unsigned char* data,int n)
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   texObj.unbind(GL_TEXTURE_1D);
+#endif
 }
 
 void GLTexture1D::setAlpha(const unsigned char* data,int n)

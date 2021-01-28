@@ -3,6 +3,18 @@
 
 using namespace GLDraw;
 
+#ifndef GL_BGR
+#ifdef GL_BGR_EXT
+#define GL_BGR GL_BGR_EXT
+#endif //GL_BGR_EXT
+#endif
+
+#ifndef GL_BGRA
+#ifdef GL_BGRA_EXT
+#define GL_BGRA GL_BGRA_EXT
+#endif //GL_BGRA_EXT
+#endif
+
 GLTexture2D::GLTexture2D()
 {
 }
@@ -51,6 +63,9 @@ void GLTexture2D::setRGBA(const unsigned char* data,int m,int n)
 
 void GLTexture2D::setBGR(const unsigned char* data,int m,int n)
 {
+#ifndef GL_BGR
+  fprintf(stderr, "GL_BGR is not defined on your system?\n");
+#else
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_2D);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -61,10 +76,14 @@ void GLTexture2D::setBGR(const unsigned char* data,int m,int n)
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   texObj.unbind(GL_TEXTURE_2D);
+#endif
 }
 
 void GLTexture2D::setBGRA(const unsigned char* data,int m,int n)
 {
+#ifndef GL_BGRA
+  fprintf(stderr, "GL_BGRA is not defined on your system?\n");
+#else
   if(texObj.isNull()) texObj.generate();
   texObj.bind(GL_TEXTURE_2D);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -75,6 +94,7 @@ void GLTexture2D::setBGRA(const unsigned char* data,int m,int n)
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
   texObj.unbind(GL_TEXTURE_2D);
+#endif
 }
 
 void GLTexture2D::setAlpha(const unsigned char* data,int m,int n)
