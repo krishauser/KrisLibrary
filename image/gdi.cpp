@@ -1,7 +1,35 @@
 #include <KrisLibrary/Logger.h>
 #include "gdi.h"
 #include <errors.h>
-#include <utils/stringutils.h>
+#include <KrisLibrary/utils/fileutils.h>
+#include <KrisLibrary/utils/stringutils.h>
+
+class GdiplusStartupHelper
+{
+public:
+  GdiplusStartupHelper() {
+    gdiplusToken = 0;
+    tried_startup = false;
+  }
+  ~GdiplusStartupHelper() {
+    if (gdiplusToken != 0) {
+      Gdiplus::GdiplusShutdown(gdiplusToken);
+    }
+  }
+  bool tried() {
+    return tried_startup;
+  }
+  bool startup() {
+    tried_startup = true;
+    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+    Gdiplus::Status res = Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+    return res == Gdiplus::Ok;
+  }
+  ULONG_PTR gdiplusToken;
+  bool tried_startup;
+};
+
+GdiplusStartupHelper gdiplusStartupHelper;
 
 Image::PixelFormat GdiToImagePixelFormat(Gdiplus::PixelFormat fmt, Gdiplus::PixelFormat& fmtOut)
 {
@@ -12,18 +40,18 @@ Image::PixelFormat GdiToImagePixelFormat(Gdiplus::PixelFormat fmt, Gdiplus::Pixe
 	case PixelFormat4bppIndexed:
 	case PixelFormat8bppIndexed:
 		fmtOut = PixelFormat32bppARGB;
-		return Image::A8R8G8B8;
+		return Image::B8G8R8A8;
 	case PixelFormat16bppARGB1555:
-		return Image::X1R5G5B5;
+		return Image::R5G5B5X1;
 	case PixelFormat16bppGrayScale:
 		fmtOut = PixelFormat32bppARGB;
-		return Image::A8R8G8B8;
+		return Image::B8G8R8A8;
 	case PixelFormat16bppRGB555:
-		return Image::X1R5G5B5;
+		return Image::R5G5B5X1;
 	case PixelFormat16bppRGB565:
 		return Image::R5G6B5;
 	case PixelFormat24bppRGB:
-		return Image::R8G8B8;
+		return Image::B8G8R8;
 	case PixelFormat32bppARGB:
 	case PixelFormat32bppPARGB: 
 	case PixelFormat48bppRGB:
@@ -31,10 +59,10 @@ Image::PixelFormat GdiToImagePixelFormat(Gdiplus::PixelFormat fmt, Gdiplus::Pixe
 	case PixelFormat64bppARGB: 
 	case PixelFormat64bppPARGB:
 		fmtOut = PixelFormat32bppARGB;
-		return Image::A8R8G8B8;
+		return Image::B8G8R8A8;
 	default:
 		fmtOut = PixelFormat32bppARGB;
-		return Image::A8R8G8B8;
+		return Image::B8G8R8A8;
 	}
 }
 
@@ -43,9 +71,11 @@ Gdiplus::PixelFormat ImageToGdiPixelFormat(Image::PixelFormat fmt)
 	switch(fmt) {
 	case Image::None: return PixelFormat1bppIndexed;	
 	case Image::R8G8B8: return PixelFormat24bppRGB;
-	case Image::A8R8G8B8: return PixelFormat32bppARGB;
+  case Image::B8G8R8: return PixelFormat24bppRGB;
+	case Image::R8G8B8A8: return PixelFormat32bppARGB;
+  case Image::B8G8R8A8: return PixelFormat32bppARGB;
 	case Image::R5G6B5: return PixelFormat16bppRGB565;
-	case Image::X1R5G5B5: return PixelFormat16bppRGB555;
+	case Image::R5G5B5X1: return PixelFormat16bppRGB555;
 	case Image::A8: return PixelFormat8bppIndexed;
 	default:
 		FatalError("Thats an invalid GDI format");
@@ -79,7 +109,10 @@ void GdiBitmapToImage(Gdiplus::Bitmap& bit, Image& img)
 		if(imageFormat == Image::None || imageFormat == Image::A8) {
 			memcpy(img.getData(0,i),data,scanline_size);
 		}
-		else {  //swap order for little endian pixels
+    else if (imageFormat == Image::B8G8R8 || imageFormat == Image::B8G8R8A8) {
+      memcpy(img.getData(0,i), data, scanline_size);
+    }
+    else {//swap order for little endian pixels
 			unsigned char* dataRow  = data;
 			unsigned char* imgRow = img.getData(0,i);
 			for(UINT j=0;j<bitdata.Width;j++,dataRow+=pixelBytes,imgRow+=pixelBytes)
@@ -113,13 +146,30 @@ Gdiplus::Bitmap* ImageToGdiBitmap(const Image& image)
 		if(image.format == Image::None || image.format == Image::A8) {
 			memcpy(data,image.getData(0,i),scanline_size);
 		}
-		else {  //swap order for little endian pixels
+    else if (image.format == Image::B8G8R8 || image.format == Image::B8G8R8A8) {
+      memcpy(data, image.getData(0,i), scanline_size);
+    }
+    else if(image.format == Image::R8G8B8) { //convert from RGB to BGR
 			unsigned char* dataRow  = data;
 			const unsigned char* imgRow = image.getData(0,i);
 			for(UINT j=0;j<bitdata.Width;j++,dataRow+=pixelBytes,imgRow+=pixelBytes)
 				for(int k=0;k<pixelBytes;k++)
 					dataRow[pixelBytes-1-k] = imgRow[k];
 		}
+    else if (image.format == Image::R8G8B8A8) { //convert from RGBA to BGRA
+      unsigned char* dataRow = data;
+      const unsigned char* imgRow = image.getData(0,i);
+      for (UINT j = 0; j < bitdata.Width; j++, dataRow += pixelBytes, imgRow += pixelBytes) {
+        dataRow[0] = imgRow[2];
+        dataRow[1] = imgRow[1];
+        dataRow[2] = imgRow[0];
+        dataRow[3] = imgRow[3];
+      }
+    }
+    else {
+      //ehhh... whatever
+      memcpy(data, image.getData(0,i), scanline_size);
+    }
 		data += bitdata.Stride;
 	}
 	bit->UnlockBits(&bitdata);
@@ -135,7 +185,23 @@ bool ImportImageGDIPlus(const char* fn, Image& img)
 	Gdiplus::Bitmap bit(wfn);
 	delete [] wfn;
 
-	if(bit.GetWidth() == 0 || bit.GetHeight() == 0) return false;
+  if (bit.GetWidth() == 0 || bit.GetHeight() == 0) {
+    if (!FileUtils::Exists(fn)) {
+      fprintf(stderr, "ImportImageGDIPlus: file %s doesn't exist\n", fn);
+    }
+    else {
+      if (gdiplusStartupHelper.tried())
+        return false;
+      if (!gdiplusStartupHelper.startup())
+        fprintf(stderr, "ImportImageGDIPlus: Couldn't start Gdiplus\n");
+      else {
+        //try again
+        return ImportImageGDIPlus(fn, img);
+      }
+      return false;
+    }
+    return false;
+  }
 	GdiBitmapToImage(bit,img);
 	return true;
 }
@@ -179,7 +245,7 @@ bool ExportImageGDIPlus(const char* fn, Image& img)
 	if(0==strcmp(ext,"tif")) ext="tiff";
 	char typebuf[32];
 #ifndef _WIN32
-	snLOG4CXX_INFO(KrisLibrary::logger(),typebuf,32,"image/"<< ext);
+	snprintf(typebuf,32,"image/"<< ext);
 #else
 	sprintf_s<32>(typebuf,"image/%s", ext);
 #endif //_WIN32
@@ -195,7 +261,21 @@ bool ExportImageGDIPlus(const char* fn, Image& img)
 	int length = strlen(fn)+5;
 	WCHAR* wfn = new WCHAR[length];
 	ToWideChar(fn,wfn,length);
-	bmp->Save(wfn, &clsid, NULL);
+	Gdiplus::Status res = bmp->Save(wfn, &clsid, NULL);
+  if (res == Gdiplus::GdiplusNotInitialized) {
+    if (gdiplusStartupHelper.tried()) {
+      delete[] wfn;
+      delete bmp;
+      return false;
+    }
+    if (!gdiplusStartupHelper.startup()) {
+      fprintf(stderr, "ExportImageGDIPlus: Couldn't start Gdiplus\n");
+      delete[] wfn;
+      delete bmp;
+      return false;
+    }
+    bmp->Save(wfn, &clsid, NULL);
+  }
 	delete [] wfn;
 	delete bmp;
 	return true;
