@@ -73,7 +73,11 @@ void TriMeshWithTopology::CalcTriNeighbors()
           duplicateNeighborMin = Min(duplicateNeighborMin,i);
           duplicateNeighborMax = Max(duplicateNeighborMax,i);
         }
-        triNeighbors[i].c=k;
+        int t2a = t2.getIndex(t.a);
+        int t2b = t2.getIndex(t.b);
+        if((t2a + 1)%3 != t2b) { //forward ordering, invalid
+          triNeighbors[i].c=k;
+        }
       }
       if(t2.contains(t.c)) {
         //edge ac
@@ -82,7 +86,11 @@ void TriMeshWithTopology::CalcTriNeighbors()
           duplicateNeighborMin = Min(duplicateNeighborMin,i);
           duplicateNeighborMax = Max(duplicateNeighborMax,i);
         }
-        triNeighbors[i].b=k;
+        int t2a = t2.getIndex(t.a);
+        int t2c = t2.getIndex(t.c);
+        if((t2c + 1)%3 != t2a) { //forward ordering, invalid
+          triNeighbors[i].b=k;
+        }
       }
     }
     //vertex b => edge bc
@@ -98,7 +106,11 @@ void TriMeshWithTopology::CalcTriNeighbors()
           duplicateNeighborMin = Min(duplicateNeighborMin,i);
           duplicateNeighborMax = Max(duplicateNeighborMax,i);
         }
-        triNeighbors[i].a=k;
+        int t2c = t2.getIndex(t.c);
+        int t2b = t2.getIndex(t.b);
+        if((t2b + 1)%3 != t2c) { //forward ordering, invalid
+          triNeighbors[i].a=k;
+        }
       }
     }
   }
@@ -117,7 +129,7 @@ bool TriMeshWithTopology::IsConsistent()
     swap(vertexNeighbors,tempVertexNeighbors);
     CalcVertexNeighbors();
     if(vertexNeighbors != tempVertexNeighbors) {
-      printf("Error in vertex neighbors\n");
+      LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: consistency error in vertex neighbors");
       return false;
     }
   }
@@ -143,6 +155,20 @@ bool TriMeshWithTopology::IsConsistent()
         return false;
       }
     }
+    for(size_t i=0;i<tris.size();i++) {
+      const auto& a=incidentTris[tris[i].a];
+      const auto& b=incidentTris[tris[i].b];
+      const auto& c=incidentTris[tris[i].c];
+      if(find(a.begin(),a.end(),int(i))==a.end()) {
+        LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: incident triangles of vertex "<<tris[i].a<<" doesn't contain "<<i);
+      }
+      if(find(b.begin(),b.end(),int(i))==b.end()) {
+        LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: incident triangles of vertex "<<tris[i].b<<" doesn't contain "<<i);
+      }
+      if(find(c.begin(),c.end(),int(i))==c.end()) {
+        LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: incident triangles of vertex "<<tris[i].c<<" doesn't contain "<<i);
+      }
+    }
   }
   if(!triNeighbors.empty()) {
     vector<TriNeighbors> tempTriNeighbors;
@@ -150,10 +176,126 @@ bool TriMeshWithTopology::IsConsistent()
     CalcTriNeighbors();
     if(triNeighbors != tempTriNeighbors) {
       LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: consistency error in tri neighbors");
+      if(triNeighbors.size() != tempTriNeighbors.size())
+        printf("  Not equal size\n");
+      else
+        for(size_t i=0;i<triNeighbors.size();i++)
+          if(triNeighbors[i] != tempTriNeighbors[i])
+            cout<<"  Mismatch for tri "<<i<<": "<<triNeighbors[i]<<" vs "<<tempTriNeighbors[i]<<endl;
       return false;
     }
   }
   return true;
+}
+
+int TriMeshWithTopology::MakeConsistent()
+{
+  ClearTopology();
+  int numAdded = 0;
+  vertexNeighbors.clear();
+  CalcIncidentTris();
+  triNeighbors.resize(tris.size());
+  fill(triNeighbors.begin(),triNeighbors.end(),IntTriple(-1,-1,-1));
+  bool manifold = true;
+  set<int> suspectTris;
+  for(size_t i=0;i<tris.size();i++) {
+    TriMesh::Tri& t=tris[i];
+    //use the incident tri list as a speedup
+    //vertex a => edge ca, ab
+    for(size_t j=0;j<incidentTris[t.a].size();j++) {
+      int k=incidentTris[t.a][j];
+      if(k==(int)i) continue; //skip this triangle
+      TriMesh::Tri& t2=tris[k];
+      Assert(t2.contains(t.a));
+      if(t2.contains(t.b)) {
+        //edge ba
+        if(triNeighbors[i].c!=-1) {
+          manifold = false;
+          suspectTris.insert(k);
+          //suspectTris.insert(i);
+          //suspectTris.insert(triNeighbors[i].c);
+        }
+        else {
+          int t2a = t2.getIndex(t.a);
+          int t2b = t2.getIndex(t.b);
+          if((t2a + 1)%3 == t2b) { //forward ordering, invalid
+            triNeighbors[i].c=-1;
+            suspectTris.insert(k);
+            //suspectTris.insert(i);
+          }
+          else
+            triNeighbors[i].c=k;
+        }
+      }
+      if(t2.contains(t.c)) {
+        //edge ac
+        if(triNeighbors[i].b!=-1) {
+          suspectTris.insert(k);
+          //suspectTris.insert(i);
+          //suspectTris.insert(triNeighbors[i].b);
+          manifold = false;
+        }
+        else {
+          int t2a = t2.getIndex(t.a);
+          int t2c = t2.getIndex(t.b);
+          if((t2c + 1)%3 == t2a) { //forward ordering, invalid
+            suspectTris.insert(k);
+            //suspectTris.insert(i);
+          }
+          else
+            triNeighbors[i].b=k;
+        }
+      }
+    }
+    //vertex b => edge bc
+    for(size_t j=0;j<incidentTris[t.b].size();j++) {
+      int k=incidentTris[t.b][j];
+      if(k==(int)i) continue; //skip this triangle
+      TriMesh::Tri& t2=tris[k];
+      Assert(t2.contains(t.b));
+      if(t2.contains(t.c)) {
+        //edge bc
+        if(triNeighbors[i].a!=-1) {
+          manifold = false;
+          suspectTris.insert(k);
+          //suspectTris.insert(i);
+          //suspectTris.insert(triNeighbors[i].a);
+        }
+        else {
+          int t2b = t2.getIndex(t.b);
+          int t2c = t2.getIndex(t.c);
+          if((t2b + 1)%3 == t2c) { //forward ordering, invalid
+            suspectTris.insert(k);
+            //suspectTris.insert(i);
+          }
+          else
+            triNeighbors[i].a=k;
+        }
+      }
+    }
+    if(triNeighbors[i].a >= 0 && triNeighbors[i].a == triNeighbors[i].b && triNeighbors[i].a == triNeighbors[i].c) {
+      manifold = false;
+      suspectTris.insert(i);
+      suspectTris.insert(triNeighbors[i].a);
+    }
+  }
+  if(manifold) return 0;
+
+  for(auto t: suspectTris) {
+    IntTriple& tri = tris[t];
+    int tstart = int(verts.size());
+    verts.push_back(verts[tri.a]);
+    verts.push_back(verts[tri.b]);
+    verts.push_back(verts[tri.c]);
+    tri.a = tstart;
+    tri.b = tstart+1;
+    tri.c = tstart+2;
+  }
+  triNeighbors.resize(0);
+  ClearTopology();
+  CalcIncidentTris();
+  CalcTriNeighbors();
+  return suspectTris.size()*3;
 }
 
 template <class T>

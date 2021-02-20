@@ -35,6 +35,9 @@ struct TriMeshWithTopology : public TriMesh
   void CalcIncidentTris();
   void CalcTriNeighbors();
   bool IsConsistent();
+  ///If the mesh is consistent, the vertices are maintained. Otherwise, duplicates vertices
+  ///to make sure the mesh is consistent. incidentTris and triNeighbors will be  modifie.
+  int MakeConsistent();
 
   ///@name Editing
   //@{

@@ -515,10 +515,7 @@ void SubdivideRecurse(TriMeshWithTopology& mesh,int tri,Real res2)
 
 void SubdivideToResolution(TriMeshWithTopology& mesh,Real res)
 {
-  if(mesh.triNeighbors.empty())
-    mesh.CalcTriNeighbors();
-  if(mesh.incidentTris.empty())
-    mesh.CalcIncidentTris();
+  mesh.MakeConsistent();
   Real res2=Sqr(res);
   Heap<IntPair,Real> heap;
   for(size_t i=0;i<mesh.tris.size();i++) {
@@ -567,6 +564,7 @@ void SubdivideToResolution(TriMeshWithTopology& mesh,Real res)
       for(auto t:mesh.incidentTris[b])
         printf("%d ",t);
       printf("\n");
+      continue;
     }
     Assert(tri >= 0);
     //find edge
@@ -589,6 +587,10 @@ void SubdivideToResolution(TriMeshWithTopology& mesh,Real res)
       adjapex = mesh.tris[adj][ea];
     }
     mesh.SplitEdge(tri,e,center);
+    Assert((int)mesh.verts.size() == newVert+1);
+    Assert((int)mesh.tris.size() >= newTri+1);
+    Assert((int)mesh.tris.size() <= newTri+2);
+    //Assert(mesh.IsConsistent());
     //add up to three new edges
     Real d2 = t.vertex(e).distanceSquared(center);
     if(d2 >= d2orig) {
