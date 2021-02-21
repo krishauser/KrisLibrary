@@ -188,6 +188,7 @@ struct IKGoalFunction : public VectorFieldFunction
   DirtyData<Vector3> eepos;
   DirtyData<Matrix3> eerot;
   DirtyData<std::vector<Matrix> > H;
+  Matrix Jptemp,Jptemp2,Jotemp,Jotemp2;
 };
 
 /** @brief Function class that measures the difference between the robot's

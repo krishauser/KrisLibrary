@@ -73,6 +73,67 @@ void EvalIKGoalDeriv(const IKGoal& g,const RigidTransform& T,const Vector3& dw,c
 
 }
 
+void GetPositionJacobian(RobotKinematics3D& robot,const Vector3& ploc,int link,const ArrayMapping& activeDofs,Matrix& J)
+{
+  if(activeDofs.IsOffset()) {
+    if(activeDofs.offset==0) {
+      robot.GetPositionJacobian(ploc,link,J);
+    }
+    else {
+      Vector3 dp;
+      J.setZero();
+      int linkmin = activeDofs.offset;
+      int linkmax = activeDofs.offset + J.n;
+      int j=link;
+      while(j >= linkmax && j >= 0)
+        j = robot.parents[j];
+      Vector3 pw;
+      robot.links[link].T_World.mulPoint(ploc,pw);
+      while(j >= linkmin && j >= 0) {
+        int i=j-linkmin;
+        robot.links[j].GetPositionJacobian(robot.q[j],pw,dp);
+        J(0,i)=dp.x;
+        J(1,i)=dp.y;
+        J(2,i)=dp.z;
+        j = robot.parents[j];
+      }
+    }
+  }
+  else {
+    robot.GetPositionJacobian(ploc,link,activeDofs.mapping,J);
+  }
+}
+
+void GetOrientationJacobian(RobotKinematics3D& robot,int link,const ArrayMapping& activeDofs,Matrix& J)
+{
+  if(activeDofs.IsOffset()) {
+    if(activeDofs.offset==0) {
+      robot.GetOrientationJacobian(link,J);
+    }
+    else {
+      Vector3 dw;
+      J.setZero();
+      int linkmin = activeDofs.offset;
+      int linkmax = activeDofs.offset + J.n;
+      int j=link;
+      while(j >= linkmax && j >= 0)
+        j = robot.parents[j];
+      while(j >= linkmin && j >= 0) {
+        int i=j-linkmin;
+        robot.links[j].GetOrientationJacobian(dw);
+        J(0,i)=dw.x;
+        J(1,i)=dw.y;
+        J(2,i)=dw.z;
+        j = robot.parents[j];
+      }
+    }
+  }
+  else {
+    robot.GetOrientationJacobian(link,activeDofs.mapping,J);
+  }
+}
+
+
 
 WorldPositionFunction::WorldPositionFunction(RobotKinematics3D& _robot,const Vector3& _pi,int _i,const ArrayMapping& _active)
   :robot(_robot),ploc(_pi),link(_i),activeDofs(_active)
@@ -102,14 +163,7 @@ Real WorldPositionFunction::Eval_i(const Vector& x, int i)
 void WorldPositionFunction::Jacobian(const Vector& x, Matrix& J)
 {
   Assert(J.hasDims(3,x.n));
-  Vector3 dp;
-  for(int i=0;i<x.n;i++) {
-    int j=GetDOF(i);
-    robot.GetPositionJacobian(ploc,link,j,dp);
-    J(0,i)=dp.x;
-    J(1,i)=dp.y;
-    J(2,i)=dp.z;
-  }
+  GetPositionJacobian(robot,ploc,link,activeDofs,J);
 }
 
 //void WorldPositionFunction::Jacobian_i(const Vector& x, int i, Vector& Ji)
@@ -312,10 +366,25 @@ Real IKGoalFunction::Eval_i(const Vector& x, int i)
 void IKGoalFunction::Jacobian(const Vector& x, Matrix& J)
 {
   UpdateEERot();
+  Jptemp.resize(3,x.n);
+  GetPositionJacobian(robot,goal.localPosition,goal.link,activeDofs,Jptemp);
+  if(goal.destLink >= 0) {
+    Jptemp2.resize(3,x.n);
+    GetPositionJacobian(robot,goal.endPosition,goal.destLink,activeDofs,Jptemp2);
+  }
+  if(goal.rotConstraint!=IKGoal::RotNone) {
+    Jotemp.resize(3,x.n);
+    GetOrientationJacobian(robot,goal.link,activeDofs,Jotemp);
+    if(goal.destLink >= 0) {
+      Jotemp2.resize(3,x.n);
+      GetOrientationJacobian(robot,goal.destLink,activeDofs,Jotemp2);
+    }
+  }
   for(int k=0;k<x.n;k++) {
     int baseLink = GetDOF(k);
-    Vector3 dp;
-    robot.GetPositionJacobian(goal.localPosition,goal.link,baseLink,dp);
+    Vector3 dp(Jptemp(0,k),Jptemp(1,k),Jptemp(2,k));
+    //Vector3 dp
+    //robot.GetPositionJacobian(goal.localPosition,goal.link,baseLink,dp);
     if(goal.posConstraint==IKGoal::PosFixed) {
       for(int j=0;j<3;j++)
 	J(j,k) = positionScale*dp[j];
@@ -337,8 +406,9 @@ void IKGoalFunction::Jacobian(const Vector& x, Matrix& J)
     }
 
     if(goal.destLink >= 0) {
-      Vector3 dpdest;
-      robot.GetPositionJacobian(goal.endPosition,goal.destLink,baseLink,dpdest);
+      Vector3 dpdest(Jptemp2(0,k),Jptemp2(1,k),Jptemp2(2,k));
+      //Vector3 dpdest;
+      //robot.GetPositionJacobian(goal.endPosition,goal.destLink,baseLink,dpdest);
       if(goal.posConstraint==IKGoal::PosFixed) {
 	for(int j=0;j<3;j++)
 	  J(j,k) -= positionScale*dpdest[j];
@@ -365,7 +435,8 @@ void IKGoalFunction::Jacobian(const Vector& x, Matrix& J)
     int m=IKGoal::NumDims(goal.posConstraint);
     Vector3 dr,dw;
     if(goal.rotConstraint==IKGoal::RotFixed) {
-      robot.GetOrientationJacobian(goal.link,baseLink,dw);
+      dw.set(Jotemp(0,k),Jotemp(1,k),Jotemp(2,k));
+      //robot.GetOrientationJacobian(goal.link,baseLink,dw);
       if(goal.destLink >= 0) {
 	//m = moment(Rdiff)
 	//dRdiff = d/dt(R1(q)Rl^T R2^T(q))
@@ -374,7 +445,8 @@ void IKGoalFunction::Jacobian(const Vector& x, Matrix& J)
 	//       = [w1]R1 Rl^T R2^T - [R1 Rl^T R2^R w2] R1 Rl^T R2^T
 	//assume dRdiff = [w]Rdiff, then w = w1-eerot*w2
 	Vector3 dwdest;
-	robot.GetOrientationJacobian(goal.destLink,baseLink,dwdest);
+        dwdest.set(Jotemp2(0,k),Jotemp2(1,k),Jotemp2(2,k));
+	//robot.GetOrientationJacobian(goal.destLink,baseLink,dwdest);
 	dw -= eerot*dwdest;
       }
       MomentDerivative(eerot,dw,dr);
@@ -391,7 +463,8 @@ void IKGoalFunction::Jacobian(const Vector& x, Matrix& J)
       if(goal.destLink >= 0) 
 	FatalError("TODO: link-to-link fancy constraints");
       GetCanonicalBasis(d,x,y);
-      robot.GetOrientationJacobian(goal.link,baseLink,dr);
+      dr.set(Jotemp(0,k),Jotemp(1,k),Jotemp(2,k));
+      //robot.GetOrientationJacobian(goal.link,baseLink,dr);
       Vector3 curAxis;
       robot.links[goal.link].T_World.R.mul(goal.localAxis,curAxis);
       Vector3 axisRateOfChange = cross(dr,curAxis);

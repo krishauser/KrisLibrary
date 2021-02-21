@@ -66,6 +66,7 @@ void RobotLink3D::GetPositionJacobian(Real qi,const Vector3& p, Vector3& Jp) con
   switch(type) {
   case Revolute:
     {
+      /*
       Vector3 pi;
       T_World.mulPointInverse(p,pi);
 
@@ -75,6 +76,11 @@ void RobotLink3D::GetPositionJacobian(Real qi,const Vector3& p, Vector3& Jp) con
       RLoc_World.mulTransposeB(T_World.R,TLoc.R);
   
       Jp = RLoc_World*(cross(w,TLoc.R*pi));
+      */
+      Vector3 d,wworld;
+      d = p - T_World.t;
+      T_World.R.mul(w,wworld);
+      Jp = cross(wworld,d);
     }
     break;
   case Prismatic:
@@ -94,6 +100,7 @@ void RobotLink3D::GetJacobian(Real qi,const Vector3& p, Vector3& Jo, Vector3& Jp
   switch(type) {
   case Revolute:
     {
+      /*
       Vector3 pi;
       T_World.mulPointInverse(p,pi);
 
@@ -104,6 +111,11 @@ void RobotLink3D::GetJacobian(Real qi,const Vector3& p, Vector3& Jo, Vector3& Jp
   
       Jp = RLoc_World*(cross(w,TLoc.R*pi));
       T_World.R.mul(w,Jo);
+      */
+      Vector3 d,wworld;
+      d = p - T_World.t;
+      T_World.R.mul(w,wworld);
+      Jp = cross(wworld,d);
     }
     break;
   case Prismatic:

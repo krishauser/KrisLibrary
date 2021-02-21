@@ -63,6 +63,7 @@ public:
   Vector3 GetCOM(const Config& q) { UpdateConfig(q); return GetCOM(); }
   Matrix3 GetTotalInertia() const;
   void GetCOMJacobian(Matrix& Jc) const;
+  void GetCOMJacobian(const std::vector<int>& links,Matrix& Jc) const;
   void GetCOMHessian(Matrix& Hx,Matrix& Hy,Matrix& Hz) const;
   void GetGravityTorques(const Vector3& g0, Vector& G) const;
   Real GetGravityPotentialEnergy(const Vector3& g0,Real refHeight=Zero) const;
@@ -88,8 +89,13 @@ public:
   ///gets the jacobian matrix of pi w.r.t q
   ///row 0-2 are angular, 3-5 are translational
   void GetFullJacobian(const Vector3& pi, int i, Matrix& J) const;
-  ///rows 3-5 of the above
+  void GetFullJacobian(const Vector3& pi, int i, const std::vector<int>& indices,Matrix& J) const;
+  ///rows 3-5 of the full jacobian
   void GetPositionJacobian(const Vector3& pi, int i, Matrix& J) const;
+  void GetPositionJacobian(const Vector3& pi, int i, const std::vector<int>& indices,Matrix& J) const;
+  ///rows 0-2 of the full jacobian
+  void GetOrientationJacobian(int i, Matrix& J) const;
+  void GetOrientationJacobian(int i, const std::vector<int>& indices,Matrix& J) const;
 
   ///for a wrench w=(torque,force) on link i, returns joint torques F = J^t w
   void GetWrenchTorques(const Vector3& torque, const Vector3& force, int i, Vector& F) const;

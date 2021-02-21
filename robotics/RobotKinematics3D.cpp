@@ -377,6 +377,37 @@ void RobotKinematics3D::GetFullJacobian(const Vector3& pi, int i, Matrix& J) con
   }
 }
 
+void RobotKinematics3D::GetFullJacobian(const Vector3& pi, int i, const vector<int>& indices, Matrix& J) const
+{
+  if(indices.size()==0) {
+    J.resize(0,0);
+    return;
+  }
+  J.resize(6,indices.size(),Zero);
+  for(size_t k=0;k<indices.size();k++)
+    Assert(indices[k] >= 0 && indices[k] < q.n);
+  map<int,int> linkmap;
+  int minindex = indices[0];
+  for(size_t k=0;k<indices.size();k++) {
+    linkmap[indices[k]] = (int)k;
+    minindex = Min(indices[k],minindex);
+  }
+  Vector3 w; Vector3 v;
+  Vector3 p;
+  GetWorldPosition(pi,i,p);
+  int j=i;
+  while(j!=-1) {
+    if(j < minindex) break;
+    if(linkmap.count(j) != 0) {
+      links[j].GetJacobian(q[j],p,w,v);
+      int col = linkmap[j];
+      J(0,col)=w.x; J(1,col)=w.y; J(2,col)=w.z;
+      J(3,col)=v.x; J(4,col)=v.y; J(5,col)=v.z;
+    }
+    j=parents[j];
+  }
+}
+
 
 void RobotKinematics3D::GetPositionJacobian(const Vector3& pi, int i, Matrix& J) const
 {
@@ -391,6 +422,78 @@ void RobotKinematics3D::GetPositionJacobian(const Vector3& pi, int i, Matrix& J)
     j=parents[j];
   }
 }
+
+void RobotKinematics3D::GetPositionJacobian(const Vector3& pi, int i, const vector<int>& indices, Matrix& J) const
+{
+  if(indices.size()==0) {
+    J.resize(0,0);
+    return;
+  }
+  J.resize(3,indices.size(),Zero);
+  for(size_t k=0;k<indices.size();k++)
+    Assert(indices[k] >= 0 && indices[k] < q.n);
+  map<int,int> linkmap;
+  int minindex = indices[0];
+  for(size_t k=0;k<indices.size();k++) {
+    linkmap[indices[k]] = (int)k;
+    minindex = Min(indices[k],minindex);
+  }
+  Vector3 v;
+  Vector3 p;
+  GetWorldPosition(pi,i,p);
+  int j=i;
+  while(j!=-1) {
+    if(j < minindex) break;
+    if(linkmap.count(j) != 0) {
+      links[j].GetPositionJacobian(q[j],p,v);
+      int col = linkmap[j];
+      J(0,col)=v.x; J(1,col)=v.y; J(2,col)=v.z;
+    }
+    j=parents[j];
+  }
+}
+
+void RobotKinematics3D::GetOrientationJacobian(int i,Matrix& J) const
+{
+  J.resize(3,links.size(),Zero);
+  Vector3 w;
+  int j=i;
+  while(j!=-1) {
+    links[j].GetOrientationJacobian(w);
+    J(0,j)=w.x; J(1,j)=w.y; J(2,j)=w.z;
+    j=parents[j];
+  }
+}
+
+void RobotKinematics3D::GetOrientationJacobian(int i,const vector<int>& indices,Matrix& J) const
+{
+  if(indices.size()==0) {
+    J.resize(0,0);
+    return;
+  }
+  J.resize(3,indices.size(),Zero);
+  for(size_t k=0;k<indices.size();k++)
+    Assert(indices[k] >= 0 && indices[k] < q.n);
+  map<int,int> linkmap;
+  int minindex = indices[0];
+  for(size_t k=0;k<indices.size();k++) {
+    linkmap[indices[k]] = (int)k;
+    minindex = Min(indices[k],minindex);
+  }
+  Vector3 w;
+  int j=i;
+  while(j!=-1) {
+    if(j < minindex) break;
+    if(linkmap.count(j) != 0) {
+      int col=linkmap[j];
+      links[j].GetOrientationJacobian(w);
+      J(0,col)=w.x; J(1,col)=w.y; J(2,col)=w.z;
+    }
+    j=parents[j];
+  }
+}
+
+
 
 void RobotKinematics3D::GetWrenchTorques(const Vector3& torque, const Vector3& force, int i, Vector& F) const
 {
@@ -488,12 +591,53 @@ void RobotKinematics3D::GetCOMJacobian(Matrix& J) const
 
   J.set(Zero);
   for(int k=0;k<q.n;k++) {
+    Vector3 cmk;
+    GetWorldPosition(links[k].com,k,cmk);
     for(int j=k;j!=-1;j=parents[j]) {
-      GetPositionJacobian(links[k].com,k,j,dp);
+      //this function checks ancestors
+      //GetPositionJacobian(links[k].com,k,j,dp);
+      links[j].GetPositionJacobian(q[j],cmk,dp);
       dp *= links[k].mass;
       J(0,j) += dp.x;
       J(1,j) += dp.y;
       J(2,j) += dp.z;
+    }
+  }
+  Real mtotal = GetTotalMass();
+  J /= mtotal;
+}
+
+void RobotKinematics3D::GetCOMJacobian(const vector<int>& indices,Matrix& J) const
+{
+  if(indices.size()==0) {
+    J.resize(0,0);
+    return;
+  }
+  J.resize(3,indices.size());
+  for(size_t k=0;k<indices.size();k++)
+    Assert(indices[k] >= 0 && indices[k] < q.n);
+  map<int,int> linkmap;
+  int minindex = indices[0];
+  for(size_t k=0;k<indices.size();k++) {
+    linkmap[indices[k]] = (int)k;
+    minindex = Min(indices[k],minindex);
+  }
+
+  Vector3 dp;
+
+  J.set(Zero);
+  for(int k=minindex;k<q.n;k++) {
+    Vector3 p;
+    GetWorldPosition(links[k].com,k,p);
+    for(int j=k;j!=-1;j=parents[j]) {
+      if(j < minindex) break;
+      if(linkmap.count(j)==0) continue;
+      int col=linkmap[j];
+      links[j].GetPositionJacobian(q[j],p,dp);
+      dp *= links[k].mass;
+      J(0,col) += dp.x;
+      J(1,col) += dp.y;
+      J(2,col) += dp.z;
     }
   }
   Real mtotal = GetTotalMass();
