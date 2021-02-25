@@ -187,8 +187,8 @@ void IKGoal::GetClosestGoalTransform(const RigidTransform& T0,RigidTransform& T)
     //make it so orthogonal directions perform a rotation similar to T0.R
     Vector3 lx,ly,rx,ry,refx;
     GetCanonicalBasis(localAxis,lx,ly);
-    rx = T.R*rx;
-    ry = T.R*ry;
+    rx = T.R*lx;
+    ry = T.R*ly;
     refx = T0.R*lx;
     Real x = dot(refx,rx);
     Real y = dot(refx,ry);
