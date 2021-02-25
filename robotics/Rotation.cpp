@@ -198,35 +198,34 @@ bool GetRotationCenter(const RigidTransform& T,Vector3& p)
 //get a rotation matrix that rotates x to y
 void GetMinimalRotation(const Vector3& x,const Vector3& y,Matrix3& R)
 {
-  AngleAxisRotation aa;
-  aa.axis.setCross(x,y);
-  Real n=aa.axis.norm();
-  //there may be a better way, similar to GetCanonicalBasis...
-  if(FuzzyZero(n)) {
-    Real d=dot(x,y);
-    assert(Abs(d) > 0.9);
-    assert(Abs(d) <= 1.0+Epsilon);
-    
-    if(FuzzyEquals(d,One)) aa.angle=0;
-    else if(FuzzyEquals(d,-One)) aa.angle=Pi;
-    else aa.angle = Acos(d);
-    Vector3 temp;
-    GetCanonicalBasis(x,aa.axis,temp);
+  Real cosAngle = dot(x,y);
+  if(FuzzyEquals(cosAngle,-1.0)) { //Pi degrees
+    AngleAxisRotation aa;
+    aa.angle = Pi;
+    Vector3 z(0.0,0.0,1.0);
+    Vector3 v;
+    v.setCross(x,z);
+    if(FuzzyZero(v.norm())) {
+      z.set(0,1,0);
+      v.setCross(x,z);
+      Assert(!FuzzyZero(v.norm()));
+    }
+    v.inplaceNormalize();
+    aa.axis = v;
+    aa.getMatrix(R);
   }
   else {
-    Real cosAngle = dot(x,y);
-    if(cosAngle > 1.0 || cosAngle < -1.0) {
-      if(!FuzzyEquals(cosAngle,1.0) && !FuzzyEquals(cosAngle,-1.0)) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"GetMinimalRotation: Warning: vectors aren't normalized?");
-	KrisLibrary::loggerWait();
-      }
-      aa.angle=Acos(Clamp(cosAngle,-1.0,1.0));
-    } 
-    else 
-      aa.angle = Acos(cosAngle);
-    aa.axis *= Inv(n);
+    Vector3 v;
+    v.setCross(x,y);
+    Matrix3 vhat,vhat2;
+    vhat.setCrossProduct(v);
+    vhat2.mul(vhat,vhat);
+    vhat2*= 1.0/(1.0+cosAngle);
+    vhat(0,0) += 1;
+    vhat(1,1) += 1;
+    vhat(2,2) += 1;
+    R = vhat + vhat2;
   }
-  aa.getMatrix(R);
 }
 
 //get a rotation matrix that rotates x to be orthogonal to y

@@ -23,13 +23,12 @@ namespace Math3D {
   /// standard basis.
   inline void GetCanonicalBasis(const Vector3& x,Vector3&y,Vector3& z) {
     Real scale;
-    if(FuzzyEquals(x.x,1.0)) scale = 0;
-    else if(FuzzyEquals(x.x,-1.0)) {  //A complete flip of the basis
+    if(FuzzyEquals(x.x,-1.0)) {  //A complete flip of the basis
       y.set(0.0,-1.0,0.0);
       z.set(0.0,0.0,1.0);
       return;
     }
-    else scale = (1.0-x.x)/(1.0-Sqr(x.x));
+    else scale = 1.0/(1.0+x.x);
     y.x = -x.y;
     y.y = x.x + scale*Sqr(x.z);
     y.z = -scale*x.y*x.z;
