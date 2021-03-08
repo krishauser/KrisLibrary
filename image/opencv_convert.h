@@ -18,13 +18,13 @@ inline cv::Mat toMat(const Image& img)
         channels = 3;
         bytes = 1;
         break;
-    case Image::A8R8G8B8:
+    case Image::R8G8B8A8: // PATRICK: ?
         cvfmt = CV_8UC4;
         channels = 4;
         bytes = 1;
         break;
     case Image::R5G6B5:
-    case Image::X1R5G5B5:
+    case Image::R5G5B5X1:
         {
         Image cvt;
         cvt.initialize(img.w,img.h,Image::R8G8B8);
@@ -109,7 +109,7 @@ inline bool fromMat(const cv::Mat& mat,Image& img)
         return false;
     }
     if(mat.depth()==CV_8U) {
-        Image::PixelFormat imgformat = (channels == 1 ? Image::A8 : (channels == 3? Image::R8G8B8 : Image::A8R8G8B8));
+        Image::PixelFormat imgformat = (channels == 1 ? Image::A8 : (channels == 3? Image::R8G8B8 : Image::R8G8B8A8));
         img.initialize(mat.rows,mat.cols,imgformat);
         if(channels == 1) 
             memcpy(img.data,mat.data,img.w*img.h*channels);
