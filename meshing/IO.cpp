@@ -960,6 +960,8 @@ bool WalkAssimpNodes(const char* fn,const aiScene* scene,const aiNode* node,cons
         models.back().verts.resize(nverts);
         for (int j = 0; j < nfaces; j++) {
           const aiFace& face = scene->mMeshes[m]->mFaces[j];
+          if(face.mNumIndices != 3)
+            LOG4CXX_ERROR(KrisLibrary::logger(),"FATAL: the triangle mesh has a triangle with "<<face.mNumIndices<<" vertices");
           Assert(face.mNumIndices == 3);
           models.back().tris[j].set(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
         }
@@ -993,11 +995,12 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 
 bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearance>& apps)
 {
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
-    // If the import failed, report it
-    if (!scene) {
-            LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter error: "<<importer.GetErrorString() << " while loading "<< fn << "\n");
+  Assimp::Importer importer;
+  importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT); 
+  const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FindDegenerates | aiProcess_SortByPType );
+  // If the import failed, report it
+  if (!scene) {
+    LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter error: "<<importer.GetErrorString() << " while loading "<< fn << "\n");
     return false;
   }
   if(scene->mNumMeshes == 0) {
