@@ -6,6 +6,7 @@
 #include <list>
 #include <map>
 #include <queue>
+#include <map>
 using namespace std;
 
 void RobotKinematics3D::Initialize(int numLinks)
