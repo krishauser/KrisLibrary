@@ -4,6 +4,7 @@
 #include "Inertia.h"
 #include <math/angle.h>
 #include <list>
+#include <map>
 #include <queue>
 using namespace std;
 
