@@ -162,6 +162,7 @@ void WidgetSet::DrawGL(Camera::Viewport& viewport)
     if(widgetEnabled[i])
       widgets[i]->DrawGL(viewport);
   }
+  requestRedraw = false;
 }
 
 void WidgetSet::Idle()
