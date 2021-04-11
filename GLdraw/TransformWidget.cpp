@@ -196,6 +196,7 @@ void TransformWidget::EndDrag()
 
 void TransformWidget::DrawGL(Camera::Viewport& viewport)
 {
+  requestRedraw = false;
   glEnable(GL_LIGHTING);
   Real scale=1.0;
   Real globalScale = 1.0;
