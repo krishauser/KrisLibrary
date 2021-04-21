@@ -232,6 +232,7 @@ void MakeTriCylinder(int numSlices,TriMesh& mesh)
 
 void MakeTriCylinder(int numSlices,Real h,Real rbase,TriMesh& mesh)
 {
+  numSlices = Max(numSlices,3);
   mesh.verts.resize(numSlices*2+2);
   mesh.tris.resize(numSlices*4);
 
