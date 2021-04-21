@@ -32,6 +32,8 @@ bool Circle3D::setIntersection(const Sphere3D& s,const Plane3D& p)
   axis = p.normal;
   //projection of s.center on plane
   center = s.center - d*p.normal;
+  if(Abs(absd) > Abs(s.radius))
+    absd = Sign(absd)*Abs(s.radius);
   radius = pythag_leg(absd,s.radius);
   return true;
 }
@@ -155,9 +157,9 @@ void Circle3D::getAABB(AABB3D& aabb) const
 {
   aabb.setPoint(center);
   Real x,y,z;
-  x = pythag_leg(axis.x,One)*radius;
-  y = pythag_leg(axis.y,One)*radius;
-  z = pythag_leg(axis.z,One)*radius;
+  x = pythag_leg(Clamp(axis.x,-One,One),One)*radius;
+  y = pythag_leg(Clamp(axis.y,-One,One),One)*radius;
+  z = pythag_leg(Clamp(axis.z,-One,One),One)*radius;
   aabb.bmin.x -= x;
   aabb.bmin.y -= y;
   aabb.bmin.z -= z;

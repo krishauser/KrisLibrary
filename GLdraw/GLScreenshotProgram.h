@@ -36,7 +36,7 @@ public:
   GLScreenshotProgram()
   {
     saveMovie = false;
-    lastScreenshotTime = 0;
+    lastScreenshotTime = -1;
     frameTime = 1.0/30.0;
     screenshotFile = "image0000.ppm";
     verbose = 1;
@@ -53,7 +53,7 @@ public:
   void StartMovie()
   {
     saveMovie = true;
-    lastScreenshotTime = 0;
+    lastScreenshotTime = -1;
     timer.Reset();
   }
 
@@ -83,7 +83,10 @@ public:
 	while(lastScreenshotTime+frameTime < t) {
 	  SaveScreenshot();
 	  IncrementStringDigits(screenshotFile);
-	  lastScreenshotTime += frameTime;
+    if(lastScreenshotTime < 0)
+      lastScreenshotTime = t;
+    else
+  	  lastScreenshotTime += frameTime;
 	}
       }
     }
