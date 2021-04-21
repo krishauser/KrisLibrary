@@ -562,7 +562,7 @@ void drawCylinder(const Vector3& h,Real r,int steps)
   glVertex3v(h);
   x.set(r,0);
   for(i=0; i<=steps; i++) {
-    point = xb*(x.x) + yb*(-x.y) + h;
+    point = xb*(x.x) + yb*(x.y) + h;
     glVertex3v(point);
     
     x = x*dx;
