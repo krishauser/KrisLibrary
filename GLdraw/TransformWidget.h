@@ -11,6 +11,7 @@ class TransformWidget : public Widget
   TransformWidget();
   virtual ~TransformWidget() {}
   virtual bool Hover(int x,int y,Camera::Viewport& viewport,double& distance);
+  virtual void SetHighlight(bool active);
   virtual bool BeginDrag(int x,int y,Camera::Viewport& viewport,double& distance);
   virtual void Drag(int dx,int dy,Camera::Viewport& viewport);
   virtual void EndDrag();

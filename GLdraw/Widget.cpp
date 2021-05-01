@@ -45,7 +45,10 @@ bool WidgetSet::Hover(int x,int y,Camera::Viewport& viewport,double& closestDist
     }
   }
   for(size_t i=0;i<widgets.size();i++)
-    if(widgets[i]->requestRedraw) { Refresh(); widgets[i]->requestRedraw=false; }
+    if(widgets[i]->requestRedraw) {
+      Refresh();
+      widgets[i]->requestRedraw=false;
+    }
   if(closestWidget) return true;
   return false;
 }
@@ -54,21 +57,19 @@ void WidgetSet::SetHighlight(bool value)
 {
   Widget::SetHighlight(value);
   if(value) {
-    if(activeWidget != closestWidget) {
-      //LOG4CXX_INFO(KrisLibrary::logger(),"Activate widget\n");
-      if(activeWidget && activeWidget != closestWidget) activeWidget->SetHighlight(false);
-      if(closestWidget) closestWidget->SetHighlight(true);
-      if(closestWidget && closestWidget->requestRedraw) {
-    Refresh();
-    closestWidget->requestRedraw=false; 
-      }
-      if(activeWidget && activeWidget->requestRedraw) {
-    Refresh();
-    activeWidget->requestRedraw=false; 
-      }
-      activeWidget = closestWidget;
-      closestWidget = NULL;
+    //LOG4CXX_INFO(KrisLibrary::logger(),"Activate widget\n");
+    if(activeWidget && activeWidget != closestWidget) activeWidget->SetHighlight(false);
+    if(closestWidget) closestWidget->SetHighlight(true);
+    if(closestWidget && closestWidget->requestRedraw) {
+      Refresh();
+      closestWidget->requestRedraw=false; 
     }
+    if(activeWidget && activeWidget->requestRedraw) {
+      Refresh();
+      activeWidget->requestRedraw=false; 
+    }
+    activeWidget = closestWidget;
+    closestWidget = NULL;
   }
   else {
     if(activeWidget) {
@@ -80,6 +81,7 @@ void WidgetSet::SetHighlight(bool value)
       }
       activeWidget = NULL;
     }
+    closestWidget = NULL;
   }
 }
 
@@ -101,7 +103,9 @@ bool WidgetSet::BeginDrag(int x,int y,Camera::Viewport& viewport,double& closest
   for(size_t i=0;i<widgets.size();i++)
     if(widgets[i]->requestRedraw) { Refresh(); widgets[i]->requestRedraw=false; }
 
-  if(closestWidget) return true;
+  if(closestWidget) {
+    return true;
+  }
   return false;
 }
 
@@ -146,6 +150,7 @@ void WidgetSet::SetFocus(bool value)
     //LOG4CXX_INFO(KrisLibrary::logger(),"Remove focus on widget "<<typeid(*this).name()<<", sub-widget "<<(activeWidget?typeid(*activeWidget).name():"NULL"));
     if(activeWidget) activeWidget->SetFocus(false);
     activeWidget = NULL;
+    closestWidget = NULL;
   }
 }
 void WidgetSet::Keypress(char c)

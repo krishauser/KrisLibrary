@@ -144,6 +144,8 @@ void SphereWidget::SetHighlight(bool value)
   }
   else
     transformWidget.SetHighlight(false);
+  if(!value)
+    hoverItem = -1;
 }
 
 void SphereWidget::SetFocus(bool value)

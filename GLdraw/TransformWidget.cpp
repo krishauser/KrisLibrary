@@ -123,6 +123,13 @@ bool TransformWidget::Hover(int x,int y,Camera::Viewport& viewport,double& dista
   return hoverItem != -1;
 }
 
+void TransformWidget::SetHighlight(bool active)
+{
+  Widget::SetHighlight(active);
+  if(!active)
+    hoverItem = -1;
+}
+
 bool TransformWidget::BeginDrag(int x,int y,Camera::Viewport& viewport,double& distance)
 {
   Hover(x,y,viewport,distance);
