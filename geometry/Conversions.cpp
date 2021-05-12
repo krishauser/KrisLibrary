@@ -109,12 +109,15 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,GLD
 void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Real depthDiscontinuity)
 {
 	if(!pc.IsStructured()) {
-				LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloudToMesh: TODO: convert unstructured point clouds to meshes\n");
+		LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloudToMesh: TODO: convert unstructured point clouds to meshes");
 		return;
 	}
 	mesh.verts = pc.points;
 	mesh.tris.reserve(pc.points.size()*2);
 	mesh.tris.resize(0);
+	RigidTransform T = pc.GetViewpoint();
+	Vector3 fwd(T.R.col3());
+	Real zofs = fwd.dot(T.t);
 	int w = pc.GetStructuredWidth();
 	int h = pc.GetStructuredHeight();
 	int k=0;
@@ -129,11 +132,11 @@ void PointCloudToMesh(const Meshing::PointCloud3D& pc,Meshing::TriMesh& mesh,Rea
 			const Vector3& p12=pc.points[v12];
 			const Vector3& p21=pc.points[v21];
 			const Vector3& p22=pc.points[v22];
-			//TODO: use origin / viewport
-			Real z11 = p11.z;
-			Real z12 = p12.z;
-			Real z21 = p21.z;
-			Real z22 = p22.z;
+			//get depth from origin / viewport
+			Real z11 = fwd.dot(p11)-zofs;
+			Real z12 = fwd.dot(p12)-zofs;
+			Real z21 = fwd.dot(p21)-zofs;
+			Real z22 = fwd.dot(p22)-zofs;
 			//sometimes NANs are used
 			if(!IsFinite(z11)) z11=0;
 			if(!IsFinite(z12)) z12=0;
