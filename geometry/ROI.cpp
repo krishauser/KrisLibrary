@@ -1,4 +1,5 @@
 #include "ROI.h"
+#include <KrisLibrary/meshing/Meshing.h>
 namespace Geometry {
 
 template <class Obj>
@@ -134,24 +135,6 @@ void ExtractROI(const CollisionPointCloud& pc,const Sphere3D& s,CollisionPointCl
     //pc_roi.InitCollisions();
 }
 
-void SplitPlane(Meshing::TriMeshWithTopology& mesh,const Plane3D& plane)
-{
-    size_t numtris = mesh.tris.size();
-    Triangle3D tri;
-    for(size_t i=0;i<numtris;i++) {
-        mesh.GetTriangle(i,tri);
-        Real u_intersections[3];
-        tri.edgeIntersections(plane,u_intersections);
-        for(int e=0;e<3;e++) {
-            if(u_intersections[e] <= 0 || u_intersections[e] >= 1) continue;
-            int a=e;
-            int b=(e+1)%3;
-            Vector3 newpt = mesh.verts[a] + u_intersections[e]*(mesh.verts[b]-mesh.verts[a]);
-            mesh.SplitEdge(i,e,newpt);
-        }
-    }
-}
-
 void GetTriangles(const Meshing::TriMesh& m,const vector<int>& tris,Meshing::TriMesh& m_roi)
 {
     map<int,int> vertmap;
@@ -188,7 +171,7 @@ void ExtractROI(const Meshing::TriMesh& m,const AABB3D& bb,Meshing::TriMesh& m_r
     bool triCheck = (flag & ExtractROIFlagTouching && truthValue) || (flag & ExtractROIFlagWithin && !truthValue) || flag & ExtractROIFlagIntersection;
     m_roi.verts.resize(0);
     m_roi.tris.resize(0);
-    m_roi.verts.resize(m.verts.size()/4);
+    m_roi.verts.reserve(m.verts.size()/4);
     m_roi.tris.reserve(m.tris.size()/4);
     vector<bool> valid(m.verts.size());
     map<int,int> vertmap;
@@ -219,53 +202,59 @@ void ExtractROI(const Meshing::TriMesh& m,const AABB3D& bb,Meshing::TriMesh& m_r
                 tmesh.verts.push_back(m.verts[c]);
                 tmesh.tris.push_back(IntTriple(0,1,2));
                 tmesh.CalcTriNeighbors();
+                Meshing::TriSplitter splitter(tmesh);
+                splitter.deleteNegative = truthValue;
                 Plane3D p;
                 if(!IsInf(bb.bmin.x)) {
                     p.normal.set(1,0,0);
                     p.offset = bb.bmin.x;
-                    SplitPlane(tmesh,p);
+                    splitter.Split(p);
                 }
                 if(!IsInf(bb.bmax.x)) {
-                    p.normal.set(1,0,0);
-                    p.offset = bb.bmax.x;
-                    SplitPlane(tmesh,p);
+                    p.normal.set(-1,0,0);
+                    p.offset = -bb.bmax.x;
+                    splitter.Split(p);
                 }
                 if(!IsInf(bb.bmin.y)) {
                     p.normal.set(0,1,0);
                     p.offset = bb.bmin.y;
-                    SplitPlane(tmesh,p);
+                    splitter.Split(p);
                 }
                 if(!IsInf(bb.bmax.y)) {
-                    p.normal.set(0,1,0);
-                    p.offset = bb.bmax.y;
-                    SplitPlane(tmesh,p);
+                    p.normal.set(0,-1,0);
+                    p.offset = -bb.bmax.y;
+                    splitter.Split(p);
                 }
                 if(!IsInf(bb.bmin.z)) {
                     p.normal.set(0,0,1);
                     p.offset = bb.bmin.z;
-                    SplitPlane(tmesh,p);
+                    splitter.Split(p);
                 }
                 if(!IsInf(bb.bmax.z)) {
-                    p.normal.set(0,0,1);
-                    p.offset = bb.bmax.z;
-                    SplitPlane(tmesh,p);
+                    p.normal.set(0,0,-1);
+                    p.offset = -bb.bmax.z;
+                    splitter.Split(p);
                 }
-                cout<<"Triangle "<<tri<<endl;
-                cout<<"BBox "<<bb<<endl;
-                cout<<"Result from splitting: "<<endl;
-                for(size_t j=0;j<tmesh.verts.size();j++) {
-                    cout<<"  "<<tmesh.verts[j]<<endl;
+                if(truthValue) {
+                    int vlen = (int)m_roi.verts.size();
+                    for(size_t j=0;j<tmesh.verts.size();j++) 
+                        m_roi.verts.push_back(tmesh.verts[j]);
+                    for(size_t j=0;j<tmesh.tris.size();j++) {
+                        const auto& t=tmesh.tris[j];
+                        m_roi.tris.push_back(IntTriple(t.a+vlen,t.b+vlen,t.c+vlen));
+                    }
                 }
-                for(size_t j=0;j<tmesh.tris.size();j++) {
-                    tmesh.GetTriangle(j,tri);
-                    Vector3 centroid = (tri.a+tri.b+tri.c)/3.0;
-                    if(bb.contains(centroid)==truthValue) {
-                        cout<<"  Triangle "<<tri<<" inside"<<endl;
-                        size_t vlen = m_roi.verts.size();
-                        m_roi.verts.push_back(tri.a);
-                        m_roi.verts.push_back(tri.b);
-                        m_roi.verts.push_back(tri.c);
-                        m_roi.tris.push_back(IntTriple(vlen,vlen+1,vlen+2));
+                else {
+                    int vlen = (int)m_roi.verts.size();
+                    for(size_t j=0;j<tmesh.verts.size();j++) 
+                        m_roi.verts.push_back(tmesh.verts[j]);
+                    for(size_t j=0;j<tmesh.tris.size();j++) {
+                        tmesh.GetTriangle(j,tri);
+                        Vector3 centroid = (tri.a+tri.b+tri.c)/3.0;
+                        if(bb.contains(centroid)==truthValue) {
+                            const auto& t=tmesh.tris[j];
+                            m_roi.tris.push_back(IntTriple(t.a+vlen,t.b+vlen,t.c+vlen));
+                        }
                     }
                 }
             }
@@ -329,7 +318,7 @@ void ExtractROI(const CollisionMesh& m,const AABB3D& bb,CollisionMesh& m_roi,int
         mtemp.tris = m.tris;
         ExtractROI(mtemp,bb,m_roi,flag);
         m_roi.currentTransform = m.currentTransform;
-        for(size_t i=0;i<mtemp.verts.size();i++) 
+        for(size_t i=0;i<m_roi.verts.size();i++) 
             m.currentTransform.mulInverse(Vector3(m_roi.verts[i]),m_roi.verts[i]);
     }
     else {
@@ -364,7 +353,7 @@ void ExtractROI(const CollisionMesh& m,const Box3D& bb,CollisionMesh& m_roi,int 
         mtemp.tris = m.tris;
         ExtractROI(mtemp,bb,m_roi,flag);
         m_roi.currentTransform = m.currentTransform;
-        for(size_t i=0;i<mtemp.verts.size();i++) 
+        for(size_t i=0;i<m_roi.verts.size();i++) 
             m.currentTransform.mulInverse(Vector3(m_roi.verts[i]),m_roi.verts[i]);
     }
     else {
