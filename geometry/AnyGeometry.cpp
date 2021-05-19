@@ -3470,6 +3470,15 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
 
 bool AnyCollisionGeometry3D::Slice(const RigidTransform& T,AnyCollisionGeometry3D& res,Real tol) const
 {
+  if(collisionData.empty()) { //fall back to non-accelerated slicing
+    RigidTransform Tlocal;
+    Tlocal.mulInverseA(currentTransform,T);
+    if(!AnyGeometry3D::Slice(Tlocal,res,tol)) return false;
+    res.currentTransform = currentTransform;
+    res.collisionData = AnyValue();
+    return true;
+  }
+
   switch(type)
   {
   case Primitive:
@@ -3532,6 +3541,17 @@ bool AnyCollisionGeometry3D::Slice(const RigidTransform& T,AnyCollisionGeometry3
 
 bool AnyCollisionGeometry3D::ExtractROI(const AABB3D& bb,AnyCollisionGeometry3D& res,int flags) const
 {
+  if(collisionData.empty()) { //fall back to non-accelerated ROI
+    RigidTransform Tinv;
+    Tinv.setInverse(currentTransform);
+    Box3D blocal;
+    blocal.setTransformed(bb,Tinv);
+    if(!AnyGeometry3D::ExtractROI(blocal,res,flags)) return false;
+    res.currentTransform = currentTransform;
+    res.collisionData = AnyValue();
+    return true;
+  }
+
   switch(type)
   {
   case Primitive:
@@ -3577,6 +3597,17 @@ bool AnyCollisionGeometry3D::ExtractROI(const AABB3D& bb,AnyCollisionGeometry3D&
 
 bool AnyCollisionGeometry3D::ExtractROI(const Box3D& bb,AnyCollisionGeometry3D& res,int flags) const
 {
+  if(collisionData.empty()) { //fall back to non-accelerated ROI
+    RigidTransform Tinv;
+    Tinv.setInverse(currentTransform);
+    Box3D blocal;
+    blocal.setTransformed(bb,Tinv);
+    if(!AnyGeometry3D::ExtractROI(blocal,res,flags)) return false;
+    res.currentTransform = currentTransform;
+    res.collisionData = AnyValue();
+    return true;
+  }
+
   switch(type)
   {
   case Primitive:
