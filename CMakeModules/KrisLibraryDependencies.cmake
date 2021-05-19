@@ -4,7 +4,8 @@
 # - KRISLIBRARY_DEP_LIBRARIES
 # - KRISLIBRARY_DEP_DEFINITIONS
 
-cmake_policy(SET CMP0074 NEW)
+#turns off warning for newer versions of CMake
+#cmake_policy(SET CMP0074 NEW)
 
 IF(NOT KRISLIBRARY_ROOT)
   SET(KRISLIBRARY_ROOT "${CMAKE_SOURCE_DIR}/.."
