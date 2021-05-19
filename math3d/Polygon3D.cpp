@@ -1,6 +1,8 @@
 #include "Polygon3D.h"
 #include "geometry3d.h"
 #include "Polygon2D.h"
+#include "Line3D.h"
+#include "Ray3D.h"
 #include <math/matrix.h>
 #include <math/linalgebra.h>
 #include <iostream>
@@ -171,18 +173,10 @@ void Polygon3D::getPlanarPolygon(Polygon2D& p,Matrix4& T) const
   fitPlane.normal.getOrthogonalBasis(xb,yb);
   //TODO: reduce numerical errors by normalizing to the mean point?
   T.set(xb,yb,fitPlane.normal,fitPlane.normal*fitPlane.offset);
-  Matrix4 Tinv;
-  Tinv.setInverse(T);
   p.vertices.resize(vertices.size());
   for(size_t i=0;i<vertices.size();i++) {
     p.vertices[i].x = dot(xb,vertices[i]);
     p.vertices[i].y = dot(yb,vertices[i]);
-    /*
-    Vector3 temp;
-    Tinv.mulPoint(vertices[i],temp);
-    Assert(FuzzyEquals(temp.x,p.vertices[i].x));
-    Assert(FuzzyEquals(temp.y,p.vertices[i].y));
-    */
   }
 }
 
@@ -196,7 +190,82 @@ void Polygon3D::getAABB(AABB3D& bb) const
   for(size_t i=1; i<vertices.size(); i++)
     bb.expand(vertices[i]);
 }
-  
+
+bool Polygon3D::contains(const Vector3& pt,Real tol) const
+{
+  Polygon2D p2;
+  Matrix4 Tm;
+  getPlanarPolygon(p2,Tm);
+  RigidTransform T,Tinv;
+  T.set(Tm);
+  Tinv.setInverse(T);
+
+  Vector3 ptlocal = Tinv*pt;
+  if(Abs(ptlocal.z) > tol) return false;
+  return p2.residue(Vector2(ptlocal.x,ptlocal.x))==1;
+}
+ 
+bool Polygon3D::intersects(const Line3D& l,Real* t) const
+{
+  Polygon2D p2;
+  Matrix4 Tm;
+  getPlanarPolygon(p2,Tm);
+
+  RigidTransform T,Tinv;
+  T.set(Tm);
+  Tinv.setInverse(T);
+  Line3D l_local;
+  Tinv.mul(l.source,l_local.source);
+  Tinv.R.mul(l.direction,l_local.direction);
+  //find intersection with z plane
+  if(FuzzyZero(l_local.direction.z)) {
+    if(FuzzyZero(l_local.source.z)) {
+      //TODO: determine intersections when line is colinear with plane
+    }
+    return false;
+  }
+  Real u = -l_local.source.z / l_local.direction.z;
+  if(t) *t=u;
+  Vector3 pt;
+  l_local.eval(u,pt);
+  return p2.residue(Vector2(pt.x,pt.y))==1;
+}
+
+bool Polygon3D::intersects(const Ray3D& r,Real* t) const
+{
+  Real u;
+  Line3D l;
+  l.source=r.source;
+  l.direction=r.direction;
+  if(!intersects(l,&u)) return false;
+  if(u < 0) return false;
+  if(t) *t=u;
+  return true;
+}
+
+bool Polygon3D::intersects(const Segment3D& s,Real* t) const
+{
+  Real u;
+  Line3D l;
+  l.source=s.a;
+  l.direction=s.b-s.a;
+  if(!intersects(l,&u)) return false;
+  if(u < 0 || u > 1) return false;
+  if(t) *t=u;
+  return true;
+}
+
+bool Polygon3D::intersects(const Plane3D& p) const
+{
+  Real dmin=Inf,dmax=-Inf;
+  for(size_t i=0;i<vertices.size();i++) {
+    Real d=p.distance(vertices[i]);
+    dmin=Min(d,dmin);
+    dmax=Max(d,dmax);
+  }
+  return dmin <= 0 && dmax >= 0;
+}
+
 //  bool Read(File& f);
 //  bool Write(File& f) const;
 
