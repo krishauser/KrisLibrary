@@ -1435,6 +1435,7 @@ bool Collide(const CollisionMesh& m,const Plane3D& p)
 {
   vector<int> tris;
   CollideAll(m,p,tris,1);
+  return !tris.empty();
 }
 
 bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
