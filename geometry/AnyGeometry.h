@@ -23,6 +23,16 @@ class AnyDistanceQueryResult;
 class AnyContactsQuerySettings;
 class AnyContactsQueryResult;
 
+//foward declaration
+#ifndef GEOMETRY_ROI_H
+enum {
+    ExtractROIFlagIntersection=0x01,
+    ExtractROIFlagTouching=0x02,
+    ExtractROIFlagWithin=0x04,
+    ExtractROIFlagInvert=0x08
+};
+#endif //GEOMETRY_ROI_H
+
 /** @brief A class that stores any kind of geometry we've defined.
  *
  * To get the data, first check the "type" member.  Then call the appropriate
@@ -111,6 +121,18 @@ class AnyGeometry3D
   ///- ImplicitSurface: new surface cell width.
   ///- Group: sent to each sub-geometry
   bool Remesh(Real resolution,AnyGeometry3D& res,bool refine=true,bool coarsen=true) const;
+  ///Extracts a slice from the geometry at a given plane.  The plane is specified
+  ///as the local X-Y plane of the given world coordinates T.  The resulting values are
+  ///given in T's local coordinates.
+  ///
+  ///For point clouds, tol must be > 0.
+  bool Slice(const RigidTransform& T,AnyGeometry3D& res,Real tol=0) const;
+  ///Extracts a region of interest (bounding box) from the geometry.  The region of interest
+  ///may be specified in the flag as all geometry intersecting the box, within the box, 
+  ///or touching the box.  It is also possible to invert the selection.  See the
+  ///ExtractROIFlagX enum for more details.
+  bool ExtractROI(const AABB3D& bb,AnyGeometry3D& res,int flag=1) const;
+  bool ExtractROI(const Box3D& bb,AnyGeometry3D& res,int flag=1) const;
 
   Type type;
   ///The data, according to the type
@@ -194,6 +216,13 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///modify the geometry using Transform(), ReinitCollisions() should be
   ///called.
   void SetTransform(const RigidTransform& T);
+  ///Groups together these geometries, as usual
+  void Merge(const vector<AnyGeometry3D>& geoms);
+  ///Groups together these geometries.  This geometry is placed such that
+  ///the active transform is the same as the active transform for the
+  ///first geometry, and all subsequent geometries are transformed relative
+  ///to the first
+  void Merge(const vector<AnyCollisionGeometry3D>& geoms);
   //Computes the furthest point on the geometry in the direction dir
   //TODO: is this useful to implement outside of ConvexHull types?
   // Vector3 FindSupport(const Vector3& dir);
@@ -207,6 +236,18 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   bool WithinDistance(AnyCollisionGeometry3D& geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   AnyContactsQueryResult Contacts(AnyCollisionGeometry3D& other,const AnyContactsQuerySettings& settings);
   bool RayCast(const Ray3D& r,Real* distance=NULL,int* element=NULL);
+  ///Extracts a slice from the geometry at a given plane.  The plane is specified
+  ///as the local X-Y plane of the given world coordinates T.  The resulting values are
+  ///given with data in T's local coordinates, with active transform T.
+  ///
+  ///For point clouds, tol must be > 0.
+  bool Slice(const RigidTransform& T,AnyCollisionGeometry3D& res,Real tol=0) const;
+  ///Extracts a region of interest (bounding box) from the geometry.  The region of interest
+  ///may be specified in the flag as all geometry intersecting the box, within the box, 
+  ///or touching the box.  It is also possible to invert the selection.  See the
+  ///ExtractROIFlagX enum for more details.
+  bool ExtractROI(const AABB3D& bb,AnyCollisionGeometry3D& res,int flag=1) const;
+  bool ExtractROI(const Box3D& bb,AnyCollisionGeometry3D& res,int flag=1) const;
 
   /** The collision data structure, according to the type.
    * - Primitive: null

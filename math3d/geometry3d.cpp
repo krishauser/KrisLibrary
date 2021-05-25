@@ -817,11 +817,11 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
       const Cylinder3D* s=AnyCast_Raw<Cylinder3D>(&data);
       Real t,u;
       if(s->intersects(ray,&t,&u)) {
-	if(u >= 0) {
-	  if(t < 0) t = 0;
-	  ray.eval(t,pt);
-	  return true;
-	}
+        if(u >= 0) {
+          if(t < 0) t = 0;
+          ray.eval(t,pt);
+          return true;
+        }
       }
       return false;
     }
@@ -830,8 +830,8 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
       Real tmin=0,tmax=Inf;
       Line3D l=ray;
       if(l.intersects(*AnyCast_Raw<AABB3D>(&data),tmin,tmax)) {
-	ray.eval(tmin,pt);
-	return true;
+        ray.eval(tmin,pt);
+        return true;
       }
       return false;
     }
@@ -845,8 +845,8 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
       Real tmin=0,tmax=Inf;
       Line3D l=rlocal;
       if(l.intersects(localbox,tmin,tmax)) {
-	ray.eval(tmin,pt);
-	return true;
+        ray.eval(tmin,pt);
+        return true;
       }
       return false;
     }
@@ -854,8 +854,17 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
     {
       Real t,u,v;
       if(AnyCast_Raw<Triangle3D>(&data)->rayIntersects(ray,&t,&u,&v)) {
-	ray.eval(t,pt);
-	return true;
+        ray.eval(t,pt);
+        return true;
+      }
+      return false;
+    }
+  case Polygon:
+    {
+      Real t;
+      if(AnyCast_Raw<Polygon3D>(&data)->intersects(ray,&t)) {
+        ray.eval(t,pt);
+        return true;
       }
       return false;
     }
@@ -870,7 +879,7 @@ bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
 bool GeometricPrimitive3D::SupportsCollides(Type a,Type b)
 {
   if(a==Point || b==Segment)
-    return (b==Point || b==Segment || b==Sphere || b==Ellipsoid || b==Cylinder || b==AABB || b==Box || b==Triangle);
+    return (b==Point || b==Segment || b==Sphere || b==Ellipsoid || b==Cylinder || b==AABB || b==Box || b==Triangle || b==Polygon);
   if(a==AABB || a==Box || a==Triangle)
     return (b==Point || b==Segment || b==Sphere || b==AABB || b==Box || b==Triangle);
   if(a==Sphere) return SupportsDistance(a,b);
@@ -922,6 +931,8 @@ bool GeometricPrimitive3D::Collides(const Vector3& point) const
     return AnyCast_Raw<Box3D>(&data)->contains(point);
   case Triangle:
     return AnyCast_Raw<Triangle3D>(&data)->contains(point);
+  case Polygon:
+    return AnyCast_Raw<Polygon3D>(&data)->contains(point);
   default:
     return false;
   }
@@ -946,6 +957,8 @@ bool GeometricPrimitive3D::Collides(const Segment3D& seg) const
     return AnyCast_Raw<Box3D>(&data)->intersects(seg);
   case Triangle:
     return AnyCast_Raw<Triangle3D>(&data)->intersects(seg);
+  case Polygon:
+    return AnyCast_Raw<Polygon3D>(&data)->intersects(seg);
   default:
     return false;
   }

@@ -313,6 +313,8 @@ void BoxWidget::SetHighlight(bool value)
   }
   else
     transformWidget.SetHighlight(false);
+  if(!value)
+    hoverItem[0] = -1;
 }
 
 void BoxWidget::SetFocus(bool value)

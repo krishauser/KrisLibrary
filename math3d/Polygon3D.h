@@ -8,6 +8,8 @@ namespace Math3D {
 
 struct Plane3D;
 struct Segment3D;
+struct Line3D;
+struct Ray3D;
 struct Triangle3D;
 struct AABB3D;
 struct Polygon2D;
@@ -42,6 +44,11 @@ struct Polygon3D
   //bool planeSplits(const Plane3D& p) const;				///<returns true if the plane intersects this polyhedron
   //bool planePos(const Plane3D& p) const;				///<returns true if this is entirely on the positive side of this plane
   //bool planeNeg(const Plane3D& p) const;				///<returns true if this is entirely on the negative side of this plane
+  bool contains(const Vector3& pt,Real plane_tol=Epsilon) const;
+  bool intersects(const Line3D& l,Real* t=NULL) const;
+  bool intersects(const Ray3D& r,Real* t=NULL) const;
+  bool intersects(const Segment3D& s,Real* t=NULL) const;
+  bool intersects(const Plane3D& p) const;
 
   void getAABB(AABB3D&) const;
   

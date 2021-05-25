@@ -145,6 +145,7 @@ bool Collide(const CollisionMesh& m,const AABB3D& b);
 bool Collide(const CollisionMesh& m,const Box3D& b);
 bool Collide(const CollisionMesh& m1,const CollisionMesh& m2);
 bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g);
+bool Collide(const CollisionMesh& m,const Plane3D& p);
 
 ///Casts a ray at the mesh. Returns the index of the first triangle hit
 ///(-1 if none) and stores the colliding point in pt (given in world coordinates).
@@ -160,7 +161,7 @@ void CollideAll(const CollisionMesh& m,const Segment3D& s,std::vector<int>& tris
 void CollideAll(const CollisionMesh& m,const AABB3D& bb,std::vector<int>& tris,int max=INT_MAX);
 void CollideAll(const CollisionMesh& m,const Box3D& b,std::vector<int>& tris,int max=INT_MAX);
 void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector<int>& tris,int max=INT_MAX);
-
+void CollideAll(const CollisionMesh& m,const Plane3D& p,std::vector<int>& tris,int max=INT_MAX);
 
 
 ///Returns true if m is within distance d of the geometry

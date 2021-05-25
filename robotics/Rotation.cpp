@@ -32,9 +32,9 @@ inline Real Cube(Real x) { return x*x*x; }
 //NOTE: this is not the same as getCrossProduct
 inline void uncross(const Matrix3& r,Vector3& v)
 {
-  v.x=r.data[1][2]-r.data[2][1];
-  v.y=r.data[2][0]-r.data[0][2];
-  v.z=r.data[0][1]-r.data[1][0];
+  v.x=r(2,1)-r(1,2);
+  v.y=r(0,2)-r(2,0);
+  v.z=r(1,0)-r(0,1);
 }
 
 
@@ -58,16 +58,16 @@ DirectionCosines::DirectionCosines(const Matrix3& m)
 
 void DirectionCosines::setMatrix(const Matrix3& m)
 {
-  for(int i=0;i<3;i++) a(i)=m.data[0][i];
-  for(int i=0;i<3;i++) b(i)=m.data[1][i];
-  for(int i=0;i<3;i++) c(i)=m.data[2][i];
+  for(int i=0;i<3;i++) a(i)=m(i,0);
+  for(int i=0;i<3;i++) b(i)=m(i,1);
+  for(int i=0;i<3;i++) c(i)=m(i,2);
 }
 
 void DirectionCosines::getMatrix(Matrix3& m) const
 {
-  for(int i=0;i<3;i++) m.data[0][i]=a(i);
-  for(int i=0;i<3;i++) m.data[1][i]=b(i);
-  for(int i=0;i<3;i++) m.data[2][i]=c(i);
+  for(int i=0;i<3;i++) m(i,0)=a(i);
+  for(int i=0;i<3;i++) m(i,1)=b(i);
+  for(int i=0;i<3;i++) m(i,2)=c(i);
 }
 
 void DirectionCosines::getMoment(MomentRotation& mr) const

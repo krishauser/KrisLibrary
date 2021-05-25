@@ -812,6 +812,7 @@ Real ClosestPoints(const Meshing::TriMesh& m1,const Meshing::TriMesh& m2,Real ab
 
 
 
+
 inline void Copy(const PQP_REAL p[3],Vector3& x)
 {
   x.set(p[0],p[1],p[2]);
@@ -1052,6 +1053,32 @@ inline bool Collide(const Triangle3D& tri,const BV& b,Vector3& pt)
 }
 
 
+/**********  Planes ************/
+
+inline void ToLocal(const BV& bv,const Plane3D& in,Plane3D& out)
+{
+  Vector3 pt = in.normal*in.offset;
+  Vector3 ptout;
+  ToLocal(bv,pt,ptout);
+  MTxV(out.normal,bv.R,in.normal);
+  out.offset = out.normal.dot(ptout);
+}
+
+inline bool CollideBV(const PQP_REAL d[3],const Plane3D& p)
+{
+  AABB3D bb;
+  bb.bmin.set(-d[0],-d[1],-d[2]);
+  bb.bmax.set(d[0],d[1],d[2]);
+  return p.intersects(bb);
+}
+
+inline bool Collide(const Triangle3D& tri,const Plane3D& p,Vector3& pt)
+{
+  Segment3D s;
+  if(!tri.intersects(p,s)) return false;
+  pt = (s.a+s.b)*0.5;
+  return true;
+}
 
 
 
@@ -1404,6 +1431,12 @@ bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g)
   }
 }
 
+bool Collide(const CollisionMesh& m,const Plane3D& p)
+{
+  vector<int> tris;
+  CollideAll(m,p,tris,1);
+}
+
 bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
 {
   switch(a.type) {
@@ -1472,7 +1505,7 @@ void CollideAll(const CollisionMesh& m,const Segment3D& s,vector<int>& tris,int 
   m.currentTransform.mulInverse(s.a,slocal.a);
   m.currentTransform.mulInverse(s.b,slocal.b);
   tris.resize(0);
-  CollideAllRecurse(s,*m.pqpModel,0,tris,max);
+  CollideAllRecurse(slocal,*m.pqpModel,0,tris,max);
 }
 
 void CollideAll(const CollisionMesh& m,const AABB3D& bb,vector<int>& tris,int max)
@@ -1529,6 +1562,16 @@ void CollideAll(const CollisionMesh& m,const GeometricPrimitive3D& g,std::vector
   default:
         LOG4CXX_ERROR(GET_LOGGER(Geometry),"CollideAll: Collider for type "<<g.TypeName());
   }
+}
+
+void CollideAll(const CollisionMesh& m,const Plane3D& p,vector<int>& tris,int max)
+{
+  RigidTransform Tinv;
+  Tinv.setInverse(m.currentTransform);
+  Plane3D plocal;
+  plocal.setTransformed(p,Tinv);
+  tris.resize(0);
+  CollideAllRecurse(plocal,*m.pqpModel,0,tris,max);
 }
 
 ///Returns true if p is within distance d of m using the PQP bounding heirarchy

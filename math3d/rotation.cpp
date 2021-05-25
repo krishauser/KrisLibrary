@@ -236,16 +236,15 @@ void EulerAngleRotation::getMatrixXYZ(Matrix3& m) const
   Real sb = Sin(y);
   Real sc = Sin(z);
 
-  //remember data is column major
-  m.data[0][0]=cb*cc;
-  m.data[0][1]=sa*sb*cc+ca*sc;
-  m.data[0][2]=sa*sc-ca*sb*cc; 
-  m.data[1][0]=-cb*sc;
-  m.data[1][1]=ca*cc-sa*sb*sc; 
-  m.data[1][2]=ca*sb*sc+sa*cc;
-  m.data[2][0]=sb; 
-  m.data[2][1]=-sa*cb; 
-  m.data[2][2]=ca*cb;
+  m(0,0)=cb*cc;
+  m(0,1)=-cb*sc;
+  m(0,2)=sb; 
+  m(1,0)=sa*sb*cc+ca*sc;
+  m(1,1)=ca*cc-sa*sb*sc; 
+  m(1,2)=-sa*cb; 
+  m(2,0)=sa*sc-ca*sb*cc; 
+  m(2,1)=ca*sb*sc+sa*cc;
+  m(2,2)=ca*cb;
 }
 
 void EulerAngleRotation::getMatrixZYX(Matrix3& m) const
@@ -257,16 +256,15 @@ void EulerAngleRotation::getMatrixZYX(Matrix3& m) const
   Real sb = Sin(y);
   Real sc = Sin(z);
 
-  //remember data is column major
-  m.data[0][0]=ca*cb;
-  m.data[0][1]=sa*cb;
-  m.data[0][2]=-sb; 
-  m.data[1][0]=ca*sb*sc-sa*cc;
-  m.data[1][1]=sa*sb*sc+ca*cc; 
-  m.data[1][2]=cb*sc;
-  m.data[2][0]=ca*sb*cc+sa*sc; 
-  m.data[2][1]=sa*sb*cc-ca*sc; 
-  m.data[2][2]=cb*cc;
+  m(0,0)=ca*cb;
+  m(0,1)=ca*sb*sc-sa*cc;
+  m(0,2)=ca*sb*cc+sa*sc; 
+  m(1,0)=sa*cb;
+  m(1,1)=sa*sb*sc+ca*cc; 
+  m(1,2)=sa*sb*cc-ca*sc; 
+  m(2,0)=-sb; 
+  m(2,1)=cb*sc;
+  m(2,2)=cb*cc;
 }
 
 void EulerAngleRotation::getMatrixZXY(Matrix3& m) const
@@ -278,16 +276,15 @@ void EulerAngleRotation::getMatrixZXY(Matrix3& m) const
   Real sb = Sin(y);
   Real sc = Sin(z);
 
-  //remember data is column major
-  m.data[0][0]=-sa*sb*sc+ca*cc;
-  m.data[0][1]=ca*sb*sc+sa*cc;
-  m.data[0][2]=-cb*sc; 
-  m.data[1][0]=-sa*cb;
-  m.data[1][1]=ca*cb; 
-  m.data[1][2]=sb;
-  m.data[2][0]=sa*sb*cc+ca*sc; 
-  m.data[2][1]=-ca*sb*cc+sa*sc; 
-  m.data[2][2]=cb*cc;
+  m(0,0)=-sa*sb*sc+ca*cc;
+  m(1,0)=ca*sb*sc+sa*cc;
+  m(2,0)=-cb*sc; 
+  m(0,1)=-sa*cb;
+  m(1,1)=ca*cb; 
+  m(2,1)=sb;
+  m(0,2)=sa*sb*cc+ca*sc; 
+  m(1,2)=-ca*sb*cc+sa*sc; 
+  m(2,2)=cb*cc;
 }
 
 void EulerAngleRotation::getMatrixYXZ(Matrix3& m) const
@@ -349,7 +346,7 @@ void AngleAxisRotation::transformPoint(const Vector3& in,Vector3& out) const
   Real cm = Cos(angle);
   Real sm = Sin(angle);
 
-  //m = s[r]-c[r][r]+rrt = s[r]-c(rrt-I)+rrt = cI + rrt(1-c) + s[r]
+  //m = s[r]-c[r,r]+rrt = s[r]-c(rrt-I)+rrt = cI + rrt(1-c) + s[r]
   //=> mv = cv + (1-c)*(r.v)r + s*(r x v)
   out.setCross(axis,in);
   out *= sm;
@@ -375,7 +372,7 @@ void AngleAxisRotation::getMatrix(Matrix3& m) const
   Real cm = Cos(angle);
   Real sm = Sin(angle);
 
-  //m = s[r]-c[r][r]+rrt = s[r]-c(rrt-I)+rrt = cI + rrt(1-c) + s[r]
+  //m = s[r]-c[r,r]+rrt = s[r]-c(rrt-I)+rrt = cI + rrt(1-c) + s[r]
   m.setCrossProduct(axis);
   m.inplaceMul(sm);
   for(int i=0;i<3;i++) {
@@ -395,7 +392,7 @@ void AngleAxisRotation::getMatrix(Matrix3& m) const
 
   for(int i=0; i<3; i++)
     for(int j=0; j<3; j++)
-      m.data[i][j] += axis[i]*axis[j];
+      m(i,j] += axis[i]*axis[j];
   */
 }
 
@@ -472,9 +469,9 @@ bool MomentRotation::setMatrix(const Matrix3& r)
 
   if(FuzzyEquals(theta,Pi,angleEps)) {
     //can't do normal version because the scale factor reaches a singularity
-    x = Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
-    y = Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
-    z = Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
+    x = Sqrt(Max((r(0,0)-c)/(1.0-c),0.0));
+    y = Sqrt(Max((r(1,1)-c)/(1.0-c),0.0));
+    z = Sqrt(Max((r(2,2)-c)/(1.0-c),0.0));
     x = theta*x;
     y = theta*y;
     z = theta*z;
@@ -538,13 +535,13 @@ bool MomentRotation::setMatrix(const Matrix3& r)
   //this is a better method for angles close to pi
   if(FuzzyEquals(theta,Pi,0.5)) {
     //c ~= -1
-    x = Sqrt(Max((r.data[0][0]-c)/(1.0-c),0.0));
-    y = Sqrt(Max((r.data[1][1]-c)/(1.0-c),0.0));
-    z = Sqrt(Max((r.data[2][2]-c)/(1.0-c),0.0));
+    x = Sqrt(Max((r(0,0)-c)/(1.0-c),0.0));
+    y = Sqrt(Max((r(1,1)-c)/(1.0-c),0.0));
+    z = Sqrt(Max((r(2,2)-c)/(1.0-c),0.0));
     double eps = Pi-theta;
-    x *= Sign(eps)*Sign(r.data[1][2]-r.data[2][1]);
-    y *= Sign(eps)*Sign(r.data[2][0]-r.data[0][2]);
-    z *= Sign(eps)*Sign(r.data[0][1]-r.data[1][0]);
+    x *= Sign(eps)*Sign(r(2,1)-r(1,2));
+    y *= Sign(eps)*Sign(r(0,2)-r(2,0));
+    z *= Sign(eps)*Sign(r(1,0)-r(0,1));
     x *= theta;
     y *= theta;
     z *= theta;
@@ -554,9 +551,9 @@ bool MomentRotation::setMatrix(const Matrix3& r)
     Real scale = Half/Sinc(theta);  //avoids the singularity at 0
     Assert(IsFinite(scale));
 
-    x = (r.data[1][2]-r.data[2][1]) * scale;
-    y = (r.data[2][0]-r.data[0][2]) * scale;
-    z = (r.data[0][1]-r.data[1][0]) * scale;
+    x = (r(2,1)-r(1,2)) * scale;
+    y = (r(0,2)-r(2,0)) * scale;
+    z = (r(1,0)-r(0,1)) * scale;
   }
   Assert(IsFinite(x));
   Assert(IsFinite(y));
@@ -643,9 +640,9 @@ bool QuaternionRotation::setMatrix(const Matrix3& m)
     s = Sqrt (tr);
     w = s * Half;
     s = Half / s;
-    x = (m.data[1][2] - m.data[2][1]) * s;
-    y = (m.data[2][0] - m.data[0][2]) * s;
-    z = (m.data[0][1] - m.data[1][0]) * s;
+    x = (m(2,1) - m(1,2)) * s;
+    y = (m(0,2) - m(2,0)) * s;
+    z = (m(1,0) - m(0,1)) * s;
   }
   else {
     //it's a rotation of 180 degrees
@@ -653,13 +650,13 @@ bool QuaternionRotation::setMatrix(const Matrix3& m)
     int i, j, k;
     // diagonal is negative
     i = 0;
-    if (m.data[1][1] > m.data[0][0]) i = 1;
-    if (m.data[2][2] > m.data[i][i]) i = 2;
+    if (m(1,1) > m(0,0)) i = 1;
+    if (m(2,2) > m(i,i)) i = 2;
     j = nxt[i];
     k = nxt[j];
     
     Real q[4];
-    s = Sqrt ((m.data[i][i] - (m.data[j][j] + m.data[k][k])) + One);
+    s = Sqrt ((m(i,i) - (m(j,j) + m(k,k))) + One);
     q[i] = s * Half;
     
     if (FuzzyZero(s)) {
@@ -679,9 +676,9 @@ bool QuaternionRotation::setMatrix(const Matrix3& m)
     }
     else {
       s = Half / s;
-      q[3] = (m.data[j][k] - m.data[k][j]) * s;
-      q[j] = (m.data[j][i] + m.data[i][j]) * s;
-      q[k] = (m.data[k][i] + m.data[k][i]) * s;
+      q[3] = (m(k,j) - m(j,k)) * s;
+      q[j] = (m(i,j) + m(j,i)) * s;
+      q[k] = (m(k,i) + m(i,k)) * s;
     }
     x = q[0];
     y = q[1];
@@ -735,9 +732,9 @@ void QuaternionRotation::getMatrix(Matrix3& m) const {
   yy = y * y2;   yz = y * z2;   zz = z * z2;
   wx = w * x2;   wy = w * y2;   wz = w * z2;
 
-  m.data[0][0] = One - (yy + zz);    m.data[1][0] = xy - wz; 			m.data[2][0] = xz + wy;
-  m.data[0][1] = xy + wz;            m.data[1][1] = One - (xx + zz);	m.data[2][1] = yz - wx;
-  m.data[0][2] = xz - wy;            m.data[1][2] = yz + wx;			m.data[2][2] = One - (xx + yy);
+  m(0,0) = One - (yy + zz);    m(0,1) = xy - wz; 			m(0,2) = xz + wy;
+  m(1,0) = xy + wz;            m(1,1) = One - (xx + zz);	m(1,2) = yz - wx;
+  m(2,0) = xz - wy;            m(2,1) = yz + wx;			m(2,2) = One - (xx + yy);
 }
 
 void QuaternionRotation::transform(const Vector3& v, Vector3& out) const

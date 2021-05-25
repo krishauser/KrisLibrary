@@ -874,7 +874,7 @@ class RigidTransform
   inline void get(Matrix4&) const;
   inline void getRotation(Matrix3&) const;
   inline void getTranslation(Vector3&) const;
-  inline void getInverse(RigidTransform&);
+  inline void getInverse(RigidTransform&) const;
 
   inline void inplaceInverse();
   inline void inplaceRotate(const Matrix3&);
@@ -2642,7 +2642,7 @@ inline void RigidTransform::get(Vector3& x, Vector3& y, Vector3& z, Vector3& tra
 inline void RigidTransform::get(Matrix4& m) const { m.set(R,t); }
 inline void RigidTransform::getRotation(Matrix3& m) const { m.set(R); }
 inline void RigidTransform::getTranslation(Vector3& v) const { v.set(t); }
-inline void RigidTransform::getInverse(RigidTransform& x) { x.setInverse(*this); }
+inline void RigidTransform::getInverse(RigidTransform& x) const { x.setInverse(*this); }
 inline void RigidTransform::inplaceInverse() { R.inplaceTranspose(); Vector3 tmp; tmp.setNegative(t); R.mul(tmp,t); }
 inline void RigidTransform::inplaceRotate(const Matrix3& m) { R *= m; }
 inline void RigidTransform::inplaceShift(const Vector3& v) { t += v; }

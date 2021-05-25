@@ -1,6 +1,8 @@
 #include <KrisLibrary/Logger.h>
+#include "ROI.h"
 #include "AnyGeometry.h"
 #include "Conversions.h"
+#include "Slice.h"
 #include <math3d/geometry3d.h>
 #include <meshing/VolumeGrid.h>
 #include <meshing/Voxelize.h>
@@ -248,7 +250,7 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D> &geoms)
   {
     type = geoms[nonempty[0]].type;
     bool group = false;
-    for (size_t i = 1; i < nonempty.size(); i++)
+    for (size_t i = 1; i < nonempty.size(); i++) 
       if (geoms[nonempty[i]].type != type)
       {
         //its' a group type
@@ -273,8 +275,24 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D> &geoms)
     }
     break;
     case PointCloud:
-      group = true;
-      break;
+    {
+      group = false;
+      Meshing::PointCloud3D merged;
+      for (size_t i = 0; i < nonempty.size(); i++) {
+        const Meshing::PointCloud3D& pc=geoms[nonempty[i]].AsPointCloud();
+        if(i > 0)
+          merged.propertyNames = pc.propertyNames;
+        else if(pc.propertyNames != merged.propertyNames) {
+          group = true;
+          break;
+        }
+        merged.points.insert(merged.points.end(),pc.points.begin(),pc.points.end());
+        merged.properties.insert(merged.properties.end(),pc.properties.begin(),pc.properties.end());
+      }
+      if(!group)
+        data = merged;
+    }
+    break;
     case ImplicitSurface:
       group = true;
       break;
@@ -327,9 +345,9 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
           w = AnyCast_Raw<Math3D::Cylinder3D>(&g.data)->radius * 2;
         param = int(w / param);
       }
-      Meshing::TriMesh mesh;
+      res = AnyGeometry3D(Meshing::TriMesh());
+      Meshing::TriMesh& mesh = res.AsTriangleMesh();
       PrimitiveToMesh(AsPrimitive(), mesh, int(param));
-      res = AnyGeometry3D(mesh);
       return true;
     }
     case PointCloud:
@@ -374,9 +392,9 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
         Real w = (bb.bmax - bb.bmin).maxAbsElement();
         param = w * 0.05;
       }
-      Meshing::VolumeGrid grid;
+      res = AnyGeometry3D(Meshing::VolumeGrid());
+      Meshing::VolumeGrid& grid = res.AsImplicitSurface();
       PrimitiveToImplicitSurface(AsPrimitive(), grid, param);
-      res = AnyGeometry3D(grid);
       return true;
     }
     case ConvexHull:
@@ -448,9 +466,9 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
     {
       if (param == 0)
         param = Inf;
-      Meshing::PointCloud3D pc;
+      res = AnyGeometry3D(Meshing::PointCloud3D());
+      Meshing::PointCloud3D& pc = res.AsPointCloud();
       MeshToPointCloud(AsTriangleMesh(), pc, param, true);
-      res = AnyGeometry3D(pc);
       return true;
     }
     case ImplicitSurface:
@@ -476,12 +494,12 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
         param = Min(param, 0.25 * (bmax.z - bmin.z));
         LOG4CXX_INFO(GET_LOGGER(Geometry), "AnyGeometry::Convert: Auto-determined grid resolution " << param);
       }
-      Meshing::VolumeGrid grid;
+      res = AnyGeometry3D(Meshing::VolumeGrid());
+      Meshing::VolumeGrid& grid = res.AsImplicitSurface();
       CollisionMesh mesh(AsTriangleMesh());
       mesh.CalcTriNeighbors();
       MeshToImplicitSurface_FMM(mesh, grid, param);
       LOG4CXX_INFO(GET_LOGGER(Geometry), "AnyGeometry::Convert: FMM grid bounding box " << grid.bb);
-      res = AnyGeometry3D(grid);
       return true;
     }
     case ConvexHull:
@@ -504,17 +522,17 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
     {
       AnyGeometry3D mesh;
       Convert(TriangleMesh, mesh, param);
-      Meshing::PointCloud3D pc;
+      res = AnyGeometry3D(Meshing::PointCloud3D());
+      Meshing::PointCloud3D& pc = res.AsPointCloud();
       MeshToPointCloud(mesh.AsTriangleMesh(), pc, true);
-      res = AnyGeometry3D(pc);
       return true;
     }
     case TriangleMesh:
     {
       const Meshing::VolumeGrid &grid = AsImplicitSurface();
-      Meshing::TriMesh mesh;
+      res = AnyGeometry3D(Meshing::TriMesh());
+      Meshing::TriMesh& mesh = res.AsTriangleMesh();
       ImplicitSurfaceToMesh(grid, mesh, param);
-      res = AnyGeometry3D(mesh);
       return true;
     }
     case ConvexHull:
@@ -569,7 +587,8 @@ bool AnyGeometry3D::Remesh(Real resolution,AnyGeometry3D& res,bool refine,bool c
     {
       if(resolution <= 0) return false;
       const Meshing::PointCloud3D& pc = AsPointCloud();
-      Meshing::PointCloud3D output;
+      res = AnyGeometry3D(Meshing::PointCloud3D());
+      Meshing::PointCloud3D& output = res.AsPointCloud();
       if(coarsen) {
         GridSubdivision3D grid(resolution);
         GridSubdivision3D::Index index;
@@ -624,7 +643,6 @@ bool AnyGeometry3D::Remesh(Real resolution,AnyGeometry3D& res,bool refine,bool c
       }
       else
         output = pc;
-      res = AnyGeometry3D(output);
       return true;
     }
   case ImplicitSurface:
@@ -637,11 +655,11 @@ bool AnyGeometry3D::Remesh(Real resolution,AnyGeometry3D& res,bool refine,bool c
         int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
         int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
         int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
-        Meshing::VolumeGrid output;
+        res = AnyGeometry3D(Meshing::VolumeGrid());
+        Meshing::VolumeGrid& output = res.AsImplicitSurface();
         output.Resize(m,n,p);
         output.bb = grid.bb;
         output.ResampleTrilinear(grid);
-        res = AnyGeometry3D(output);
         return true;
       }
       else {
@@ -665,6 +683,141 @@ bool AnyGeometry3D::Remesh(Real resolution,AnyGeometry3D& res,bool refine,bool c
     return false;
   }
 }
+
+bool AnyGeometry3D::Slice(const RigidTransform& T,AnyGeometry3D& res,Real tol) const
+{
+  switch(type)
+  {
+  case Primitive:
+  case ConvexHull:
+  case ImplicitSurface:
+    return false;
+  case TriangleMesh:
+    {
+      const Meshing::TriMesh& mesh=AsTriangleMesh();
+      vector<Segment2D> segs;
+      vector<int> tri_indices;
+      ::SliceXY(mesh,T,segs,tri_indices);
+
+      res = AnyGeometry3D(vector<AnyGeometry3D>());
+      vector<AnyGeometry3D>& segGeoms = res.AsGroup();
+      segGeoms.resize(segs.size());
+      for(size_t i=0;i<segs.size();i++) {
+        Segment3D seg;
+        seg.a.set(segs[i].a.x,segs[i].a.y,0);
+        seg.b.set(segs[i].b.x,segs[i].b.y,0);
+        segGeoms[i] = AnyGeometry3D(GeometricPrimitive3D(seg));
+      }
+      return true;
+    }
+  case PointCloud:
+    {
+      const Meshing::PointCloud3D& pc=AsPointCloud();
+      vector<Vector2> pts;
+      vector<int> inds;
+      ::SliceXY(pc,T,tol,pts,inds);
+      res = AnyGeometry3D(Meshing::PointCloud3D());
+      Meshing::PointCloud3D& pc_out = res.AsPointCloud();
+      pc_out.propertyNames = pc.propertyNames;
+      pc_out.settings = pc.settings;
+      pc_out.settings.remove("width");
+      pc_out.settings.remove("height");
+      for(size_t i=0;i<pts.size();i++) {
+        pc_out.points.push_back(Vector3(pts[i].x,pts[i].y,0));
+        pc_out.properties.push_back(pc.properties[inds[i]]);
+      }
+      return true;
+    }
+  
+  case Group:
+    {
+      const vector<AnyGeometry3D> &items = AsGroup();
+      vector<AnyGeometry3D> converted(items.size());
+      for (size_t i = 0; i < items.size(); i++)
+        if(!items[i].Slice(T, converted[i], tol)) return false;
+      res = AnyGeometry3D(items);
+      return true;
+    }
+  default:
+    FatalError("Unhandled type?");
+    return false;
+  }
+}
+
+bool AnyGeometry3D::ExtractROI(const AABB3D& bb,AnyGeometry3D& res,int flags) const
+{
+  switch(type)
+  {
+  case Primitive:
+  case ConvexHull:
+  case ImplicitSurface:
+    return false;
+  case TriangleMesh:
+    {
+      const Meshing::TriMesh& mesh=AsTriangleMesh();
+      res = AnyGeometry3D(Meshing::TriMesh());
+      ::ExtractROI(mesh,bb,res.AsTriangleMesh(),flags);
+      return true;
+    }
+  case PointCloud:
+    {
+      const Meshing::PointCloud3D& pc=AsPointCloud();
+      res = AnyGeometry3D(Meshing::PointCloud3D());
+      ::ExtractROI(pc,bb,res.AsPointCloud(),flags);
+      return true;
+    }
+  case Group:
+    {
+      const vector<AnyGeometry3D> &items = AsGroup();
+      vector<AnyGeometry3D> converted(items.size());
+      for (size_t i = 0; i < items.size(); i++)
+        if(!items[i].ExtractROI(bb, res, flags)) return false;
+      res = AnyGeometry3D(items);
+      return true;
+    }
+  default:
+    FatalError("Unhandled type?");
+    return false;
+  }
+}
+
+bool AnyGeometry3D::ExtractROI(const Box3D& bb,AnyGeometry3D& res,int flags) const
+{
+  switch(type)
+  {
+  case Primitive:
+  case ConvexHull:
+  case ImplicitSurface:
+    return false;
+  case TriangleMesh:
+    {
+      const Meshing::TriMesh& mesh=AsTriangleMesh();
+      res = AnyGeometry3D(Meshing::TriMesh());
+      ::ExtractROI(mesh,bb,res.AsTriangleMesh(),flags);
+      return true;
+    }
+  case PointCloud:
+    {
+      const Meshing::PointCloud3D& pc=AsPointCloud();
+      res = AnyGeometry3D(Meshing::PointCloud3D());
+      ::ExtractROI(pc,bb,res.AsPointCloud(),flags);
+      return true;
+    }
+  case Group:
+    {
+      const vector<AnyGeometry3D> &items = AsGroup();
+      vector<AnyGeometry3D> converted(items.size());
+      for (size_t i = 0; i < items.size(); i++)
+        if(!items[i].ExtractROI(bb, res, flags)) return false;
+      res = AnyGeometry3D(items);
+      return true;
+    }
+  default:
+    FatalError("Unhandled type?");
+    return false;
+  }
+}
+
 
 size_t AnyGeometry3D::NumElements() const
 {
@@ -1228,6 +1381,118 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   assert(!collisionData.empty());
 }
 
+void AnyCollisionGeometry3D::Merge(const vector<AnyGeometry3D>& geoms)
+{
+  AnyGeometry3D::Merge(geoms);
+  ClearCollisionData();
+}
+
+void AnyCollisionGeometry3D::Merge(const vector<AnyCollisionGeometry3D> &geoms)
+{
+  vector<int> nonempty;
+  for (size_t i = 0; i < geoms.size(); i++)
+    if (!geoms[i].Empty())
+      nonempty.push_back((int)i);
+  if (nonempty.empty())
+    *this = AnyGeometry3D();
+  else if (nonempty.size() == 1)
+  {
+    *this = geoms[nonempty[0]];
+  }
+  else
+  {
+    type = geoms[nonempty[0]].type;
+    bool group = false;
+    for (size_t i = 1; i < nonempty.size(); i++) 
+      if (geoms[nonempty[i]].type != type)
+      {
+        //its' a group type
+        group = true;
+      }
+    switch (type)
+    {
+    case Primitive:
+      group = true;
+      break;
+    case ConvexHull:
+      group = true;
+      break;
+    case TriangleMesh:
+    {
+      Meshing::TriMesh merged;
+      for (size_t i = 0; i < nonempty.size(); i++) {
+        if(i==0) merged = geoms[nonempty[i]].AsTriangleMesh();
+        else {
+          RigidTransform Ti = geoms[nonempty[i]].GetTransform();
+          RigidTransform T0 = geoms[nonempty[0]].GetTransform();
+          RigidTransform Trel; Trel.mulInverseA(T0,Ti);
+          Meshing::TriMesh temp = geoms[nonempty[i]].AsTriangleMesh();
+          temp.Transform(Trel);
+          merged.MergeWith(temp);
+        }
+      }
+      data = merged;
+      ReinitCollisionData();
+      SetTransform(geoms[0].GetTransform());
+      group = false;
+    }
+    break;
+    case PointCloud:
+    {
+      group = false;
+      Meshing::PointCloud3D merged;
+      RigidTransform Trel;
+      for (size_t i = 0; i < nonempty.size(); i++) {
+        const Meshing::PointCloud3D& pc=geoms[nonempty[i]].AsPointCloud();
+        if(i > 0)
+          merged.propertyNames = pc.propertyNames;
+        else if(pc.propertyNames != merged.propertyNames) {
+          group = true;
+          break;
+        }
+        if(i==0) Trel.setIdentity();
+        else {
+          RigidTransform Ti = geoms[nonempty[i]].GetTransform();
+          RigidTransform T0 = geoms[nonempty[0]].GetTransform();
+          Trel.mulInverseA(T0,Ti);
+        }
+        for(auto& pt:pc.points)
+          merged.points.push_back(Trel*pt);
+        merged.properties.insert(merged.properties.end(),pc.properties.begin(),pc.properties.end());
+      }
+      if(!group) {
+        data = merged;
+        ReinitCollisionData();
+        SetTransform(geoms[0].GetTransform());
+      }
+    }
+    break;
+    case ImplicitSurface:
+      group = true;
+      break;
+    case Group:
+      //don't need to add an extra level of hierarchy
+      {
+        vector<AnyCollisionGeometry3D> items;
+        for (size_t i = 0; i < nonempty.size(); i++)
+          items.insert(items.end(), geoms[nonempty[i]].AsGroup().begin(), geoms[nonempty[i]].AsGroup().end());
+        data = items;
+      }
+      break;
+    }
+    if (group)
+    {
+      type = Group;
+      vector<AnyGeometry3D> geomdatas(geoms.size());
+      for(size_t i=0;i<geoms.size();i++)
+        geomdatas[i] = geoms[i];
+      data = geomdatas;
+      collisionData = geoms;
+    }
+  }
+}
+
+
 bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, Real param)
 {
   if (type == TriangleMesh && restype == ImplicitSurface)
@@ -1256,7 +1521,8 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
       param = Min(param, 0.25 * (bmax.z - bmin.z));
       LOG4CXX_INFO(GET_LOGGER(Geometry), "Auto-determined grid resolution " << param);
     }
-    Meshing::VolumeGrid grid;
+    res = AnyCollisionGeometry3D(Meshing::VolumeGrid());
+    Meshing::VolumeGrid& grid = res.AsImplicitSurface();
     RigidTransform Torig, Tident;
     Tident.setIdentity();
     CollisionMesh &mesh = TriangleMeshCollisionData();
@@ -1265,7 +1531,6 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     MeshToImplicitSurface_FMM(mesh, grid, param, margin);
     //MeshToImplicitSurface_SpaceCarving(TriangleMeshCollisionData(),grid,param,40);
     mesh.UpdateTransform(Torig);
-    res = AnyCollisionGeometry3D(grid);
     //LOG4CXX_INFO(GET_LOGGER(Geometry), "Grid bb " << grid.bb);
     res.SetTransform(GetTransform());
     res.margin = margin;
@@ -1279,9 +1544,9 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
       Real w = (bb.bmax - bb.bmin).maxAbsElement();
       param = w * 0.05;
     }
-    Meshing::VolumeGrid grid;
+    res = AnyCollisionGeometry3D(Meshing::VolumeGrid());
+    Meshing::VolumeGrid& grid = res.AsImplicitSurface();
     PrimitiveToImplicitSurface(AsPrimitive(), grid, param, margin);
-    res = AnyCollisionGeometry3D(grid);
     res.SetTransform(GetTransform());
     res.margin = margin;
     return true;
@@ -1290,16 +1555,10 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     vector<AnyCollisionGeometry3D> &items = GroupCollisionData();
     vector<AnyCollisionGeometry3D> resitems(items.size());
     res = AnyCollisionGeometry3D();
-    res.type = Group;
     for(size_t i=0;i<items.size();i++) {
       if(!items[i].Convert(restype,resitems[i],param)) return false;
     }
-    res.collisionData = resitems;
-    vector<AnyGeometry3D> resgeoms(resitems.size());
-    for(size_t i=0;i<items.size();i++) 
-      resgeoms[i] = resitems[i];
-    res.data = resgeoms;
-    res.SetTransform(GetTransform());
+    res.Merge(resitems);
     res.margin = margin;
     return true;
   }
@@ -3208,6 +3467,193 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
   }
   return false;
 }
+
+bool AnyCollisionGeometry3D::Slice(const RigidTransform& T,AnyCollisionGeometry3D& res,Real tol) const
+{
+  if(collisionData.empty()) { //fall back to non-accelerated slicing
+    RigidTransform Tlocal;
+    Tlocal.mulInverseA(currentTransform,T);
+    if(!AnyGeometry3D::Slice(Tlocal,res,tol)) return false;
+    res.currentTransform = currentTransform;
+    res.collisionData = AnyValue();
+    return true;
+  }
+
+  switch(type)
+  {
+  case Primitive:
+  case ConvexHull:
+  case ImplicitSurface:
+    return false;
+  case TriangleMesh:
+    {
+      const CollisionMesh& mesh=TriangleMeshCollisionData();
+      vector<Segment2D> segs;
+      vector<int> tri_indices;
+      ::SliceXY(mesh,T,segs,tri_indices);
+      res = AnyCollisionGeometry3D(vector<AnyGeometry3D>());
+      vector<AnyGeometry3D>& segGeoms = res.AsGroup();
+      segGeoms.resize(segs.size());
+      for(size_t i=0;i<segs.size();i++) {
+        Segment3D seg;
+        seg.a.set(segs[i].a.x,segs[i].a.y,0);
+        seg.b.set(segs[i].b.x,segs[i].b.y,0);
+        segGeoms[i] = AnyGeometry3D(GeometricPrimitive3D(seg));
+      }
+      res.SetTransform(T);
+      return true;
+    }
+  case PointCloud:
+    {
+      const CollisionPointCloud& pc=PointCloudCollisionData();
+      vector<int> inds;
+      vector<Vector2> pts;
+      ::SliceXY(pc,T,tol,pts,inds);
+      res = AnyCollisionGeometry3D(Meshing::PointCloud3D());
+      Meshing::PointCloud3D& pc_out = res.AsPointCloud();
+      pc_out.propertyNames = pc.propertyNames;
+      pc_out.settings = pc.settings;
+      pc_out.settings.remove("width");
+      pc_out.settings.remove("height");
+      for(size_t i=0;i<pts.size();i++) {
+        pc_out.points.push_back(Vector3(pts[i].x,pts[i].y,0));
+        pc_out.properties.push_back(pc.properties[inds[i]]);
+      }
+      res.SetTransform(T);
+      return true;
+    }
+  
+  case Group:
+    {
+      const vector<AnyCollisionGeometry3D> &items = GroupCollisionData();
+      res = AnyCollisionGeometry3D(vector<AnyGeometry3D>());
+      vector<AnyCollisionGeometry3D>& converted = res.GroupCollisionData();
+      converted.resize(items.size());
+      for (size_t i = 0; i < items.size(); i++)
+        if(!items[i].Slice(T, converted[i], tol)) return false;
+      return true;
+    }
+  default:
+    FatalError("Unhandled type?");
+    return false;
+  }
+}
+
+bool AnyCollisionGeometry3D::ExtractROI(const AABB3D& bb,AnyCollisionGeometry3D& res,int flags) const
+{
+  if(collisionData.empty()) { //fall back to non-accelerated ROI
+    RigidTransform Tinv;
+    Tinv.setInverse(currentTransform);
+    Box3D blocal;
+    blocal.setTransformed(bb,Tinv);
+    if(!AnyGeometry3D::ExtractROI(blocal,res,flags)) return false;
+    res.currentTransform = currentTransform;
+    res.collisionData = AnyValue();
+    return true;
+  }
+
+  switch(type)
+  {
+  case Primitive:
+  case ConvexHull:
+  case ImplicitSurface:
+    return false;
+  case TriangleMesh:
+    {
+      const CollisionMesh& mesh=TriangleMeshCollisionData();
+      res = AnyCollisionGeometry3D(Meshing::TriMesh());
+      res.InitCollisionData();
+      ::ExtractROI(mesh,bb,res.TriangleMeshCollisionData(),flags);
+      res.AsTriangleMesh() = res.TriangleMeshCollisionData();
+      res.currentTransform = res.TriangleMeshCollisionData().currentTransform;
+      res.collisionData = AnyValue();
+      return true;
+    }
+  case PointCloud:
+    {
+      const CollisionPointCloud& pc=PointCloudCollisionData();
+      res = AnyCollisionGeometry3D(Meshing::PointCloud3D());
+      res.InitCollisionData();
+      ::ExtractROI(pc,bb,res.PointCloudCollisionData(),flags);
+      res.AsPointCloud() = res.PointCloudCollisionData();
+      res.currentTransform = res.PointCloudCollisionData().currentTransform;
+      res.collisionData = AnyValue();
+      return true;
+    }
+  case Group:
+    {
+      const vector<AnyGeometry3D> &items = AsGroup();
+      vector<AnyGeometry3D> converted(items.size());
+      for (size_t i = 0; i < items.size(); i++)
+        if(!items[i].ExtractROI(bb, res, flags)) return false;
+      res = AnyCollisionGeometry3D(items);
+      return true;
+    }
+  default:
+    FatalError("Unhandled type?");
+    return false;
+  }
+}
+
+bool AnyCollisionGeometry3D::ExtractROI(const Box3D& bb,AnyCollisionGeometry3D& res,int flags) const
+{
+  if(collisionData.empty()) { //fall back to non-accelerated ROI
+    RigidTransform Tinv;
+    Tinv.setInverse(currentTransform);
+    Box3D blocal;
+    blocal.setTransformed(bb,Tinv);
+    if(!AnyGeometry3D::ExtractROI(blocal,res,flags)) return false;
+    res.currentTransform = currentTransform;
+    res.collisionData = AnyValue();
+    return true;
+  }
+
+  switch(type)
+  {
+  case Primitive:
+  case ConvexHull:
+  case ImplicitSurface:
+    return false;
+  case TriangleMesh:
+    {
+      const CollisionMesh& mesh=TriangleMeshCollisionData();
+      res = AnyCollisionGeometry3D(Meshing::TriMesh());
+      res.InitCollisionData();
+      ::ExtractROI(mesh,bb,res.TriangleMeshCollisionData(),flags);
+      res.AsTriangleMesh() = res.TriangleMeshCollisionData();
+      res.currentTransform = res.TriangleMeshCollisionData().currentTransform;
+      res.collisionData = AnyValue();
+      return true;
+    }
+  case PointCloud:
+    {
+      const CollisionPointCloud& pc=PointCloudCollisionData();
+      res = AnyCollisionGeometry3D(Meshing::PointCloud3D());
+      res.InitCollisionData();
+      ::ExtractROI(pc,bb,res.PointCloudCollisionData(),flags);
+      res.AsPointCloud() = res.PointCloudCollisionData();
+      res.currentTransform = res.PointCloudCollisionData().currentTransform;
+      res.collisionData = AnyValue();
+      return true;
+    }
+  case Group:
+    {
+      const vector<AnyGeometry3D> &items = AsGroup();
+      vector<AnyGeometry3D> converted(items.size());
+      for (size_t i = 0; i < items.size(); i++)
+        if(!items[i].ExtractROI(bb, res, flags)) return false;
+      res = AnyCollisionGeometry3D(items);
+      return true;
+    }
+  default:
+    FatalError("Unhandled type?");
+    return false;
+  }
+}
+
+
+
+
 
 typedef AnyContactsQueryResult::ContactPair ContactPair;
 
