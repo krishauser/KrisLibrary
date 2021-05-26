@@ -4,8 +4,8 @@ language: cpp
 compiler:
   - clang
   - gcc
-# Ubuntu 14.04+ is required
-dist: trusty
+# Ubuntu 16.04+ is required
+dist: xenial
 # Build steps
 script:
   - cmake . && make
@@ -20,4 +20,6 @@ addons:
     - libglpk-dev
     - liblog4cxx10-dev
     - libglew-dev
+    - libassimp-dev
+
 
