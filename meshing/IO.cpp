@@ -1009,18 +1009,20 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
   }
   models.resize(0);
   int upAxis=2,upAxisSign=1,frontAxis=1,frontAxisSign=1,coordAxis=0,coordAxisSign=1;
-  /* for(int i=0;i<scene->mMetaData->mNumProperties;i++) {
-    printf("ASSIMP: Property %s\n",scene->mMetaData->mKeys[i].C_Str());
-  }
-  */
-  if(scene->mMetaData){
-    scene->mMetaData->Get<int>("UpAxis",upAxis);
-    scene->mMetaData->Get<int>("UpAxisSign",upAxisSign);
-    scene->mMetaData->Get<int>("FrontAxis",frontAxis);
-    scene->mMetaData->Get<int>("FrontAxisSign",frontAxisSign);
-    scene->mMetaData->Get<int>("CoordAxis",coordAxis);
-    scene->mMetaData->Get<int>("CoordAxisSign",coordAxisSign);
-  }
+  #if ASSIMP_MAJOR_VERSION>3
+    /* for(int i=0;i<scene->mMetaData->mNumProperties;i++) {
+      printf("ASSIMP: Property %s\n",scene->mMetaData->mKeys[i].C_Str());
+    }
+    */
+    if(scene->mMetaData){
+      scene->mMetaData->Get<int>("UpAxis",upAxis);
+      scene->mMetaData->Get<int>("UpAxisSign",upAxisSign);
+      scene->mMetaData->Get<int>("FrontAxis",frontAxis);
+      scene->mMetaData->Get<int>("FrontAxisSign",frontAxisSign);
+      scene->mMetaData->Get<int>("CoordAxis",coordAxis);
+      scene->mMetaData->Get<int>("CoordAxisSign",coordAxisSign);
+    }
+  #endif //ASSIMP_MAJOR_VERSION>3
   if(upAxis == frontAxis || upAxis == coordAxis || frontAxis == coordAxis) {
     LOG4CXX_WARN(KrisLibrary::logger(), "AssimpImporter: Warning, axis metadata is erroneous in " << fn << "!");
     upAxis = 2;
