@@ -9,9 +9,9 @@
 
 DECLARE_LOGGER(Geometry)
 
-//switch to brute force when # points drops below 1000
 #define DEBUG_DISTANCE_CHECKING 0
 //#define DEBUG_DISTANCE_CHECKING 1
+//switch to brute force when # points drops below 1000
 #define BRUTE_FORCE_DISTANCE_CHECKING_NPOINTS 1000
 //The bounding volume method is a bit inaccurate due to the discretization of the implicit surface. 
 //This value allows a little bit of slop in the pruning step so that more points are considered.
