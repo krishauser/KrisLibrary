@@ -30,10 +30,10 @@ DisplayListManager::DisplayListManager()
 
 DisplayListManager::~DisplayListManager()
 {
-  for(size_t i=0;i<freedDisplayLists.size();i++) {
-    glDeleteLists(freedDisplayLists[i],freedDisplayListCounts[i]);
-    gNumDisplayLists -= freedDisplayListCounts[i];
-  }
+  // for(size_t i=0;i<freedDisplayLists.size();i++) {
+  //   glDeleteLists(freedDisplayLists[i],freedDisplayListCounts[i]);
+  //   gNumDisplayLists -= freedDisplayListCounts[i];
+  // }
 }
 
 int DisplayListManager::Allocate(int count)
