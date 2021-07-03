@@ -9,7 +9,7 @@
  * @brief For a mapping f:i->fwd[i], this gets the inverse multi-mapping
  * g:j->{i|fwd[i]=j}
  */
-inline void InverseMapping(const std::vector<int>& fwd,std::vector<vector<int> >& bwd) {
+inline void InverseMapping(const std::vector<int>& fwd,std::vector<std::vector<int> >& bwd) {
   bwd.clear();
   bwd.reserve(fwd.size());
   if(fwd.empty()) return;
@@ -37,7 +37,7 @@ inline void InverseMapping(const std::vector<int>& fwd,std::vector<vector<int> >
  * The algorithm makes at most n(n+1)/2 comparisons.
  */
 template <class T,class EqFn>
-void EquivalenceMap(const std::vector<T>& x,std::vector<vector<int> >& eq,EqFn& Eq)
+void EquivalenceMap(const std::vector<T>& x,std::vector<std::vector<int> >& eq,EqFn& Eq)
 {
   int n=(int)x.size();
   UnionFind uf(n);
@@ -56,11 +56,11 @@ void EquivalenceMap(const std::vector<T>& x,std::vector<vector<int> >& eq,EqFn& 
       }
     }
   }
-  vector<int> sets;
+  std::vector<int> sets;
   uf.GetSets(sets);
   InverseMapping(sets,eq);
   //remove empty sets
-  vector<vector<int> >::iterator it,prev;
+  std::vector<std::vector<int> >::iterator it,prev;
   int i=0;
   int num=0;
   for(it=eq.begin();it!=eq.end();it++,i++) {
