@@ -65,6 +65,8 @@ struct TriMesh
   ///@name Calculations
   //@{
   bool IsValid() const;
+  //returns true if every edge of a triangle is shared by two triangles
+  bool IsWatertight() const;
   void GetAABB(Vector3& bmin, Vector3& bmax) const;
   //returns the closest/collided triangle
   int ClosestPoint(const Vector3& pt,Vector3& cp) const;
