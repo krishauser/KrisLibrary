@@ -116,6 +116,7 @@ void RobotLink3D::GetJacobian(Real qi,const Vector3& p, Vector3& Jo, Vector3& Jp
       d = p - T_World.t;
       T_World.R.mul(w,wworld);
       Jp = cross(wworld,d);
+      Jo = wworld;
     }
     break;
   case Prismatic:
