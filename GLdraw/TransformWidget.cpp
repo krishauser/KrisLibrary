@@ -155,6 +155,14 @@ void TransformWidget::Drag(int dx,int dy,Camera::Viewport& viewport)
   else if(hoverItem == 0) {
     Vector3 v;
     viewport.getMovementVectorAtDistance((float)dx, (float)dy, (float)clickDistance, v);
+    //apply constraints, if enabled
+    if(!enableTranslationAxes[0] && !enableTranslationAxes[1] && !enableTranslationAxes[2]) {
+    }
+    else {
+      if(!enableTranslationAxes[0]) v.x=0;
+      if(!enableTranslationAxes[1]) v.y=0;
+      if(!enableTranslationAxes[2]) v.z=0;
+    }
     T.t += v;
   }
   else if(hoverItem <= 3) { //translation
