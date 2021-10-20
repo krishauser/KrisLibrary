@@ -4,9 +4,6 @@
 # - KRISLIBRARY_DEP_LIBRARIES
 # - KRISLIBRARY_DEP_DEFINITIONS
 
-#turns off warning for newer versions of CMake
-#cmake_policy(SET CMP0074 NEW)
-
 IF(NOT KRISLIBRARY_ROOT)
   SET(KRISLIBRARY_ROOT "${CMAKE_SOURCE_DIR}/.."
      CACHE PATH
@@ -25,6 +22,7 @@ MESSAGE(STATUS "Using compiler ${CMAKE_CXX_COMPILER}")
 if(CMAKE_VERSION VERSION_LESS "3.1.0")
   MESSAGE("Old version of CMAKE - can't check compiler")
 else(CMAKE_VERSION VERSION_LESS "3.1.0")
+  cmake_policy(SET CMP0074 NEW)
   include(CheckCXXCompilerFlag) 
   CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11) 
 

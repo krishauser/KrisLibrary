@@ -56,7 +56,7 @@ ELSE(WIN32)
   
   #do the find_package call...
   include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(KRISLIBRARY "Could not find KrisLibrary " KRISLIBRARY_INCLUDE_DIR KRISLIBRARY_LIBRARY)
+  find_package_handle_standard_args(KrisLibrary "Could not find KrisLibrary " KRISLIBRARY_INCLUDE_DIR KRISLIBRARY_LIBRARY)
 ENDIF(WIN32)
 
 SET(KRISLIBRARY_INCLUDE_DIRS ${KRISLIBRARY_INCLUDE_DIRS} ${KRISLIBRARY_INCLUDE_DIR})
