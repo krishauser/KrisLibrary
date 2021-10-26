@@ -180,6 +180,33 @@ void RobotKinematics3D::UpdateFrames()
   }
 }
 
+void RobotKinematics3D::ChangeConfig(const Config& q_new)
+{
+  Assert(q_new.n == (int)links.size());
+  Frame3D Ti;
+  vector<bool> changed(q.n,false);
+  for(size_t i=0;i<links.size();i++) {
+    if(q[i] != q_new[i]) {
+      changed[i] = true;
+      q[i] = q_new[i];
+    }
+    else if(parents[i] >= 0) {
+      changed[i] = changed[parents[i]];
+    }
+    if(changed[i]) {
+      RobotLink3D& li = links[i];
+      li.GetLocalTransform(q(i),Ti);
+      int pi=parents[i];
+      if(pi==-1)
+        li.T_World.mul(li.T0_Parent,Ti);
+      else {
+        li.T_World.mul(links[pi].T_World,li.T0_Parent);
+        li.T_World*=Ti;
+      }
+    }
+  }
+}
+
 void RobotKinematics3D::UpdateSelectedFrames(int link,int base)
 {
   Frame3D Ti;

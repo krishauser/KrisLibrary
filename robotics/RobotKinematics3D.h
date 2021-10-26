@@ -52,6 +52,11 @@ public:
   void UpdateSelectedFrames(int link,int root=-1);
   /// sets the current config q and updates frames
   void UpdateConfig(const Config& q);
+  /// modifies frames only for the components of q that are different + their
+  /// descendants.  Slightly slower (~10%-20%) than UpdateConfig if all frames
+  /// are updated, can be significantly (~50%-80%) faster if only a few frames
+  /// are updated.
+  void ChangeConfig(const Config& q);
 
   /// returns true if q is within joint limits
   bool InJointLimits(const Config& q) const;
