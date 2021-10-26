@@ -31,6 +31,7 @@ struct ArrayMapping
   inline void Map(const A& x,A& mapx) const;
   template <class A>
   inline void InvMap(const A& mapx,A& x) const;  
+  inline bool InDomain(int j) const;
 
   std::vector<int> mapping;    
   int imax;
@@ -63,6 +64,16 @@ int ArrayMapping::InvMap(int imap) const
       if(mapping[i] == imap) return (int)i;
     abort();
     return -1;
+  }
+}
+
+bool ArrayMapping::InDomain(int j) const
+{
+  if(IsOffset()) {
+    return j >= offset && j < offset+imax;
+  }
+  else {
+    return std::find(mapping.begin(),mapping.end(),j) != mapping.end();
   }
 }
 
