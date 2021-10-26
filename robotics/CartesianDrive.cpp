@@ -273,7 +273,7 @@ Real CartesianDriveSolver::Drive(const Config& qcur,const vector<Vector3>& drive
 
     //now advance the driven transforms
     if(links.size()==1)
-      robot->UpdateSelectedFrames(links[0]);
+      robot->UpdateUpstreamFrames(links[0]);
     else
       robot->UpdateFrames();
     vector<RigidTransform> achievedTransforms(links.size());

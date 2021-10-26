@@ -48,8 +48,13 @@ public:
 
   /// based on the values in q, update the frames T
   void UpdateFrames();
-  /// based on the values in q, update the frames of link T up to the root
-  void UpdateSelectedFrames(int link,int root=-1);
+  /// based on the values in q, update the frames of the link up to the root
+  void UpdateUpstreamFrames(int link,int root=-1);
+  /// based on the values in q, update the frames of the link up to the root
+  /// Deprecated! Use UpdateUpstreamFrames going forward
+  void UpdateSelectedFrames(int link,int root=-1) { UpdateUpstreamFrames(link,root); }
+  /// based on the values in q, update the frames of the link down to children
+  void UpdateDownstreamFrames(int link);
   /// sets the current config q and updates frames
   void UpdateConfig(const Config& q);
   /// modifies frames only for the components of q that are different + their

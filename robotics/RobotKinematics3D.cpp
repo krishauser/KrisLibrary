@@ -207,7 +207,7 @@ void RobotKinematics3D::ChangeConfig(const Config& q_new)
   }
 }
 
-void RobotKinematics3D::UpdateSelectedFrames(int link,int base)
+void RobotKinematics3D::UpdateUpstreamFrames(int link,int base)
 {
   Frame3D Ti;
   vector<int> updlinks;
@@ -228,6 +228,29 @@ void RobotKinematics3D::UpdateSelectedFrames(int link,int base)
     else {
       li.T_World.mul(links[pi].T_World,li.T0_Parent);
       li.T_World*=Ti;
+    }
+  }
+}
+
+void RobotKinematics3D::UpdateDownstreamFrames(int link)
+{
+  Assert(link >= 0 && link < (int)links.size());
+  Frame3D Ti;
+  vector<bool> updated((int)links.size()-link,false);
+  for(size_t k=0;k<updated.size();k++) {
+    int i = (int)k+link;
+    if(k==0 || (parents[i]>=0 && updated[parents[i]-link])) {
+      updated[i-link] = true;
+      
+      RobotLink3D& li = links[i];
+      li.GetLocalTransform(q(i),Ti);
+      int pi=parents[i];
+      if(pi==-1)
+        li.T_World.mul(li.T0_Parent,Ti);
+      else {
+        li.T_World.mul(links[pi].T_World,li.T0_Parent);
+        li.T_World*=Ti;
+      }
     }
   }
 }
