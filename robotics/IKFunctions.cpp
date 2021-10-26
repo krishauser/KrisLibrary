@@ -9,6 +9,7 @@
 #include <math3d/misc.h>
 #include <math3d/basis.h>
 #include <iostream>
+#include <sstream>
 #include <set>
 using namespace std;
 
@@ -811,6 +812,51 @@ void RobotIKFunction::UseCOM(const Vector2& comGoal)
   functions.push_back(make_shared<RobotCOMFunction>(robot,comGoal,activeDofs));
 }
 
+void RobotIKFunction::UseAffineConstraint(const std::vector<int>& links,const std::vector<Real>& coeffs,Real value)
+{
+  functions.push_back(make_shared<RobotAffineConstraintFunction>(robot,links,coeffs,value,activeDofs));
+}
+
+void RobotIKFunction::UseAffineConstraint(const std::vector<int>& links,const std::vector<Real>& scaling,const std::vector<Real>& offset)
+{
+  vector<int> used;
+  vector<int> unused;
+  for(size_t j=0;j<links.size();j++) {
+    if(activeDofs.InDomain(links[j])) 
+      used.push_back(j);
+    else
+      unused.push_back(j);
+  }
+  if(used.size()==0) return; //nothing to be constrained
+  vector<int> clinks(2);
+  vector<Real> coeffs(2);
+  Real value;
+  for(size_t j=0;j+1<used.size();j++) {
+    int a=used[j];
+    int b=used[j+1];
+    clinks[0] = links[a];
+    clinks[1] = links[b];
+    coeffs[0] = scaling[b];
+    coeffs[1] = -scaling[a];
+    value = scaling[a]*offset[b] - scaling[b]*offset[a];
+    UseAffineConstraint(clinks,coeffs,value);
+  }
+  clinks.resize(1);
+  coeffs.resize(1);
+  for(size_t j=0;j<unused.size();j++) {
+    int a=unused[j];
+    int b=used[0];
+    clinks[0] = links[b];
+    //q[a] = coeffs[0]*q[clinks[0]] - value
+    //v = q[b]/scaling[b]-offset[b]/scaling[b]
+    //q[a] = scaling[a]*v + offset[a] =>
+    //q[a] = scaling[a]/scaling[b]*q[b] + offset[a] - offset[b]*scaling[a]/scaling[b]
+    coeffs[0] = scaling[a]/scaling[b];
+    value = -offset[a] + offset[b]*scaling[a]/scaling[b];
+    determinedDofs[links[a]]= make_shared<RobotAffineConstraintFunction>(robot,clinks,coeffs,value,activeDofs);
+  }
+}
+
 void RobotIKFunction::GetState(Vector& x) const
 {
   Assert(x.n == activeDofs.Size());
@@ -820,15 +866,22 @@ void RobotIKFunction::GetState(Vector& x) const
 void RobotIKFunction::SetState(const Vector& x) const
 {
   Assert(x.n == (int)activeDofs.Size());
-  activeDofs.Map(x,robot.q);
-  if(activeDofs.IsOffset())
-    robot.UpdateFrames();
-  else {
-    robot.UpdateFrames();
-    //TODO: figure out all the intermediate frames that might be affected
-    //for(size_t i=0;i<activeDofs.mapping.size();i++) 
-    //robot.UpdateSelectedFrames(activeDofs.mapping[i],activeDofs.mapping[i]);
+  if(x.n*2 < robot.q.n) { // save some time if only a few DOF are updated
+    Config qnew = robot.q;
+    activeDofs.Map(x,qnew);
+    for(auto i:determinedDofs)
+      qnew[i.first] = i.second->Eval_i(x,0);
+    robot.ChangeConfig(qnew);
   }
+  else {
+    activeDofs.Map(x,robot.q);
+    for(auto i:determinedDofs)
+      robot.q[i.first] = i.second->Eval_i(x,0);
+    robot.UpdateFrames();
+  }
+  //TODO: figure out all the intermediate frames that might be affected
+  //for(size_t i=0;i<activeDofs.mapping.size();i++) 
+  //robot.UpdateSelectedFrames(activeDofs.mapping[i],activeDofs.mapping[i]);
 }
 
 void RobotIKFunction::PreEval(const Vector& x)
@@ -837,6 +890,81 @@ void RobotIKFunction::PreEval(const Vector& x)
   CompositeVectorFieldFunction::PreEval(x);
 }
 
+
+RobotAffineConstraintFunction::RobotAffineConstraintFunction(const RobotKinematics3D& _robot,
+      const std::vector<int>& _links,
+      const std::vector<Real>& _coeffs,
+      Real _value,
+      const ArrayMapping& _activeDofs)
+  :activeDofs(_activeDofs)
+{
+  Assert(_links.size()==_coeffs.size());
+  indices.reserve(_links.size());
+  coeffs.reserve(_links.size());
+  value = _value;
+  for(size_t i=0;i<_links.size();i++) {
+    if(activeDofs.InDomain(_links[i])) {
+      indices.push_back(activeDofs.InvMap(_links[i]));
+      coeffs.push_back(_coeffs[i]);
+    }
+    else {  //not in active set, consider fixed
+      value -= _robot.q[i]*_coeffs[i];
+    }
+  }
+  if(indices.empty()) {
+    LOG4CXX_WARN(KrisLibrary::logger(),"Affine IK constraint has no valid entries in active DOFs");
+  }
+}
+int RobotAffineConstraintFunction::GetDOF(int dim) const
+{
+  return activeDofs.Map(dim);
+}
+std::string RobotAffineConstraintFunction::Label() const
+{
+  std::stringstream ss;
+  ss<<"Affine ";
+  for(size_t i=0;i<indices.size();i++)
+    ss<<indices[i]<<" ";
+  return ss.str();
+}
+std::string RobotAffineConstraintFunction::Label(int i) const
+{
+  return Label();
+}
+void RobotAffineConstraintFunction::Eval(const Vector& x, Vector& r)
+{
+  Assert(r.n == 1);
+  r[0] = Eval_i(x,0);
+}
+Real RobotAffineConstraintFunction::Eval_i(const Vector& x, int i)
+{
+  Assert(x.n == activeDofs.Size());
+  Real rhs = 0;
+  for(size_t j=0;j<indices.size();j++)
+    rhs += coeffs[j]*x[indices[j]];
+  return rhs - value;
+}
+
+void RobotAffineConstraintFunction::Jacobian(const Vector& x, Matrix& J)
+{
+  Assert(J.m == 1);
+  Assert(J.n == x.n);
+  Vector v;
+  J.getRowRef(0,v);
+  Jacobian_i(x,0,v);
+}
+
+void RobotAffineConstraintFunction::Jacobian_i(const Vector& x, int i, Vector& Ji)
+{
+  Ji.setZero();
+  for(size_t j=0;j<indices.size();j++)
+    Ji[indices[j]] = coeffs[j];
+}
+
+void RobotAffineConstraintFunction::Hessian_i(const Vector& x,int i,Matrix& Hi)
+{
+  Hi.setZero();
+}
 
 
 

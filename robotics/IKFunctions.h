@@ -35,9 +35,17 @@ struct RobotIKFunction : public CompositeVectorFieldFunction
   RobotIKFunction(RobotKinematics3D&);
   ~RobotIKFunction();
 
+  ///Applies multiple IK constraints
   void UseIK(const std::vector<IKGoal>& g);
+  ///Applies an IK constraint
   void UseIK(const IKGoal& g);
+  ///Applies a constraint com(q) = comGoal
   void UseCOM(const Vector2& comGoal);
+  ///Applies an affine constraint q[links]^T coeffs = value. Warning: activeDofs
+  ///must be finalized before this is called.
+  void UseAffineConstraint(const std::vector<int>& links,const std::vector<Real>& coeffs,Real value);
+  ///Applies an affine constraint q[links[i]] = scaling[i] * v + offsets[i] for an unknown parameter v
+  void UseAffineConstraint(const std::vector<int>& links,const std::vector<Real>& scaling,const std::vector<Real>& offsets);
   void Clear();
 
   void SetState(const Vector& x) const;
@@ -48,6 +56,7 @@ struct RobotIKFunction : public CompositeVectorFieldFunction
 
   ArrayMapping activeDofs;
   //vector<Real> scaleDofs; TODO? enable scaling of dofs
+  std::map<int,std::shared_ptr<VectorFieldFunction> > determinedDofs;
 };
 
 /** @brief A Newton-Raphson robot IK solver.
@@ -219,6 +228,30 @@ struct RobotCOMFunction : public VectorFieldFunction
   Real mtotal;
   DirtyData<Matrix> Hx;
   DirtyData<Matrix> Hy;
+};
+
+struct RobotAffineConstraintFunction : public VectorFieldFunction
+{
+  RobotAffineConstraintFunction(const RobotKinematics3D& robot,
+      const std::vector<int>& links,
+      const std::vector<Real>& coeffs,
+      Real value,
+      const ArrayMapping& activeDofs);
+  int GetDOF(int dim) const;
+  virtual std::string Label() const;
+  virtual std::string Label(int i) const;
+  virtual int NumDimensions() const { return 1; }
+  virtual void PreEval(const Vector& x) {}
+  virtual void Eval(const Vector& x, Vector& r);
+  virtual Real Eval_i(const Vector& x, int i);
+  virtual void Jacobian(const Vector& x, Matrix& J);
+  virtual void Jacobian_i(const Vector& x, int i, Vector& Ji);
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+
+  std::vector<int> indices;
+  std::vector<Real> coeffs;
+  Real value;
+  const ArrayMapping& activeDofs;
 };
 
 /// Returns false if the goals a and b cannot be mutually reached because
