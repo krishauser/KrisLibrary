@@ -1014,6 +1014,7 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
       printf("ASSIMP: Property %s\n",scene->mMetaData->mKeys[i].C_Str());
     }
     */
+    /* //some versions of assimp > 3 don't have mMetaData... this doesn't appear to be helpful anyways so ¯\_(ツ)_/¯
     if(scene->mMetaData){
       scene->mMetaData->Get<int>("UpAxis",upAxis);
       scene->mMetaData->Get<int>("UpAxisSign",upAxisSign);
@@ -1022,6 +1023,7 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
       scene->mMetaData->Get<int>("CoordAxis",coordAxis);
       scene->mMetaData->Get<int>("CoordAxisSign",coordAxisSign);
     }
+    */
   #endif //ASSIMP_MAJOR_VERSION>3
   if(upAxis == frontAxis || upAxis == coordAxis || frontAxis == coordAxis) {
     LOG4CXX_WARN(KrisLibrary::logger(), "AssimpImporter: Warning, axis metadata is erroneous in " << fn << "!");
