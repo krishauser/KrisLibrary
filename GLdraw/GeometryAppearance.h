@@ -33,7 +33,7 @@ void drawFacesWorld(const Geometry::AnyCollisionGeometry3D& geom);
 ///draw the expansion of the collision geometry, in its local coordinates
 void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Math::Real p=-1);
 
-/** @brief A class for coloring, texturing, and drawing meshes in OpenGL.
+/** @brief A class for coloring, texturing, and drawing geometries in OpenGL.
  *
  * GL display lists are created on first DrawGL call.  This makes subsequent
  * DrawGL calls very fast.  If you change the overall face color or vertex
@@ -45,16 +45,31 @@ void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Math::Real p=-1);
  * bit weird.  If you use the assignment operator a = b where a is cached
  * and b is not, then a's display lists will be clobbered, leading to 
  * severe performance drops!  If this isn't what you intended, then
- * you should use the CopyMaterial method.  
- *
+ * you should use the CopyMaterial method. 
+ * 
  * Keep that in mind if you are, e.g., assigning vectors of
  * GeometryAppearances.
+ * 
+ * TriangleMeshes are drawn as faces, edges, and/or vertices depending on
+ * which elements are enabled.
+ * 
+ * GeometricPrimitives are converted to triangle meshes and drawn as meshes.
+ * 
+ * PointClouds, if unstructured, are drawn as points.  If structured, they
+ * are drawn as meshes.
+ * 
+ * ImplicitSurface geometries are extracted using marching cubes at the
+ * 0 level set.
+ * 
+ * Occupancy grid geometries are drawn as ImplicitSurfaces for now. 
+ * TODO: Draw as density maps / voxel grids.
+ *
  */
 class GeometryAppearance
 {
  public:
   enum Element { ALL, VERTICES, EDGES, FACES, SILHOUETTE, ALL_TRANSPARENT, ALL_OPAQUE };
-
+  
   GeometryAppearance();
   ///This copies over the "material" information but doesn't change the display lists (if possible)
   void CopyMaterial(const GeometryAppearance& rhs);
@@ -104,20 +119,40 @@ class GeometryAppearance
   GLColor specularColor;
   ///Optional: set to non-null if you want to texture the object
   std::shared_ptr<Image> tex1D,tex2D;
-  ///If true, the texture will wrap.  Default false
-  bool texWrap; 
+  bool texWrap;            ///Optional: if true, texture will wrap
+  bool texFilterNearest;   ///Optional: if true, texture will not be interpolated (i.e., will look blocky)
+
   ///Optional: per-element texture mapping coordinates (up to 2D)
   std::vector<Math3D::Vector2> texcoords;
-  ///Optional: linear texture generation coefficients for S and T coordinates
+  ///Optional: linear texture generation coefficients.
+  ///
+  ///E.g., for 2D, set texgen.size()==2, and the texcoords (S,T) will be
   ///S = c[0]^T p (p in homogeneous coordinates)
   ///T = c[1]^T p
+  ///
+  ///For projection mapping, the R and Q elements should be set.  The Q
+  ///coordinate determines the homogeneous coordinate, and should be 
+  ///set to [vx vy vz -ofs] with (vx,vy,vz) the viewing direction and
+  ///ofs the dot product of the viewing direction and origin.
   std::vector<Math3D::Vector4> texgen;
+  ///Optional: if texture generation is used, you can specify world coordinates
+  ///rather than object coordinates (default) by setting this to true.
+  ///World coordinates are used for projection mapping.
+  ///
+  ///If an AnyCollisionGeometry is drawn, the object's inverse transform
+  ///is performed before this one.  Otherwise, this transform is interpreted
+  ///as being relative to the object coordinates. 
+  std::shared_ptr<Math3D::RigidTransform> texgenEyeTransform;
   ///Optional: draw meshes with a crease if the angle between triangles is
   ///greater than this threshold, in radians (default 0, indicating disabled)
   float creaseAngle;
   ///Optional: draw meshes with a silhouette outline (default 0, indicating disabled)
   float silhouetteRadius;
   GLColor silhouetteColor;
+  ///Optional: for OccupancyGrids, the piecewise-linear map from density values to
+  ///colors.  If not set, goes from clear to faceColor.
+  std::vector<float> densityGradientKeypoints;
+  std::vector<GLColor> densityGradientColors;
   
   ///Temporary: Mesh computed for implicit surfaces, point clouds, silhouettes
   std::shared_ptr<Meshing::TriMesh> tempMesh,tempMesh2;
