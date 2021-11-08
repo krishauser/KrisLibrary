@@ -199,6 +199,15 @@ void ConvexHull3D::SetPoint(const Vector3& a) {
   shapeHandle = make_shared<ShapeHandleContainer>(DT_NewPoint(data));
 }
 
+void ConvexHull3D::SetLineSegment(const Segment3D& s) {
+  type = LineSegment;
+  data = s;
+  DT_Vector3 src,dest;
+  s.a.get(src);
+  s.b.get(dest);
+  shapeHandle = make_shared<ShapeHandleContainer>(DT_NewLineSegment(src,dest));
+}
+
 void ConvexHull3D::SetPoints(const Vector& a) {
   int asize = a.size();
   std::vector<double> points;
@@ -434,6 +443,11 @@ const ConvexHull3D::PointData& ConvexHull3D::AsPoint() const {
   return *AnyCast<PointData>(&this->data);
 }
 
+const ConvexHull3D::LineSegmentData& ConvexHull3D::AsLineSegment() const {
+  Assert(type == LineSegment);
+  return *AnyCast<LineSegmentData>(&this->data);
+}
+
 const ConvexHull3D::HullData& ConvexHull3D::AsHull() const {
   Assert(type == Hull);
   return *AnyCast<HullData>(&this->data);
@@ -477,6 +491,8 @@ GeometricPrimitive3D ConvexHull3D::GetPrimitive(int elem) const
   } 
   else if(type == Point)
     return GeometricPrimitive3D(AsPoint());
+  else if(type == LineSegment)
+    return GeometricPrimitive3D(AsLineSegment());
   else
     FatalError("Can't get primitive of this type yet");
   return GeometricPrimitive3D();
@@ -520,7 +536,7 @@ bool CollisionConvexHull3D::Contains(const Vector3& pnt) const
   return Collides(ccpt);
 }
 
-bool CollisionConvexHull3D::Collides(CollisionConvexHull3D& geometry, Vector3* common_point) const
+bool CollisionConvexHull3D::Collides(const CollisionConvexHull3D& geometry, Vector3* common_point) const
 {
   DT_SetAccuracy((DT_Scalar)1e-6);
   DT_SetTolerance((DT_Scalar)(1e-6));
@@ -556,7 +572,7 @@ Real CollisionConvexHull3D::ClosestPoint(const Vector3& pnt,Vector3& cp,Vector3&
 }
 
 // compute the closest points between two convexhull3d with collision data and store results somewhere
-Real CollisionConvexHull3D::ClosestPoints(CollisionConvexHull3D& g, Vector3& cp, Vector3& direction) const {
+Real CollisionConvexHull3D::ClosestPoints(const CollisionConvexHull3D& g, Vector3& cp, Vector3& direction) const {
   double dist;
   std::tie(dist, cp, direction) = dist_func(this->objectHandle->data, g.objectHandle->data);
   // change direction based on distance
