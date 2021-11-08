@@ -1,6 +1,8 @@
-#include <KrisLibrary/Logger.h>
 #include "CollisionMesh.h"
 #include "PenetrationDepth.h"
+#include "GridSubdivision.h"
+#include "Octree.h"
+#include <KrisLibrary/Logger.h>
 #include <math3d/clip.h>
 #include <iostream>
 using namespace Meshing;
@@ -29,6 +31,11 @@ DECLARE_LOGGER(Geometry)
 
 namespace Geometry {
 
+enum {
+  CollisionDataHintFast=0x01,     
+  CollisionDataHintTemporallyCoherent=0x02,
+  CollisionDataHintGridlike=0x04
+};
 
 void RigidTransformToPQP(const RigidTransform& f,PQP_REAL R[3][3],PQP_REAL T[3])
 {
@@ -48,7 +55,13 @@ void PQPToRigidTransform(const PQP_REAL R[3][3],const PQP_REAL T[3],RigidTransfo
   }
 }
 
-void ConvertTriToPQP(const TriMesh& tri, PQP_Model& pqp)
+struct OctreeToBVHData
+{
+  vector<int> children;
+  int bv;
+};
+
+void ConvertTriToPQP(const TriMesh& tri, PQP_Model& pqp,int hints)
 {
   PQP_REAL p1[3],p2[3],p3[3];
 
@@ -62,6 +75,140 @@ void ConvertTriToPQP(const TriMesh& tri, PQP_Model& pqp)
     p3[0] = v3.x;     p3[1] = v3.y;     p3[2] = v3.z; 
     pqp.AddTri(p1,p2,p3,i);
   }
+  if(hints & CollisionDataHintFast) {
+    if(hints & CollisionDataHintGridlike) {
+      //axis aligned BVs
+      Math3D::AABB3D bb;
+      tri.GetAABB(bb.bmin,bb.bmax);
+      OctreePointSet octree(bb);
+      Real third = 1.0/3.0;
+      for(size_t i=0;i<tri.tris.size();i++) {
+        const Vector3& v1 = tri.TriangleVertex(i,0);
+        const Vector3& v2 = tri.TriangleVertex(i,1);
+        const Vector3& v3 = tri.TriangleVertex(i,2);
+        Vector3 c = (v1+v2+v3)*third;
+        octree.Add(c,(int)i);
+      }
+      pqp.b = new BV[2*pqp.num_tris - 1];
+      pqp.num_bvs_alloced = 2*pqp.num_tris - 1;
+      pqp.num_bvs = 0;
+      for(int i=0;i<pqp.num_bvs_alloced;i++) {
+        Midentity(pqp.b[i].R);
+      }
+      int nn=octree.NumNodes();
+      int nbv = 0;
+      vector<int> octree_node_to_pqp(nn,-1);
+      octree_node_to_pqp[0] = 0;
+      for(int i=0;i<nn;i++) {
+        //create a node
+        const auto& on = octree.Node(i);
+        vector<int> tris;
+        if(octree.IsLeaf(on)) {
+          octree.GetPointIDs(on,tris);
+          if(tris.empty()) continue;   //empty leaf node, skip
+        }
+        auto& bv = pqp.b[octree_node_to_pqp[i]];
+        if(tris.size() == 1) {
+          bv.first_child = -(tris[0]+1);
+          bv.FitToTris(bv.R,&pqp.tris[tris[0]],1);
+          nbv += 1;
+        }
+        else if(tris.size() > 1) {
+          //coincident triangle centroids create new children
+          Assert(nbv+tris.size()*2-2 <= pqp.num_bvs_alloced);
+          bv.first_child = nbv;
+          for(size_t j=0;j<tris.size();j++) {
+            pqp.b[nbv].first_child = -(tris[j]+1);
+            pqp.b[nbv].FitToTris(bv.R,&pqp.tris[tris[j]],1);
+            if(j+2 < tris.size()) { //allocate new non-leaf node
+              pqp.b[nbv+1].first_child = nbv+2; 
+              nbv += 2;
+            }
+            else
+              nbv += 1; ///just use last leaf node for j+1
+          }
+        }
+        else {
+          //non-leaf node: allocate new children
+          vector<int> validChildren;
+          for(int j=0;j<8;j++) {
+            int c=on.childIndices[j];
+            if(octree.IsLeaf(octree.Node(c))) {
+              octree.GetPointIDs(c,tris);
+              if(tris.size() > 0) 
+                validChildren.push_back(j);
+            }
+            else 
+              validChildren.push_back(j);
+          }
+          Assert(!validChildren.empty());
+          
+          list<OctreeToBVHData> data;
+          OctreeToBVHData root,c1,c2;
+          root.children = validChildren;
+          root.bv = octree_node_to_pqp[i];
+          data.push_back(root);
+          while(data.empty()) {
+            root = data.front();
+            data.pop_front();
+            if(root.children.size()==1) {
+              octree_node_to_pqp[root.children[0]] = root.bv;
+              continue;  //done recursing this branch
+            }
+            bool xlo=false,xhi=false;
+            bool ylo=false,yhi=false;
+            bool zlo=false,zhi=false;
+            for(auto c: root.children) {
+              if(c&0x4) xhi=true;
+              else xlo=true;
+              if(c&0x2) yhi=true;
+              else ylo=true;
+              if(c&0x1) zhi=true;
+              else zlo=true;
+            }
+            int axis = 0;
+            if(xlo && xhi) axis = 0x4;
+            else if(ylo && yhi) axis = 0x2;
+            else if(zlo && zhi) axis = 0x1;
+            Assert(axis != 0);
+            //split by chosen axis
+            pqp.b[root.bv].first_child = nbv;
+            c1.bv = nbv;
+            c2.bv = nbv+1;
+            for(auto c: root.children) {
+              if(c&axis) c1.children.push_back(c);
+              else c2.children.push_back(c);
+            }
+            data.push_back(c1);
+            data.push_back(c2);
+            nbv += 2;
+          }
+        }
+      }
+      Assert(nbv == pqp.num_bvs_alloced);
+      pqp.num_bvs = nbv;
+      //now do backwards pass filling in non-leaf node dimensions
+      for(int i=nbv-1;i>=0;i--) {
+        if(!pqp.b[i].Leaf()) {
+          //fit to children
+          auto& bv = pqp.b[i];
+          auto& c1=pqp.b[pqp.b[i].first_child];
+          auto& c2=pqp.b[pqp.b[i].first_child+1];
+          PQP_REAL pts[4][3];
+          VmV(pts[0],c1.To,c1.d);
+          VpV(pts[1],c1.To,c1.d);
+          VmV(pts[2],c2.To,c2.d);
+          VpV(pts[3],c2.To,c2.d);
+          bv.FitToPointsLocal(pts,4);
+        }
+      }
+      pqp.build_state = 2;
+      return;
+    }
+    else {
+
+    }
+  }
   pqp.EndModel();
 }
 
@@ -73,21 +220,21 @@ CollisionMesh::CollisionMesh()
   currentTransform.setIdentity();
 }
 
-CollisionMesh::CollisionMesh(const Meshing::TriMesh& mesh)
+CollisionMesh::CollisionMesh(const Meshing::TriMesh& mesh,int hints)
 {
   pqpModel=NULL;
   verts = mesh.verts;
   tris = mesh.tris;
   currentTransform.setIdentity();
-  InitCollisions();
+  InitCollisions(hints);
 }
 
-CollisionMesh::CollisionMesh(const Meshing::TriMeshWithTopology& mesh)
+CollisionMesh::CollisionMesh(const Meshing::TriMeshWithTopology& mesh,int hints)
 {
   pqpModel=NULL;
   TriMeshWithTopology::operator = (mesh);
   currentTransform.setIdentity();
-  InitCollisions();
+  InitCollisions(hints);
 }
 
 CollisionMesh::CollisionMesh(const CollisionMesh& model)
@@ -101,12 +248,12 @@ CollisionMesh::~CollisionMesh()
   SafeDelete(pqpModel)
 }
 
-void CollisionMesh::InitCollisions()
+void CollisionMesh::InitCollisions(int hints)
 {
   SafeDelete(pqpModel);
   if(!tris.empty()) {
     pqpModel = new PQP_Model;
-    ConvertTriToPQP(*this,*pqpModel);
+    ConvertTriToPQP(*this,*pqpModel,hints);
     CalcVertexNeighbors();
     CalcTriNeighbors();
   }

@@ -33,6 +33,40 @@ enum {
 };
 #endif //GEOMETRY_ROI_H
 
+/** @brief Optional flags for collision data hints.  The collision data preprocessor
+ * may use these to improve preprocessing / collision checking performance.
+ * 
+ * - CollisionDataHintFast: The preprocessor should prioritize speed rather than tightness, e.g., the data is dynamic.
+ * - CollisionDataHintTemporallyCoherent: The collision / proximity checker will be called with small changes in transform
+ * - CollisionDataHintGridlike: The elements are arranged approximately along a regular grid.
+ * 
+ */
+enum {
+  CollisionDataHintFast=0x01,     
+  CollisionDataHintTemporallyCoherent=0x02,
+  CollisionDataHintGridlike=0x04
+};
+
+
+/** @brief Types to flag how VolumeGrid values should be interpreted.
+ * 
+ * - Unknown: not marked.
+ * - ImplicitSurface: surface of the geometry correspond to the zero level set, <0 inside, >0 outside.
+ * - SDF: signed distance function. Functionally equivalent to ImplicitSurface but actually measures distance.
+ * - TSDF: truncated signed distance function.  Functionally equivalent to ImplicitSurface but estimates distance up to some threshold.
+ * - OccupancyGrid: stores the occupancy of cells, in the range [0,1].
+ * - Density: stores a density in cells. An implicit surface is defined with 0.5 - density.
+ */
+enum { 
+  VolumeGridUnknown=0,
+  VolumeGridImplicitSurface=1,
+  VolumeGridSDF=2,
+  VolumeGridTSDF=3,
+  VolumeGridOccupancyGrid=4,
+  VolumeGridDensity=5
+};
+
+
 /** @brief A class that stores any kind of geometry we've defined.
  *
  * To get the data, first check the "type" member.  Then call the appropriate
@@ -53,13 +87,14 @@ class AnyGeometry3D
    * - TriangleMesh: TriMesh
    * - PointCloud: PointCloud3D
    * - ImplicitSurface: VolumeGrid
+   * - OccupancyGrid: VolumeGrid
    * - Group: vector<AnyGeometry3D>
    */
-  enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface, ConvexHull, Group };
+  enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface, OccupancyGrid, ConvexHull, Group };
 
   AnyGeometry3D();
   AnyGeometry3D(const GeometricPrimitive3D& primitive);
-  AnyGeometry3D(const Meshing::VolumeGrid& grid);
+  AnyGeometry3D(const Meshing::VolumeGrid& grid,int value_type=VolumeGridImplicitSurface);
   AnyGeometry3D(const Meshing::TriMesh& mesh);
   AnyGeometry3D(const Meshing::PointCloud3D& pc);
   AnyGeometry3D(const vector<AnyGeometry3D>& items);
@@ -74,12 +109,14 @@ class AnyGeometry3D
   const Meshing::TriMesh& AsTriangleMesh() const;
   const Meshing::PointCloud3D& AsPointCloud() const;
   const Meshing::VolumeGrid& AsImplicitSurface() const;
+  const Meshing::VolumeGrid& AsOccupancyGrid() const;
   const ConvexHull3D& AsConvexHull() const;
   const vector<AnyGeometry3D>& AsGroup() const;
   GeometricPrimitive3D& AsPrimitive();
   Meshing::TriMesh& AsTriangleMesh();
   Meshing::PointCloud3D& AsPointCloud();
   Meshing::VolumeGrid& AsImplicitSurface();
+  Meshing::VolumeGrid& AsOccupancyGrid();
   ConvexHull3D& AsConvexHull();
   vector<AnyGeometry3D>& AsGroup();
   GLDraw::GeometryAppearance* TriangleMeshAppearanceData();
@@ -107,10 +144,13 @@ class AnyGeometry3D
   ///param is interpreted as follows, with 0 being a "reasonable" default value:
   ///- Primitive -> TriangleMesh: desired resolution of mesh
   ///- Primitive -> PointCloud: desired resolution of point cloud
+  ///- PointCloud -> OccupancyGrid: desired width of volume grid cells
   ///- TriangleMesh -> PointCloud: desired resolution of point cloud
   ///- TriangleMesh -> ImplicitSurface: desired width of volume grid cells
+  ///- TriangleMesh -> OccupancyGrid: desired width of volume grid cells
   ///- ImplicitSurface -> TriangleMesh: level set to be extracted
   ///- ImplicitSurface -> PointCloud: level set to be extracted
+  ///- OccupancyGrid -> TriangleMesh: threshold of occupancy
   bool Convert(Type restype,AnyGeometry3D& res,Real param=0) const;
   ///Re-meshes the geometry at the desired resolution, storing the result into res.
   ///
@@ -118,7 +158,8 @@ class AnyGeometry3D
   ///- Primitive, ConvexHull: ignored
   ///- TriangleMesh: desired length of triangle edges.  Refinement only.
   ///- PointCloud: desire 1 point per grid cell of width resolution.  Coarsen only.
-  ///- ImplicitSurface: new surface cell width.
+  ///- ImplicitSurface: new cell width.
+  ///- OccupancyGrid: new cell width.
   ///- Group: sent to each sub-geometry
   bool Remesh(Real resolution,AnyGeometry3D& res,bool refine=true,bool coarsen=true) const;
   ///Extracts a slice from the geometry at a given plane.  The plane is specified
@@ -159,7 +200,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   AnyCollisionGeometry3D(const GeometricPrimitive3D& primitive);
   AnyCollisionGeometry3D(const Meshing::TriMesh& mesh);
   AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc);
-  AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid);
+  AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid,int value_type=VolumeGridImplicitSurface);
   AnyCollisionGeometry3D(const AnyGeometry3D& geom);
   AnyCollisionGeometry3D(const ConvexHull3D& primitive);
   AnyCollisionGeometry3D(const vector<AnyGeometry3D>& group);
@@ -182,12 +223,14 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
   const CollisionImplicitSurface& ImplicitSurfaceCollisionData() const;
+  //const CollisionOccupancyGrid& OccupancyGridCollisionData() const;
   const CollisionConvexHull3D& ConvexHullCollisionData() const;
   const vector<AnyCollisionGeometry3D>& GroupCollisionData() const;
   RigidTransform& PrimitiveCollisionData();
   CollisionMesh& TriangleMeshCollisionData();
   CollisionPointCloud& PointCloudCollisionData();
   CollisionImplicitSurface& ImplicitSurfaceCollisionData();
+  //CollisionOccupancyGrid& OccupancyGridCollisionData();
   CollisionConvexHull3D& ConvexHullCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
   ///Performs a type conversion, also copying the active transform and collision margin.
@@ -262,6 +305,9 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///The current transform, used if the collision data is not initialized yet
   ///or the data type is Primitive / VolumeGrid.
   RigidTransform currentTransform;
+  ///A hint for initializing the collision data appropriately.  See flags starting
+  ///with CollisionDataHint.  Default 0.
+  int collisionHint;
 };
 
 /** @brief A class that stores information regarding a collision query.
