@@ -929,7 +929,10 @@ void GeometryAppearance::DrawGL(Element e)
               assert(trimesh->tris.size() == creaseMesh.tris.size());
             trimesh = &creaseMesh;
           }
-          if(timer.ElapsedTime() > 0.1) {
+          if(timer.ElapsedTime() > 0.5) {
+            LOG4CXX_INFO(KrisLibrary::logger(),"GeometryAppearance: preprocessing mesh with "<<trimesh->tris.size()<<" tris took "<<timer.ElapsedTime()<<"s, try disabling creasing and silhouettes");
+          }
+          else if(timer.ElapsedTime() > 0.1) {
             LOG4CXX_INFO(KrisLibrary::logger(),"GeometryAppearance: preprocessing mesh with "<<trimesh->tris.size()<<" tris took "<<timer.ElapsedTime()<<"s");
           }
         }
