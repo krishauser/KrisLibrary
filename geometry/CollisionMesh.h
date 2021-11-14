@@ -28,11 +28,11 @@ class CollisionMesh : public Meshing::TriMeshWithTopology
  public:
   CollisionMesh();
   CollisionMesh(const CollisionMesh& model);
-  explicit CollisionMesh(const Meshing::TriMesh& mesh,int hints=0);
-  explicit CollisionMesh(const Meshing::TriMeshWithTopology& mesh,int hints=0);
+  explicit CollisionMesh(const Meshing::TriMesh& mesh);
+  explicit CollisionMesh(const Meshing::TriMeshWithTopology& mesh);
   ~CollisionMesh();
   const CollisionMesh& operator = (const CollisionMesh& model);
-  void InitCollisions(int hints=0);
+  void InitCollisions();
   inline void UpdateTransform(const RigidTransform& f) {currentTransform = f;}
   void GetTransform(RigidTransform& f) const {f=currentTransform; }
 

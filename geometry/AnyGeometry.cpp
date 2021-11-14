@@ -1424,7 +1424,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
     collisionData = CollisionMesh(AsTriangleMesh());
     break;
   case PointCloud:
-    collisionData = CollisionPointCloud(AsPointCloud());
+    collisionData = CollisionPointCloud(AsPointCloud(),collisionHint);
     break;
   case Group:
   {
