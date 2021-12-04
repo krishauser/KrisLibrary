@@ -18,7 +18,7 @@ class DoubleIntegratorKinodynamicSpace : public KinodynamicSpace
 {
 public:
   DoubleIntegratorKinodynamicSpace(std::shared_ptr<CSpace> qspace,std::shared_ptr<CSpace> dqspace,std::shared_ptr<CSet> ddqset,Real dtmax);
-  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const std::shared_ptr<Interpolator>& path);
+  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const std::shared_ptr<Interpolator>& path) override;
   void SetVisibilityEpsilon(Real tol);
 
   Real visibilityEpsilon;
@@ -28,11 +28,11 @@ class DoubleIntegratorControlSpace : public IntegratedControlSpace
 {
 public:
   DoubleIntegratorControlSpace(const std::shared_ptr<CSet>& uset,Real dtmax);
-  virtual std::string VariableName(int i);
-  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
-  virtual void Successor(const State& x0, const ControlInput& u,State& x1);
+  virtual std::string VariableName(int i) override;
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u) override;
+  virtual void Successor(const State& x0, const ControlInput& u,State& x1) override;
 
-  virtual void Derivative(const State& x, const ControlInput& u,State& dx);
+  virtual void Derivative(const State& x, const ControlInput& u,State& dx) override;
   void EvalDynamics(const State& x0, const ControlInput& ddx,Real t,State& x1);
 };
 
@@ -46,9 +46,9 @@ public:
   DoubleIntegratorBoxBoundedSteeringFunction(const Vector& amax,const Vector& vmax);
   virtual ~DoubleIntegratorBoxBoundedSteeringFunction() {}
   void SetConfigurationBounds(const Config& qmin,const Config& qmax);
-  virtual bool IsExact() const { return true; };
-  virtual bool IsOptimal() const { return true; };
-  virtual bool Connect(const State& x,const State& y,KinodynamicMilestonePath& path);
+  virtual bool IsExact() const override { return true; };
+  virtual bool IsOptimal() const override { return true; };
+  virtual bool Connect(const State& x,const State& y,KinodynamicMilestonePath& path) override;
 
   std::vector<double> amax,vmax;
   std::vector<double> qmin,qmax;  ///< optional

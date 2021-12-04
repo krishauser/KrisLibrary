@@ -35,13 +35,21 @@ EdgePlannerPtr PerturbationCSpace::PathChecker(const Config& a,const Config& b,i
   return baseSpace->PathChecker(a+perturbations[obstacle],b+perturbations[obstacle]);
 }
 
-int PerturbationCSpace::NumObstacles() { return (int)perturbations.size(); }
+int PerturbationCSpace::NumConstraints() { return (int)perturbations.size(); }
 
-std::string PerturbationCSpace::ObstacleName(int obstacle)
+std::string PerturbationCSpace::ConstraintName(int obstacle)
 {
   char buf[64];
   snprintf(buf,64,"perturbation[%d]",obstacle);
   return buf;
+}
+
+Real PerturbationCSpace::ObstacleDistance(const Config& a) 
+{
+  Real d = Inf;
+  for(size_t i=0;i<perturbations.size();i++)
+    d = Min(d,ObstacleDistance(a,(int)i));
+  return d;
 }
 
 Real PerturbationCSpace::ObstacleDistance(const Config& a,int obstacle)
@@ -49,7 +57,7 @@ Real PerturbationCSpace::ObstacleDistance(const Config& a,int obstacle)
   return baseSpace->ObstacleDistance(Perturb(a,perturbations[obstacle]));
 }
 
-void PerturbationCSpace::Properties(PropertyMap& map) const
+void PerturbationCSpace::Properties(PropertyMap& map)
 {
   baseSpace->Properties(map);
 }

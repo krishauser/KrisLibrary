@@ -224,24 +224,24 @@ class BasicResource : public ResourceBase
   BasicResource(const T& val,const std::string& name) : ResourceBase(name),data(val) {}
   BasicResource(const T& val,const std::string& name,const std::string& fileName) : ResourceBase(name,fileName),data(val) {}
   virtual ~BasicResource() {}
-  virtual bool Load(std::istream& in) {
+  virtual bool Load(std::istream& in) override {
     in>>data;
     if(in.bad()) {
       return false;
     }
     return true;
   }
-  virtual bool Save(std::ostream& out) {
+  virtual bool Save(std::ostream& out) override {
     out<<data<<std::endl;
     return true;
   }
-  virtual bool Load(const std::string& fn) { return ResourceBase::Load(fn); }
-  virtual bool Load() { return ResourceBase::Load(); }
-  virtual bool Save(const std::string& fn) { return ResourceBase::Save(fn); }
-  virtual bool Save() { return ResourceBase::Save(); }
-  virtual const char* Type() const { return BasicResourceTypeName<T>(); }
-  virtual ResourceBase* Make() { return new BasicResource<T>; }
-  virtual ResourceBase* Copy() { return new BasicResource<T>(data,name,fileName); }
+  virtual bool Load(const std::string& fn) override { return ResourceBase::Load(fn); }
+  virtual bool Load() override { return ResourceBase::Load(); }
+  virtual bool Save(const std::string& fn) override { return ResourceBase::Save(fn); }
+  virtual bool Save() override { return ResourceBase::Save(); }
+  virtual const char* Type() const override { return BasicResourceTypeName<T>(); }
+  virtual ResourceBase* Make() override { return new BasicResource<T>; }
+  virtual ResourceBase* Copy() override { return new BasicResource<T>(data,name,fileName); }
 
   T data;
 };
@@ -312,7 +312,7 @@ class BasicArrayResource : public CompoundResourceBase
   BasicArrayResource(const std::vector<T>& val,const std::string& name) : CompoundResourceBase(name),data(val) {}
   BasicArrayResource(const std::vector<T>& val,const std::string& name,const std::string& fileName) : CompoundResourceBase(name,fileName),data(val) {}
   virtual ~BasicArrayResource() {}
-  virtual bool Load(std::istream& in) {
+  virtual bool Load(std::istream& in) override {
     size_t n;
     in>>n;
     if(in.bad()) return false;
@@ -323,7 +323,7 @@ class BasicArrayResource : public CompoundResourceBase
     }
     return true;
   }
-  virtual bool Save(std::ostream& out) {
+  virtual bool Save(std::ostream& out) override {
     out<<data.size()<<'\t';
     for(size_t i=0;i<data.size();i++) {
       out<<data[i];
@@ -332,24 +332,24 @@ class BasicArrayResource : public CompoundResourceBase
     out<<std::endl;
     return true;
   }
-  virtual bool Load(const std::string& fn) { return ResourceBase::Load(fn); }
-  virtual bool Load() { return ResourceBase::Load(); }
-  virtual bool Save(const std::string& fn) { return ResourceBase::Save(fn); }
-  virtual bool Save() { return ResourceBase::Save(); }
-  virtual bool Load(AnyCollection& c) { return c["data"].asvector(data); }
-  virtual bool Save(AnyCollection& c) { c["data"] = data; return true;}
-  virtual const char* Type() const { return BasicResourceTypeName<std::vector<T> >(); }
-  virtual ResourceBase* Make() { return new BasicArrayResource<T>; }
-  virtual ResourceBase* Copy() { return new BasicArrayResource<T>(data,name,fileName); }
+  virtual bool Load(const std::string& fn) override { return ResourceBase::Load(fn); }
+  virtual bool Load() override { return ResourceBase::Load(); }
+  virtual bool Save(const std::string& fn) override { return ResourceBase::Save(fn); }
+  virtual bool Save() override { return ResourceBase::Save(); }
+  virtual bool Load(AnyCollection& c) override { return c["data"].asvector(data); }
+  virtual bool Save(AnyCollection& c) override { c["data"] = data; return true;}
+  virtual const char* Type() const override { return BasicResourceTypeName<std::vector<T> >(); }
+  virtual ResourceBase* Make() override { return new BasicArrayResource<T>; }
+  virtual ResourceBase* Copy() override { return new BasicArrayResource<T>(data,name,fileName); }
 
   //CompoundResourceBase methods
-  virtual std::vector<std::string> SubTypes() const { return std::vector<std::string>(1,BasicResourceTypeName<T>()); }
-  virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects) {
+  virtual std::vector<std::string> SubTypes() const override { return std::vector<std::string>(1,BasicResourceTypeName<T>()); }
+  virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects) override {
     if(0==strcmp(subtype,BasicResourceTypeName<T>()))
       return Unpack(subobjects);
     return false;
   }
-  virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL) {
+  virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL) override {
     for(size_t i=0;i<subobjects.size();i++)
       if(typeid(*subobjects[i]) != typeid(BaseType)) {
 	if(errorMessage) *errorMessage = std::string("Subobject does not have type ")+std::string(BasicResourceTypeName<T>());
@@ -360,7 +360,7 @@ class BasicArrayResource : public CompoundResourceBase
       data[i] = dynamic_cast<BaseType*>(&*subobjects[i])->data;
     return true;
   }
-  virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL) {
+  virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL) override {
     subobjects.resize(data.size());
     for(size_t i=0;i<data.size();i++) {
       subobjects[i] = std::make_shared<BaseType>(data[i]);
@@ -388,17 +388,17 @@ typedef BasicArrayResource<std::string> StringArrayResource;
 class ResourceLibraryResource : public CompoundResourceBase
 {
  public:
-  virtual bool Load(const std::string& fn);
-  virtual bool Save(const std::string& fn);
-  virtual bool Load(AnyCollection& c);
-  virtual bool Save(AnyCollection& c);
-  virtual const char* Type() const { return "ResourceLibrary"; }
-  virtual ResourceBase* Make() { return new ResourceLibraryResource; }
-  virtual ResourceBase* Copy();
-  virtual std::vector<std::string> SubTypes() const;
-  virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects);
-  virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL);
-  virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL);
+  virtual bool Load(const std::string& fn) override;
+  virtual bool Save(const std::string& fn) override;
+  virtual bool Load(AnyCollection& c) override;
+  virtual bool Save(AnyCollection& c) override;
+  virtual const char* Type() const override { return "ResourceLibrary"; }
+  virtual ResourceBase* Make() override { return new ResourceLibraryResource; }
+  virtual ResourceBase* Copy() override;
+  virtual std::vector<std::string> SubTypes() const override;
+  virtual bool Extract(const char* subtype,std::vector<ResourcePtr>& subobjects) override;
+  virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL) override;
+  virtual bool Unpack(std::vector<ResourcePtr>& subobjects,bool* incomplete=NULL) override;
 
   ResourceLibrary library;
 };

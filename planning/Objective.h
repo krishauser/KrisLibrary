@@ -8,6 +8,11 @@
 class MilestonePath;
 class AnyCollection;
 
+class AddObjectiveFunctional;
+class SubObjectiveFunctional;
+class MulObjectiveFunctional;
+class DivObjectiveFunctional;
+
 /** @ingroup MotionPlanning
  * @brief A base class for objective functionals of the form
  * J[x,u] = sum_0^N-1 L(xi,ui) dt + Phi(xN)
@@ -48,6 +53,15 @@ class ObjectiveFunctionalBase
   ///Subclasses: read and write parameters to collection
   virtual bool SaveParams(AnyCollection& collection) { return false; }
   virtual bool LoadParams(AnyCollection& collection) { return false; }
+
+  AddObjectiveFunctional operator + (Real rhs);
+  AddObjectiveFunctional operator + (ObjectiveFunctionalBase& rhs);
+  SubObjectiveFunctional operator - (Real rhs);
+  SubObjectiveFunctional operator - (ObjectiveFunctionalBase& rhs);
+  MulObjectiveFunctional operator * (Real rhs);
+  MulObjectiveFunctional operator * (ObjectiveFunctionalBase& rhs);
+  DivObjectiveFunctional operator / (Real rhs);
+  DivObjectiveFunctional operator / (ObjectiveFunctionalBase& rhs);
 };
 
 /** @ingroup Planning
@@ -63,12 +77,12 @@ class CompositeObjective : public ObjectiveFunctionalBase
   ///Adds a new component.  Note: this takes ownership of the pointer.
   void Add(const std::shared_ptr<ObjectiveFunctionalBase>& obj,Real weight=1.0);
 
-  virtual const char* TypeString() { return "composite"; }
-  virtual std::string Description();
+  virtual const char* TypeString() override { return "composite"; }
+  virtual std::string Description() override;
 
-  virtual Real TerminalCost(const Vector& qend);
-  virtual Real IncrementalCost(const Interpolator* path);
-  virtual bool PathInvariant() const;
+  virtual Real TerminalCost(const Vector& qend) override;
+  virtual Real IncrementalCost(const Interpolator* path) override;
+  virtual bool PathInvariant() const override;
 
   Real norm;
   std::vector<std::shared_ptr<ObjectiveFunctionalBase> > components;
@@ -114,8 +128,8 @@ class LengthObjective : public ObjectiveFunctionalBase
  public:
   LengthObjective() {}
   virtual ~LengthObjective() {}
-  virtual const char* TypeString() { return "length"; }
-  virtual Real IncrementalCost(const Interpolator* path) { return path->Length(); }
+  virtual const char* TypeString() override { return "length"; }
+  virtual Real IncrementalCost(const Interpolator* path) override { return path->Length(); }
 };
 
 
@@ -129,8 +143,8 @@ class TimeObjective : public ObjectiveFunctionalBase
  public:
   TimeObjective(int timeIndex=0);
   virtual ~TimeObjective() {}
-  virtual const char* TypeString() { return "time"; }
-  virtual Real IncrementalCost(const Interpolator* path);
+  virtual const char* TypeString() override { return "time"; }
+  virtual Real IncrementalCost(const Interpolator* path) override;
 
   int timeIndex;
 };
@@ -144,9 +158,9 @@ class ConfigObjective : public ObjectiveFunctionalBase
   ConfigObjective(const Config& qgoal,CSpace* cspace=NULL);
   ConfigObjective(const Config& qgoal,const Vector& weights);
   virtual ~ConfigObjective() {}
-  virtual const char* TypeString() { return "config"; }
-  virtual Real TerminalCost(const Vector& qend);
-  virtual bool PathInvariant() const { return true; }
+  virtual const char* TypeString() override { return "config"; }
+  virtual Real TerminalCost(const Vector& qend) override;
+  virtual bool PathInvariant() const override { return true; }
 
   Vector qgoal,weights;
   CSpace* cspace;
@@ -168,13 +182,94 @@ class QuadraticObjective : public IntegratorObjectiveFunctional
  public:
   QuadraticObjective(int timeIndex=0);
   virtual ~QuadraticObjective() {}
-  virtual const char* TypeString() { return "quadratic"; }
-  virtual Real TerminalCost(const Vector& qend);
-  virtual Real DifferentialCost(const State& x,const ControlInput& u);
+  virtual const char* TypeString() override { return "quadratic"; }
+  virtual Real TerminalCost(const Vector& qend) override;
+  virtual Real DifferentialCost(const State& x,const ControlInput& u) override;
   
   InterpolatorPtr desiredPath;
   Math::Matrix stateCostMatrix,controlCostMatrix;
   Math::Matrix terminalCostMatrix;
+};
+
+class OpObjectiveFunctional : public ObjectiveFunctionalBase
+{
+ public:
+  OpObjectiveFunctional(ObjectiveFunctionalBase* rhs,ObjectiveFunctionalBase* lhs);
+  OpObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs);
+
+  virtual std::string OpString() const=0;
+  virtual Real Op(Real a,Real b)=0;
+
+  virtual const char* TypeString();
+  virtual std::string Description();
+
+  virtual Real IncrementalCost(const Interpolator* path) override { return Op(rhs->IncrementalCost(path),(lhs ? lhs->IncrementalCost(path) : 0.0)); }
+  virtual Real IncrementalCost(const ControlInput& u,const Interpolator* path) override { return Op(rhs->IncrementalCost(u,path),(lhs ? lhs->IncrementalCost(u,path) : 0.0)); }
+  virtual Real IncrementalCost(const KinodynamicMilestonePath& path) override { return Op(rhs->IncrementalCost(path),(lhs ? lhs->IncrementalCost(path) : 0.0)); }
+
+  virtual Real TerminalCost(const Config& qend) override { return Op(rhs->TerminalCost(qend),(lhs ? lhs->TerminalCost(qend) : lhs_const)); }
+  virtual bool PathInvariant() const override { return rhs->PathInvariant() && (lhs ? lhs->PathInvariant() : true); }
+  virtual Real PathCost(const MilestonePath& path) override { return Op(rhs->PathCost(path),(lhs ? lhs->PathCost(path) : lhs_const)); }
+  virtual Real PathCost(const KinodynamicMilestonePath& path) override { return Op(rhs->PathCost(path),(lhs ? lhs->PathCost(path) : lhs_const)); }
+
+  virtual bool SaveParams(AnyCollection& collection) override;
+  virtual bool LoadParams(AnyCollection& collection) override;
+
+  ObjectiveFunctionalBase *rhs,*lhs;
+  Real lhs_const;
+  std::string type_string,desc_string;
+};
+
+class AddObjectiveFunctional : public OpObjectiveFunctional
+{
+ public:
+  AddObjectiveFunctional(ObjectiveFunctionalBase* rhs,ObjectiveFunctionalBase* lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  AddObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  virtual std::string OpString() const  { return "+"; }
+  virtual Real Op(Real a,Real b) { return a+b; }
+};
+
+class SubObjectiveFunctional : public OpObjectiveFunctional
+{
+ public:
+  SubObjectiveFunctional(ObjectiveFunctionalBase* rhs,ObjectiveFunctionalBase* lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  SubObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  virtual std::string OpString() const  { return "-"; }
+  virtual Real Op(Real a,Real b) { return a-b; }
+};
+
+class MulObjectiveFunctional : public OpObjectiveFunctional
+{
+ public:
+  MulObjectiveFunctional(ObjectiveFunctionalBase* rhs,ObjectiveFunctionalBase* lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  MulObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  virtual std::string OpString() const  { return "*"; }
+  virtual Real Op(Real a,Real b) { return a*b; }
+};
+
+class DivObjectiveFunctional : public OpObjectiveFunctional
+{
+ public:
+  DivObjectiveFunctional(ObjectiveFunctionalBase* rhs,ObjectiveFunctionalBase* lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  DivObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
+  :OpObjectiveFunctional(rhs,lhs)
+  {}
+  virtual std::string OpString() const  { return "/"; }
+  virtual Real Op(Real a,Real b) { return a/b; }
 };
 
 

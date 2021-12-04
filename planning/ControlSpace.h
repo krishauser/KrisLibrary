@@ -136,11 +136,11 @@ public:
   enum TimeSelection { Uniform, Maximum, Biased };
 
   IntegratedControlSet(const std::shared_ptr<CSet>& base,Real dtmax);
-  virtual int NumDimensions() const;
-  virtual bool Project(Config& x);
-  virtual bool IsSampleable() const;
-  virtual void Sample(ControlInput& u);
-  virtual bool Contains(const ControlInput& u);
+  virtual int NumDimensions() const override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsSampleable() const override;
+  virtual void Sample(ControlInput& u) override;
+  virtual bool Contains(const ControlInput& u) override;
   
   TimeSelection timeSelection;
   std::shared_ptr<CSet> base;
@@ -175,9 +175,9 @@ class IntegratedControlSpace : public ControlSpace
   void SetGeodesicSpace(GeodesicSpace* space);
   void SetBaseControlSet(std::shared_ptr<CSet> baseControlSet);
   std::shared_ptr<CSet> GetBaseControlSet();
-  virtual std::string VariableName(int i);
-  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
-  virtual std::shared_ptr<CSet> GetControlSet(const Config& x);
+  virtual std::string VariableName(int i) override;
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u) override;
+  virtual std::shared_ptr<CSet> GetControlSet(const Config& x) override;
 
   //subclasses may override the following:
 
@@ -210,14 +210,14 @@ class KinematicControlSpace : public ReversibleControlSpace
   KinematicControlSpace(const std::shared_ptr<CSpace>& base,Real maxNeighborhoodRadius=0.1);
   virtual ~KinematicControlSpace() {}
 
-  virtual std::string VariableName(int i);
-  virtual std::shared_ptr<CSet> GetControlSet(const Config& x);
+  virtual std::string VariableName(int i) override;
+  virtual std::shared_ptr<CSet> GetControlSet(const Config& x) override;
 
-  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
-  virtual void Successor(const State& x0, const ControlInput& u,State& x1);
-  virtual Math::VectorFieldFunction* SuccessorNumeric();
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u) override;
+  virtual void Successor(const State& x0, const ControlInput& u,State& x1) override;
+  virtual Math::VectorFieldFunction* SuccessorNumeric() override;
 
-  virtual bool ReverseControl(const State& x0,const State& x1,ControlInput& u);
+  virtual bool ReverseControl(const State& x0,const State& x1,ControlInput& u) override;
 
   std::shared_ptr<CSpace> base;
   Real maxNeighborhoodRadius;

@@ -22,17 +22,17 @@ class GeodesicCSpaceAdaptor : public GeodesicCSpace
 {
 public:
   GeodesicCSpaceAdaptor(const std::shared_ptr<GeodesicSpace>& geodesic);
-  virtual int NumDimensions() { return geodesic->NumDimensions(); }
-  virtual int NumIntrinsicDimensions() { return geodesic->NumIntrinsicDimensions(); }
-  virtual Real Distance(const Config& x, const Config& y) { return geodesic->Distance(x,y); }
-  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out) { geodesic->Interpolate(x,y,u,out); }
-  virtual void Midpoint(const Config& x,const Config& y,Config& out) { geodesic->Interpolate(x,y,0.5,out); }
+  virtual int NumDimensions() override { return geodesic->NumDimensions(); }
+  virtual int NumIntrinsicDimensions() override { return geodesic->NumIntrinsicDimensions(); }
+  virtual Real Distance(const Config& x, const Config& y) override { return geodesic->Distance(x,y); }
+  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out) override { geodesic->Interpolate(x,y,u,out); }
+  virtual void Midpoint(const Config& x,const Config& y,Config& out) override { geodesic->Interpolate(x,y,0.5,out); }
 
-  virtual void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx) { geodesic->InterpolateDeriv(a,b,u,dx); }
-  virtual void InterpolateDerivA(const Config& a,const Config& b,Real u,const Vector& da,Vector& dx) { geodesic->InterpolateDerivA(a,b,u,da,dx); }
-  virtual void InterpolateDerivB(const Config& a,const Config& b,Real u,const Vector& db,Vector& dx) { geodesic->InterpolateDerivB(a,b,u,db,dx); }
-  virtual void InterpolateDeriv2(const Config& a,const Config& b,Real u,Vector& ddx) { geodesic->InterpolateDeriv2(a,b,u,ddx); }
-  virtual void Integrate(const Config& a,const Vector& da,Config& b) { geodesic->Integrate(a,da,b); }
+  virtual void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx) override { geodesic->InterpolateDeriv(a,b,u,dx); }
+  virtual void InterpolateDerivA(const Config& a,const Config& b,Real u,const Vector& da,Vector& dx) override { geodesic->InterpolateDerivA(a,b,u,da,dx); }
+  virtual void InterpolateDerivB(const Config& a,const Config& b,Real u,const Vector& db,Vector& dx) override { geodesic->InterpolateDerivB(a,b,u,db,dx); }
+  virtual void InterpolateDeriv2(const Config& a,const Config& b,Real u,Vector& ddx) override { geodesic->InterpolateDeriv2(a,b,u,ddx); }
+  virtual void Integrate(const Config& a,const Vector& da,Config& b) override { geodesic->Integrate(a,da,b); }
 
   std::shared_ptr<GeodesicSpace> geodesic;
 };
@@ -45,13 +45,13 @@ class CartesianCSpace : public GeodesicCSpace
 {
 public:
   CartesianCSpace(int d);
-  virtual int NumDimensions() { return d; }
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual Real Distance(const Config& x, const Config& y) { return CSpace::Distance(x,y); }
-  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out) { CSpace::Interpolate(x,y,u,out); }
-  virtual void Midpoint(const Config& x,const Config& y,Config& out) { out.add(x,y); out.inplaceMul(0.5); }
+  virtual int NumDimensions() override { return d; }
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual Real Distance(const Config& x, const Config& y) override { return CSpace::Distance(x,y); }
+  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out) override { CSpace::Interpolate(x,y,u,out); }
+  virtual void Midpoint(const Config& x,const Config& y,Config& out) override { out.add(x,y); out.inplaceMul(0.5); }
 
-  virtual void Sample(Config& q) { FatalError("Not implemented"); }
+  virtual void Sample(Config& q) override { FatalError("Not implemented"); }
 
   int d;
 };
@@ -67,11 +67,11 @@ public:
   BoxCSpace(const Vector& bmin,const Vector& bmax);
   void SetDomain(const Vector& bmin,const Vector& bmax);
   void GetDomain(Vector& bmin,Vector& bmax);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual void Sample(Config& x);
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual bool ProjectFeasible(Config& x);
-  virtual void Properties(PropertyMap&);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual void Sample(Config& x) override;
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual bool ProjectFeasible(Config& x) override;
+  virtual void Properties(PropertyMap&) override;
 
   ///The domain.  NOTE: modifing these does not directly affect the constraints! Use SetDomain instead
   Vector bmin,bmax;
@@ -150,33 +150,33 @@ public:
   EdgePlannerPtr PathChecker_Independent(const Config& a,const Config& b,int constraint);
 
   //CSpace overloads
-  virtual int NumDimensions();
-  virtual int NumIntrinsicDimensions();
-  virtual std::string VariableName(int i);
-  virtual int NumConstraints();
-  virtual std::string ConstraintName(int i);
-  virtual std::shared_ptr<CSet> Constraint(int i);
-  virtual void Sample(Config& x);
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual bool IsFeasible(const Config& q);
-  virtual bool ProjectFeasible(Config& x);
-  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual int NumDimensions() override;
+  virtual int NumIntrinsicDimensions() override;
+  virtual std::string VariableName(int i) override;
+  virtual int NumConstraints() override;
+  virtual std::string ConstraintName(int i) override;
+  virtual std::shared_ptr<CSet> Constraint(int i) override;
+  virtual void Sample(Config& x) override;
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual bool IsFeasible(const Config& q) override;
+  virtual bool ProjectFeasible(Config& x) override;
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle) override;
 
-  virtual Optimization::NonlinearProgram* FeasibleNumeric();
-  virtual Real Distance(const Config& x, const Config& y);
-  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
-  virtual void Midpoint(const Config& x,const Config& y,Config& out);
-  virtual Real ObstacleDistance(const Config& a);
-  virtual void Properties(PropertyMap&);
+  virtual Optimization::NonlinearProgram* FeasibleNumeric() override;
+  virtual Real Distance(const Config& x, const Config& y) override;
+  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out) override;
+  virtual void Midpoint(const Config& x,const Config& y,Config& out) override;
+  virtual Real ObstacleDistance(const Config& a) override;
+  virtual void Properties(PropertyMap&) override;
 
   //GeodesicSpace overloads
-  virtual void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx);
-  virtual void InterpolateDerivA(const Config& a,const Config& b,Real u,const Vector& da,Vector& dx);
-  virtual void InterpolateDerivB(const Config& a,const Config& b,Real u,const Vector& db,Vector& dx);
-  virtual void InterpolateDeriv2(const Config& a,const Config& b,Real u,Vector& ddx);
-  virtual void Integrate(const Config& a,const Vector& da,Config& b);
+  virtual void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx) override;
+  virtual void InterpolateDerivA(const Config& a,const Config& b,Real u,const Vector& da,Vector& dx) override;
+  virtual void InterpolateDerivB(const Config& a,const Config& b,Real u,const Vector& db,Vector& dx) override;
+  virtual void InterpolateDeriv2(const Config& a,const Config& b,Real u,Vector& ddx) override;
+  virtual void Integrate(const Config& a,const Vector& da,Config& b) override;
 
   std::vector<std::shared_ptr<CSpace> > components;
   std::vector<std::string> componentNames;
@@ -197,24 +197,24 @@ class PiggybackCSpace : public CSpace
 {
 public:
   PiggybackCSpace(CSpace* _baseSpace=NULL);
-  virtual int NumDimensions();
-  virtual std::string VariableName(int i);
-  virtual int NumConstraints();
-  virtual std::string ConstraintName(int i);
-  virtual std::shared_ptr<CSet> Constraint(int i);
-  virtual void Sample(Config& x);
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
-  virtual bool IsFeasible(const Config& x);
-  virtual bool IsFeasible(const Config&,int constraint);
-  virtual bool ProjectFeasible(Config& x);
-  virtual Optimization::NonlinearProgram* FeasibleNumeric();
-  virtual Real Distance(const Config& x, const Config& y);
-  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
-  virtual void Midpoint(const Config& x,const Config& y,Config& out);
-  virtual void Properties(PropertyMap& map);
+  virtual int NumDimensions() override;
+  virtual std::string VariableName(int i) override;
+  virtual int NumConstraints() override;
+  virtual std::string ConstraintName(int i) override;
+  virtual std::shared_ptr<CSet> Constraint(int i) override;
+  virtual void Sample(Config& x) override;
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle) override;
+  virtual bool IsFeasible(const Config& x) override;
+  virtual bool IsFeasible(const Config&,int constraint) override;
+  virtual bool ProjectFeasible(Config& x) override;
+  virtual Optimization::NonlinearProgram* FeasibleNumeric() override;
+  virtual Real Distance(const Config& x, const Config& y) override;
+  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out) override;
+  virtual void Midpoint(const Config& x,const Config& y,Config& out) override;
+  virtual void Properties(PropertyMap& map) override;
 
   CSpace* baseSpace;
 };
@@ -227,13 +227,13 @@ class SubsetConstraintCSpace : public PiggybackCSpace
 public:
   SubsetConstraintCSpace(CSpace* baseSpace,const std::vector<int>& constraints);
   SubsetConstraintCSpace(CSpace* baseSpace,int constraints);
-  virtual bool IsFeasible(const Config& x) { return CSpace::IsFeasible(x); }
-  virtual bool IsFeasible(const Config& x,int obstacle) { return CSpace::IsFeasible(x,obstacle); }
-  virtual bool ProjectFeasible(Config& x) { return CSpace::ProjectFeasible(x); }
-  virtual Optimization::NonlinearProgram* FeasibleNumeric() { return CSpace::FeasibleNumeric(); }
-  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b) { return CSpace::LocalPlanner(a,b); }
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual bool IsFeasible(const Config& x) override { return CSpace::IsFeasible(x); }
+  virtual bool IsFeasible(const Config& x,int obstacle) override { return CSpace::IsFeasible(x,obstacle); }
+  virtual bool ProjectFeasible(Config& x) override { return CSpace::ProjectFeasible(x); }
+  virtual Optimization::NonlinearProgram* FeasibleNumeric() override { return CSpace::FeasibleNumeric(); }
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b) override { return CSpace::LocalPlanner(a,b); }
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle) override;
 
   std::vector<int> activeConstraints;
 };
@@ -255,11 +255,11 @@ class AdaptiveCSpace : public PiggybackCSpace
 {
 public:
   AdaptiveCSpace(CSpace* baseSpace);
-  virtual bool IsFeasible(const Config& x);
-  virtual bool IsFeasible(const Config& x,int obstacle);
-  virtual void CheckConstraints(const Config& x,std::vector<bool>& satisfied);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
+  virtual bool IsFeasible(const Config& x) override;
+  virtual bool IsFeasible(const Config& x,int obstacle) override;
+  virtual void CheckConstraints(const Config& x,std::vector<bool>& satisfied) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle) override;
   bool IsFeasible_NoDeps(const Config& x,int obstacle);
   EdgePlannerPtr PathChecker_NoDeps(const Config& a,const Config& b,int obstacle);
   void SetupAdaptiveInfo();

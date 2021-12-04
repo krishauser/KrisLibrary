@@ -26,9 +26,10 @@ public:
   void Rasterize(CSpace* space);
   void DrawGL();
 
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual EdgePlannerPtr PathChecker(const InterpolatorPtr& b);
-  virtual Real Distance(const Config& x, const Config& y);
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  EdgePlannerPtr PathChecker(const std::shared_ptr<Interpolator>& path);
+  virtual Real Distance(const Config& x, const Config& y) override;
   
   bool euclideanSpace;
   std::shared_ptr<Tabular2DSet> occupied;

@@ -22,8 +22,8 @@ class TimeControlSpace : public ControlSpace
  public:
   TimeControlSpace(Real dtmax=1.0);
   void SetMaxTimeStep(Real dtmax);
-  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
-  virtual void SimulateEndpoint(const State& x0, const ControlInput& u,State& x1) { x1 = x0+u; }
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u) override;
+  virtual void Successor(const State& x0, const ControlInput& u,State& x1) override { x1 = x0+u; }
 };
 
 /** @ingroup MotionPlanning
@@ -36,10 +36,10 @@ class SpaceTimeCSpace : public MultiCSpace
 public:
   SpaceTimeCSpace(const std::shared_ptr<CSpace>& stateSpace,Real tmax=Inf);
   void SetTimeMetricWeight(Real weight);
-  virtual void Sample(Config& x);
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
+  virtual void Sample(Config& x) override;
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual EdgePlannerPtr LocalPlanner(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
 };
 
 /** @brief Given an IntegratedControlSpace on a certain state space, this will produce a
@@ -49,9 +49,9 @@ class SpaceTimeIntegratedControlSpace : public IntegratedControlSpace
 {
 public:
   SpaceTimeIntegratedControlSpace(const std::shared_ptr<IntegratedControlSpace>& base);
-  virtual std::string VariableName(int i);
-  virtual void Derivative(const State& x, const ControlInput& u,State& dx);
-  virtual void UpdateIntegrationParameters(const State& x);
+  virtual std::string VariableName(int i) override;
+  virtual void Derivative(const State& x, const ControlInput& u,State& dx) override;
+  virtual void UpdateIntegrationParameters(const State& x) override;
   std::shared_ptr<IntegratedControlSpace> base;
 };
 

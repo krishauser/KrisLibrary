@@ -13,11 +13,11 @@ class StateCostControlSpace: public ControlSpace
 {
 public:
   StateCostControlSpace(const std::shared_ptr<ControlSpace>& base,const std::shared_ptr<ObjectiveFunctionalBase>& objective);
-  virtual std::string VariableName(int i);
-  virtual std::shared_ptr<CSet> GetControlSet(const State& x);
-  virtual std::shared_ptr<SteeringFunction> GetSteeringFunction();
-  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u);
-  virtual void Successor(const State& x0, const ControlInput& u,State& x1);
+  virtual std::string VariableName(int i) override;
+  virtual std::shared_ptr<CSet> GetControlSet(const State& x) override;
+  virtual std::shared_ptr<SteeringFunction> GetSteeringFunction() override;
+  virtual InterpolatorPtr Simulate(const State& x0, const ControlInput& u) override;
+  virtual void Successor(const State& x0, const ControlInput& u,State& x1) override;
 
   static void Split(const State& xc,State& x,Real& cost);
   static void SplitRef(const State& xc,State& x,Real& cost);

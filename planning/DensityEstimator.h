@@ -48,12 +48,12 @@ public:
   GridDensityEstimator(const std::vector<int>& mappedDims,const Math::Vector& h);
   void Randomize(int numSourceDims,int numMapped,const Vector& hsource);
   void Randomize(int numSourceDims,int numMapped,Real h);
-  virtual void Clear();
-  virtual void Add(const Math::Vector& x,void* data);
-  virtual void Remove(const Math::Vector& x,void* data);
-  virtual double Density(const Config& x);
-  virtual void* RandomNear(const Math::Vector& x);
-  virtual void* Random();
+  virtual void Clear() override;
+  virtual void Add(const Math::Vector& x,void* data) override;
+  virtual void Remove(const Math::Vector& x,void* data) override;
+  virtual double Density(const Config& x) override;
+  virtual void* RandomNear(const Math::Vector& x) override;
+  virtual void* Random() override;
   
   std::vector<int> mappedDims;
   Math::Vector h;
@@ -77,12 +77,12 @@ public:
   MultiGridDensityEstimator(int numDims,int numMappedDims,Real h);
   MultiGridDensityEstimator(int numDims,int numMappedDims,const Math::Vector& h);
   void Randomize();
-  virtual void Clear();
-  virtual void Add(const Math::Vector& x,void* data);
-  virtual void Remove(const Math::Vector& x,void* data);
-  virtual double Density(const Config& x);
-  virtual void* RandomNear(const Math::Vector& x);
-  virtual void* Random();
+  virtual void Clear() override;
+  virtual void Add(const Math::Vector& x,void* data) override;
+  virtual void Remove(const Math::Vector& x,void* data) override;
+  virtual double Density(const Config& x) override;
+  virtual void* RandomNear(const Math::Vector& x) override;
+  virtual void* Random() override;
 
   int numDims,numMappedDims;
   Math::Vector h;
@@ -97,13 +97,13 @@ class KernelDensityEstimator : public DensityEstimatorBase
 public:
   enum KernelType { KernelUniform, KernelGaussian, KernelTriangular};
   KernelDensityEstimator(Math::Real kernelRadius,Math::Real kernelTruncationFactor=3.0);
-  virtual void Clear();
-  virtual void Add(const Math::Vector& x,void* data);
-  virtual void Remove(const Math::Vector& x,void* data);
-  virtual double Density(const Config& x);
-  virtual void* RandomNear(const Math::Vector& x);
-  virtual void* Random();
-  virtual void Random(Math::Vector& x);
+  virtual void Clear() override;
+  virtual void Add(const Math::Vector& x,void* data) override;
+  virtual void Remove(const Math::Vector& x,void* data) override;
+  virtual double Density(const Config& x) override;
+  virtual void* RandomNear(const Math::Vector& x) override;
+  virtual void* Random() override;
+  virtual void Random(Math::Vector& x) override;
   
   KernelType kernelType;
   Math::Real kernelRadius,kernelTruncationFactor;

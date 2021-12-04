@@ -16,13 +16,13 @@ class GLUTNavigationProgram : public GLUTProgramBase
 {
 public:
   GLUTNavigationProgram();
-  virtual bool Initialize();
-  virtual void Handle_Display();
-  virtual void Handle_Reshape(int w,int h);
-  virtual void Handle_Click(int button,int state,int x,int y);
-  virtual void Handle_Drag(int x,int y);
-  virtual void Handle_Keypress(unsigned char key,int x,int y);
-  virtual void Handle_Idle();
+  virtual bool Initialize() override;
+  virtual void Handle_Display() override;
+  virtual void Handle_Reshape(int w,int h) override;
+  virtual void Handle_Click(int button,int state,int x,int y) override;
+  virtual void Handle_Drag(int x,int y) override;
+  virtual void Handle_Keypress(unsigned char key,int x,int y) override;
+  virtual void Handle_Idle() override;
   
   //overrideable
   virtual void SetWorldLights() {}

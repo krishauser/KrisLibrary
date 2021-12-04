@@ -56,16 +56,16 @@ class NaivePointLocation : public PointLocationBase
 {
  public:
   NaivePointLocation(std::vector<Vector>& points,CSpace* _space);
-  virtual void OnBuild() {}
-  virtual void OnAppend() {}
-  virtual bool OnDelete(int id) { return true; }
-  virtual bool OnClear() { return true; }
-  virtual bool NN(const Vector& p,int& nn,Real& distance);
-  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance);
-  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances);
-  virtual bool FilteredClose(const Vector& p,Real r,bool (*filter)(int),std::vector<int>& neighbors,std::vector<Real>& distances);
+  virtual void OnBuild() override {}
+  virtual void OnAppend() override {}
+  virtual bool OnDelete(int id) override { return true; }
+  virtual bool OnClear() override { return true; }
+  virtual bool NN(const Vector& p,int& nn,Real& distance) override;
+  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance) override;
+  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual bool FilteredClose(const Vector& p,Real r,bool (*filter)(int),std::vector<int>& neighbors,std::vector<Real>& distances) override;
 
 
   CSpace* space;
@@ -78,15 +78,15 @@ class RandomPointLocation : public PointLocationBase
 {
  public:
   RandomPointLocation(std::vector<Vector>& points);
-  virtual void OnBuild() {}
-  virtual void OnAppend() {}
-  virtual bool OnDelete(int id) { return true; }
-  virtual bool OnClear() { return true; }
-  virtual bool Exact() { return false; }
-  virtual bool NN(const Vector& p,int& nn,Real& distance);
-  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance);
-  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances);
+  virtual void OnBuild() override {}
+  virtual void OnAppend() override {}
+  virtual bool OnDelete(int id) override { return true; }
+  virtual bool OnClear() override { return true; }
+  virtual bool Exact() override { return false; }
+  virtual bool NN(const Vector& p,int& nn,Real& distance) override;
+  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance) override;
+  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) override;
 };
 
 /** @brief The approximate O(k) point location algorithm that returns the closest
@@ -96,15 +96,15 @@ class RandomBestPointLocation : public PointLocationBase
 {
  public:
   RandomBestPointLocation(std::vector<Vector>& points,CSpace* _space,int k=1);
-  virtual void OnBuild() {}
-  virtual void OnAppend() {}
-  virtual bool OnDelete(int id) { return true; }
-  virtual bool OnClear() { return true; }
-  virtual bool Exact() { return false; }
-  virtual bool NN(const Vector& p,int& nn,Real& distance);
-  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance);
-  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances);
+  virtual void OnBuild() override {}
+  virtual void OnAppend() override {}
+  virtual bool OnDelete(int id) override { return true; }
+  virtual bool OnClear() override { return true; }
+  virtual bool Exact() override { return false; }
+  virtual bool NN(const Vector& p,int& nn,Real& distance) override;
+  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual bool FilteredNN(const Vector& p,bool (*filter)(int),int& nn,Real& distance) override;
+  virtual bool FilteredKNN(const Vector& p,int k,bool (*filter)(int),std::vector<int>& nn,std::vector<Real>& distances) override;
 
   CSpace* space;
   int k;
@@ -122,13 +122,13 @@ class KDTreePointLocation : public PointLocationBase
  public:
   KDTreePointLocation(std::vector<Vector>& points);
   KDTreePointLocation(std::vector<Vector>& points,Real norm,const Vector& weights);
-  virtual void OnBuild();
-  virtual void OnAppend();
-  virtual bool OnClear();
-  virtual bool NN(const Vector& p,int& nn,Real& distance);
-  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual void GetStats(PropertyMap& stats);
+  virtual void OnBuild() override;
+  virtual void OnAppend() override;
+  virtual bool OnClear() override;
+  virtual bool NN(const Vector& p,int& nn,Real& distance) override;
+  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual void GetStats(PropertyMap& stats) override;
 
   Real norm;
   Vector weights;
@@ -145,13 +145,13 @@ class BallTreePointLocation : public PointLocationBase
 {
  public:
   BallTreePointLocation(CSpace* cspace,std::vector<Vector>& points);
-  virtual void OnBuild();
-  virtual void OnAppend();
-  virtual bool OnClear();
-  virtual bool NN(const Vector& p,int& nn,Real& distance);
-  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances);
-  virtual void GetStats(PropertyMap& stats);
+  virtual void OnBuild() override;
+  virtual void OnAppend() override;
+  virtual bool OnClear() override;
+  virtual bool NN(const Vector& p,int& nn,Real& distance) override;
+  virtual bool KNN(const Vector& p,int k,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual bool Close(const Vector& p,Real r,std::vector<int>& nn,std::vector<Real>& distances) override;
+  virtual void GetStats(PropertyMap& stats) override;
 
   CSpace* cspace;
   std::unique_ptr<Geometry::BallTree> tree;
