@@ -84,13 +84,13 @@ bool GLOffscreenContext::setup()
     
     /* open display */
     if ( ! (dpy = XOpenDisplay(0)) ){
-        fprintf(stderr, "Failed to open display\n");
+        fprintf(stderr, "GLOffscreenContext: Failed to open display\n");
         return false;
     }
 
     /* get framebuffer configs, any is usable (might want to add proper attribs) */
     if ( !(fbc = glXChooseFBConfig(dpy, DefaultScreen(dpy), visual_attribs, &fbcount) ) ){
-        fprintf(stderr, "Failed to get FBConfig\n");
+        fprintf(stderr, "GLOffscreenContext: Failed to get FBConfig\n");
         return false;
     }
     
@@ -98,7 +98,7 @@ bool GLOffscreenContext::setup()
     glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB");
     glXMakeContextCurrentARB = (glXMakeContextCurrentARBProc)glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
     if ( !(glXCreateContextAttribsARB && glXMakeContextCurrentARB) ){
-        fprintf(stderr, "missing support for GLX_ARB_create_context\n");
+        fprintf(stderr, "GLOffscreenContext: missing support for GLX_ARB_create_context\n");
         XFree(fbc);
         return false;
     }
@@ -121,12 +121,12 @@ bool GLOffscreenContext::setup()
         XVisualInfo *vi = glXGetVisualFromFBConfig( dpy, fbc[0] );
         if ( !vi )
         {
-            fprintf(stderr, "Failed to get visual info\n");
+            fprintf(stderr, "GLOffscreenContext: Failed to get visual info\n");
             XFree(fbc);
             return false;
         }
         if ( !( ctx = glXCreateContext(dpy, vi, 0, True)) ){
-            fprintf(stderr, "Failed to create opengl context\n");
+            fprintf(stderr, "GLOffscreenContext: Failed to create opengl context\n");
             XFree(fbc);
             XFree( vi ); 
             return false;
@@ -163,14 +163,14 @@ bool GLOffscreenContext::setup()
         * using the default window.
         */
         if ( !glXMakeContextCurrent(dpy, DefaultRootWindow(dpy), DefaultRootWindow(dpy), ctx) ){
-            fprintf(stderr, "failed to make current\n");
+            fprintf(stderr, "GLOffscreenContext: failed to make current\n");
             return false;
         }
     } else {
-        printf("Init completed.\n");
+        //printf("Init completed.\n");
     }
 
-    printf("Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
+    printf("OpenGL vendor: %s\n", (const char*)glGetString(GL_VENDOR));
     //Works in OpenGL 2.0 but not 3.0
     //printf("Extensions: %s\n", (const char*)glGetString(GL_EXTENSIONS));
     /*
@@ -188,7 +188,7 @@ bool GLOffscreenContext::setup()
     }
     */
     glewInit();
-    printf("%p\n",glGenRenderbuffers);
+    //printf("%p\n",glGenRenderbuffers);
     return true;
 }
 
