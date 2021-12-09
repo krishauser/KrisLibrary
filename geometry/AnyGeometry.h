@@ -407,6 +407,7 @@ public:
   };
 
   AnyContactsQueryResult();
+  AnyContactsQueryResult(const AnyContactsQueryResult & rhs) = default;
   AnyContactsQueryResult(AnyContactsQueryResult&& other) = default;
   ///The list of computed contact points
   vector<ContactPair> contacts;
