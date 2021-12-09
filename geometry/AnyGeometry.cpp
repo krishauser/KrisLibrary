@@ -1663,6 +1663,11 @@ AABB3D AnyCollisionGeometry3D::GetAABBTight() const
     bb.minimize();
     for (size_t i = 0; i < m.verts.size(); i++)
       bb.expand(m.currentTransform * m.verts[i]);
+    if(margin != 0)
+    {
+      bb.bmin -= Vector3(margin);
+      bb.bmax += Vector3(margin);
+    }
     return bb;
   }
   break;
@@ -1673,6 +1678,11 @@ AABB3D AnyCollisionGeometry3D::GetAABBTight() const
     bb.minimize();
     for (size_t i = 0; i < pc.points.size(); i++)
       bb.expand(pc.currentTransform * pc.points[i]);
+    if(margin != 0)
+    {
+      bb.bmin -= Vector3(margin);
+      bb.bmax += Vector3(margin);
+    }
     return bb;
   }
   break;
@@ -1714,7 +1724,7 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
     GeometricPrimitive3D gT(g);
     gT.Transform(T);
     AABB3D res = gT.GetAABB();
-    if (margin != 0)
+    if(margin != 0)
     {
       res.bmin -= Vector3(margin);
       res.bmax += Vector3(margin);
@@ -1737,10 +1747,11 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
     // ConvexHull3D gT(g);
     // gT.Transform(T);
     // AABB3D res = gT.GetAABB();
-    // {
-    //   res.bmin -= Vector3(margin);
-    //   res.bmax += Vector3(margin);
-    // }
+    if(margin != 0)
+    {
+      res.bmin -= Vector3(margin);
+      res.bmax += Vector3(margin);
+    }
     return res;
   }
   case TriangleMesh:
