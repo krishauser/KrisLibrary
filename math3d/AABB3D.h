@@ -42,6 +42,12 @@ struct AABB3D
   Real signedDistance(const Point3D& pt,Point3D& surface) const;
   Real distance(const AABB3D& bb) const;
   Real distance(const AABB3D& bb,Point3D& myclosest,Point3D& bbclosest) const;
+  ///Returns the maximum distance of any point in the range to this pt
+  Real maxDistance(const Point3D& pt) const;
+  Real maxDistance(const Point3D& pt,Point3D& farthest) const;
+  ///Returns the maximum distance of any point in the range to any point in bb
+  Real maxDistance(const AABB3D& bb) const;
+  Real maxDistance(const AABB3D& pt,Point3D& thisfarthest,Point3D& bbfarthest) const;
 
   Vector3 bmin, bmax;
 };
