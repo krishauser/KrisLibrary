@@ -17,7 +17,6 @@
 #include <memory.h>
 
 using namespace Geometry;
-
 namespace GLDraw {
 
   void TransferTexture1D(GLTextureObject& obj,const Image& img)
@@ -312,7 +311,7 @@ GeometryAppearance::GeometryAppearance()
    lightFaces(true),
    vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),emissiveColor(0,0,0),shininess(0),specularColor(0.1,0.1,0.1),
    texWrap(true),texFilterNearest(false),
-   creaseAngle(0),silhouetteRadius(0),silhouetteColor(0,0,0)
+   creaseAngle(0),silhouetteRadius(0),silhouetteColor(0,0,0),tintColor(0,0,0),tintStrength(0)
 {}
 
 void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
@@ -370,6 +369,8 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   if(creaseAngle != rhs.creaseAngle)
     faceDisplayList.erase();
   creaseAngle=rhs.creaseAngle;
+  tintColor=rhs.tintColor;
+  tintStrength=rhs.tintStrength;
   densityGradientKeypoints=rhs.densityGradientKeypoints;
   densityGradientColors=rhs.densityGradientColors;
 }
@@ -411,6 +412,8 @@ void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
   if(creaseAngle != rhs.creaseAngle)
     faceDisplayList.erase();
   creaseAngle=rhs.creaseAngle;
+  tintColor=rhs.tintColor;
+  tintStrength=rhs.tintStrength;
   densityGradientKeypoints=rhs.densityGradientKeypoints;
   densityGradientColors=rhs.densityGradientColors;
 }
@@ -675,6 +678,26 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   Refresh();
 }
 
+inline void SetTintedColor(const GLColor& col,const GLColor& tintColor,float tintStrength)
+{
+  if(tintStrength != 0) {
+    GLColor temp;
+    temp.blend(col,tintColor,tintStrength);
+    temp.setCurrentGL();
+  }
+  else col.setCurrentGL();
+}
+
+inline void SetTintedMaterial(GLenum face,GLenum pname,const GLColor& col,const GLColor& tintColor,float tintStrength)
+{
+  if(tintStrength != 0) {
+    GLColor temp;
+    temp.blend(col,tintColor,tintStrength);
+    glMaterialfv(face,pname,temp.rgba);
+  }
+  else glMaterialfv(face,pname,col.rgba);
+}
+
 void GeometryAppearance::DrawGL(Element e)
 {
   bool doDrawVertices = false;
@@ -722,8 +745,9 @@ void GeometryAppearance::DrawGL(Element e)
         glEnable(GL_BLEND); 
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
       }
-      if(vertexColors.size()!=verts->size())
-        vertexColor.setCurrentGL();
+      if(vertexColors.size()!=verts->size()) {
+        SetTintedColor(vertexColor,tintColor,tintStrength);
+      }
       glPointSize(vertexSize);
 
       //compile the vertex display list
@@ -737,7 +761,7 @@ void GeometryAppearance::DrawGL(Element e)
           glBegin(GL_POINTS);
           for(size_t i=0;i<verts->size();i++) {
             const Vector3& v=(*verts)[i];
-            vertexColors[i].setCurrentGL();
+            SetTintedColor(vertexColors[i],tintColor,tintStrength);
             glVertex3f(v.x,v.y,v.z);
           }
           glEnd();
@@ -771,7 +795,7 @@ void GeometryAppearance::DrawGL(Element e)
 
     if(lightFaces) {
       glEnable(GL_LIGHTING);
-      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,faceColor.rgba);
+      SetTintedMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,faceColor,tintColor,tintStrength);
       glMaterialfv(GL_FRONT,GL_EMISSION,emissiveColor.rgba);
       glMaterialf(GL_FRONT,GL_SHININESS,shininess);
       if(shininess != 0)
@@ -783,7 +807,7 @@ void GeometryAppearance::DrawGL(Element e)
     }
     else {
       glDisable(GL_LIGHTING);
-      glColor4fv(faceColor.rgba);
+      SetTintedColor(faceColor,tintColor,tintStrength);
     }
     //set up the texture coordinates
     if(tex1D || tex2D) {
@@ -806,7 +830,7 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
         }
         else {
-          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP);
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
         }
         if(texFilterNearest) {
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -825,8 +849,8 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
         }
         else {
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
         }
         if(texFilterNearest) {
           glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -1053,18 +1077,18 @@ void GeometryAppearance::DrawGL(Element e)
               const Vector3& a=trimesh->verts[t.a];
               const Vector3& b=trimesh->verts[t.b];
               const Vector3& c=trimesh->verts[t.c];
-              Vector3 n = trimesh->TriangleNormal(i);
-              glNormal3f(n.x,n.y,n.z);
-              vertexColors[t.a].setCurrentGL();
+              //Vector3 n = trimesh->TriangleNormal(i);
+              //glNormal3f(n.x,n.y,n.z);
+              SetTintedColor(vertexColors[t.a],tintColor,tintStrength);
               glVertex3f(a.x,a.y,a.z);
-              vertexColors[t.b].setCurrentGL();
+              SetTintedColor(vertexColors[t.b],tintColor,tintStrength);
               glVertex3f(b.x,b.y,b.z);
-              vertexColors[t.c].setCurrentGL();
+              SetTintedColor(vertexColors[t.c],tintColor,tintStrength);
               glVertex3f(c.x,c.y,c.z);
             }
             glEnd();
+            
             glEnable(GL_LIGHTING);
-            glShadeModel(GL_FLAT);
           }
         }
         else {
@@ -1080,7 +1104,7 @@ void GeometryAppearance::DrawGL(Element e)
             const Vector3& c=trimesh->verts[t.c];
             Vector3 n = trimesh->TriangleNormal(i);
             if(useFaceColors)
-              faceColors[i].setCurrentGL();
+              SetTintedColor(faceColors[i],tintColor,tintStrength);
             glNormal3f(n.x,n.y,n.z);
             if(useTexCoords) {
               glTexCoord2f(texcoords[t.a].x,texcoords[t.a].y);
@@ -1179,7 +1203,7 @@ void GeometryAppearance::DrawGL(Element e)
       glEnable(GL_BLEND); 
       glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     }
-    edgeColor.setCurrentGL();
+    SetTintedColor(edgeColor,tintColor,tintStrength);
     edgeDisplayList.call();
     if(edgeColor.rgba[3] != 1.0) {
       glDisable(GL_BLEND);
@@ -1301,21 +1325,12 @@ void GeometryAppearance::SetColor(const GLColor& color)
   SetColor(color.rgba[0],color.rgba[1],color.rgba[2],color.rgba[3]);
 }
 
-void GeometryAppearance::ModulateColor(const GLColor& color,float fraction)
+void GeometryAppearance::SetTintColor(const GLColor& color,float fraction)
 {
-  faceColor.blend(GLColor(faceColor),color,fraction);
-  vertexColor.blend(GLColor(vertexColor),color,fraction);
-  edgeColor.blend(GLColor(edgeColor),color,fraction);
-
-  if(!vertexColors.empty() || !faceColors.empty()) {
-    for(size_t i=0;i<vertexColors.size();i++)
-      vertexColors[i].blend(GLColor(vertexColors[i]),color,fraction);
-    for(size_t i=0;i<faceColors.size();i++)
-      faceColors[i].blend(GLColor(faceColors[i]),color,fraction);
-    Refresh();
-  }
+  tintColor = color;
+  tintStrength = fraction;
   for(size_t i=0;i<subAppearances.size();i++)
-    subAppearances[i].ModulateColor(color,fraction);
+    subAppearances[i].SetTintColor(color,fraction);
 }
 
 

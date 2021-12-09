@@ -93,8 +93,10 @@ class GeometryAppearance
   void SetColor(float r,float g, float b, float a);
   void SetColor(const GLColor& color);
   ///Modulates the current color, including sub-appearances, and per-vertex
-  ///or per-face colors.  Refresh() does not need to be called.
-  void ModulateColor(const GLColor& color,float fraction);
+  ///or per-face colors.  Refresh() does not need to be called.  Setting
+  ///fraction=0 resets to the original color
+  void SetTintColor(const GLColor& color,float fraction);
+  //void ModulateColor(const GLColor& color,float fraction) { SetTintColor(color,fraction); }
 
   ///Geometry pointer
   const Geometry::AnyGeometry3D* geom;
@@ -149,6 +151,9 @@ class GeometryAppearance
   ///Optional: draw meshes with a silhouette outline (default 0, indicating disabled)
   float silhouetteRadius;
   GLColor silhouetteColor;
+  ///Tints faces / vertices etc with a modulation color
+  GLColor tintColor;
+  float tintStrength;
   ///Optional: for OccupancyGrids, the piecewise-linear map from density values to
   ///colors.  If not set, goes from clear to faceColor.
   std::vector<float> densityGradientKeypoints;
