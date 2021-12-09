@@ -639,6 +639,15 @@ void GridSubdivision::Clear()
   buckets.clear();
 }
 
+void GridSubdivision::Enumerate(std::vector<void*>& items) const
+{
+  items.resize(0);
+  for(const auto& i:buckets) {
+    for(auto j:i.second)
+      items.push_back(j);
+  }
+}
+
 void GridSubdivision::PointToIndex(const Vector& p,Index& i) const
 {
   assert(p.n == hinv.n);
@@ -881,6 +890,15 @@ void GridSubdivision3D::Clear()
   buckets.clear();
 }
 
+void GridSubdivision3D::Enumerate(std::vector<void*>& items) const
+{
+  items.resize(0);
+  for(const auto& i:buckets) {
+    for(auto j:i.second)
+      items.push_back(j);
+  }
+}
+
 void GridSubdivision3D::PointToIndex(const Vector3& p,Index& i) const
 {
   for(int k=0;k<3;k++) {
@@ -1057,3 +1075,8 @@ void GridSubdivision3D::BallItems(const Vector3& c,Real r,ObjectSet& objs) const
   PointToIndex(bmax,imax);
   IndexItems(imin,imax,objs);
 }
+
+
+//GridHash3DContainer<int> try1;
+//GridSubdivision3DContainer<int> try2;
+//GridHash3DContiguousContainer<int> try3;

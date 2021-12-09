@@ -47,9 +47,7 @@ SparseVolumeGrid::~SparseVolumeGrid()
 
 void SparseVolumeGrid::Clear()
 {
-  for(auto i:hash.buckets)
-    delete reinterpret_cast<Block*>(i.second);
-  hash.buckets.clear();
+  hash.Clear();
 }
 
 int SparseVolumeGrid::AddChannel(const std::string& name)
@@ -59,8 +57,8 @@ int SparseVolumeGrid::AddChannel(const std::string& name)
   defaultValue.resize(oldDefault.n+1);
   defaultValue.copySubVector(0,oldDefault);
   defaultValue[oldDefault.n] = oldDefault[oldDefault.n-1];
-  for(auto i:hash.buckets) {
-    Block* b = reinterpret_cast<Block*>(i.second);
+  for(auto i:hash) {
+    Block* b = i.second;
     //TODO: copy the channel names? or just save some memory
     b->grid.channels.resize(b->grid.channels.size()+1);
     b->grid.channels.back().MakeSimilar(b->grid.channels[0]);
@@ -149,10 +147,6 @@ void SparseVolumeGrid::GetIndexRange(const AABB3D& range,IntTriple& imin,IntTrip
   GetIndex(range.bmax,imax);
 }
 
-SparseVolumeGrid::Block* SparseVolumeGrid::BlockPtr(const IntTriple& blockIndex) const
-{
-  return reinterpret_cast<Block*>(hash.Get(blockIndex));
-}
 
 void SparseVolumeGrid::SetValue(int i,int j,int k,Real value,int channel)
 {
@@ -192,7 +186,7 @@ Real SparseVolumeGrid::GetValue(int i,int j,int k,int channel) const
 {
   IntTriple hashIndex;
   GetBlock(i,j,k,hashIndex);
-  Block* b = BlockPtr(hashIndex);
+  const Block* b = BlockPtr(hashIndex);
   if(!b) return defaultValue[channel];
   return b->grid.channels[channel].value(modulo(i,blockSize.a),modulo(j,blockSize.b),modulo(k,blockSize.c));
 }
@@ -208,12 +202,12 @@ void SparseVolumeGrid::GetValue(int i,int j,int k,Vector& values) const
 {
   IntTriple hashIndex;
   GetBlock(i,j,k,hashIndex);
-  Block* b = BlockPtr(hashIndex);
+  const Block* b = BlockPtr(hashIndex);
   if(!b) values = defaultValue;
   else {
     int p=modulo(i,blockSize.a),q=modulo(j,blockSize.b),r=modulo(k,blockSize.c);
     for(int d=0;d<values.n;d++)
-      b->grid.channels[d].value(p,q,r) = (float)values[d];
+      values[d] = b->grid.channels[d].value(p,q,r);
   }
 }
 
@@ -244,9 +238,9 @@ void SparseVolumeGrid::GetBlockRange(const AABB3D& range,IntTriple& hashMin,IntT
 
 SparseVolumeGrid::Block* SparseVolumeGrid::GetMakeBlock(const IntTriple& blockIndex)
 {
-  void* res = hash.Get(blockIndex);
-  if (res != NULL) return reinterpret_cast<Block*>(res);
-  Block* newblock = new Block();
+  bool created;
+  Block* newblock = hash.Insert(blockIndex,&created);
+  if(!created) return newblock;
   newblock->id = blockIDCounter++;
   newblock->index = blockIndex;
   //TODO: copy the channel names? or just save some memory
@@ -261,48 +255,41 @@ SparseVolumeGrid::Block* SparseVolumeGrid::GetMakeBlock(const IntTriple& blockIn
     newblock->grid.channels[i].bb.bmin = bmin;
     newblock->grid.channels[i].bb.bmax = bmax;
   }
-  hash.Set(blockIndex,newblock);
   return newblock;
 }
 
-bool SparseVolumeGrid::MakeBlock(const IntTriple& hashIndex)
+bool SparseVolumeGrid::MakeBlock(const IntTriple& blockIndex)
 {
-  void* res = hash.Get(hashIndex);
-  if (res != NULL) return false;
-  Block* newblock = new Block();
+  bool created;
+  Block* newblock = hash.Insert(blockIndex,&created);
+  if(!created) return false;
   newblock->id = blockIDCounter++;
-  newblock->index = hashIndex;
+  newblock->index = blockIndex;
   //TODO: copy the channel names? or just save some memory
   //newblock->grid.channelNames = channelNames.size();
   newblock->grid.channelNames.clear();
   newblock->grid.channels.resize(channelNames.size());
   newblock->grid.Resize(blockSize.a,blockSize.b,blockSize.c);
   Vector3 bmin,bmax;
-  hash.IndexBucketBounds(hashIndex,bmin,bmax);
+  hash.IndexBucketBounds(blockIndex,bmin,bmax);
   for(size_t i=0;i<channelNames.size();i++) {
     newblock->grid.channels[i].value.set((float)defaultValue[i]);
     newblock->grid.channels[i].bb.bmin = bmin;
     newblock->grid.channels[i].bb.bmax = bmax;
   }
-  hash.Set(hashIndex,newblock);
   return true;
 }
 
-bool SparseVolumeGrid::EraseBlock(const IntTriple& hashIndex)
+bool SparseVolumeGrid::EraseBlock(const IntTriple& blockIndex)
 {
-  void* res = hash.Get(hashIndex);
-  if (res == NULL) return false;
-  Block* b = reinterpret_cast<Block*>(res);
-  delete b;
-  hash.Erase(hashIndex);
-  return true;
+  return hash.Erase(blockIndex);
 }
 
 void SparseVolumeGrid::AddBlocks(const SparseVolumeGrid& grid)
 {
   Assert(IsSimilar(grid));
   for(auto it = grid.hash.buckets.begin();it != grid.hash.buckets.end();it++) {
-    MakeBlock(IntTriple(it->first[0],it->first[1],it->first[2]));
+    MakeBlock(it->first);
   }
 }
 
@@ -322,7 +309,7 @@ void SparseVolumeGrid::GetSamples(VolumeGrid& range,int channel) const
         int kmax = ::Min(range.value.p,kmin+blockSize.c);
         Range3Indices rind(i,i+blockSize.a,j,j+blockSize.b,k,k+blockSize.c);
         hind.set(i,j,k);
-        Block* b = reinterpret_cast<Block*>(hash.Get(hind));
+        const Block* b = hash.Get(hind);
         if(b) {
           for(int p=imin;p<imax;p++)
             for(int q=jmin;q<jmax;q++)
@@ -356,8 +343,7 @@ void SparseVolumeGrid::SetSamples(const VolumeGrid& range,int channel)
         int kmax = ::Min(range.value.p,kmin+blockSize.c);
         Range3Indices rind(i,i+blockSize.a,j,j+blockSize.b,k,k+blockSize.c);
         hind.set(i,j,k);
-        MakeBlock(hind);
-        Block* b = reinterpret_cast<Block*>(hash.Get(hind));
+        Block* b = GetMakeBlock(hind);
         for(int p=imin;p<imax;p++)
           for(int q=jmin;q<jmax;q++)
             for(int r=kmin;r<kmax;r++)
@@ -369,7 +355,7 @@ Real SparseVolumeGrid::TrilinearInterpolate(const Vector3& pt,int channel) const
 {
   IntTriple hind;
   GetBlock(pt,hind);
-  Block* b = BlockPtr(hind);
+  const Block* b = BlockPtr(hind);
   if(!b) return defaultValue[channel];
   return b->grid.channels[channel].TrilinearInterpolate(pt);
 }
@@ -379,7 +365,7 @@ void SparseVolumeGrid::Gradient(const Vector3& pt,Vector3& grad,int channel) con
 {
   IntTriple hind;
   GetBlock(pt,hind);
-  Block* b = BlockPtr(hind);
+  const Block* b = BlockPtr(hind);
   if(!b) grad.setZero();
   else b->grid.channels[channel].Gradient(pt,grad);
 }
@@ -388,9 +374,9 @@ void SparseVolumeGrid::Add(const SparseVolumeGrid& grid)
   assert(channelNames.size() == grid.channelNames.size());
   AddBlocks(grid);
   defaultValue += grid.defaultValue;
-  for(auto it : grid.hash.buckets) {
-    Block* b1=reinterpret_cast<Block*>(hash.buckets[it.first]);
-    Block* b2=reinterpret_cast<Block*>(it.second);
+  for(auto it : grid.hash) {
+    Block* b1=hash.Get(it.first);
+    Block* b2=it.second;
     for(size_t c=0;c<channelNames.size();c++)
       b1->grid.channels[c].Add(b2->grid.channels[c]);
   }
@@ -400,9 +386,9 @@ void SparseVolumeGrid::Subtract(const SparseVolumeGrid& grid)
   assert(channelNames.size() == grid.channelNames.size());
   AddBlocks(grid);
   defaultValue -= grid.defaultValue;
-  for(auto it : grid.hash.buckets) {
-    Block* b1=reinterpret_cast<Block*>(hash.buckets[it.first]);
-    Block* b2=reinterpret_cast<Block*>(it.second);
+  for(auto it : grid.hash) {
+    Block* b1=hash.Get(it.first);
+    Block* b2=it.second;
     for(size_t c=0;c<channelNames.size();c++)
       b1->grid.channels[c].Subtract(b2->grid.channels[c]);
   }
@@ -412,9 +398,9 @@ void SparseVolumeGrid::Multiply(const SparseVolumeGrid& grid)
   assert(channelNames.size() == grid.channelNames.size());
   AddBlocks(grid);
   defaultValue.inplaceComponentMul(grid.defaultValue);
-  for(auto it : grid.hash.buckets) {
-    Block* b1=reinterpret_cast<Block*>(hash.buckets[it.first]);
-    Block* b2=reinterpret_cast<Block*>(it.second);
+  for(auto it : grid.hash) {
+    Block* b1=hash.Get(it.first);
+    Block* b2=it.second;
     for(size_t c=0;c<channelNames.size();c++)
       b1->grid.channels[c].Multiply(b2->grid.channels[c]);
   }
@@ -424,9 +410,9 @@ void SparseVolumeGrid::Max(const SparseVolumeGrid& grid)
   assert(channelNames.size() == grid.channelNames.size());
   AddBlocks(grid);
   defaultValue = ::Max(defaultValue,grid.defaultValue);
-  for(auto it : grid.hash.buckets) {
-    Block* b1=reinterpret_cast<Block*>(hash.buckets[it.first]);
-    Block* b2=reinterpret_cast<Block*>(it.second);
+  for(auto it : grid.hash) {
+    Block* b1=hash.Get(it.first);
+    Block* b2=it.second;
     for(size_t c=0;c<channelNames.size();c++)
       b1->grid.channels[c].Max(b2->grid.channels[c]);
   }
@@ -436,9 +422,9 @@ void SparseVolumeGrid::Min(const SparseVolumeGrid& grid)
   assert(channelNames.size() == grid.channelNames.size());
   AddBlocks(grid);
   defaultValue = ::Min(defaultValue,grid.defaultValue);
-  for(auto it : grid.hash.buckets) {
-    Block* b1=reinterpret_cast<Block*>(hash.buckets[it.first]);
-    Block* b2=reinterpret_cast<Block*>(it.second);
+  for(auto it : grid.hash) {
+    Block* b1=hash.Get(it.first);
+    Block* b2=it.second;
     for(size_t c=0;c<channelNames.size();c++)
       b1->grid.channels[c].Min(b2->grid.channels[c]);
   }
@@ -447,27 +433,27 @@ void SparseVolumeGrid::Add(Real val,int channel)
 {
   defaultValue[channel] += val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Add((float)val);
+    hash.Cast(i->second)->grid.channels[channel].Add((float)val);
 }
 void SparseVolumeGrid::Multiply(Real val,int channel)
 {
   defaultValue[channel] *= val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Multiply((float)val);
+    hash.Cast(i->second)->grid.channels[channel].Multiply((float)val);
 }
 void SparseVolumeGrid::Max(Real val,int channel)
 {
   if(defaultValue[channel] < val)
     defaultValue[channel] = val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Max((float)val);
+    hash.Cast(i->second)->grid.channels[channel].Max((float)val);
 }
 void SparseVolumeGrid::Min(Real val,int channel)
 {
   if(defaultValue[channel] > val)
     defaultValue[channel] = val;
   for(auto i=hash.buckets.begin();i!=hash.buckets.end();i++)
-    reinterpret_cast<Block*>(i->second)->grid.channels[channel].Min((float)val);
+    hash.Cast(i->second)->grid.channels[channel].Min((float)val);
 }
 
 
@@ -480,7 +466,7 @@ void SparseVolumeGrid::ExtractMesh(float isosurface,Meshing::TriMesh& mesh)
   TriMesh tempMesh;
   Array3D<float> expandedBlock(m+1,n+1,p+1);
   for(auto b=hash.buckets.begin();b!=hash.buckets.end();b++) {
-    VolumeGridTemplate<float>& depth = reinterpret_cast<Block*>(b->second)->grid.channels[0];
+    VolumeGridTemplate<float>& depth = hash.Cast(b->second)->grid.channels[0];
     AABB3D center_bb = depth.bb;
     Vector3 celldims = depth.GetCellSize();
     center_bb.bmin += celldims*0.5;
@@ -492,22 +478,22 @@ void SparseVolumeGrid::ExtractMesh(float isosurface,Meshing::TriMesh& mesh)
 
     //now work on the seams:
     IntTriple c;
-    void* ptr;
+    Block* ptr;
     c = b->first;
     c[0] += 1;
     if((ptr=hash.Get(c))) {
-      Array3D<float> &xnext = reinterpret_cast<Block*>(ptr)->grid.channels[0].value;
+      Array3D<float> &xnext = ptr->grid.channels[0].value;
       for(int j=0;j<n;j++) 
         for(int k=0;k<p;k++) 
           expandedBlock(m,j,k) = xnext(0,j,k);
       c[1] += 1;
       if((ptr=hash.Get(c))) {
-        Array3D<float> &xynext = reinterpret_cast<Block*>(ptr)->grid.channels[0].value;
+        Array3D<float> &xynext = ptr->grid.channels[0].value;
         for(int k=0;k<p;k++) 
           expandedBlock(m,n,k) = xynext(0,0,k);
         c[2] += 1;
         if((ptr=hash.Get(c))) {
-          Array3D<float> &xyznext = reinterpret_cast<Block*>(ptr)->grid.channels[0].value;
+          Array3D<float> &xyznext = ptr->grid.channels[0].value;
           expandedBlock(m,n,p) = xyznext(0,0,0);
         }
         else
@@ -521,7 +507,7 @@ void SparseVolumeGrid::ExtractMesh(float isosurface,Meshing::TriMesh& mesh)
       c[1] -= 1;
       c[2] += 1;
       if((ptr=hash.Get(c))) {
-        Array3D<float> &xznext = reinterpret_cast<Block*>(ptr)->grid.channels[0].value;
+        Array3D<float> &xznext = ptr->grid.channels[0].value;
         for(int j=0;j<n;j++) 
           expandedBlock(m,j,p) = xznext(0,j,0);
       }
@@ -539,13 +525,13 @@ void SparseVolumeGrid::ExtractMesh(float isosurface,Meshing::TriMesh& mesh)
     c[0] -= 1;
     c[1] += 1;
     if((ptr=hash.Get(c))) {
-      Array3D<float> &ynext = reinterpret_cast<Block*>(ptr)->grid.channels[0].value;
+      Array3D<float> &ynext = ptr->grid.channels[0].value;
       for(int i=0;i<m;i++)
         for(int k=0;k<p;k++) 
           expandedBlock(i,n,k) = ynext(i,0,k);
       c[2] += 1;
       if((ptr=hash.Get(c))) {
-        Array3D<float> &yznext = reinterpret_cast<Block*>(ptr)->grid.channels[0].value;
+        Array3D<float> &yznext = ptr->grid.channels[0].value;
         for(int i=0;i<m;i++) 
           expandedBlock(i,n,p) = yznext(i,0,0);
       }
@@ -562,7 +548,7 @@ void SparseVolumeGrid::ExtractMesh(float isosurface,Meshing::TriMesh& mesh)
     c[1] -= 1;
     c[2] += 1;
     if((ptr=hash.Get(c))) {
-      Array3D<float> &znext = reinterpret_cast<Block*>(ptr)->grid.channels[0].value;
+      Array3D<float> &znext = ptr->grid.channels[0].value;
       for(int i=0;i<m;i++)
         for(int j=0;j<n;j++) 
           expandedBlock(i,j,p) = znext(i,j,0);
