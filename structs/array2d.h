@@ -34,6 +34,8 @@ public:
   Array2D(int m,int n);
   Array2D(int m,int n,const T& initVal);
   Array2D(const Array2D<T>& rhs);
+  template <class T2>
+  Array2D(const Array2D<T2>& rhs);
   Array2D(Array2D<T>&& rhs);
   ~Array2D();
   
@@ -41,7 +43,9 @@ public:
   inline const T& operator()(int i,int j) const { Assert(i>=0&&i<m); Assert(j>=0&&j<n); return items[i*n+j]; }
   inline T& operator()(const IntPair& t) { return operator()(t.a,t.b); }
   inline const T& operator()(const IntPair& t) const { return operator()(t.a,t.b); }
-  Array2D<T>& operator =(const Array2D<T>& rhs);
+  const Array2D<T>& operator =(const Array2D<T>& rhs);
+  template <class T2>
+  const Array2D<T>& operator =(const Array2D<T2>& rhs);
   Array2D<T>& operator =(Array2D<T>&& rhs);
   
   bool Read(File& f);
@@ -63,6 +67,8 @@ public:
   inline bool contains(const T& item) const { int i,j; return find(item,i,j); }
   void set(const T& item);
   void set(const Array2D<T>&);
+  template <class T2>
+  void set(const Array2D<T2>&);
   void swap(Array2D<T>&);
   inline T* getData() const { return items; }
   inline T* getRowData(int i) const { return &items[i*n]; }
@@ -141,6 +147,14 @@ Array2D<T>::Array2D(const Array2D<T>& rhs)
 }
 
 template <class T>
+template <class T2>
+Array2D<T>::Array2D(const Array2D<T2>& rhs)
+:m(0),n(0),items(0),capacity(0)
+{
+	set(rhs);
+}
+
+template <class T>
 Array2D<T>::Array2D(Array2D<T>&& rhs)
 :m(rhs.m),n(rhs.n),items(rhs.items),capacity(rhs.capacity)
 {
@@ -155,7 +169,15 @@ Array2D<T>::~Array2D()
 }
 
 template <class T>
-Array2D<T>& Array2D<T>::operator =(const Array2D<T>& rhs)
+const Array2D<T>& Array2D<T>::operator =(const Array2D<T>& rhs)
+{
+	set(rhs);
+	return *this;
+}
+
+template <class T>
+template <class T2>
+const Array2D<T>& Array2D<T>::operator =(const Array2D<T2>& rhs)
 {
 	set(rhs);
 	return *this;
@@ -278,6 +300,15 @@ void Array2D<T>::set(const Array2D<T>& rhs)
 {
 	resize(rhs.m,rhs.n);
 	for(int i=0;i<m*n;i++) items[i]=rhs.items[i];
+}
+
+template <class T>
+template <class T2>
+void Array2D<T>::set(const Array2D<T2>& rhs)
+{
+	resize(rhs.m,rhs.n);
+  int total=m*n;
+  for(int i=0;i<total;i++) items[i] = T(rhs.items[i]);
 }
 
 template <class T>
