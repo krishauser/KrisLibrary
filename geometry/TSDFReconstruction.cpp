@@ -616,12 +616,17 @@ void DenseTSDFReconstruction::GetColor(const Vector3& point,float* color) const
   vector<float> ws;
   vs.reserve(8);
   ws.reserve(8);
-  for(int p=0;p<=1;p++)
-    for(int q=0;q<=1;q++)
+  for(int p=0;p<=1;p++) {
+    float wx = (p?u.x:1-u.x);
+    for(int q=0;q<=1;q++) {
+      float wy = (q?u.y:1-u.y);
       for(int r=0;r<=1;r++) {
+        float wz = (r?u.z:1-u.z);
         vs.push_back(&info(c.a+p,c.b+q,c.c+r));
-        ws.push_back(float((1-p + (p*2-1)*u.x)*(1-q + (q*2-1)*u.y)*(1-r + (r*2-1)*u.z)));
+        ws.push_back(float(wx*wy*wz));
       }
+    }
+  }
   for(int j=0;j<3;j++) {
     color[j] = 0.0; 
     for(int k=0;k<8;k++)
@@ -637,14 +642,25 @@ void DenseTSDFReconstruction::ClearPoint(const Vector3& p,Real dist,Real weight)
 
 void DenseTSDFReconstruction::Fill(const VolumeGrid& values)
 {
-  VolumeGridTemplate<float> fvalues;
-  fvalues.MakeSimilar(values);
-  auto j=values.value.begin();
-  for(auto i=fvalues.value.begin();i!=fvalues.value.end();++i)
-    *i = *j;
-  tsdf.ResampleTrilinear(fvalues);
+  if(values.IsSimilar(tsdf)) {
+    //cast to float
+    auto j=values.value.begin();
+    for(auto i=tsdf.value.begin();i!=tsdf.value.end();++i,++j)
+      *i = *j;
+  }
+  else {
+    //cast to float
+    VolumeGridTemplate<float> fvalues;
+    fvalues.MakeSimilar(values);
+    auto j=values.value.begin();
+    for(auto i=fvalues.value.begin();i!=fvalues.value.end();++i,++j)
+      *i = *j;
+
+    //resample to grid
+    tsdf.ResampleTrilinear(fvalues);
+  }
   auto k=info.begin();
-  for(auto i=fvalues.value.begin();i!=fvalues.value.end();++i) {
+  for(auto i=tsdf.value.begin();i!=tsdf.value.end();++i,++k) {
     (*k).weight = 1.0;
     if(Abs(*i)<truncationDistance) {
       (*k).occupancy = 1.0;
@@ -693,6 +709,7 @@ void DenseTSDFReconstruction::Fill(const Meshing::TriMesh& geom,const vector<GLD
   Array3D<Vector3> gradient;
   vector<IntTriple> surfaceCells;
   Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
+  
   Fill(grid);
   if(vertexColors.size()==geom.verts.size()) {
     IntTriple ind;
@@ -780,6 +797,39 @@ SparseTSDFReconstruction::SparseTSDFReconstruction(const Vector3& cellSize,Real 
   depthChannel = 0;
   weightChannel = rgbChannel = surfaceWeightChannel = ageChannel = auxiliaryChannelStart = -1;
   scanID = -1;
+}
+
+SparseTSDFReconstruction::SparseTSDFReconstruction(const SparseTSDFReconstruction& rhs)
+:truncationDistance(rhs.truncationDistance),depthStddev0(rhs.depthStddev0),depthStddev1(rhs.depthStddev1),
+ forgettingRate(rhs.forgettingRate),colored(rhs.colored),auxiliaryAttributes(rhs.auxiliaryAttributes),
+ numThreads(rhs.numThreads),tsdf(rhs.tsdf),
+ depthChannel(rhs.depthChannel),weightChannel(rhs.weightChannel),ageChannel(rhs.ageChannel),rgbChannel(rhs.rgbChannel),
+ surfaceWeightChannel(rhs.surfaceWeightChannel),auxiliaryChannelStart(rhs.auxiliaryChannelStart),
+ scanID(rhs.scanID),blockLastTouched(rhs.blockLastTouched),blocksUpdatedOnScan(rhs.blocksUpdatedOnScan)
+{}
+
+const SparseTSDFReconstruction& SparseTSDFReconstruction::operator = (const SparseTSDFReconstruction& rhs)
+{
+  if(!threads.empty())
+    FatalError("Can't copy a reconstruction if threads are currently started");
+  truncationDistance=rhs.truncationDistance;
+  depthStddev0=rhs.depthStddev0;
+  depthStddev1=rhs.depthStddev1;
+  forgettingRate=rhs.forgettingRate;
+  colored=rhs.colored;
+  auxiliaryAttributes=rhs.auxiliaryAttributes;
+  numThreads=rhs.numThreads;
+  tsdf=rhs.tsdf;
+  depthChannel=rhs.depthChannel;
+  weightChannel=rhs.weightChannel;
+  ageChannel=rhs.ageChannel;
+  rgbChannel=rhs.rgbChannel;
+  surfaceWeightChannel=rhs.surfaceWeightChannel;
+  auxiliaryChannelStart=rhs.auxiliaryChannelStart;
+  scanID=rhs.scanID;
+  blockLastTouched=rhs.blockLastTouched;
+  blocksUpdatedOnScan=rhs.blocksUpdatedOnScan;
+  return *this;
 }
 
 SparseTSDFReconstruction::~SparseTSDFReconstruction()
@@ -1092,7 +1142,7 @@ void* FuseThread(void* vdata)
       return vdata;
     }
     else if(job.type == JOB_FIND_BLOCKS) {
-      if(DEBUG_THREADING) printf("Thread %d working on JOB_FIND_BLOCKS, points %d - %d\n",data->id,job.indices.front(),job.indices.back());
+      if(DEBUG_THREADING) printf("Thread %d working on JOB_FIND_BLOCKS, points %d - %d\n",data->id,(int)job.indices.front(),(int)job.indices.back());
       Timer timer;
       DoFindBlocks(data,job.indices);
       if(DEBUG_THREADING) printf("Thread %d finished JOB_FIND_BLOCKS in time %g\n",data->id,timer.ElapsedTime());
@@ -1101,7 +1151,7 @@ void* FuseThread(void* vdata)
     }
     else if(job.type == JOB_FUSE) {
       Timer timer;
-      if(DEBUG_THREADING) printf("Thread %d working on JOB_FUSE, blocks %d - %d\n",data->id,job.indices.front(),job.indices.back());
+      if(DEBUG_THREADING) printf("Thread %d working on JOB_FUSE, blocks %d - %d\n",data->id,(int)job.indices.front(),(int)job.indices.back());
       DoFuse(data,job.indices);
       if(DEBUG_THREADING) printf("Thread %d finished JOB_FUSE in time %g\n",data->id,timer.ElapsedTime());
       if(data->finished)
@@ -1109,7 +1159,7 @@ void* FuseThread(void* vdata)
     }
     else if(job.type == JOB_CORRESPONDENCES) {
       Timer timer;
-      if(DEBUG_THREADING) printf("Thread %d working on JOB_CORRESPONDENCES, blocks %d - %d\n",data->id,job.indices.front(),job.indices.back());
+      if(DEBUG_THREADING) printf("Thread %d working on JOB_CORRESPONDENCES, blocks %d - %d\n",data->id,(int)job.indices.front(),(int)job.indices.back());
       DoCorrespondences(data,job.indices);
       if(DEBUG_THREADING) printf("Thread %d finished JOB_CORRESPONDENCES in time %g\n",data->id,timer.ElapsedTime());
       if(data->finished)
@@ -1185,30 +1235,44 @@ void SparseTSDFReconstruction::NewScan()
   blocksUpdatedOnScan.resize(0);
 }
 
+void SparseTSDFReconstruction::InitChannels(bool colored,const vector<string>& auxAttributes)
+{
+  if(weightChannel >= 0) {
+    FatalError("Cannot call InitChannels more than once");
+  }
+  this->colored = colored;
+  weightChannel = tsdf.AddChannel("weight");
+  ageChannel = tsdf.AddChannel("age");
+  if(colored || !auxAttributes.empty()) {
+    surfaceWeightChannel = tsdf.AddChannel("surfaceWeight");
+  }
+  if(colored)
+    rgbChannel = tsdf.AddChannel("rgb");
+  if(!auxiliaryAttributes.empty()) {
+    auxiliaryChannelStart = tsdf.GetNumChannels();
+    for(size_t i=0;i<auxAttributes.size();i++)
+      tsdf.AddChannel(auxAttributes[i]);
+  }
+
+  //initialize truncation distance
+  tsdf.defaultValue[0] = truncationDistance;
+}
+
+
 void SparseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const Meshing::PointCloud3D& pc,Real weight)
 {
   if(scanID < 0) 
     FatalError("NewScan must be called before Fuse");
   if(weightChannel < 0) {
-    weightChannel = tsdf.AddChannel("weight");
     ageChannel = tsdf.AddChannel("age");
     if(colored)
       if(!pc.HasColor()) {
         colored = false;
       }
-    if(colored || !auxiliaryAttributes.empty()) {
-      surfaceWeightChannel = tsdf.AddChannel("surfaceWeight");
-    }
-    if(colored)
-      rgbChannel = tsdf.AddChannel("rgb");
-    if(!auxiliaryAttributes.empty()) {
-      auxiliaryChannelStart = tsdf.GetNumChannels();
-      for(size_t i=0;i<auxiliaryAttributes.size();i++)
-        tsdf.AddChannel(pc.propertyNames[auxiliaryAttributes[i]]);
-    }
-
-    //initialize truncation distance
-    tsdf.defaultValue[0] = truncationDistance;
+    vector<string> auxProperties(auxiliaryAttributes.size());
+    for(size_t i=0;i<auxiliaryAttributes.size();i++)
+        auxProperties[i] = pc.propertyNames[auxiliaryAttributes[i]];
+    InitChannels(colored,auxProperties);
   }
   float scanFloat = float(scanID);
 
@@ -1869,14 +1933,14 @@ void SparseTSDFReconstruction::Register(const PointCloud3D& pc,const RigidTransf
   printf("Timing for correspondences: %gs, oulier rejection %gs, fitting %gs\n",correspondenceTime,outlierTime,fitTime);
 }
 
-void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh)
+void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh) const
 {
   AABB3D roi;
   roi.maximize();
   ExtractMesh(roi,mesh);
 }
 
-void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh)
+void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh) const
 {
   mesh.tris.resize(0);
   mesh.verts.resize(0);
@@ -1899,14 +1963,14 @@ void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& m
   }
 }
 
-void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app)
+void SparseTSDFReconstruction::ExtractMesh(Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app) const
 {
   AABB3D roi;
   roi.maximize();
   ExtractMesh(roi,mesh,app);
 }
 
-void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app)
+void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app) const
 {
   //TODO: do this faster without repeated block lookup
   ExtractMesh(roi,mesh);
@@ -1923,14 +1987,123 @@ void SparseTSDFReconstruction::ExtractMesh(const AABB3D& roi,Meshing::TriMesh& m
 
 void SparseTSDFReconstruction::GetExpandedBlock(const IntTriple& b,int channelIndex,Array3D<float>& expandedBlock,float defaultValue) const
 {
-  void* ptr = tsdf.hash.Get(b);
-  if(!ptr) {
+  const SparseVolumeGrid::Block* bl = tsdf.hash.Get(b);
+  if(!bl) {
     expandedBlock.set(defaultValue);
     return;
   }
-  const SparseVolumeGrid::Block* bl = reinterpret_cast<SparseVolumeGrid::Block*>(ptr);
   GetExpandedBlock(bl,channelIndex,expandedBlock,defaultValue);
 }
+
+void MakeExpandedBlock(const vector<const Array3D<float> *>& sources,Array3D<float>& out,float defaultValue)
+{
+    Assert(sources.size()==8);
+    Assert(sources[0] != NULL);
+    int m=sources[0]->m;
+    int n=sources[0]->n;
+    int p=sources[0]->p;
+    Assert(out.m == m+1);
+    Assert(out.n == n+1);
+    Assert(out.p == p+1);
+    //copy main chunk
+    //Array3D<float>::iterator it=out.begin();
+    //Array3D<float>::iterator it2=sources[0]->begin();
+    for(int i=0;i<m;i++) {
+        for(int j=0;j<n;j++) {
+            for(int k=0;k<p;k++) {
+                out(i,j,k) = (*sources[0])(i,j,k);
+                //*it = *it2;
+                //++it;
+                //++it2;
+            }
+            //it.incThird();
+        }
+        //it.incSecond();
+    }
+
+    if(sources[0x1]) {
+        const Array3D<float>& in = *sources[0x1];
+        for(int j=0;j<n;j++)
+            for(int k=0;k<p;k++)
+                out(m,j,k) = in(0,j,k);
+    }
+    else {
+        for(int j=0;j<n;j++)
+            for(int k=0;k<p;k++)
+                //out(m,j,k) = out(m-1,j,k);
+                out(m,j,k) = defaultValue;
+    }
+
+    if(sources[0x2]) {
+        const Array3D<float>& in = *sources[0x2];
+        for(int i=0;i<m;i++)
+            for(int k=0;k<p;k++)
+                out(i,n,k) = in(i,0,k);
+    }
+    else {
+        for(int i=0;i<m;i++)
+            for(int k=0;k<p;k++)
+                //out(i,n,k) = out(i,n-1,k);
+                out(i,n,k) = defaultValue;
+    }
+
+    if(sources[0x4]) {
+        const Array3D<float>& in = *sources[0x4];
+        for(int i=0;i<m;i++)
+            for(int j=0;j<n;j++)
+                out(i,j,p) = in(i,j,0);
+    }
+    else {
+        for(int i=0;i<m;i++)
+            for(int j=0;j<n;j++)
+                //out(i,j,p) = out(i,j,p-1);
+                out(i,j,p) = defaultValue;
+    }
+
+    if(sources[0x1|0x2]) {
+        const Array3D<float>& in = *sources[0x1|0x2];
+        for(int k=0;k<p;k++)
+            out(m,n,k) = in(0,0,k);
+    }
+    else {
+        for(int k=0;k<p;k++)
+            //out(m,n,k) = out(m-1,n-1,k);
+            out(m,n,k) = defaultValue;
+    }
+
+    if(sources[0x1|0x4]) {
+        const Array3D<float>& in = *sources[0x1|0x4];
+        for(int j=0;j<n;j++)
+            out(m,j,p) = in(0,j,0);
+    }
+    else {
+        for(int j=0;j<n;j++)
+            //out(m,j,p) = out(m-1,j,p-1);
+            out(m,j,p) = defaultValue;
+    }
+
+    if(sources[0x2|0x4]) {
+        const Array3D<float>& in = *sources[0x2|0x4];
+        for(int i=0;i<m;i++)
+            out(i,n,p) = in(i,0,0);
+    }
+    else {
+        for(int i=0;i<m;i++)
+            //out(i,n,p) = out(i,n-1,p-1);
+            out(i,n,p) = defaultValue;
+    }
+
+    if(sources[0x1|0x2|0x4]) {
+        const Array3D<float>& in = *sources[0x1|0x2|0x4];
+        out(m,n,p) = in(0,0,0);
+    }
+    else {
+        //out(m,n,p) = out(m-1,n-1,p-1);
+        out(m,n,p) = defaultValue;
+    }
+    
+}
+
 
 void SparseTSDFReconstruction::GetExpandedBlock(const SparseVolumeGrid::Block* bl,int channelIndex,Array3D<float>& expandedBlock,float defaultValue) const
 {
@@ -1945,22 +2118,33 @@ void SparseTSDFReconstruction::GetExpandedBlock(const SparseVolumeGrid::Block* b
     *j = *i;
 
   //now work on the seams:
-  IntTriple c = bl->index;
-  void* ptr;
+  IntTriple c;
+  const SparseVolumeGrid::Block* ptr;
+  vector<const Array3D<float>*> neighbors(8);
+  for(int i=0;i<8;i++) {
+    c = bl->index;
+    if(i&0x1) c.a++;;
+    if(i&0x2) c.b++;;
+    if(i&0x4) c.c++;;
+    if((ptr=tsdf.hash.Get(c)))
+      neighbors[i] = &ptr->grid.channels[channelIndex].value;
+  }
+  MakeExpandedBlock(neighbors,expandedBlock,defaultValue);
+  /*
   c[0] += 1;
   if((ptr=tsdf.hash.Get(c))) {
-    Array3D<float> &xnext = reinterpret_cast<SparseVolumeGrid::Block*>(ptr)->grid.channels[channelIndex].value;
+    const Array3D<float> &xnext = ptr->grid.channels[channelIndex].value;
     for(int j=0;j<n;j++) 
       for(int k=0;k<p;k++) 
         expandedBlock(m,j,k) = xnext(0,j,k);
     c[1] += 1;
     if((ptr=tsdf.hash.Get(c))) {
-      Array3D<float> &xynext = reinterpret_cast<SparseVolumeGrid::Block*>(ptr)->grid.channels[channelIndex].value;
+      const Array3D<float> &xynext = ptr->grid.channels[channelIndex].value;
       for(int k=0;k<p;k++) 
         expandedBlock(m,n,k) = xynext(0,0,k);
       c[2] += 1;
       if((ptr=tsdf.hash.Get(c))) {
-        Array3D<float> &xyznext = reinterpret_cast<SparseVolumeGrid::Block*>(ptr)->grid.channels[channelIndex].value;
+        const Array3D<float> &xyznext = ptr->grid.channels[channelIndex].value;
         expandedBlock(m,n,p) = xyznext(0,0,0);
       }
       else
@@ -1974,7 +2158,7 @@ void SparseTSDFReconstruction::GetExpandedBlock(const SparseVolumeGrid::Block* b
     c[1] -= 1;
     c[2] += 1;
     if((ptr=tsdf.hash.Get(c))) {
-      Array3D<float> &xznext = reinterpret_cast<SparseVolumeGrid::Block*>(ptr)->grid.channels[channelIndex].value;
+      const Array3D<float> &xznext = ptr->grid.channels[channelIndex].value;
       for(int j=0;j<n;j++) 
         expandedBlock(m,j,p) = xznext(0,j,0);
     }
@@ -1992,13 +2176,13 @@ void SparseTSDFReconstruction::GetExpandedBlock(const SparseVolumeGrid::Block* b
   c[0] -= 1;
   c[1] += 1;
   if((ptr=tsdf.hash.Get(c))) {
-    Array3D<float> &ynext = reinterpret_cast<SparseVolumeGrid::Block*>(ptr)->grid.channels[channelIndex].value;
+    const Array3D<float> &ynext = ptr->grid.channels[channelIndex].value;
     for(int i=0;i<m;i++)
       for(int k=0;k<p;k++) 
         expandedBlock(i,n,k) = ynext(i,0,k);
     c[2] += 1;
     if((ptr=tsdf.hash.Get(c))) {
-      Array3D<float> &yznext = reinterpret_cast<SparseVolumeGrid::Block*>(ptr)->grid.channels[channelIndex].value;
+      const Array3D<float> &yznext = ptr->grid.channels[channelIndex].value;
       for(int i=0;i<m;i++) 
         expandedBlock(i,n,p) = yznext(i,0,0);
     }
@@ -2015,7 +2199,7 @@ void SparseTSDFReconstruction::GetExpandedBlock(const SparseVolumeGrid::Block* b
   c[1] -= 1;
   c[2] += 1;
   if((ptr=tsdf.hash.Get(c))) {
-    Array3D<float> &znext = reinterpret_cast<SparseVolumeGrid::Block*>(ptr)->grid.channels[channelIndex].value;
+    const Array3D<float> &znext = ptr->grid.channels[channelIndex].value;
     for(int i=0;i<m;i++)
       for(int j=0;j<n;j++) {
         expandedBlock(i,j,p) = znext(i,j,0);
@@ -2026,6 +2210,7 @@ void SparseTSDFReconstruction::GetExpandedBlock(const SparseVolumeGrid::Block* b
       for(int j=0;j<n;j++) 
         expandedBlock(i,j,p) = defaultValue;
   }
+  */
 }
 
 void SparseTSDFReconstruction::GetColor(const Vector3& point,float* color) const
@@ -2054,15 +2239,27 @@ void SparseTSDFReconstruction::Fill(const VolumeGrid& values)
   rectifiedbb.bmax = cellmin.bmax;
   DenseTSDFReconstruction denseGrid(rectifiedbb,gridsize,truncationDistance);
   denseGrid.Fill(values);
+  denseGrid.colored = false;
   Fill(denseGrid);
 }
 
 void SparseTSDFReconstruction::Fill(const DenseTSDFReconstruction& denseGrid)
 {
+  if(weightChannel < 0) {
+    InitChannels(denseGrid.colored);
+  }
+  IntTriple imin;
+  tsdf.GetIndex(denseGrid.tsdf.bb.bmin,imin);
   auto i=denseGrid.tsdf.getIterator();
   Vector vec(tsdf.defaultValue.n,0.0);
-  while(i.isDone()) {
+  float dmin=Inf,dmax=-Inf,dabsmin=Inf;
+  int numAdded = 0;
+  while(!i.isDone()) {
+    dmin = Min(dmin,*i);
+    dmax = Max(dmax,*i);
+    dabsmin = Min(dabsmin,Abs(*i));
     if(Abs(*i) < truncationDistance) {
+      numAdded++;
       IntTriple idx = i.getIndex();
       vec[depthChannel] = *i;
       vec[weightChannel] = 1;
@@ -2075,9 +2272,13 @@ void SparseTSDFReconstruction::Fill(const DenseTSDFReconstruction& denseGrid)
         rgb[2] = info.rgb[2];
       }
       if(surfaceWeightChannel >= 0) vec[surfaceWeightChannel] = 1;
-      tsdf.SetValue(idx.a,idx.b,idx.c,vec);
+      tsdf.SetValue(idx.a+imin.a,idx.b+imin.b,idx.c+imin.c,vec);
     }
     ++i;
+  }
+  if(numAdded==0) {
+    printf("By STL iterator %f %f\n",*std::min_element(denseGrid.tsdf.value.begin(),denseGrid.tsdf.value.end()),*std::max_element(denseGrid.tsdf.value.begin(),denseGrid.tsdf.value.end()));
+    LOG4CXX_WARN(KrisLibrary::logger(),"SparseTSDFReconstruction::Fill: No cells added? Distance range ["<<dmin<<","<<dmax<<"], minabs "<<dabsmin);
   }
 }
 
@@ -2086,7 +2287,7 @@ void SparseTSDFReconstruction::Fill(const AnyGeometry3D& geom)
   AABB3D geombb;
   geombb = geom.GetAABB();
   geombb.bmin -= tsdf.cellRes;
-  geombb.bmax -= tsdf.cellRes;
+  geombb.bmax += tsdf.cellRes;
   AABB3D cellmin,cellmax;
   IntTriple imin,imax;
   tsdf.GetIndex(geombb.bmin,imin);
@@ -2096,8 +2297,9 @@ void SparseTSDFReconstruction::Fill(const AnyGeometry3D& geom)
   tsdf.GetCell(imax,cellmax);
   AABB3D rectifiedbb;
   rectifiedbb.bmin = cellmin.bmin;
-  rectifiedbb.bmax = cellmin.bmax;
+  rectifiedbb.bmax = cellmax.bmax;
   DenseTSDFReconstruction denseGrid(rectifiedbb,gridsize,truncationDistance);
+  denseGrid.colored = false;
   denseGrid.Fill(geom);
   Fill(denseGrid);
 }
@@ -2119,6 +2321,7 @@ void SparseTSDFReconstruction::Fill(const Meshing::TriMesh& geom,const vector<GL
   rectifiedbb.bmin = cellmin.bmin;
   rectifiedbb.bmax = cellmin.bmax;
   DenseTSDFReconstruction denseGrid(rectifiedbb,gridsize,truncationDistance);
+  denseGrid.colored = false;
   denseGrid.Fill(geom,vertexColors);
   Fill(denseGrid);
 }

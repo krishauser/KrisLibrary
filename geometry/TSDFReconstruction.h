@@ -68,6 +68,7 @@ class DenseTSDFReconstruction
 {
 public:
   DenseTSDFReconstruction(const AABB3D& volume,const IntTriple& res,Real truncationDistance=0.1);
+  DenseTSDFReconstruction(const DenseTSDFReconstruction& rhs) = default;
   ///Changes the truncation distance (this clears the TSDF)
   void SetTruncationDistance(Real truncationDistance);
   ///Indicates that a new scan is beginning.
@@ -168,7 +169,10 @@ class SparseTSDFReconstruction
 {
 public:
   SparseTSDFReconstruction(const Vector3& cellSize,Real truncationDistance=0.1);
+  SparseTSDFReconstruction(const SparseTSDFReconstruction& rhs);
   ~SparseTSDFReconstruction();
+  ///Copy
+  const SparseTSDFReconstruction& operator = (const SparseTSDFReconstruction& rhs);
   ///Indicates that a new scan is beginning.
   void NewScan();
   /** @brief Performs registration between the point cloud and the TSDF
@@ -180,14 +184,18 @@ public:
   void Register(const Meshing::PointCloud3D& pc,const RigidTransform& Tcamera_est,ICPParameters& params);
   /// Fuses the point cloud (in camera coordinates) into the TSDF
   void Fuse(const RigidTransform& Tcamera,const Meshing::PointCloud3D& pc,Real weight=1.0);
+  ///Will automatically be called if you haven't alraedy
+  void InitChannels(bool colored) { std::vector<std::string> attrs; InitChannels(colored,attrs); }
+  ///With auxiliary attributes (should correspond to attributes in fused point clouds)
+  void InitChannels(bool colored,const std::vector<std::string>& auxAttributes);
   ///Builds the mesh using the marching cubes algorithm
-  void ExtractMesh(Meshing::TriMesh& mesh);
+  void ExtractMesh(Meshing::TriMesh& mesh) const;
   ///Builds a colored mesh using the marching cubes algorithm
-  void ExtractMesh(Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app);
+  void ExtractMesh(Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app) const;
   ///Extracts the mesh at a region of interest (bounding box) 
-  void ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh);
+  void ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh) const;
   ///Extracts a colored mesh at a region of interest (bounding box) 
-  void ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app);
+  void ExtractMesh(const AABB3D& roi,Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& app) const;
   ///Get a vertex-centered block of values, augmented by the vertices of neighboring blocks.
   void GetExpandedBlock(const SparseVolumeGrid::Block* bl,int channelIndex,Array3D<float>& expandedBlock,float defaultValue) const;
   ///Get a vertex-centered block of values, augmented by the vertices of neighboring blocks.
