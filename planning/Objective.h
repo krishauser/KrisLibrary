@@ -194,8 +194,8 @@ class QuadraticObjective : public IntegratorObjectiveFunctional
 class OpObjectiveFunctional : public ObjectiveFunctionalBase
 {
  public:
-  OpObjectiveFunctional(ObjectiveFunctionalBase* rhs,ObjectiveFunctionalBase* lhs);
-  OpObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs);
+  OpObjectiveFunctional(ObjectiveFunctionalBase* rhs,ObjectiveFunctionalBase* lhs) : rhs(rhs), lhs(lhs) {};
+  OpObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs) : rhs(rhs), lhs_const(lhs) {};
 
   virtual std::string OpString() const=0;
   virtual Real Op(Real a,Real b)=0;
