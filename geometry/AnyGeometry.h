@@ -409,6 +409,8 @@ public:
   AnyContactsQueryResult();
   AnyContactsQueryResult(const AnyContactsQueryResult & rhs) = default;
   AnyContactsQueryResult(AnyContactsQueryResult&& other) = default;
+  AnyContactsQueryResult& operator = (const AnyContactsQueryResult& rhs) = default;
+  AnyContactsQueryResult& operator = (AnyContactsQueryResult&& rhs) = default;
   ///The list of computed contact points
   vector<ContactPair> contacts;
   ///True if clustering was performed
