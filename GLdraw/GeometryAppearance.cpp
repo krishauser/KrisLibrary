@@ -16,6 +16,12 @@
 #include <KrisLibrary/Timer.h>
 #include <memory.h>
 
+#ifdef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_MODE GL_CLAMP_TO_EDGE
+#else
+#define GL_CLAMP_MODE GL_CLAMP
+#endif //GL_CLAMP_TO_EDGE
+
 using namespace Geometry;
 namespace GLDraw {
 
@@ -830,7 +836,7 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
         }
         else {
-          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP_MODE);
         }
         if(texFilterNearest) {
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -849,8 +855,8 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
         }
         else {
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_MODE);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_MODE);
         }
         if(texFilterNearest) {
           glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
