@@ -73,7 +73,7 @@ public:
   inline T* getData() const { return items; }
   inline T* getRowData(int i) const { return &items[i*n]; }
 
-  class iterator
+  class iterator : public std::iterator<std::bidirectional_iterator_tag, T>
   {
   public:
     explicit iterator(const Array2D<T>* array);

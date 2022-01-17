@@ -64,7 +64,7 @@ class ArrayND
   inline int decOffset(int offset,int dim) const { return offset-strides[dim]; }
   std::vector<int> offsetToIndex(int offset) const;
 
-  struct iterator
+  struct iterator : public std::iterator<std::bidirectional_iterator_tag, T>
   {
     iterator& operator ++();
     iterator& operator --();

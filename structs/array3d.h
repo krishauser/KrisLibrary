@@ -75,7 +75,7 @@ class Array3D
   void swap(Array3D<T>&);
   inline T* getData() const { return items; }
   
-  class iterator
+  class iterator : public std::iterator<std::bidirectional_iterator_tag,T>
   {
   public:
     explicit iterator(const Array3D<T>* array);
