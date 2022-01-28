@@ -118,6 +118,13 @@ Image::Image(const Image& other)
 	operator = (other);
 }
 
+Image::Image(Image&& rhs)
+:format(rhs.format), w(rhs.w), h(rhs.h), data(rhs.data), num_bytes(rhs.num_bytes)
+{
+  //prevent deletion
+  rhs.data = 0;
+}
+
 Image::~Image()
 {
 	unload();
@@ -326,6 +333,36 @@ bool Image::Write(File& f) const
 	return true;
 }
 
+unsigned int Image::pixelChannels() const
+{
+	switch(format)
+	{
+	case Image::R8G8B8A8:
+		return 4;
+	case Image::R8G8B8:
+		return 3;
+	case Image::B8G8R8A8:
+		return 4;
+	case Image::B8G8R8:
+		return 3;
+	case Image::R5G6B5:
+		return 3;
+	case Image::R5G5B5X1:
+		return 3;
+	case Image::A8:
+		return 1;
+	case Image::FloatRGB:
+		return 3;
+	case Image::FloatRGBA:
+		return 4;
+	case Image::FloatA:
+		return 1;
+	default:
+		FatalError("Invalid format");
+		return 0;
+	}
+}
+
 unsigned char* Image::getData(int x, int y) const
 {
 	if(x >= w || x < 0)
@@ -334,6 +371,28 @@ unsigned char* Image::getData(int x, int y) const
 		return NULL;
 	int size = pixelSize();
 	return data + ((x+y*w)*size);
+}
+
+void Image::getNormalizedColor(int x, int y, float* out) const
+{
+	int nc = pixelChannels();
+	unsigned char* pixeldat = getData(x,y);
+	PIXELGETPROC get = pixel_get_proc(format);
+	COLOROPTYPE col;
+	get(pixeldat,col);
+	for(int i=0;i<nc;i++)
+		out[i] = float(col[i]*one_over_255);
+}
+
+void Image::setNormalizedColor(int x, int y, const float* in)
+{
+	int nc = pixelChannels();
+	unsigned char* pixeldat = getData(x,y);
+	PIXELSETPROC set = pixel_set_proc(format);
+	COLOROPTYPE col;
+	for(int i=0;i<nc;i++)
+		col[i] = (unsigned int)(in[i]*255.0);
+	set(pixeldat,col);
 }
 
 
