@@ -146,7 +146,7 @@ void LoadTriMeshExtensions(std::vector<std::string>& exts)
 #if HAVE_ASSIMP
   Assimp::Importer importer;
   string extlist;
-  import.GetExtensionList(extlist);
+  importer.GetExtensionList(extlist);
   vector<string> assimpexts = Split(extlist,";");  //still have format *.EXT
   for(auto s:assimpexts) {
     exts.push_back(s.substr(2));
