@@ -1,15 +1,16 @@
 #ifndef ANY_GEOMETRY_H
 #define ANY_GEOMETRY_H
 
-#include <KrisLibrary/utils/AnyValue.h>
 #include "AnyGeometryType.h"
+#include "CollisionMesh.h"
 
 class TiXmlElement;
 
 //forward declarations
-namespace Meshing { template <class T> class VolumeGridTemplate; typedef VolumeGridTemplate<Real> VolumeGrid; class PointCloud3D; }
+namespace Meshing { template <class T> class VolumeGridTemplate; typedef VolumeGridTemplate<Math::Real> VolumeGrid; class PointCloud3D; }
 namespace Math3D { class GeometricPrimitive3D; }
 namespace GLDraw { class GeometryAppearance; }
+namespace Geometry { class ConvexHull3D; }
 
 namespace Geometry {
 
@@ -21,10 +22,10 @@ typedef DistanceQueryResult AnyDistanceQueryResult;
 typedef ContactsQuerySettings AnyContactsQuerySettings;
 typedef ContactsQueryResult AnyContactsQueryResult;
 class Collider3DPrimitive;
-class Collision3DConvexHull;
+class Collider3DConvexHull;
 class CollisionMesh;
 class CollisionPointCloud;
-
+class CollisionImplicitSurface;
 
 /** @brief Optional flags for collision data hints.  The collision data preprocessor
  * may use these to improve preprocessing / collision checking performance.
@@ -78,11 +79,11 @@ class AnyGeometry3D
 
   AnyGeometry3D();
   AnyGeometry3D(const GeometricPrimitive3D& primitive);
-  AnyGeometry3D(const Meshing::VolumeGrid& grid,int value_type=VolumeGridImplicitSurface);
+  AnyGeometry3D(const ConvexHull3D& cvxhull);
   AnyGeometry3D(const Meshing::TriMesh& mesh);
   AnyGeometry3D(const Meshing::PointCloud3D& pc);
+  AnyGeometry3D(const Meshing::VolumeGrid& grid,int value_type=VolumeGridImplicitSurface);
   AnyGeometry3D(const vector<AnyGeometry3D>& items);
-  AnyGeometry3D(const ConvexHull3D& cvxhull);
   AnyGeometry3D(const AnyGeometry3D& geom) = default;
   AnyGeometry3D(AnyGeometry3D&& geom) = default;
   AnyGeometry3D& operator = (const AnyGeometry3D& rhs) = default;
@@ -180,11 +181,11 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
  public:
   AnyCollisionGeometry3D();
   AnyCollisionGeometry3D(const GeometricPrimitive3D& primitive);
+  AnyCollisionGeometry3D(const ConvexHull3D& primitive);
   AnyCollisionGeometry3D(const Meshing::TriMesh& mesh);
   AnyCollisionGeometry3D(const Meshing::PointCloud3D& pc);
   AnyCollisionGeometry3D(const Meshing::VolumeGrid& grid,int value_type=VolumeGridImplicitSurface);
   AnyCollisionGeometry3D(const AnyGeometry3D& geom);
-  AnyCollisionGeometry3D(const ConvexHull3D& primitive);
   AnyCollisionGeometry3D(const vector<AnyGeometry3D>& group);
   AnyCollisionGeometry3D(const AnyCollisionGeometry3D& geom);
   AnyCollisionGeometry3D(AnyCollisionGeometry3D&& geom) = default;

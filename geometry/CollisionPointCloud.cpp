@@ -24,12 +24,6 @@ typedef ContactsQueryResult::ContactPair ContactPair;
 //declared in CollisionMesh
 void RigidTransformToPQP(const RigidTransform &f, PQP_REAL R[3][3], PQP_REAL T[3]);
 
-enum {
-  CollisionDataHintFast=0x01,     
-  CollisionDataHintTemporallyCoherent=0x02,
-  CollisionDataHintGridlike=0x04
-};
-
 
 CollisionPointCloud::CollisionPointCloud()
   :gridResolution(0),grid(3),radiusIndex(-1),maxRadius(0)
@@ -802,17 +796,6 @@ inline bool Collide(const Triangle3D &tri, const Sphere3D &s)
   return s.contains(pt);
 }
 
-inline Real Volume(const AABB3D &bb)
-{
-  Vector3 d = bb.bmax - bb.bmin;
-  return d.x * d.y * d.z;
-}
-
-inline Real Volume(const OctreeNode &n)
-{
-  return Volume(n.bb);
-}
-
 inline Real Volume(const BV &b)
 {
   return 8.0 * b.d[0] * b.d[1] * b.d[2];
@@ -1038,10 +1021,6 @@ bool Collides(const CollisionPointCloud &a, Real margin, const CollisionPointClo
 
 
 
-bool Geometry3DPointCloud::Empty() const
-{
-    return data.points.empty();
-}
 
 bool Geometry3DPointCloud::Merge(const vector<Geometry3D*>& geoms)
 {
@@ -1091,8 +1070,10 @@ Geometry3D* Geometry3DPointCloud::ConvertTo(Type restype, Real param, Real expan
         }
     case Type::OccupancyGrid:
         FatalError("TODO: Convert PointCloud to OccupancyGrid");
+        return NULL;
+    default:
+        return NULL;
     }
-    return NULL;
 }
 
 bool Geometry3DPointCloud::ConvertFrom(const Geometry3D* geom,Real param,Real domainExpansion) 
@@ -1150,9 +1131,8 @@ bool Geometry3DPointCloud::ConvertFrom(const Geometry3D* geom,Real param,Real do
         return true;
     }
     default:
-        ;
+        return false;
     }
-    return false;
 }
 
 Geometry3D* Geometry3DPointCloud::Remesh(Real resolution,bool refine,bool coarsen) const
@@ -1249,11 +1229,6 @@ Geometry3D* Geometry3DPointCloud::ExtractROI(const Box3D& bb,int flags) const
     auto* res = new Geometry3DPointCloud;
     Geometry::ExtractROI(data,bb,res->data,flags);
     return res;
-}
-
-size_t Geometry3DPointCloud::NumElements() const 
-{
-    return data.points.size();
 }
 
 shared_ptr<Geometry3D> Geometry3DPointCloud::GetElement(int elem) const
@@ -1650,9 +1625,10 @@ bool Collider3DPointCloud::Contacts(Collider3D* other,const ContactsQuerySetting
     }
   case Type::ConvexHull:
     LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: point cloud-convex hull contacts");
-    break;
+    return false;
+  default:
+      return false;
   }
-  return false;
 }
 
 Collider3D* Collider3DPointCloud::Slice(const RigidTransform& T,Real tol) const

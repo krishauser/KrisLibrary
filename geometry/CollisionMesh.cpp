@@ -12,7 +12,7 @@
 #include <KrisLibrary/meshing/Meshing.h>
 #include "CollisionPrimitive.h"
 #include "CollisionPointCloud.h"
-#include "ConvexHull3D.h"
+#include "CollisionConvexHull.h"
 using namespace Meshing;
 using namespace std;
 
@@ -39,12 +39,6 @@ DECLARE_LOGGER(Geometry)
 namespace Geometry {
 
 typedef ContactsQueryResult::ContactPair ContactPair;
-
-enum {
-  CollisionDataHintFast=0x01,     
-  CollisionDataHintTemporallyCoherent=0x02,
-  CollisionDataHintGridlike=0x04
-};
 
 void RigidTransformToPQP(const RigidTransform& f,PQP_REAL R[3][3],PQP_REAL T[3])
 {
@@ -2003,8 +1997,9 @@ Geometry3D* Geometry3DTriangleMesh::ConvertTo(Type restype, Real param, Real exp
         MeshConvexDecomposition(data,res->data,param);
         return res;
         }
+    default:
+        return NULL;
     }
-    return NULL;
 }
 
 bool Geometry3DTriangleMesh::ConvertFrom(const Geometry3D* geom,Real param,Real domainExpansion)
@@ -2029,18 +2024,9 @@ bool Geometry3DTriangleMesh::ConvertFrom(const Geometry3D* geom,Real param,Real 
     case Type::ConvexHull:
         ConvexHullToMesh(dynamic_cast<const Geometry3DConvexHull*>(geom)->data,data);    
         return true;
+    default:
+        return false;
     }
-    return false;
-}
-
-bool Geometry3DTriangleMesh::Empty() const
-{
-    return data.tris.empty();
-}
-
-size_t Geometry3DTriangleMesh::NumElements() const 
-{
-    return data.tris.size();
 }
 
 shared_ptr<Geometry3D> Geometry3DTriangleMesh::GetElement(int elem) const
@@ -2206,43 +2192,12 @@ Collider3D* Collider3DTriangleMesh::Copy() const
 
 Collider3D* Collider3DTriangleMesh::ConvertTo(Type restype, Real param,Real domainExpansion)
 {
-    if (restype == Type::ImplicitSurface)
-    {
-        if(collisionData.triNeighbors.empty())
-            collisionData.CalcTriNeighbors();
-        if (param == 0)
-        {
-            const Meshing::TriMesh &mesh = data->data;
-            if (mesh.tris.empty())
-                return NULL;
-            Real sumlengths = 0;
-            for (size_t i = 0; i < mesh.tris.size(); i++)
-            {
-                sumlengths += mesh.verts[mesh.tris[i].a].distance(mesh.verts[mesh.tris[i].b]);
-                sumlengths += mesh.verts[mesh.tris[i].b].distance(mesh.verts[mesh.tris[i].c]);
-                sumlengths += mesh.verts[mesh.tris[i].c].distance(mesh.verts[mesh.tris[i].a]);
-            }
-            Real avglength = sumlengths / (3 * mesh.tris.size());
-            param = avglength / 2;
-            Vector3 bmin, bmax;
-            mesh.GetAABB(bmin, bmax);
-            param = Min(param, 0.25 * (bmax.x - bmin.x));
-            param = Min(param, 0.25 * (bmax.y - bmin.y));
-            param = Min(param, 0.25 * (bmax.z - bmin.z));
-            LOG4CXX_INFO(GET_LOGGER(Geometry), "Auto-determined grid resolution " << param);
-        }
-        shared_ptr<Geometry3DImplicitSurface> surfdata(new Geometry3DImplicitSurface());
-        RigidTransform Torig, Tident;
-        collisionData.GetTransform(Torig);
-        collisionData.UpdateTransform(Tident);
-        MeshToImplicitSurface_FMM(collisionData, surfdata->data, param, domainExpansion);
-        //MeshToImplicitSurface_SpaceCarving(TriangleMeshCollisionData(),grid,param,40);
-        collisionData.UpdateTransform(Torig);
-        //LOG4CXX_INFO(GET_LOGGER(Geometry), "Grid bb " << grid.bb);
-        auto* res = new Collider3DImplicitSurface(surfdata);
-        res->SetTransform(GetTransform());
-        return res;
+    if(restype == Type::ConvexHull) {
+      auto convex_hull = make_shared<Geometry3DConvexHull>();
+      MeshConvexDecomposition(data->data,convex_hull->data,param);
+      return new Collider3DConvexHull(convex_hull);
     }
+    return NULL;
 }
 
 AABB3D Collider3DTriangleMesh::GetAABBTight() const
@@ -2938,7 +2893,7 @@ void MeshPrimitiveContacts(CollisionMesh &m1, Real outerMargin1, GeometricPrimit
 }
 
 
-Collider3D* Collider3DTriangleMesh::Slice(const RigidTransform& T,Real tol=0) const
+Collider3D* Collider3DTriangleMesh::Slice(const RigidTransform& T,Real tol) const
 {
   vector<Segment2D> segs;
   vector<int> tri_indices;
@@ -2998,6 +2953,8 @@ bool Collider3DTriangleMesh::Contacts(Collider3D* other,const ContactsQuerySetti
   case Type::ConvexHull:
     LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: triangle mesh-convex hull contacts");
     break;
+  default:
+    return false;
   }
   return false;
 }

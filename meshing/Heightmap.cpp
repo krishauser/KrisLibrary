@@ -49,7 +49,7 @@ Vector2 Heightmap::GetCellCenter(int i,int j) const
     Real di = 1.0/(heights.m-1);
     Real dj = 1.0/(heights.n-1);
     Real u = Real(i+0.5)*di - 0.5;
-    Real v = Real(j+0.5)*di - 0.5;
+    Real v = Real(j+0.5)*dj - 0.5;
     return Vector2(u*xysize.x+offset.x,v*xysize.y+offset.y);
 }
 
@@ -92,6 +92,7 @@ AABB3D Heightmap::GetAABB() const
         res.bmin.z = *std::min_element(heights.begin(),heights.end()) + offset.z;
         res.bmax.z = *std::max_element(heights.begin(),heights.end()) + offset.z;
     }
+    return res;
 }
 
 void Heightmap::SetViewport(const Camera::Viewport& vp)
@@ -244,13 +245,13 @@ Vector3 Heightmap::GetVertex(int i,int j) const
     return res + offset;
 }
 
-Vector3 Heightmap::GetVertex(int i,int j,Real u,Real v,int interpolation) const
+Vector3 Heightmap::GetVertex(int i,int j,Real vu,Real vv,int interpolation) const
 {
     Vector3 res;
     Real di = 1.0/(heights.m-1);
     Real dj = 1.0/(heights.n-1);
-    Real u = Real(i+u)*di - 0.5;
-    Real v = Real(j+u)*dj - 0.5;
+    Real u = Real(i+vu)*di - 0.5;
+    Real v = Real(j+vv)*dj - 0.5;
     res.x = u*xysize.x;
     res.y = v*xysize.y;
     if(heights.empty()) {
@@ -431,7 +432,7 @@ void Heightmap::Remesh(const Heightmap& hm)
             newheights(i,j) = GetHeight(verts(i,j));
             if(colors.num_bytes != 0) {
                 Vector3 c = GetColor(verts(i,j));
-                float col[4] = {c.x,c.y,c.z,1.0};
+                float col[4] = {(float)c.x,(float)c.y,(float)c.z,1.0f};
                 newcolors.setNormalizedColor(i,verts.n-1-j,col);
             }
         }

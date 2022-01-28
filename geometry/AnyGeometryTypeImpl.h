@@ -3,7 +3,6 @@
 
 #include "AnyGeometryType.h"
 #include "ConvexHull3D.h"
-#include "CollisionImplicitSurface.h"
 #include <KrisLibrary/meshing/PointCloud.h>
 #include <KrisLibrary/meshing/VolumeGrid.h>
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
@@ -33,7 +32,7 @@ public:
     virtual bool Save(ostream& out) const override;
     virtual bool Empty() const override { return data.type == GeometricPrimitive3D::Empty; }
     virtual size_t NumElements() const override { return 1; }
-    virtual shared_ptr<Geometry3D> GetElement(int elem) const override { return make_shared<Geometry3D>(new Geometry3DPrimitive(data)); }
+    virtual shared_ptr<Geometry3D> GetElement(int elem) const override { return shared_ptr<Geometry3D>(new Geometry3DPrimitive(data)); }
     virtual AABB3D GetAABB() const override;
     virtual bool Transform(const Matrix4& mat) override;
     virtual Geometry3D* Copy() const override { return new Geometry3DPrimitive(data); }
@@ -180,14 +179,14 @@ public:
 class Geometry3DGroup : public Geometry3D
 {
 public:
-    Geometry3DGroup() {}
-    Geometry3DGroup(const vector<AnyGeometry3D>& _data):data(_data) {}
-    virtual ~Geometry3DGroup () {}
+    Geometry3DGroup();
+    Geometry3DGroup(const vector<AnyGeometry3D>& _data);
+    virtual ~Geometry3DGroup ();
     virtual Type GetType() const override { return Type::Group; }
     virtual bool Load(istream& in) override;
     virtual bool Save(ostream& out) const override;
-    virtual bool Empty() const override { return data.empty(); }
-    virtual size_t NumElements() const override { return data.size(); }
+    virtual bool Empty() const override;
+    virtual size_t NumElements() const override;
     virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
     virtual AABB3D GetAABB() const override;
     virtual bool Transform(const Matrix4& mat) override;
@@ -206,7 +205,7 @@ class Collider3DGroup : public Collider3D
 {
 public:
     Collider3DGroup(shared_ptr<Geometry3DGroup> data);
-    virtual ~Collider3DGroup() {}
+    virtual ~Collider3DGroup();
     virtual shared_ptr<Geometry3D> GetData() const override { return dynamic_pointer_cast<Geometry3D>(data); }
     virtual void Reset() override;
     virtual AABB3D GetAABB() const override;
@@ -234,5 +233,5 @@ public:
 
 } //namespace Geometry
 
-#endif //ANY_GEOMETRY_TYPE_IMPL
+#endif //ANY_GEOMETRY_TYPE_IMPL_H
 

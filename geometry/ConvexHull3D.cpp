@@ -1,5 +1,7 @@
 #include "ConvexHull3D.h"
+#include "CollisionConvexHull.h"
 #include "CollisionPrimitive.h"
+#include "Conversions.h"
 #include <iostream>
 #include <limits>
 #include <KrisLibrary/utils/AnyValue.h>
@@ -546,10 +548,8 @@ Geometry3D* Geometry3DConvexHull::ConvertTo(Type restype, Real param,Real domain
         return res;
         }
     default:
-        LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from ConvexHull to anything except for TriangleMesh and PointCloud");
-        break;
+        return NULL;
     }
-    return NULL;
 }
 
 bool Geometry3DConvexHull::ConvertFrom(const Geometry3D* geom,Real param,Real domainExpansion)
@@ -612,6 +612,7 @@ AABB3D Collider3DConvexHull::GetAABB() const
       res.bmin[i] = bmin[i];
       res.bmax[i] = bmax[i];
     }
+    return res;
 }
 
 void Collider3DConvexHull::Reset()
@@ -624,17 +625,13 @@ void Collider3DConvexHull::Reset()
   SetTransform(ident);
 }
 
-Collider3DConvexHull::Collider3DConvexHull()  // no value, waiting to be initialized
-{
-  shapeHandle = NULL;
-}
-
-bool Collider3DConvexHull::Contains(const Vector3& pnt) const
+bool Collider3DConvexHull::Contains(const Vector3& pnt,bool& result)
 {
   ConvexHull3D cpt;
   cpt.SetPoint(pnt);
   Collider3DConvexHull ccpt(cpt);
-  return Collides(ccpt);
+  result = Collides(ccpt);
+  return true;
 }
 
 bool Collider3DConvexHull::Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
@@ -644,7 +641,7 @@ bool Collider3DConvexHull::Collides(Collider3D* geom,vector<int>& elements1,vect
     {
     auto* b=dynamic_cast<Collider3DPrimitive*>(geom);
     bool collides;
-    if(!Collides(*b->data,collides)) return false;
+    if(!Collides(b->data->data,collides)) return false;
     if(collides) {
       elements1.push_back(0);
       elements2.push_back(0);
@@ -660,8 +657,9 @@ bool Collider3DConvexHull::Collides(Collider3D* geom,vector<int>& elements1,vect
     }
     return true;
     }
+  default:
+    return false;
   }
-  return false;
 }
 
 
@@ -672,7 +670,8 @@ bool Collider3DConvexHull::WithinDistance(Collider3D* geom,Real d,vector<int>& e
     {
     auto* b=dynamic_cast<Collider3DPrimitive*>(geom);
     Real dist;
-    if(!Distance(*b->data,dist)) return false;
+    Vector3 cp,dir;
+    if(!ClosestPoint(b->data->data,dist,cp,dir)) return false;
     if(dist <= d) {
       elements1.push_back(0);
       elements2.push_back(0);
@@ -682,26 +681,28 @@ bool Collider3DConvexHull::WithinDistance(Collider3D* geom,Real d,vector<int>& e
   case Type::ConvexHull:
     {
     auto* b=dynamic_cast<Collider3DConvexHull*>(geom);
-    Real dist,
-    if(!Distance(*b,dist)) return false;
+    Real dist;
+    Vector3 cp,dir;
+    dist = ClosestPoint(*b,cp,dir);
     if(dist <= d) {
       elements1.push_back(0);
       elements2.push_back(0);
     }
     return true;
     }
+  default:
+    return false;
   }
-  return false;
 }
 
-bool Collider3DConvexHull::Collides(const GeometricPrimitive3D& primitive,bool& result) const
+bool Collider3DConvexHull::Collides(const GeometricPrimitive3D& primitive,bool& result)
 {
   if(primitive.type == GeometricPrimitive3D::Point) {
-    if(!Contains(AnyCast<Vector3*>(&primitive.data),result)) return false;
+    if(!Contains(*AnyCast<Vector3>(&primitive.data),result)) return false;
     return true;
   }
-  else if(b->data->data.type == GeometricPrimitive3D::Sphere) {
-    auto* s = AnyCast<Sphere3D*>(&primitive.data);
+  else if(primitive.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D* s = AnyCast<Sphere3D>(&primitive.data);
     Real dist;
     if(!Distance(s->center,dist)) return false;
     result = (dist <= s->radius);
@@ -751,14 +752,25 @@ bool Collider3DConvexHull::Distance(Collider3D* geom,const DistanceQuerySettings
   switch(geom->GetType()) {
   case Type::Primitive:
   {
-    print("TODO: ConvexHull -> primitive distance");
+    auto* prim = dynamic_cast<Collider3DPrimitive*>(geom);
+    auto wp = prim->data->data;
+    wp.Transform(prim->T);
+    Vector3 cp,dir;
+    if(!ClosestPoint(wp,result.d,cp,dir)) return false;
+    result.hasPenetration = true;
+    result.hasClosestPoints = true;
+    result.hasDirections = true;
+    result.cp1 = cp;
+    result.cp2 = cp+dir*result.d;
+    result.dir1 = dir;
+    result.dir2 = -dir;
     return false;
   }
   case Type::ConvexHull:
   {
       // use AABB to exclude them
       AABB3D aabb1 = this->GetAABB();
-      AABB3D aabb2 = geom.GetAABB();
+      AABB3D aabb2 = geom->GetAABB();
       // std::cout << "BBox1 " << aabb1.bmin.x << " " << aabb1.bmin.y << " " << aabb1.bmin.z << " and " << aabb1.bmax.x << " " << aabb1.bmax.y << " " << aabb1.bmax.z << "\n";
       // std::cout << "BBox2 " << aabb2.bmin.x << " " << aabb2.bmin.y << " " << aabb2.bmin.z << " and " << aabb2.bmax.x << " " << aabb2.bmax.y << " " << aabb2.bmax.z << "\n";
       double d = aabb1.distance(aabb2);
@@ -773,7 +785,7 @@ bool Collider3DConvexHull::Distance(Collider3D* geom,const DistanceQuerySettings
       }
       Collider3DConvexHull* b = dynamic_cast<Collider3DConvexHull*>(geom);
       Vector3 cp, direction;
-      Real dist = ClosestPoints(*b, cp, direction);
+      Real dist = ClosestPoint(*b, cp, direction);
       //std::cout << "Call closest point and get " << dist << "\n";
       result.hasElements = false;
       result.hasPenetration = true;
@@ -812,13 +824,13 @@ Real Collider3DConvexHull::ClosestPoint(const Vector3& pnt,Vector3& cp,Vector3& 
 bool Collider3DConvexHull::ClosestPoint(const GeometricPrimitive3D& primitive,Real& dist,Vector3& cp,Vector3& direction) const
 {
   if(primitive.type == GeometricPrimitive3D::Point) {
-    auto* pt = AnyCast<Vector3*>(&primitive.data);
+    auto* pt = AnyCast<Vector3>(&primitive.data);
     dist = ClosestPoint(*pt,cp,direction);
     return true;
   }
-  else if(b->data->data.type == GeometricPrimitive3D::Sphere) {
-    auto* s = AnyCast<Sphere3D*>(&primitive.data);
-    dist = ClosestPoint(*pt,cp,direction);
+  else if(primitive.type == GeometricPrimitive3D::Sphere) {
+    const Sphere3D* s = AnyCast<Sphere3D>(&primitive.data);
+    dist = ClosestPoint(s->center,cp,direction);
     dist -= s->radius;
     return true;
   }
@@ -849,17 +861,6 @@ void Collider3DConvexHull::SetTransform(const RigidTransform &tran)
   transform[8] = tran.R.data[2][0]; transform[9] = tran.R.data[2][1]; transform[10] = tran.R.data[2][2]; transform[11] = 0;
   transform[12] = tran.t[0]; transform[13] = tran.t[1]; transform[14] = tran.t[2]; transform[15] = 1;
   DT_SetMatrixd(objectHandle->data, transform);
-}
-
-RigidTransform Collider3DConvexHull::GetTransform() const
-{
-  RigidTransform tran;
-  for(int i=0;i<3;i++) {
-    for(int j=0;j<3;j++)
-      tran.R.data[i,j] = transform[i*4+j]
-  }
-  tran.t.set(transform[12],transform[13],transform[14]);
-  return tran;
 }
 
 void Collider3DConvexHull::UpdateHullSecondRelativeTransform(const RigidTransform &tran) {

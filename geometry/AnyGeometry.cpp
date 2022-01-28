@@ -1,14 +1,14 @@
-#include <KrisLibrary/Logger.h>
 #include "AnyGeometry.h"
 #include "AnyGeometryTypeImpl.h"
 #include "CollisionPrimitive.h"
+#include "CollisionConvexHull.h"
 #include "CollisionMesh.h"
 #include "CollisionPointCloud.h"
 #include "CollisionImplicitSurface.h"
-#include "ConvexHull3D.h"
 #include <KrisLibrary/meshing/IO.h>
 #include <KrisLibrary/utils/stringutils.h>
 #include <KrisLibrary/structs/Heap.h>
+#include <KrisLibrary/Logger.h>
 #include <Timer.h>
 #include <fstream>
 #include <stdlib.h>
@@ -224,6 +224,7 @@ GeometricPrimitive3D AnyGeometry3D::GetElement(int elem) const
     return prim;
   }
   FatalError("Element isn't a primitive");
+  return GeometricPrimitive3D();
 }
 
 bool AnyGeometry3D::CanLoadExt(const char *ext)
@@ -423,6 +424,7 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
   collisionHint = geom.collisionHint;
 
   if (geom.collider) collider.reset(geom.collider->Copy());
+  return *this;
 }
 
 const Collider3DPrimitive &AnyCollisionGeometry3D::PrimitiveCollisionData() const { return *dynamic_cast<const Collider3DPrimitive*>(collider.get()); }
@@ -652,7 +654,6 @@ bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D &geom,
     return false;
   }
   else {
-    bool result;
     if(collider->Collides(geom.collider.get(),elements1,elements2,maxContacts)) { return !elements1.empty(); }
     if(geom.collider->Collides(collider.get(),elements2,elements1,maxContacts)) { return !elements1.empty(); }
     return false;
@@ -714,7 +715,6 @@ bool AnyCollisionGeometry3D::WithinDistance(AnyCollisionGeometry3D &geom, Real t
   InitCollisionData();
   geom.InitCollisionData();
   tol += margin + geom.margin;
-  bool result;
   if(type < geom.type) {
     if(geom.collider->WithinDistance(collider.get(),tol,elements2,elements1)) { return !elements1.empty(); }
     if(collider->WithinDistance(geom.collider.get(),tol,elements1,elements2)) { return !elements1.empty(); }

@@ -7,15 +7,17 @@
 #include <meshing/VolumeGrid.h>
 #include <meshing/Voxelize.h>
 #include "CollisionPrimitive.h"
+#include "CollisionConvexHull.h"
 #include "CollisionMesh.h"
 #include "CollisionPointCloud.h"
+#include "CollisionImplicitSurface.h"
 #include "CollisionOccupancyGrid.h"
 #include <fstream>
 
 DECLARE_LOGGER(Geometry)
 
-using namespace Geometry;
 
+namespace Geometry {
 
 void Flip(DistanceQueryResult &res)
 {
@@ -98,13 +100,16 @@ void PushGroup2(DistanceQueryResult &res, int i)
   res.elem2 = i;
 }
 
-void ReverseContact(ContactPair &contact)
+void ReverseContact(ContactsQueryResult::ContactPair &contact)
 {
   std::swap(contact.p1, contact.p2);
   contact.n.inplaceNegative();
   std::swap(contact.elem1, contact.elem2);
 }
 
+} //Geometry
+
+using namespace Geometry;
 
 DistanceQueryResult::DistanceQueryResult()
     : hasPenetration(0), hasElements(0), hasClosestPoints(0), hasDirections(0), d(Inf), elem1(-1), elem2(-1)
@@ -208,7 +213,19 @@ bool Geometry3D::Transform(const RigidTransform& T)
     return Transform(Matrix4(T));
 }
 
+Geometry3DGroup::Geometry3DGroup()
+{}
 
+Geometry3DGroup::Geometry3DGroup(const vector<AnyGeometry3D>& _data)
+:data(_data)
+{}
+
+Geometry3DGroup::~Geometry3DGroup ()
+{}
+
+bool Geometry3DGroup::Empty() const { return data.empty(); }
+
+size_t Geometry3DGroup::NumElements() const { return data.size(); }
 
 Geometry3D* Geometry3DGroup::ConvertTo(Type restype, Real param,Real domainExpansion) const
 {
@@ -283,10 +300,6 @@ Geometry3D* Geometry3DGroup::ExtractROI(const Box3D& bb,int flags) const
     }
     return res;
 }
- 
-
-
-
 
 bool Geometry3DGroup::Load(istream& in)
 {
@@ -448,6 +461,17 @@ bool Collider3D::ConvertFrom(Collider3D* geom,Real param,Real domainExpansion)
     return true;
 }
 
+Collider3DGroup::Collider3DGroup(shared_ptr<Geometry3DGroup> _data)
+:data(_data),collisionData(_data->data.size())
+{
+  for(size_t i=0;i<data->data.size();i++) {
+    collisionData[i].type = data->data[i].type;
+    collisionData[i].data = data->data[i].data;
+  }
+}
+
+Collider3DGroup::~Collider3DGroup() {}
+
 AABB3D Collider3DGroup::GetAABBTight() const
 {
     const vector<AnyCollisionGeometry3D> &items = collisionData;
@@ -466,27 +490,12 @@ AABB3D Collider3D::GetAABB() const
     return bb;
 }
 
-Collider3D* Collider3DGroup::ConvertTo(Type restype, Real param,Real domainExpansion)
+Box3D Collider3D::GetBB() const
 {
-    vector<AnyCollisionGeometry3D> &items = collisionData;
-    vector<AnyCollisionGeometry3D> resitems(items.size());
-    for(size_t i=0;i<items.size();i++) {
-      auto* res = items[i].collider->ConvertTo(restype,param,domainExpansion);
-      if(!res) return NULL;
-      resitems[i].type = res->GetType();
-      resitems[i].data = res->GetData();
-      resitems[i].collider.reset(res);
-    }
-    auto* res_geom = Geometry3D::Make(restype);
-    auto* res = Collider3D::Make(shared_ptr<Geometry3D>(res_geom));
-    vector<Collider3D*> resgeoms(resitems.size());
-    for(size_t i=0;i<resitems.size();i++)
-        resgeoms[i] = resitems[i].collider.get();
-    if(!res->Merge(resgeoms)) {
-        delete res;
-        return NULL;
-    }
-    return res;
+  Box3D b;
+  AABB3D bblocal = GetData()->GetAABB();
+  b.setTransformed(bblocal, GetTransform());
+  return b;
 }
 
 AABB3D Collider3DGroup::GetAABB() const
@@ -497,14 +506,6 @@ AABB3D Collider3DGroup::GetAABB() const
     for (size_t i = 0; i < items.size(); i++)
       bb.setUnion(items[i].GetAABB());
     return bb;
-}
-
-Box3D Collider3D::GetBB() const
-{
-  Box3D b;
-  AABB3D bblocal = GetData()->GetAABB();
-  b.setTransformed(bblocal, GetTransform());
-  return b;
 }
 
 Box3D Collider3DGroup::GetBB() const
@@ -534,12 +535,6 @@ bool Collider3DGroup::Distance(const Vector3& pt,Real& result)
     return true;
 }
 
-bool Collider3D::Distance(const Vector3 &pt, const DistanceQuerySettings &settings,DistanceQueryResult& res)
-{
-  return Distance(pt,res.d);
-}
-
-
 bool Collider3DGroup::Distance(const Vector3 &pt, const DistanceQuerySettings &settings,DistanceQueryResult& res)
 {
     vector<AnyCollisionGeometry3D> &items = collisionData;
@@ -556,12 +551,6 @@ bool Collider3DGroup::Distance(const Vector3 &pt, const DistanceQuerySettings &s
     }
     return true;
 }
-
-
-
-
-
-
 
 bool Collider3DGroup::WithinDistance(Collider3D* geom,Real d,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
@@ -627,7 +616,7 @@ bool Collider3DGroup::Contacts(Collider3D* other,const ContactsQuerySettings& se
     if(items[i].collider->Contacts(other,modsettings,modresult)) {
       for (auto &c : modresult.contacts)
         c.elem1 = (int)i;
-      contacts.insert(contacts.end(), modresult.contacts.begin(), modresult.contacts.end());
+      res.contacts.insert(res.contacts.end(), modresult.contacts.begin(), modresult.contacts.end());
     }
     else {
       swap(modsettings.padding1,modsettings.padding2);
@@ -636,7 +625,7 @@ bool Collider3DGroup::Contacts(Collider3D* other,const ContactsQuerySettings& se
           c.elem2 = (int)i;
           ReverseContact(c);
         }
-        contacts.insert(contacts.end(), modresult.contacts.begin(), modresult.contacts.end());
+        res.contacts.insert(res.contacts.end(), modresult.contacts.begin(), modresult.contacts.end());
       }
       else return false;
     }
@@ -668,10 +657,10 @@ Collider3D* Collider3DGroup::ExtractROI(const AABB3D& bb,int flags) const
   const vector<AnyCollisionGeometry3D> &items = collisionData;
   auto* res = new Collider3DGroup(make_shared<Geometry3DGroup>());
   for (size_t i = 0; i < items.size(); i++) {
-    if(!items[i].ExtractROI(bb,res->collisionData[i],flags)) return false;
+    if(!items[i].ExtractROI(bb,res->collisionData[i],flags)) return NULL;
     res->data->data[i] = res->collisionData[i];
   }
-  return true;
+  return res;
 }
 
 Collider3D* Collider3DGroup::ExtractROI(const Box3D& bb,int flags) const
@@ -679,8 +668,31 @@ Collider3D* Collider3DGroup::ExtractROI(const Box3D& bb,int flags) const
   const vector<AnyCollisionGeometry3D> &items = collisionData;
   auto* res = new Collider3DGroup(make_shared<Geometry3DGroup>());
   for (size_t i = 0; i < items.size(); i++) {
-    if(!items[i].ExtractROI(bb,res->collisionData[i],flags)) return false;
+    if(!items[i].ExtractROI(bb,res->collisionData[i],flags)) return NULL;
     res->data->data[i] = res->collisionData[i];
   }
-  return true;
+  return res;
+}
+
+Collider3D* Collider3DGroup::ConvertTo(Type restype, Real param,Real domainExpansion)
+{
+    vector<AnyCollisionGeometry3D> &items = collisionData;
+    vector<AnyCollisionGeometry3D> resitems(items.size());
+    for(size_t i=0;i<items.size();i++) {
+      auto* res = items[i].collider->ConvertTo(restype,param,domainExpansion);
+      if(!res) return NULL;
+      resitems[i].type = res->GetType();
+      resitems[i].data = res->GetData();
+      resitems[i].collider.reset(res);
+    }
+    auto* res_geom = Geometry3D::Make(restype);
+    auto* res = Collider3D::Make(shared_ptr<Geometry3D>(res_geom));
+    vector<Collider3D*> resgeoms(resitems.size());
+    for(size_t i=0;i<resitems.size();i++)
+        resgeoms[i] = resitems[i].collider.get();
+    if(!res->Merge(resgeoms)) {
+        delete res;
+        return NULL;
+    }
+    return res;
 }

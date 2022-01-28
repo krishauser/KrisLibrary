@@ -1020,8 +1020,9 @@ Geometry3D* Geometry3DImplicitSurface::ConvertTo(Type restype, Real param,Real d
                         g2.value(i,j,k) = 0.0;
         return res;
         }
+    default:
+        return NULL;
     }
-    return NULL;
 }
 
 Geometry3D* Geometry3DImplicitSurface::Remesh(Real resolution,bool refine,bool coarsen) const
@@ -1279,6 +1280,8 @@ bool Collider3DImplicitSurface::Contacts(Collider3D* other,const ContactsQuerySe
     case Type::ConvexHull:
       LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: implicit surface-convex hull contacts");
       break;
+    default:
+      return false;
   }
   return false;
 }

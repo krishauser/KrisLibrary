@@ -2,24 +2,29 @@
 #define ANY_GEOMETRY_TYPE_H
 
 #include <KrisLibrary/math3d/geometry3d.h>
+#include <memory>
 #include <limits.h>
 
 namespace Geometry {
 
+using namespace std;
+using namespace Math;
+using namespace Math3D;
 class DistanceQuerySettings;
 class DistanceQueryResult;
 class ContactsQuerySettings;
 class ContactsQueryResult;
 
 //foward declaration
-#ifndef GEOMETRY_ROI_H
+#ifndef EXTRACT_ROI_FLAG_DECL
+#define EXTRACT_ROI_FLAG_DECL
 enum {
     ExtractROIFlagIntersection=0x01,
     ExtractROIFlagTouching=0x02,
     ExtractROIFlagWithin=0x04,
     ExtractROIFlagInvert=0x08
 };
-#endif //GEOMETRY_ROI_H
+#endif //EXTRACT_ROI_FLAG_DECL
 
 
 
@@ -143,8 +148,6 @@ public:
     virtual bool Distance(const Vector3& pt,Real& result);
     virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res);
     virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) { return false; }
-    ///This is true if Distance() reports negative values for penetration depths
-    virtual bool IsDistanceSigned() const { return false; }
     virtual bool WithinDistance(Collider3D* geom,Real d,bool& result);
     virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) { return false; }
     virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) { return false; }

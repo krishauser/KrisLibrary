@@ -3,6 +3,7 @@
 
 #include <KrisLibrary/meshing/VolumeGrid.h>
 #include <KrisLibrary/math3d/geometry3d.h>
+#include "AnyGeometryTypeImpl.h"
 
 namespace Geometry {
 
@@ -56,7 +57,7 @@ public:
     virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res);
     virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res);
     virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
-    virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) { return false; }
+    virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res);
     virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element);
     virtual Collider3D* Slice(const RigidTransform& T,Real tol=0) const;
     virtual Collider3D* ExtractROI(const AABB3D& bb,int flag=1) const;

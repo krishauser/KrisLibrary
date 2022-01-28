@@ -674,7 +674,7 @@ void DenseTSDFReconstruction::Fill(const VolumeGrid& values)
 
 void DenseTSDFReconstruction::Fill(const AnyGeometry3D& geom)
 {
-  if(geom.type == AnyGeometry3D::Primitive) {
+  if(geom.type == AnyGeometry3D::Type::Primitive) {
     const auto& primitive = geom.AsPrimitive();
     VolumeGrid values;
     values.MakeSimilar(tsdf);
@@ -687,12 +687,12 @@ void DenseTSDFReconstruction::Fill(const AnyGeometry3D& geom)
     }
     Fill(values);
   }
-  else if(geom.type == AnyGeometry3D::TriangleMesh) {
+  else if(geom.type == AnyGeometry3D::Type::TriangleMesh) {
     const auto& mesh = geom.AsTriangleMesh();
     vector<GLDraw::GLColor> colors;
     Fill(mesh,colors);
   }
-  else if(geom.type == AnyGeometry3D::ImplicitSurface) {
+  else if(geom.type == AnyGeometry3D::Type::ImplicitSurface) {
     const auto& grid = geom.AsImplicitSurface();
     Fill(grid);
   }

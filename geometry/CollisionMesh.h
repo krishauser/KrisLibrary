@@ -12,39 +12,9 @@ class PQP_Results;
 
 namespace Geometry {
 
-  class ApproximatePenetrationDepth;
-  using namespace Math3D;
+using namespace Math3D;
+class ApproximatePenetrationDepth;
 
-class Collider3DTriangleMesh : public Collider3D
-{
-public:
-    Collider3DTriangleMesh(shared_ptr<Geometry3DTriangleMesh> data);
-    Collider3DTriangleMesh(const Collider3DTriangleMesh& rhs);
-    virtual ~Collider3DTriangleMesh() {}
-    virtual shared_ptr<Geometry3D> GetData() const override{ return dynamic_pointer_cast<Geometry3D>(data); }
-    virtual void Reset() override;
-    virtual AABB3D GetAABB() const override;
-    virtual AABB3D GetAABBTight() const override;
-    virtual Box3D GetBB() const override;
-    virtual RigidTransform GetTransform() const override { return collisionData.currentTransform; }
-    virtual void SetTransform(const RigidTransform& T) override { collisionData.currentTransform = T; }
-    virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
-    virtual bool Contains(const Vector3& pt,bool& result) override;
-    virtual bool Distance(const Vector3& pt,Real& result) override;
-    virtual bool Distance(const Vector3& pt,const AnyDistanceQuerySettings& settings,AnyDistanceQueryResult& res) override;
-    virtual bool Distance(Collider3D* geom,const AnyDistanceQuerySettings& settings,AnyDistanceQueryResult& res) override;
-    virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
-    virtual bool Contacts(Collider3D* other,const AnyContactsQuerySettings& settings,AnyContactsQueryResult& res) override;
-    virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
-    virtual Collider3D* Copy() const override;
-    virtual Collider3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) override;
-    virtual Collider3D* Slice(const RigidTransform& T,Real tol=0) const override;
-    virtual Collider3D* ExtractROI(const AABB3D& bb,int flag=1) const override;
-    virtual Collider3D* ExtractROI(const Box3D& bb,int flag=1) const override;
-
-    shared_ptr<Geometry3DTriangleMesh> data;
-    CollisionMesh collisionData;
-};
 
 
 /** @ingroup Geometry
@@ -73,6 +43,38 @@ class CollisionMesh : public Meshing::TriMeshWithTopology
   PQP_Model* pqpModel;
   RigidTransform currentTransform;
 };
+
+class Collider3DTriangleMesh : public Collider3D
+{
+public:
+    Collider3DTriangleMesh(shared_ptr<Geometry3DTriangleMesh> data);
+    Collider3DTriangleMesh(const Collider3DTriangleMesh& rhs);
+    virtual ~Collider3DTriangleMesh() {}
+    virtual shared_ptr<Geometry3D> GetData() const override{ return dynamic_pointer_cast<Geometry3D>(data); }
+    virtual void Reset() override;
+    virtual AABB3D GetAABB() const override;
+    virtual AABB3D GetAABBTight() const override;
+    virtual Box3D GetBB() const override;
+    virtual RigidTransform GetTransform() const override { return collisionData.currentTransform; }
+    virtual void SetTransform(const RigidTransform& T) override { collisionData.currentTransform = T; }
+    virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
+    virtual bool Contains(const Vector3& pt,bool& result) override;
+    virtual bool Distance(const Vector3& pt,Real& result) override;
+    virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
+    virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) override;
+    virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
+    virtual Collider3D* Copy() const override;
+    virtual Collider3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) override;
+    virtual Collider3D* Slice(const RigidTransform& T,Real tol=0) const override;
+    virtual Collider3D* ExtractROI(const AABB3D& bb,int flag=1) const override;
+    virtual Collider3D* ExtractROI(const Box3D& bb,int flag=1) const override;
+
+    shared_ptr<Geometry3DTriangleMesh> data;
+    CollisionMesh collisionData;
+};
+
 
 /** @ingroup Geometry
  * @brief A general-purpose distance querying class.
