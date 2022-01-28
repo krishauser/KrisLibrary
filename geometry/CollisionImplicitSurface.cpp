@@ -1,12 +1,14 @@
 #include "CollisionImplicitSurface.h"
+#include "CollisionPrimitive.h"
 #include "CollisionPointCloud.h"
+#include "CollisionMesh.h"
+#include "Conversions.h"
 #include <meshing/Voxelize.h>
 #include <spline/TimeSegmentation.h>
 #include <structs/Heap.h>
 #include <KrisLibrary/Logger.h>
 #include <Timer.h>
 #include <tuple>
-
 DECLARE_LOGGER(Geometry)
 
 #define DEBUG_DISTANCE_CHECKING 0
@@ -24,6 +26,9 @@ DECLARE_LOGGER(Geometry)
 using namespace std;
 
 namespace Geometry {
+
+typedef ContactsQueryResult::ContactPair ContactPair;
+
 
 void GetMinMax(const Meshing::VolumeGrid* mingrid,const Meshing::VolumeGrid* maxgrid,const AABB3D& bb,Real& vmin,Real& vmax)
 {
@@ -836,5 +841,494 @@ Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelS
   }
   return tmax;
 }
+
+
+
+int PointIndex(const CollisionImplicitSurface &s, const Vector3 &ptworld)
+{
+  Vector3 plocal;
+  s.currentTransform.mulInverse(ptworld, plocal);
+  IntTriple cell;
+  s.baseGrid.GetIndex(plocal, cell);
+  if (cell.a < 0)
+    cell.a = 0;
+  if (cell.a >= s.baseGrid.value.m)
+    cell.a = s.baseGrid.value.m - 1;
+  if (cell.b < 0)
+    cell.b = 0;
+  if (cell.b >= s.baseGrid.value.n)
+    cell.b = s.baseGrid.value.n - 1;
+  if (cell.c < 0)
+    cell.c = 0;
+  if (cell.c >= s.baseGrid.value.p)
+    cell.c = s.baseGrid.value.p - 1;
+  return cell.a * s.baseGrid.value.n * s.baseGrid.value.p + cell.b * s.baseGrid.value.p + cell.c;
+}
+
+bool Collides(const CollisionPointCloud &a, Real margin, const CollisionImplicitSurface &b,
+              vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
+{
+  bool res = Geometry::Collides(b, a, margin, elements1, maxContacts);
+  elements2.resize(elements1.size());
+  for (size_t i = 0; i < elements1.size(); i++)
+    elements2[i] = PointIndex(b, a.currentTransform * a.points[elements1[i]]);
+  return res;
+}
+
+bool Collides(const CollisionImplicitSurface &a, const CollisionImplicitSurface &b, Real margin,
+              vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
+{
+  LOG4CXX_ERROR(GET_LOGGER(Geometry), "Volume grid to volume grid collisions not done");
+  return false;
+}
+
+bool Collides(const CollisionImplicitSurface &a, const CollisionMesh &b, Real margin,
+              vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
+{
+  LOG4CXX_ERROR(GET_LOGGER(Geometry), "Volume grid to triangle mesh collisions not done");
+  return false;
+}
+
+
+
+bool Geometry3DVolume::Empty() const
+{
+    return data.value.empty();
+}
+
+size_t Geometry3DVolume::NumElements() const 
+{
+    IntTriple size = data.value.size();
+    return size.a * size.b * size.c;
+}
+
+shared_ptr<Geometry3D> Geometry3DVolume::GetElement(int elem) const
+{
+    const Meshing::VolumeGrid &grid = data;
+    IntTriple size = grid.value.size();
+    //elem = cell.a*size.b*size.c + cell.b*size.c + cell.c;
+    IntTriple cell;
+    cell.a = elem / (size.b * size.c);
+    cell.b = (elem / size.c) % size.b;
+    cell.c = elem % size.c;
+    AABB3D bb;
+    grid.GetCell(cell, bb);
+    return make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
+}
+
+bool Geometry3DVolume::Load(istream& in) 
+{
+    in >> data;
+    if(!in) return false;
+    return true;
+}
+
+bool Geometry3DVolume::Save(ostream& out) const
+{
+    out << data << endl;
+    return true;
+}
+
+bool Geometry3DVolume::Transform(const Matrix4 &T)
+{
+    if (T(0, 1) != 0 || T(0, 2) != 0 || T(1, 2) != 0 || T(1, 0) != 0 || T(2, 0) != 0 || T(2, 1) != 0)
+    {
+       LOG4CXX_ERROR(GET_LOGGER(Geometry),"Cannot transform volume grid except via translation / scale");
+       return false;
+    }
+    data.bb.bmin = T * data.bb.bmin;
+    data.bb.bmax = T * data.bb.bmax;
+    return true;
+}
+
+AABB3D Geometry3DVolume::GetAABB() const
+{
+    return data.bb;
+}
+
+
+bool Geometry3DImplicitSurface::ConvertFrom(const Geometry3D* geom,Real param,Real domainExpansion)  
+{
+    switch(geom->GetType()) {
+    case Type::Primitive:
+        if (param == 0)
+        {
+            AABB3D bb = geom->GetAABB();
+            Real w = (bb.bmax - bb.bmin).maxAbsElement();
+            param = w * 0.05;
+        }
+        PrimitiveToImplicitSurface(dynamic_cast<const Geometry3DPrimitive*>(geom)->data, data, param, domainExpansion);
+        return true;
+    case Type::TriangleMesh:
+        {
+        const auto& mesh = dynamic_cast<const Geometry3DTriangleMesh*>(geom)->data;
+        if (param == 0) {
+            if (mesh.tris.empty()) return NULL;
+            Real sumlengths = 0;
+            for (size_t i = 0; i < mesh.tris.size(); i++) {
+                sumlengths += mesh.verts[mesh.tris[i].a].distance(mesh.verts[mesh.tris[i].b]);
+                sumlengths += mesh.verts[mesh.tris[i].b].distance(mesh.verts[mesh.tris[i].c]);
+                sumlengths += mesh.verts[mesh.tris[i].c].distance(mesh.verts[mesh.tris[i].a]);
+            }
+            Real avglength = sumlengths / (3 * mesh.tris.size());
+            param = avglength / 2;
+            Vector3 bmin, bmax;
+            mesh.GetAABB(bmin, bmax);
+            param = Min(param, 0.25 * (bmax.x - bmin.x));
+            param = Min(param, 0.25 * (bmax.y - bmin.y));
+            param = Min(param, 0.25 * (bmax.z - bmin.z));
+            LOG4CXX_INFO(GET_LOGGER(Geometry), "AnyGeometry::Convert: Auto-determined grid resolution " << param);
+        }
+        CollisionMesh cmesh(mesh);
+        cmesh.CalcTriNeighbors();
+        MeshToImplicitSurface_FMM(cmesh, data, param);
+        LOG4CXX_INFO(GET_LOGGER(Geometry), "AnyGeometry::Convert: FMM grid bounding box " << data.bb);
+        return true;
+        }
+    default:
+        return false;
+    }
+}
+
+Geometry3D* Geometry3DImplicitSurface::ConvertTo(Type restype, Real param,Real domainExpansion) const
+{
+    switch (restype)
+    {
+    case Type::ImplicitSurface:
+        {
+        auto* res = new Geometry3DImplicitSurface();
+        res->data = data;
+        return res;
+        }
+    case Type::TriangleMesh:
+        {
+        auto* res = new Geometry3DTriangleMesh();
+        ImplicitSurfaceToMesh(data, res->data, param);
+        return res;
+        }
+    case Type::OccupancyGrid:
+        {
+        auto* res = new Geometry3DOccupancyGrid();
+        Meshing::VolumeGrid& g2 = res->data;
+        g2 = data;
+        for(int i=0;i<g2.value.m;i++)
+            for(int j=0;j<g2.value.n;j++)
+                for(int k=0;k<g2.value.p;k++)
+                    if(g2.value(i,j,k) < 0)
+                        g2.value(i,j,k) = 1.0;
+                    else
+                        g2.value(i,j,k) = 0.0;
+        return res;
+        }
+    }
+    return NULL;
+}
+
+Geometry3D* Geometry3DImplicitSurface::Remesh(Real resolution,bool refine,bool coarsen) const
+{
+    const Meshing::VolumeGrid& grid = data;
+    auto* res = new Geometry3DImplicitSurface;
+    Vector3 size=grid.GetCellSize();
+    if((resolution < size.x && refine) || (resolution > size.x && coarsen) ||
+       (resolution < size.y && refine) || (resolution > size.y && coarsen) ||
+       (resolution < size.z && refine) || (resolution > size.z && coarsen)) {
+        int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
+        int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
+        int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
+        Meshing::VolumeGrid& output = res->data;
+        output.Resize(m,n,p);
+        output.bb = grid.bb;
+        output.ResampleTrilinear(grid);
+    }
+    else {
+        res->data = grid;
+    }
+    return res;
+}
+
+Geometry3D* Geometry3DOccupancyGrid::Remesh(Real resolution,bool refine,bool coarsen) const
+{
+    const Meshing::VolumeGrid& grid = data;
+    auto* res = new Geometry3DOccupancyGrid;
+    Vector3 size=grid.GetCellSize();
+    if((resolution < size.x && refine) || (resolution > size.x && coarsen) ||
+    (resolution < size.y && refine) || (resolution > size.y && coarsen) ||
+    (resolution < size.z && refine) || (resolution > size.z && coarsen)) {
+        int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
+        int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
+        int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
+        Meshing::VolumeGrid& output = res->data;
+        output.Resize(m,n,p);
+        output.bb = grid.bb;
+        output.ResampleAverage(grid);
+    }
+    else {
+        res->data = grid;
+    }
+    return res;
+}
+
+
+bool Collider3DImplicitSurface::Distance(const Vector3& pt,Real& result)
+{
+    result = Geometry::Distance(collisionData, pt);
+    return true;
+}
+
+bool Collider3DImplicitSurface::Distance(const Vector3 &pt, const DistanceQuerySettings &settings,DistanceQueryResult& res)
+{
+    res.hasClosestPoints = true;
+    res.hasElements = true;
+    res.elem2 = 0;
+    res.cp2 = pt;
+
+    const CollisionImplicitSurface &vg = collisionData;
+    res.d = Geometry::Distance(vg, pt, res.cp1, res.dir2);
+    res.dir1.setNegative(res.dir2);
+    res.hasPenetration = true;
+    res.hasDirections = true;
+    res.elem1 = PointIndex(vg, res.cp1);
+    //cout<<"Doing ImplicitSurface - point collision detection, with direction "<<res.dir2<<endl;
+    return true;
+}
+
+
+bool Collider3DImplicitSurface::WithinDistance(Collider3D* geom,Real d,
+              vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
+{
+  switch (geom->GetType())
+  {
+  case Type::Primitive:
+  {
+    GeometricPrimitive3D bw = dynamic_cast<Collider3DPrimitive*>(geom)->data->data;
+    bw.Transform(geom->GetTransform());
+    Vector3 cpa;
+    if (Geometry::Collides(collisionData, bw, d, cpa))
+    {
+      elements1.resize(1);
+      elements1[0] = PointIndex(collisionData, cpa);
+      elements2.push_back(0);
+    }
+    return true;
+  }
+  case Type::ImplicitSurface:
+  {
+        auto& b = dynamic_cast<Collider3DImplicitSurface*>(geom)->collisionData;
+        Geometry::Collides(collisionData, b, d, elements1, elements2, maxContacts);
+        return true;
+  }
+  case Type::TriangleMesh:
+  {
+        auto& b = dynamic_cast<Collider3DTriangleMesh*>(geom)->collisionData;
+        Geometry::Collides(collisionData, b, d, elements1, elements2, maxContacts);
+        return true;
+  }
+  case Type::PointCloud:
+  {
+        auto& b = dynamic_cast<Collider3DPointCloud*>(geom)->collisionData;
+        bool res = Geometry::Collides(collisionData, b, d, elements2, maxContacts);
+        elements1.resize(elements2.size());
+        for (size_t i = 0; i < elements2.size(); i++)
+            elements1[i] = PointIndex(collisionData, b.currentTransform * b.points[elements2[i]]);
+        if(res) assert(!elements1.empty());
+        return true;
+  }
+  break;
+  default:
+    return false;
+  }
+  return false;
+}
+
+
+bool Collider3DImplicitSurface::RayCast(const Ray3D& r,Real margin,Real& distance, int& element)
+{
+    const auto& surf = collisionData;
+    distance = Geometry::RayCast(surf,r,margin);
+    if(!IsInf(distance)) {
+        element = PointIndex(surf,r.source+distance*r.direction);
+        return true;
+    }
+    return true;
+}
+
+void PointCloudImplicitSurfaceContacts(CollisionPointCloud &pc1, Real outerMargin1, CollisionImplicitSurface &s2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  contacts.resize(0);
+  Real tol = outerMargin1 + outerMargin2;
+  vector<int> points;
+  Geometry::Collides(s2, pc1, tol, points, maxcontacts);
+  contacts.reserve(points.size());
+  for (size_t j = 0; j < points.size(); j++)
+  {
+    Vector3 p1w = pc1.currentTransform * pc1.points[points[j]];
+    Vector3 p2w;
+    Vector3 n;
+    Real d = Geometry::Distance(s2, p1w, p2w, n);
+    size_t k = contacts.size();
+    contacts.resize(k + 1);
+    contacts[k].p1 = p1w + n * outerMargin1;
+    contacts[k].p2 = p2w - n * outerMargin2;
+    contacts[k].n = n;
+    contacts[k].depth = tol - d;
+    contacts[k].elem1 = points[j];
+    contacts[k].elem2 = PointIndex(s2, p2w);
+    contacts[k].unreliable = false;
+  }
+}
+
+void ImplicitSurfaceSphereContacts(CollisionImplicitSurface &s1, Real outerMargin1, const Sphere3D &s, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  //NOTE: this does not allow for multiple points of contact, e.g., for non-convex implicit surfaces
+  contacts.resize(0);
+  Real tol = outerMargin1 + outerMargin2;
+  Vector3 cp, dir;
+  Real d = Distance(s1, s.center, cp, dir) - s.radius;
+  if (d > tol)
+    return;
+  Vector3 pw = s.center + dir * s.radius;
+  contacts.resize(1);
+  Vector3 n;
+  n.setNegative(dir);
+  contacts[0].p1 = cp + outerMargin1 * n;
+  contacts[0].p2 = pw - outerMargin2 * n;
+  contacts[0].n = n;
+  contacts[0].depth = tol - d;
+  contacts[0].elem1 = PointIndex(s1, cp);
+  contacts[0].elem2 = -1;
+  contacts[0].unreliable = false;
+}
+
+void ImplicitSurfaceSegmentContacts(CollisionImplicitSurface &s1, Real outerMargin1, const Segment3D &s, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  //NOTE: this does not allow for multiple points of contact, e.g., for non-convex implicit surfaces
+  contacts.resize(0);
+  Real tol = outerMargin1 + outerMargin2;
+  Vector3 cpgrid, cpseg, dir;
+  Real d = Geometry::Distance(s1, GeometricPrimitive3D(s), cpgrid, cpseg, dir);
+  if (d > tol)
+    return;
+  contacts.resize(1);
+  Vector3 n;
+  n.setNegative(dir);
+  contacts[0].p1 = cpgrid + outerMargin1 * n;
+  contacts[0].p2 = cpseg - outerMargin2 * n;
+  contacts[0].n = n;
+  contacts[0].depth = tol - d;
+  contacts[0].elem1 = PointIndex(s1, cpgrid);
+  contacts[0].elem2 = -1;
+  contacts[0].unreliable = false;
+}
+
+void ImplicitSurfacePrimitiveContacts(CollisionImplicitSurface &s1, Real outerMargin1, GeometricPrimitive3D &g2, const RigidTransform &T2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  GeometricPrimitive3D gworld = g2;
+  gworld.Transform(T2);
+
+  if (gworld.type == GeometricPrimitive3D::Point)
+  {
+    Sphere3D s;
+    s.center = *AnyCast<Point3D>(&gworld.data);
+    s.radius = 0;
+    ImplicitSurfaceSphereContacts(s1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
+  }
+  else if (gworld.type == GeometricPrimitive3D::Sphere)
+  {
+    const Sphere3D &s = *AnyCast<Sphere3D>(&gworld.data);
+    ImplicitSurfaceSphereContacts(s1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
+  }
+  else if (gworld.type == GeometricPrimitive3D::Segment)
+  {
+    const Segment3D &s = *AnyCast<Segment3D>(&gworld.data);
+    ImplicitSurfaceSegmentContacts(s1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
+  }
+  else
+  {
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "Contact computations between ImplicitSurface and " << gworld.TypeName() << " not supported");
+    return;
+  }
+}
+
+bool Collider3DImplicitSurface::Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) 
+{
+  switch (other->GetType())
+  {
+    case Type::Primitive:
+      {
+        auto* prim = dynamic_cast<Collider3DPrimitive*>(other);
+        ImplicitSurfacePrimitiveContacts(collisionData, settings.padding1, prim->data->data, prim->T, settings.padding2, res.contacts, settings.maxcontacts);
+        return true;
+      }
+    case Type::TriangleMesh:
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-triangle mesh contacts");
+      break;
+    case Type::PointCloud:
+      {
+        auto* pc = dynamic_cast<Collider3DPointCloud*>(other);
+        PointCloudImplicitSurfaceContacts(pc->collisionData, settings.padding2, collisionData, settings.padding1, res.contacts, settings.maxcontacts);
+        for (auto &c : res.contacts)
+          ReverseContact(c);
+      }
+      return true;
+    case Type::ImplicitSurface:
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-implicit surface contacts");
+      break;
+    case Type::Group:
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-group contacts");
+      break;
+    case Type::ConvexHull:
+      LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: implicit surface-convex hull contacts");
+      break;
+  }
+  return false;
+}
+
+bool Collider3DImplicitSurface::ConvertFrom(Collider3D* geom,Real param,Real domainExpansion)
+{
+  if(geom->GetType() == Type::TriangleMesh)
+  {
+    auto* gmesh = dynamic_cast<Collider3DTriangleMesh*>(geom);
+    if(gmesh->collisionData.triNeighbors.empty())
+      gmesh->collisionData.CalcTriNeighbors();
+    if (param == 0)
+    {
+      const Meshing::TriMesh &mesh = gmesh->data->data;
+      if (mesh.tris.empty())
+        return false;
+      Real sumlengths = 0;
+      for (size_t i = 0; i < mesh.tris.size(); i++)
+      {
+        sumlengths += mesh.verts[mesh.tris[i].a].distance(mesh.verts[mesh.tris[i].b]);
+        sumlengths += mesh.verts[mesh.tris[i].b].distance(mesh.verts[mesh.tris[i].c]);
+        sumlengths += mesh.verts[mesh.tris[i].c].distance(mesh.verts[mesh.tris[i].a]);
+      }
+      Real avglength = sumlengths / (3 * mesh.tris.size());
+      param = avglength / 2;
+      Vector3 bmin, bmax;
+      mesh.GetAABB(bmin, bmax);
+      param = Min(param, 0.25 * (bmax.x - bmin.x));
+      param = Min(param, 0.25 * (bmax.y - bmin.y));
+      param = Min(param, 0.25 * (bmax.z - bmin.z));
+      LOG4CXX_INFO(GET_LOGGER(Geometry), "Auto-determined grid resolution " << param);
+    }
+    Meshing::VolumeGrid& grid = data->data;
+    RigidTransform Torig, Tident;
+    Tident.setIdentity();
+    CollisionMesh &cmesh = gmesh->collisionData;
+    cmesh.GetTransform(Torig);
+    cmesh.UpdateTransform(Tident);
+    MeshToImplicitSurface_FMM(cmesh, grid, param, domainExpansion);
+    //MeshToImplicitSurface_SpaceCarving(TriangleMeshCollisionData(),grid,param,40);
+    cmesh.UpdateTransform(Torig);
+    //sLOG4CXX_INFO(GET_LOGGER(Geometry), "Grid bb " << grid.bb);
+    SetTransform(geom->GetTransform());
+    return true;
+  }
+  return false;
+}
+
+
+
+
 
 } //namespace Geometry

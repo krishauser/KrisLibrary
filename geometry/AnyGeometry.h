@@ -2,14 +2,12 @@
 #define ANY_GEOMETRY_H
 
 #include <KrisLibrary/utils/AnyValue.h>
-#include "CollisionMesh.h"
-#include "ConvexHull3D.h"
+#include "AnyGeometryType.h"
 
 class TiXmlElement;
 
 //forward declarations
 namespace Meshing { template <class T> class VolumeGridTemplate; typedef VolumeGridTemplate<Real> VolumeGrid; class PointCloud3D; }
-namespace Geometry { class CollisionPointCloud; class CollisionImplicitSurface; class ConvexHull3D; class CollisionConvexHull3D; }
 namespace Math3D { class GeometricPrimitive3D; }
 namespace GLDraw { class GeometryAppearance; }
 
@@ -18,20 +16,15 @@ namespace Geometry {
   using namespace Math3D;
   using namespace std;
 
-class AnyDistanceQuerySettings;
-class AnyDistanceQueryResult;
-class AnyContactsQuerySettings;
-class AnyContactsQueryResult;
+typedef DistanceQuerySettings AnyDistanceQuerySettings;
+typedef DistanceQueryResult AnyDistanceQueryResult;
+typedef ContactsQuerySettings AnyContactsQuerySettings;
+typedef ContactsQueryResult AnyContactsQueryResult;
+class Collider3DPrimitive;
+class Collision3DConvexHull;
+class CollisionMesh;
+class CollisionPointCloud;
 
-//foward declaration
-#ifndef GEOMETRY_ROI_H
-enum {
-    ExtractROIFlagIntersection=0x01,
-    ExtractROIFlagTouching=0x02,
-    ExtractROIFlagWithin=0x04,
-    ExtractROIFlagInvert=0x08
-};
-#endif //GEOMETRY_ROI_H
 
 /** @brief Optional flags for collision data hints.  The collision data preprocessor
  * may use these to improve preprocessing / collision checking performance.
@@ -67,7 +60,7 @@ enum {
 };
 
 
-/** @brief A class that stores any kind of geometry we've defined.
+/** @brief A container class that stores any kind of geometry we've defined.
  *
  * To get the data, first check the "type" member.  Then call the appropriate
  * AsX method to retrieve the data in the underlying format.
@@ -81,16 +74,7 @@ enum {
 class AnyGeometry3D
 {
  public:
-  /** 
-   * Map of types to classes in the value member
-   * - Primitive: GeometricPrimitive3D
-   * - TriangleMesh: TriMesh
-   * - PointCloud: PointCloud3D
-   * - ImplicitSurface: VolumeGrid
-   * - OccupancyGrid: VolumeGrid
-   * - Group: vector<AnyGeometry3D>
-   */
-  enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface, OccupancyGrid, ConvexHull, Group };
+  typedef Geometry3D::Type Type;
 
   AnyGeometry3D();
   AnyGeometry3D(const GeometricPrimitive3D& primitive);
@@ -103,8 +87,8 @@ class AnyGeometry3D
   AnyGeometry3D(AnyGeometry3D&& geom) = default;
   AnyGeometry3D& operator = (const AnyGeometry3D& rhs) = default;
   AnyGeometry3D& operator = (AnyGeometry3D&& rhs) = default;
-  static const char* TypeName(Type type);
-  const char* TypeName() const { return AnyGeometry3D::TypeName(type); }
+  static const char* TypeName(Type type) { return Geometry3D::TypeName(type); }
+  const char* TypeName() const { return Geometry3D::TypeName(type); }
   const GeometricPrimitive3D& AsPrimitive() const;
   const Meshing::TriMesh& AsTriangleMesh() const;
   const Meshing::PointCloud3D& AsPointCloud() const;
@@ -133,8 +117,8 @@ class AnyGeometry3D
   size_t NumElements() const;
   GeometricPrimitive3D GetElement(int elem) const;
   AABB3D GetAABB() const;
-  void Transform(const RigidTransform& T);
-  void Transform(const Matrix4& mat);
+  bool Transform(const RigidTransform& T);
+  bool Transform(const Matrix4& mat);
   void Merge(const vector<AnyGeometry3D>& geoms);
   ///Converts to another geometry type, storing the result in res and returning true
   ///if the conversion is available. 
@@ -176,10 +160,8 @@ class AnyGeometry3D
   bool ExtractROI(const Box3D& bb,AnyGeometry3D& res,int flag=1) const;
 
   Type type;
-  ///The data, according to the type
-  AnyValue data;
-  ///Optional appearance data, according to the type
-  AnyValue appearanceData;
+  ///The data, which is one of the types in AnyGeometryTypeImpl.h
+  shared_ptr<Geometry3D> data;
 };
 
 
@@ -216,22 +198,22 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///collision detection data structure.
   void ReinitCollisionData();
   ///Returns true if the collision data is initialized
-  bool CollisionDataInitialized() const { return !collisionData.empty(); }
+  bool CollisionDataInitialized() const { return collider != NULL; }
   ///Clears the current collision data
-  void ClearCollisionData() { collisionData = AnyValue(); }
-  const RigidTransform& PrimitiveCollisionData() const;
+  void ClearCollisionData() { collider.reset(); }
+  const Collider3DPrimitive& PrimitiveCollisionData() const;
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
   const CollisionImplicitSurface& ImplicitSurfaceCollisionData() const;
   //const CollisionOccupancyGrid& OccupancyGridCollisionData() const;
-  const CollisionConvexHull3D& ConvexHullCollisionData() const;
+  const Collider3DConvexHull& ConvexHullCollisionData() const;
   const vector<AnyCollisionGeometry3D>& GroupCollisionData() const;
-  RigidTransform& PrimitiveCollisionData();
+  Collider3DPrimitive& PrimitiveCollisionData();
   CollisionMesh& TriangleMeshCollisionData();
   CollisionPointCloud& PointCloudCollisionData();
   CollisionImplicitSurface& ImplicitSurfaceCollisionData();
   //CollisionOccupancyGrid& OccupancyGridCollisionData();
-  CollisionConvexHull3D& ConvexHullCollisionData();
+  Collider3DConvexHull& ConvexHullCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
   ///Performs a type conversion, also copying the active transform and collision margin.
   ///May be a bit faster than AnyGeometry3D.Convert for some conversions
@@ -292,18 +274,10 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   bool ExtractROI(const AABB3D& bb,AnyCollisionGeometry3D& res,int flag=1) const;
   bool ExtractROI(const Box3D& bb,AnyCollisionGeometry3D& res,int flag=1) const;
 
-  /** The collision data structure, according to the type.
-   * - Primitive: null
-   * - TriangleMesh: CollisionMesh
-   * - PointCloud: CollisionPointCloud
-   * - VolumeGrid: CollisionImplicitSurface
-   * - Group: vector<AnyCollisionGeometry3D>
-   */
-  AnyValue collisionData;
+  shared_ptr<Collider3D> collider;
   ///Amount by which the underlying geometry is "fattened"
   Real margin;
-  ///The current transform, used if the collision data is not initialized yet
-  ///or the data type is Primitive / VolumeGrid.
+  ///The current transform, used if the collision data is not initialized yet.
   RigidTransform currentTransform;
   ///A hint for initializing the collision data appropriately.  See flags starting
   ///with CollisionDataHint.  Default 0.
@@ -347,75 +321,6 @@ class AnyCollisionQuery
   std::vector<Vector3> points1,points2;
 };
 
-class AnyDistanceQuerySettings
-{
-public:
-  AnyDistanceQuerySettings();
-  ///Allowable relative and absolute errors
-  Real relErr,absErr;
-  ///An upper bound on the distance, and if the two objects are farther than this distance the computation may break
-  Real upperBound;
-};
-
-class AnyDistanceQueryResult
-{
-public:
-  AnyDistanceQueryResult();
-  ///flags indicating which elements are filled out
-  bool hasPenetration,hasElements,hasClosestPoints,hasDirections;
-  ///The distance, with negative values indicating penetration if hasPenetration=true. Otherwise, 0 indicates penetration.
-  Real d;
-  ///The elements defining the closest points on the geometries
-  int elem1,elem2;
-  ///The closest points on the two geometries, in world coordinates
-  Vector3 cp1,cp2;
-  ///The direction from geometry 1 to geometry 2, and the distance from geometry 2 to geometry 1, in world coordinates
-  ///These are typically proportional to cp2-cp1 and cp1-cp2, respectively, EXCEPT when the points are exactly
-  ///coincident.
-  Vector3 dir1,dir2;
-  ///If the item is a group, this vector will recursively define the sub-elements
-  vector<int> group_elem1,group_elem2;
-};
-
-class AnyContactsQuerySettings
-{
-public:
-  AnyContactsQuerySettings();
-  ///Extra padding on the geometries, padding1 for this object and padding2 for the other other
-  Real padding1,padding2;
-  ///Maximum number of contacts queried
-  size_t maxcontacts;
-  ///True if you'd like to cluster the contacts into at most maxcontacts results
-  bool cluster;
-};
-
-class AnyContactsQueryResult
-{
-public:
-  struct ContactPair
-  {
-    ///the depth of the contact, padding included
-    Real depth;
-    ///the contact points on the padded geometries of object1 and object2, in world coordinates
-    Vector3 p1,p2;
-    ///the outward contact normal from object 1 pointing into object 2, in world coordinates
-    Vector3 n;
-    ///the item defining the element to which this point belongs
-    int elem1,elem2;
-    ///if true, the contact normal can't be estimated accurately
-    bool unreliable;
-  };
-
-  AnyContactsQueryResult();
-  AnyContactsQueryResult(const AnyContactsQueryResult & rhs) = default;
-  AnyContactsQueryResult(AnyContactsQueryResult&& other) = default;
-  AnyContactsQueryResult& operator = (const AnyContactsQueryResult& rhs) = default;
-  AnyContactsQueryResult& operator = (AnyContactsQueryResult&& rhs) = default;
-  ///The list of computed contact points
-  vector<ContactPair> contacts;
-  ///True if clustering was performed
-  bool clustered;
-};
 
 } //namespace Geometry
 
