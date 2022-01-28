@@ -90,9 +90,9 @@ namespace GLDraw {
 
   void draw(const Geometry::AnyGeometry3D& geom)
   {
-    if(geom.type == AnyGeometry3D::PointCloud) 
+    if(geom.type == AnyGeometry3D::Type::PointCloud) 
       drawPoints(geom);
-    else if(geom.type == AnyGeometry3D::Group) {
+    else if(geom.type == AnyGeometry3D::Type::Group) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
       for(size_t i=0;i<subgeoms.size();i++)
         draw(subgeoms[i]);
@@ -104,11 +104,11 @@ namespace GLDraw {
   void drawPoints(const Geometry::AnyGeometry3D& geom)
   {
     const vector<Vector3>* verts = NULL;
-    if(geom.type == AnyGeometry3D::TriangleMesh) 
+    if(geom.type == AnyGeometry3D::Type::TriangleMesh) 
       verts = &geom.AsTriangleMesh().verts;
-    else if(geom.type == AnyGeometry3D::PointCloud) 
+    else if(geom.type == AnyGeometry3D::Type::PointCloud) 
       verts = &geom.AsPointCloud().points;
-    else if(geom.type == AnyGeometry3D::Group) {
+    else if(geom.type == AnyGeometry3D::Type::Group) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
       for(size_t i=0;i<subgeoms.size();i++)
         drawPoints(subgeoms[i]);
@@ -127,14 +127,14 @@ namespace GLDraw {
   void drawFaces(const Geometry::AnyGeometry3D& geom)
   {
     const Meshing::TriMesh* trimesh = NULL;
-    if(geom.type == AnyGeometry3D::TriangleMesh) 
+    if(geom.type == AnyGeometry3D::Type::TriangleMesh) 
       trimesh = &geom.AsTriangleMesh();
-    else if(geom.type == AnyGeometry3D::Group) {
+    else if(geom.type == AnyGeometry3D::Type::Group) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
       for(size_t i=0;i<subgeoms.size();i++)
         drawFaces(subgeoms[i]);
     }
-    else if(geom.type == AnyGeometry3D::Primitive) 
+    else if(geom.type == AnyGeometry3D::Type::Primitive) 
       draw(geom.AsPrimitive());  
 
     //draw the mesh
@@ -170,14 +170,14 @@ namespace GLDraw {
   void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
   {
     if(p < 0) p = geom.margin;
-    if(geom.type == Geometry::AnyCollisionGeometry3D::TriangleMesh) {
+    if(geom.type == Geometry::AnyGeometry3D::Type::TriangleMesh) {
       Meshing::TriMesh m;
       geom.TriangleMeshCollisionData().CalcTriNeighbors();
       geom.TriangleMeshCollisionData().CalcIncidentTris();
       Meshing::Expand2Sided(geom.TriangleMeshCollisionData(),p,3,m);
       DrawGLTris(m);
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::PointCloud) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::PointCloud) {
       const Meshing::PointCloud3D& pc = geom.AsPointCloud();
       for(size_t i=0;i<pc.points.size();i++) {
         glPushMatrix();
@@ -186,17 +186,17 @@ namespace GLDraw {
         glPopMatrix();
       }
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::ImplicitSurface) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::ImplicitSurface) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw implicit surface");
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::OccupancyGrid) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::OccupancyGrid) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw occupancy grid");
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::Primitive) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::Primitive) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw expanded primitive");
       draw(geom.AsPrimitive());
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::Group) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::Group) {
       std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = geom.GroupCollisionData();
       for(size_t i=0;i<subgeoms.size();i++)
         drawExpanded(subgeoms[i],p);
@@ -454,22 +454,22 @@ void GeometryAppearance::Refresh()
 void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 {
   geom = &_geom;
-  if(geom->type == AnyGeometry3D::Primitive) {
+  if(geom->type == AnyGeometry3D::Type::Primitive) {
     Set(*geom);
   }
-  else if(geom->type == AnyGeometry3D::ImplicitSurface) {
+  else if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
     Set(*geom);
   }
-  else if(geom->type == AnyGeometry3D::OccupancyGrid) {
+  else if(geom->type == AnyGeometry3D::Type::OccupancyGrid) {
     Set(*geom);
   }
-  else if(geom->type == AnyGeometry3D::PointCloud) {
+  else if(geom->type == AnyGeometry3D::Type::PointCloud) {
     Set(*geom);
   }
-  else if(geom->type == AnyGeometry3D::ConvexHull) {
+  else if(geom->type == AnyGeometry3D::Type::ConvexHull) {
     Set(*geom);
   }
-  else if(geom->type == AnyGeometry3D::Group) {
+  else if(geom->type == AnyGeometry3D::Type::Group) {
     drawFaces = true;
     drawEdges = true;
     drawVertices = true;
@@ -513,7 +513,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 {
   geom = &_geom;
   collisionGeom = NULL;
-  if(geom->type == AnyGeometry3D::Primitive) {
+  if(geom->type == AnyGeometry3D::Type::Primitive) {
     const Math3D::GeometricPrimitive3D* g = &geom->AsPrimitive();
     drawFaces = true;
     drawEdges = false;
@@ -535,7 +535,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       drawEdges = true;
     }
   }
-  else if(geom->type == AnyGeometry3D::ImplicitSurface) {
+  else if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
     const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
     ImplicitSurfaceToMesh(*g,*tempMesh);
@@ -543,7 +543,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     drawEdges = false;
     drawVertices = false;
   }
-  else if(geom->type == AnyGeometry3D::OccupancyGrid) {
+  else if(geom->type == AnyGeometry3D::Type::OccupancyGrid) {
     //TODO: draw as blocks with density
     const Meshing::VolumeGrid* g = &geom->AsOccupancyGrid();
     if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
@@ -552,7 +552,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     drawEdges = false;
     drawVertices = false;
   }
-  else if(geom->type == AnyGeometry3D::PointCloud) {
+  else if(geom->type == AnyGeometry3D::Type::PointCloud) {
     drawVertices = true;
     drawEdges = false;
     drawFaces = false;
@@ -653,7 +653,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       PointCloudToMesh(pc,*tempMesh,0.02);
     }
   }
-  else if(geom->type == AnyGeometry3D::ConvexHull) {
+  else if(geom->type == AnyGeometry3D::Type::ConvexHull) {
     const Geometry::ConvexHull3D* g = &geom->AsConvexHull();
     if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
     ConvexHullToMesh(*g,*tempMesh);
@@ -661,7 +661,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     drawEdges = false;
     drawVertices = false;
   }
-  else if(geom->type == AnyGeometry3D::Group) {
+  else if(geom->type == AnyGeometry3D::Type::Group) {
     drawFaces = true;
     drawEdges = true;
     drawVertices = true;
@@ -738,11 +738,11 @@ void GeometryAppearance::DrawGL(Element e)
     FatalError("Invalid Element specified");
   if(doDrawVertices) {   
     const vector<Vector3>* verts = NULL;  
-    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::ConvexHull) 
+    if(geom->type == AnyGeometry3D::Type::ImplicitSurface || geom->type == AnyGeometry3D::Type::ConvexHull) 
       verts = &tempMesh->verts;
-    else if(geom->type == AnyGeometry3D::TriangleMesh) 
+    else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
       verts = &geom->AsTriangleMesh().verts;
-    else if(geom->type == AnyGeometry3D::PointCloud) 
+    else if(geom->type == AnyGeometry3D::Type::PointCloud) 
       verts = &geom->AsPointCloud().points;
     if(verts) {
       //do the drawing
@@ -922,14 +922,14 @@ void GeometryAppearance::DrawGL(Element e)
       Timer timer;
       const Meshing::TriMesh* trimesh = NULL;
       const Meshing::TriMeshWithTopology* trimesh_topology = NULL;
-      if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
+      if(geom->type == AnyGeometry3D::Type::ImplicitSurface || geom->type == AnyGeometry3D::Type::PointCloud || geom->type == AnyGeometry3D::Type::ConvexHull) 
         trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::TriangleMesh) {
+      else if(geom->type == AnyGeometry3D::Type::TriangleMesh) {
         trimesh = &geom->AsTriangleMesh();
         if(collisionGeom && collisionGeom->CollisionDataInitialized())
           trimesh_topology = &collisionGeom->TriangleMeshCollisionData();
       }
-      else if(geom->type == AnyGeometry3D::Primitive) 
+      else if(geom->type == AnyGeometry3D::Type::Primitive) 
         draw(geom->AsPrimitive());
 
       //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling face display list "<<trimesh->tris.size());
@@ -1131,7 +1131,7 @@ void GeometryAppearance::DrawGL(Element e)
             glEnable(GL_LIGHTING);
         }
       }
-      else if(geom->type == AnyGeometry3D::Primitive) {
+      else if(geom->type == AnyGeometry3D::Type::Primitive) {
         draw(geom->AsPrimitive());
       }
       faceDisplayList.endCompile();
@@ -1164,11 +1164,11 @@ void GeometryAppearance::DrawGL(Element e)
 
   if(doDrawEdges) {
     const Meshing::TriMesh* trimesh = NULL;
-    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
+    if(geom->type == AnyGeometry3D::Type::ImplicitSurface || geom->type == AnyGeometry3D::Type::PointCloud || geom->type == AnyGeometry3D::Type::ConvexHull) 
       trimesh = tempMesh.get();
-    else if(geom->type == AnyGeometry3D::TriangleMesh) 
+    else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
       trimesh = &geom->AsTriangleMesh();
-    else if(geom->type == AnyGeometry3D::Primitive) {
+    else if(geom->type == AnyGeometry3D::Type::Primitive) {
       if(!edgeDisplayList) {
         edgeDisplayList.beginCompile();
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1239,11 +1239,11 @@ void GeometryAppearance::DrawGL(Element e)
     if(!weldMesh) {
       //make the weld mesh from the triangle mesh
       const Meshing::TriMesh* trimesh = NULL;
-      if(geom->type == AnyGeometry3D::ImplicitSurface) 
+      if(geom->type == AnyGeometry3D::Type::ImplicitSurface) 
         trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::PointCloud) 
+      else if(geom->type == AnyGeometry3D::Type::PointCloud) 
         trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::TriangleMesh) 
+      else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
         trimesh = &geom->AsTriangleMesh();
       
       if(trimesh) {
