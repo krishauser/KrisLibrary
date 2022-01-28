@@ -133,9 +133,38 @@ bool CanLoadTriMeshExt(const char* ext)
     Assimp::Importer importer;
     string dext = "."+string(ext);
     return importer.IsExtensionSupported(dext.c_str());
-#endif
+#endif //HAVE_ASSIMP
   }
   return false;
+}
+
+void LoadTriMeshExtensions(std::vector<std::string>& exts)
+{
+  exts.resize(0);
+  exts.push_back("tri");
+  exts.push_back("off");
+#if HAVE_ASSIMP
+  Assimp::Importer importer;
+  string extlist;
+  import.GetExtensionList(extlist);
+  vector<string> assimpexts = Split(extlist,";");  //still have format *.EXT
+  for(auto s:assimpexts) {
+    exts.push_back(s.substr(2));
+  }
+#endif //HAVE_ASSIMP
+}
+
+void SaveTriMeshExtensions(std::vector<std::string>& exts)
+{
+  exts.resize(0);
+  exts.push_back("tri");
+  exts.push_back("off");
+  exts.push_back("wrl");
+#if HAVE_ASSIMP
+  Assimp::Exporter exporter;
+  for(size_t i=0;i<exporter.GetExportFormatCount();i++) 
+    exts.push_back(exporter.GetExportFormatDescription(i)->fileExtension);
+#endif //HAVE_ASSIMP
 }
 
 ///Returns true if the extension is a file type that we can save to

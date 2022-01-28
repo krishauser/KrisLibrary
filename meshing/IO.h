@@ -26,6 +26,10 @@ bool Export(const char* fn,const TriMesh& tri,const GLDraw::GeometryAppearance& 
 bool CanLoadTriMeshExt(const char* ext);
 ///Returns true if the extension is a file type that we can save to 
 bool CanSaveTriMeshExt(const char* ext);
+///Returns all the supported extensions
+void LoadTriMeshExtensions(std::vector<std::string>& exts);
+///Returns all the supported extensions
+void SaveTriMeshExtensions(std::vector<std::string>& exts);
 
 ///Loads from VRML file format: not implemented.
 bool LoadVRML(std::istream& in,TriMesh& tri);
