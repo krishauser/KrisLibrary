@@ -308,7 +308,8 @@ void Array2D<T>::set(const Array2D<T2>& rhs)
 {
 	resize(rhs.m,rhs.n);
   int total=m*n;
-  for(int i=0;i<total;i++) items[i] = T(rhs.items[i]);
+  const T2* rhsdata = rhs.getData();
+  for(int i=0;i<total;i++) items[i] = T(rhsdata[i]);
 }
 
 template <class T>
