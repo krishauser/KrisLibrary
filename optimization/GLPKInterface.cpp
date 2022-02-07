@@ -14,7 +14,7 @@ extern "C"
 using namespace Optimization;
 using namespace std;
 
-#if GLP_MAJOR_VERSION < 4 || GLP_MINOR_VERSION < 20
+#if GLP_MAJOR_VERSION < 4 || (GLP_MAJOR_VERSION == 4 && GLP_MINOR_VERSION < 20)
 #error "Require GLPK 4.20 or above"
 #endif
 

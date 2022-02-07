@@ -7,6 +7,7 @@
 #include <KrisLibrary/utils/indexing.h>
 #include <KrisLibrary/errors.h>
 #include <iosfwd>
+#include <memory.h>
 
 /** @brief A three-dimensional m x n x parray.
  *
@@ -35,6 +36,8 @@ class Array3D
   Array3D(int m,int n,int p);
   Array3D(int m,int n,int p,const T& initVal);
   Array3D(const Array3D<T>& rhs);
+  template <class T2>
+  Array3D(const Array3D<T2>& rhs);
   Array3D(Array3D<T>&& rhs);
   ~Array3D();
   
@@ -42,7 +45,9 @@ class Array3D
   inline const T& operator()(int i,int j,int k) const { return items[(i*n+j)*p+k]; }
   inline T& operator()(const IntTriple& t) { return operator()(t.a,t.b,t.c); }
   inline const T& operator()(const IntTriple& t) const { return operator()(t.a,t.b,t.c); }
-  Array3D<T>& operator =(const Array3D<T>& rhs);
+  const Array3D<T>& operator =(const Array3D<T>& rhs);
+  template <class T2>
+  const Array3D<T>& operator =(const Array3D<T2>& rhs);
   Array3D<T>& operator =(Array3D<T>&& rhs);
   
   bool Read(File& f);
@@ -65,6 +70,8 @@ class Array3D
   inline bool contains(const T& item) const { int i,j,k; return find(item,i,j,k); }
   void set(const T& item);
   void set(const Array3D<T>&);
+  template <class T2>
+  void set(const Array3D<T2>&);
   void swap(Array3D<T>&);
   inline T* getData() const { return items; }
   
@@ -179,6 +186,14 @@ Array3D<T>::Array3D(const Array3D<T>& rhs)
 }
 
 template <class T>
+template <class T2>
+Array3D<T>::Array3D(const Array3D<T2>& rhs)
+:m(0),n(0),p(0),items(0),capacity(0)
+{
+	set(rhs);
+}
+
+template <class T>
 Array3D<T>::Array3D(Array3D<T>&& rhs)
 {
   m = rhs.m;
@@ -197,7 +212,15 @@ Array3D<T>::~Array3D()
 }
 
 template <class T>
-Array3D<T>& Array3D<T>::operator =(const Array3D<T>& rhs)
+const Array3D<T>& Array3D<T>::operator =(const Array3D<T>& rhs)
+{
+	set(rhs);
+	return *this;
+}
+
+template <class T>
+template <class T2>
+const Array3D<T>& Array3D<T>::operator =(const Array3D<T2>& rhs)
 {
 	set(rhs);
 	return *this;
@@ -305,14 +328,24 @@ bool Array3D<T>::find(const T& item,int& i,int& j,int& k) const
 template <class T>
 void Array3D<T>::set(const T& item)
 {
-	for(int i=0;i<m*n*p;i++) items[i]=item;
+  int total=m*n*p;
+	for(int i=0;i<total;i++) items[i]=item;
 }
 
 template <class T>
 void Array3D<T>::set(const Array3D<T>& rhs)
 {
 	resize(rhs.m,rhs.n,rhs.p);
-	for(int i=0;i<m*n*p;i++) items[i]=rhs.items[i];
+  memcpy(items,rhs.items,m*n*p*sizeof(T));
+}
+
+template <class T>
+template <class T2>
+void Array3D<T>::set(const Array3D<T2>& rhs)
+{
+	resize(rhs.m,rhs.n,rhs.p);
+  int total=m*n*p;
+  for(int i=0;i<total;i++) items[i] = T(rhs.items[i]);
 }
 
 template <class T>

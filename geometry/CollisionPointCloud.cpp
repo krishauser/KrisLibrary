@@ -4,7 +4,15 @@
 
 DECLARE_LOGGER(Geometry)
 
+
 namespace Geometry {
+
+enum {
+  CollisionDataHintFast=0x01,     
+  CollisionDataHintTemporallyCoherent=0x02,
+  CollisionDataHintGridlike=0x04
+};
+
 
 CollisionPointCloud::CollisionPointCloud()
   :gridResolution(0),grid(3),radiusIndex(-1),maxRadius(0)
@@ -12,11 +20,11 @@ CollisionPointCloud::CollisionPointCloud()
   currentTransform.setIdentity();
 }
 
-CollisionPointCloud::CollisionPointCloud(const Meshing::PointCloud3D& _pc)
+CollisionPointCloud::CollisionPointCloud(const Meshing::PointCloud3D& _pc,int hints)
   :Meshing::PointCloud3D(_pc),gridResolution(0),grid(3),radiusIndex(-1),maxRadius(0)
 {
   currentTransform.setIdentity();
-  InitCollisions();
+  InitCollisions(hints);
 }
 
 CollisionPointCloud::CollisionPointCloud(const CollisionPointCloud& _pc)
@@ -27,7 +35,7 @@ CollisionPointCloud::CollisionPointCloud(const CollisionPointCloud& _pc)
 
 }
 
-void CollisionPointCloud::InitCollisions()
+void CollisionPointCloud::InitCollisions(int hints)
 {
   radiusIndex = PropertyIndex("radius");
   if(radiusIndex >= 0) {
@@ -109,8 +117,10 @@ void CollisionPointCloud::InitCollisions()
   }
   LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
   //TEST: should we fit to points?
-  octree->FitToPoints();
-  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree fit to points in time "<<timer.ElapsedTime());
+  if(!(hints & CollisionDataHintFast)) {
+    octree->FitToPoints();
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree fit to points in time "<<timer.ElapsedTime());
+  }
   /*
   //TEST: method 2.  Turns out to be much slower
   timer.Reset();

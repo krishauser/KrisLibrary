@@ -13,14 +13,14 @@ public:
   BoxSet(Real xmin,Real xmax,int d=1);
   BoxSet(const Vector& bmin,const Vector& bmax);
   virtual ~BoxSet() {}
-  virtual int NumDimensions() const;
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsConvex() const { return true; }
-  virtual bool IsSampleable() const { return true; }
-  virtual void Sample(Config& x);
-  virtual Real ObstacleDistance(const Config& x);
-  virtual Optimization::NonlinearProgram* Numeric();
+  virtual int NumDimensions() const override;
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsConvex() const override { return true; }
+  virtual bool IsSampleable() const override { return true; }
+  virtual void Sample(Config& x) override;
+  virtual Real ObstacleDistance(const Config& x) override;
+  virtual Optimization::NonlinearProgram* Numeric() override;
 
   Vector bmin,bmax;
 };
@@ -33,13 +33,13 @@ class AxisRangeSet : public CSet
 public:
   AxisRangeSet(int i,Real xmin,Real xmax);
   virtual ~AxisRangeSet() {}
-  virtual int NumDimensions() const;
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsConvex() const { return true; }
-  virtual bool IsSampleable() const { return false; }
-  virtual Real ObstacleDistance(const Config& x);
-  virtual Optimization::NonlinearProgram* Numeric();
+  virtual int NumDimensions() const override;
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsConvex() const override { return true; }
+  virtual bool IsSampleable() const override { return false; }
+  virtual Real ObstacleDistance(const Config& x) override;
+  virtual Optimization::NonlinearProgram* Numeric() override;
 
   int i;
   Real low,high;
@@ -51,14 +51,14 @@ class NeighborhoodSet : public CSet
 public:
   NeighborhoodSet(CSpace* space,const Config& c,Real r);
   virtual ~NeighborhoodSet() {}
-  virtual int NumDimensions() const;
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsConvex() const { return true; }
-  virtual bool IsSampleable() const { return true; }
-  virtual void Sample(Config& x);
-  virtual Real ObstacleDistance(const Config& x);
-  virtual Optimization::NonlinearProgram* Numeric();
+  virtual int NumDimensions() const override;
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsConvex() const override { return true; }
+  virtual bool IsSampleable() const override { return true; }
+  virtual void Sample(Config& x) override;
+  virtual Real ObstacleDistance(const Config& x) override;
+  virtual Optimization::NonlinearProgram* Numeric() override;
 
   CSpace* space;
   Config center;
@@ -73,12 +73,12 @@ class SubspaceSet : public CSet
 public:
   SubspaceSet(const std::shared_ptr<CSet>& base,int imin,int imax);
   virtual ~SubspaceSet() {}
-  virtual int NumDimensions() const { return -1; }
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsConvex() const { return base->IsConvex(); }
-  virtual Real ObstacleDistance(const Config& x);
-  virtual Optimization::NonlinearProgram* Numeric();
+  virtual int NumDimensions() const override { return -1; }
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsConvex() const override { return base->IsConvex(); }
+  virtual Real ObstacleDistance(const Config& x) override;
+  virtual Optimization::NonlinearProgram* Numeric() override;
 
   std::shared_ptr<CSet> base;
   int imin,imax;
@@ -93,13 +93,13 @@ public:
   FiniteSet(const Vector& item1,const Vector& item2,const Vector& item3);
   FiniteSet(const std::vector<Vector>& items);
   virtual ~FiniteSet() {}
-  virtual int NumDimensions() const;
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsSampleable() const { return true; }
-  virtual void Sample(Config& x);
-  virtual Real ObstacleDistance(const Config& x);
-  virtual Optimization::NonlinearProgram* Numeric();
+  virtual int NumDimensions() const override;
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsSampleable() const override { return true; }
+  virtual void Sample(Config& x) override;
+  virtual Real ObstacleDistance(const Config& x) override;
+  virtual Optimization::NonlinearProgram* Numeric() override;
 
   std::vector<Vector> items;
 };
@@ -109,8 +109,8 @@ class VisibilitySet : public CSet
 public:
   VisibilitySet(CSpace* space,const Vector& x);
   virtual ~VisibilitySet() {}
-  virtual int NumDimensions() const;
-  virtual bool Contains(const Config& x);
+  virtual int NumDimensions() const override;
+  virtual bool Contains(const Config& x) override;
 
   CSpace* space;
   Vector center;
@@ -122,11 +122,11 @@ public:
   UnionSet(const std::shared_ptr<CSet>& a,const std::shared_ptr<CSet>& b);
   UnionSet(const std::vector<std::shared_ptr<CSet> >& items);
   virtual ~UnionSet() {}
-  virtual int NumDimensions() const;
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsSampleable() const;
-  virtual void Sample(Config& x);
+  virtual int NumDimensions() const override;
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsSampleable() const override;
+  virtual void Sample(Config& x) override;
 
   std::vector<std::shared_ptr<CSet> > items;
 };
@@ -137,13 +137,13 @@ public:
   IntersectionSet(const std::shared_ptr<CSet>& a,const std::shared_ptr<CSet>& b);
   IntersectionSet(const std::vector<std::shared_ptr<CSet> >& items);
   virtual ~IntersectionSet() {}
-  virtual int NumDimensions() const;
-  virtual bool Contains(const Config& x);
-  virtual bool IsSampleable() const;
-  virtual void Sample(Config& x);
-  virtual bool IsConvex() const;
-  virtual Real ObstacleDistance(const Config& x);
-  virtual Optimization::NonlinearProgram* Numeric();
+  virtual int NumDimensions() const override;
+  virtual bool Contains(const Config& x) override;
+  virtual bool IsSampleable() const override;
+  virtual void Sample(Config& x) override;
+  virtual bool IsConvex() const override;
+  virtual Real ObstacleDistance(const Config& x) override;
+  virtual Optimization::NonlinearProgram* Numeric() override;
 
   std::vector<std::shared_ptr<CSet> > items;
 };

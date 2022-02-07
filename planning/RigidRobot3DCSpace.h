@@ -2,6 +2,7 @@
 #define RIGID_ROBOT_2D_CSPACE_H
 
 #include <KrisLibrary/geometry/AnyGeometry.h>
+#include "RigidBodyCSpace.h"
 
 /** @ingroup Planning
  * @brief a translating and rotating 3D robot in a 3D workspace.

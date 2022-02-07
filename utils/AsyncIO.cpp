@@ -492,16 +492,31 @@ bool ReadIntPrependedString(File& file,std::string& buf)
 {
   int slen;
   if(!file.ReadData(&slen,4)) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Socket::ReadString read length failed\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ReadIntPrependedString read length failed");
     return false;
   }
   if(slen < 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadIntPrependedString read length "<<slen);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ReadIntPrependedString read length "<<slen);
     return false;
   }
   buf.resize(slen);
   if(!file.ReadData(&buf[0],slen)) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"ReadIntPrependedString read string failed\n");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ReadIntPrependedString read string failed");
+    return false;
+  }
+  return true;
+}
+
+bool WriteIntPrependedString(File& file,const std::string& buf)
+{
+  int slen = (int)buf.size();
+  Assert(sizeof(int)==4);
+  if(!file.WriteData(&slen,4)) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"WriteIntPrependedString write length failed");
+    return false;
+  }
+  if(!file.WriteData(&buf[0],slen)) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"WriteIntPrependedString write string failed");
     return false;
   }
   return true;

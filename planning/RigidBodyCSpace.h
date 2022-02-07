@@ -12,7 +12,7 @@ class R2CSpace : public BoxCSpace
 {
 public:
   R2CSpace(const Math3D::Vector2& bmin,const Math3D::Vector2& bmax);
-  virtual std::string VariableName(int i);
+  virtual std::string VariableName(int i) override;
   void SetDomain(const Math3D::Vector2& bmin,const Math3D::Vector2& bmax);
   void GetDomain(Math3D::Vector2& bmin,Math3D::Vector2& bmax);
 };
@@ -25,7 +25,7 @@ class R3CSpace : public BoxCSpace
 {
 public:
   R3CSpace(const Math3D::Vector3& bmin,const Math3D::Vector3& bmax);
-  virtual std::string VariableName(int i);
+  virtual std::string VariableName(int i) override;
   void SetDomain(const Math3D::Vector3& bmin,const Math3D::Vector3& bmax);
   void GetDomain(Math3D::Vector3& bmin,Math3D::Vector3& bmax);
 };
@@ -37,13 +37,13 @@ public:
 class SO2CSpace : public GeodesicCSpace
 {
 public:
-  virtual int NumDimensions() { return 1; }
-  virtual std::string VariableName(int i);
-  virtual void Sample(Config& x);
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual void Interpolate(const Config& a,const Config& b,Real u,Config& out);
-  virtual Real Distance(const Config& a,const Config& b);
-  virtual void Properties(PropertyMap& pmap);
+  virtual int NumDimensions() override { return 1; }
+  virtual std::string VariableName(int i) override;
+  virtual void Sample(Config& x) override;
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual void Interpolate(const Config& a,const Config& b,Real u,Config& out) override;
+  virtual Real Distance(const Config& a,const Config& b) override;
+  virtual void Properties(PropertyMap& pmap) override;
 
   static void GetRotation(const Config& x,Math3D::Matrix2& R);
   static void SetRotation(const Math3D::Matrix2& R,Config& x);
@@ -75,13 +75,13 @@ public:
 class SO3CSpace : public GeodesicCSpace
 {
 public:
-  virtual int NumDimensions() { return 3; }
-  virtual std::string VariableName(int i);
-  virtual void Sample(Config& x);
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual void Interpolate(const Config& a,const Config& b,Real u,Config& out);
-  virtual Real Distance(const Config& a,const Config& b);
-  virtual void Properties(PropertyMap& pmap);
+  virtual int NumDimensions() override { return 3; }
+  virtual std::string VariableName(int i) override;
+  virtual void Sample(Config& x) override;
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual void Interpolate(const Config& a,const Config& b,Real u,Config& out) override;
+  virtual Real Distance(const Config& a,const Config& b) override;
+  virtual void Properties(PropertyMap& pmap) override;
 
   void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx);
   void Integrate(const Config& a,const Vector& da,Config& b);

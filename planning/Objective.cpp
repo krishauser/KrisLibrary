@@ -135,6 +135,17 @@ Real ObjectiveFunctionalBase::PathCost(const KinodynamicMilestonePath& path)
   return IncrementalCost(path) + TerminalCost(path.End());
 }
 
+
+AddObjectiveFunctional ObjectiveFunctionalBase::operator + (Real rhs) { return AddObjectiveFunctional(this,rhs); }
+AddObjectiveFunctional ObjectiveFunctionalBase::operator + (ObjectiveFunctionalBase& rhs) { return AddObjectiveFunctional(this,&rhs); }
+SubObjectiveFunctional ObjectiveFunctionalBase::operator - (Real rhs) { return SubObjectiveFunctional(this,rhs); }
+SubObjectiveFunctional ObjectiveFunctionalBase::operator - (ObjectiveFunctionalBase& rhs) { return SubObjectiveFunctional(this,&rhs); }
+MulObjectiveFunctional ObjectiveFunctionalBase::operator * (Real rhs) { return MulObjectiveFunctional(this,rhs); }
+MulObjectiveFunctional ObjectiveFunctionalBase::operator * (ObjectiveFunctionalBase& rhs) { return MulObjectiveFunctional(this,&rhs); }
+DivObjectiveFunctional ObjectiveFunctionalBase::operator / (Real rhs) { return DivObjectiveFunctional(this,rhs); }
+DivObjectiveFunctional ObjectiveFunctionalBase::operator / (ObjectiveFunctionalBase& rhs) { return DivObjectiveFunctional(this,&rhs); }
+
+
 IntegratorObjectiveFunctional::IntegratorObjectiveFunctional(Real _dt,int _timeIndex)
 :dt(_dt),timeIndex(_timeIndex)
 {}
@@ -299,3 +310,41 @@ bool CompositeObjective::PathInvariant() const
 
 
 
+const char* OpObjectiveFunctional::TypeString()
+{
+  if(type_string.empty()) {
+    stringstream ss;
+    ss<<rhs->TypeString()<<OpString();
+    if(lhs) ss<<lhs->TypeString();
+    else ss<<lhs_const;
+    type_string = ss.str();
+  }
+  return type_string.c_str();
+}
+
+std::string OpObjectiveFunctional::Description() 
+{
+  if(desc_string.empty()) {
+    stringstream ss;
+    ss<<rhs->Description()<<OpString();
+    if(lhs) ss<<lhs->Description();
+    else ss<<lhs_const;
+    desc_string = ss.str();
+  }
+  return desc_string.c_str();
+}
+
+
+bool OpObjectiveFunctional::SaveParams(AnyCollection& collection) 
+{ 
+  if(!rhs->SaveParams(collection["rhs"])) return false;
+  if(lhs && !lhs->SaveParams(collection["lhs"])) return false;
+  return true;
+}
+
+bool OpObjectiveFunctional::LoadParams(AnyCollection& collection) 
+{ 
+  if(!rhs->LoadParams(collection["rhs"])) return false;
+  if(lhs && !lhs->LoadParams(collection["lhs"])) return false;
+  return true;
+}

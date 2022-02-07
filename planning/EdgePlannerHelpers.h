@@ -9,15 +9,15 @@ class TrueEdgeChecker : public EdgeChecker
 public:
   TrueEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   TrueEdgeChecker(CSpace* space,const Config& a,const Config& b);
-  virtual bool IsVisible() { return true; }
-  virtual EdgePlannerPtr Copy() const { return std::make_shared<TrueEdgeChecker>(space,path); }
-  virtual EdgePlannerPtr ReverseCopy() const { return std::make_shared<TrueEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
+  virtual bool IsVisible() override { return true; }
+  virtual EdgePlannerPtr Copy() const override { return std::make_shared<TrueEdgeChecker>(space,path); }
+  virtual EdgePlannerPtr ReverseCopy() const override { return std::make_shared<TrueEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
 
-  virtual bool IsIncremental() const { return true; } 
-  virtual Real Priority() const { return 0; }
-  virtual bool Plan() { return false; }
-  virtual bool Done() const { return true; }
-  virtual bool Failed() const {  return false; }
+  virtual bool IsIncremental() const override { return true; } 
+  virtual Real Priority() const override { return 0; }
+  virtual bool Plan() override { return false; }
+  virtual bool Done() const override { return true; }
+  virtual bool Failed() const override {  return false; }
 };
 
 /// Edge planner that is never visible 
@@ -27,14 +27,14 @@ public:
   FalseEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   FalseEdgeChecker(CSpace* space,const Config& a,const Config& b);
   virtual bool IsVisible() { return false; }
-  virtual EdgePlannerPtr Copy() const { return std::make_shared<FalseEdgeChecker>(space,path); }
-  virtual EdgePlannerPtr ReverseCopy() const { return std::make_shared<FalseEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
+  virtual EdgePlannerPtr Copy() const override { return std::make_shared<FalseEdgeChecker>(space,path); }
+  virtual EdgePlannerPtr ReverseCopy() const override { return std::make_shared<FalseEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
 
-  virtual bool IsIncremental() const { return true; } 
-  virtual Real Priority() const { return 0; }
-  virtual bool Plan() { return false; }
-  virtual bool Done() const { return true; }
-  virtual bool Failed() const {  return true; }
+  virtual bool IsIncremental() const override { return true; } 
+  virtual Real Priority() const override { return 0; }
+  virtual bool Plan() override { return false; }
+  virtual bool Done() const override { return true; }
+  virtual bool Failed() const override {  return true; }
 };
 
 /// Edge planner that only checks the endpoint
@@ -43,9 +43,9 @@ class EndpointEdgeChecker : public EdgeChecker
 public:
   EndpointEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   EndpointEdgeChecker(CSpace* space,const Config& a,const Config& b);
-  virtual bool IsVisible();
-  virtual EdgePlannerPtr Copy() const { return std::make_shared<EndpointEdgeChecker>(space,path); }
-  virtual EdgePlannerPtr ReverseCopy() const { return std::make_shared<EndpointEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
+  virtual bool IsVisible() override;
+  virtual EdgePlannerPtr Copy() const override { return std::make_shared<EndpointEdgeChecker>(space,path); }
+  virtual EdgePlannerPtr ReverseCopy() const override { return std::make_shared<EndpointEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
 };
 
 
@@ -69,20 +69,20 @@ public:
   PiggybackEdgePlanner(CSpace* space,const Config& a,const Config& b,EdgePlannerPtr e);
   virtual ~PiggybackEdgePlanner() {}
   virtual bool IsVisible() { return e->IsVisible(); }
-  virtual EdgePlannerPtr Copy() const;
-  virtual EdgePlannerPtr ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const override;
+  virtual EdgePlannerPtr ReverseCopy() const override;
 
-  virtual bool IsIncremental() const { return e->IsIncremental(); } 
-  virtual Real Priority() const { return e->Priority(); }
+  virtual bool IsIncremental() const override { return e->IsIncremental(); } 
+  virtual Real Priority() const override { return e->Priority(); }
   virtual bool Plan() { return e->Plan(); }
-  virtual bool Done() const { return e->Done(); }
-  virtual bool Failed() const { return e->Failed(); }
+  virtual bool Done() const override { return e->Done(); }
+  virtual bool Failed() const override { return e->Failed(); }
 
-  virtual void Eval(Real u,Config& x) const;
-  virtual Real Length() const;
-  virtual const Config& Start() const;
-  virtual const Config& End() const;
-  virtual CSpace* Space() const;
+  virtual void Eval(Real u,Config& x) const override;
+  virtual Real Length() const override;
+  virtual const Config& Start() const override;
+  virtual const Config& End() const override;
+  virtual CSpace* Space() const override;
 
   EdgePlannerPtr e;
 };
@@ -94,19 +94,19 @@ class PathEdgeChecker : public EdgePlanner
 {
 public:
   PathEdgeChecker(CSpace* space,const std::vector<EdgePlannerPtr> & path);
-  virtual void Eval(Real u,Config& x) const;
-  virtual Real Length() const;
-  virtual const Config& Start() const;
-  virtual const Config& End() const;  
+  virtual void Eval(Real u,Config& x) const override;
+  virtual Real Length() const override;
+  virtual const Config& Start() const override;
+  virtual const Config& End() const override;  
   virtual bool IsVisible();
-  virtual CSpace* Space() const { return space; }
-  virtual EdgePlannerPtr Copy() const;
-  virtual EdgePlannerPtr ReverseCopy() const;
-  virtual bool IsIncremental() const { return true; } 
-  virtual Real Priority() const;
-  virtual bool Plan();
-  virtual bool Done() const;
-  virtual bool Failed() const;
+  virtual CSpace* Space() const override { return space; }
+  virtual EdgePlannerPtr Copy() const override;
+  virtual EdgePlannerPtr ReverseCopy() const override;
+  virtual bool IsIncremental() const override { return true; } 
+  virtual Real Priority() const override;
+  virtual bool Plan() override;
+  virtual bool Done() const override;
+  virtual bool Failed() const override;
 
   //TODO: queue them
   CSpace* space;
@@ -135,13 +135,13 @@ class IncrementalizedEdgePlanner : public PiggybackEdgePlanner
 {
 public:
   IncrementalizedEdgePlanner(const EdgePlannerPtr& e);
-  virtual bool IsIncremental() const { return true; } 
-  virtual Real Priority() const;
-  virtual bool Plan();
-  virtual bool Done() const;
-  virtual bool Failed() const;
-  virtual EdgePlannerPtr Copy() const;
-  virtual EdgePlannerPtr ReverseCopy() const;
+  virtual bool IsIncremental() const override { return true; } 
+  virtual Real Priority() const override;
+  virtual bool Plan() override;
+  virtual bool Done() const override;
+  virtual bool Failed() const override;
+  virtual EdgePlannerPtr Copy() const override;
+  virtual EdgePlannerPtr ReverseCopy() const override;
   
   bool checked,visible;
 };
@@ -158,8 +158,8 @@ class EdgePlannerWithCSpaceContainer : public PiggybackEdgePlanner
 public:
   EdgePlannerWithCSpaceContainer(const std::shared_ptr<CSpace>& space,const EdgePlannerPtr& e);
   virtual ~EdgePlannerWithCSpaceContainer() { }
-  virtual EdgePlannerPtr Copy() const;
-  virtual EdgePlannerPtr ReverseCopy() const;
+  virtual EdgePlannerPtr Copy() const override;
+  virtual EdgePlannerPtr ReverseCopy() const override;
 
   std::shared_ptr<CSpace> spacePtr;
 };

@@ -16,10 +16,10 @@ public:
     if(i<(int)edges.size()) return edges[i]->Start();
     else return End();
   }
-  virtual Real Length() const;
-  virtual void Eval(Real t,Config& q) const { Eval2(t,q); }
-  virtual Real ParamStart() const { return 0.0; }
-  virtual Real ParamEnd() const;
+  virtual Real Length() const override;
+  virtual void Eval(Real t,Config& q) const override { Eval2(t,q); }
+  virtual Real ParamStart() const override { return 0.0; }
+  virtual Real ParamEnd() const override;
 
   void SetConstant(const Config& q,CSpace* space);
   void Set(const MilestonePath& path,int timeIndex=-1);

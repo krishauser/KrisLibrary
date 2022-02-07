@@ -997,7 +997,7 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
 {
   Assimp::Importer importer;
   importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-  const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FindDegenerates | aiProcess_SortByPType );
+  const aiScene* scene = importer.ReadFile(fn, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FindDegenerates | aiProcess_SortByPType | aiProcess_GenUVCoords );
   // If the import failed, report it
   if (!scene) {
     LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter error: "<<importer.GetErrorString() << " while loading "<< fn);

@@ -198,6 +198,39 @@ Real AABB3D::distance(const AABB3D& bb,Point3D& myclosest,Point3D& bbclosest) co
   return myclosest.distance(bbclosest);
 }
 
+Real AABB3D::maxDistance(const Point3D& pt) const
+{
+  Vector3 farthest;
+  return maxDistance(pt,farthest);
+}
+Real AABB3D::maxDistance(const Point3D& pt,Point3D& farthest) const
+{
+  if(Abs(pt.x-bmin.x) > Abs(pt.x-bmax.x)) farthest.x = bmin.x;
+  else farthest.x = bmax.x;
+  if(Abs(pt.y-bmin.y) > Abs(pt.y-bmax.y)) farthest.y = bmin.y;
+  else farthest.y = bmax.y;
+  if(Abs(pt.z-bmin.z) > Abs(pt.z-bmax.z)) farthest.z = bmin.z;
+  else farthest.z = bmax.z;
+  return farthest.distance(pt);
+}
+
+Real AABB3D::maxDistance(const AABB3D& bb) const
+{
+  Vector3 thisfarthest,bbfarthest;
+  return maxDistance(bb,thisfarthest,bbfarthest);
+}
+
+Real AABB3D::maxDistance(const AABB3D& bb,Point3D& thisfarthest,Point3D& bbfarthest) const
+{
+  if(Abs(bb.bmax.x-bmin.x) > Abs(bb.bmin.x-bmax.x)) { thisfarthest.x = bmin.x; bbfarthest.x = bb.bmax.x; }
+  else  { thisfarthest.x = bmax.x; bbfarthest.x = bb.bmin.x; }
+  if(Abs(bb.bmax.y-bmin.y) > Abs(bb.bmin.y-bmax.y)) { thisfarthest.y = bmin.y; bbfarthest.y = bb.bmax.y; }
+  else  { thisfarthest.y = bmax.y; bbfarthest.y = bb.bmin.y; }
+  if(Abs(bb.bmax.z-bmin.z) > Abs(bb.bmin.z-bmax.z)) { thisfarthest.z = bmin.z; bbfarthest.z = bb.bmax.z; }
+  else  { thisfarthest.z = bmax.z; bbfarthest.z = bb.bmin.z; }
+  return thisfarthest.distance(bbfarthest);
+}
+
 bool AABB3D::intersects(const AABB3D& a) const
 {
 	return (bmin.x <= a.bmax.x && bmax.x >= a.bmin.x &&

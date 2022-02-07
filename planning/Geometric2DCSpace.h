@@ -81,14 +81,14 @@ public:
   bool ObstacleOverlap(const Triangle2D& tri) const;
   bool ObstacleOverlap(const Segment2D& s,int obstacle) const;
 
-  virtual int NumDimensions() const { return 2; }
-  virtual void Sample(Config& x);
-  virtual void SampleNeighborhood(const Config& c,Real r,Config& x);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
-  virtual Real Distance(const Config& x, const Config& y);
-  virtual Real ObstacleDistance(const Config& x) { return ObstacleDistance(Vector2(x(0),x(1))); }
-  virtual void Properties(PropertyMap&) const;
+  virtual int NumDimensions() override { return 2; }
+  virtual void Sample(Config& x) override;
+  virtual void SampleNeighborhood(const Config& c,Real r,Config& x) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle) override;
+  virtual Real Distance(const Config& x, const Config& y) override;
+  virtual Real ObstacleDistance(const Config& x) override { return ObstacleDistance(Vector2(x(0),x(1))); }
+  virtual void Properties(PropertyMap&) override;
 
   bool euclideanSpace;
   Real visibilityEpsilon;
@@ -101,9 +101,9 @@ public:
   Geometric2DObstacleFreeSet(const GeometricPrimitive2D& obstacle);
   Geometric2DObstacleFreeSet(const GeometricPrimitive2D& obstacle,const Geometric2DCollection& robot,bool translationOnly);
   virtual ~Geometric2DObstacleFreeSet() {}
-  virtual int NumDimensions() { return translationOnly ? 2:3; }
-  virtual bool Contains(const Config& x);
-  virtual Real ObstacleDistance(const Config& x);
+  virtual int NumDimensions() const override { return translationOnly ? 2:3; }
+  virtual bool Contains(const Config& x) override;
+  virtual Real ObstacleDistance(const Config& x) override;
 
   GeometricPrimitive2D obstacle;
   const Geometric2DCollection* robot;

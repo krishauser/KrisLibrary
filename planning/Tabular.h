@@ -49,11 +49,11 @@ public:
   Tabular1DSet(const std::vector<bool>& valid,Real a,Real b);
   Tabular1DSet(int n,Real a,Real b);
   virtual ~Tabular1DSet() {}
-  virtual int NumDimensions() const { return 1; }
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsSampleable() const { return true; }
-  virtual void Sample(Config& x);
+  virtual int NumDimensions() const override { return 1; }
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsSampleable() const override { return true; }
+  virtual void Sample(Config& x) override;
 
   bool calculatedValidIndices;
   std::vector<int> validIndices;
@@ -70,11 +70,11 @@ public:
   Tabular2DSet(const Array2D<bool>& valid,const Vector2& bmin,const Vector2& bmax);
   Tabular2DSet(int m,int n,const Vector2& bmin,const Vector2& bmax);
   virtual ~Tabular2DSet() {}
-  virtual int NumDimensions() const { return 2; }
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsSampleable() const { return true; }
-  virtual void Sample(Config& x);
+  virtual int NumDimensions() const override { return 2; }
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsSampleable() const override { return true; }
+  virtual void Sample(Config& x) override;
 
   bool calculatedValidIndices;
   std::vector<IntPair> validIndices;
@@ -91,11 +91,11 @@ public:
   Tabular3DSet(const Array3D<bool>& valid,const Vector3& bmin,const Vector3& bmax);
   Tabular3DSet(int m,int n, int p,const Vector3& bmin,const Vector3& bmax);
   virtual ~Tabular3DSet() {}
-  virtual int NumDimensions() const { return 2; }
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
-  virtual bool IsSampleable() const { return true; }
-  virtual void Sample(Config& x);
+  virtual int NumDimensions() const override { return 3; }
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
+  virtual bool IsSampleable() const override { return true; }
+  virtual void Sample(Config& x) override;
 
   bool calculatedValidIndices;
   std::vector<IntTriple> validIndices;
@@ -113,9 +113,9 @@ class Tabular1DLevelSet : public BoxSet, Table1D<Real>
 public:
   Tabular1DLevelSet(const std::vector<Real>& f,Real a,Real b,Real threshold=0);
   virtual ~Tabular1DLevelSet() {}
-  virtual int NumDimensions() const { return 1; }
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
+  virtual int NumDimensions() const override { return 1; }
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
 
   Real threshold;
 };
@@ -134,9 +134,9 @@ class Tabular2DLevelSet : public BoxSet
 public:
   Tabular2DLevelSet(const Array2D<Real>& f,const Vector2& bmin,const Vector2& bmax,Real threshold=0);
   virtual ~Tabular2DLevelSet() {}
-  virtual int NumDimensions() const { return 2; }
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
+  virtual int NumDimensions() const override { return 2; }
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
 
   Meshing::AreaGridTemplate<Real> agrid;
   Real threshold;
@@ -156,9 +156,9 @@ class Tabular3DLevelSet : public BoxSet
 public:
   Tabular3DLevelSet(const Array3D<Real>& f,const Vector3& bmin,const Vector3& bmax,Real threshold=0);
   virtual ~Tabular3DLevelSet() {}
-  virtual int NumDimensions() const { return 3; }
-  virtual bool Contains(const Config& x);
-  virtual bool Project(Config& x);
+  virtual int NumDimensions() const override { return 3; }
+  virtual bool Contains(const Config& x) override;
+  virtual bool Project(Config& x) override;
 
   Meshing::VolumeGridTemplate<Real> vgrid;
   Real threshold;
@@ -190,11 +190,11 @@ public:
     Real a,Real b,
     int dim);
   virtual ~Tabular1DObjective() {}
-  virtual const char* TypeString() { return "tabular1d"; }
-  virtual std::string Description();
-  virtual bool PathInvariant() const { return differentialCosts.values.empty(); }
-  virtual Real IncrementalCost(const Interpolator* path);
-  virtual Real TerminalCost(const Vector& qend);
+  virtual const char* TypeString() override { return "tabular1d"; }
+  virtual std::string Description() override;
+  virtual bool PathInvariant() const override { return differentialCosts.values.empty(); }
+  virtual Real IncrementalCost(const Interpolator* path) override;
+  virtual Real TerminalCost(const Vector& qend) override;
 
   Table1D<Real> differentialCosts,terminalCosts;
   int dim;
@@ -221,11 +221,11 @@ public:
     const Math3D::Vector2& bmin,const Math3D::Vector2& bmax,
     int dim0=0,int dim1=1);
   virtual ~Tabular2DObjective() {}
-  virtual const char* TypeString() { return "tabular2d"; }
-  virtual std::string Description();
-  virtual bool PathInvariant() const { return differentialCosts.value.empty(); }
-  virtual Real IncrementalCost(const Interpolator* path);
-  virtual Real TerminalCost(const Vector& qend);
+  virtual const char* TypeString() override { return "tabular2d"; }
+  virtual std::string Description() override;
+  virtual bool PathInvariant() const override { return differentialCosts.value.empty(); }
+  virtual Real IncrementalCost(const Interpolator* path) override;
+  virtual Real TerminalCost(const Vector& qend) override;
 
   Meshing::AreaGridTemplate<Real> differentialCosts,terminalCosts;
   int dim0,dim1;
@@ -253,11 +253,11 @@ public:
     const Math3D::Vector3& bmin,const Math3D::Vector3& bmax,
     int dim0=0,int dim1=1,int dim2=2);
   virtual ~Tabular3DObjective() {}
-  virtual const char* TypeString() { return "tabular23"; }
-  virtual std::string Description();
-  virtual bool PathInvariant() const { return differentialCosts.value.empty(); }
-  virtual Real IncrementalCost(const Interpolator* path);
-  virtual Real TerminalCost(const Vector& qend);
+  virtual const char* TypeString() override { return "tabular23"; }
+  virtual std::string Description() override;
+  virtual bool PathInvariant() const override { return differentialCosts.value.empty(); }
+  virtual Real IncrementalCost(const Interpolator* path) override;
+  virtual Real TerminalCost(const Vector& qend) override;
 
   Meshing::VolumeGridTemplate<Real> differentialCosts,terminalCosts;
   int dim0,dim1,dim2;

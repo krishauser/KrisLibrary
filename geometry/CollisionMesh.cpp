@@ -1,6 +1,7 @@
-#include <KrisLibrary/Logger.h>
 #include "CollisionMesh.h"
 #include "PenetrationDepth.h"
+#include "GridSubdivision.h"
+#include <KrisLibrary/Logger.h>
 #include <math3d/clip.h>
 #include <iostream>
 using namespace Meshing;
@@ -29,6 +30,11 @@ DECLARE_LOGGER(Geometry)
 
 namespace Geometry {
 
+enum {
+  CollisionDataHintFast=0x01,     
+  CollisionDataHintTemporallyCoherent=0x02,
+  CollisionDataHintGridlike=0x04
+};
 
 void RigidTransformToPQP(const RigidTransform& f,PQP_REAL R[3][3],PQP_REAL T[3])
 {

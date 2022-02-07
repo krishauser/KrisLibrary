@@ -27,10 +27,10 @@ class ReverseInterpolator : public Interpolator
 public:
   ReverseInterpolator(const std::shared_ptr<Interpolator>& base);
   virtual ~ReverseInterpolator() {}
-  virtual void Eval(Real u,Config& x) const { base->Eval(1.0-u,x); }
-  virtual Real Length() const { return base->Length(); }
-  virtual const Config& Start() const { return base->End(); }
-  virtual const Config& End() const { return base->Start(); }
+  virtual void Eval(Real u,Config& x) const override { base->Eval(1.0-u,x); }
+  virtual Real Length() const override { return base->Length(); }
+  virtual const Config& Start() const override { return base->End(); }
+  virtual const Config& End() const override { return base->Start(); }
 
   std::shared_ptr<Interpolator> base;
 };

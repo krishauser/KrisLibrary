@@ -76,11 +76,11 @@ public:
   EdgeChecker(CSpace* space,const InterpolatorPtr& path);
   EdgeChecker(CSpace* space,const Config& a,const Config& b);
   virtual ~EdgeChecker() {}
-  virtual void Eval(Real u,Config& x) const { path->Eval(u,x); }
-  virtual Real Length() const { return path->Length(); }
-  virtual const Config& Start() const { return path->Start(); }
-  virtual const Config& End() const { return path->End(); }
-  virtual CSpace* Space() const { return space; }
+  virtual void Eval(Real u,Config& x) const override { path->Eval(u,x); }
+  virtual Real Length() const override { return path->Length(); }
+  virtual const Config& Start() const override { return path->Start(); }
+  virtual const Config& End() const override { return path->End(); }
+  virtual CSpace* Space() const override { return space; }
 
   CSpace* space;
   InterpolatorPtr path;
@@ -97,14 +97,14 @@ class EpsilonEdgeChecker : public EdgeChecker
 public:
   EpsilonEdgeChecker(CSpace* space,const InterpolatorPtr& path,Real epsilon);
   EpsilonEdgeChecker(CSpace* space,const Config& a,const Config& b,Real epsilon);
-  virtual bool IsVisible();
-  virtual EdgePlannerPtr Copy() const;
-  virtual EdgePlannerPtr ReverseCopy() const;
-  virtual bool IsIncremental() const { return true; } 
-  virtual Real Priority() const;
-  virtual bool Plan();
-  virtual bool Done() const;
-  virtual bool Failed() const;
+  virtual bool IsVisible() override;
+  virtual EdgePlannerPtr Copy() const override;
+  virtual EdgePlannerPtr ReverseCopy() const override;
+  virtual bool IsIncremental() const override { return true; } 
+  virtual Real Priority() const override;
+  virtual bool Plan() override;
+  virtual bool Done() const override;
+  virtual bool Failed() const override;
 
   Real epsilon;
 
@@ -125,9 +125,9 @@ class ObstacleDistanceEdgeChecker : public EdgeChecker
 public:
   ObstacleDistanceEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   ObstacleDistanceEdgeChecker(CSpace* space,const Config& a, const Config& b);
-  virtual bool IsVisible();
-  virtual EdgePlannerPtr Copy() const;
-  virtual EdgePlannerPtr ReverseCopy() const;
+  virtual bool IsVisible() override;
+  virtual EdgePlannerPtr Copy() const override;
+  virtual EdgePlannerPtr ReverseCopy() const override;
 
   bool CheckVisibility(Real ua,Real ub,const Config& a,const Config& b,Real da,Real db);
 };
@@ -145,19 +145,19 @@ class BisectionEpsilonEdgePlanner : public EdgePlanner
 public:
   BisectionEpsilonEdgePlanner(CSpace* space,const Config& a,const Config& b,Real epsilon);
   virtual ~BisectionEpsilonEdgePlanner() {}
-  virtual bool IsVisible();
-  virtual void Eval(Real u,Config& x) const;
-  virtual Real Length() const;
-  virtual const Config& Start() const;
-  virtual const Config& End() const;
-  virtual CSpace* Space() const { return space; }
-  virtual EdgePlannerPtr Copy() const;
-  virtual EdgePlannerPtr ReverseCopy() const;
-  virtual bool IsIncremental() const { return true; } 
-  virtual Real Priority() const;
-  virtual bool Plan();
-  virtual bool Done() const;
-  virtual bool Failed() const;
+  virtual bool IsVisible() override;
+  virtual void Eval(Real u,Config& x) const override;
+  virtual Real Length() const override;
+  virtual const Config& Start() const override;
+  virtual const Config& End() const override;
+  virtual CSpace* Space() const override { return space; }
+  virtual EdgePlannerPtr Copy() const override;
+  virtual EdgePlannerPtr ReverseCopy() const override;
+  virtual bool IsIncremental() const override { return true; } 
+  virtual Real Priority() const override;
+  virtual bool Plan() override;
+  virtual bool Done() const override;
+  virtual bool Failed() const override;
   //on failure, returns the segment last checked
   bool Plan(Config*& pre,Config*& post);
 

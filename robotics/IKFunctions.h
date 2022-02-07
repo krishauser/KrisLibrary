@@ -7,6 +7,7 @@
 #include <KrisLibrary/optimization/Newton.h>
 #include <KrisLibrary/utils/ArrayMapping.h>
 #include <KrisLibrary/utils/DirtyData.h>
+#include <map>
 
 /** @file IKFunctions.h
  * @ingroup Kinematics
@@ -152,13 +153,13 @@ struct WorldPositionFunction : public VectorFieldFunction
 {
   WorldPositionFunction(RobotKinematics3D&,const Vector3& pi,int i,const ArrayMapping& activeDofs);
   int GetDOF(int dim) const;
-  virtual std::string Label() const { return "WorldPos"; }
-  virtual int NumDimensions() const { return 3; }
-  virtual void Eval(const Vector& x, Vector& v);
-  virtual Real Eval_i(const Vector& x, int i);
-  virtual void Jacobian(const Vector& x, Matrix& J);
-  //virtual void Jacobian_i(const Vector& x, int i, Vector& Ji);
-  //virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override { return "WorldPos"; }
+  virtual int NumDimensions() const override { return 3; }
+  virtual void Eval(const Vector& x, Vector& v) override;
+  virtual Real Eval_i(const Vector& x, int i) override;
+  virtual void Jacobian(const Vector& x, Matrix& J) override;
+  //virtual void Jacobian_i(const Vector& x, int i, Vector& Ji) override;
+  //virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   RobotKinematics3D& robot;
   Vector3 ploc;
@@ -176,15 +177,15 @@ struct IKGoalFunction : public VectorFieldFunction
 {
   IKGoalFunction(RobotKinematics3D&,const IKGoal&,const ArrayMapping& activeDofs);
   int GetDOF(int dim) const;
-  virtual std::string Label() const;
-  virtual std::string Label(int i) const;
-  virtual int NumDimensions() const;
-  virtual void PreEval(const Vector& x);
-  virtual void Eval(const Vector& x, Vector& r);
-  virtual Real Eval_i(const Vector& x, int i);
-  virtual void Jacobian(const Vector& x, Matrix& J);
-  virtual void Jacobian_i(const Vector& x, int i, Vector& Ji);
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override;
+  virtual std::string Label(int i) const override;
+  virtual int NumDimensions() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual void Eval(const Vector& x, Vector& r) override;
+  virtual Real Eval_i(const Vector& x, int i) override;
+  virtual void Jacobian(const Vector& x, Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x, int i, Vector& Ji) override;
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   void UpdateEEPos();
   void UpdateEERot();
@@ -210,15 +211,15 @@ struct RobotCOMFunction : public VectorFieldFunction
 {
   RobotCOMFunction(RobotKinematics3D&,const Vector2& com,const ArrayMapping& activeDofs);
   int GetDOF(int dim) const;
-  virtual std::string Label() const;
-  virtual std::string Label(int i) const;
-  virtual int NumDimensions() const { return 2; }
-  virtual void PreEval(const Vector& x);
-  virtual void Eval(const Vector& x, Vector& r);
-  virtual Real Eval_i(const Vector& x, int i);
-  virtual void Jacobian(const Vector& x, Matrix& J);
-  virtual void Jacobian_i(const Vector& x, int i, Vector& Ji);
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override;
+  virtual std::string Label(int i) const override;
+  virtual int NumDimensions() const override { return 2; }
+  virtual void PreEval(const Vector& x) override;
+  virtual void Eval(const Vector& x, Vector& r) override;
+  virtual Real Eval_i(const Vector& x, int i) override;
+  virtual void Jacobian(const Vector& x, Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x, int i, Vector& Ji) override;
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   RobotKinematics3D& robot;
   Vector2 comGoal;
@@ -238,15 +239,15 @@ struct RobotAffineConstraintFunction : public VectorFieldFunction
       Real value,
       const ArrayMapping& activeDofs);
   int GetDOF(int dim) const;
-  virtual std::string Label() const;
-  virtual std::string Label(int i) const;
-  virtual int NumDimensions() const { return 1; }
-  virtual void PreEval(const Vector& x) {}
-  virtual void Eval(const Vector& x, Vector& r);
-  virtual Real Eval_i(const Vector& x, int i);
-  virtual void Jacobian(const Vector& x, Matrix& J);
-  virtual void Jacobian_i(const Vector& x, int i, Vector& Ji);
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override;
+  virtual std::string Label(int i) const override;
+  virtual int NumDimensions() const override { return 1; }
+  virtual void PreEval(const Vector& x) override {}
+  virtual void Eval(const Vector& x, Vector& r) override;
+  virtual Real Eval_i(const Vector& x, int i) override;
+  virtual void Jacobian(const Vector& x, Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x, int i, Vector& Ji) override;
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   std::vector<int> indices;
   std::vector<Real> coeffs;

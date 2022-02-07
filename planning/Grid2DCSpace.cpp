@@ -126,12 +126,20 @@ void Grid2DCSpace::SampleNeighborhood(const Config& c,Real r,Config& x)
   x += c;
 }
 
-EdgePlannerPtr Grid2DCSpace::PathChecker(const InterpolatorPtr& path)
+EdgePlannerPtr Grid2DCSpace::PathChecker(const Config& a,const Config& b)
+{
+  Real res = Min((occupied->bb.bmax.x-occupied->bb.bmin.x)/Real(occupied->value.m),
+		 (occupied->bb.bmax.y-occupied->bb.bmin.y)/Real(occupied->value.n));
+  return std::make_shared<EpsilonEdgeChecker>(this,a,b,res);
+}
+
+EdgePlannerPtr Grid2DCSpace::PathChecker(const shared_ptr<Interpolator>& path)
 {
   Real res = Min((occupied->bb.bmax.x-occupied->bb.bmin.x)/Real(occupied->value.m),
 		 (occupied->bb.bmax.y-occupied->bb.bmin.y)/Real(occupied->value.n));
   return std::make_shared<EpsilonEdgeChecker>(this,path,res);
 }
+
 
 Real Grid2DCSpace::Distance(const Config& x, const Config& y)
 { 

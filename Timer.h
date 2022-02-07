@@ -10,14 +10,17 @@ class Timer
   Timer(const Timer& rhs);
   ~Timer();
   const Timer& operator = (const Timer&);
+  /// Resets the timer
   void Reset();
 
-  // Returns elapsed time in milliseconds,seconds respectively
+  /// Returns elapsed time since constructor or last Reset() call, in milliseconds
   long long ElapsedTicks();
+  /// Returns elapsed time since constructor or last Reset() call, in seconds
   double ElapsedTime();
 
-  // Doesn't refresh the current time
+  /// Returns elapsed time cached on prior ElapsedX call, in milliseconds 
   long long LastElapsedTicks() const;
+  /// Returns elapsed time cached on prior ElapsedX call, in seconds
   double LastElapsedTime() const;
 
  private:

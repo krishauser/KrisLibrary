@@ -161,13 +161,13 @@ SOCKET Connect(const char* addr)
 	  
   SOCKET sockfd = socket(AF_INET, sockettype, 0);
   if (sockfd == INVALID_SOCKET) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Connect: Error creating socket\n");
+        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Connect: Error creating socket\n");
     delete [] host;
     return INVALID_SOCKET;
   }
   server = gethostbyname(host);
   if (server == NULL) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Connect: Error, no such host "<<host<<":"<<port);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Connect: Error, no such host "<<host<<":"<<port);
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET;
@@ -180,7 +180,7 @@ SOCKET Connect(const char* addr)
   serv_addr.sin_port = htons(port);
 
   if (connect(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Connect: Connect to server "<<host<<":"<<port);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Connect("<<host<<":"<<port<<") failed");
     perror("  Reason");
     CloseSocket(sockfd);
     delete [] host;
@@ -226,7 +226,7 @@ SOCKET Bind(const char* addr,bool block)
 
   server = gethostbyname(host);
   if (server == NULL) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Bind: Error, no such host "<<host<<":"<<port);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Bind: Error, no such host "<<host<<":"<<port);
     CloseSocket(sockfd);
     delete [] host;
     return INVALID_SOCKET;
@@ -239,7 +239,7 @@ SOCKET Bind(const char* addr,bool block)
   serv_addr.sin_port = htons(port);
 
   if (bind(sockfd,(sockaddr*)&serv_addr,sizeof(serv_addr)) < 0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Bind: Bind server to "<<host<<":"<<port);
+    LOG4CXX_ERROR(KrisLibrary::logger(),"socketutils.cpp Bind("<<host<<":"<<port<<") failed");
     perror("  Reason");
     CloseSocket(sockfd);
     delete [] host;

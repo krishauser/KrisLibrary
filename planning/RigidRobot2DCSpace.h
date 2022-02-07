@@ -16,9 +16,9 @@ public:
   void DrawRobotGL(const Config& q) const;
   void DrawGL(const Config& q) const;
 
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle);
-  virtual void Properties(PropertyMap&);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int obstacle) override;
+  virtual void Properties(PropertyMap&) override;
 
   Real visibilityEpsilon;
   Geometric2DCollection obstacles;

@@ -17,7 +17,6 @@
 #include <memory.h>
 
 using namespace Geometry;
-
 namespace GLDraw {
 
   void TransferTexture1D(GLTextureObject& obj,const Image& img)
@@ -184,6 +183,9 @@ namespace GLDraw {
     else if(geom.type == Geometry::AnyCollisionGeometry3D::ImplicitSurface) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw implicit surface");
     }
+    else if(geom.type == Geometry::AnyCollisionGeometry3D::OccupancyGrid) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw occupancy grid");
+    }
     else if(geom.type == Geometry::AnyCollisionGeometry3D::Primitive) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw expanded primitive");
       draw(geom.AsPrimitive());
@@ -308,8 +310,8 @@ GeometryAppearance::GeometryAppearance()
   :geom(NULL),drawVertices(false),drawEdges(false),drawFaces(false),vertexSize(1.0),edgeSize(1.0),
    lightFaces(true),
    vertexColor(1,1,1),edgeColor(1,1,1),faceColor(0.5,0.5,0.5),emissiveColor(0,0,0),shininess(0),specularColor(0.1,0.1,0.1),
-   texWrap(false),
-   creaseAngle(0),silhouetteRadius(0),silhouetteColor(0,0,0)
+   texWrap(true),texFilterNearest(false),
+   creaseAngle(0),silhouetteRadius(0),silhouetteColor(0,0,0),tintColor(0,0,0),tintStrength(0)
 {}
 
 void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
@@ -347,14 +349,16 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   faceColors=rhs.faceColors;
   tex1D=rhs.tex1D;
   tex2D=rhs.tex2D;
-  texWrap=rhs.texWrap;
   if(!rhs.texcoords.empty() && !texcoords.empty()) {
     if(rhs.texcoords.size() != texcoords.size())
       LOG4CXX_WARN(KrisLibrary::logger(),"GeometryAppearance::CopyMaterial(): Warning, erroneous size of texture coordinates?"); 
     Refresh();
   }
   texcoords=rhs.texcoords;
+  texWrap=rhs.texWrap;
+  texFilterNearest=rhs.texFilterNearest;
   texgen=rhs.texgen;
+  texgenEyeTransform=rhs.texgenEyeTransform;
   emissiveColor=rhs.emissiveColor;
   shininess=rhs.shininess;
   specularColor=rhs.specularColor;
@@ -365,6 +369,10 @@ void GeometryAppearance::CopyMaterial(const GeometryAppearance& rhs)
   if(creaseAngle != rhs.creaseAngle)
     faceDisplayList.erase();
   creaseAngle=rhs.creaseAngle;
+  tintColor=rhs.tintColor;
+  tintStrength=rhs.tintStrength;
+  densityGradientKeypoints=rhs.densityGradientKeypoints;
+  densityGradientColors=rhs.densityGradientColors;
 }
 
 void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
@@ -391,7 +399,9 @@ void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
   tex1D=rhs.tex1D;
   tex2D=rhs.tex2D;
   texWrap=rhs.texWrap;
+  texFilterNearest=rhs.texFilterNearest;
   texgen=rhs.texgen;
+  texgenEyeTransform=rhs.texgenEyeTransform;
   emissiveColor=rhs.emissiveColor;
   shininess=rhs.shininess;
   specularColor=rhs.specularColor;
@@ -402,6 +412,10 @@ void GeometryAppearance::CopyMaterialFlat(const GeometryAppearance& rhs)
   if(creaseAngle != rhs.creaseAngle)
     faceDisplayList.erase();
   creaseAngle=rhs.creaseAngle;
+  tintColor=rhs.tintColor;
+  tintStrength=rhs.tintStrength;
+  densityGradientKeypoints=rhs.densityGradientKeypoints;
+  densityGradientColors=rhs.densityGradientColors;
 }
 
 
@@ -438,6 +452,9 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
     Set(*geom);
   }
   else if(geom->type == AnyGeometry3D::ImplicitSurface) {
+    Set(*geom);
+  }
+  else if(geom->type == AnyGeometry3D::OccupancyGrid) {
     Set(*geom);
   }
   else if(geom->type == AnyGeometry3D::PointCloud) {
@@ -520,8 +537,16 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     drawEdges = false;
     drawVertices = false;
   }
+  else if(geom->type == AnyGeometry3D::OccupancyGrid) {
+    //TODO: draw as blocks with density
+    const Meshing::VolumeGrid* g = &geom->AsOccupancyGrid();
+    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
+    ImplicitSurfaceToMesh(*g,*tempMesh);
+    drawFaces = true;
+    drawEdges = false;
+    drawVertices = false;
+  }
   else if(geom->type == AnyGeometry3D::PointCloud) {
-    Timer timer;
     drawVertices = true;
     drawEdges = false;
     drawFaces = false;
@@ -653,6 +678,26 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   Refresh();
 }
 
+inline void SetTintedColor(const GLColor& col,const GLColor& tintColor,float tintStrength)
+{
+  if(tintStrength != 0) {
+    GLColor temp;
+    temp.blend(col,tintColor,tintStrength);
+    temp.setCurrentGL();
+  }
+  else col.setCurrentGL();
+}
+
+inline void SetTintedMaterial(GLenum face,GLenum pname,const GLColor& col,const GLColor& tintColor,float tintStrength)
+{
+  if(tintStrength != 0) {
+    GLColor temp;
+    temp.blend(col,tintColor,tintStrength);
+    glMaterialfv(face,pname,temp.rgba);
+  }
+  else glMaterialfv(face,pname,col.rgba);
+}
+
 void GeometryAppearance::DrawGL(Element e)
 {
   bool doDrawVertices = false;
@@ -700,8 +745,9 @@ void GeometryAppearance::DrawGL(Element e)
         glEnable(GL_BLEND); 
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
       }
-      if(vertexColors.size()!=verts->size())
-        vertexColor.setCurrentGL();
+      if(vertexColors.size()!=verts->size()) {
+        SetTintedColor(vertexColor,tintColor,tintStrength);
+      }
       glPointSize(vertexSize);
 
       //compile the vertex display list
@@ -715,7 +761,7 @@ void GeometryAppearance::DrawGL(Element e)
           glBegin(GL_POINTS);
           for(size_t i=0;i<verts->size();i++) {
             const Vector3& v=(*verts)[i];
-            vertexColors[i].setCurrentGL();
+            SetTintedColor(vertexColors[i],tintColor,tintStrength);
             glVertex3f(v.x,v.y,v.z);
           }
           glEnd();
@@ -749,7 +795,7 @@ void GeometryAppearance::DrawGL(Element e)
 
     if(lightFaces) {
       glEnable(GL_LIGHTING);
-      glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,faceColor.rgba);
+      SetTintedMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,faceColor,tintColor,tintStrength);
       glMaterialfv(GL_FRONT,GL_EMISSION,emissiveColor.rgba);
       glMaterialf(GL_FRONT,GL_SHININESS,shininess);
       if(shininess != 0)
@@ -761,7 +807,7 @@ void GeometryAppearance::DrawGL(Element e)
     }
     else {
       glDisable(GL_LIGHTING);
-      glColor4fv(faceColor.rgba);
+      SetTintedColor(faceColor,tintColor,tintStrength);
     }
     //set up the texture coordinates
     if(tex1D || tex2D) {
@@ -770,57 +816,104 @@ void GeometryAppearance::DrawGL(Element e)
         if(tex2D) {
           TransferTexture2D(textureObject,*tex2D);
           textureObject.bind(GL_TEXTURE_2D);
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-          if(texWrap) {
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-          }
-          else {
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
-          }
         }
         else {
           TransferTexture1D(textureObject,*tex1D);
           textureObject.bind(GL_TEXTURE_1D);
-          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-          if(texWrap)
-            glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-          else
-            glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP);
         }
       }
       glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
       if(tex1D) {
         glEnable(GL_TEXTURE_1D);
         textureObject.bind(GL_TEXTURE_1D);
+        if(texWrap) {
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+        }
+        else {
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+        }
+        if(texFilterNearest) {
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+        }
+        else {
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        }
       }
       else if(tex2D) {
         glEnable(GL_TEXTURE_2D);
         textureObject.bind(GL_TEXTURE_2D);
+        if(texWrap) {
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+        }
+        else {
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+        }
+        if(texFilterNearest) {
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+        }
+        else {
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        }
       }
     }
 
     if(!texgen.empty()) {
-      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_OBJECT_LINEAR);
+      GLint mode = GL_OBJECT_LINEAR; 
+      GLenum plane = GL_OBJECT_PLANE; 
+      if(texgenEyeTransform) {
+        mode = GL_EYE_LINEAR;
+        plane = GL_EYE_PLANE;
+        RigidTransform Tinv;
+        if(collisionGeom)
+          Tinv.setInverse(collisionGeom->currentTransform);
+        else
+          Tinv.setIdentity();
+        glPushMatrix();
+        glMultMatrix(Matrix4(*texgenEyeTransform*Tinv));
+      }
+      
+      glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,mode);
       float params[4];
       for(int i=0;i<4;i++)
         params[i] = texgen[0][i];
-      glTexGenfv(GL_S,GL_OBJECT_PLANE,params);
+      glTexGenfv(GL_S,plane,params);
       glEnable(GL_TEXTURE_GEN_S);
       if(texgen.size() >= 2) {
-        glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_OBJECT_LINEAR);
+        glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,mode);
         for(int i=0;i<4;i++)
           params[i] = texgen[1][i];
-        glTexGenfv(GL_T,GL_OBJECT_PLANE,params);
+        glTexGenfv(GL_T,plane,params);
         glEnable(GL_TEXTURE_GEN_T);
+      }
+      if(texgen.size() >= 3) {
+        glTexGeni(GL_R,GL_TEXTURE_GEN_MODE,mode);
+        for(int i=0;i<4;i++)
+          params[i] = texgen[2][i];
+        glTexGenfv(GL_R,plane,params);
+        glEnable(GL_TEXTURE_GEN_R);
+      }
+      if(texgen.size() >= 4) {
+        glTexGeni(GL_Q,GL_TEXTURE_GEN_MODE,mode);
+        for(int i=0;i<4;i++)
+          params[i] = texgen[3][i];
+        glTexGenfv(GL_Q,plane,params);
+        glEnable(GL_TEXTURE_GEN_Q);
+      }
+
+      if(texgenEyeTransform) {
+        glPopMatrix();
       }
     }
     
     if(!faceDisplayList) {
       faceDisplayList.beginCompileAndExecute();
+      Timer timer;
       const Meshing::TriMesh* trimesh = NULL;
       const Meshing::TriMeshWithTopology* trimesh_topology = NULL;
       if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
@@ -859,6 +952,12 @@ void GeometryAppearance::DrawGL(Element e)
             if(!faceColors.empty())
               assert(trimesh->tris.size() == creaseMesh.tris.size());
             trimesh = &creaseMesh;
+          }
+          if(timer.ElapsedTime() > 0.5) {
+            LOG4CXX_INFO(KrisLibrary::logger(),"GeometryAppearance: preprocessing mesh with "<<trimesh->tris.size()<<" tris took "<<timer.ElapsedTime()<<"s, try disabling creasing and silhouettes");
+          }
+          else if(timer.ElapsedTime() > 0.1) {
+            LOG4CXX_INFO(KrisLibrary::logger(),"GeometryAppearance: preprocessing mesh with "<<trimesh->tris.size()<<" tris took "<<timer.ElapsedTime()<<"s");
           }
         }
 
@@ -978,18 +1077,18 @@ void GeometryAppearance::DrawGL(Element e)
               const Vector3& a=trimesh->verts[t.a];
               const Vector3& b=trimesh->verts[t.b];
               const Vector3& c=trimesh->verts[t.c];
-              Vector3 n = trimesh->TriangleNormal(i);
-              glNormal3f(n.x,n.y,n.z);
-              vertexColors[t.a].setCurrentGL();
+              //Vector3 n = trimesh->TriangleNormal(i);
+              //glNormal3f(n.x,n.y,n.z);
+              SetTintedColor(vertexColors[t.a],tintColor,tintStrength);
               glVertex3f(a.x,a.y,a.z);
-              vertexColors[t.b].setCurrentGL();
+              SetTintedColor(vertexColors[t.b],tintColor,tintStrength);
               glVertex3f(b.x,b.y,b.z);
-              vertexColors[t.c].setCurrentGL();
+              SetTintedColor(vertexColors[t.c],tintColor,tintStrength);
               glVertex3f(c.x,c.y,c.z);
             }
             glEnd();
+            
             glEnable(GL_LIGHTING);
-            glShadeModel(GL_FLAT);
           }
         }
         else {
@@ -1005,7 +1104,7 @@ void GeometryAppearance::DrawGL(Element e)
             const Vector3& c=trimesh->verts[t.c];
             Vector3 n = trimesh->TriangleNormal(i);
             if(useFaceColors)
-              faceColors[i].setCurrentGL();
+              SetTintedColor(faceColors[i],tintColor,tintStrength);
             glNormal3f(n.x,n.y,n.z);
             if(useTexCoords) {
               glTexCoord2f(texcoords[t.a].x,texcoords[t.a].y);
@@ -1039,13 +1138,18 @@ void GeometryAppearance::DrawGL(Element e)
     //cleanup, reset GL state
     if(tex1D) {
       glDisable(GL_TEXTURE_1D);
-      glDisable(GL_TEXTURE_GEN_S);
     }
     else if(tex2D) {
       glDisable(GL_TEXTURE_2D);
-      glDisable(GL_TEXTURE_GEN_S);
-      glDisable(GL_TEXTURE_GEN_T);
     }
+    if(texgen.size() >= 1)
+      glDisable(GL_TEXTURE_GEN_S);
+    if(texgen.size() >= 2)
+      glDisable(GL_TEXTURE_GEN_T);
+    if(texgen.size() >= 3)
+      glDisable(GL_TEXTURE_GEN_R);
+    if(texgen.size() >= 4)
+      glDisable(GL_TEXTURE_GEN_Q);
 
     if(faceColor.rgba[3] != 1.0) {
       glDisable(GL_BLEND); 
@@ -1099,7 +1203,7 @@ void GeometryAppearance::DrawGL(Element e)
       glEnable(GL_BLEND); 
       glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     }
-    edgeColor.setCurrentGL();
+    SetTintedColor(edgeColor,tintColor,tintStrength);
     edgeDisplayList.call();
     if(edgeColor.rgba[3] != 1.0) {
       glDisable(GL_BLEND);
@@ -1221,21 +1325,12 @@ void GeometryAppearance::SetColor(const GLColor& color)
   SetColor(color.rgba[0],color.rgba[1],color.rgba[2],color.rgba[3]);
 }
 
-void GeometryAppearance::ModulateColor(const GLColor& color,float fraction)
+void GeometryAppearance::SetTintColor(const GLColor& color,float fraction)
 {
-  faceColor.blend(GLColor(faceColor),color,fraction);
-  vertexColor.blend(GLColor(vertexColor),color,fraction);
-  edgeColor.blend(GLColor(edgeColor),color,fraction);
-
-  if(!vertexColors.empty() || !faceColors.empty()) {
-    for(size_t i=0;i<vertexColors.size();i++)
-      vertexColors[i].blend(GLColor(vertexColors[i]),color,fraction);
-    for(size_t i=0;i<faceColors.size();i++)
-      faceColors[i].blend(GLColor(faceColors[i]),color,fraction);
-    Refresh();
-  }
+  tintColor = color;
+  tintStrength = fraction;
   for(size_t i=0;i<subAppearances.size();i++)
-    subAppearances[i].ModulateColor(color,fraction);
+    subAppearances[i].SetTintColor(color,fraction);
 }
 
 

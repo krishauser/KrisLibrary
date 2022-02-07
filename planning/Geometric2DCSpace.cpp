@@ -696,7 +696,7 @@ Real Geometric2DCSpace::Distance(const Config& x, const Config& y)
   else return Distance_LInf(x,y);
 }
 
-void Geometric2DCSpace::Properties(PropertyMap& map) const
+void Geometric2DCSpace::Properties(PropertyMap& map) 
 {
   map.set("cartesian",1);
   map.set("geodesic",1);

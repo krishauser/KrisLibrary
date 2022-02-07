@@ -132,7 +132,7 @@ class TransportBase
  public:
   TransportBase() {}
   virtual ~TransportBase() {}
-  ///Subclasses -- can the object read?
+  ///Subclasses -- mark beginning and end of usage
   virtual bool Start() { return true; }
   virtual bool Stop() { return true; }
   ///Subclasses -- can the object read?
@@ -185,10 +185,10 @@ class StreamTransport : public TransportBase
   StreamTransport(std::ostream& out);
   StreamTransport(std::istream& in,std::ostream& out);
   virtual ~StreamTransport() {}
-  virtual bool ReadReady();
-  virtual bool WriteReady();
-  virtual const std::string* DoRead();
-  virtual bool DoWrite(const char* msg,int length);
+  virtual bool ReadReady() override;
+  virtual bool WriteReady() override;
+  virtual const std::string* DoRead() override;
+  virtual bool DoWrite(const char* msg,int length) override;
 };
 
 
@@ -200,14 +200,14 @@ class SocketClientTransport : public TransportBase
   SocketClientTransport(const char* addr);
   ///Initializes with an already open socket
   SocketClientTransport(const char* addr,SOCKET socket);
-  virtual bool ReadReady();
-  virtual bool WriteReady();
-  virtual bool Start();
-  virtual bool Stop();
+  virtual bool ReadReady() override;
+  virtual bool WriteReady() override;
+  virtual bool Start() override;
+  virtual bool Stop() override;
   ///Reads a string (4 byte length + data). Note: blocking
-  virtual const std::string* DoRead();
+  virtual const std::string* DoRead() override;
   ///Writes a string (4 byte length + data). Note: blocking.
-  virtual bool DoWrite (const char* str,int length);
+  virtual bool DoWrite (const char* str,int length) override;
 
   std::string addr;
   File socket;
@@ -222,14 +222,14 @@ class SocketServerTransport : public TransportBase
  public:
   SocketServerTransport(const char* addr,int maxclients=1);
   ~SocketServerTransport();
-  virtual bool Start();
-  virtual bool Stop();
-  virtual bool ReadReady();
-  virtual bool WriteReady();
+  virtual bool Start() override;
+  virtual bool Stop() override;
+  virtual bool ReadReady() override;
+  virtual bool WriteReady() override;
   ///Reads a string (4 byte length + data) from all clients. Note: blocking
-  virtual const std::string* DoRead();
+  virtual const std::string* DoRead() override;
   ///Writes a string (4 byte length + data) to all clients. Note: blocking.
-  virtual bool DoWrite (const char* str,int length);
+  virtual bool DoWrite (const char* str,int length) override;
 
   std::string addr;
   int serversocket;
@@ -257,8 +257,8 @@ class SyncPipe : public AsyncPipeQueue
  public:
   SyncPipe();
   virtual ~SyncPipe();
-  virtual void Reset();
-  virtual void Work();
+  virtual void Reset() override;
+  virtual void Work() override;
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
@@ -287,8 +287,8 @@ class AsyncReaderThread : public AsyncReaderQueue
  public:
   AsyncReaderThread(double timeout=Math::Inf);
   virtual ~AsyncReaderThread();
-  virtual void Reset();
-  virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread"); }
+  virtual void Reset() override;
+  virtual void Work() override { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();
@@ -309,6 +309,7 @@ class AsyncReaderThread : public AsyncReaderQueue
  * 
  * If no read/write has occurred for 'timeout' seconds, then the thread will quit
  *
+ * Start() will start the read/write threads.
  * Stop() or destructor will quit the read/write threads.
  */
 class AsyncPipeThread : public AsyncPipeQueue
@@ -316,8 +317,8 @@ class AsyncPipeThread : public AsyncPipeQueue
  public:
   AsyncPipeThread(double timeout=Math::Inf);
   virtual ~AsyncPipeThread();
-  virtual void Reset();
-    virtual void Work() { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread"); }
+  virtual void Reset() override;
+  virtual void Work() override { LOG4CXX_ERROR(KrisLibrary::logger(),"No need to call Work on AsyncReaderThread"); }
   ///Subclasses: override these to implement custom starting and stopping routines
   virtual bool Start();
   virtual void Stop();

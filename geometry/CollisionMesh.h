@@ -29,7 +29,7 @@ class CollisionMesh : public Meshing::TriMeshWithTopology
   CollisionMesh();
   CollisionMesh(const CollisionMesh& model);
   explicit CollisionMesh(const Meshing::TriMesh& mesh);
-  explicit   CollisionMesh(const Meshing::TriMeshWithTopology& mesh);
+  explicit CollisionMesh(const Meshing::TriMeshWithTopology& mesh);
   ~CollisionMesh();
   const CollisionMesh& operator = (const CollisionMesh& model);
   void InitCollisions();

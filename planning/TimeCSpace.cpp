@@ -63,7 +63,7 @@ void TimeControlSpace::SetMaxTimeStep(Real dtmax)
 InterpolatorPtr TimeControlSpace::Simulate(const State& x0, const ControlInput& u)
 {
   State x1;
-  SimulateEndpoint(x0,u,x1);
+  Successor(x0,u,x1);
   return make_shared<LinearInterpolator>(x0,x1);
 }
 

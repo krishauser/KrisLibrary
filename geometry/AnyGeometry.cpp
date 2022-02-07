@@ -165,9 +165,11 @@ AnyGeometry3D::AnyGeometry3D(const Meshing::PointCloud3D &pc)
 {
 }
 
-AnyGeometry3D::AnyGeometry3D(const Meshing::VolumeGrid &grid)
+AnyGeometry3D::AnyGeometry3D(const Meshing::VolumeGrid &grid, int value_type)
     : type(ImplicitSurface), data(grid)
 {
+  if(value_type == VolumeGridOccupancyGrid || value_type == VolumeGridDensity)
+    type = OccupancyGrid;
 }
 
 AnyGeometry3D::AnyGeometry3D(const vector<AnyGeometry3D> &group)
@@ -180,12 +182,14 @@ const ConvexHull3D& AnyGeometry3D::AsConvexHull() const { return *AnyCast_Raw<Co
 const Meshing::TriMesh &AnyGeometry3D::AsTriangleMesh() const { return *AnyCast_Raw<Meshing::TriMesh>(&data); }
 const Meshing::PointCloud3D &AnyGeometry3D::AsPointCloud() const { return *AnyCast_Raw<Meshing::PointCloud3D>(&data); }
 const Meshing::VolumeGrid &AnyGeometry3D::AsImplicitSurface() const { return *AnyCast_Raw<Meshing::VolumeGrid>(&data); }
+const Meshing::VolumeGrid &AnyGeometry3D::AsOccupancyGrid() const { return *AnyCast_Raw<Meshing::VolumeGrid>(&data); }
 const vector<AnyGeometry3D> &AnyGeometry3D::AsGroup() const { return *AnyCast_Raw<vector<AnyGeometry3D>>(&data); }
 GeometricPrimitive3D &AnyGeometry3D::AsPrimitive() { return *AnyCast_Raw<GeometricPrimitive3D>(&data); }
 ConvexHull3D& AnyGeometry3D::AsConvexHull() { return *AnyCast_Raw<ConvexHull3D>(&data); };
 Meshing::TriMesh &AnyGeometry3D::AsTriangleMesh() { return *AnyCast_Raw<Meshing::TriMesh>(&data); }
 Meshing::PointCloud3D &AnyGeometry3D::AsPointCloud() { return *AnyCast_Raw<Meshing::PointCloud3D>(&data); }
 Meshing::VolumeGrid &AnyGeometry3D::AsImplicitSurface() { return *AnyCast_Raw<Meshing::VolumeGrid>(&data); }
+Meshing::VolumeGrid &AnyGeometry3D::AsOccupancyGrid() { return *AnyCast_Raw<Meshing::VolumeGrid>(&data); }
 vector<AnyGeometry3D> &AnyGeometry3D::AsGroup() { return *AnyCast_Raw<vector<AnyGeometry3D>>(&data); }
 
 
@@ -207,6 +211,8 @@ const char *AnyGeometry3D::TypeName(Type type)
     return "PointCloud";
   case ImplicitSurface:
     return "ImplicitSurface";
+  case OccupancyGrid:
+    return "OccupancyGrid";
   case Group:
     return "Group";
   default:
@@ -227,6 +233,7 @@ bool AnyGeometry3D::Empty() const
   case PointCloud:
     return AsPointCloud().points.empty();
   case ImplicitSurface:
+  case OccupancyGrid:
     return false;
   case Group:
     return AsGroup().empty();
@@ -294,6 +301,7 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D> &geoms)
     }
     break;
     case ImplicitSurface:
+    case OccupancyGrid:
       group = true;
       break;
     case Group:
@@ -325,6 +333,12 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
   }
   if (restype == Group)
     return false;
+  if (restype == OccupancyGrid && type != ImplicitSurface) {
+    AnyGeometry3D surf;
+    Convert(ImplicitSurface,surf,param);
+    surf.Convert(OccupancyGrid,res);
+    return true;
+  }
   if (type != ImplicitSurface)
     Assert(param >= 0);
   switch (type)
@@ -542,6 +556,21 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
       mesh.Convert(ConvexHull,res,0);
       return true;
     }
+    case OccupancyGrid:
+    {
+      const Meshing::VolumeGrid &grid = AsImplicitSurface();
+      res = AnyGeometry3D(Meshing::VolumeGrid(),VolumeGridOccupancyGrid);
+      Meshing::VolumeGrid& g2 = res.AsOccupancyGrid();
+      g2 = grid;
+      for(int i=0;i<g2.value.m;i++)
+        for(int j=0;j<g2.value.n;j++)
+          for(int k=0;k<g2.value.p;k++)
+            if(g2.value(i,j,k) < 0)
+              g2.value(i,j,k) = 1.0;
+            else
+              g2.value(i,j,k) = 0.0;
+      return true;
+    }
     default:
       break;
     }
@@ -668,6 +697,29 @@ bool AnyGeometry3D::Remesh(Real resolution,AnyGeometry3D& res,bool refine,bool c
       }
     }
     break;
+  case OccupancyGrid:
+    {
+      const Meshing::VolumeGrid& grid =AsOccupancyGrid();
+      Vector3 size=grid.GetCellSize();
+      if((resolution < size.x && refine) || (resolution > size.x && coarsen) ||
+        (resolution < size.y && refine) || (resolution > size.y && coarsen) ||
+        (resolution < size.z && refine) || (resolution > size.z && coarsen)) {
+        int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
+        int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
+        int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
+        res = AnyGeometry3D(Meshing::VolumeGrid(),VolumeGridOccupancyGrid);
+        Meshing::VolumeGrid& output = res.AsOccupancyGrid();
+        output.Resize(m,n,p);
+        output.bb = grid.bb;
+        output.ResampleAverage(grid);
+        return true;
+      }
+      else {
+        res = *this;
+        return true;
+      }
+    }
+    break;
   case Group:
     {
       if(resolution <= 0) return false;
@@ -691,6 +743,7 @@ bool AnyGeometry3D::Slice(const RigidTransform& T,AnyGeometry3D& res,Real tol) c
   case Primitive:
   case ConvexHull:
   case ImplicitSurface:
+  case OccupancyGrid:
     return false;
   case TriangleMesh:
     {
@@ -751,6 +804,7 @@ bool AnyGeometry3D::ExtractROI(const AABB3D& bb,AnyGeometry3D& res,int flags) co
   case Primitive:
   case ConvexHull:
   case ImplicitSurface:
+  case OccupancyGrid:
     return false;
   case TriangleMesh:
     {
@@ -788,6 +842,7 @@ bool AnyGeometry3D::ExtractROI(const Box3D& bb,AnyGeometry3D& res,int flags) con
   case Primitive:
   case ConvexHull:
   case ImplicitSurface:
+  case OccupancyGrid:
     return false;
   case TriangleMesh:
     {
@@ -836,6 +891,7 @@ size_t AnyGeometry3D::NumElements() const
   case PointCloud:
     return AsPointCloud().points.size();
   case ImplicitSurface:
+  case OccupancyGrid:
   {
     IntTriple size = AsImplicitSurface().value.size();
     return size.a * size.b * size.c;
@@ -868,7 +924,7 @@ GeometricPrimitive3D AnyGeometry3D::GetElement(int elem) const
   {
     return AsPrimitive();
   }
-  else if (type == ImplicitSurface)
+  else if (type == ImplicitSurface || type == OccupancyGrid)
   {
     const Meshing::VolumeGrid &grid = AsImplicitSurface();
     IntTriple size = grid.value.size();
@@ -1002,6 +1058,7 @@ bool AnyGeometry3D::Save(const char *fn) const
     }
     break;
   case ImplicitSurface:
+  case OccupancyGrid:
   {
     ofstream out(fn, ios::out);
     if (!out)
@@ -1079,6 +1136,12 @@ bool AnyGeometry3D::Load(istream &in)
     data = Meshing::VolumeGrid();
     in >> this->AsImplicitSurface();
   }
+  else if (typestr == "OccupancyGrid")
+  {
+    type = OccupancyGrid;
+    data = Meshing::VolumeGrid();
+    in >> this->AsOccupancyGrid();
+  }
   else if (typestr == "Group")
   {
     int n;
@@ -1123,6 +1186,7 @@ bool AnyGeometry3D::Save(ostream &out) const
       return false;
     break;
   case ImplicitSurface:
+  case OccupancyGrid:
     out << this->AsImplicitSurface() << endl;
     break;
   case Group:
@@ -1160,6 +1224,7 @@ void AnyGeometry3D::Transform(const Matrix4 &T)
     AsPointCloud().Transform(T);
     break;
   case ImplicitSurface:
+  case OccupancyGrid:
   {
     if (T(0, 1) != 0 || T(0, 2) != 0 || T(1, 2) != 0 || T(1, 0) != 0 || T(2, 0) != 0 || T(2, 1) != 0)
     {
@@ -1199,6 +1264,7 @@ AABB3D AnyGeometry3D::GetAABB() const
     AsPointCloud().GetAABB(bb.bmin, bb.bmax);
     return bb;
   case ImplicitSurface:
+  case OccupancyGrid:
     return AsImplicitSurface().bb;
     break;
   case Group:
@@ -1216,49 +1282,49 @@ AABB3D AnyGeometry3D::GetAABB() const
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D()
-    : margin(0)
+    : margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const GeometricPrimitive3D &primitive)
-    : AnyGeometry3D(primitive), margin(0)
+    : AnyGeometry3D(primitive), margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const ConvexHull3D &hull)
-    : AnyGeometry3D(hull), margin(0)
+    : AnyGeometry3D(hull), margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::TriMesh &mesh)
-    : AnyGeometry3D(mesh), margin(0)
+    : AnyGeometry3D(mesh), margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::PointCloud3D &pc)
-    : AnyGeometry3D(pc), margin(0)
+    : AnyGeometry3D(pc), margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
 
-AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::VolumeGrid &grid)
-    : AnyGeometry3D(grid), margin(0)
+AnyCollisionGeometry3D::AnyCollisionGeometry3D(const Meshing::VolumeGrid &grid,int value_type)
+    : AnyGeometry3D(grid,value_type), margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const vector<AnyGeometry3D> &items)
-    : AnyGeometry3D(items), margin(0)
+    : AnyGeometry3D(items), margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
 
 AnyCollisionGeometry3D::AnyCollisionGeometry3D(const AnyGeometry3D &geom)
-    : AnyGeometry3D(geom), margin(0)
+    : AnyGeometry3D(geom), margin(0), collisionHint(0)
 {
   currentTransform.setIdentity();
 }
@@ -1273,6 +1339,7 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
   AnyGeometry3D::operator=(geom);
   margin = geom.margin;
   currentTransform = geom.currentTransform;
+  collisionHint = geom.collisionHint;
 
   if (!geom.collisionData.empty())
   {
@@ -1357,7 +1424,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
     collisionData = CollisionMesh(AsTriangleMesh());
     break;
   case PointCloud:
-    collisionData = CollisionPointCloud(AsPointCloud());
+    collisionData = CollisionPointCloud(AsPointCloud(),collisionHint);
     break;
   case Group:
   {
@@ -1468,6 +1535,7 @@ void AnyCollisionGeometry3D::Merge(const vector<AnyCollisionGeometry3D> &geoms)
     }
     break;
     case ImplicitSurface:
+    case OccupancyGrid:
       group = true;
       break;
     case Group:
@@ -1586,6 +1654,7 @@ AABB3D AnyCollisionGeometry3D::GetAABBTight() const
   case ConvexHull: // TODO: what is this supposed to do
     return GetAABB();
   case ImplicitSurface:
+  case OccupancyGrid:
     return GetAABB();
   case TriangleMesh:
   {
@@ -1594,6 +1663,11 @@ AABB3D AnyCollisionGeometry3D::GetAABBTight() const
     bb.minimize();
     for (size_t i = 0; i < m.verts.size(); i++)
       bb.expand(m.currentTransform * m.verts[i]);
+    if(margin != 0)
+    {
+      bb.bmin -= Vector3(margin);
+      bb.bmax += Vector3(margin);
+    }
     return bb;
   }
   break;
@@ -1604,6 +1678,11 @@ AABB3D AnyCollisionGeometry3D::GetAABBTight() const
     bb.minimize();
     for (size_t i = 0; i < pc.points.size(); i++)
       bb.expand(pc.currentTransform * pc.points[i]);
+    if(margin != 0)
+    {
+      bb.bmin -= Vector3(margin);
+      bb.bmax += Vector3(margin);
+    }
     return bb;
   }
   break;
@@ -1645,7 +1724,7 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
     GeometricPrimitive3D gT(g);
     gT.Transform(T);
     AABB3D res = gT.GetAABB();
-    if (margin != 0)
+    if(margin != 0)
     {
       res.bmin -= Vector3(margin);
       res.bmax += Vector3(margin);
@@ -1668,15 +1747,17 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
     // ConvexHull3D gT(g);
     // gT.Transform(T);
     // AABB3D res = gT.GetAABB();
-    // {
-    //   res.bmin -= Vector3(margin);
-    //   res.bmax += Vector3(margin);
-    // }
+    if(margin != 0)
+    {
+      res.bmin -= Vector3(margin);
+      res.bmax += Vector3(margin);
+    }
     return res;
   }
   case TriangleMesh:
   case PointCloud:
   case ImplicitSurface:
+  case OccupancyGrid:
   {
     AABB3D bb;
     Box3D b = GetBB();
@@ -1734,6 +1815,7 @@ Box3D AnyCollisionGeometry3D::GetBB() const
     {
       AABB3D bb = GetAABB();
       b.set(bb);
+      return b; /// don't expand this by the margin
     }
     break;
     }
@@ -3461,8 +3543,23 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
   }
   case ConvexHull:
   {
-    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't ray-cast convex hull yet");
-    break;
+    const CollisionConvexHull3D& ch = ConvexHullCollisionData();
+    Vector3 pt = ch.FindSupport(r.direction);
+    Real fwd = r.direction.dot(pt-r.source);
+    if(fwd < 0) return false;
+    ConvexHull3D ray_ch;
+    Segment3D long_segment;
+    long_segment.a = r.source;
+    long_segment.b = r.source + r.direction*(2*fwd);
+    ray_ch.SetLineSegment(long_segment);
+    CollisionConvexHull3D ray_cch(ray_ch);
+    Vector3 common_point;
+    if(!ray_cch.Collides(ch,&common_point))
+      return false;
+    if(distance) { //TODO: is this the closest point?
+      *distance = r.closestPointParameter(common_point);
+    }
+    return true;
   }
   }
   return false;

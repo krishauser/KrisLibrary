@@ -93,7 +93,7 @@ class IntegratedKinodynamicSpace : public KinodynamicSpace
 {
 public:
   IntegratedKinodynamicSpace(const std::shared_ptr<CSpace>& xspace,const std::shared_ptr<IntegratedControlSpace>& controlSpace);
-  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path);
+  virtual EdgePlannerPtr TrajectoryChecker(const ControlInput& u,const InterpolatorPtr& path) override;
 };
 
 /** @ingroup MotionPlanning
@@ -104,9 +104,9 @@ class RandomBiasSteeringFunction : public SteeringFunction
 {
 public:
   RandomBiasSteeringFunction(KinodynamicSpace* space,int sampleCount);
-  virtual bool IsExact() const { return false; };
-  virtual bool IsOptimal() const { return false; };
-  virtual bool Connect(const State& x,const State& y,KinodynamicMilestonePath& path);
+  virtual bool IsExact() const override { return false; };
+  virtual bool IsOptimal() const override { return false; };
+  virtual bool Connect(const State& x,const State& y,KinodynamicMilestonePath& path) override;
 
   KinodynamicSpace* space;
   int sampleCount;
@@ -120,9 +120,9 @@ class RandomBiasReverseSteeringFunction : public SteeringFunction
 {
 public:
   RandomBiasReverseSteeringFunction(KinodynamicSpace* space,int sampleCount);
-  virtual bool IsExact() const { return false; };
-  virtual bool IsOptimal() const { return false; };
-  virtual bool Connect(const State& x,const State& y,KinodynamicMilestonePath& path);
+  virtual bool IsExact() const override { return false; };
+  virtual bool IsOptimal() const override { return false; };
+  virtual bool Connect(const State& x,const State& y,KinodynamicMilestonePath& path) override;
 
   KinodynamicSpace* space;
   int sampleCount;
@@ -155,12 +155,12 @@ class KinodynamicSteeringCSpaceAdaptor : public PiggybackCSpace
 {
 public:
   KinodynamicSteeringCSpaceAdaptor(const std::shared_ptr<KinodynamicSpace>& kinodynamicSpace);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b);
-  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int constraint);
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b) override;
+  virtual EdgePlannerPtr PathChecker(const Config& a,const Config& b,int constraint) override;
 
-  virtual Real Distance(const Config& x, const Config& y);
-  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out);
-  virtual void Properties(PropertyMap& map);
+  virtual Real Distance(const Config& x, const Config& y) override;
+  virtual void Interpolate(const Config& x,const Config& y,Real u,Config& out) override;
+  virtual void Properties(PropertyMap& map) override;
 
   std::shared_ptr<KinodynamicSpace> kinodynamicSpace;
   std::shared_ptr<SteeringFunction> steeringFunction;

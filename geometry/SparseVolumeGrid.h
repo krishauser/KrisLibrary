@@ -79,7 +79,8 @@ class SparseVolumeGrid
   ///Returns the min/max indices of blocks (unlike GetIndexRange, which gives a range of cell sin the hypothetical infinite grid)
   void GetBlockRange(const AABB3D& range,IntTriple& blockMin,IntTriple& blockMax) const;
   ///Retrieves the block given an index, or NULL if the block doesn't exist
-  Block* BlockPtr(const IntTriple& blockIndex) const;
+  Block* BlockPtr(const IntTriple& blockIndex) { return hash.Get(blockIndex); }
+  const Block* BlockPtr(const IntTriple& blockIndex) const { return hash.Get(blockIndex); }
   ///If block exists at the given index, returns BlockPtr().  Otherwise, calls MakeBlock() on it and returns the pointer.
   ///Faster than "MakeBlock(b); return BlockPtr(b);".
   Block* GetMakeBlock(const IntTriple& blockIndex);
@@ -90,8 +91,6 @@ class SparseVolumeGrid
   bool EraseBlock(const IntTriple& blockIndex);
   ///For a similar grid, makes default blocks with the same block pattern as grid
   void AddBlocks(const SparseVolumeGrid& grid);
-  ///Subdivides a given block
-  void SubdivideBlock(const IntTriple& block);
 
   ///Samples the grid along a dense volume grid (using basic extraction at cell centers).  The grid bbox and values must be
   ///sized appropriately.
@@ -129,7 +128,7 @@ class SparseVolumeGrid
   ///Generates a mesh for the level set at the given level set (usually 0), using the marching cubes algorithm
   void ExtractMesh(float isosurface,Meshing::TriMesh& mesh);
 
-  GridHash3D hash;
+  GridHash3DContainer<Block> hash;
   int blockIDCounter;
   IntTriple blockSize;
   std::vector<std::string> channelNames;
