@@ -1,11 +1,7 @@
 #ifndef MATH_INFNAN_H
 #define MATH_INFNAN_H
 
-#if defined (__APPLE__) || defined (MACOSX)
-#include "/usr/include/math.h"
-#else
 #include <math.h>
-#endif
 
 #ifndef INFINITY
   #include <limits>
