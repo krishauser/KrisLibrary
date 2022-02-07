@@ -24,6 +24,32 @@ int TranslateEscape(int c)
   }
 }
 
+void TranslateEscapes(const char* src,char* dest) 
+{
+  char c,next;
+
+  while ((c = *(src++))) {
+    if(c=='\\') {
+      next = src[0];
+      *(dest++) = TranslateEscape(next);
+      src++;
+    }
+    else
+      *(dest++)=c;
+  }
+
+  *dest = 0;
+}
+
+std::string TranslateEscapes(const std::string& input)
+{
+  std::string res;
+  res.resize(input.length()+1);
+  TranslateEscapes(input.c_str(),&res[0]);
+  return res;
+}
+
+/*
 std::string TranslateEscapes(const std::string& str)
 {
   std::string res;
@@ -37,6 +63,7 @@ std::string TranslateEscapes(const std::string& str)
   res += str[str.length()-1];
   return res;
 }
+*/
 
 void EatWhitespace(std::istream& in)
 {
