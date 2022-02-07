@@ -1,11 +1,7 @@
 #ifndef MATH_MATH_H
 #define MATH_MATH_H
 
-#if defined(__APPLE__) || defined(MACOSX)
-#include "/usr/include/math.h"
-#else
 #include <math.h>
-#endif
 
 #include <float.h>
 #include <limits>
