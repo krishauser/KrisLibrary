@@ -968,6 +968,50 @@ bool AnyGeometry3D::Load(const char *fn)
   const char *ext = FileExtension(fn);
   if (Meshing::CanLoadTriMeshExt(ext))
   {
+    vector<Meshing::TriMesh> meshes;
+    vector<GLDraw::GeometryAppearance> appearances;
+    if(!Meshing::LoadAssimp(fn,meshes,appearances)) {
+      meshes.resize(1);
+      appearances.resize(1);
+      if (!Meshing::Import(fn, meshes[0], appearances[0]))
+        return false;
+    }
+    GLDraw::GeometryAppearance blank;
+    if(meshes.size()==1) {
+      type = TriangleMesh;
+      data = meshes[0];
+      GLDraw::GeometryAppearance& temp=appearances[0];
+      if (temp.faceColor != blank.faceColor ||
+        !temp.vertexColors.empty() ||
+        !temp.faceColors.empty()) //loaded appearance data
+        appearanceData = temp;
+    }
+    else {
+      LOG4CXX_INFO(GET_LOGGER(Geometry),"Loading "<<meshes.size()<<" meshes from "<<fn<<" into Group");
+      type = Group;
+      data = vector<AnyGeometry3D>();
+      vector<AnyGeometry3D>& groupdata = AsGroup();
+      groupdata.resize(meshes.size());
+      bool hasappearance = false;
+      for(size_t i=0;i<meshes.size();i++) {
+        groupdata[i].type = TriangleMesh;
+        groupdata[i].data = meshes[i];
+        groupdata[i].appearanceData = appearances[i];
+        GLDraw::GeometryAppearance& temp=appearances[i];
+        if (temp.faceColor != blank.faceColor ||
+          !temp.vertexColors.empty() ||
+          !temp.faceColors.empty()) //loaded appearance data
+          hasappearance = true;
+      }
+      if(hasappearance) {
+        GLDraw::GeometryAppearance groupAppearance;
+        groupAppearance.geom = this;
+        groupAppearance.subAppearances = appearances;
+        appearanceData = groupAppearance;
+      }
+    }
+    return true;
+    /*
     type = TriangleMesh;
     data = Meshing::TriMesh();
     GLDraw::GeometryAppearance blank, temp;
@@ -977,6 +1021,7 @@ bool AnyGeometry3D::Load(const char *fn)
         !temp.vertexColors.empty() ||
         !temp.faceColors.empty()) //loaded appearance data
       appearanceData = temp;
+    */
     return true;
   }
   else if (0 == strcmp(ext, "pcd"))
