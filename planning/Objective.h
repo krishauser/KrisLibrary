@@ -200,8 +200,8 @@ class OpObjectiveFunctional : public ObjectiveFunctionalBase
   virtual std::string OpString() const=0;
   virtual Real Op(Real a,Real b)=0;
 
-  virtual const char* TypeString();
-  virtual std::string Description();
+  virtual const char* TypeString() override;
+  virtual std::string Description() override;
 
   virtual Real IncrementalCost(const Interpolator* path) override { return Op(rhs->IncrementalCost(path),(lhs ? lhs->IncrementalCost(path) : 0.0)); }
   virtual Real IncrementalCost(const ControlInput& u,const Interpolator* path) override { return Op(rhs->IncrementalCost(u,path),(lhs ? lhs->IncrementalCost(u,path) : 0.0)); }
@@ -229,8 +229,8 @@ class AddObjectiveFunctional : public OpObjectiveFunctional
   AddObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
   :OpObjectiveFunctional(rhs,lhs)
   {}
-  virtual std::string OpString() const  { return "+"; }
-  virtual Real Op(Real a,Real b) { return a+b; }
+  virtual std::string OpString() const override { return "+"; }
+  virtual Real Op(Real a,Real b) override { return a+b; }
 };
 
 class SubObjectiveFunctional : public OpObjectiveFunctional
@@ -242,8 +242,8 @@ class SubObjectiveFunctional : public OpObjectiveFunctional
   SubObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
   :OpObjectiveFunctional(rhs,lhs)
   {}
-  virtual std::string OpString() const  { return "-"; }
-  virtual Real Op(Real a,Real b) { return a-b; }
+  virtual std::string OpString() const override { return "-"; }
+  virtual Real Op(Real a,Real b) override { return a-b; }
 };
 
 class MulObjectiveFunctional : public OpObjectiveFunctional
@@ -255,8 +255,8 @@ class MulObjectiveFunctional : public OpObjectiveFunctional
   MulObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
   :OpObjectiveFunctional(rhs,lhs)
   {}
-  virtual std::string OpString() const  { return "*"; }
-  virtual Real Op(Real a,Real b) { return a*b; }
+  virtual std::string OpString() const override { return "*"; }
+  virtual Real Op(Real a,Real b) override { return a*b; }
 };
 
 class DivObjectiveFunctional : public OpObjectiveFunctional
@@ -268,8 +268,8 @@ class DivObjectiveFunctional : public OpObjectiveFunctional
   DivObjectiveFunctional(ObjectiveFunctionalBase* rhs,Real lhs)
   :OpObjectiveFunctional(rhs,lhs)
   {}
-  virtual std::string OpString() const  { return "/"; }
-  virtual Real Op(Real a,Real b) { return a/b; }
+  virtual std::string OpString() const override { return "/"; }
+  virtual Real Op(Real a,Real b) override { return a/b; }
 };
 
 
