@@ -625,21 +625,49 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3 &pt, const
   return res;
 }
 
+bool AnyCollisionGeometry3D::Support(const Vector3& dir,Vector3& pt)
+{
+  if(!collider) {
+    Vector3 dirlocal,ptlocal;
+    currentTransform.R.mulTranspose(dir,dirlocal);
+    if(!data->Support(dir,ptlocal)) return false;
+    pt = currentTransform*ptlocal;
+    return true;
+  }
+  return collider->Support(dir,pt);
+}
+
 bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D &geom)
 {
   InitCollisionData();
   geom.InitCollisionData();
-  if(type < geom.type) {
-    bool result;
-    if(geom.collider->Collides(collider.get(),result)) return result;
-    if(collider->Collides(geom.collider.get(),result)) return result;
-    return false;
+  if(margin + geom.margin == 0) {
+    if(type < geom.type) {
+      bool result;
+      if(geom.collider->Collides(collider.get(),result)) return result;
+      if(collider->Collides(geom.collider.get(),result)) return result;
+      return false;
+    }
+    else {
+      bool result;
+      if(collider->Collides(geom.collider.get(),result)) return result;
+      if(geom.collider->Collides(collider.get(),result)) return result;
+      return false;
+    }
   }
   else {
-    bool result;
-    if(collider->Collides(geom.collider.get(),result)) return result;
-    if(geom.collider->Collides(collider.get(),result)) return result;
-    return false;
+    if(type < geom.type) {
+      bool result;
+      if(geom.collider->WithinDistance(collider.get(),margin+geom.margin,result)) return result;
+      if(collider->WithinDistance(geom.collider.get(),margin+geom.margin,result)) return result;
+      return false;
+    }
+    else {
+      bool result;
+      if(collider->WithinDistance(geom.collider.get(),margin+geom.margin,result)) return result;
+      if(geom.collider->WithinDistance(collider.get(),margin+geom.margin,result)) return result;
+      return false;
+    }
   }
 }
 
@@ -648,15 +676,29 @@ bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D &geom,
 {
   InitCollisionData();
   geom.InitCollisionData();
-  if(type < geom.type) {
-    if(geom.collider->Collides(collider.get(),elements2,elements1,maxContacts)) { return !elements1.empty(); }
-    if(collider->Collides(geom.collider.get(),elements1,elements2,maxContacts)) { return !elements1.empty(); }
-    return false;
+  if(margin + geom.margin == 0) {
+    if(type < geom.type) {
+      if(geom.collider->Collides(collider.get(),elements2,elements1,maxContacts)) { return !elements1.empty(); }
+      if(collider->Collides(geom.collider.get(),elements1,elements2,maxContacts)) { return !elements1.empty(); }
+      return false;
+    }
+    else {
+      if(collider->Collides(geom.collider.get(),elements1,elements2,maxContacts)) { return !elements1.empty(); }
+      if(geom.collider->Collides(collider.get(),elements2,elements1,maxContacts)) { return !elements1.empty(); }
+      return false;
+    }
   }
   else {
-    if(collider->Collides(geom.collider.get(),elements1,elements2,maxContacts)) { return !elements1.empty(); }
-    if(geom.collider->Collides(collider.get(),elements2,elements1,maxContacts)) { return !elements1.empty(); }
-    return false;
+    if(type < geom.type) {
+      if(geom.collider->WithinDistance(collider.get(),margin+geom.margin,elements2,elements1,maxContacts)) { return !elements1.empty(); }
+      if(collider->WithinDistance(geom.collider.get(),margin+geom.margin,elements1,elements2,maxContacts)) { return !elements1.empty(); }
+      return false;
+    }
+    else {
+      if(collider->WithinDistance(geom.collider.get(),margin+geom.margin,elements1,elements2,maxContacts)) { return !elements1.empty(); }
+      if(geom.collider->WithinDistance(collider.get(),margin+geom.margin,elements2,elements1,maxContacts)) { return !elements1.empty(); }
+      return false;
+    }
   }
 }
 

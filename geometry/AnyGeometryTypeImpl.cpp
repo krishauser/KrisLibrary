@@ -227,6 +227,16 @@ bool Geometry3DGroup::Empty() const { return data.empty(); }
 
 size_t Geometry3DGroup::NumElements() const { return data.size(); }
 
+bool Geometry3DGroup::Merge(const vector<Geometry3D*>& geoms) 
+{
+  data.resize(geoms.size());
+  for(size_t i=0;i<geoms.size();i++) {
+    data[i].type = geoms[i]->GetType();
+    data[i].data.reset(geoms[i]->Copy());
+  }
+  return true;
+}
+
 Geometry3D* Geometry3DGroup::ConvertTo(Type restype, Real param,Real domainExpansion) const
 {
     vector<AnyGeometry3D> convert(data.size());
@@ -345,6 +355,26 @@ AABB3D Geometry3DGroup::GetAABB() const
     return bb;
 }
 
+shared_ptr<Geometry3D> Geometry3DGroup::GetElement(int elem) const
+{
+  Assert(elem >= 0 && elem < (int)data.size());
+  return data[elem].data;
+}
+
+bool Geometry3DGroup::Support(const Vector3& dir,Vector3& pt) const
+{
+  Real farthest = -Inf;
+  Vector3 temp;
+  for (size_t i = 0; i < data.size(); i++) {
+    if(!data[i].data->Support(dir,temp)) return false;
+    Real d = dir.dot(temp);
+    if(d > farthest) {
+      farthest = d;
+      pt = temp;
+    }
+  }
+  return true;
+}
 
 Collider3D* Collider3D::Make(shared_ptr<Geometry3D> data)
 {
@@ -462,15 +492,21 @@ bool Collider3D::ConvertFrom(Collider3D* geom,Real param,Real domainExpansion)
 }
 
 Collider3DGroup::Collider3DGroup(shared_ptr<Geometry3DGroup> _data)
-:data(_data),collisionData(_data->data.size())
+:data(_data)
 {
+  Reset();
+}
+
+Collider3DGroup::~Collider3DGroup() {}
+
+void Collider3DGroup::Reset()
+{
+  collisionData.resize(data->data.size());
   for(size_t i=0;i<data->data.size();i++) {
     collisionData[i].type = data->data[i].type;
     collisionData[i].data = data->data[i].data;
   }
 }
-
-Collider3DGroup::~Collider3DGroup() {}
 
 AABB3D Collider3DGroup::GetAABBTight() const
 {
@@ -498,6 +534,16 @@ Box3D Collider3D::GetBB() const
   return b;
 }
 
+bool Collider3D::Support(const Vector3& dir,Vector3& pt)
+{
+  Vector3 dirlocal,localpt;
+  RigidTransform T = GetTransform();
+  T.R.mulTranspose(dir,dirlocal);
+  if(!GetData()->Support(dirlocal,localpt)) return false;
+  pt = T*localpt;
+  return true;
+}
+
 AABB3D Collider3DGroup::GetAABB() const
 {
     const vector<AnyCollisionGeometry3D> &items = collisionData;
@@ -522,6 +568,80 @@ void Collider3DGroup::SetTransform(const RigidTransform& T)
         items[i].SetTransform(T);
 }
 
+RigidTransform Collider3DGroup::GetTransform() const
+{
+  const vector<AnyCollisionGeometry3D> &items = collisionData;
+  if(items.size()==0) {
+    RigidTransform res;
+    res.setIdentity();
+    return res;
+  }
+  return items[0].GetTransform();
+}
+
+bool Collider3DGroup::Contains(const Vector3& pt,bool& result)
+{
+    vector<AnyCollisionGeometry3D> &items = collisionData;
+    result = false;
+    for (size_t i = 0; i < items.size(); i++) {
+        if(!items[i].collider->Contains(pt,result)) return false;
+        if(result) return true;
+    }
+    return true;
+}
+
+bool Collider3DGroup::Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxContacts)
+{
+    for (size_t i = 0; i < collisionData.size(); i++)
+    {
+        vector<int> ei1, ei2;
+        if(collisionData[i].margin==0) {
+            if (collisionData[i].collider->Collides(geom, ei1, ei2, maxContacts - (int)elements1.size()))
+            {
+              for (size_t j = 0; j < ei1.size(); j++)
+              {
+                elements1.push_back((int)i);
+                elements2.push_back((int)ei2[j]);
+              }
+              if (elements2.size() >= maxContacts)
+                return true;
+            }
+            else if (geom->Collides(collisionData[i].collider.get(), ei2, ei1, maxContacts - (int)elements1.size())) {
+              for (size_t j = 0; j < ei1.size(); j++)
+              {
+                elements1.push_back((int)i);
+                elements2.push_back((int)ei2[j]);
+              }
+              if (elements2.size() >= maxContacts)
+                return true;
+            }
+            else return false;
+        }
+        else {
+            if (collisionData[i].collider->WithinDistance(geom, collisionData[i].margin, ei1, ei2, maxContacts - (int)elements1.size()))
+            {
+              for (size_t j = 0; j < ei1.size(); j++)
+              {
+                elements1.push_back((int)i);
+                elements2.push_back((int)ei2[j]);
+              }
+              if (elements2.size() >= maxContacts)
+                return true;
+            }
+            else if (geom->WithinDistance(collisionData[i].collider.get(), collisionData[i].margin, ei2, ei1, maxContacts - (int)elements1.size())) {
+              for (size_t j = 0; j < ei1.size(); j++)
+              {
+                elements1.push_back((int)i);
+                elements2.push_back((int)ei2[j]);
+              }
+              if (elements2.size() >= maxContacts)
+                return true;
+            }
+            else return false;
+        }
+    }
+    return true;
+}
 
 bool Collider3DGroup::Distance(const Vector3& pt,Real& result)
 {
@@ -539,15 +659,49 @@ bool Collider3DGroup::Distance(const Vector3 &pt, const DistanceQuerySettings &s
 {
     vector<AnyCollisionGeometry3D> &items = collisionData;
     DistanceQuerySettings modsettings = settings;
+    res.d = settings.upperBound;
     for (size_t i = 0; i < items.size(); i++)
     {
-      DistanceQueryResult ires = items[i].Distance(pt, modsettings);
+      DistanceQueryResult ires;
+      modsettings.upperBound = res.d + items[i].margin;
+      if(!items[i].collider->Distance(pt, modsettings, ires)) return false;
       if (ires.d < res.d)
       {
         res = ires;
         PushGroup1(res, (int)i);
-        modsettings.upperBound = res.d;
+        Offset1(res, items[i].margin);
       }
+    }
+    return true;
+}
+ 
+bool Collider3DGroup::Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res)
+{
+    vector<AnyCollisionGeometry3D> &items = collisionData;
+    DistanceQuerySettings modsettings = settings;
+    res.d = settings.upperBound;
+    for (size_t i = 0; i < items.size(); i++)
+    {
+      DistanceQueryResult ires;
+      modsettings.upperBound = res.d + items[i].margin;
+      if(items[i].collider->Distance(geom, modsettings, ires)) {
+        if (ires.d < res.d)
+        {
+          res = ires;
+          PushGroup1(res, (int)i);
+          Offset1(res, items[i].margin);
+        }
+      }
+      else if(geom->Distance(items[i].collider.get(),modsettings,ires)) {
+        if (ires.d < res.d)
+        {
+          res = ires;
+          Flip(res);
+          PushGroup1(res, (int)i);
+          Offset1(res, items[i].margin);
+        }
+      }
+      else return false;
     }
     return true;
 }
@@ -558,7 +712,7 @@ bool Collider3DGroup::WithinDistance(Collider3D* geom,Real d,
   for (size_t i = 0; i < collisionData.size(); i++)
   {
     vector<int> ei1, ei2;
-    if (collisionData[i].collider->WithinDistance(geom, d, ei1, ei2, maxContacts - (int)elements1.size()))
+    if (collisionData[i].collider->WithinDistance(geom, d-collisionData[i].margin, ei1, ei2, maxContacts - (int)elements1.size()))
     {
       for (size_t j = 0; j < ei1.size(); j++)
       {
@@ -568,7 +722,7 @@ bool Collider3DGroup::WithinDistance(Collider3D* geom,Real d,
       if (elements2.size() >= maxContacts)
         return true;
     }
-    else if (geom->WithinDistance(collisionData[i].collider.get(), d, ei2, ei1, maxContacts - (int)elements1.size())) {
+    else if (geom->WithinDistance(collisionData[i].collider.get(), d-collisionData[i].margin, ei2, ei1, maxContacts - (int)elements1.size())) {
       for (size_t j = 0; j < ei1.size(); j++)
       {
         elements1.push_back((int)i);
@@ -591,7 +745,7 @@ bool Collider3DGroup::RayCast(const Ray3D& r,Real margin,Real& distance,int& ele
   {
     Real d;
     int elem;
-    if (items[i].RayCast(r, &d, &elem))
+    if (items[i].collider->RayCast(r, margin + items[i].margin, d, elem))
     {
       if (d < distance)
       {
@@ -599,6 +753,7 @@ bool Collider3DGroup::RayCast(const Ray3D& r,Real margin,Real& distance,int& ele
         element = (int)i;
       }
     }
+    else return false;
   }
   return true;
 }

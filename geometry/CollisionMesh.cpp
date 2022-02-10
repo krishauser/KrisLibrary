@@ -1980,6 +1980,23 @@ TriDistance(PQP_REAL R[3][3], PQP_REAL T[3], Tri *t1, Tri *t2,
 
 
 
+Geometry3DTriangleMesh::Geometry3DTriangleMesh()
+{}
+
+Geometry3DTriangleMesh::Geometry3DTriangleMesh(const Meshing::TriMesh& _data)
+: data(_data)
+{}
+
+Geometry3DTriangleMesh::Geometry3DTriangleMesh(const Meshing::TriMesh& _data,shared_ptr<GLDraw::GeometryAppearance> _appearance)
+: data(_data),appearance(_appearance)
+{}
+
+Geometry3DTriangleMesh::Geometry3DTriangleMesh(Meshing::TriMesh&& _data)
+: data(_data)
+{}
+
+Geometry3DTriangleMesh::~Geometry3DTriangleMesh ()
+{}
 
 Geometry3D* Geometry3DTriangleMesh::ConvertTo(Type restype, Real param, Real expansionParameter) const
 {
@@ -2049,6 +2066,13 @@ bool Geometry3DTriangleMesh::Load(const char *fn)
     return true;
 }
 
+vector<string> Geometry3DTriangleMesh::FileExtensions() const
+{
+  vector<string> res;
+  Meshing::LoadTriMeshExtensions(res);
+  return res;
+}
+
 bool Geometry3DTriangleMesh::Load(istream &in)
 {
     auto pos = in.tellg();
@@ -2083,6 +2107,20 @@ AABB3D Geometry3DTriangleMesh::GetAABB() const
     AABB3D bb;
     data.GetAABB(bb.bmin, bb.bmax);
     return bb;
+}
+
+bool Geometry3DTriangleMesh::Support(const Vector3& dir,Vector3& pt) const
+{
+  if(data.verts.empty()) return false;
+  Real farthest = -Inf;
+  for(size_t i=0;i<data.verts.size();i++) {
+    Real d=dir.dot(data.verts[i]);
+    if(d > farthest) {
+      farthest = d;
+      pt = data.verts[i];
+    }
+  }
+  return true;
 }
 
 bool Geometry3DTriangleMesh::Merge(const vector<Geometry3D*>& geoms)
@@ -2215,7 +2253,15 @@ Box3D Collider3DTriangleMesh::GetBB() const
     Box3D b;
     Geometry::GetBB(collisionData, b);
     return b;
-}   
+}
+
+AABB3D Collider3DTriangleMesh::GetAABB() const
+{
+    Box3D b = GetBB();
+    AABB3D bb;
+    b.getAABB(bb);
+    return bb;
+}
 
 bool Collider3DTriangleMesh::Distance(const Vector3& pt,Real& result)
 {
@@ -2291,6 +2337,99 @@ bool Collider3DTriangleMesh::RayCast(const Ray3D& r,Real margin,Real& distance,i
   }
   element = -1;
   return true;
+}
+
+bool Collider3DTriangleMesh::Contains(const Vector3& pt,bool& result)
+{
+  Ray3D rtest;
+  rtest.source = pt;
+  const Real directions [14][3] = {
+    {1,0,0},
+    {-1,0,0},
+    {0,1,0},
+    {0,-1,0},
+    {0,0,1},
+    {0,0,-1},
+    {1,1,1},
+    {-1,1,1},
+    {1,-1,1},
+    {-1,-1,1},
+    {1,1,-1},
+    {-1,1,-1},
+    {1,-1,-1},
+    {-1,-1,-1},
+  };
+  Vector3 n;
+  Vector3 worldpt;
+  int numInside = 0, numOutside = 0;
+  for(int i=0;i<14;i++) {
+    rtest.direction.setNormalized(Vector3(directions[i]));
+    int tri = Geometry::RayCast(collisionData,rtest,worldpt);
+    if(tri >= 0) {
+      n = data->data.TriangleNormal(tri);
+      if(n.dot(rtest.direction) < 0)
+        numInside += 1;
+      else
+        numOutside += 1;
+    }
+    else numOutside += 1;
+  }
+  return numInside > numOutside; //majority voting
+}
+
+AnyDistanceQueryResult Distance(const GeometricPrimitive3D &a, const CollisionMesh &b, const AnyDistanceQuerySettings &settings)
+{
+  AnyDistanceQueryResult res;
+  res.hasElements = true;
+  res.hasPenetration = true;
+  res.hasClosestPoints = true;
+  res.hasDirections = true;
+  res.elem1 = 0;
+  res.d = Geometry::Distance(b, a, res.elem2, res.cp2, res.dir2, settings.upperBound);
+  res.dir1.setNegative(res.dir2);
+  res.cp1 = res.cp2 + res.d * res.dir2;
+  return res;
+}
+
+AnyDistanceQueryResult Distance(const CollisionMesh &a, const CollisionMesh &b, const AnyDistanceQuerySettings &settings)
+{
+  AnyDistanceQueryResult res;
+  CollisionMeshQuery q(a, b);
+  res.d = q.Distance(settings.absErr, settings.relErr, settings.upperBound);
+  q.ClosestPair(res.elem1, res.elem2);
+  q.ClosestPoints(res.cp1, res.cp2);
+  res.cp1 = a.currentTransform * res.cp1;
+  res.cp2 = b.currentTransform * res.cp2;
+  res.hasElements = true;
+  res.hasClosestPoints = true;
+  return res;
+}
+
+bool Collider3DTriangleMesh::Distance(Collider3D* geom, const AnyDistanceQuerySettings &settings,AnyDistanceQueryResult& res)
+{
+  switch (geom->GetType())
+  {
+  case Type::Primitive:
+  {
+    GeometricPrimitive3D bw = dynamic_cast<Collider3DPrimitive*>(geom)->data->data;
+    bw.Transform(geom->GetTransform());
+    res = Geometry::Distance(bw, collisionData, settings);
+    Flip(res);
+    return true;
+  }
+  case Type::TriangleMesh:
+  {
+    CollisionMesh& b = dynamic_cast<Collider3DTriangleMesh*>(geom)->collisionData;
+    res = Geometry::Distance(collisionData, b, settings);
+    return true;
+  }
+  break;
+  case Type::ConvexHull:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do mesh-convex hull distance yet");
+    return false;
+  default:
+    return false;
+  }
 }
 
 typedef ContactsQueryResult::ContactPair ContactPair;

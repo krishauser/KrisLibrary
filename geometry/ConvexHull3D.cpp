@@ -455,7 +455,7 @@ size_t ConvexHull3D::NumPrimitives() const
   if(type == Polytope)
     return AsPolytope().size() / 3;
   else if(type == Hull) {
-    auto items = AsHull();
+    const auto& items = AsHull();
     return items.first.NumPrimitives() + items.second.NumPrimitives();
   }
   else if(type == Trans)
@@ -466,22 +466,68 @@ size_t ConvexHull3D::NumPrimitives() const
     return 1;
 }
 
+vector<Vector3> ConvexHull3D::GetPoints() const
+{
+  vector<Vector3> res;
+  if(type == Polytope) {
+    const auto& pts = AsPolytope();
+    res.resize(pts.size()/3);
+    for(size_t i=0;i<pts.size();i+=3) 
+      res[i/3].set(&pts[i]);
+    return res;
+  }
+  else if(type == Hull) {
+    const auto& items = AsHull();
+    res = items.first.GetPoints();
+    vector<Vector3> other = items.second.GetPoints();
+    res.insert(res.end(),other.begin(),other.end());
+    return res;
+  }
+  else if(type == Trans) {
+    const auto& data = AsTrans();
+    res = data.first.GetPoints();
+    for(size_t i=0;i<res.size();i++)
+      res[i] = data.second * res[i];
+    return res;
+  }
+  else if(type == Trans) {
+    const auto& data = AsTrans();
+    res = data.first.GetPoints();
+    for(size_t i=0;i<res.size();i++)
+      res[i] = data.second * res[i];
+    return res;
+  }
+  else if(type == Point) {
+    res.resize(1);
+    res[0] = AsPoint();
+    return res;
+  }
+  else if(type == LineSegment) {
+    res.resize(2);
+    res[0] = AsLineSegment().a;
+    res[1] = AsLineSegment().b;
+    return res;
+  }
+  FatalError("Can't get points for this type yet");
+  return res;
+}
+
 GeometricPrimitive3D ConvexHull3D::GetPrimitive(int elem) const
 {
   if(type == Polytope) {
-    auto pnt = AsPolytope();
+    const auto& pnt = AsPolytope();
     Vector3 point(pnt[elem * 3], pnt[elem * 3 + 1], pnt[elem * 3 + 2]);
     return GeometricPrimitive3D(point);
   }
   else if(type == Hull) {
-    auto items = AsHull();
+    const auto& items = AsHull();
     if(elem < (int)items.first.NumPrimitives())
       return items.first.GetPrimitive(elem);
     else
       return items.second.GetPrimitive(elem-items.first.NumPrimitives());
   }
   else if(type == Trans) {
-    auto data = AsTrans();
+    const auto& data = AsTrans();
     auto g = data.first.GetPrimitive(elem);
     g.Transform(data.second);
     return g;
@@ -536,6 +582,21 @@ bool Geometry3DConvexHull::Transform(const Matrix4 &T)
 AABB3D Geometry3DConvexHull::GetAABB() const
 {
     return data.GetAABB();
+}
+
+bool Geometry3DConvexHull::Support(const Vector3& dir,Vector3& pt) const
+{
+  vector<Vector3> pts = data.GetPoints();
+  if(pts.empty()) return false;
+  Real farthest = -Inf;
+  for(size_t i=0;i<pts.size();i++) {
+    Real d = dir.dot(pts[i]);
+    if(d > farthest) {
+      pt = pts[i];
+      farthest = d;
+    }
+  }
+  return true;
 }
 
 Geometry3D* Geometry3DConvexHull::ConvertTo(Type restype, Real param,Real domainExpansion) const

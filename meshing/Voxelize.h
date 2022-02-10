@@ -53,6 +53,12 @@ void GetTriangleCells(const Triangle3D& tri,int m,int n,int p,const AABB3D& bb,v
 void SurfaceOccupancyGrid(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb);
 
 /** @ingroup Meshing
+ * @brief Sets cells of a boolean 3D grid (value,bb) that overlap the
+ * surface of m to fillValue.
+ */
+void SurfaceOccupancyGridFill(const TriMesh& m,Array3D<float>& value,const AABB3D& bb,float fillValue=1);
+
+/** @ingroup Meshing
  * @brief Sets cells of a boolean 3D grid (occupied,bb) to true
  * if the cell's center is in the interior of the mesh, and false otherwise.
  * Occupancy is determined by a flood-fill algorithm starting from the seed

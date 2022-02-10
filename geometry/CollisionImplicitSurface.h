@@ -46,12 +46,9 @@ public:
     virtual ~Collider3DImplicitSurface() {}
     virtual shared_ptr<Geometry3D> GetData() const { return dynamic_pointer_cast<Geometry3D>(data); }
     virtual void Reset();
-    virtual AABB3D GetAABB() const;
-    virtual Box3D GetBB() const;
     virtual RigidTransform GetTransform() const { return collisionData.currentTransform; }
     virtual bool ConvertFrom(Collider3D* geom,Real param=0,Real domainExpansion=0);
     virtual void SetTransform(const RigidTransform& T) { collisionData.currentTransform = T; }
-    virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
     virtual bool Contains(const Vector3& pt,bool& result);
     virtual bool Distance(const Vector3& pt,Real& result);
     virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res);

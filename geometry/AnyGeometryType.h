@@ -62,6 +62,7 @@ public:
     virtual size_t NumElements() const=0;
     virtual shared_ptr<Geometry3D> GetElement(int elem) const=0;
     virtual AABB3D GetAABB() const=0;
+    virtual bool Support(const Vector3& dir,Vector3& pt) const { return false; }
     virtual bool Transform(const RigidTransform& T);
     virtual bool Transform(const Matrix4& mat)=0;
     virtual Geometry3D* Copy() const=0;
@@ -153,7 +154,7 @@ public:
     virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) { return false; }
     virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) { return false; }
     /////Computes the furthest point on the geometry in the direction dir
-    virtual bool Support(const Vector3& dir,Vector3& pt) { return false; }
+    virtual bool Support(const Vector3& dir,Vector3& pt);
     virtual Collider3D* Copy() const;
     virtual Collider3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0);
     virtual bool ConvertFrom(Collider3D* geom,Real param=0,Real domainExpansion=0);

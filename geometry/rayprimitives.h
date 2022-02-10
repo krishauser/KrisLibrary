@@ -41,7 +41,7 @@ inline Real HomogeneousCmp(Real a, bool awZero, Real b, bool bwZero)
     if(a == 0) return -b;
     else return a;
   }
-  else if(bwZero) {
+  else { //bwZero = true
     if(b == 0) return -a;
     else return b;
   }

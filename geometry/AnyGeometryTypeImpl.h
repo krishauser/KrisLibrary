@@ -23,10 +23,10 @@ void ReverseContact(ContactsQueryResult::ContactPair &contact);
 class Geometry3DPrimitive : public Geometry3D
 {
 public:
-    Geometry3DPrimitive() {}
-    Geometry3DPrimitive(const GeometricPrimitive3D& _data) : data(_data) {}
-    Geometry3DPrimitive(GeometricPrimitive3D&& _data) : data(_data) {}
-    virtual ~Geometry3DPrimitive () {}
+    Geometry3DPrimitive();
+    Geometry3DPrimitive(const GeometricPrimitive3D& _data);
+    Geometry3DPrimitive(GeometricPrimitive3D&& _data);
+    virtual ~Geometry3DPrimitive ();
     virtual Type GetType() const override { return Type::Primitive; }
     virtual bool Load(istream& in) override;
     virtual bool Save(ostream& out) const override;
@@ -34,6 +34,7 @@ public:
     virtual size_t NumElements() const override { return 1; }
     virtual shared_ptr<Geometry3D> GetElement(int elem) const override { return shared_ptr<Geometry3D>(new Geometry3DPrimitive(data)); }
     virtual AABB3D GetAABB() const override;
+    virtual bool Support(const Vector3& dir,Vector3& pt) const override;
     virtual bool Transform(const Matrix4& mat) override;
     virtual Geometry3D* Copy() const override { return new Geometry3DPrimitive(data); }
     virtual Geometry3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) const override;
@@ -45,10 +46,10 @@ class Geometry3DTriangleMesh : public Geometry3D
 {
 public:
     Geometry3DTriangleMesh();
-    Geometry3DTriangleMesh(const Meshing::TriMesh& _data) : data(_data) {}
-    Geometry3DTriangleMesh(const Meshing::TriMesh& _data,shared_ptr<GLDraw::GeometryAppearance> _appearance) : data(_data),appearance(_appearance) {}
-    Geometry3DTriangleMesh(Meshing::TriMesh&& _data) : data(_data) {}
-    virtual ~Geometry3DTriangleMesh () {}
+    Geometry3DTriangleMesh(const Meshing::TriMesh& data);
+    Geometry3DTriangleMesh(const Meshing::TriMesh& data,shared_ptr<GLDraw::GeometryAppearance> appearance);
+    Geometry3DTriangleMesh(Meshing::TriMesh&& data);
+    virtual ~Geometry3DTriangleMesh ();
     virtual Type GetType() const override { return Type::TriangleMesh; }
     virtual const char* FileExtension() const override { return "off"; }
     virtual vector<string> FileExtensions() const override;
@@ -60,6 +61,7 @@ public:
     virtual size_t NumElements() const override { return data.tris.size(); }
     virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
     virtual AABB3D GetAABB() const override;
+    virtual bool Support(const Vector3& dir,Vector3& pt) const override;
     virtual bool Transform(const Matrix4& mat) override;
     virtual bool Merge(const vector<Geometry3D*>& geoms) override;
     virtual Geometry3D* Copy() const override { return new Geometry3DTriangleMesh(data,appearance); }
@@ -78,9 +80,9 @@ class Geometry3DPointCloud : public Geometry3D
 {
 public:
     Geometry3DPointCloud();
-    Geometry3DPointCloud(const Meshing::PointCloud3D& _data) : data(_data) {}
-    Geometry3DPointCloud(Meshing::PointCloud3D&& _data) : data(_data) {}
-    virtual ~Geometry3DPointCloud () {}
+    Geometry3DPointCloud(const Meshing::PointCloud3D& data);
+    Geometry3DPointCloud(Meshing::PointCloud3D&& data);
+    virtual ~Geometry3DPointCloud ();
     virtual Type GetType() const override { return Type::PointCloud; }
     virtual const char* FileExtension() const override { return "pcd"; }
     virtual bool Load(const char *fn) override;
@@ -91,6 +93,7 @@ public:
     virtual size_t NumElements() const override { return data.points.size(); }
     virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
     virtual AABB3D GetAABB() const override;
+    virtual bool Support(const Vector3& dir,Vector3& pt) const override;
     virtual bool Transform(const Matrix4& mat) override;
     virtual bool Merge(const vector<Geometry3D*>& geoms) override;
     virtual Geometry3D* Copy() const override { return new Geometry3DPointCloud(data); }
@@ -117,6 +120,7 @@ public:
     virtual size_t NumElements() const override;
     virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
     virtual AABB3D GetAABB() const override;
+    virtual bool Support(const Vector3& dir,Vector3& pt) const override;
     virtual bool Transform(const Matrix4& mat) override;
     virtual Geometry3D* Copy() const override { return new Geometry3DConvexHull(data); }
     virtual Geometry3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) const override;
@@ -140,9 +144,7 @@ public:
     virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
     virtual AABB3D GetAABB() const override;
     virtual bool Transform(const Matrix4& mat) override;
-    virtual Geometry3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) const override;
-    virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) override;
-    virtual Geometry3D* Remesh(Real resolution,bool refine,bool coarsen) const override;
+    void ResizeTo(const Geometry3D* geom,Real resolution,Real domainExpansion=0);
 
     Meshing::VolumeGrid data;
 };
@@ -189,6 +191,7 @@ public:
     virtual size_t NumElements() const override;
     virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
     virtual AABB3D GetAABB() const override;
+    virtual bool Support(const Vector3& dir,Vector3& pt) const override;
     virtual bool Transform(const Matrix4& mat) override;
     virtual bool Merge(const vector<Geometry3D*>& geoms) override;
     virtual Geometry3D* Copy() const override { return new Geometry3DGroup(data); }

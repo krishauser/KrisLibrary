@@ -57,7 +57,6 @@ public:
     virtual Box3D GetBB() const override;
     virtual RigidTransform GetTransform() const override { return collisionData.currentTransform; }
     virtual void SetTransform(const RigidTransform& T) override { collisionData.currentTransform = T; }
-    virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
     virtual bool Contains(const Vector3& pt,bool& result) override;
     virtual bool Distance(const Vector3& pt,Real& result) override;
     virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;

@@ -719,6 +719,28 @@ void SurfaceOccupancyGrid(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb)
   }
 }
 
+void SurfaceOccupancyGridFill(const TriMesh& m,Array3D<float>& value,const AABB3D& bb,float fillValue)
+{
+  Triangle3D tri;
+  AABB3D query,cell;
+  IntTriple hi,lo;
+  for(size_t i=0;i<m.tris.size();i++) {
+    m.GetTriangle(i,tri);
+    query.setPoint(tri.a);
+    query.expand(tri.b);
+    query.expand(tri.c);
+    bool q=QueryGrid(value,bb,query,lo,hi);
+    if(!q) continue;
+    VolumeGridIterator<float> it(value,bb);
+    it.setRange(lo,hi);
+    for(;!it.isDone();++it) {
+      it.getCell(cell);
+      if(tri.intersects(cell))
+        value(it.index)=fillValue;
+    }
+  }
+}
+
 void VolumeOccupancyGrid_FloodFill(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb,const IntTriple& seed,bool seedOccupied)
 {
   if(bb.bmin.x > bb.bmax.x || bb.bmin.y > bb.bmax.y || bb.bmin.z > bb.bmax.z)

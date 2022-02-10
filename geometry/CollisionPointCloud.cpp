@@ -2,12 +2,13 @@
 #include "CollisionPointCloud.h"
 #include "CollisionPrimitive.h"
 #include "CollisionMesh.h"
-#include "ConvexHull3D.h"
+#include "CollisionConvexHull.h"
 #include "Conversions.h"
 #include "ROI.h"
 #include "Slice.h"
 #include <Timer.h>
 #include <KrisLibrary/utils/stringutils.h>
+#include <KrisLibrary/structs/Heap.h>
 
 #include "PQP/include/PQP.h"
 #include "PQP/src/MatVec.h"
@@ -1021,6 +1022,19 @@ bool Collides(const CollisionPointCloud &a, Real margin, const CollisionPointClo
 
 
 
+Geometry3DPointCloud::Geometry3DPointCloud()
+{}
+
+Geometry3DPointCloud::Geometry3DPointCloud(const Meshing::PointCloud3D& _data)
+: data(_data)
+{}
+
+Geometry3DPointCloud::Geometry3DPointCloud(Meshing::PointCloud3D&& _data)
+: data(_data)
+{}
+
+Geometry3DPointCloud::~Geometry3DPointCloud ()
+{}
 
 bool Geometry3DPointCloud::Merge(const vector<Geometry3D*>& geoms)
 {
@@ -1236,6 +1250,26 @@ shared_ptr<Geometry3D> Geometry3DPointCloud::GetElement(int elem) const
     return make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(data.points[elem]));
 }
 
+AABB3D Geometry3DPointCloud::GetAABB() const
+{
+  AABB3D bb;
+  data.GetAABB(bb.bmin,bb.bmax);
+  return bb;
+}
+
+bool Geometry3DPointCloud::Support(const Vector3& dir,Vector3& pt) const
+{
+  if(data.points.empty()) return false;
+  Real farthest = -Inf;
+  for(size_t i=0;i<data.points.size();i++) {
+    Real d=dir.dot(data.points[i]);
+    if(d > farthest) {
+      farthest = d;
+      pt = data.points[i];
+    }
+  }
+  return true;
+}
 
 bool Geometry3DPointCloud::Load(const char *fn)
 {
@@ -1294,6 +1328,14 @@ void Collider3DPointCloud::Reset()
   collisionData.InitCollisions();
 }
 
+AABB3D Collider3DPointCloud::GetAABB() const
+{
+  Box3D b = GetBB();
+  AABB3D bb;
+  b.getAABB(bb);
+  return bb;
+}
+
 AABB3D Collider3DPointCloud::GetAABBTight() const
 {
     const CollisionPointCloud &pc = collisionData;
@@ -1307,7 +1349,7 @@ AABB3D Collider3DPointCloud::GetAABBTight() const
 Box3D Collider3DPointCloud::GetBB() const
 {
     Box3D b;
-    Geometry::GetBB(collisionData, b);
+    b.setTransformed(collisionData.bblocal,collisionData.currentTransform);
     return b;
 }
 
@@ -1628,6 +1670,338 @@ bool Collider3DPointCloud::Contacts(Collider3D* other,const ContactsQuerySetting
     return false;
   default:
       return false;
+  }
+}
+
+AnyDistanceQueryResult Distance(const GeometricPrimitive3D &a, const CollisionPointCloud &b, const AnyDistanceQuerySettings &settings)
+{
+  AnyDistanceQueryResult res;
+  res.hasElements = true;
+  res.elem1 = 0;
+  res.d = Distance(b, a, res.elem2, settings.upperBound);
+  res.hasClosestPoints = true;
+  res.hasDirections = true;
+  res.cp2 = b.currentTransform * b.points[res.elem2];
+  a.ClosestPoints(res.cp2, res.cp1, res.dir1);
+  res.dir2.setNegative(res.dir1);
+  return res;
+}
+
+class PointMeshDistance
+{
+public:
+  const CollisionPointCloud &pc;
+  const CollisionMesh &mesh;
+  RigidTransform Tba, Twa, Tab;
+  PQP_REAL pqpRab[3][3], pqpTab[3];
+  BV pcbv;
+  Real absErr, relErr;
+  Real upperBound;
+  int pcpoint;
+  int meshtri;
+  Vector3 meshpoint; //note: local coordinates
+  Heap<pair<int, int>, Real> queue;
+
+  PointMeshDistance(const CollisionPointCloud &a, const CollisionMesh &b, Real _absErr, Real _relErr, Real _upperBound = Inf)
+      : pc(a), mesh(b), absErr(_absErr), relErr(_relErr), upperBound(_upperBound), pcpoint(-1), meshtri(-1)
+  {
+    Twa.setInverse(a.currentTransform);
+    Tba.mul(Twa, b.currentTransform);
+    Tab.setInverse(Tba);
+    //RigidTransformToPQP(Tab,pqpRab,pqpTab);
+    RigidTransformToPQP(Tba, pqpRab, pqpTab);
+
+    RigidTransform ident;
+    ident.setIdentity();
+    RigidTransformToPQP(ident, pcbv.R, pcbv.To);
+
+    //start with initial upper bound by taking some arbitrary point
+    Triangle3D tri;
+    b.GetTriangle(b.tris.size() / 3, tri);
+    Vector3 pt = Tab * pc.points[pc.points.size() / 3];
+    Vector3 cp = tri.closestPoint(pt);
+    Real d = cp.distance(pt);
+    if (d < upperBound)
+    {
+      upperBound = d;
+      pcpoint = int(pc.points.size() / 3);
+      meshtri = int(b.tris.size() / 3);
+      meshpoint = cp;
+    }
+  }
+  Real Distance(const OctreeNode &pcnode, const BV &meshnode)
+  {
+    //Vector3 halfdims = (pcnode.bb.bmax-pcnode.bb.bmin)*0.5;
+    //Vector3 center = (pcnode.bb.bmin+pcnode.bb.bmax)*0.5;
+    //halfdims.get(pcbv.d);
+    //center.get(pcbv.Tr);
+    //PQP uses rectangle-swept-sphere to do distance calculation
+    Vector3 d = pcnode.bb.bmax - pcnode.bb.bmin;
+    pcbv.Tr[0] = pcnode.bb.bmin.x;
+    pcbv.Tr[1] = pcnode.bb.bmin.y;
+    pcbv.Tr[2] = (pcnode.bb.bmin.z + pcnode.bb.bmax.z) * 0.5;
+    pcbv.l[0] = d.x;
+    pcbv.l[1] = d.y;
+    pcbv.r = d.z * 0.5;
+    return BV_Distance2(pqpRab, pqpTab, &pcbv, &meshnode);
+  }
+  void UpdateLeaves(const OctreeNode &pcOctreeNode, const BV &meshnode)
+  {
+    int t = -meshnode.first_child - 1;
+    Triangle3D tri;
+    Copy(mesh.pqpModel->tris[t].p1, tri.a);
+    Copy(mesh.pqpModel->tris[t].p2, tri.b);
+    Copy(mesh.pqpModel->tris[t].p3, tri.c);
+    tri.a = Tba * tri.a;
+    tri.b = Tba * tri.b;
+    tri.c = Tba * tri.c;
+    //collide the triangle and points
+    vector<Vector3> pts;
+    vector<int> pcids;
+    pc.octree->GetPoints(pcOctreeNode, pts);
+    pc.octree->GetPointIDs(pcOctreeNode, pcids);
+    Vector3 cp;
+    for (size_t i = 0; i < pts.size(); i++)
+    {
+      cp = tri.closestPoint(pts[i]);
+      Real d = pts[i].distance(cp);
+      if (d < upperBound)
+      {
+        upperBound = d;
+        pcpoint = pcids[i];
+        meshtri = t;
+        meshpoint = Tab * cp;
+      }
+    }
+  }
+  void Recurse()
+  {
+    int maxqueuesize = 100;
+    queue.push(make_pair(0, 0), -Distance(pc.octree->Node(0), mesh.pqpModel->b[0]));
+    while (!queue.empty())
+    {
+      if (-queue.topPriority() * (1 + relErr) + absErr >= upperBound)
+        break;
+      pair<int, int> next = queue.top();
+      queue.pop();
+      int pcOctreeNode = next.first;
+      int meshBVHNode = next.second;
+
+      if (queue.size() >= maxqueuesize)
+      {
+        Recurse(pcOctreeNode, meshBVHNode);
+        continue;
+      }
+
+      const OctreeNode &pcnode = pc.octree->Node(pcOctreeNode);
+      const BV &meshnode = mesh.pqpModel->b[meshBVHNode];
+      if (pc.octree->IsLeaf(pcnode))
+      {
+        if (pc.octree->NumPoints(pcnode) == 0)
+          continue;
+        if (meshnode.Leaf())
+        {
+          UpdateLeaves(pcnode, meshnode);
+          continue;
+        }
+      }
+      bool splitPC = true;
+      if (pc.octree->IsLeaf(pcnode))
+        splitPC = false;
+      else if (!meshnode.Leaf())
+      {
+        //determine which BVH to split
+        Real vpc = Volume(pcnode);
+        Real vmesh = Volume(meshnode);
+        if (vpc * 10 < vmesh)
+          splitPC = false;
+      }
+      if (splitPC)
+      {
+        for (int i = 0; i < 8; i++)
+        {
+          const auto &child = pc.octree->Node(pcnode.childIndices[i]);
+          if (child.bb.bmin.x > child.bb.bmax.x)
+            continue;
+          Real d = Distance(child, meshnode);
+          if (d * (1.0 + relErr) + absErr < upperBound)
+          {
+            queue.push(pair<int, int>(pcnode.childIndices[i], meshBVHNode), -d);
+          }
+        }
+      }
+      else
+      {
+        int c1 = mesh.pqpModel->b[meshBVHNode].first_child;
+        int c2 = c1 + 1;
+        assert(c1 >= 0);
+        Real d1 = Distance(pcnode, mesh.pqpModel->b[c1]);
+        Real d2 = Distance(pcnode, mesh.pqpModel->b[c2]);
+        if (d1 * (1.0 + relErr) + absErr < upperBound)
+        {
+          queue.push(pair<int, int>(pcOctreeNode, c1), -d1);
+        }
+        if (d2 * (1.0 + relErr) + absErr < upperBound)
+        {
+          queue.push(pair<int, int>(pcOctreeNode, c2), -d2);
+        }
+      }
+    }
+  }
+  void Recurse(int pcOctreeNode, int meshBVHNode)
+  {
+    const OctreeNode &pcnode = pc.octree->Node(pcOctreeNode);
+    const BV &meshnode = mesh.pqpModel->b[meshBVHNode];
+    if (pc.octree->IsLeaf(pcnode))
+    {
+      if (pc.octree->NumPoints(pcnode) == 0)
+        return;
+      if (meshnode.Leaf())
+      {
+        UpdateLeaves(pcnode, meshnode);
+        return;
+      }
+    }
+    bool splitPC = true;
+    if (pc.octree->IsLeaf(pcnode))
+      splitPC = false;
+    else if (!meshnode.Leaf())
+    {
+      //determine which BVH to split
+      Real vpc = Volume(pcnode);
+      Real vmesh = Volume(meshnode);
+      if (vpc * 10 < vmesh)
+        splitPC = false;
+    }
+    if (splitPC)
+    {
+      vector<pair<Real, int>> sorter;
+      for (int i = 0; i < 8; i++)
+      {
+        const auto &child = pc.octree->Node(pcnode.childIndices[i]);
+        if (child.bb.bmin.x > child.bb.bmax.x)
+          continue;
+        Real d = Distance(child, meshnode);
+        if (d * (1.0 + relErr) + absErr < upperBound)
+        {
+          sorter.push_back(make_pair(d, pcnode.childIndices[i]));
+        }
+      }
+      sort(sorter.begin(), sorter.end());
+      for (const auto &order : sorter)
+      {
+        if (order.first * (1.0 + relErr) + absErr < upperBound)
+          Recurse(order.second, meshBVHNode);
+        else
+          break;
+      }
+    }
+    else
+    {
+      int c1 = mesh.pqpModel->b[meshBVHNode].first_child;
+      int c2 = c1 + 1;
+      assert(c1 >= 0);
+      Real d1 = Distance(pcnode, mesh.pqpModel->b[c1]);
+      Real d2 = Distance(pcnode, mesh.pqpModel->b[c2]);
+      if (d1 < d2)
+      {
+        if (d1 * (1.0 + relErr) + absErr < upperBound)
+        {
+          Recurse(pcOctreeNode, c1);
+        }
+        if (d2 * (1.0 + relErr) + absErr < upperBound)
+        {
+          Recurse(pcOctreeNode, c2);
+        }
+      }
+      else
+      {
+        if (d2 * (1.0 + relErr) + absErr < upperBound)
+        {
+          Recurse(pcOctreeNode, c2);
+        }
+        if (d1 * (1.0 + relErr) + absErr < upperBound)
+        {
+          Recurse(pcOctreeNode, c1);
+        }
+      }
+    }
+  }
+};
+
+AnyDistanceQueryResult Distance(const CollisionPointCloud &a, const CollisionMesh &b, const AnyDistanceQuerySettings &settings)
+{
+  PointMeshDistance solver(a, b, settings.absErr, settings.relErr, settings.upperBound);
+  solver.Recurse();
+  AnyDistanceQueryResult res;
+  res.d = solver.upperBound;
+  res.elem1 = solver.pcpoint;
+  res.elem2 = solver.meshtri;
+  res.cp1 = a.currentTransform * a.points[solver.pcpoint];
+  res.cp2 = b.currentTransform * solver.meshpoint;
+  res.hasElements = true;
+  res.hasClosestPoints = true;
+  return res;
+}
+
+AnyDistanceQueryResult Distance(const CollisionPointCloud &a, const CollisionPointCloud &b, const AnyDistanceQuerySettings &settings)
+{
+  AnyDistanceQueryResult res;
+  res.d = Geometry::Distance(a, b, res.elem1, res.elem2, settings.upperBound);
+  res.cp1 = a.currentTransform * a.points[res.elem1];
+  res.cp2 = b.currentTransform * b.points[res.elem2];
+  res.hasElements = true;
+  res.hasClosestPoints = true;
+  return res;
+}
+
+
+bool Collider3DPointCloud::Distance(Collider3D* other,const DistanceQuerySettings& settings,DistanceQueryResult& res) 
+{
+  switch (other->GetType())
+  {
+  case Type::Primitive:
+  {
+    GeometricPrimitive3D bw = dynamic_cast<Collider3DPrimitive*>(other)->data->data;
+    bw.Transform(other->GetTransform());
+    res = Geometry::Distance(bw, collisionData, settings);
+    Flip(res);
+    return true;
+  }
+  case Type::TriangleMesh:
+  {
+    CollisionMesh& b = dynamic_cast<Collider3DTriangleMesh*>(other)->collisionData;
+    res = Geometry::Distance(collisionData, b, settings);
+    return true;
+  }
+  case Type::PointCloud:
+  {
+    CollisionPointCloud& b = dynamic_cast<Collider3DPointCloud*>(other)->collisionData;
+    res = Geometry::Distance(collisionData, b, settings);
+    return true;
+  }
+  case Type::ConvexHull:
+  {
+    DistanceQuerySettings modsettings = settings;
+    Collider3DConvexHull* b = dynamic_cast<Collider3DConvexHull*>(other);
+    //bound check
+    if(!IsInf(settings.upperBound)) {
+      Box3D bb = GetBB();
+      Collider3DPrimitive prim(make_shared<Geometry3DPrimitive>(bb));
+      if(b->Distance(&prim,settings,res)) {
+        if(res.d >= settings.upperBound) return true;
+      }
+    }
+    //brute force
+    for(size_t i=0;i<data->data.points.size();i++) {
+      if(b->Distance(data->data.points[i],modsettings,res)) {
+        modsettings.upperBound = res.d;
+      }
+    }
+    return true;
+  }
+  default:
+    return false;
   }
 }
 

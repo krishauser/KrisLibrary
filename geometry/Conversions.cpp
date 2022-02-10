@@ -19,6 +19,19 @@ DECLARE_LOGGER(Geometry)
 #include "SOLID.h"
 #include <hacdHACD.h>
 
+namespace Meshing {
+	//in meshing/Voxelize.cpp
+	bool QueryGrid(int m,int n,int p,const AABB3D& grid,const AABB3D& query,IntTriple& low,IntTriple& high);
+
+	
+	template <class T>
+	inline bool QueryGrid(const Array3D<T>& cells,const AABB3D& grid,const AABB3D& query,IntTriple& low,IntTriple& high)
+	{
+		return QueryGrid(cells.m,cells.n,cells.p,grid,query,low,high);
+	}
+
+
+}
 
 namespace Geometry {
 	
@@ -375,6 +388,45 @@ void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
 		fprintf(f,"\n");
 	}
 	fclose(f);
+}
+
+void MeshToOccupancyGrid(const Meshing::TriMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+{
+	AABB3D aabb;
+	mesh.GetAABB(aabb.bmin,aabb.bmax);
+	Vector3 expansionv(expansion);
+	aabb.bmin -= expansionv;
+	aabb.bmax += expansionv;
+	FitGridToBB(aabb,grid,resolution,0.5);
+	grid.value.set(0.0);
+	Triangle3D tri;
+	AABB3D query,cell;
+	IntTriple hi,lo;
+	Real cellradius = resolution*0.5*Sqrt(3.0);
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		mesh.GetTriangle(i,tri);
+		query.setPoint(tri.a);
+		query.expand(tri.b);
+		query.expand(tri.c);
+		query.bmin -= expansionv;
+		query.bmax -= expansionv;
+		bool q=Meshing::QueryGrid(grid.value,grid.bb,query,lo,hi);
+		if(!q) continue;
+		//KrisLibrary::loggerWait();
+		Meshing::VolumeGridIterator<Real> it(grid.value,grid.bb);
+		it.setRange(lo,hi);
+		for(;!it.isDone();++it) {
+			it.getCell(cell);
+			if(tri.intersects(cell))
+				grid.value(it.index)=1;
+			else if(expansion > 0) {
+				Vector3 c = (cell.bmin+cell.bmax)*0.5;
+				Vector3 cp = tri.closestPoint(c);
+				if(c.distance(cp) < expansion + cellradius)
+					grid.value(it.index)=1;
+			}
+		}
+	}
 }
 
 void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion)

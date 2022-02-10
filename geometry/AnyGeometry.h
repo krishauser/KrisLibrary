@@ -249,9 +249,8 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///first geometry, and all subsequent geometries are transformed relative
   ///to the first
   void Merge(const vector<AnyCollisionGeometry3D>& geoms);
-  //Computes the furthest point on the geometry in the direction dir
-  //TODO: is this useful to implement outside of ConvexHull types?
-  // Vector3 FindSupport(const Vector3& dir);
+  ///Computes the furthest point on the geometry in the direction dir
+  bool Support(const Vector3& dir,Vector3& pt);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);

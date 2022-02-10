@@ -72,7 +72,7 @@ public:
   
   /// Polytope, Box, Cone, Cylinder, Sphere, Point, LineSegment, correspond to SOLID basic data types
   /// Minkowski means the minkowski sum of two ConvexHull3D's (not implemented yet)
-  /// Tran means a transformed version of another ConvexHull3D.
+  /// Trans means a transformed version of another ConvexHull3D.
   /// Hull means the hull of two objects.
   enum Type { Empty, Polytope, Box, Cone, Cylinder, Sphere, Point, LineSegment, Minkowski, Trans, Hull};
   ConvexHull3D();
@@ -104,6 +104,7 @@ public:
   const HullData& AsHull() const;
   size_t NumPrimitives() const;
   GeometricPrimitive3D GetPrimitive(int index) const;
+  std::vector<Vector3> GetPoints() const;
 
   AnyValue data;  // Stored in the same format as the [Type]Data typedefs listed above
   Type type;

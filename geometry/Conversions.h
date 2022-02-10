@@ -50,6 +50,13 @@ void PrimitiveToMesh(const GeometricPrimitive3D& primitive,Meshing::TriMesh& mes
 void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
 
 /** @ingroup Geometry
+ * @brief Creates an occupancy grid for a mesh using a Fast Marching Method.
+ *
+ * expansion grows the domain of each triangle by this many units.
+ */
+void MeshToOccupancyGrid(const Meshing::TriMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
+
+/** @ingroup Geometry
  * @brief Creates an implicit surface for a mesh using a Fast Marching Method.
  *
  * Note: the mesh's current transform is NOT taken into account (i.e., the resulting grid

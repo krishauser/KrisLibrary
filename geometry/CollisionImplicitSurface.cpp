@@ -29,6 +29,8 @@ namespace Geometry {
 
 typedef ContactsQueryResult::ContactPair ContactPair;
 
+//defined in Conversions.cpp
+void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real expansion=0.5);
 
 void GetMinMax(const Meshing::VolumeGrid* mingrid,const Meshing::VolumeGrid* maxgrid,const AABB3D& bb,Real& vmin,Real& vmax)
 {
@@ -946,6 +948,12 @@ AABB3D Geometry3DVolume::GetAABB() const
     return data.bb;
 }
 
+void Geometry3DVolume::ResizeTo(const Geometry3D* geom,Real resolution,Real domainExpansion)
+{
+  AABB3D bb = geom->GetAABB();
+  Assert(resolution > 0);
+  FitGridToBB(bb,data,resolution,domainExpansion/resolution);
+}
 
 bool Geometry3DImplicitSurface::ConvertFrom(const Geometry3D* geom,Real param,Real domainExpansion)  
 {
@@ -1047,28 +1055,25 @@ Geometry3D* Geometry3DImplicitSurface::Remesh(Real resolution,bool refine,bool c
     return res;
 }
 
-Geometry3D* Geometry3DOccupancyGrid::Remesh(Real resolution,bool refine,bool coarsen) const
+Collider3DImplicitSurface::Collider3DImplicitSurface(shared_ptr<Geometry3DImplicitSurface> _data)
+:data(_data)
 {
-    const Meshing::VolumeGrid& grid = data;
-    auto* res = new Geometry3DOccupancyGrid;
-    Vector3 size=grid.GetCellSize();
-    if((resolution < size.x && refine) || (resolution > size.x && coarsen) ||
-    (resolution < size.y && refine) || (resolution > size.y && coarsen) ||
-    (resolution < size.z && refine) || (resolution > size.z && coarsen)) {
-        int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
-        int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
-        int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
-        Meshing::VolumeGrid& output = res->data;
-        output.Resize(m,n,p);
-        output.bb = grid.bb;
-        output.ResampleAverage(grid);
-    }
-    else {
-        res->data = grid;
-    }
-    return res;
+  Reset();
 }
 
+void Collider3DImplicitSurface::Reset()
+{
+  collisionData.baseGrid = data->data;
+  collisionData.InitCollisions();
+}
+
+bool Collider3DImplicitSurface::Contains(const Vector3& pt,bool& result)
+{
+  Real d;
+  Distance(pt,d);
+  result = (d <= 0);
+  return true;
+}
 
 bool Collider3DImplicitSurface::Distance(const Vector3& pt,Real& result)
 {
@@ -1091,6 +1096,58 @@ bool Collider3DImplicitSurface::Distance(const Vector3 &pt, const DistanceQueryS
     res.elem1 = PointIndex(vg, res.cp1);
     //cout<<"Doing ImplicitSurface - point collision detection, with direction "<<res.dir2<<endl;
     return true;
+}
+
+AnyDistanceQueryResult Distance(const GeometricPrimitive3D &a, const CollisionImplicitSurface &b, const AnyDistanceQuerySettings &settings)
+{
+  AnyDistanceQueryResult res;
+  res.hasElements = true;
+  res.hasPenetration = true;
+  res.hasClosestPoints = true;
+  res.hasDirections = true;
+  res.elem1 = 0;
+  res.d = Geometry::Distance(b, a, res.cp2, res.cp1, res.dir1);
+  res.elem2 = PointIndex(b, res.cp2);
+  res.dir2.setNegative(res.dir1);
+  return res;
+}
+
+AnyDistanceQueryResult Distance(const CollisionImplicitSurface &a, const CollisionPointCloud &b, const AnyDistanceQuerySettings &settings)
+{
+  AnyDistanceQueryResult res;
+  res.hasElements = true;
+  res.hasPenetration = true;
+  res.hasClosestPoints = true;
+  res.hasDirections = true;
+  res.d = Geometry::Distance(a, b, res.elem2, settings.upperBound);
+  res.cp2 = b.currentTransform * b.points[res.elem2];
+  Geometry::Distance(a, res.cp2, res.cp1, res.dir1);
+  res.dir2.setNegative(res.dir1);
+  res.elem1 = PointIndex(a, res.cp1);
+  return res;
+}
+
+bool Collider3DImplicitSurface::Distance(Collider3D* geom, const DistanceQuerySettings &settings,DistanceQueryResult& res)
+{
+  switch (geom->GetType())
+  {
+  case Type::Primitive:
+  {
+    GeometricPrimitive3D bw = dynamic_cast<Collider3DPrimitive*>(geom)->data->data;
+    bw.Transform(geom->GetTransform());
+    res = Geometry::Distance(bw, collisionData, settings);
+    Flip(res);
+    return true;
+  }
+  case Type::PointCloud:
+  {
+    auto& pc = dynamic_cast<Collider3DPointCloud*>(geom)->collisionData;
+    res = Geometry::Distance(collisionData, pc, settings);
+    return true;
+  }
+  default:
+    return false;
+  }
 }
 
 
@@ -1330,7 +1387,15 @@ bool Collider3DImplicitSurface::ConvertFrom(Collider3D* geom,Real param,Real dom
   return false;
 }
 
-
+Collider3D* Collider3DImplicitSurface::Slice(const RigidTransform& T,Real tol) const {
+  return NULL;
+}
+Collider3D* Collider3DImplicitSurface::ExtractROI(const AABB3D& bb,int flag) const {
+  return NULL;
+}
+Collider3D* Collider3DImplicitSurface::ExtractROI(const Box3D& bb,int flag) const {
+  return NULL;
+}
 
 
 

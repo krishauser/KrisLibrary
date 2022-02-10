@@ -7,6 +7,20 @@ typedef ContactsQueryResult::ContactPair ContactPair;
 
 DECLARE_LOGGER(Geometry)
 
+Geometry3DPrimitive::Geometry3DPrimitive()
+{}
+
+Geometry3DPrimitive::Geometry3DPrimitive(const GeometricPrimitive3D& _data)
+: data(_data)
+{}
+
+Geometry3DPrimitive::Geometry3DPrimitive(GeometricPrimitive3D&& _data)
+: data(_data)
+{}
+
+Geometry3DPrimitive::~Geometry3DPrimitive ()
+{}
+
 bool Geometry3DPrimitive::Load(istream& in)
 {
     in >> data;
@@ -23,10 +37,25 @@ AABB3D Geometry3DPrimitive::GetAABB() const
     return data.GetAABB();
 }
 
+bool Geometry3DPrimitive::Support(const Vector3& dir,Vector3& pt) const
+{
+    if(!data.SupportsClosestPoints(GeometricPrimitive3D::Point)) return false;
+    Vector3 farpt = 100000*dir;
+    Vector3 tempdir;
+    data.ClosestPoints(farpt,pt,tempdir);
+    return true;
+}
+
 bool Geometry3DPrimitive::Transform(const Matrix4& mat)
 {
     data.Transform(mat);
     return true;
+}
+
+Collider3DPrimitive::Collider3DPrimitive(shared_ptr<Geometry3DPrimitive> _data)
+:data(_data)
+{
+  T.setIdentity();
 }
 
 Box3D Collider3DPrimitive::GetBB() const
@@ -60,6 +89,14 @@ bool Collider3DPrimitive::Distance(const Vector3 &pt,Real& result)
     Vector3 ptlocal;
     T.mulInverse(pt, ptlocal);
     result = data->data.Distance(ptlocal);
+    return true;
+}
+
+bool Collider3DPrimitive::Contains(const Vector3& pt,bool& result) 
+{
+    Vector3 ptlocal;
+    T.mulInverse(pt, ptlocal);
+    result = data->data.Collides(ptlocal);
     return true;
 }
 
