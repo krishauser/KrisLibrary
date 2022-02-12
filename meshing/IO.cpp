@@ -913,13 +913,13 @@ void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const a
           if(0==strcmp(tex->achFormatHint,"jpg") || 0==strcmp(tex->achFormatHint,"png") || 0==strcmp(tex->achFormatHint,"tif") || 0==strcmp(tex->achFormatHint,"bmp")) {
             stringstream ss;
             ss<<"_assimp_img_temp."<<tex->achFormatHint;
-            const char* tempfn = ss.str().c_str();
-            FILE* out = fopen(tempfn,"wb");
+            string tempfn = ss.str();
+            FILE* out = fopen(tempfn.c_str(),"wb");
             fwrite(tex->pcData,tex->mWidth,1,out);
             fclose(out);
-            if(ImportImage(tempfn,*img)) {
+            if(ImportImage(tempfn.c_str(),*img)) {
               app.tex2D = img;
-              FileUtils::Delete(tempfn);
+              FileUtils::Delete(tempfn.c_str());
             }
             else {
               LOG4CXX_INFO(KrisLibrary::logger(),"AssimpMaterialToAppearance: can't load compressed embedded texture, saved to "<<tempfn<<" for inspection");
