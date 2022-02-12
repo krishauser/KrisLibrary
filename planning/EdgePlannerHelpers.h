@@ -98,7 +98,7 @@ public:
   virtual Real Length() const override;
   virtual const Config& Start() const override;
   virtual const Config& End() const override;  
-  virtual bool IsVisible();
+  virtual bool IsVisible() override;
   virtual CSpace* Space() const override { return space; }
   virtual EdgePlannerPtr Copy() const override;
   virtual EdgePlannerPtr ReverseCopy() const override;
