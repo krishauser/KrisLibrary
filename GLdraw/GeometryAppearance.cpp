@@ -1272,7 +1272,12 @@ void GeometryAppearance::DrawGL(Element e)
       bool iDrawFaces=subAppearances[i].drawFaces;
       bool iDrawEdges=subAppearances[i].drawEdges;
       bool iDrawVertices=subAppearances[i].drawVertices;
-      if(subgeoms[i].appearanceData.empty())
+      bool customAppearance = false;
+      if(subgeoms[i].type == AnyGeometry3D::Type::TriangleMesh) {
+        auto* mesh = dynamic_cast<Geometry3DTriangleMesh*>(subgeoms[i].data.get());
+        if(mesh->appearance) customAppearance = true;
+      }
+      if(!customAppearance)
         subAppearances[i].CopyMaterialFlat(*this);
       subAppearances[i].drawFaces = iDrawFaces && drawFaces;
       subAppearances[i].drawEdges = iDrawEdges && drawEdges;
