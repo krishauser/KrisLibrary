@@ -15,7 +15,7 @@ EdgeChecker::EdgeChecker(CSpace* _space,const Config& a,const Config& b)
 
 
 TrueEdgeChecker::TrueEdgeChecker(CSpace* _space,const InterpolatorPtr& _path)
-  :EdgeChecker(_space,path)
+  :EdgeChecker(_space,_path)
 {}
 
 TrueEdgeChecker::TrueEdgeChecker(CSpace* _space,const Config& x,const Config& y)
@@ -24,7 +24,7 @@ TrueEdgeChecker::TrueEdgeChecker(CSpace* _space,const Config& x,const Config& y)
 
 
 FalseEdgeChecker::FalseEdgeChecker(CSpace* _space,const InterpolatorPtr& _path)
-  :EdgeChecker(_space,path)
+  :EdgeChecker(_space,_path)
 {}
 
 FalseEdgeChecker::FalseEdgeChecker(CSpace* _space,const Config& x,const Config& y)
@@ -33,7 +33,7 @@ FalseEdgeChecker::FalseEdgeChecker(CSpace* _space,const Config& x,const Config& 
 
 
 EndpointEdgeChecker::EndpointEdgeChecker(CSpace* _space,const InterpolatorPtr& _path)
-  :EdgeChecker(_space,path)
+  :EdgeChecker(_space,_path)
 {}
 
 EndpointEdgeChecker::EndpointEdgeChecker(CSpace* _space,const Config& x,const Config& y)
