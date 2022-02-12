@@ -48,8 +48,8 @@ public:
   static void GetRotation(const Config& x,Math3D::Matrix2& R);
   static void SetRotation(const Math3D::Matrix2& R,Config& x);
 
-  void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx);
-  void Integrate(const Config& a,const Vector& da,Config& b);
+  virtual void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx) override;
+  virtual void Integrate(const Config& a,const Vector& da,Config& b) override;
 };
 
 /** @brief The space of rigid body transforms SE(2). 
@@ -83,8 +83,8 @@ public:
   virtual Real Distance(const Config& a,const Config& b) override;
   virtual void Properties(PropertyMap& pmap) override;
 
-  void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx);
-  void Integrate(const Config& a,const Vector& da,Config& b);
+  virtual void InterpolateDeriv(const Config& a,const Config& b,Real u,Vector& dx) override;
+  virtual void Integrate(const Config& a,const Vector& da,Config& b) override;
 
   static void GetRotation(const Config& x,Math3D::Matrix3& R);
   static void SetRotation(const Math3D::Matrix3& R,Config& x);

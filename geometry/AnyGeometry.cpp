@@ -260,11 +260,48 @@ bool AnyGeometry3D::Load(const char *fn)
   const char *ext = FileExtension(fn);
   if (Meshing::CanLoadTriMeshExt(ext))
   {
-    data.reset(new Geometry3DTriangleMesh());
-    if(!data->Load(fn)) {
-      return false;
+    vector<Meshing::TriMesh> meshes;
+    vector<GLDraw::GeometryAppearance> appearances;
+    if(!Meshing::LoadAssimp(fn,meshes,appearances)) {
+      meshes.resize(1);
+      appearances.resize(1);
+      if (!Meshing::Import(fn, meshes[0], appearances[0]))
+        return false;
     }
-    type = Type::TriangleMesh;
+    GLDraw::GeometryAppearance blank;
+    if(meshes.size()==1) {
+      type = Type::TriangleMesh;
+      auto* mesh = new Geometry3DTriangleMesh(meshes[0]);
+      GLDraw::GeometryAppearance& temp=appearances[0];
+      if (temp.faceColor != blank.faceColor ||
+        !temp.vertexColors.empty() ||
+        !temp.faceColors.empty()) //loaded appearance data
+        mesh->appearance.reset(new GLDraw::GeometryAppearance(temp));
+      data.reset(mesh);
+    }
+    else {
+      LOG4CXX_INFO(GET_LOGGER(Geometry),"Loading "<<meshes.size()<<" meshes from "<<fn<<" into Group");
+      type = Type::Group;
+      auto* group = new Geometry3DGroup();
+      group->data.resize(meshes.size());
+      for(size_t i=0;i<meshes.size();i++) {
+        group->data[i].type = Type::TriangleMesh;
+        group->data[i].data.reset(new Geometry3DTriangleMesh(meshes[i],make_shared<GLDraw::GeometryAppearance>(appearances[i])));
+      }
+      data.reset(group);
+    }
+    return true;
+    /*
+    type = TriangleMesh;
+    data = Meshing::TriMesh();
+    GLDraw::GeometryAppearance blank, temp;
+    if (!Meshing::Import(fn, this->AsTriangleMesh(), temp))
+      return false;
+    if (temp.faceColor != blank.faceColor ||
+        !temp.vertexColors.empty() ||
+        !temp.faceColors.empty()) //loaded appearance data
+      appearanceData = temp;
+    */
     return true;
   }
   else if (0 == strcmp(ext, "pcd"))
