@@ -26,7 +26,7 @@ class FalseEdgeChecker : public EdgeChecker
 public:
   FalseEdgeChecker(CSpace* space,const InterpolatorPtr& path);
   FalseEdgeChecker(CSpace* space,const Config& a,const Config& b);
-  virtual bool IsVisible() { return false; }
+  virtual bool IsVisible() override { return false; }
   virtual EdgePlannerPtr Copy() const override { return std::make_shared<FalseEdgeChecker>(space,path); }
   virtual EdgePlannerPtr ReverseCopy() const override { return std::make_shared<FalseEdgeChecker>(space,std::make_shared<ReverseInterpolator>(path)); }
 
@@ -68,13 +68,13 @@ public:
   ///Initialize in override mode
   PiggybackEdgePlanner(CSpace* space,const Config& a,const Config& b,EdgePlannerPtr e);
   virtual ~PiggybackEdgePlanner() {}
-  virtual bool IsVisible() { return e->IsVisible(); }
+  virtual bool IsVisible() override { return e->IsVisible(); }
   virtual EdgePlannerPtr Copy() const override;
   virtual EdgePlannerPtr ReverseCopy() const override;
 
   virtual bool IsIncremental() const override { return e->IsIncremental(); } 
   virtual Real Priority() const override { return e->Priority(); }
-  virtual bool Plan() { return e->Plan(); }
+  virtual bool Plan() override { return e->Plan(); }
   virtual bool Done() const override { return e->Done(); }
   virtual bool Failed() const override { return e->Failed(); }
 
@@ -98,7 +98,7 @@ public:
   virtual Real Length() const override;
   virtual const Config& Start() const override;
   virtual const Config& End() const override;  
-  virtual bool IsVisible();
+  virtual bool IsVisible() override;
   virtual CSpace* Space() const override { return space; }
   virtual EdgePlannerPtr Copy() const override;
   virtual EdgePlannerPtr ReverseCopy() const override;

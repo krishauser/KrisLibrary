@@ -75,7 +75,7 @@ class Array3D
   void swap(Array3D<T>&);
   inline T* getData() const { return items; }
   
-  class iterator
+  class iterator : public std::iterator<std::bidirectional_iterator_tag,T>
   {
   public:
     explicit iterator(const Array3D<T>* array);
@@ -345,7 +345,8 @@ void Array3D<T>::set(const Array3D<T2>& rhs)
 {
 	resize(rhs.m,rhs.n,rhs.p);
   int total=m*n*p;
-  for(int i=0;i<total;i++) items[i] = T(rhs.items[i]);
+  const T2* rhsdata = rhs.getData();
+  for(int i=0;i<total;i++) items[i] = T(rhsdata[i]);
 }
 
 template <class T>

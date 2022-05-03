@@ -73,7 +73,7 @@ public:
   inline T* getData() const { return items; }
   inline T* getRowData(int i) const { return &items[i*n]; }
 
-  class iterator
+  class iterator : public std::iterator<std::bidirectional_iterator_tag, T>
   {
   public:
     explicit iterator(const Array2D<T>* array);
@@ -308,7 +308,8 @@ void Array2D<T>::set(const Array2D<T2>& rhs)
 {
 	resize(rhs.m,rhs.n);
   int total=m*n;
-  for(int i=0;i<total;i++) items[i] = T(rhs.items[i]);
+  const T2* rhsdata = rhs.getData();
+  for(int i=0;i<total;i++) items[i] = T(rhsdata[i]);
 }
 
 template <class T>

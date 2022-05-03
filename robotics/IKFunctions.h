@@ -31,8 +31,9 @@
  * Warning: the UseIK functions store POINTERS to IKGoal's, so you must maintain
  * the structures throughout the life of this struct.
  */
-struct RobotIKFunction : public CompositeVectorFieldFunction
+class RobotIKFunction : public CompositeVectorFieldFunction
 {
+public:
   RobotIKFunction(RobotKinematics3D&);
   ~RobotIKFunction();
 
@@ -74,8 +75,9 @@ struct RobotIKFunction : public CompositeVectorFieldFunction
  * for joints with wide ranges, because it allows the joint angle to pass from
  * -pi to pi, and vice versa.
  */
-struct RobotIKSolver
+class RobotIKSolver
 {
+public:
   RobotIKSolver(RobotIKFunction& function);
   void UseJointLimits(Real revJointThreshold = Inf);
   void UseJointLimits(const Vector& qmin,const Vector& qmax);
@@ -149,8 +151,9 @@ bool AddGoalNonredundant(const IKGoal& goal,std::vector<IKGoal>& goalSet,Real to
  * An individual component of a RobotIKFunction.
  * Requres robot.q to be set, and the chain updated before PreEval is called.
  */
-struct WorldPositionFunction : public VectorFieldFunction
+class WorldPositionFunction : public VectorFieldFunction
 {
+public:
   WorldPositionFunction(RobotKinematics3D&,const Vector3& pi,int i,const ArrayMapping& activeDofs);
   int GetDOF(int dim) const;
   virtual std::string Label() const override { return "WorldPos"; }
@@ -173,8 +176,9 @@ struct WorldPositionFunction : public VectorFieldFunction
  * An individual component of a RobotIKFunction.
  * Requres robot.q to be set, and the chain updated before PreEval is called.
  */
-struct IKGoalFunction : public VectorFieldFunction
+class IKGoalFunction : public VectorFieldFunction
 {
+public:
   IKGoalFunction(RobotKinematics3D&,const IKGoal&,const ArrayMapping& activeDofs);
   int GetDOF(int dim) const;
   virtual std::string Label() const override;
@@ -207,8 +211,9 @@ struct IKGoalFunction : public VectorFieldFunction
  * An individual component of a RobotIKFunction.
  * Requres robot.q to be set, and the chain updated before PreEval is called.
  */
-struct RobotCOMFunction : public VectorFieldFunction
+class RobotCOMFunction : public VectorFieldFunction
 {
+public:
   RobotCOMFunction(RobotKinematics3D&,const Vector2& com,const ArrayMapping& activeDofs);
   int GetDOF(int dim) const;
   virtual std::string Label() const override;
@@ -231,8 +236,9 @@ struct RobotCOMFunction : public VectorFieldFunction
   DirtyData<Matrix> Hy;
 };
 
-struct RobotAffineConstraintFunction : public VectorFieldFunction
+class RobotAffineConstraintFunction : public VectorFieldFunction
 {
+public:
   RobotAffineConstraintFunction(const RobotKinematics3D& robot,
       const std::vector<int>& links,
       const std::vector<Real>& coeffs,

@@ -11,6 +11,7 @@ class Image
 public:
   Image();
   Image(const Image& img);
+  Image(Image&& rhs);
   virtual ~Image();
   
   const Image& operator = (const Image&);
@@ -47,10 +48,25 @@ public:
   ///makes this an easy way to convert formats.
   void blit(Image& dest, int sx = 0, int sy = 0, int w = -1, int h = -1, int dx = 0, int dy = 0) const;
 
-  inline unsigned int pixelSize() const { return pixelFormatSize(format); }  //size in bytes
-  inline unsigned int pixelBPP() const { return pixelSize()<<3; }
-  inline unsigned int pitch() const { return pixelSize()*w; }
+  inline unsigned int pixelSize() const { return pixelFormatSize(format); }  /// < # of bytes per pixel
+  inline unsigned int pixelBPP() const { return pixelSize()<<3; }   /// < # of bits per pixel
+  unsigned int pixelChannels() const;  /// < # of channels per pixel
+  inline unsigned int pitch() const { return pixelSize()*w; }   /// < # of bytes per row
   unsigned char* getData(int x, int y) const;   ///< x is the number of pixels from left to right, y is from top to bottom
+  ///Retrieves pixel color as an array of channels in range [0,1]. 
+  ///out must point to a buffer with pixelChannels() elements.
+  ///
+  ///For 1-channel formats, out[0] is set to that value. For 3-channel
+  ///formats, the channels 0,1,2 correspond to R,G,B values.  For 4-channel
+  ///formats, the channels 0,1,2,3 correspond to R,G,B,A values.
+  void getNormalizedColor(int x,int y,float* out) const;
+  ///Sets the color of a pixel from an array of channels in range [0,1].
+  ///col must point to a buffer with pixelChannels() elements.
+  ///
+  ///For 1-channel formats, col[0] is that value. For 3-channel
+  ///formats, the channels 0,1,2 correspond to R,G,B values.  For 4-channel
+  ///formats, the channels 0,1,2,3 correspond to R,G,B,A values.
+  void setNormalizedColor(int x,int y,const float* col);
 
   PixelFormat format;			///<format of image
   unsigned short w,h;			///<width and height, in pixels

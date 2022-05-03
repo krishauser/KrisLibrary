@@ -15,7 +15,7 @@
 
 using namespace std;
 
-static char* lsqr_term_msg[8] = {
+static const char* lsqr_term_msg[8] = {
   "The exact solution is x = x0",
   "The residual Ax - b is small enough, given ATOL and BTOL",
   "The least squares error is small enough, given ATOL",

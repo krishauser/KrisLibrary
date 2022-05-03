@@ -16,6 +16,12 @@
 #include <KrisLibrary/Timer.h>
 #include <memory.h>
 
+#ifdef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_MODE GL_CLAMP_TO_EDGE
+#else
+#define GL_CLAMP_MODE GL_CLAMP
+#endif //GL_CLAMP_TO_EDGE
+
 using namespace Geometry;
 namespace GLDraw {
 
@@ -448,22 +454,7 @@ void GeometryAppearance::Refresh()
 void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 {
   geom = &_geom;
-  if(geom->type == AnyGeometry3D::Primitive) {
-    Set(*geom);
-  }
-  else if(geom->type == AnyGeometry3D::ImplicitSurface) {
-    Set(*geom);
-  }
-  else if(geom->type == AnyGeometry3D::OccupancyGrid) {
-    Set(*geom);
-  }
-  else if(geom->type == AnyGeometry3D::PointCloud) {
-    Set(*geom);
-  }
-  else if(geom->type == AnyGeometry3D::ConvexHull) {
-    Set(*geom);
-  }
-  else if(geom->type == AnyGeometry3D::Group) {
+  if(geom->type == AnyGeometry3D::Group) {
     drawFaces = true;
     drawEdges = true;
     drawVertices = true;
@@ -475,7 +466,8 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
         bool iDrawFaces = subAppearances[i].drawFaces;
         bool iDrawEdges = subAppearances[i].drawEdges;
         bool iDrawVertices = subAppearances[i].drawVertices;
-        subAppearances[i].CopyMaterialFlat(*this);
+        if(subgeoms[i].appearanceData.empty())
+          subAppearances[i].CopyMaterialFlat(*this);
         subAppearances[i].drawFaces = iDrawFaces;
         subAppearances[i].drawEdges = iDrawEdges;
         subAppearances[i].drawVertices = iDrawVertices;
@@ -490,15 +482,17 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
         bool iDrawFaces = subAppearances[i].drawFaces;
         bool iDrawEdges = subAppearances[i].drawEdges;
         bool iDrawVertices = subAppearances[i].drawVertices;
-        subAppearances[i].CopyMaterialFlat(*this);
+        if(subgeoms[i].appearanceData.empty())
+          subAppearances[i].CopyMaterialFlat(*this);
         subAppearances[i].drawFaces = iDrawFaces;
         subAppearances[i].drawEdges = iDrawEdges;
         subAppearances[i].drawVertices = iDrawVertices;
       }
     }
   }
-  else
-    drawFaces = true;
+  else {
+    Set(*geom);
+  }
   collisionGeom = &_geom;
   Refresh();
 }
@@ -507,6 +501,10 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 {
   geom = &_geom;
   collisionGeom = NULL;
+  if(!_geom.appearanceData.empty()) {
+    const GeometryAppearance* app = AnyCast<GeometryAppearance>(&_geom.appearanceData);
+    CopyMaterial(*app);
+  }
   if(geom->type == AnyGeometry3D::Primitive) {
     const Math3D::GeometricPrimitive3D* g = &geom->AsPrimitive();
     drawFaces = true;
@@ -667,7 +665,8 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       bool iDrawFaces = subAppearances[i].drawFaces;
       bool iDrawEdges = subAppearances[i].drawEdges;
       bool iDrawVertices = subAppearances[i].drawVertices;
-      subAppearances[i].CopyMaterialFlat(*this);
+      if(subgeoms[i].appearanceData.empty())
+        subAppearances[i].CopyMaterialFlat(*this);
       subAppearances[i].drawFaces = iDrawFaces;
       subAppearances[i].drawEdges = iDrawEdges;
       subAppearances[i].drawVertices = iDrawVertices;
@@ -830,7 +829,7 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
         }
         else {
-          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+          glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP_MODE);
         }
         if(texFilterNearest) {
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -849,8 +848,8 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
         }
         else {
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_MODE);
+          glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_MODE);
         }
         if(texFilterNearest) {
           glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -1288,20 +1287,23 @@ void GeometryAppearance::DrawGL(Element e)
     }
   }
 
-  
-  //for group geometries
-  for(size_t i=0;i<subAppearances.size();i++) {
-    bool iDrawFaces=subAppearances[i].drawFaces;
-    bool iDrawEdges=subAppearances[i].drawEdges;
-    bool iDrawVertices=subAppearances[i].drawVertices;
-    subAppearances[i].CopyMaterialFlat(*this);
-    subAppearances[i].drawFaces = iDrawFaces && drawFaces;
-    subAppearances[i].drawEdges = iDrawEdges && drawEdges;
-    subAppearances[i].drawVertices = iDrawVertices && drawVertices;
-    subAppearances[i].DrawGL(e);
-    subAppearances[i].drawFaces = iDrawFaces;
-    subAppearances[i].drawEdges = iDrawEdges;
-    subAppearances[i].drawVertices = iDrawVertices;
+  if(!subAppearances.empty()) {
+    //for group geometries
+    const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom->AsGroup();
+    for(size_t i=0;i<subAppearances.size();i++) {
+      bool iDrawFaces=subAppearances[i].drawFaces;
+      bool iDrawEdges=subAppearances[i].drawEdges;
+      bool iDrawVertices=subAppearances[i].drawVertices;
+      if(subgeoms[i].appearanceData.empty())
+        subAppearances[i].CopyMaterialFlat(*this);
+      subAppearances[i].drawFaces = iDrawFaces && drawFaces;
+      subAppearances[i].drawEdges = iDrawEdges && drawEdges;
+      subAppearances[i].drawVertices = iDrawVertices && drawVertices;
+      subAppearances[i].DrawGL(e);
+      subAppearances[i].drawFaces = iDrawFaces;
+      subAppearances[i].drawEdges = iDrawEdges;
+      subAppearances[i].drawVertices = iDrawVertices;
+    }
   }
 }
 
