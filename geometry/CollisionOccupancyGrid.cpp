@@ -1,5 +1,6 @@
 #include "CollisionOccupancyGrid.h"
 #include "Conversions.h"
+#include "GridSubdivision.h"
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/utils/stl_tr1.h>
 #include <KrisLibrary/meshing/Voxelize.h>
@@ -63,7 +64,7 @@ Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real doma
             {0,1,0,  0,1,1,   1,1,1,  1,1,0}, //#+y
             {0,0,1,  1,0,1,   1,1,1,  0,1,1}, //#+z
         };
-        UNORDERED_MAP_TEMPLATE<IntTriple,int> vertexMap;
+        UNORDERED_MAP_TEMPLATE<IntTriple,int,IndexHash> vertexMap;
         while(!it.isDone()) {
             if(*it > 0) {
                 vector<int> faces;
