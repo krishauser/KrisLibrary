@@ -174,7 +174,7 @@ bool InequalityConstraint::Push_i(Vector& x,int i,Real d)
 {
   std::shared_ptr<ScalarFieldFunction> p(new VectorFieldProjectionFunction(*this,i));
   std::shared_ptr<RealFunction> add_d(new LinearFunction(One,-d-kPushDTolerance*Half));
-  ComposeScalarFieldFunction fd(add_d,p);
+  ComposeScalarFieldFunction fd(add_d.get(),p.get());
   int iters=kPushMaxIters;
   ConvergenceResult res=Root_Newton(fd,x,x,iters,kPushXTolerance,kPushDTolerance*Half);
   Real dtrue = (*p)(x);
