@@ -21,7 +21,7 @@ void QNHessianUpdater::MakePositiveDefinite(Real resetValue)
   Vector d;
   ldl.LDL.getDiagRef(0,d);
   if(d.minElement() <= 0) {
-    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain positive definiteness of hessian!");
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"QuasiNewton: Unable to maintain positive definiteness of hessian in MakePositiveDefinite!");
     for(int i=0;i<d.n;i++)
 if(d(i) < tolerance) d(i) = resetValue;
     //return ConvergenceError;
@@ -48,7 +48,7 @@ bool QNHessianUpdater::UpdateBFGS(const Vector& s,const Vector& q)
   Assert(sHs > 0);
   upd.div(Hs,Sqrt(sHs));
   if(!ldl.downdate(upd)) {
-    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain strict positive definiteness of hessian!");
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"QuasiNewton: Unable to maintain strict positive definiteness of hessian in BFGS!");
     ldl.LDL = tempLDL;
     return false;
   }
@@ -79,7 +79,7 @@ bool QNHessianUpdater::UpdateDFS(const Vector& s,const Vector& q)
   Assert(qHq > 0);
   upd.div(Hq,Sqrt(qHq));
   if(!ldl.downdate(upd)) {
-    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain strict positive definiteness of hessian!");
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"QuasiNewton: Unable to maintain strict positive definiteness of hessian in DFS!");
     ldl.LDL = tempLDL;
     return false;
   }
@@ -88,7 +88,7 @@ bool QNHessianUpdater::UpdateDFS(const Vector& s,const Vector& q)
   Vector d;
   ldl.LDL.getDiagRef(0,d);
   if(d.minElement() <= 0) {
-    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain positive definiteness of hessian!");
+    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"QuasiNewton: Unable to maintain positive definiteness of hessian in DFS!");
     for(int i=0;i<d.n;i++)
 if(d(i) < tolerance) d(i) = 1;
     //return ConvergenceError;
