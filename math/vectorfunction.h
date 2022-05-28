@@ -4,8 +4,8 @@
 #include "function.h"
 #include "vector.h"
 #include "matrix.h"
-#include <memory>
 #include <vector>
+#include <memory>
 #include <assert.h>
 
 /** @ingroup Math
@@ -199,7 +199,7 @@ public:
 class ComposeScalarFieldFunction : public ScalarFieldFunction
 {
 public:
-  ComposeScalarFieldFunction(std::shared_ptr<RealFunction> _f,std::shared_ptr<ScalarFieldFunction> _g) : f(_f), g(_g) {}
+  ComposeScalarFieldFunction(RealFunction* _f,ScalarFieldFunction* _g) : f(_f), g(_g) {}
   virtual std::string Label() const override;
   virtual void PreEval(const Vector& x) override;
   virtual Real Eval(const Vector& x) override { return f->Eval(gx); }
@@ -208,8 +208,8 @@ public:
   virtual void Hessian(const Vector& x,Matrix& H) override;
   virtual Real Hessian_ij(const Vector& x,int i,int j) override; 
  
-  std::shared_ptr<RealFunction> f;
-  std::shared_ptr<ScalarFieldFunction> g;
+  RealFunction* f;
+  ScalarFieldFunction* g;
   //temp
   Real gx;
 };
@@ -268,7 +268,7 @@ class LinearVectorFieldFunction : public VectorFieldFunction
 class Compose_SF_VF_Function : public ScalarFieldFunction
 {
 public:
-  Compose_SF_VF_Function(std::shared_ptr<ScalarFieldFunction> _f,std::shared_ptr<VectorFieldFunction> _g) : f(_f), g(_g) {}
+  Compose_SF_VF_Function(ScalarFieldFunction* _f,VectorFieldFunction* _g) : f(_f), g(_g) {}
   virtual std::string Label() const override;
   virtual void PreEval(const Vector& x) override;
   virtual Real Eval(const Vector& x) override { return f->Eval(gx); }
@@ -277,8 +277,8 @@ public:
   virtual void Hessian(const Vector& x,Matrix& H) override;
   virtual Real Hessian_ij(const Vector& x,int i,int j) override;
   
-  std::shared_ptr<ScalarFieldFunction> f;
-  std::shared_ptr<VectorFieldFunction> g;
+  ScalarFieldFunction* f;
+  VectorFieldFunction* g;
   //temp
   Vector gx;
   Vector gradf;
@@ -289,7 +289,7 @@ public:
 class Compose_VF_VF_Function : public VectorFieldFunction
 {
 public:
-  Compose_VF_VF_Function(std::shared_ptr<VectorFieldFunction> _f,std::shared_ptr<VectorFieldFunction> _g) : f(_f), g(_g) {}
+  Compose_VF_VF_Function(VectorFieldFunction* _f,VectorFieldFunction* _g) : f(_f), g(_g) {}
   virtual std::string Label() const;
   virtual void PreEval(const Vector& x) override;
   virtual void Eval(const Vector& x,Vector& v) override { f->Eval(gx,v); }
@@ -298,8 +298,8 @@ public:
   virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override;
   virtual void Jacobian_j(const Vector& x,int j,Vector& Jj) override;
  
-  std::shared_ptr<VectorFieldFunction> f;
-  std::shared_ptr<VectorFieldFunction> g;
+  VectorFieldFunction* f;
+  VectorFieldFunction* g;
   Vector gx;
   Matrix Jg,Jf;
 };
