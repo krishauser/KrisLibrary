@@ -149,6 +149,7 @@ void Viewport::getClickVector(float mx, float my, Vector3& v) const
 
 		Vector3 xb(xDir()), yb(yDir());
 		v += (mx*xb + my*yb)/(w*scale);
+		v.inplaceNormalize();
 	}
 }
 

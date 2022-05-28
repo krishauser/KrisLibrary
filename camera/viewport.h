@@ -41,9 +41,11 @@ public:
 	///direction
 	void getMovementVectorAtDistance(float dx, float dy, float dist, Vector3&) const;
 	
-	///find the point/direction on the image plane corresponding to a
-	///screen space point
+	///find the direction on the image plane corresponding to a
+	///screen space point.  In world space.  Note: vector is normalized.
 	void getClickVector(float mx, float my, Vector3&) const;
+	///find the point on the image plane corresponding to a
+	///screen space point.  In world space.
 	void getClickSource(float mx, float my, Vector3&) const;
 
 	///Computes the screen coordinates of a point pt in world space.
