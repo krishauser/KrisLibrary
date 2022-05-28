@@ -29,11 +29,11 @@ class ScalarFieldDirectionalFunction : public RealFunction
 {
 public:
   ScalarFieldDirectionalFunction(ScalarFieldFunction& _f,const Vector& x,const Vector& n,bool ref=false);
-  virtual std::string Label() const;
-  virtual void PreEval(Real t);
-  virtual Real Eval(Real t);
-  virtual Real Deriv(Real t);
-  virtual Real Deriv2(Real t);
+  virtual std::string Label() const override;
+  virtual void PreEval(Real t) override;
+  virtual Real Eval(Real t) override;
+  virtual Real Deriv(Real t) override;
+  virtual Real Deriv2(Real t) override;
   virtual const Vector& LastEvaluation() const { return tmp; }
 
 private:
@@ -53,11 +53,11 @@ class ScalarFieldProjectionFunction : public RealFunction
 {
 public:
   ScalarFieldProjectionFunction(ScalarFieldFunction& f,const Vector& x,int i);
-  virtual std::string Label() const;
-  virtual void PreEval(Real t);
-  virtual Real Eval(Real t);
-  virtual Real Deriv(Real t);
-  virtual Real Deriv2(Real t);
+  virtual std::string Label() const override;
+  virtual void PreEval(Real t) override;
+  virtual Real Eval(Real t) override;
+  virtual Real Deriv(Real t) override;
+  virtual Real Deriv2(Real t) override;
 
 private:
   ScalarFieldFunction* f;
@@ -83,12 +83,12 @@ public:
     }
   }
 
-  virtual std::string Label() const { return "<a^t*x+b>"; }
-  virtual Real Eval(const Vector& x) { return a.dot(x)+b; }
-  virtual void Gradient(const Vector& x,Vector& grad) { grad = a; }
-  virtual Real Gradient_i(const Vector& x,int i) { return a(i); }
-  virtual void Hessian(const Vector& x,Matrix& H) { H.setZero(); }
-  virtual Real Hessian_ij(const Vector& x,int i,int j) { return 0; }
+  virtual std::string Label() const override { return "<a^t*x+b>"; }
+  virtual Real Eval(const Vector& x) override { return a.dot(x)+b; }
+  virtual void Gradient(const Vector& x,Vector& grad) override { grad = a; }
+  virtual Real Gradient_i(const Vector& x,int i) override { return a(i); }
+  virtual void Hessian(const Vector& x,Matrix& H) override { H.setZero(); }
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override { return 0; }
 
   Vector a;
   Real b;
@@ -112,18 +112,18 @@ class QuadraticScalarFieldFunction : public ScalarFieldFunction
       c=_c;
     }
   }
-  virtual std::string Label() const { return "[0.5*x'Ax+bx+c]"; }
-  virtual void PreEval(const Vector& x) { A.mul(x,Ax); }
-  virtual Real Eval(const Vector& x) { return Half*x.dot(Ax) + x.dot(b) + c; }
-  virtual void Gradient(const Vector& x,Vector& grad) 
+  virtual std::string Label() const override { return "[0.5*x'Ax+bx+c]"; }
+  virtual void PreEval(const Vector& x) override { A.mul(x,Ax); }
+  virtual Real Eval(const Vector& x) override { return Half*x.dot(Ax) + x.dot(b) + c; }
+  virtual void Gradient(const Vector& x,Vector& grad)  override
   { grad.add(Ax,b); }
-  virtual Real Gradient_i(const Vector& x,int i)
+  virtual Real Gradient_i(const Vector& x,int i) override
   { return Ax(i) + b(i); }
-  virtual Real DirectionalDeriv(const Vector& x,const Vector& h)
+  virtual Real DirectionalDeriv(const Vector& x,const Vector& h) override
   { return Ax.dot(h) + b.dot(h); }
-  virtual void Hessian(const Vector& x,Matrix& H) { H = A; }
-  virtual Real Hessian_ij(const Vector& x,int i,int j) { return A(i,j); }
-  virtual Real DirectionalDeriv2(const Vector& x,const Vector& h)
+  virtual void Hessian(const Vector& x,Matrix& H) override { H = A; }
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override { return A(i,j); }
+  virtual Real DirectionalDeriv2(const Vector& x,const Vector& h) override
   { Real sum = 0;
     for(int i=0;i<A.m;i++) sum += h(i)*A.dotRow(i,h);
     return sum;
@@ -139,25 +139,25 @@ class QuadraticScalarFieldFunction : public ScalarFieldFunction
 /// A scalar field ||x||^2
 struct NormSquaredScalarFieldFunction : public ScalarFieldFunction
 {
-  virtual std::string Label() const { return "<|x|^2>"; }
-  virtual Real Eval(const Vector& x) { return x.normSquared(); }
-  virtual void Gradient(const Vector& x,Vector& grad) { grad.add(x,x); }
-  virtual Real Gradient_i(const Vector& x,int i) { return Two*x(i); }
-  virtual void Hessian(const Vector& x,Matrix& H) { H.setIdentity(); H.inplaceMul(Two); }
-  virtual Real Hessian_ij(const Vector& x,int i,int j) { return Two*Delta(i,j); }
+  virtual std::string Label() const override { return "<|x|^2>"; }
+  virtual Real Eval(const Vector& x) override { return x.normSquared(); }
+  virtual void Gradient(const Vector& x,Vector& grad) override { grad.add(x,x); }
+  virtual Real Gradient_i(const Vector& x,int i) override { return Two*x(i); }
+  virtual void Hessian(const Vector& x,Matrix& H) override { H.setIdentity(); H.inplaceMul(Two); }
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override { return Two*Delta(i,j); }
 };
 
 /// A scalar field for the L-d norm, where d is passed into the constructor
 struct NormScalarFieldFunction : public ScalarFieldFunction
 {
   NormScalarFieldFunction(Real _degree=Two) : degree(_degree) {}
-  virtual std::string Label() const;
-  virtual void PreEval(const Vector& x);
-  virtual Real Eval(const Vector& x);
-  virtual void Gradient(const Vector& x,Vector& grad);
-  virtual Real Gradient_i(const Vector& x,int i);
-  virtual void Hessian(const Vector& x,Matrix& H);
-  virtual Real Hessian_ij(const Vector& x,int i,int j);
+  virtual std::string Label() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual Real Eval(const Vector& x) override;
+  virtual void Gradient(const Vector& x,Vector& grad) override;
+  virtual Real Gradient_i(const Vector& x,int i) override;
+  virtual void Hessian(const Vector& x,Matrix& H) override;
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override;
 
   Real degree;
   Real norm;
@@ -168,12 +168,12 @@ class MinimumScalarFieldFunction : public ScalarFieldFunction
 {
 public:
   virtual std::string Label() const { return "<min_i xi>"; }
-  virtual void PreEval(const Vector& x);
-  virtual Real Eval(const Vector& x);
-  virtual void Gradient(const Vector& x,Vector& grad);
-  virtual Real Gradient_i(const Vector& x,int i);
-  virtual void Hessian(const Vector& x,Matrix& H) { H.setZero(); }
-  virtual Real Hessian_ij(const Vector& x,Matrix& H) { return Zero; }
+  virtual void PreEval(const Vector& x) override;
+  virtual Real Eval(const Vector& x) override;
+  virtual void Gradient(const Vector& x,Vector& grad) override;
+  virtual Real Gradient_i(const Vector& x,int i) override;
+  virtual void Hessian(const Vector& x,Matrix& H) override { H.setZero(); }
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override { return Zero; }
 
   Real xmin;
   int index;
@@ -184,12 +184,12 @@ class MaximumScalarFieldFunction : public ScalarFieldFunction
 {
 public:
   virtual std::string Label() const { return "<max_i xi>"; }
-  virtual void PreEval(const Vector& x);
-  virtual Real Eval(const Vector& x);
-  virtual void Gradient(const Vector& x,Vector& grad);
-  virtual Real Gradient_i(const Vector& x,int i);
-  virtual void Hessian(const Vector& x,Matrix& H) { H.setZero(); }
-  virtual Real Hessian_ij(const Vector& x,Matrix& H) { return Zero; }
+  virtual void PreEval(const Vector& x) override;
+  virtual Real Eval(const Vector& x) override;
+  virtual void Gradient(const Vector& x,Vector& grad) override;
+  virtual Real Gradient_i(const Vector& x,int i) override;
+  virtual void Hessian(const Vector& x,Matrix& H) override { H.setZero(); }
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override { return Zero; }
 
   Real xmax;
   int index;
@@ -200,13 +200,13 @@ class ComposeScalarFieldFunction : public ScalarFieldFunction
 {
 public:
   ComposeScalarFieldFunction(std::shared_ptr<RealFunction> _f,std::shared_ptr<ScalarFieldFunction> _g) : f(_f), g(_g) {}
-  virtual std::string Label() const;
-  virtual void PreEval(const Vector& x);
-  virtual Real Eval(const Vector& x) { return f->Eval(gx); }
-  virtual void Gradient(const Vector& x,Vector& grad);
-  virtual Real Gradient_i(const Vector& x,int i);
-  virtual void Hessian(const Vector& x,Matrix& H);
-  virtual Real Hessian_ij(const Vector& x,int i,int j); 
+  virtual std::string Label() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual Real Eval(const Vector& x) override { return f->Eval(gx); }
+  virtual void Gradient(const Vector& x,Vector& grad) override;
+  virtual Real Gradient_i(const Vector& x,int i) override;
+  virtual void Hessian(const Vector& x,Matrix& H) override;
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override; 
  
   std::shared_ptr<RealFunction> f;
   std::shared_ptr<ScalarFieldFunction> g;
@@ -229,7 +229,7 @@ public:
     curl(1)=Jacobian_ij(x,0,2)-Jacobian_ij(x,2,0);
     curl(2)=Jacobian_ij(x,1,0)-Jacobian_ij(x,0,1);
   }
-  virtual int NumDimensions() const { return 3; }
+  virtual int NumDimensions() const override { return 3; }
 };
 
 /// A linear vector field Ax+b
@@ -248,17 +248,17 @@ class LinearVectorFieldFunction : public VectorFieldFunction
       b=_b;
     }
   }
-  virtual std::string Label() const { return "[A*x+b]"; }
-  virtual int NumDimensions() const { return A.m; }
-  virtual void Eval(const Vector& x,Vector& v) { A.mul(x,v); v+=b;  }
-  virtual Real Eval_i(const Vector& x,int i) { return A.dotRow(i,x)+b(i); }
-  virtual Real Jacobian_ij(const Vector& x,int i,int j) { return A(i,j); }
-  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) { A.getRowCopy(i,Ji); }
-  virtual void Jacobian_j(const Vector& x,int j,Vector& Jj) { A.getColCopy(j,Jj); }
-  virtual void Jacobian(const Vector& x,Matrix& J) { J=A; }
-  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v) { A.mul(h,v); }
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) { Hi.setZero(); }
-  virtual Real Hessian_ijk(const Vector& x,int i,int j,int k) { return 0; }
+  virtual std::string Label() const override { return "[A*x+b]"; }
+  virtual int NumDimensions() const override { return A.m; }
+  virtual void Eval(const Vector& x,Vector& v) override { A.mul(x,v); v+=b;  }
+  virtual Real Eval_i(const Vector& x,int i) override { return A.dotRow(i,x)+b(i); }
+  virtual Real Jacobian_ij(const Vector& x,int i,int j) override { return A(i,j); }
+  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override { A.getRowCopy(i,Ji); }
+  virtual void Jacobian_j(const Vector& x,int j,Vector& Jj) override { A.getColCopy(j,Jj); }
+  virtual void Jacobian(const Vector& x,Matrix& J) override { J=A; }
+  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v) override { A.mul(h,v); }
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override { Hi.setZero(); }
+  virtual Real Hessian_ijk(const Vector& x,int i,int j,int k) override { return 0; }
 
   Matrix A;
   Vector b;
@@ -269,13 +269,13 @@ class Compose_SF_VF_Function : public ScalarFieldFunction
 {
 public:
   Compose_SF_VF_Function(std::shared_ptr<ScalarFieldFunction> _f,std::shared_ptr<VectorFieldFunction> _g) : f(_f), g(_g) {}
-  virtual std::string Label() const;
-  virtual void PreEval(const Vector& x);
-  virtual Real Eval(const Vector& x) { return f->Eval(gx); }
-  virtual void Gradient(const Vector& x,Vector& grad);
-  virtual Real Gradient_i(const Vector& x,int i);
-  virtual void Hessian(const Vector& x,Matrix& H);
-  virtual Real Hessian_ij(const Vector& x,int i,int j);
+  virtual std::string Label() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual Real Eval(const Vector& x) override { return f->Eval(gx); }
+  virtual void Gradient(const Vector& x,Vector& grad) override;
+  virtual Real Gradient_i(const Vector& x,int i) override;
+  virtual void Hessian(const Vector& x,Matrix& H) override;
+  virtual Real Hessian_ij(const Vector& x,int i,int j) override;
   
   std::shared_ptr<ScalarFieldFunction> f;
   std::shared_ptr<VectorFieldFunction> g;
@@ -286,17 +286,17 @@ public:
 };
 
 /// A vector field function h(x) = f(g(x)) (f,g vector fields)
-class Compose_VF_VF_Function : public ScalarFieldFunction
+class Compose_VF_VF_Function : public VectorFieldFunction
 {
 public:
   Compose_VF_VF_Function(std::shared_ptr<VectorFieldFunction> _f,std::shared_ptr<VectorFieldFunction> _g) : f(_f), g(_g) {}
   virtual std::string Label() const;
-  virtual void PreEval(const Vector& x);
-  virtual void Eval(const Vector& x,Vector& v) { f->Eval(gx,v); }
-  virtual Real Eval_i(const Vector& x,int i) { return f->Eval_i(gx,i); }
-  virtual void Jacobian(const Vector& x,Matrix& J);
-  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji);
-  virtual void Jacobian_j(const Vector& x,int j,Vector& Jj);
+  virtual void PreEval(const Vector& x) override;
+  virtual void Eval(const Vector& x,Vector& v) override { f->Eval(gx,v); }
+  virtual Real Eval_i(const Vector& x,int i) override { return f->Eval_i(gx,i); }
+  virtual void Jacobian(const Vector& x,Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override;
+  virtual void Jacobian_j(const Vector& x,int j,Vector& Jj) override;
  
   std::shared_ptr<VectorFieldFunction> f;
   std::shared_ptr<VectorFieldFunction> g;
@@ -309,16 +309,16 @@ public:
 class ComponentVectorFieldFunction : public VectorFieldFunction
 {
 public:
-  virtual std::string Label() const;
-  virtual std::string Label(int i) const;
-  virtual int NumDimensions() const;
-  virtual void PreEval(const Vector& x);
-  virtual void Eval(const Vector& x, Vector& v);
-  virtual Real Eval_i(const Vector& x,int i);
-  virtual void Jacobian(const Vector& x,Matrix& J);
-  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji);
-  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override;
+  virtual std::string Label(int i) const override;
+  virtual int NumDimensions() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual void Eval(const Vector& x, Vector& v) override;
+  virtual Real Eval_i(const Vector& x,int i) override;
+  virtual void Jacobian(const Vector& x,Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override;
+  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v) override;
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   std::vector<std::shared_ptr<ScalarFieldFunction> > functions;
 };
@@ -328,10 +328,10 @@ class VectorFieldProjectionFunction : public ScalarFieldFunction
 {
 public:
   VectorFieldProjectionFunction(VectorFieldFunction& f,int i);
-  virtual std::string Label() const;
-  virtual void PreEval(const Vector& x) { f->PreEval(x); }
-  virtual Real Eval(const Vector& x);
-  virtual void Gradient(const Vector& x,Vector& grad);
+  virtual std::string Label() const override;
+  virtual void PreEval(const Vector& x) override { f->PreEval(x); }
+  virtual Real Eval(const Vector& x) override;
+  virtual void Gradient(const Vector& x,Vector& grad) override;
 
 private:
   VectorFieldFunction* f;
@@ -347,16 +347,16 @@ public:
   CompositeVectorFieldFunction();
   CompositeVectorFieldFunction(std::shared_ptr<VectorFieldFunction> f1,std::shared_ptr<VectorFieldFunction>& f2);
   CompositeVectorFieldFunction(const std::vector<std::shared_ptr<VectorFieldFunction> >& fs);
-  virtual std::string Label() const;
-  virtual std::string Label(int i) const;
-  virtual int NumDimensions() const;
-  virtual void PreEval(const Vector& x);
-  virtual void Eval(const Vector& x, Vector& v);
-  virtual Real Eval_i(const Vector& x,int i);
-  virtual void Jacobian(const Vector& x,Matrix& J);
-  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji);
-  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override;
+  virtual std::string Label(int i) const override;
+  virtual int NumDimensions() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual void Eval(const Vector& x, Vector& v) override;
+  virtual Real Eval_i(const Vector& x,int i) override;
+  virtual void Jacobian(const Vector& x,Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override;
+  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v) override;
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   int GetFunction(int &i) const;
 
