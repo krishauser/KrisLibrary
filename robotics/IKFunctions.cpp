@@ -8,6 +8,7 @@
 #include <math/misc.h>
 #include <math3d/misc.h>
 #include <math3d/basis.h>
+#include <optimization/Minimization.h>
 #include <iostream>
 #include <sstream>
 #include <set>
@@ -1052,6 +1053,61 @@ bool RobotIKSolver::Solve(Real tolerance,int& iters)
   return res;
 }
 
+
+bool RobotIKSolver::MinimizeResidual(Real tolerance,Real delta_tolerance,int& iters)
+{
+  RobotToState();
+  NormSquaredScalarFieldFunction h;
+  Compose_SF_VF_Function gnorm(&h,&function);
+  Optimization::BCMinimizationProblem problem(&gnorm);
+  problem.verbose = solver.verbose;
+  problem.bmin = solver.bmin;
+  problem.bmax = solver.bmax;
+  //approximate hessian with J^T*J + 0.1*I
+  function.SetState(solver.x);
+  Matrix J;
+  function.Jacobian(solver.x,J);
+  problem.H.mulTransposeA(J,J);
+  problem.H *= 2;
+  for(int i=0;i<solver.x.n;i++)
+    problem.H(i,i) += 0.1;
+  problem.tolf = Sqr(tolerance); //squared tolerance
+  problem.tolx = tolerance*0.01;
+  problem.tolgrad = delta_tolerance;
+  problem.x = solver.x;
+  ConvergenceResult res = problem.SolveQuasiNewton(iters);
+  solver.x = problem.x;
+  StateToRobot();
+  if(problem.fx <= Sqr(tolerance)) return true;
+  return false;
+}
+
+bool RobotIKSolver::PrioritizedSolve(ScalarFieldFunction& objective,Real tolerance,Real delta_tolerance,int& iters)
+{
+  int maxiters = iters;
+  if(!MinimizeResidual(tolerance,delta_tolerance,iters)) return false;
+  if(iters==maxiters) return false;
+  //iters was the # of iterations used
+  int iters_minimize = iters;
+  iters = maxiters - iters_minimize;
+  //RobotToState();  // not needed: solver.x already contains solution
+  Optimization::ConstrainedMinimizationProblem problem(&objective,&function,NULL);
+  problem.verbose = solver.verbose;
+  problem.bmin = solver.bmin;
+  problem.bmax = solver.bmax;
+  problem.tolc = tolerance;
+  problem.tolx = tolerance*0.01;
+  problem.tolgrad = delta_tolerance;
+  problem.x = solver.x;
+  //ConvergenceResult res = problem.SolveAugmentedLangrangian(iters);
+  ConvergenceResult res = problem.SolveSQP(iters);
+  solver.x = problem.x;
+  iters += iters_minimize;
+  StateToRobot();
+  if(problem.fx <= Sqr(tolerance)) return true;
+  return false;
+}
+
 void RobotIKSolver::PrintStats()
 {
   /*
@@ -1125,7 +1181,7 @@ bool SolveIK(RobotIKFunction& f,
 	     Real tolerance,int& iters,int verbose)
 {
   if(verbose >= 1) {
-    LOG4CXX_INFO(KrisLibrary::logger(),"SolveIK(tol="<<tolerance<<",iters="<<iters);
+    LOG4CXX_INFO(KrisLibrary::logger(),"SolveIK(tol="<<tolerance<<",iters="<<iters<<")");
     Timer timer;
     RobotIKSolver solver(f);
     solver.UseJointLimits(TwoPi);
@@ -1175,6 +1231,72 @@ bool SolvePassiveChainIK(RobotKinematics3D& robot,const IKGoal& goal,
   function.UseIK(goal);
   GetPassiveChainDOFs(robot,goal,function.activeDofs);
   return SolveIK(function,tolerance,iters,verbose);
+}
+
+
+bool MinimizeIK(RobotIKFunction& f,
+	     Real tolerance,Real delta_tolerance,int& iters,int verbose)
+{
+  if(verbose >= 1) {
+    LOG4CXX_INFO(KrisLibrary::logger(),"MinimizeIK(tol="<<tolerance<<",delta_tol="<<delta_tolerance<<"iters="<<iters<<")");
+    Timer timer;
+    RobotIKSolver solver(f);
+    solver.UseJointLimits(TwoPi);
+    solver.solver.verbose = verbose;
+    if(solver.MinimizeResidual(tolerance,delta_tolerance,iters)) {
+      LOG4CXX_INFO(KrisLibrary::logger(),"    Succeeded! "<< timer.ElapsedTime());
+      if(verbose >= 2) solver.PrintStats();
+      return true;
+    }
+    else {
+      LOG4CXX_INFO(KrisLibrary::logger(),"    Failed... "<< timer.ElapsedTime());
+      if(verbose >= 2) solver.PrintStats();
+      return false;
+    }
+  }
+  else {
+    RobotIKSolver solver(f);
+    solver.UseJointLimits(TwoPi);
+    solver.solver.verbose = verbose;
+    return solver.MinimizeResidual(tolerance,delta_tolerance,iters);
+  }
+}
+
+
+bool PrioritizedIK(RobotIKFunction& f,VectorFieldFunction& g,
+       Real tolerance,Real delta_tolerance,int& iters,int verbose)
+{
+  NormSquaredScalarFieldFunction h;
+  Compose_SF_VF_Function gnorm(&h,&g);
+  return PrioritizedIK(f,gnorm,tolerance,delta_tolerance,iters,verbose);
+}
+
+bool PrioritizedIK(RobotIKFunction& f,ScalarFieldFunction& g,
+       Real tolerance,Real delta_tolerance,int& iters,int verbose)
+{
+    if(verbose >= 1) {
+    LOG4CXX_INFO(KrisLibrary::logger(),"MinimizeIK(tol="<<tolerance<<",delta_tol="<<delta_tolerance<<"iters="<<iters<<")");
+    Timer timer;
+    RobotIKSolver solver(f);
+    solver.UseJointLimits(TwoPi);
+    solver.solver.verbose = verbose;
+    if(solver.PrioritizedSolve(g,tolerance,delta_tolerance,iters)) {
+      LOG4CXX_INFO(KrisLibrary::logger(),"    Succeeded! "<< timer.ElapsedTime());
+      if(verbose >= 2) solver.PrintStats();
+      return true;
+    }
+    else {
+      LOG4CXX_INFO(KrisLibrary::logger(),"    Failed... "<< timer.ElapsedTime());
+      if(verbose >= 2) solver.PrintStats();
+      return false;
+    }
+  }
+  else {
+    RobotIKSolver solver(f);
+    solver.UseJointLimits(TwoPi);
+    solver.solver.verbose = verbose;
+    return solver.PrioritizedSolve(g,tolerance,delta_tolerance,iters);
+  }
 }
 
 
