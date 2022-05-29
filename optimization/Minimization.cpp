@@ -247,7 +247,7 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
   return MaxItersReached;
 }
 
-ConvergenceResult MinimizationProblem::SolveLM(int& iters,Real lambda0,Real lambdaScale)
+ConvergenceResult MinimizationProblem::SolveLM(int& iters,Real lambda0,Real lambdaGrow,Real lambdaShrink)
 {
   Real lambda=lambda0;
   grad.resize(x.n);
@@ -287,14 +287,14 @@ ConvergenceResult MinimizationProblem::SolveLM(int& iters,Real lambda0,Real lamb
     if(dx.maxAbsElement() < tolx) return ConvergenceX;
     if(fx < fx0) {
       tookStep=true;
-      lambda /= lambdaScale;
+      lambda /= lambdaShrink;
     }
     else {
       tookStep=false;
       x = x0;
       fx = fx0;
       H.copyDiag(0,diagH); 
-      lambda *= lambdaScale;
+      lambda *= lambdaGrow;
     }
   }
   return MaxItersReached;
@@ -435,7 +435,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
       if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"BCMinimizationProblem::SolveQuasiNewton(): Warning, hessian direction opposes gradient on step "<<iters);
       //dx.setNegative(grad);
     }
-    grad.inplaceNegative();
+    dx.inplaceNegative();
 
     x0 = x;
     grad0 = grad;
@@ -493,10 +493,8 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
 
 ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& alpha0)
 {
-  if(alpha0 != 1) {
-    if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"BCMinimizationProblem::LineMinimizationStep(): Warning, alpha0 is set to something other than 1");
-  }
-  Assert(AABBContains(x,bmin,bmax));
+  if(!AABBContains(x,bmin,bmax)) 
+    LOG4CXX_ERROR(KrisLibrary::logger(),"BCMinimizationProblem::LineMinimizationStep(): Initial state not in bounds?")
   activeSet.resize(x.n);
   for(int i=0;i<dx.n;i++) {
     if(FuzzyEquals(x(i),bmin(i),boundEpsilon) ||
@@ -509,649 +507,352 @@ ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& a
     //free an index if the direction opposes the constraint direction
     if(!activeSet[i]) {
       if(FuzzyEquals(x(i),bmin(i),boundEpsilon)) {
-	if(dx(i) > 0) activeSet[i] = false;
+        if(dx(i) > 0) {
+          //printf("Freeing x[%d], dx=%f > 0\n",i,dx(i));
+          activeSet[i] = true;
+        }
       }
       else {
-	Assert(FuzzyEquals(x(i),bmax(i),boundEpsilon));
-	if(dx(i) < 0) activeSet[i] = false;
+        Assert(FuzzyEquals(x(i),bmax(i),boundEpsilon));
+        if(dx(i) < 0) {
+          //printf("Freeing x[%d], dx=%f < 0\n",i,dx(i));
+          activeSet[i] = true;
+        }
       }
     }
     if(!activeSet[i])
       dx(i) = 0;
   }
-  Real fx0=fx;
-  Real t=ParabolicLineMinimization(*f,x,dx,kLineMinMaxIters,tolx);
-  AABBLineSearch(x,dx,bmin,bmax,t);
-  alpha0 = t;
-  x.madd(dx,t);
-  if(S) S->push_back(x);
-  fx = (*f)(x);
-
   //termination criteria
-  Real normdx = dx.maxAbsElement();
-  if(normdx <= tolgrad) 
+  Real normdx = Norm_LInf(dx);
+  if(normdx <= tolgrad) {
+    //printf("Converged on f: |dx|=%f\n",normdx);
     return ConvergenceF;
-  if(normdx*Abs(t) <= tolx)
-    return ConvergenceX;
-  if(Abs(fx0-fx) < tolf)
-    return ConvergenceF;
+  }
+  
+  //start line search
+  Real fx0=fx;
+  Vector x0 = x;
+  Real t=alpha0;
+  AABBLineSearch(x,dx,bmin,bmax,t);
+  //printf("Fx0 = %f\n",fx0);
+
   if(normdx*Abs(t) > 1e8)
     return Divergence;
+  for(int lineSearchIters=0;;lineSearchIters++) {
+    if(normdx*Abs(t) <= tolx)
+      return ConvergenceX;
+    x = x0;
+    x.madd(dx,t);
+    fx = (*f)(x);
+    //printf("Exploring line search alpha %f, step size %f, fx %f\n",t,normdx*t,fx);
+    if(fx < fx0) break; //accept step
+    t *= 0.5;
+  }
+  //decide how to modify alpha
+  if(alpha0 == t) alpha0 = t*2.5;
+  else alpha0 = t;
+
+  if(S) S->push_back(x);
+  if(Abs(fx0-fx) < tolf)
+      return ConvergenceF;
+
   return MaxItersReached;
 }
 
 
 
-#if 0
-
-
-/*
-ConstrainedMinimizationProblem::ConstrainedMinimizationProblem(ScalarFieldFunction* _f,ImplicitManifold* M)
-  :f(_f),C(M->C),D(M->D),
-   tolx(1e-7),tolf(1e-5),tolgrad(1e-8),tolc(M->ctol),
-   verbose(1),S(NULL),rootSolver(M->C,M->D)
-{
-  if(!M->bmin.isEmpty()) {
-    bmin.setRef(M->bmin);
-    bmax.setRef(M->bmax);
-  }
-}
-*/
 
 ConstrainedMinimizationProblem::ConstrainedMinimizationProblem(ScalarFieldFunction* _f,VectorFieldFunction*_c,VectorFieldFunction*_d)
   :f(_f),C(_c),D(_d),
-   tolx(1e-7),tolf(1e-5),tolgrad(1e-8),tolc(1e-6),sparse(false),
-   verbose(1),S(NULL),rootSolver(_c,_d)
+   tolx(1e-7),tolf(1e-5),tolgrad(1e-8),tolc(1e-6),
+   innerIters(2),augmentedLagrangianProblem(_f),
+   verbose(1),S(NULL)
 {
 }
 
-bool ConstrainedMinimizationProblem::CheckPoint(const Vector& x) const
+
+ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int& iters)
 {
-  if(C&&!SatisfiesEquality(C,x,tolc)) {
-    if(verbose>=1) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::Solve(): Error, initial point\n    doesn't satisfy equality constraints");
-      Vector v(C->NumDimensions());
-      (*C)(x,v);
-      int index;
-      Real max=v.maxAbsElement(&index);
-      LOG4CXX_ERROR(KrisLibrary::logger(),"    Error "<<max<<" at "<<C->Label(index)<<" exceeds threshold "<<tolc);
-    }
-    return false;
-  }
-  if(D&&!SatisfiesInequality(D,x,Zero)) {
-    if(verbose>=1) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::Solve(): Error, initial point\n    doesn't satisfy inequality constraints");
-      Vector v(D->NumDimensions());
-      (*D)(x,v);
-      int index;
-      Real max=v.minElement(&index);
-      LOG4CXX_ERROR(KrisLibrary::logger(),"    Error "<<max<<" at "<<D->Label(index)<<" is less than zero");
-    }
-    return false;
-  }
-  if(!bmin.isEmpty()&&!AABBContains(x,bmin,bmax)) {
-    if(verbose>=1) LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::Solve(): Error, initial point doesn't satisfy bound constraints");
-    return false;
-  }
-  return true;
-}
+  augmentedLagrangianProblem.bmin = bmin;
+  augmentedLagrangianProblem.bmax = bmax;
+  augmentedLagrangianProblem.x = x;
+  augmentedLagrangianProblem.tolf = tolf;
+  augmentedLagrangianProblem.tolx = tolx;
+  augmentedLagrangianProblem.tolgrad = tolgrad;
+  augmentedLagrangianProblem.verbose = verbose;
+  augmentedLagrangianProblem.H.resize(x.n,x.n);
+  augmentedLagrangianProblem.H.setIdentity();
 
+  if(f) fx = (*f)(x);
+  else fx = 0;
+  if(C) {
+    cx.resize(C->NumDimensions());
+    (*C)(x,cx);
+  }
+  if(D) {
+    dx.resize(D->NumDimensions());
+    (*D)(x,dx);
+  }
+  
 
-ConvergenceResult ConstrainedMinimizationProblem::SolveGD(int& iters)
-{
-  if(!CheckPoint(x)) return ConvergenceError;
-
-  fx=(*f)(x);
-  grad.resize(x.n);
+  Vector lambda_c,lambda_d;
+  Real mu = 100.0;
+  if(C) lambda_c.resize(C->NumDimensions(),0.0);
+  if(D) lambda_d.resize(D->NumDimensions(),0.0);
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
-    f->Gradient(x,grad);
-    grad.inplaceNegative();
-
-    Real dxnorm0 = grad.maxAbsElement();
-    NullspaceProjection(x,grad);
-    Real dxnorm = grad.maxAbsElement();
-    if(dxnorm < tolgrad) {
-      if(verbose >= 1) LOG4CXX_INFO(KrisLibrary::logger(),"Projected gradient is 0!");
-      return LocalMinimum;
+    if(verbose>=1) {
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveAugmentedLagrangian(): Iter "<<iters<<" fx "<<fx<<" cx "<<(cx.n ? cx.maxAbsElement() : 0)<<" dx "<<(dx.n ? dx.maxAbsElement() : 0));
+      LOG4CXX_INFO(KrisLibrary::logger(),"    mu "<<mu<<" lambdas "<<lambda_c<<", "<<lambda_d);
     }
-    Real alpha0 = Min(dxnorm0/dxnorm,(Real)10);
-    ConvergenceResult res=LineMinimizationStep(grad,alpha0);
-    if(res != MaxItersReached) return res;
+    ConvergenceResult res = StepAugmentedLangrangian(mu,lambda_c,lambda_d);
+    if(res != MaxItersReached) {
+      if(cx.n == 0 || cx.maxAbsElement() < tolc) {
+        if(dx.n == 0 || dx.maxElement() < tolc) {
+          if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveAugmentedLagrangian(): Converged with feasible solution");
+          return res;
+        }
+      }
+    }
+    if(S) S->push_back(x);
+
+    //modify augmented langrangian multipliers
+    for(int i=0;i<lambda_c.n;i++)
+      lambda_c[i] += mu*cx[i];
+    for(int i=0;i<lambda_d.n;i++) {
+      if(dx[i] < 0 && lambda_d[i] > 0) lambda_d[i] = 0;
+      else lambda_d[i] += mu*dx[i];
+    }
+    mu *= 2.0;
+    mu = Min(mu,1000000.0);
   }
-  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::Solve(): Max iters reached "<<iters<<".");
+  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveAugmentedLagrangian(): Max iters reached "<<iters<<".");
   return MaxItersReached;
 }
 
-
-ConvergenceResult ConstrainedMinimizationProblem::StepGD()
+class AugmentedLagrangianFunction : public ScalarFieldFunction
 {
-  if(!CheckPoint(x)) return ConvergenceError;
-
-  fx=(*f)(x);
-  grad.resize(x.n);
-  f->Gradient(x,grad);
-  grad.inplaceNegative();
-
-  //HACK!
-  Real dxnorm0 = grad.maxAbsElement();
-  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization: Projecting gradient to nullspace...");
-  NullspaceProjection(x,grad);
-  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
-  Real dxnorm = grad.maxAbsElement();
-  if(dxnorm < tolgrad) {
-    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Projected gradient is 0!");
-    return LocalMinimum;
+  public:
+  AugmentedLagrangianFunction(ScalarFieldFunction* _f,VectorFieldFunction* _C,VectorFieldFunction* _D,
+    Real _mu,const Vector& _lambda_c,const Vector& _lambda_d)
+    :f(_f),C(_C),D(_D),mu(_mu),lambda_c(_lambda_c),lambda_d(_lambda_d)
+  {}
+  virtual void PreEval(const Vector& x) override {
+    if(f) f->PreEval(x);
+    if(C) C->PreEval(x);
+    if(D) D->PreEval(x);
+    if(f) fx = f->Eval(x);
+    else fx = 0.0;
+    if(C) {
+      cx.resize(C->NumDimensions());
+      C->Eval(x,cx);
+    }
+    if(D) {
+      dx.resize(D->NumDimensions());
+      D->Eval(x,dx);
+    }
   }
-  Real alpha0 = Min(dxnorm0/dxnorm,(Real)1);
-  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization: Line minimization...");
-  ConvergenceResult res = LineMinimizationStep(grad,alpha0);
-  LOG4CXX_INFO(KrisLibrary::logger(),"Done");
+  virtual Real Eval(const Vector& x) override {
+    Assert(cx.n == lambda_c.n);
+    Assert(dx.n == lambda_d.n);
+    Real dx2=0,clam=0,dlam=0;
+    for(int i=0;i<dx.n;i++) if(dx[i] > 0) dx2 += Sqr(dx[i]);
+    for(int i=0;i<cx.n;i++) clam += lambda_c[i]*cx[i];
+    for(int i=0;i<dx.n;i++) dlam += lambda_d[i]*dx[i];
+    return fx + mu*(cx.normSquared() + dx2) + clam + dlam;
+  }
+  virtual void Gradient(const Vector& x,Vector& g) override
+  {
+    g.resize(x.n);
+    Matrix dC,dD;
+    if(f) {
+      f->Gradient(x,g);
+    }
+    else {
+      g.set(0.0);
+    }
+    if(C) {
+      dC.resize(C->NumDimensions(),x.n);
+      C->Jacobian(x,dC);
+      Vector temp;
+      dC.mulTranspose(cx,temp);
+      g.madd(temp,2*mu);
+      dC.mulTranspose(lambda_c,temp);
+      g += temp;
+    }
+    if(D) {
+      dD.resize(D->NumDimensions(),x.n);
+      D->Jacobian(x,dD);
+      Vector temp;
+      Vector dxpos(dx.n,0.0);
+      for(int i=0;i<dx.n;i++)
+        if(dx[i] > 0) dxpos[i] = dx[i];
+      dD.mulTranspose(dx,temp);
+      g.madd(temp,2*mu);
+      dD.mulTranspose(lambda_d,temp);
+      g += temp;
+    }
+  }
+
+  ScalarFieldFunction* f;
+  VectorFieldFunction *C,*D;
+  Real mu;
+  Vector lambda_c,lambda_d;
+
+  Real fx;
+  Vector cx,dx;
+};
+
+
+ConvergenceResult ConstrainedMinimizationProblem::StepAugmentedLangrangian(Real mu,const Vector& lambda_c,const Vector& lambda_d)
+{
+  AugmentedLagrangianFunction faug(f,C,D,mu,lambda_c,lambda_d);
+  augmentedLagrangianProblem.f = &faug;
+  int tempIters = innerIters;
+  ConvergenceResult res = augmentedLagrangianProblem.SolveQuasiNewton(tempIters);
+  cout<<"SolveQuasiNewton got "<<res<<" in "<<tempIters<<" iterations"<<endl;
+  fx = faug.fx;
+  cx = faug.cx;
+  dx = faug.dx;
+  x = augmentedLagrangianProblem.x;
   return res;
 }
 
-ConvergenceResult ConstrainedMinimizationProblem::SolveNewton(int& iters)
+ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
 {
-  if(!CheckPoint(x)) return ConvergenceError;
-
-  Vector dx;
-  fx=(*f)(x);
-  grad.resize(x.n);
-  H.resize(x.n,x.n);
-  LDLDecomposition<Real> ldl;
+  if(f) fx = (*f)(x);
+  else fx = 0;
+  if(C) {
+    cx.resize(C->NumDimensions());
+    (*C)(x,cx);
+  }
+  if(D) {
+    dx.resize(D->NumDimensions());
+    (*D)(x,dx);
+  }
+  
+  Real alpha = 1.0;
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
-    f->Gradient(x,grad);
-    f->Hessian(x,H);
-    ldl.set(H);
-    Vector d;
-    ldl.LDL.getDiagRef(0,d);
-    if(d.minElement() < 0) {
-      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"Warning, hessian is not positive definite");
-      for(int i=0;i<d.n;i++)
-	if(d(i) < 1e-4) d(i) = 1e-4;
-      //return ConvergenceError;
+    if(verbose>=1) {
+      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveSQP(): Iter "<<iters<<" fx "<<fx<<" cx "<<(cx.n ? cx.maxAbsElement() : 0)<<" dx "<<(dx.n ? dx.maxAbsElement() : 0));
     }
-    ldl.backSub(grad,dx);
-    if(dot(dx,grad) < Zero) {
-      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveNewton(): Warning, hessian direction opposes gradient on step "<<iters);
-      //dx.setNegative(grad);
+    ConvergenceResult res = StepSQP(alpha);
+    if(res != MaxItersReached) {
+      return res;
     }
-    dx.inplaceNegative();
-
-    Real dxnorm0 = dx.maxAbsElement();
-    NullspaceProjection(x,dx);
-    Real dxnorm = dx.maxAbsElement();
-    Real alpha0 = Min(dxnorm0/dxnorm,(Real)10);
-    ConvergenceResult res=LineMinimizationStep(dx,alpha0);
-    if(res != MaxItersReached) return res;
+    if(S) S->push_back(x);
   }
-  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::Solve(): Max iters reached "<<iters<<".");
+  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveSQP(): Max iters reached "<<iters<<".");
   return MaxItersReached;
 }
 
-Real Merit(Real f,const Vector& c,const Vector& d,Real fScale=One)
+ConvergenceResult ConstrainedMinimizationProblem::StepSQP(Real &alpha)
 {
-  Real m=fScale*f + c.normSquared();
-  for(int i=0;i<d.n;i++)
-    if(d(i) < Zero) m += Sqr(d(i));
-  return m;
-}
-
-
-ConvergenceResult ConstrainedMinimizationProblem::StepTR(Real R)
-{
-  grad.resize(x.n);
-  fx=(*f)(x);
-  f->Gradient(x,grad);
-
-  int cn = C->NumDimensions();
-  int dn = D->NumDimensions();
-  Vector cx(cn),dx(dn);
-  (*C)(x,cx);
-  (*D)(x,dx);
-  LOG4CXX_INFO(KrisLibrary::logger(),"******************************************************");
-  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): objective "<<fx<<", initial distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
-
-  //solving the linearized version of the problem for a displacement
-  //y such that C(x+y) ~= C(x)+J(x)*y = 0
-  //etc
-  if(!sparse) {
-    LinearProgram lp;
-    lp.minimize=true;
-    lp.Resize(cn+dn,x.n);  //reserve enough space in A
-    Assert(lp.c.n == grad.n);
-    lp.c = grad;
-    Matrix Ac,Ad;
-    Vector bc,bd;
-    Ac.setRef(lp.A,0,0,1,1,cn,x.n);
-    Ad.setRef(lp.A,cn,0,1,1,dn,x.n);
-    C->Jacobian(x,Ac);
-    D->Jacobian(x,Ad);
-    bc.setRef(lp.p,0,1,cn);
-    bc.setNegative(cx);
-    bc.setRef(lp.q,0,1,cn);
-    bc.setNegative(cx);
-    bd.setRef(lp.q,cn,1,dn);
-    bd.setNegative(dx);
-    lp.l.set(-R);
-    lp.u.set(R);
-    if(bmin.n != 0) {
-      for(int i=0;i<x.n;i++) {
-	if(lp.l(i)+x(i) < bmin(i)) lp.l(i) = bmin(i)-x(i);
-	if(lp.u(i)+x(i) > bmax(i)) lp.u(i) = bmax(i)-x(i);
-      }
-    }
-
-    RobustLPSolver lps;
-    LinearProgram::Result res=lps.Solve(lp);
-
-    if(res == LinearProgram::Infeasible) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too small, doing a feasibility solve step");
-      //NOTE: if MaxItersReached is returned, this will return ConvergenceError
-      ConvergenceResult r;
-      SolveFeasiblePoint(x,1,&r);
-      if(r == MaxItersReached || r == ConvergenceF) 
-	//if(!SolveFeasiblePoint(x,1)) return ConvergenceError;
-	return LocalMinimum;
-      else if(r == ConvergenceX)
-	return ConvergenceX;
-      else
-	return ConvergenceError;
-    }
-    else if(res == LinearProgram::Unbounded) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): uh... can't be unbounded!");
-      Abort();
-    }
-    else if(res == LinearProgram::Feasible) {
-      //arbitrary merit function...
-      Real fScale=tolf/tolc;
-      Real origMerit = Merit(fx,cx,dx,fScale);
-      
-      Real alpha = One;
-      Real stepNorm = lps.xopt.norm();
-      Vector xold=x;
-      int numSteps=0;
-      while(alpha > 1e-3) {
-	x=xold; x.madd(lps.xopt,alpha);
-	(*C)(x,cx);
-	(*D)(x,dx);
-	fx = (*f)(x);
-	Real newMerit = Merit(fx,cx,dx,fScale);
-	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): step length "<<stepNorm*alpha);
-	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
-      
-	if(newMerit < origMerit) {
-	  if(numSteps == 0) {
-	    if(FuzzyEquals(newMerit,origMerit,tolf)) return ConvergenceF;
-	    if(stepNorm < tolx) return ConvergenceX;
-	    return MaxItersReached;
-	  }
-	  else {
-	    LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Suggest radius "<<R*alpha);
-	    return Divergence;
-	  }
-	}
-	numSteps++;
-	alpha *= 0.5;
-      }
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
-      x = xold;
-      return Divergence;
-    }
-    else { //error
-      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): error solving linear program!");
-      return ConvergenceError;
-    }
-    return MaxItersReached;
+  //given x, f(x+dx) ~= f(x) + f'(x)dx + 1/2 dx^T f''(x) dx
+  //C(x+dx) ~= C(x) + C'(x) dx = 0
+  //To minimize f(x+dx) s.t. C(x+dx) = 0, solve lagrange multipliers
+  //f' + f''*dx + C'^T lambda = 0
+  //C + C'*dx = 0
+  //[f'' C'^T ] [dx    ] = [-f']
+  //[C'  0    ] [lambda]   [-C ]
+  //dx = -f''^-1*f' + f''^-1 C'^T lambda
+  //-C' f''^-1*f' + C' f''^-1 C'^T lambda = -C
+  //lambda = (C' f''^-1 C'^T)^-1 (C' f''^-1*f' - C)
+  //dx = -f''^-1*f' + f''^-1 C'^T (C' f''^-1 C'^T)^-1 (C' f''^-1*f' - C)
+  if(D) FatalError("TODO: SQP with inequalities");
+  if(!f) FatalError("TODO: SQP without objective");
+  Vector gf(x.n);
+  Matrix Hf,JC;
+  Matrix lagrangian(x.n+cx.n,x.n+cx.n,0.0);
+  if(f) {
+    f->Gradient(x,gf);
+    Hf.setRef(lagrangian,0,0,1,1,x.n,x.n);
+    f->Hessian(x,Hf);
   }
-  else {  //identical, but sparse
-    LinearProgram_Sparse lp;
-    lp.minimize=true;
-    lp.Resize(cn+dn,x.n);  //reserve enough space in A
-    Assert(lp.c.n == grad.n);
-    lp.c = grad;
-    SparseMatrix Ac(cn,x.n),Ad(dn,x.n);
-    Vector bc,bd;
-    SparseVectorFunction* sC,*sD;
-    //Note: dangerous cast here!
-    try {
-      sC=dynamic_cast<SparseVectorFunction*>(C);
-      sD=dynamic_cast<SparseVectorFunction*>(D);
-    }
-    catch(exception& e) {
-      FatalError("Could not cast C or D to sparse functions! exception: %s",e.what());
-    }
-    LOG4CXX_INFO(KrisLibrary::logger(),"Evaluating equality jacobian...");     sC->Jacobian_Sparse(x,Ac);
-    LOG4CXX_INFO(KrisLibrary::logger(),Ac.numNonZeros()<<" nonzeros");
-    LOG4CXX_INFO(KrisLibrary::logger(),"Evaluating inequality jacobian...");     sD->Jacobian_Sparse(x,Ad);
-    LOG4CXX_INFO(KrisLibrary::logger(),Ad.numNonZeros()<<" nonzeros");
-    lp.A.copySubMatrix(0,0,Ac);
-    lp.A.copySubMatrix(cn,0,Ad);
-    bc.setRef(lp.p,0,1,cn);
-    bc.setNegative(cx);
-    bc.setRef(lp.q,0,1,cn);
-    bc.setNegative(cx);
-    bd.setRef(lp.q,cn,1,dn);
-    bd.setNegative(dx);
-    lp.l.set(-R);
-    lp.u.set(R);
-    if(bmin.n != 0) {
-      for(int i=0;i<x.n;i++) {
-	if(lp.l(i)+x(i) < bmin(i)) lp.l(i) = bmin(i)-x(i);
-	if(lp.u(i)+x(i) > bmax(i)) lp.u(i) = bmax(i)-x(i);
-      }
-    }
-    RobustLPSolver lps;
-    LinearProgram::Result res=lps.Solve(lp);
-
-    if(res == LinearProgram::Infeasible) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"Linear program is infeasible!");
-
-      /*
-      lp.l.set(-Inf);
-      lp.u.set(Inf);
-      LinearProgram::Result res2=lps.Solve(lp);
-      if(res2 == LinearProgram::Infeasible) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"Seems to be infeasible over entire space!");
-	KrisLibrary::loggerWait();
-
-	//deactivate inequality constraints
-	for(int i=0;i<dn;i++) {
-	  lp.q(cn+i)=-Inf;
-	  lp.p(cn+i)=Inf;
-	}
-	res2 = lps.Solve(lp);
-	if(res2 == LinearProgram::Infeasible) {
-	  LOG4CXX_INFO(KrisLibrary::logger(),"equalities are infeasible!");
-	  //LOG4CXX_INFO(KrisLibrary::logger(),"Equalities: "<<cn<<", variables "<<x.n);
-	  //lp.Print(cout);
-	  KrisLibrary::loggerWait();
-
-	  LOG4CXX_INFO(KrisLibrary::logger(),"Trying LSQR of equalities...");
-	  LSQRInterface lsqr;
-	  lsqr.verbose = 0;
-	  if(lsqr.Solve(Ac,cx)) {
-	    lsqr.x.inplaceNegative();
-	    LOG4CXX_INFO(KrisLibrary::logger(),"LSQR solved the problem with residual "<<lsqr.residualNorm);
-	  }
-	  else
-	    LOG4CXX_INFO(KrisLibrary::logger(),"LSQR failed with residual "<<lsqr.residualNorm);
-	  return ConvergenceError;
-	}
-	else {
-	}
-      }
-      */
-      /*
-      lp.A.eraseZeros();
-      LinearProgram_Sparse lptemp;
-      lptemp = lp;
-      lptemp.A.clear();
-      lptemp.p.clear();
-      lptemp.q.clear();
-      for(int i=1;i<lp.A.m;i++) {
-	lptemp.A.resize(i,lp.A.n);
-	lptemp.p.resize(i);
-	lptemp.q.resize(i);
-	for(int j=0;j<i;j++) {
-	  lptemp.A.rows[j] = lp.A.rows[j];
-	  lptemp.p(j) = lp.p(j);
-	  lptemp.q(j) = lp.q(j);
-	}
-	if(lps.Solve(lptemp) == LinearProgram::Infeasible) {
-	  LOG4CXX_INFO(KrisLibrary::logger(),"Constraint "<<i<<" caused the LP to become infeasible!");
-	  SparseVector tmp;
-	  tmp.set(lptemp.A.rows[i-1]);
-	  LOG4CXX_INFO(KrisLibrary::logger()(),lptemp.q(i-1)<<" < "); tmp.print(	  if(KrisLibrary::logger()()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
-	  break;
-	}
-      }
-      */
-
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too small, doing a feasibility solve step");
-      rootSolver.tolf = tolc;
-      rootSolver.tolmin = tolx;
-      rootSolver.tolx = tolx;
-      rootSolver.bmin.setRef(bmin);
-      rootSolver.bmax.setRef(bmax);
-      rootSolver.verbose = verbose;
-      rootSolver.x.setRef(x);
-      rootSolver.sparse = sparse;
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveFeasiblePoint...");
-      int iters=1;
-      ConvergenceResult r=rootSolver.SolveConstrained_SLP(iters);
-      if(r == ConvergenceError) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): feasibility could not be solved!");
-	return ConvergenceError;
-      }
-      else if(r == ConvergenceX) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): feasibility could not be solved, x tolerance has been reached");
-	return ConvergenceX;
-      }
-
-      /*
-      if(!SolveFeasiblePoint(x,1)) {
-	LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): feasibility could not be solved!");
-	return ConvergenceError;
-      }
-      */
-      (*C)(x,cx);
-      (*D)(x,dx);
-      fx = (*f)(x);
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): final objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
-      /*
-      //shortcut to SolveFeasiblePoint() -- just solve the least squares problem
-      for(int i=0;i<dn;i++)
-	if(dx(i) > Zero) { //remove from lp.A, lp.b
-	  lp.A.rows[i+cn].entries.clear();
-	  lp.q(i+cn)=Zero;
-	}
-      bool res=rootSolver.SolveUnderconstrainedLS(lp.A,lp.q,lps.xopt);
-      if(res) {
-	Real merit = Merit(Zero,cx,dx);
-	Real alpha = One;
-	Vector x0=x;
-	while(alpha > 1e-4) {
-	  x = x0; x.madd(lps.xopt,alpha);
-	  (*C)(x,cx);
-	  (*D)(x,dx);
-	  fx = (*f)(x);
-	  Real newMerit = Merit(Zero,cx,dx);
-	  if(newMerit < merit-1e-4) //sufficient decrease
-	    break;
-	  alpha *= 0.5;
-	}
-	if(alpha <= 1e-4) {
-	  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): backtracking failed!");
-	  x=x0;
-	}
-	else {
-	  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): final objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
-	}
-      }
-      */
-      return LocalMinimum;
-    }
-    else if(res == LinearProgram::Unbounded) {
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): uh... can't be unbounded!");
-      Abort();
-    }
-    else if(res == LinearProgram::Feasible) {
-      //arbitrary merit function...
-      Real fScale=tolf/tolc;
-      Real origMerit = Merit(fx,cx,dx,fScale);
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR():");
-      LOG4CXX_INFO(KrisLibrary::logger(),"   Original merit "<<origMerit);
-
-      Real alpha = One;
-      Real stepNorm = lps.xopt.norm();
-      Vector xold=x;
-      int numSteps=0;
-      while(alpha > 1e-3) {
-	x=xold; x.madd(lps.xopt,alpha);
-	(*C)(x,cx);
-	(*D)(x,dx);
-	fx = (*f)(x);
-	Real newMerit = Merit(fx,cx,dx,fScale);
-	LOG4CXX_INFO(KrisLibrary::logger(),"   Step length "<<stepNorm*alpha<<", merit "<<newMerit);
-	LOG4CXX_INFO(KrisLibrary::logger(),"   Objective "<<fx<<", distance "<<cx.maxAbsElement()<<", margin "<<dx.minElement());
-      
-	if(newMerit < origMerit) {
-	  if(numSteps == 0) {
-	    if(FuzzyEquals(newMerit,origMerit,tolf)) return ConvergenceF;
-	    if(stepNorm < tolx) return ConvergenceX;
-	    return MaxItersReached;
-	  }
-	  else {
-	    LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
-	    LOG4CXX_INFO(KrisLibrary::logger(),"Suggest radius "<<R*alpha);
-	    return Divergence;
-	  }
-	}
-	numSteps++;
-	alpha *= 0.5;
-      }
-      LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): trust region radius "<<R<<" too large");
-      x = xold;
-      return Divergence;
-    }
-    else { //error
-      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimization::StepTR(): error solving linear program!");
-      return ConvergenceError;
-    }
-    return MaxItersReached;
+  else {
+    gf.setZero();
   }
-}
-
-void ConstrainedMinimizationProblem::NullspaceProjection(const Vector& x,Vector& dx)
-{
   if(C) {
-    //C(x+dx) = C(x)
-    //C(x+dx) ~= C(x) + J*dx
-    //=> J*dx = 0
-    //let p be an offset to dx
-    //J*p = -J*dx
-    Matrix J;
-    int m=C->NumDimensions();
-    int n=x.n;
-    J.resize(m,n);
-    C->PreEval(x);
-    C->Jacobian(x,J);
-    Vector p,Jdx;
-    J.mul(dx,Jdx);
-    rootSolver.SolveUnderconstrainedLS(J,Jdx,p);
-    dx -= p;
-    /*
-    RobustSVD<Real> svd;
-    Matrix J;
-    int m=C->NumDimensions();
-    int n=x.n;
-    J.resize(m,n);
-    C->PreEval(x);
-    C->Jacobian(x,J);
-    svd.resize(m,n);
-    if(!svd.set(J)) {
-      LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::NullspaceProjection: Error setting SVD of equality Jacobian!!!");
-      //LOG4CXX_INFO(KrisLibrary::logger(),MatrixPrinter(J));
-      //KrisLibrary::loggerWait();
-      J.setZero();
-      svd.setZero(J.m,J.n);
-    }
-    Vector proj;
-    svd.nullspaceComponent(dx,proj);
-    dx -= proj;
-    */
+    JC.setRef(lagrangian,x.n,0,1,1,cx.n,x.n);
+    C->Jacobian(x,JC);
+    Matrix JCT;
+    JCT.setRefTranspose(JC);
+    lagrangian.copySubMatrix(0,x.n,JCT);
   }
-
-  //TODO: active set of D constraints, simultaneous svd solution
-  if(bmin.n != 0) {
-    for(int i=0;i<bmin.n;i++) {
-      Assert(x(i) >= bmin(i));
-      Assert(x(i) <= bmax(i));
-      if(x(i) == bmin(i)) {
-	if(dx(i) < 0) dx(i) = 0;
-      }
-      else if(x(i) == bmax(i)) {
-	if(dx(i) > 0) dx(i) = 0;
-      }
+  Vector fc(x.n+cx.n);
+  fc.copySubVector(0,gf);
+  fc.copySubVector(x.n,cx);
+  fc.inplaceNegative();
+  Vector dxlambda,deltax;
+  LDLDecomposition<Real> ldl(lagrangian);
+  Vector ldlD;
+  ldl.LDL.getDiagRef(0,ldlD);
+  if(ldlD.minAbsElement() <= ldl.zeroTolerance) { //not stable, need pseudoinverse
+    SVDecomposition<Real> svd(lagrangian);
+    svd.backSub(fc,dxlambda);
+  }
+  else {
+    ldl.backSub(fc,dxlambda);
+  }
+  deltax.setRef(dxlambda,0,1,x.n);
+  if(!AABBContains(x,bmin,bmax)) 
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::StepSQP: Initial state not in bounds?")
+  for(int i=0;i<x.n;i++) {
+    if(FuzzyEquals(x[i],bmin[i],boundEpsilon)) {
+      if(deltax[i] < 0) deltax[i] = 0;
+    }
+    else if(FuzzyEquals(x[i],bmax[i],boundEpsilon)) {
+      if(deltax[i] > 0) deltax[i] = 0;
     }
   }
-}
 
-ConvergenceResult ConstrainedMinimizationProblem::LineMinimizationStep(const Vector& dx,Real& alpha0)
-{
-  Vector x0 = x;
-  Real fx0 = fx;
-  const Real lineSearchShrink = 0.5;
-  Real dxnorm = dx.norm();
-  Real t = alpha0;
-  Real slope = Abs(dx.dot(grad));
-  if(dxnorm < tolgrad) {
+  //now do line search on merit function f(x) + mu||c(x)||_1
+  Real normdx = deltax.norm();
+  if(normdx < tolgrad) 
     return ConvergenceF;
+  Real muscale = 2.0;
+  Real cnorm = Norm_L1(cx);
+  //f(x+dx) + mu||c(x+dx)|| < f + mu||c|| 
+  //f'*dx + mu (||c(x+dx)|| - ||c(x)||_1) < 0
+  //mu > f'*dx / (||c(x)|| - ||c(x+dx)||)  but ||c(x+dx)|| = 0
+  Real mu;
+  if(cnorm!=0) 
+    mu = muscale * Max(deltax.dot(gf) / cnorm,1.0);
+  else
+    mu = 1.0;
+  Real merit0 = fx + mu*cnorm;
+  if(verbose >= 2) {
+    printf("Expected full step decrease in f = %f, in c = %f\n",deltax.dot(gf), -cnorm);
+    printf("Mu %f, ",mu);
+    printf("%.3f ",merit0);
   }
-
-  //if(verbose>=1 && t != alpha0) LOG4CXX_INFO(KrisLibrary::logger(),"Starting t value: "<<t);
-  //find a step that descends along grad
-  for(int lineSearchIters=0;;lineSearchIters++) {
-    if(t*dxnorm < tolx) {
-      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::LineSearch(): Converged on t on line search iteration "<<lineSearchIters<<", |dx|="<<dxnorm);
-      //x must remain on surface... just set x to x0
-      x = x0; alpha0 = 0;
-      return ConvergenceX;
+  Vector x0=x;
+  AABBLineSearch(x,deltax,bmin,bmax,alpha);
+  for(int lineSearchIters=1;;lineSearchIters++) {
+    if(alpha * normdx < tolx) {
+      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::LineMinimizationStep(): Quitting on line search iter "<<lineSearchIters);
+      if(verbose >= 2) printf("\n");
+      return ConvergenceF;
     }
-    x = x0; x.madd(dx,t);
-    for(int i=0;i<x.n;i++)
-      if(IsNaN(x(i))) {
-	LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem: x is NaN!");
-	LOG4CXX_ERROR(KrisLibrary::logger(),"t is "<<t);
-	LOG4CXX_ERROR(KrisLibrary::logger(),"x0 is "<<x0);
-	KrisLibrary::loggerWait();
-	return ConvergenceError;
-      }
-    if(SolveFeasiblePoint(x,20)) {
-      Assert(CheckPoint(x));
-      fx = (*f)(x);
-      if(fx < fx0 - ALF*slope*t) {
-	break;
-      }
+
+    x = x0;
+    x.madd(deltax,alpha);
+    fx = (*f)(x);
+    if(C) (*C)(x,cx);
+    if(D) (*D)(x,dx);
+    Real merit = fx + mu*Norm_L1(cx);
+    if(verbose >= 2) printf("%.3f ",merit);
+    if(merit < merit0) {
+      if(verbose >= 2) printf("\n");
+      if(lineSearchIters==1) alpha *= 2.5;
+      return MaxItersReached;
     }
-    else {
-      if(verbose>=1) LOG4CXX_WARN(KrisLibrary::logger(),"ConstrainedMinimzationProblem::StepGD(): Warning, MoveToSurface_Bounded failed on line search iteration "<<lineSearchIters);
+    if(!IsFinite(merit)) {
+      x = x0;
+      return ConvergenceError;
     }
-    //reduce t
-    t *= lineSearchShrink;
-  }
-  alpha0 = t;
-
-  if(Abs(fx-fx0) <= tolf) {
-    if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimzationProblem::StepGD(): Success, change in f is "<<fx0-fx);
-    return ConvergenceF;
-  }
-
-  if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"StepGD(): Target "<<fx<<", length of gradient "<<dxnorm<<", step size "<<t*dxnorm);
-
-  if(bmin.n != 0)
-    Assert(AABBContains(x0,bmin,bmax));
-
-  return MaxItersReached;
+    alpha *= 0.5;
+  } 
 }
-
-bool ConstrainedMinimizationProblem::SolveFeasiblePoint(Vector& x,int maxIters,ConvergenceResult* res)
-{
-  rootSolver.tolf = tolc;
-  rootSolver.tolmin = tolx;
-  rootSolver.tolx = tolx;
-  rootSolver.bmin.setRef(bmin);
-  rootSolver.bmax.setRef(bmax);
-  rootSolver.verbose = verbose;
-  rootSolver.x.setRef(x);
-  rootSolver.sparse = sparse;
-  LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveFeasiblePoint...");
-  return rootSolver.GlobalSolve(maxIters,res);
-}
-
-
-
-#endif //commented out ConstrainedMinimizationProblem
