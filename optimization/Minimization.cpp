@@ -743,7 +743,10 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
   if(f) fx = (*f)(x);
   else fx = 0;
   if(fx <= fbreak) return ConvergenceF;
+  if(C) {
+    cx.resize(C->NumDimensions());
     (*C)(x,cx);
+  }
   if(D) {
     dx.resize(D->NumDimensions());
     (*D)(x,dx);
