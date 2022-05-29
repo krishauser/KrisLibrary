@@ -89,8 +89,16 @@ public:
   bool Solve(Real tolerance,int& iters);
   ///Minimization-based solve
   bool MinimizeResidual(Real tolerance,Real delta_tolerance,int& iters);
-  ///Prioritized solve: minimize objective subject to IK constraint and bounds
+  ///Prioritized solve: minimize objective subject to IK constraint and bounds.
+  ///
+  ///Important: objective(q_active) operates on the subset of robot DOFs given
+  ///by function.activeDofs. 
   bool PrioritizedSolve(ScalarFieldFunction& objective,Real tolerance,Real delta_tolerance,int& iters);
+  ///Prioritized solve: minimize norm of objective subject to IK constraint and bounds
+  ///
+  ///Important: objective(q_active) operates on the subset of robot DOFs given
+  ///by function.activeDofs. 
+  bool PrioritizedSolve(VectorFieldFunction& objective,Real tolerance,Real delta_tolerance,int& iters);
   void PrintStats();
 
   Optimization::NewtonRoot solver;
@@ -147,6 +155,12 @@ bool MinimizeIK(RobotIKFunction& f,
 /// Terminates when ||residual|| <= tolerance and ||g(q) - g(q)'||<= delta_tolerance.
 /// Accepts a maximum # of iterations and returns the # of iterations used in iters.
 /// Returns true if the residual tolerance is reached.  
+<<<<<<< HEAD
+=======
+///
+///Important: g(q) operates on the subset of robot DOFs given
+///by f.activeDofs.
+>>>>>>> devel
 bool PrioritizedIK(RobotIKFunction& f,VectorFieldFunction& g,
        Real tolerance,Real delta_tolerance,int& iters,int verbose=1);
 
@@ -155,6 +169,12 @@ bool PrioritizedIK(RobotIKFunction& f,VectorFieldFunction& g,
 /// Terminates when ||residual|| <= tolerance and |g(q) - g(q)'|<= delta_tolerance.
 /// Accepts a maximum # of iterations and returns the # of iterations used in iters.
 /// Returns true if the residual tolerance is reached.  
+<<<<<<< HEAD
+=======
+///
+///Important: g(q) operates on the subset of robot DOFs given
+///by f.activeDofs. 
+>>>>>>> devel
 bool PrioritizedIK(RobotIKFunction& f,ScalarFieldFunction& g,
        Real tolerance,Real delta_tolerance,int& iters,int verbose=1);
 

@@ -88,6 +88,7 @@ struct MinimizationProblem
   ScalarFieldFunction* f;
   Vector x;
   Real tolx,tolf,tolgrad;
+  Real fbreak; ///< stop when the objective function goes below this value
 
   //output options
   int verbose;
@@ -128,6 +129,7 @@ struct BCMinimizationProblem
   Vector bmin,bmax;
   Vector x;
   Real tolx,tolf,tolgrad;
+  Real fbreak; ///< stop when the objective function goes below this value
 
   //output options
   int verbose;
@@ -166,6 +168,7 @@ struct ConstrainedMinimizationProblem
   Vector x;
   Real tolx,tolf,tolgrad,tolc;
   int innerIters;
+  Real fbreak; ///< stop when the constraints are satisfied and the objective function goes below this value
 
   BCMinimizationProblem augmentedLagrangianProblem;
 

@@ -350,11 +350,13 @@ class BasicArrayResource : public CompoundResourceBase
     return false;
   }
   virtual bool Pack(std::vector<ResourcePtr>& subobjects,std::string* errorMessage=NULL) override {
-    for(size_t i=0;i<subobjects.size();i++)
-      if(typeid(*subobjects[i]) != typeid(BaseType)) {
+    for(size_t i=0;i<subobjects.size();i++) {
+      auto& subobj = *subobjects[i];
+      if(typeid(subobj) != typeid(BaseType)) {
 	if(errorMessage) *errorMessage = std::string("Subobject does not have type ")+std::string(BasicResourceTypeName<T>());
 	return false;
       }
+    }
     data.resize(subobjects.size());
     for(size_t i=0;i<subobjects.size();i++)    
       data[i] = dynamic_cast<BaseType*>(&*subobjects[i])->data;
