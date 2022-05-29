@@ -71,7 +71,7 @@ struct MinimizationProblem
   ConvergenceResult SolveQuasiNewton(int& maxIters);
 
   ///Levenberg-Marquardt iteration
-  ConvergenceResult SolveLM(int& maxIters,Real lambda0=1,Real lambdaScale=10);
+  ConvergenceResult SolveLM(int& maxIters,Real lambda0=1,Real lambdaGrow=2,Real lambdaShrink=3);
 
   ///Performs a line search to minimize f(x) in the direction dx.
   ///fx must be set to the initial f(x).  f is updated to the final x
@@ -144,52 +144,30 @@ struct BCMinimizationProblem
  * @brief Same as MinimizationProblem but with nonlinear constraints
  * C(x)=0 and D(x)<=0, bound constraints bmin/bmax
  *
- * Performs the line search while maintaining feasibility on the constraint 
- * manifold.  The initial point must lie in the feasibility set.
- * This isn't really a well established minimization
- * technique and hasn't been tested thoroughly.
- *
- * StepTR performs a sequential linear programming step with a given
- * trust region.  We could implement SQP, but other libraries would probably
- * be better.
- *
- * If sparse is set to true, C and D are assumed to be subclasses of
- * SparseVectorFunction.  Undefined behavior if this does not hold!
+ * Both inequalities and inequalities are not fully-implemented.
  */
 struct ConstrainedMinimizationProblem
 {
-  //ConstrainedMinimizationProblem(ScalarFieldFunction* f,ImplicitManifold*M);
   ConstrainedMinimizationProblem(ScalarFieldFunction* f,VectorFieldFunction*C,VectorFieldFunction*D);
 
-  ///Gradient descent
-  ConvergenceResult SolveGD(int& maxIters);
+  ///Augmented Lagrangian newton iteration  
+  ConvergenceResult SolveAugmentedLangrangian(int& maxIters);
   ///Returns MaxItersReached on normal exit
-  ConvergenceResult StepGD();
+  ConvergenceResult StepAugmentedLangrangian(Real mu,const Vector& lambda_c,const Vector& lambda_d);
 
-  ///Newton iteration  
-  ConvergenceResult SolveNewton(int& maxIters);
+  ///Sequential quadratic programming. Currently only implemented for equality constraints.
+  ConvergenceResult SolveSQP(int& maxIters);
   ///Returns MaxItersReached on normal exit
-  ConvergenceResult StepNewton();
-
-  ///Gradient-based trust-region method
-  ///Returns MaxItersReached on normal exit, LocalMinimum if R should be increased, Divergence if it should be reduced
-  ConvergenceResult StepTR(Real R);
-
-  ///Helper to project grad onto the constraint nullspace 
-  void NullspaceProjection(const Vector& x,Vector& dx);
-  ///Helper for line minimzation -- like above, but on the manifold surface
-  ConvergenceResult LineMinimizationStep(const Vector& dx,Real& alpha0);
-  ///Helper to check point feasibility
-  bool CheckPoint(const Vector& x) const;
-  ///Helper to solve for a feasible point
-  bool SolveFeasiblePoint(Vector& x,int maxIters,ConvergenceResult* res=NULL);
+  ConvergenceResult StepSQP(Real &alpha);
 
   ScalarFieldFunction* f;
   VectorFieldFunction* C,*D;
   Vector bmin,bmax;
   Vector x;
   Real tolx,tolf,tolgrad,tolc;
-  bool sparse;
+  int innerIters;
+
+  BCMinimizationProblem augmentedLagrangianProblem;
 
   //output options
   int verbose;
@@ -197,9 +175,7 @@ struct ConstrainedMinimizationProblem
 
   //temporary
   Real fx;
-  Vector grad;
-  Matrix H;
-  ConstrainedNewtonRoot rootSolver;
+  Vector cx,dx;
 };
 
 } //namespace Optimization
