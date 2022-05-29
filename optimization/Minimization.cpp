@@ -23,7 +23,7 @@ enum { DFS, BFGS };
 const static int updateType = BFGS;
 
 MinimizationProblem::MinimizationProblem(ScalarFieldFunction* _f)
-  :f(_f),tolx(1e-7),tolf(1e-5),tolgrad(1e-8),verbose(1),S(NULL)
+  :f(_f),tolx(1e-7),tolf(1e-5),tolgrad(1e-8),fbreak(-Inf),verbose(1),S(NULL)
 {}
 
 
@@ -33,6 +33,7 @@ ConvergenceResult MinimizationProblem::SolveGD(Real alpha,int& iters)
   grad.resize(x.n);
   Real fx0;
   fx = (*f)(x);
+  if(fx <= fbreak) return ConvergenceF;
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
     //Step()
@@ -45,6 +46,7 @@ ConvergenceResult MinimizationProblem::SolveGD(Real alpha,int& iters)
     //termination criteria
     if(grad.maxAbsElement()*alpha <= tolx)
       return ConvergenceX;
+    if(fx <= fbreak) return ConvergenceF;
     if(Abs(fx0-fx) < tolf*alpha)
       return ConvergenceF;
     if(grad.maxAbsElement()*alpha > 1e8)
@@ -67,12 +69,14 @@ ConvergenceResult MinimizationProblem::SolveSD(int& iters)
   grad.resize(x.n);
   int maxIters=iters;
   fx=(*f)(x); 
+  if(fx <= fbreak) return ConvergenceF;
   for(iters=0;iters<maxIters;iters++) {
     f->Gradient(x,grad);
     grad.inplaceNegative();
     Real alpha0=1;
     ConvergenceResult res=LineMinimizationStep(grad,alpha0);
     if(res != MaxItersReached) return res;
+    if(fx <= fbreak) return ConvergenceF;
   }
   return MaxItersReached;
 }
@@ -85,8 +89,9 @@ ConvergenceResult MinimizationProblem::SolveCG(int& iters)
 {
   Real gg,gam,fx0,dgg;
   Vector g,h;
-  grad.resize(x.n);
   fx=(*f)(x);
+  if(fx <= fbreak) return ConvergenceF;
+  grad.resize(x.n);
   f->Gradient(x,grad);
   g.setNegative(grad);
   grad=h=g;
@@ -97,7 +102,7 @@ ConvergenceResult MinimizationProblem::SolveCG(int& iters)
     x.madd(grad,dx);
     fx=(*f)(x);
     if(S) S->push_back(x);
-
+    if(fx <= fbreak) return ConvergenceF;
     if (2.0*Abs(fx0-fx) <= tolf*(Abs(fx0)+Abs(fx)+Epsilon)) {
       return ConvergenceF;
     }
@@ -119,11 +124,12 @@ ConvergenceResult MinimizationProblem::SolveCG(int& iters)
 
 ConvergenceResult MinimizationProblem::SolveNewton(int& iters)
 {
+  fx = (*f)(x);
+  if(fx <= fbreak) return ConvergenceF;
   grad.resize(x.n);
   H.resize(x.n,x.n);
   dx.resize(x.n);
   LDLDecomposition<Real> ldl;
-  fx = (*f)(x);
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
     f->Gradient(x,grad);
@@ -152,6 +158,7 @@ ConvergenceResult MinimizationProblem::SolveNewton(int& iters)
     Real alpha0 = 1;
     ConvergenceResult res = LineMinimizationStep(dx,alpha0);
     if(res != MaxItersReached) return res;
+    if(fx <= fbreak) return ConvergenceF;
   }
   return MaxItersReached;
 }
@@ -173,6 +180,8 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton_Diff(Real dx,int& maxIte
 ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
 {
   Assert(H.m == x.n && H.n == x.n);
+  fx = (*f)(x);
+  if(fx <= fbreak) return ConvergenceF;
   grad.resize(x.n);
   Vector x0,grad0,s,q,upd;
   QNHessianUpdater qn;
@@ -185,7 +194,6 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
     H.setIdentity();
     qn.SetHessian(H);
   }
-  fx = (*f)(x);
   f->Gradient(x,grad);
 
   Matrix trueH;
@@ -210,6 +218,7 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
     Real alpha0=1;
     ConvergenceResult res = LineMinimizationStep(dx,alpha0);
     if(res != MaxItersReached) return res;
+    if(fx <= fbreak) return ConvergenceF;
 
     //update the gradient
     f->Gradient(x,grad);
@@ -249,6 +258,8 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
 
 ConvergenceResult MinimizationProblem::SolveLM(int& iters,Real lambda0,Real lambdaGrow,Real lambdaShrink)
 {
+  fx = (*f)(x);
+  if(fx <= fbreak) return ConvergenceF;
   Real lambda=lambda0;
   grad.resize(x.n);
   H.resize(x.n,x.n);
@@ -256,7 +267,6 @@ ConvergenceResult MinimizationProblem::SolveLM(int& iters,Real lambda0,Real lamb
   Vector x0,diagH;
   LDLDecomposition<Real> ldl;
   Real fx0;
-  fx = (*f)(x);
   bool tookStep=true;
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
@@ -288,6 +298,7 @@ ConvergenceResult MinimizationProblem::SolveLM(int& iters,Real lambda0,Real lamb
     if(fx < fx0) {
       tookStep=true;
       lambda /= lambdaShrink;
+      if(fx <= fbreak) return ConvergenceF;
     }
     else {
       tookStep=false;
@@ -349,30 +360,33 @@ ConvergenceResult MinimizationProblem::LineMinimizationStep(const Vector& dx,Rea
 
 
 BCMinimizationProblem::BCMinimizationProblem(ScalarFieldFunction* _f)
-  :f(_f),tolx(1e-7),tolf(1e-5),tolgrad(1e-8),verbose(1),S(NULL)
+  :f(_f),tolx(1e-7),tolf(1e-5),tolgrad(1e-8),fbreak(-Inf),verbose(1),S(NULL)
 {}
 
 ConvergenceResult BCMinimizationProblem::SolveSD(int& iters)
 {
   int maxIters=iters;
   fx=(*f)(x); 
+  if(fx <= fbreak) return ConvergenceF;
   for(iters=0;iters<maxIters;iters++) {
     f->Gradient(x,grad);
     grad.inplaceNegative();
     Real alpha0=1;
     ConvergenceResult res=LineMinimizationStep(grad,alpha0);
     if(res != MaxItersReached) return res;
+    if(fx <= fbreak) return ConvergenceF;
   }
   return MaxItersReached;
 }
 
 ConvergenceResult BCMinimizationProblem::SolveNewton(int& iters)
 {
+  fx = (*f)(x);
+  if(fx <= fbreak) return ConvergenceF;
   grad.resize(x.n);
   H.resize(x.n,x.n);
   Vector dx(x.n);
   LDLDecomposition<Real> ldl;
-  fx = (*f)(x);
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
     f->Gradient(x,grad);
@@ -401,6 +415,7 @@ ConvergenceResult BCMinimizationProblem::SolveNewton(int& iters)
     Real alpha0 = 1;
     ConvergenceResult res = LineMinimizationStep(dx,alpha0);
     if(res != MaxItersReached) return res;
+    if(fx <= fbreak) return ConvergenceF;
   }
   return MaxItersReached;
 }
@@ -422,11 +437,12 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton_Diff(Real dx,int& maxI
 ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
 {
   Assert(H.m == x.n && H.n == x.n);
+  fx = (*f)(x);
+  if(fx <= fbreak) return ConvergenceF;
   grad.resize(x.n);
   Vector x0,grad0,s,q,upd,temp,dx(x.n);
   LDLDecomposition<Real> ldl;
   ldl.set(H);
-  fx = (*f)(x);
   f->Gradient(x,grad);
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
@@ -443,6 +459,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
     Real alpha0=1.0;
     ConvergenceResult res = LineMinimizationStep(dx,alpha0);
     if(res != MaxItersReached) return res;
+    if(fx <= fbreak) return ConvergenceF;
 
     //update the gradient
     f->Gradient(x,grad);
@@ -566,7 +583,7 @@ ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& a
 ConstrainedMinimizationProblem::ConstrainedMinimizationProblem(ScalarFieldFunction* _f,VectorFieldFunction*_c,VectorFieldFunction*_d)
   :f(_f),C(_c),D(_d),
    tolx(1e-7),tolf(1e-5),tolgrad(1e-8),tolc(1e-6),
-   innerIters(2),augmentedLagrangianProblem(_f),
+   innerIters(2),fbreak(-Inf),augmentedLagrangianProblem(_f),
    verbose(1),S(NULL)
 {
 }
@@ -586,6 +603,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int&
 
   if(f) fx = (*f)(x);
   else fx = 0;
+  if(fx <= fbreak) return ConvergenceF;
   if(C) {
     cx.resize(C->NumDimensions());
     (*C)(x,cx);
@@ -607,6 +625,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int&
       LOG4CXX_INFO(KrisLibrary::logger(),"    mu "<<mu<<" lambdas "<<lambda_c<<", "<<lambda_d);
     }
     ConvergenceResult res = StepAugmentedLangrangian(mu,lambda_c,lambda_d);
+    if(S) S->push_back(x);
     if(res != MaxItersReached) {
       if(cx.n == 0 || cx.maxAbsElement() < tolc) {
         if(dx.n == 0 || dx.maxElement() < tolc) {
@@ -615,7 +634,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int&
         }
       }
     }
-    if(S) S->push_back(x);
+    if(fx <= fbreak) return ConvergenceF;
 
     //modify augmented langrangian multipliers
     for(int i=0;i<lambda_c.n;i++)
@@ -723,6 +742,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
 {
   if(f) fx = (*f)(x);
   else fx = 0;
+  if(fx <= fbreak) return ConvergenceF;
   if(C) {
     cx.resize(C->NumDimensions());
     (*C)(x,cx);
@@ -742,6 +762,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
     if(res != MaxItersReached) {
       return res;
     }
+    if(fx <= fbreak) return ConvergenceF;
     if(S) S->push_back(x);
   }
   if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveSQP(): Max iters reached "<<iters<<".");
