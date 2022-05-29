@@ -85,7 +85,12 @@ public:
   void ClearJointLimits();
   void RobotToState();
   void StateToRobot();
+  ///Standard solve
   bool Solve(Real tolerance,int& iters);
+  ///Minimization-based solve
+  bool MinimizeResidual(Real tolerance,Real delta_tolerance,int& iters);
+  ///Prioritized solve: minimize objective subject to IK constraint and bounds
+  bool PrioritizedSolve(ScalarFieldFunction& objective,Real tolerance,Real delta_tolerance,int& iters);
   void PrintStats();
 
   Optimization::NewtonRoot solver;
@@ -106,7 +111,9 @@ void GetPassiveChainDOFs(const RobotKinematics3D& robot,const IKGoal& ikGoal,Arr
 void GetPassiveChainDOFs(const RobotKinematics3D& robot,int link,int numTerms,ArrayMapping& passiveDofs);
 
 /// Helper function that tries to solve the given ik function using the
-/// Newton-Raphson solver.  Returns true if successful
+/// Newton-Raphson solver.  Attempts to reach ||residual|| <= tolerance. Accepts
+/// a maximum # of iterations and returns the # of iterations used in iters.
+/// Returns true if successful.  
 bool SolveIK(RobotIKFunction& f,
 	     Real tolerance,int& iters,int verbose=1);
 
@@ -115,7 +122,9 @@ bool SolveIK(RobotKinematics3D&,const std::vector<IKGoal>& problem,
 	     Real tolerance,int& iters,int verbose=1);
 
 /// Same as above, constructing the ik function from an IK problem and a list of
-/// active dofs
+/// active dofs.  Attempts to reach ||residual|| <= tolerance. Accepts
+/// a maximum # of iterations and returns the # of iterations used in iters.
+/// Returns true if successful.  
 bool SolveIK(RobotKinematics3D&,const std::vector<IKGoal>& problem,
 	     const std::vector<int>& activeDofs,
 	     Real tolerance,int& iters,int verbose=1);
@@ -125,6 +134,30 @@ bool SolveIK(RobotKinematics3D&,const std::vector<IKGoal>& problem,
 /// goal.
 bool SolvePassiveChainIK(RobotKinematics3D&,const IKGoal& goal,
 			 Real tolerance,int& iters,int verbose=0);
+
+/// Solver that tries to minimize the residual of the given ik function.
+/// Attempts to reach ||residual|| <= tolerance or ||residual - residual'||<= delta_tolerance.
+/// Accepts a maximum # of iterations and returns the # of iterations used in iters.
+/// Returns true if the residual tolerance is reached.  
+bool MinimizeIK(RobotIKFunction& f,
+       Real tolerance,Real delta_tolerance,int& iters,int verbose=1);
+
+/// Solver that tries to minimize ||g(q)|| and achieve f(q)=0 simultaneously.
+/// If not possible, tries to minimize ||f(q)||.
+/// Terminates when ||residual|| <= tolerance and ||g(q) - g(q)'||<= delta_tolerance.
+/// Accepts a maximum # of iterations and returns the # of iterations used in iters.
+/// Returns true if the residual tolerance is reached.  
+bool PrioritizedIK(RobotIKFunction& f,VectorFieldFunction& g,
+       Real tolerance,Real delta_tolerance,int& iters,int verbose=1);
+
+/// Function that tries to minimize g(q) and achieve f(q)=0 simultaneously.
+/// If not possible, tries to minimize ||f(q)||.
+/// Terminates when ||residual|| <= tolerance and |g(q) - g(q)'|<= delta_tolerance.
+/// Accepts a maximum # of iterations and returns the # of iterations used in iters.
+/// Returns true if the residual tolerance is reached.  
+bool PrioritizedIK(RobotIKFunction& f,ScalarFieldFunction& g,
+       Real tolerance,Real delta_tolerance,int& iters,int verbose=1);
+
 
 /// For the goal link's transformation T, computes the error of the IK goal g
 void EvalIKError(const IKGoal& g,const RigidTransform& T,Real* poserr,Real* orierr);
