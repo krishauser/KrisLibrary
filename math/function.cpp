@@ -113,7 +113,14 @@ Real VectorFieldFunction::Divergence(const Vector& x)
   return sum;
 }
 
-
+void VectorFieldFunction::Hessian(const Vector& x,vector<Matrix>& H)
+{
+  H.resize(NumDimensions());
+  for(size_t i=0;i<H.size();i++) {
+    H[i].resize(x.n,x.n);
+    Hessian_i(x,(int)i,H[i]);
+  }
+}
 
 
 

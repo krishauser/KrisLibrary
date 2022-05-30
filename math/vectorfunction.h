@@ -332,6 +332,7 @@ public:
   virtual void PreEval(const Vector& x) override { f->PreEval(x); }
   virtual Real Eval(const Vector& x) override;
   virtual void Gradient(const Vector& x,Vector& grad) override;
+  virtual void Hessian(const Vector& x,Matrix& H) override;
 
 private:
   VectorFieldFunction* f;
@@ -339,8 +340,8 @@ private:
 };
 
 
-/// A vector field function f(x) = (f1(x), ... , fn(x)) where f1...fn are also
-/// vector fields
+/// A vector field function f(x) = stack(f1(x), ... , fn(x)) where f1...fn 
+/// are also vector fields
 class CompositeVectorFieldFunction : public VectorFieldFunction
 {
 public:
@@ -356,6 +357,7 @@ public:
   virtual void Jacobian(const Vector& x,Matrix& J) override;
   virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override;
   virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v) override;
+  virtual void Hessian(const Vector& x,std::vector<Matrix>& H) override;
   virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   int GetFunction(int &i) const;
@@ -367,16 +369,17 @@ public:
 class IndexedVectorFieldFunction : public VectorFieldFunction
 {
 public:
-  virtual std::string Label() const;
-  virtual std::string Label(int i) const;
-  virtual int NumDimensions() const;
-  virtual void PreEval(const Vector& x);
-  virtual void Eval(const Vector& x, Vector& v);
-  virtual Real Eval_i(const Vector& x,int i);
-  virtual void Jacobian(const Vector& x,Matrix& J);
-  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji);
-  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override;
+  virtual std::string Label(int i) const override;
+  virtual int NumDimensions() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual void Eval(const Vector& x, Vector& v) override;
+  virtual Real Eval_i(const Vector& x,int i) override;
+  virtual void Jacobian(const Vector& x,Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override;
+  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v) override;
+  virtual void Hessian(const Vector& x,std::vector<Matrix>& H) override;
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   std::shared_ptr<VectorFieldFunction> function;
   std::vector<int> xindices,findices;
@@ -390,16 +393,17 @@ public:
 class SliceVectorFieldFunction : public VectorFieldFunction
 {
 public:
-  virtual std::string Label() const;
-  virtual std::string Label(int i) const;
-  virtual int NumDimensions() const;
-  virtual void PreEval(const Vector& x);
-  virtual void Eval(const Vector& x, Vector& v);
-  virtual Real Eval_i(const Vector& x,int i);
-  virtual void Jacobian(const Vector& x,Matrix& J);
-  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji);
-  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
-  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi);
+  virtual std::string Label() const override;
+  virtual std::string Label(int i) const override;
+  virtual int NumDimensions() const override;
+  virtual void PreEval(const Vector& x) override;
+  virtual void Eval(const Vector& x, Vector& v) override;
+  virtual Real Eval_i(const Vector& x,int i) override;
+  virtual void Jacobian(const Vector& x,Matrix& J) override;
+  virtual void Jacobian_i(const Vector& x,int i,Vector& Ji) override;
+  virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v) override;
+  virtual void Hessian(const Vector& x,std::vector<Matrix>& H) override;
+  virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   std::shared_ptr<VectorFieldFunction> function;
   Vector x0;
