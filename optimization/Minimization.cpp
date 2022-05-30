@@ -33,7 +33,10 @@ ConvergenceResult MinimizationProblem::SolveGD(Real alpha,int& iters)
   grad.resize(x.n);
   Real fx0;
   fx = (*f)(x);
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  }
   int maxIters=iters;
   for(iters=0;iters<maxIters;iters++) {
     //Step()
@@ -69,7 +72,10 @@ ConvergenceResult MinimizationProblem::SolveSD(int& iters)
   grad.resize(x.n);
   int maxIters=iters;
   fx=(*f)(x); 
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  }
   for(iters=0;iters<maxIters;iters++) {
     f->Gradient(x,grad);
     grad.inplaceNegative();
@@ -90,7 +96,10 @@ ConvergenceResult MinimizationProblem::SolveCG(int& iters)
   Real gg,gam,fx0,dgg;
   Vector g,h;
   fx=(*f)(x);
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   grad.resize(x.n);
   f->Gradient(x,grad);
   g.setNegative(grad);
@@ -125,7 +134,10 @@ ConvergenceResult MinimizationProblem::SolveCG(int& iters)
 ConvergenceResult MinimizationProblem::SolveNewton(int& iters)
 {
   fx = (*f)(x);
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   grad.resize(x.n);
   H.resize(x.n,x.n);
   dx.resize(x.n);
@@ -181,7 +193,10 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
 {
   Assert(H.m == x.n && H.n == x.n);
   fx = (*f)(x);
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   grad.resize(x.n);
   Vector x0,grad0,s,q,upd;
   QNHessianUpdater qn;
@@ -259,7 +274,10 @@ ConvergenceResult MinimizationProblem::SolveQuasiNewton(int& iters)
 ConvergenceResult MinimizationProblem::SolveLM(int& iters,Real lambda0,Real lambdaGrow,Real lambdaShrink)
 {
   fx = (*f)(x);
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   Real lambda=lambda0;
   grad.resize(x.n);
   H.resize(x.n,x.n);
@@ -367,7 +385,10 @@ ConvergenceResult BCMinimizationProblem::SolveSD(int& iters)
 {
   int maxIters=iters;
   fx=(*f)(x); 
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   for(iters=0;iters<maxIters;iters++) {
     f->Gradient(x,grad);
     grad.inplaceNegative();
@@ -382,7 +403,10 @@ ConvergenceResult BCMinimizationProblem::SolveSD(int& iters)
 ConvergenceResult BCMinimizationProblem::SolveNewton(int& iters)
 {
   fx = (*f)(x);
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   grad.resize(x.n);
   H.resize(x.n,x.n);
   Vector dx(x.n);
@@ -438,7 +462,10 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
 {
   Assert(H.m == x.n && H.n == x.n);
   fx = (*f)(x);
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   grad.resize(x.n);
   Vector x0,grad0,s,q,upd,temp,dx(x.n);
   LDLDecomposition<Real> ldl;
@@ -603,7 +630,10 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int&
 
   if(f) fx = (*f)(x);
   else fx = 0;
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   if(C) {
     cx.resize(C->NumDimensions());
     (*C)(x,cx);
@@ -742,7 +772,10 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
 {
   if(f) fx = (*f)(x);
   else fx = 0;
-  if(fx <= fbreak) return ConvergenceF;
+  if(fx <= fbreak) {
+    iters=0;
+    return ConvergenceF;
+  } 
   if(C) {
     cx.resize(C->NumDimensions());
     (*C)(x,cx);
@@ -807,6 +840,9 @@ ConvergenceResult ConstrainedMinimizationProblem::StepSQP(Real &alpha)
   fc.copySubVector(x.n,cx);
   fc.inplaceNegative();
   Vector dxlambda,deltax;
+  SVDecomposition<Real> svd(lagrangian);
+  svd.dampedBackSub(fc,1e-2,dxlambda);
+  /*
   LDLDecomposition<Real> ldl(lagrangian);
   Vector ldlD;
   ldl.LDL.getDiagRef(0,ldlD);
@@ -817,6 +853,7 @@ ConvergenceResult ConstrainedMinimizationProblem::StepSQP(Real &alpha)
   else {
     ldl.backSub(fc,dxlambda);
   }
+  */
   deltax.setRef(dxlambda,0,1,x.n);
   if(!AABBContains(x,bmin,bmax)) 
     LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::StepSQP: Initial state not in bounds?")
