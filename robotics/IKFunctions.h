@@ -236,6 +236,7 @@ public:
   virtual Real Eval_i(const Vector& x, int i) override;
   virtual void Jacobian(const Vector& x, Matrix& J) override;
   virtual void Jacobian_i(const Vector& x, int i, Vector& Ji) override;
+  virtual void Hessian(const Vector& x,std::vector<Matrix>& H) override;
   virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   void UpdateEEPos();
@@ -248,7 +249,6 @@ public:
   //position,rotation error of end effector
   DirtyData<Vector3> eepos;
   DirtyData<Matrix3> eerot;
-  DirtyData<std::vector<Matrix> > H;
   Matrix Jptemp,Jptemp2,Jotemp,Jotemp2;
 };
 
@@ -271,6 +271,7 @@ public:
   virtual Real Eval_i(const Vector& x, int i) override;
   virtual void Jacobian(const Vector& x, Matrix& J) override;
   virtual void Jacobian_i(const Vector& x, int i, Vector& Ji) override;
+  virtual void Hessian(const Vector& x,std::vector<Matrix>& H) override;
   virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) override;
 
   RobotKinematics3D& robot;
@@ -279,8 +280,6 @@ public:
   Real comScale;
   //temp
   Real mtotal;
-  DirtyData<Matrix> Hx;
-  DirtyData<Matrix> Hy;
 };
 
 class RobotAffineConstraintFunction : public VectorFieldFunction
