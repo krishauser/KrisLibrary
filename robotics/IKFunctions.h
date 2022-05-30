@@ -242,7 +242,7 @@ public:
   void UpdateEERot();
 
   RobotKinematics3D& robot;
-  const IKGoal& goal;
+  IKGoal goal;
   const ArrayMapping& activeDofs;
   Real positionScale, rotationScale;
   //position,rotation error of end effector
