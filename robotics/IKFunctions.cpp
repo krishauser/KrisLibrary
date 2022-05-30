@@ -177,6 +177,8 @@ IKGoalFunction::IKGoalFunction(RobotKinematics3D& _robot,const IKGoal& _goal,con
   :robot(_robot),goal(_goal),activeDofs(active),
    positionScale(1),rotationScale(1)
 {
+  if(goal.link < 0 || goal.link >= _robot.q.n) FatalError("Invalid goal link");
+  if(goal.destLink >= _robot.q.n) FatalError("Invalid dest link");
   Assert(goal.posConstraint != IKGoal::PosNone || goal.rotConstraint != IKGoal::RotNone);
 }
 
