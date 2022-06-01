@@ -385,7 +385,7 @@ ConvergenceResult BCMinimizationProblem::SolveSD(int& iters)
 {
   int maxIters=iters;
   fx=(*f)(x); 
-  if(fx <= fbreak) {
+  if(fx <= fbreak && AABBContains(x,bmin,bmax)) {
     iters=0;
     return ConvergenceF;
   } 
@@ -403,7 +403,7 @@ ConvergenceResult BCMinimizationProblem::SolveSD(int& iters)
 ConvergenceResult BCMinimizationProblem::SolveNewton(int& iters)
 {
   fx = (*f)(x);
-  if(fx <= fbreak) {
+  if(fx <= fbreak && AABBContains(x,bmin,bmax)) {
     iters=0;
     return ConvergenceF;
   } 
@@ -462,7 +462,7 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
 {
   Assert(H.m == x.n && H.n == x.n);
   fx = (*f)(x);
-  if(fx <= fbreak) {
+  if(fx <= fbreak && AABBContains(x,bmin,bmax)) {
     iters=0;
     return ConvergenceF;
   } 
@@ -486,7 +486,9 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
     Real alpha0=1.0;
     ConvergenceResult res = LineMinimizationStep(dx,alpha0);
     if(res != MaxItersReached) return res;
-    if(fx <= fbreak) return ConvergenceF;
+    if(fx <= fbreak) {
+      return ConvergenceF;
+    }
 
     //update the gradient
     f->Gradient(x,grad);
@@ -518,7 +520,10 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
     Assert(sHs > 0);
     upd /= Sqrt(sHs);
     if(!ldl.downdate(upd)) {
-      if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain strict positive definiteness of hessian!");
+      if(verbose>=1) {
+        LOG4CXX_INFO(KrisLibrary::logger(),"Unable to maintain strict positive definiteness of hessian!");
+        cout<<"f(x) "<<fx<<endl;
+      }
       //revert to identity
       ldl.LDL.setIdentity();
       continue;
@@ -571,7 +576,7 @@ ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& a
   Real normdx = Norm_LInf(dx);
   if(normdx <= tolgrad) {
     //printf("Converged on f: |dx|=%f\n",normdx);
-    return ConvergenceF;
+    return LocalMinimum;
   }
   
   //start line search
@@ -598,8 +603,9 @@ ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& a
   else alpha0 = t;
 
   if(S) S->push_back(x);
-  if(Abs(fx0-fx) < tolf)
-      return ConvergenceF;
+  if(Abs(fx0-fx)/Max(Abs(fx),1.0) < tolf) {
+    return ConvergenceF;
+  }
 
   return MaxItersReached;
 }
@@ -630,10 +636,6 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int&
 
   if(f) fx = (*f)(x);
   else fx = 0;
-  if(fx <= fbreak) {
-    iters=0;
-    return ConvergenceF;
-  } 
   if(C) {
     cx.resize(C->NumDimensions());
     (*C)(x,cx);
@@ -642,7 +644,10 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int&
     dx.resize(D->NumDimensions());
     (*D)(x,dx);
   }
-  
+  if(fx <= fbreak && CurrentFeasible()) {
+    iters=0;
+    return ConvergenceF;
+  } 
 
   Vector lambda_c,lambda_d;
   Real mu = 100.0;
@@ -664,7 +669,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveAugmentedLangrangian(int&
         }
       }
     }
-    if(fx <= fbreak) return ConvergenceF;
+    if(fx <= fbreak && CurrentFeasible()) return ConvergenceF;
 
     //modify augmented langrangian multipliers
     for(int i=0;i<lambda_c.n;i++)
@@ -772,10 +777,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
 {
   if(f) fx = (*f)(x);
   else fx = 0;
-  if(fx <= fbreak) {
-    iters=0;
-    return ConvergenceF;
-  } 
+  //check feasibility too
   if(C) {
     cx.resize(C->NumDimensions());
     (*C)(x,cx);
@@ -784,6 +786,10 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
     dx.resize(D->NumDimensions());
     (*D)(x,dx);
   }
+  if(fx <= fbreak && CurrentFeasible()) {
+    iters=0;
+    return ConvergenceF;
+  } 
   
   Real alpha = 1.0;
   int maxIters=iters;
@@ -795,7 +801,7 @@ ConvergenceResult ConstrainedMinimizationProblem::SolveSQP(int& iters)
     if(res != MaxItersReached) {
       return res;
     }
-    if(fx <= fbreak) return ConvergenceF;
+    if(fx <= fbreak && CurrentFeasible()) return ConvergenceF;
     if(S) S->push_back(x);
   }
   if(verbose>=1) LOG4CXX_INFO(KrisLibrary::logger(),"ConstrainedMinimizationProblem::SolveSQP(): Max iters reached "<<iters<<".");
@@ -841,7 +847,7 @@ ConvergenceResult ConstrainedMinimizationProblem::StepSQP(Real &alpha)
   fc.inplaceNegative();
   Vector dxlambda,deltax;
   SVDecomposition<Real> svd(lagrangian);
-  svd.dampedBackSub(fc,1e-2,dxlambda);
+  svd.dampedBackSub(fc,1e-3,dxlambda);
   /*
   LDLDecomposition<Real> ldl(lagrangian);
   Vector ldlD;
@@ -913,4 +919,37 @@ ConvergenceResult ConstrainedMinimizationProblem::StepSQP(Real &alpha)
     }
     alpha *= 0.5;
   } 
+}
+
+
+bool ConstrainedMinimizationProblem::Feasible(const Vector& x,Real tol_c,Real tol_d)
+{
+  if(C) {
+    (*C)(x,cx);
+  }
+  if(D) {
+    (*D)(x,dx);
+  }
+  if(&x == &this->x)
+    return CurrentFeasible(tol_c,tol_d);
+  else {
+    Vector oldx = this->x;
+    this->x = x;
+    bool res = CurrentFeasible(tol_c,tol_d);
+    this->x = oldx;
+    return res;
+  }
+}
+
+bool ConstrainedMinimizationProblem::CurrentFeasible(Real tol_c,Real tol_d)
+{
+  if(tol_c<=0) tol_c = this->tolc;
+  if(!AABBContains(x,bmin,bmax)) return false;
+  if(C) {
+    if(cx.maxAbsElement() > tol_c) return false;
+  }
+  if(D) {
+    if(dx.maxElement() > -tol_d) return false;
+  }
+  return true;
 }
