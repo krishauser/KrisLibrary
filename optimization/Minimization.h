@@ -122,6 +122,10 @@ struct BCMinimizationProblem
   ///Hessian given in H
   ConvergenceResult SolveQuasiNewton(int& maxIters);
 
+  ///Performs Levenberg-Marquardt on a least squares problem min ||f(x)||^2.  Converges
+  ///better than newton or quasi-newton as df/dx approaches singular.
+  ConvergenceResult SolveLM(VectorFieldFunction* vf,int& maxIters,Real lambda0=1,Real lambdaGrow=2,Real lambdaShrink=3);
+
   ///Performs a line search to minimize f(x) in the direction dx.
   ConvergenceResult LineMinimizationStep(Vector& dx,Real& alpha0);
 
@@ -129,7 +133,7 @@ struct BCMinimizationProblem
   Vector bmin,bmax;
   Vector x;
   Real tolx,tolf,tolgrad;
-  Real fbreak; ///< stop when the objective function goes below this value
+  Real fbreak; ///< stop when the objective function goes below this value (and x is feasible)
 
   //output options
   int verbose;
@@ -162,13 +166,19 @@ struct ConstrainedMinimizationProblem
   ///Returns MaxItersReached on normal exit
   ConvergenceResult StepSQP(Real &alpha);
 
+  ///Returns true if x is a feasible point. Checks ||C(X)||_inf<=tol_c and D(X)<=-tol_d. 
+  ///If tol_c<=0, uses this->tolc as the equality testing tolerance. 
+  bool Feasible(const Vector& x,Real tol_c=0,Real tol_d=0);
+  ///Same as feasible but uses current values of cx, dx
+  bool CurrentFeasible(Real tol_c=0,Real tol_d=0);
+
   ScalarFieldFunction* f;
   VectorFieldFunction* C,*D;
   Vector bmin,bmax;
   Vector x;
   Real tolx,tolf,tolgrad,tolc;
   int innerIters;
-  Real fbreak; ///< stop when the constraints are satisfied and the objective function goes below this value
+  Real fbreak; ///< stop when the constraints are satisfied and the objective function goes below this value (and x is feasible)
 
   BCMinimizationProblem augmentedLagrangianProblem;
 

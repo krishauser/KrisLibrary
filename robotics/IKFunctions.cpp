@@ -1086,7 +1086,8 @@ bool RobotIKSolver::MinimizeResidual(Real tolerance,Real delta_tolerance,int& it
   problem.tolgrad = delta_tolerance;
   problem.x = solver.x;
   problem.fbreak = Sqr(tolerance); //squared tolerance
-  ConvergenceResult res = problem.SolveQuasiNewton(iters);
+  //ConvergenceResult res = problem.SolveQuasiNewton(iters);
+  ConvergenceResult res = problem.SolveLM(&function,iters,0.01);
   solver.x = problem.x;
   StateToRobot();
   if(problem.fx <= Sqr(tolerance)) {

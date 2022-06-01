@@ -540,6 +540,61 @@ ConvergenceResult BCMinimizationProblem::SolveQuasiNewton(int& iters)
   return MaxItersReached;
 }
 
+ConvergenceResult BCMinimizationProblem::SolveLM(VectorFieldFunction* vf,int& iters,Real lambda0,Real lambdaGrow,Real lambdaShrink)
+{
+  Vector vfx(vf->NumDimensions());
+  Matrix J(vf->NumDimensions(),x.n);
+  Vector dx;
+  (*vf)(x,vfx);
+  fx = vfx.normSquared();
+  if(fx <= fbreak && AABBContains(x,bmin,bmax)) {
+    iters=0;
+    return ConvergenceF;
+  } 
+  Real lambda=lambda0;
+  grad.resize(x.n);
+  dx.resize(x.n);
+  Vector x0;
+  SVDecomposition<Real> svd;
+  Real fx0;
+  bool tookStep=true;
+  int maxIters=iters;
+  for(iters=0;iters<maxIters;iters++) {
+    if(tookStep) {
+      vf->Jacobian(x,J);
+      J.mulTranspose(vfx,grad);
+      grad *= 2;
+      svd.set(J);
+    }
+
+    fx0 = fx;
+    x0 = x;
+    svd.dampedBackSub(vfx,lambda,dx);
+    dx.inplaceNegative();
+    x += dx;
+    AABBClamp(x,bmin,bmax);
+
+    //check if the step works or not
+    (*vf)(x,vfx);
+    fx = vfx.normSquared();
+    if(Abs(fx0 - fx)/Max(Abs(fx0),1.0) < tolf) return ConvergenceF;
+    if(grad.maxAbsElement() < tolgrad) return ConvergenceF;
+    if(dx.maxAbsElement() < tolx) return ConvergenceX;
+    if(fx < fx0) {
+      tookStep=true;
+      lambda /= lambdaShrink;
+      if(fx <= fbreak) return ConvergenceF;
+    }
+    else {
+      tookStep=false;
+      x = x0;
+      fx = fx0;
+      lambda *= lambdaGrow;
+    }
+  }
+  return MaxItersReached;
+}
+
 ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& alpha0)
 {
   if(!AABBContains(x,bmin,bmax)) 
