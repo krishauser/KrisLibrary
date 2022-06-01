@@ -1081,7 +1081,7 @@ bool RobotIKSolver::MinimizeResidual(Real tolerance,Real delta_tolerance,int& it
   problem.H *= 2;
   for(int i=0;i<solver.x.n;i++)
     problem.H(i,i) += 0.1;
-  problem.tolf = Sqr(tolerance); //squared tolerance
+  problem.tolf = Sqr(tolerance)*0.01; //squared tolerance -- this is the change between steps
   problem.tolx = tolerance*0.01;
   problem.tolgrad = delta_tolerance;
   problem.x = solver.x;
