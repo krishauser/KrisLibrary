@@ -437,9 +437,24 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
         Convert(TriangleMesh,mesh,param);
         if (param == 0) param = Inf;
         mesh.Convert(PointCloud, res, param);
+        return true;
+      }
+      case ImplicitSurface:
+      {
+        if (param == 0)
+        {
+          AABB3D bb = GetAABB();
+          Real w = (bb.bmax - bb.bmin).maxAbsElement();
+          param = w * 0.05;
+        }
+        res = AnyGeometry3D(Meshing::VolumeGrid());
+        Meshing::VolumeGrid& grid = res.AsImplicitSurface();
+        ConvexHullToImplcitSurface(AsConvexHull(),grid, param);
+        return true;
       }
       default:
-        LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from ConvexHull to anything except for TriangleMesh and PointCloud");
+        printf("Trying to convert ConvexHull to %d\n",(int)restype);
+        LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot convert from ConvexHull to anything except for TriangleMesh, PointCloud, and ImplicitSurface");
         break;
     }
   case PointCloud:
@@ -1672,6 +1687,20 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
       if(!items[i].Convert(restype,resitems[i],param)) return false;
     }
     res.Merge(resitems);
+    res.margin = margin;
+    return true;
+  }
+  else if (type == ConvexHull && restype == ImplicitSurface) {
+    if (param == 0)
+    {
+      AABB3D bb = GetAABB();
+      Real w = (bb.bmax - bb.bmin).maxAbsElement();
+      param = w * 0.05;
+    }
+    res = AnyCollisionGeometry3D(Meshing::VolumeGrid());
+    Meshing::VolumeGrid& grid = res.AsImplicitSurface();
+    ConvexHullToImplcitSurface(AsConvexHull(),grid, param, margin);
+    res.SetTransform(GetTransform());
     res.margin = margin;
     return true;
   }

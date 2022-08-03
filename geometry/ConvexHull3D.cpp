@@ -268,7 +268,7 @@ void ConvexHull3D::SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2)
   shapeHandle = make_shared<ShapeHandleContainer>(DT_NewHullFree(hull1.shapeHandle->data, hull2.shapeHandle->data));
 }
 
-bool ConvexHull3D::Contains(const Vector3& pnt)
+bool ConvexHull3D::Contains(const Vector3& pnt) const
 {
   if(!shapeHandle) return false;
   ConvexHull3D pnt_hull;
@@ -276,7 +276,7 @@ bool ConvexHull3D::Contains(const Vector3& pnt)
   return Collides(pnt_hull);
 }
 
-bool ConvexHull3D::Collides(const ConvexHull3D& g,Vector3* common_point)
+bool ConvexHull3D::Collides(const ConvexHull3D& g,Vector3* common_point) const
 {
   DT_SetAccuracy((DT_Scalar)1e-6);
   DT_SetTolerance((DT_Scalar)(1e-6));
@@ -343,11 +343,11 @@ std::tuple<Real, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_ObjectH
 }
 
 // compute the distance from a hull to another hull
-Real ConvexHull3D::Distance(const ConvexHull3D &h) {
+Real ConvexHull3D::Distance(const ConvexHull3D &h) const {
     return std::get<0>(ClosestPoints(h));
 }
 
-Real ConvexHull3D::Distance(const Vector3 &pnt) {
+Real ConvexHull3D::Distance(const Vector3 &pnt) const {
   ConvexHull3D pnt_hull;
   pnt_hull.SetPoint(pnt);
   return Distance(pnt_hull);

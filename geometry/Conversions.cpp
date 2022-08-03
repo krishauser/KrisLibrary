@@ -720,4 +720,19 @@ void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh)
 	}
 }
 
+void ConvexHullToImplcitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+{
+	AABB3D aabb = ch.GetAABB();
+	aabb.bmin -= Vector3(expansion);
+	aabb.bmax += Vector3(expansion);
+	FitGridToBB(aabb,grid,resolution,0.5);
+	Meshing::VolumeGrid::iterator it = grid.getIterator();
+	Vector3 c;
+	while(!it.isDone()) {
+		it.getCellCenter(c);
+		*it = ch.Distance(c);
+		++it;
+	}
+}
+
 } //namespace Geometry

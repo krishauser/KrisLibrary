@@ -105,6 +105,11 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
  */
 void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh);
 
+/** @ingroup geometry
+ * Computes an implicit surface from a ConvexHull.
+ */
+void ConvexHullToImplcitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
+
 } //namespace Geometry
 
 #endif
