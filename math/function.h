@@ -3,6 +3,7 @@
 
 #include "math.h"
 #include <KrisLibrary/errors.h>
+#include <vector>
 #include <string>
 namespace Math
 {
