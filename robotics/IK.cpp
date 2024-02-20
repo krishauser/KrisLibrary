@@ -315,7 +315,7 @@ void IKGoal::RemoveRotationAxis(const Vector3& p,const Vector3& axis)
 void IKGoal::RemoveRotationAxis(const Vector3& axis)
 {
   switch(rotConstraint) {
-  case IKGoal::PosNone: //done
+  case IKGoal::RotNone: //done
     break;
   case IKGoal::RotTwoAxis: //dual-axis rotation
     //if one of the axes are parallel to the normal, all is well
