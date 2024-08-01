@@ -738,6 +738,45 @@ Real RayCast(const Meshing::VolumeGrid& grid,const Ray3D& ray,Real levelSet,Real
   return tmax;
 }
 
+///Returns the distance to the closest point on the occupancy grid defined at the given density threshold.
+///tmax will be returned if no collision is found.
+///
+///The algorithm marches along cells intersected by the ray until a zero-crossing is met.
+///O(n) where n is the resolution of the grid.
+Real RayCast_Occupancy(const Meshing::VolumeGrid& grid,const Ray3D& ray,Real levelSet,Real tmax)
+{
+  Real umin=0,umax=tmax;
+  AABB3D center_bb = grid.bb;
+  Vector3 celldims = grid.GetCellSize();
+  //make correction for grid cell centers
+  center_bb.bmin += celldims*0.5;
+  center_bb.bmax -= celldims*0.5;
+  if(!ray.intersects(center_bb,umin,umax)) {
+    return tmax;
+  }
+  if(umin >= tmax) return tmax;
+  if(umax > tmax) umax = tmax;
+  Segment3D overlap;
+  overlap.a = ray.source + umin*ray.direction;
+  overlap.b = ray.source + umax*ray.direction;
+  vector<IntTriple> cells;
+  vector<Real> params;
+  //grid values are interpreted at their centers
+  Real segscale = (umax-umin);
+  Meshing::GetSegmentCells(overlap,grid.value.m-1,grid.value.n-1,grid.value.p-1,center_bb,cells,&params);
+  for(size_t i=0;i<cells.size();i++) {
+    if(grid.value(cells[i]) > levelSet) {
+      AABB3D cellbb;
+      grid.GetCell(cells[i],cellbb);
+      umin = 0;
+      umax = tmax;
+      if(ray.intersects(cellbb,umin,umax))
+        return umin;
+    }
+  }
+  return tmax;
+}
+
 ///Returns the distance to the closest point on the implicit surface defined at the given level set.
 ///The algorithm uses the collision hierarchy (O(log n) where n is the resolution of the grid.
 Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelSet,Real tmax)

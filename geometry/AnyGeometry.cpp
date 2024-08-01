@@ -109,25 +109,31 @@ void PushGroup2(AnyDistanceQueryResult &res, int i)
   res.elem2 = i;
 }
 
-int PointIndex(const CollisionImplicitSurface &s, const Vector3 &ptworld)
+
+int PointIndex(const Meshing::VolumeGrid &g, const RigidTransform Tg,const Vector3 &ptworld)
 {
   Vector3 plocal;
-  s.currentTransform.mulInverse(ptworld, plocal);
+  Tg.mulInverse(ptworld, plocal);
   IntTriple cell;
-  s.baseGrid.GetIndex(plocal, cell);
+  g.GetIndex(plocal, cell);
   if (cell.a < 0)
     cell.a = 0;
-  if (cell.a >= s.baseGrid.value.m)
-    cell.a = s.baseGrid.value.m - 1;
+  if (cell.a >= g.value.m)
+    cell.a = g.value.m - 1;
   if (cell.b < 0)
     cell.b = 0;
-  if (cell.b >= s.baseGrid.value.n)
-    cell.b = s.baseGrid.value.n - 1;
+  if (cell.b >= g.value.n)
+    cell.b = g.value.n - 1;
   if (cell.c < 0)
     cell.c = 0;
-  if (cell.c >= s.baseGrid.value.p)
-    cell.c = s.baseGrid.value.p - 1;
-  return cell.a * s.baseGrid.value.n * s.baseGrid.value.p + cell.b * s.baseGrid.value.p + cell.c;
+  if (cell.c >= g.value.p)
+    cell.c = g.value.p - 1;
+  return cell.a * g.value.n * g.value.p + cell.b * g.value.p + cell.c;
+}
+
+int PointIndex(const CollisionImplicitSurface &s, const Vector3 &ptworld)
+{
+  return PointIndex(s.baseGrid,s.currentTransform,ptworld);
 }
 
 AnyDistanceQueryResult::AnyDistanceQueryResult()
@@ -241,7 +247,7 @@ bool AnyGeometry3D::Empty() const
   return false;
 }
 
-void AnyGeometry3D::Merge(const vector<AnyGeometry3D> &geoms)
+void AnyGeometry3D::Union(const vector<AnyGeometry3D> &geoms)
 {
   vector<int> nonempty;
   for (size_t i = 0; i < geoms.size(); i++)
@@ -277,7 +283,7 @@ void AnyGeometry3D::Merge(const vector<AnyGeometry3D> &geoms)
       vector<Meshing::TriMesh> items(nonempty.size());
       for (size_t i = 0; i < nonempty.size(); i++)
         items[i] = geoms[nonempty[i]].AsTriangleMesh();
-      merged.Merge(items);
+      merged.Union(items);
       data = merged;
     }
     break;
@@ -449,7 +455,7 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
         }
         res = AnyGeometry3D(Meshing::VolumeGrid());
         Meshing::VolumeGrid& grid = res.AsImplicitSurface();
-        ConvexHullToImplcitSurface(AsConvexHull(),grid, param);
+        ConvexHullToImplicitSurface(AsConvexHull(),grid, param);
         return true;
       }
       default:
@@ -596,7 +602,7 @@ bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
     vector<AnyGeometry3D> converted(items.size());
     for (size_t i = 0; i < items.size(); i++)
       items[i].Convert(restype, converted[i], param);
-    res.Merge(items);
+    res.Union(items);
     return true;
   }
   break;
@@ -886,6 +892,158 @@ bool AnyGeometry3D::ExtractROI(const Box3D& bb,AnyGeometry3D& res,int flags) con
     FatalError("Unhandled type?");
     return false;
   }
+}
+
+bool AnyGeometry3D::Merge(const AnyGeometry3D& geom,const RigidTransform& T,double threshold)
+{
+    if(geom.type == Group) {
+    const vector<AnyGeometry3D>& items = geom.AsGroup();
+    for(size_t i=0;i<items.size();i++)
+      if(!Merge(items[i],T,threshold)) return false;
+    return true;
+  }
+  if(type == geom.type) {
+    if(type == TriangleMesh || type == PointCloud) {
+      vector<AnyGeometry3D> items(2);
+      items[0] = *this;
+      items[1] = geom;
+      items[1].Transform(T);
+      Union(items);
+      Assert(type != Group);  //should not have merged into a group
+      return true;
+    }
+    else if(type == ConvexHull) {
+      ConvexHull3D& chull = AsConvexHull();
+      const ConvexHull3D& chull2 = geom.AsConvexHull();
+      if(chull.type == ConvexHull3D::Empty) {
+        chull = chull2;
+        return true;
+      }
+      else if(chull.type == ConvexHull3D::Polytope && chull2.type == ConvexHull3D::Polytope) {
+        vector<double>& pts = chull.AsPolytope();
+        const vector<double>& pts2 = chull2.AsPolytope();
+        pts.insert(pts.end(),pts2.begin(),pts2.end());
+        return true;
+      }
+      else {
+        chull.SetHull(chull,chull2);
+        return true;
+      }
+    }
+    else if(type == ImplicitSurface) {
+      Meshing::VolumeGrid& grid = AsImplicitSurface();
+      const Meshing::VolumeGrid& grid2 = geom.AsImplicitSurface();
+      if(grid.IsSimilar(grid2))
+        grid.Min(grid2);
+      else {
+        Meshing::VolumeGrid::iterator it = grid.getIterator();
+        Vector3 c,cl;
+        while(!it.isDone()) {
+          it.getCellCenter(c);
+          T.mulInverse(c,cl);
+          *it = Min(*it,grid2.TrilinearInterpolate(cl));
+          ++it;
+        }
+      }
+      return true;
+    }
+    else if(type == OccupancyGrid) {
+      Meshing::VolumeGrid& grid = AsImplicitSurface();
+      const Meshing::VolumeGrid& grid2 = geom.AsImplicitSurface();
+      if(grid.IsSimilar(grid2))
+        grid.Min(grid2);
+      else {
+        //average over all cells in the box
+        Meshing::VolumeGrid::iterator it = grid.getIterator();
+        AABB3D bb;
+        Box3D box;
+        RigidTransform Tinv; Tinv.setInverse(T);
+        while(!it.isDone()) {
+          it.getCell(bb);
+          box.setTransformed(bb,Tinv);
+          box.getAABB(bb);
+          *it = Max(*it,grid2.Average(bb));
+          ++it;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+  if(type == ImplicitSurface) {
+    Meshing::VolumeGrid& grid = AsImplicitSurface();
+    if(geom.type == OccupancyGrid) {
+      //can't go from occupancy grid to implicit surface yet
+      return false;
+    }
+    else {
+      //TODO: use threshold to set up an ROI
+      Meshing::VolumeGrid gridtemp;
+      gridtemp.MakeSimilar(grid);
+      if(geom.type == Primitive) {
+        const GeometricPrimitive3D& primitive = geom.AsPrimitive();
+        GeometricPrimitive3D Tp = primitive;
+        Tp.Transform(T);
+        PrimitiveImplicitSurfaceFill(Tp,gridtemp);
+      }
+      else if(geom.type == ConvexHull) {
+        const ConvexHull3D& hull = geom.AsConvexHull();
+        ConvexHull3D Tc = hull;
+        Tc.Transform(T);
+        ConvexHullToImplicitSurface(Tc,gridtemp);
+      }
+      else {
+        //need collision acceleration data structures
+        return false;
+      }
+      grid.Min(gridtemp);
+      return true;
+    }
+  }
+  else if(type == OccupancyGrid) {
+    Meshing::VolumeGrid& grid = AsImplicitSurface();
+    if(geom.type == ImplicitSurface) {
+      AnyGeometry3D gridtemp;
+      geom.Convert(OccupancyGrid,gridtemp);
+      return Merge(gridtemp,T,threshold);
+    }
+    else {
+      //TODO: these should be faster since we don't need to compute distances everywhere
+      AnyGeometry3D geomtemp(Meshing::VolumeGrid(),VolumeGridImplicitSurface);
+      Meshing::VolumeGrid& gridtemp = geomtemp.AsImplicitSurface();
+      gridtemp.MakeSimilar(grid);
+      if(geom.type == Primitive) {
+        const GeometricPrimitive3D& primitive = geom.AsPrimitive();
+        GeometricPrimitive3D Tp = primitive;
+        Tp.Transform(T);
+        PrimitiveImplicitSurfaceFill(Tp,gridtemp);
+      }
+      else if(geom.type == ConvexHull) {
+        const ConvexHull3D& hull = geom.AsConvexHull();
+        ConvexHull3D Tc = hull;
+        Tc.Transform(T);
+        ConvexHullToImplicitSurface(Tc,gridtemp);
+      }
+      else if(geom.type == PointCloud) {
+        const Meshing::PointCloud3D& pc = geom.AsPointCloud();
+        for(size_t i=0;i<pc.points.size();i++) {
+          Vector3 pw;
+          T.mul(pc.points[i],pw);
+          grid.SetValue(pw,1.0);
+        }
+        return true;
+      }
+      else {
+        //need collision acceleration data structures
+        return false;
+      }
+      AnyGeometry3D geomtemp2;
+      geomtemp.Convert(OccupancyGrid,geomtemp2);
+      grid.Max(geomtemp2.AsOccupancyGrid());
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -1420,6 +1578,11 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
       collisionData = CollisionImplicitSurface(cmesh);
     }
     break;
+    case OccupancyGrid:
+    {
+      LOG4CXX_WARN(GET_LOGGER(Geometry), "Occupancy grid collision not supported yet");
+    }
+    break;
     case TriangleMesh:
     {
       const CollisionMesh &cmesh = geom.TriangleMeshCollisionData();
@@ -1480,6 +1643,9 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   case ImplicitSurface:
     collisionData = CollisionImplicitSurface(AsImplicitSurface());
     break;
+  case OccupancyGrid:
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "Occupancy grid collision not supported yet");
+    break;
   case TriangleMesh:
     collisionData = CollisionMesh(AsTriangleMesh());
     break;
@@ -1508,13 +1674,13 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   assert(!collisionData.empty());
 }
 
-void AnyCollisionGeometry3D::Merge(const vector<AnyGeometry3D>& geoms)
+void AnyCollisionGeometry3D::Union(const vector<AnyGeometry3D>& geoms)
 {
-  AnyGeometry3D::Merge(geoms);
+  AnyGeometry3D::Union(geoms);
   ClearCollisionData();
 }
 
-void AnyCollisionGeometry3D::Merge(const vector<AnyCollisionGeometry3D> &geoms)
+void AnyCollisionGeometry3D::Union(const vector<AnyCollisionGeometry3D> &geoms)
 {
   vector<int> nonempty;
   for (size_t i = 0; i < geoms.size(); i++)
@@ -1686,7 +1852,7 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     for(size_t i=0;i<items.size();i++) {
       if(!items[i].Convert(restype,resitems[i],param)) return false;
     }
-    res.Merge(resitems);
+    res.Union(resitems);
     res.margin = margin;
     return true;
   }
@@ -1699,7 +1865,7 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     }
     res = AnyCollisionGeometry3D(Meshing::VolumeGrid());
     Meshing::VolumeGrid& grid = res.AsImplicitSurface();
-    ConvexHullToImplcitSurface(AsConvexHull(),grid, param, margin);
+    ConvexHullToImplicitSurface(AsConvexHull(),grid, param, margin);
     res.SetTransform(GetTransform());
     res.margin = margin;
     return true;
@@ -1871,10 +2037,10 @@ Box3D AnyCollisionGeometry3D::GetBB() const
     switch (type)
     {
     case Primitive:
-      b.setTransformed(AsPrimitive().GetBB(), PrimitiveCollisionData());
+      b.setTransformed(AsPrimitive().GetBB(), currentTransform);
       break;
     case ConvexHull:  //TODO: how to implement getBB function for convex hull if not axis aligned?
-      b.setTransformed(AsConvexHull().GetBB(), this->currentTransform);
+      b.setTransformed(AsConvexHull().GetBB(), currentTransform);
       break;
     case TriangleMesh:
       ::GetBB(TriangleMeshCollisionData(), b);
@@ -1883,7 +2049,10 @@ Box3D AnyCollisionGeometry3D::GetBB() const
       ::GetBB(PointCloudCollisionData(), b);
       break;
     case ImplicitSurface:
-      b.setTransformed(AsImplicitSurface().bb, ImplicitSurfaceCollisionData().currentTransform);
+      b.setTransformed(AsImplicitSurface().bb, currentTransform);
+      break;
+    case OccupancyGrid:
+      b.setTransformed(AsOccupancyGrid().bb, currentTransform);
       break;
     case Group:
     {
@@ -1923,6 +2092,9 @@ void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
       break;
     case ImplicitSurface:
       ImplicitSurfaceCollisionData().currentTransform = T;
+      break;
+    case OccupancyGrid:
+      //TODO: do something with the collision data
       break;
     case TriangleMesh:
       TriangleMeshCollisionData().UpdateTransform(T);
@@ -1964,7 +2136,11 @@ Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
     const CollisionImplicitSurface &vg = ImplicitSurfaceCollisionData();
     return Geometry::Distance(vg, pt) - margin;
   }
-  break;
+  case OccupancyGrid:
+  {
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "Occupancy grid distance not supported yet");
+    break;
+  }
   case TriangleMesh:
   {
     const CollisionMesh &cm = TriangleMeshCollisionData();
@@ -2035,6 +2211,11 @@ AnyDistanceQueryResult AnyCollisionGeometry3D::Distance(const Vector3 &pt, const
     Offset1(res, margin);
     //cout<<"Doing ImplicitSurface - point collision detection, with direction "<<res.dir2<<endl;
     return res;
+  }
+  case OccupancyGrid:
+  {
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "Occupancy grid distance not supported yet");
+    break;
   }
   case TriangleMesh:
   {
@@ -3302,6 +3483,9 @@ AnyDistanceQueryResult Distance(const CollisionMesh &a, const AnyCollisionGeomet
   case AnyCollisionGeometry3D::ImplicitSurface:
     LOG4CXX_ERROR(GET_LOGGER(Geometry), "Unable to do triangle mesh/implicit surface distance yet");
     break;
+  case AnyCollisionGeometry3D::OccupancyGrid:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Unable to do triangle mesh/occupancy grid distance yet");
+    break;
   case AnyCollisionGeometry3D::TriangleMesh:
   {
     res = Distance(a, b.TriangleMeshCollisionData(), modsettings);
@@ -3366,6 +3550,9 @@ AnyDistanceQueryResult Distance(const CollisionPointCloud &a, const AnyCollision
     Flip(res);
     Offset2(res, b.margin);
   }
+  case AnyCollisionGeometry3D::OccupancyGrid:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Unable to do point cloud/occupancy grid distance yet");
+    break;
   break;
   case AnyCollisionGeometry3D::Group:
   {
@@ -3555,6 +3742,19 @@ bool AnyCollisionGeometry3D::RayCast(const Ray3D &r, Real *distance, int *elemen
     if(!IsInf(dist)) {
       if(distance) *distance = dist;
       if(element) *element = PointIndex(surf,r.source+dist*r.direction);
+      return true;
+    }
+    return false;
+  }
+  case OccupancyGrid:
+  {
+    //note: margin is not handled properly for grazing rays
+    const auto& grid = AsOccupancyGrid();
+    Real dist = ::RayCast_Occupancy(grid,r);
+    if(!IsInf(dist)) {
+      dist -= margin;
+      if(distance) *distance = dist;
+      if(element) *element = PointIndex(grid,currentTransform,r.source+dist*r.direction);
       return true;
     }
     return false;
@@ -3822,6 +4022,55 @@ bool AnyCollisionGeometry3D::ExtractROI(const Box3D& bb,AnyCollisionGeometry3D& 
   }
 }
 
+bool AnyCollisionGeometry3D::Merge(AnyCollisionGeometry3D& geom,double threshold)
+{
+  if(geom.type == Group) {
+    vector<AnyCollisionGeometry3D>& items = geom.GroupCollisionData();
+    for(size_t i=0;i<items.size();i++)
+      if(!Merge(items[i],threshold)) return false;
+    return true;
+  }
+  if(type == ImplicitSurface) {
+    if(!(geom.type == OccupancyGrid || geom.type == Primitive || geom.type == ConvexHull)) {
+      Meshing::VolumeGrid& grid = AsImplicitSurface();
+      //TODO: use threshold to set up an ROI
+      Meshing::VolumeGrid::iterator it = grid.getIterator();
+      Vector3 c,cw;
+      while(!it.isDone()) {
+        it.getCellCenter(c);
+        currentTransform.mul(c,cw);
+        Real d = geom.Distance(cw);
+        *it = Min(*it,d);
+      }
+      ClearCollisionData();
+      return true;
+    }
+  }
+  else if(type == OccupancyGrid) {
+    if(!(geom.type == ImplicitSurface || geom.type == Primitive || geom.type == ConvexHull || geom.type == PointCloud)) {
+      Meshing::VolumeGrid& grid = AsOccupancyGrid();
+      //TODO: use threshold to set up an ROI
+      Meshing::VolumeGrid::iterator it = grid.getIterator();
+      AnyDistanceQuerySettings settings;
+      settings.upperBound = threshold;
+      Vector3 c,cw;
+      while(!it.isDone()) {
+        it.getCellCenter(c);
+        currentTransform.mul(c,cw);
+        AnyDistanceQueryResult res=geom.Distance(cw,settings);
+        if(res.d <= 0)
+          *it = 1.0;
+      }
+      ClearCollisionData();
+      return true;
+    }
+  }
+  RigidTransform Trel;
+  Trel.mulInverseA(currentTransform,geom.currentTransform);
+  bool res = AnyGeometry3D::Merge(geom,Trel,threshold);
+  if(res) ClearCollisionData();
+  return res;
+}
 
 
 
@@ -4843,6 +5092,9 @@ void PrimitiveGeometryContacts(GeometricPrimitive3D &g1, const RigidTransform &T
   case AnyGeometry3D::ImplicitSurface:
     LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: primitive-implicit surface contacts");
     break;
+  case AnyGeometry3D::OccupancyGrid:
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: primitive-occupancy grid contacts");
+    break;
   case AnyGeometry3D::ConvexHull:
     LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: primitive-convex hull contacts");
     break;
@@ -4887,6 +5139,9 @@ void MeshGeometryContacts(CollisionMesh &m1, Real outerMargin1, Geometry::AnyCol
     return;
   case AnyGeometry3D::ImplicitSurface:
     LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: triangle mesh-implicit surface contacts");
+    break;
+  case AnyGeometry3D::OccupancyGrid:
+    LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: triangle mesh-occupancy grid contacts");
     break;
   case AnyGeometry3D::ConvexHull:
     LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: triangle mesh-convex hull contacts");
@@ -4941,6 +5196,9 @@ void GeometryGeometryContacts(Geometry::AnyCollisionGeometry3D &g1, Real outerMa
     case AnyGeometry3D::ImplicitSurface:
       PointCloudImplicitSurfaceContacts(g1.PointCloudCollisionData(), g1.margin + outerMargin1, g2.ImplicitSurfaceCollisionData(), g2.margin + outerMargin2, contacts, maxcontacts);
       break;
+    case AnyGeometry3D::OccupancyGrid:
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: point cloud-occupancy grid contaccts");
+      break;
     case AnyGeometry3D::Group:
       LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: point cloud-group contacts");
       break;
@@ -4968,6 +5226,9 @@ void GeometryGeometryContacts(Geometry::AnyCollisionGeometry3D &g1, Real outerMa
     case AnyGeometry3D::ImplicitSurface:
       LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-implicit surface contacts");
       break;
+    case AnyGeometry3D::OccupancyGrid:
+      LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-occupancy grid contacts");
+      break;
     case AnyGeometry3D::Group:
       LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-group contacts");
       break;
@@ -4976,6 +5237,9 @@ void GeometryGeometryContacts(Geometry::AnyCollisionGeometry3D &g1, Real outerMa
       break;
     }
     break;
+  case AnyGeometry3D::OccupancyGrid:
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: occupancy grid-anything contacts");
+    return;
   case AnyGeometry3D::ConvexHull:
     LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: convex hull-anything contacts");
     break;

@@ -55,7 +55,7 @@ enum {
  * - SDF: signed distance function. Functionally equivalent to ImplicitSurface but actually measures distance.
  * - TSDF: truncated signed distance function.  Functionally equivalent to ImplicitSurface but estimates distance up to some threshold.
  * - OccupancyGrid: stores the occupancy of cells, in the range [0,1].
- * - Density: stores a density in cells. An implicit surface is defined with 0.5 - density.
+ * - Density: stores a density in cells. An implicit surface is defined with density = 0.5.
  */
 enum { 
   VolumeGridUnknown=0,
@@ -88,6 +88,7 @@ class AnyGeometry3D
    * - PointCloud: PointCloud3D
    * - ImplicitSurface: VolumeGrid
    * - OccupancyGrid: VolumeGrid
+   * - ConvexHull: ConvexHull3D
    * - Group: vector<AnyGeometry3D>
    */
   enum Type { Primitive, TriangleMesh, PointCloud, ImplicitSurface, OccupancyGrid, ConvexHull, Group };
@@ -135,7 +136,11 @@ class AnyGeometry3D
   AABB3D GetAABB() const;
   void Transform(const RigidTransform& T);
   void Transform(const Matrix4& mat);
-  void Merge(const vector<AnyGeometry3D>& geoms);
+  /// Creates a unified geometry that is the union of all the geometries in the group.
+  ///
+  /// Destroys the current geometry.  If the objects are not compatible, a Group
+  /// geometry is created.
+  void Union(const vector<AnyGeometry3D>& geoms);
   ///Converts to another geometry type, storing the result in res and returning true
   ///if the conversion is available. 
   ///
@@ -174,6 +179,15 @@ class AnyGeometry3D
   ///ExtractROIFlagX enum for more details.
   bool ExtractROI(const AABB3D& bb,AnyGeometry3D& res,int flag=1) const;
   bool ExtractROI(const Box3D& bb,AnyGeometry3D& res,int flag=1) const;
+  ///Merges geom into the current geometry.  For ImplicitSurface / OccupancyGrid,
+  ///the current domain is preserved. 
+  ///
+  ///T is the transform from geom to this geometry's frame.  If type=ImplicitSurface,
+  ///threshold is a TSDF truncation threshold.
+  ///
+  ///Returns false if a valid conversion is not possible.  All types except
+  ///for ImplicitSurface / OccupancyGrid must be matched with this->type.
+  bool Merge(const AnyGeometry3D& geom,const RigidTransform& T,double threshold=0);
 
   Type type;
   ///The data, according to the type
@@ -192,6 +206,11 @@ class AnyGeometry3D
  * the result is <= 0, the two objects are in collision. A geometry type
  * may support returning a signed distance if the objects are penetrating, i.e.
  * Distance() < 0.
+ * 
+ * Note: Group geometries share the same current transform. Yes, it would be
+ * more convenient to have groups act as independent rigid objects whose
+ * sub-geometries can be set to different locations.  But this would break
+ * most geometry processing APIs.
  */
 class AnyCollisionGeometry3D : public AnyGeometry3D
 {
@@ -259,13 +278,15 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///modify the geometry using Transform(), ReinitCollisions() should be
   ///called.
   void SetTransform(const RigidTransform& T);
-  ///Groups together these geometries, as usual
-  void Merge(const vector<AnyGeometry3D>& geoms);
-  ///Groups together these geometries.  This geometry is placed such that
-  ///the active transform is the same as the active transform for the
-  ///first geometry, and all subsequent geometries are transformed relative
-  ///to the first
-  void Merge(const vector<AnyCollisionGeometry3D>& geoms);
+  ///Unifies the given geometries.  If all geoms are compatible, the type is
+  ///preserved.  Otherwise this becomes a Group.
+  void Union(const vector<AnyGeometry3D>& geoms);
+  ///Unifies the given geometries.  If all geoms are compatible, the type is
+  ///preserved.  Otherwise this becomes a Group.  The resulting group is
+  ///placed such that the current transform is the same as the current transform
+  ///for the first geometry, and all subsequent geometries are transformed relative
+  ///to the first.  
+  void Union(const vector<AnyCollisionGeometry3D>& geoms);
   //Computes the furthest point on the geometry in the direction dir
   //TODO: is this useful to implement outside of ConvexHull types?
   // Vector3 FindSupport(const Vector3& dir);
@@ -291,6 +312,14 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///ExtractROIFlagX enum for more details.
   bool ExtractROI(const AABB3D& bb,AnyCollisionGeometry3D& res,int flag=1) const;
   bool ExtractROI(const Box3D& bb,AnyCollisionGeometry3D& res,int flag=1) const;
+  ///Merges geom with the current geometry.  For ImplicitSurface / OccupancyGrid,
+  ///the current domain is preserved. 
+  ///
+  ///T is the transform from geom to this geometry's frame.
+  ///
+  ///Returns false if a valid conversion is not possible.  All types except
+  ///for ImplicitSurface / OccupancyGrid must be matched with this->type.
+  bool Merge(AnyCollisionGeometry3D& geom,double threshold=0);
 
   /** The collision data structure, according to the type.
    * - Primitive: null

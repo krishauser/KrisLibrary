@@ -201,21 +201,24 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real
 	grid.Resize(m,n,p);
 }
 
+void PrimitiveImplicitSurfaceFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+{
+	Meshing::VolumeGrid::iterator it = grid.getIterator();
+	Vector3 c;
+	while(!it.isDone()) {
+		it.getCellCenter(c);
+		*it = primitive.Distance(c);
+		++it;
+	}
+}
+
 void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
 {
 	AABB3D aabb = primitive.GetAABB();
 	aabb.bmin -= Vector3(expansion);
 	aabb.bmax += Vector3(expansion);
 	FitGridToBB(aabb,grid,resolution);
-	Meshing::VolumeGrid::iterator it = grid.getIterator();
-	Vector3 c;
-	while(!it.isDone()) {
-		it.getCellCenter(c);
-		//if(primitive.Collides(c)) *it = -expansion;
-		//else
-		*it = primitive.Distance(c);
-		++it;
-	}
+	PrimitiveImplicitSurfaceFill(primitive,grid);
 }
 
 void Extrema(const AABB3D& bb,const Vector3& dir,Real& a,Real& b)
@@ -377,6 +380,14 @@ void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
 	fclose(f);
 }
 
+void MeshImplicitSurfaceFill_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid)
+{
+	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
+	vector<IntTriple> surfaceCells;
+	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
+	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
+}
+
 void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
 {
 	AABB3D aabb;
@@ -384,10 +395,7 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
 	aabb.bmin -= Vector3(expansion);
 	aabb.bmax += Vector3(expansion);
 	FitGridToBB(aabb,grid,resolution,0.5);
-	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
-	vector<IntTriple> surfaceCells;
-	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
-	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
+	MeshImplicitSurfaceFill_FMM(mesh,grid);
 }
 
 void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews,Real expansion)
@@ -720,12 +728,8 @@ void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh)
 	}
 }
 
-void ConvexHullToImplcitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+void ConvexHullImplicitSurfaceFill(const ConvexHull3D& ch, Meshing::VolumeGrid& grid)
 {
-	AABB3D aabb = ch.GetAABB();
-	aabb.bmin -= Vector3(expansion);
-	aabb.bmax += Vector3(expansion);
-	FitGridToBB(aabb,grid,resolution,0.5);
 	Meshing::VolumeGrid::iterator it = grid.getIterator();
 	Vector3 c;
 	while(!it.isDone()) {
@@ -733,6 +737,15 @@ void ConvexHullToImplcitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& gri
 		*it = ch.Distance(c);
 		++it;
 	}
+}
+
+void ConvexHullToImplicitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+{
+	AABB3D aabb = ch.GetAABB();
+	aabb.bmin -= Vector3(expansion);
+	aabb.bmax += Vector3(expansion);
+	FitGridToBB(aabb,grid,resolution,0.5);
+	ConvexHullImplicitSurfaceFill(ch,grid);
 }
 
 } //namespace Geometry

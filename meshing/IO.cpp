@@ -762,7 +762,7 @@ bool LoadAssimp(const char* fn, TriMesh& mesh)
 {
         vector<TriMesh> models;
         if(!LoadAssimp(fn,models)) return false;
-        mesh.Merge(models);
+        mesh.Union(models);
         LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model "<<fn<<" ("<<mesh.verts.size()<<" verts, "<<mesh.tris.size()<<" tris)");
         return true;
 }
@@ -773,7 +773,7 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
   vector<TriMesh> models;
   vector<GeometryAppearance> apps;
   if(!LoadAssimp(fn,models,apps)) return false;
-  mesh.Merge(models);
+  mesh.Union(models);
   if(!apps.empty()) {
     //need to merge appearance information
     app = apps[0];

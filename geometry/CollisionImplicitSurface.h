@@ -74,9 +74,16 @@ Real Distance(const CollisionImplicitSurface& s,const CollisionPointCloud& pc,in
 ///Returns the distance to the closest point on the implicit surface defined at the given level set.
 ///tmax will be returned if no collision is found.
 ///
-///The algorithm marches along cells intersected by the ray until a zero-crossing is met (O(n))
-///where n is the resolution of the grid.
+///The algorithm marches along cells intersected by the ray until a zero-crossing is met.
+///O(n) where n is the resolution of the grid.
 Real RayCast(const Meshing::VolumeGrid& grid,const Ray3D& ray,Real levelSet=0,Real tmax=Inf);
+
+///Returns the distance to the closest point on the occupancy grid defined at the given density threshold.
+///tmax will be returned if no collision is found.
+///
+///The algorithm marches along cells intersected by the ray until a zero-crossing is met.
+///O(n) where n is the resolution of the grid.
+Real RayCast_Occupancy(const Meshing::VolumeGrid& grid,const Ray3D& ray,Real threshold=0.5,Real tmax=Inf);
 
 ///Returns the distance to the closest point on the implicit surface defined at the given level set.
 ///tmax will be returned if no collision is found.

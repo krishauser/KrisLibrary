@@ -108,7 +108,14 @@ void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh);
 /** @ingroup geometry
  * Computes an implicit surface from a ConvexHull.
  */
-void ConvexHullToImplcitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
+void ConvexHullToImplicitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
+
+/// Like a conversion but keeps the same grid dimensions and size
+void PrimitiveImplicitSurfaceFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid);
+/// Like a conversion but keeps the same grid dimensions and size -- may not be accurate if the mesh is out of bounds
+void MeshImplicitSurfaceFill_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid);
+/// Like a conversion but keeps the same grid dimensions and size
+void ConvexHullToImplicitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid);
 
 } //namespace Geometry
 
