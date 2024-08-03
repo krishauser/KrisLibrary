@@ -115,7 +115,7 @@ void PrimitiveImplicitSurfaceFill(const GeometricPrimitive3D& primitive,Meshing:
 /// Like a conversion but keeps the same grid dimensions and size -- may not be accurate if the mesh is out of bounds
 void MeshImplicitSurfaceFill_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid);
 /// Like a conversion but keeps the same grid dimensions and size
-void ConvexHullToImplicitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid);
+void ConvexHullImplicitSurface_Fill(const ConvexHull3D& ch, Meshing::VolumeGrid& grid);
 
 } //namespace Geometry
 

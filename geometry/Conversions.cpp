@@ -201,7 +201,7 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real
 	grid.Resize(m,n,p);
 }
 
-void PrimitiveImplicitSurfaceFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+void PrimitiveImplicitSurfaceFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real truncation)
 {
 	Meshing::VolumeGrid::iterator it = grid.getIterator();
 	Vector3 c;
