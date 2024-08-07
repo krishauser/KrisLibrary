@@ -11,6 +11,7 @@ bool WritePPM_Grayscale_Binary(unsigned char image[],int m,int n,const char* fil
 bool ReadPPM_RGB(unsigned char** image,int* m,int* n,const char* file);
 bool ReadPPM_Grayscale(unsigned char** image,int* m,int* n,const char* file);
 
-bool ExportImagePPM(const char* fn, Image& img,bool binary=false);
+bool ExportImagePPM(const char* fn, Image& img,bool binary);
+bool ExportImagePPM(const char* fn, Image& img);
 
 #endif

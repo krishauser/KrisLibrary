@@ -1,5 +1,5 @@
 #include <KrisLibrary/Logger.h>
-#include "import.h"
+#include "io.h"
 #include <string.h>
 #include <errors.h>
 #include <utils/stringutils.h>
@@ -11,6 +11,11 @@
 const char* ImageImportTypes()
 {
 	return ".bit;.ppm;.bmp;.tga;";
+}
+
+const char* ImageExportTypes()
+{
+	return ".bit;.ppm;";
 }
 
 #if HAVE_FREE_IMAGE
@@ -47,28 +52,46 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 	Image::PixelFormat fmt;
 	FREE_IMAGE_TYPE imgtype = FreeImage_GetImageType(fimg);
 	FREE_IMAGE_COLOR_TYPE coltype = FreeImage_GetColorType(fimg);
-	switch(coltype) {
-	case FIC_MINISWHITE:
-		fmt = Image::A8;
+	switch(imgtype) {
+	case FIT_RGBF:
+		fmt = Image::FloatRGB;
 		break;
-	case FIC_MINISBLACK:
-		fmt = Image::A8;
+	case FIT_RGBAF:
+		fmt = Image::FloatRGBA;
 		break;
-	case FIC_RGB:
-		fmt = Image::R8G8B8;
+	case FIT_FLOAT:
+		fmt = Image::FloatA;
 		break;
-	case FIC_PALETTE:
-		fmt = Image::R8G8B8;
-		break;
-	case FIC_RGBALPHA:
-		fmt = Image::R8G8B8A8;
-		break;
-	case FIC_CMYK:
-		fmt = Image::R8G8B8;
-		break;
+	default:
+		switch(coltype) {
+		case FIC_MINISWHITE:
+			fmt = Image::A8;
+			break;
+		case FIC_MINISBLACK:
+			fmt = Image::A8;
+			break;
+		case FIC_RGB:
+			fmt = Image::R8G8B8;
+			break;
+		case FIC_PALETTE:
+			fmt = Image::R8G8B8;
+			break;
+		case FIC_RGBALPHA:
+			fmt = Image::R8G8B8A8;
+			break;
+		case FIC_CMYK:
+			fmt = Image::R8G8B8;
+			break;
+		}
 	}
 	img.initialize(w,h,fmt);
 	//Important! Freeimage stores images from bottom up
+	if(fmt == Image::FloatA || fmt == Image::FloatRGB || fmt == Image::FloatRGBA) {
+		for(int i=0;i<h;i++) {
+			const unsigned char* FreeImage_GetScanLine(fimg,i);	
+			memcpy(img.getData(0,h-1-i),line,w*img.pixelSize());
+		}
+	}
 	if(fmt == Image::R8G8B8) {
 		RGBQUAD rgb;
 		for(int i=0;i<h;i++) {
@@ -96,7 +119,7 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 			}
 		}
 	}
-	else {
+	else { //A8
 		RGBQUAD rgb;
 		for(int i=0;i<h;i++) {
 			unsigned char* d = img.getData(0,h-1-i);
@@ -108,11 +131,51 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 		}
 	}
 }
+
+void ImageToFreeImageBitmap(const Image& img)
+{
+	int imgtype = FIT_BITMAP;
+	unsigned int red_mask = 0, green_mask = 0, blue_mask = 0;
+	switch (img.format))
+	{
+	case Image::FloatRGB:
+		imgtype = FIT_RGBF;
+		break;
+	case Image::FloatRGBA:
+		imgtype = FIT_RGBAF;
+		break;
+	case Image::FloatA:
+		imgtype = FIT_FLOAT;
+		break;
+	case Image::B8G8R8:
+		red_mask = 0xff0000;
+		green_mask = 0xff00;
+		blue_mask = 0xff;
+		break;
+	case Image::B8G8R8A8:
+		red_mask = 0xff0000;
+		green_mask = 0xff00;
+		blue_mask = 0xff;
+		break;
+	default:
+		break;
+	}
+	FIBITMAP* fimg = FreeImage_AllocateT(type,img.w,img.h,img.pixelBPP(),red_mask,green_mask,blue_mask);
+	//Important! Freeimage stores images from bottom up
+	for(int i=0;i<img.h;i++) {
+		unsigned char* line = FreeImage_GetScanLine(fimg,i);	
+		memcpy(line,img.getData(0,img.h-1-i),img.w*img.pixelSize());
+	}
+	return fimg;
+}
+
 #endif //HAVE_FREE_IMAGE
 
 #ifndef _WIN32
 bool ImportImageGDIPlus(const char* fn, Image& img) { return false; }
+bool ExportImageGDIPlus(const char* fn, const Image& img) { return false; }
 #endif //_WIN32
+
 
 bool ImportImage(const char* fn, Image& img)
 {
@@ -146,11 +209,11 @@ bool ImportImage(const char* fn, Image& img)
 #else 
 	const char* ext = FileExtension(fn);
 	if(!ext) {
-	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Couldnt detect an extension on image import file "<< fn);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Couldnt detect an extension on image import file "<< fn);
 		return false;
 	}
 	if(strlen(ext) > 8) {
-	  	  LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown extension \""<< ext<<"\" on image import file "<< fn);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown extension \""<< ext<<"\" on image import file "<< fn);
 		return false;
 	}
 	char extbuf[8];
@@ -172,7 +235,62 @@ bool ImportImage(const char* fn, Image& img)
 #ifdef _WIN32
 		return ImportImageGDIPlus(fn, img);
 #else
-				LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage: Unknown file extension \""<<extbuf<<"\" on image import file "<<fn);
+		LOG4CXX_ERROR(KrisLibrary::logger(),"ImportImage: Unknown file extension \""<<extbuf<<"\" on image import file "<<fn);
+		return false;
+#endif //_WIN32
+	}
+#endif //HAVE_FREE_IMAGE
+}
+
+
+bool ExportImage(const char* fn, const Image& img)
+{
+#if HAVE_FREE_IMAGE
+	_free_image_initializer.initialize();
+	FREE_IMAGE_FORMAT fif_type = FIF_UNKNOWN;
+	const char* ext = FileExtension(fn);
+	if(ext != NULL) {
+		if(0==strcmp(ext,"png")) 
+			fif_type = FIF_PNG;
+		else if(0==strcmp(ext,"jpg") || 0==strcmp(ext,"jpeg")) 
+			fif_type = FIF_JPEG;
+		else if(0==strcmp(ext,"bmp")) 
+			fif_type = FIF_BMP;
+		else if(0==strcmp(ext,"tif") || 0==strcmp(ext,"tiff")) 
+			fif_type = FIF_TIFF;
+	}
+
+	FIBITMAP* fimg = ImageToFreeImageBitmap(img);
+	if(FreeImage_Save(fif_type, fimg, fn)) {
+		FreeImage_Unload(fimg);
+		return true;
+	}
+	LOG4CXX_ERROR(KrisLibrary::logger(),"FreeImage_Save \""<<fn<<"\" result is false");
+	return false;
+#else 
+	const char* ext = FileExtension(fn);
+	if(!ext) {
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Couldnt detect an extension on image export file "<< fn);
+		return false;
+	}
+	if(strlen(ext) > 8) {
+		LOG4CXX_ERROR(KrisLibrary::logger(),"Unknown extension \""<< ext<<"\" on image export file "<< fn);
+		return false;
+	}
+	char extbuf[8];
+	strcpy(extbuf, ext);
+	Lowercase(extbuf);
+	if(0 == strcmp(extbuf, "bit")) {
+		return img.Write(fn);
+	}
+	else if(0 == strcmp(extbuf, "ppm")) {
+		return ExportImagePPM(fn, img);
+	}
+	else {
+#ifdef _WIN32
+		return ExportImageGDIPlus(fn, img);
+#else
+		LOG4CXX_ERROR(KrisLibrary::logger(),"ExportImage: Unknown file extension \""<<extbuf<<"\" on image export file "<<fn);
 		return false;
 #endif //_WIN32
 	}
