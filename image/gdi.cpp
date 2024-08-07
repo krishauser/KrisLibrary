@@ -237,7 +237,7 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
    return -1;  // Failure
 }
 
-bool ExportImageGDIPlus(const char* fn, Image& img)
+bool ExportImageGDIPlus(const char* fn, const Image& img)
 {
 	//get the proper encoder
 	const char* ext=FileExtension(fn);

@@ -14,6 +14,7 @@ Gdiplus::PixelFormat ImageGdiPixelFormat(Image::PixelFormat fmt);
 void GdiBitmapToImage(Gdiplus::Bitmap& bit, Image& img);
 Gdiplus::Bitmap* ImageToGdiBitmap(const Image& img);
 
-bool ExportImageGDIPlus(const char* fn, Image& img);
+bool ImportImageGDIPlus(const char* fn, Image& img);
+bool ExportImageGDIPlus(const char* fn, const Image& img);
 
 #endif

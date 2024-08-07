@@ -342,7 +342,7 @@ bool ImportImagePPM(const char* fn, Image& img)
   return false;
 }
 
-bool ExportImagePPM(const char* fn, Image& img,bool binary)
+bool ExportImagePPM(const char* fn, const Image& img,bool binary)
 {
   if(img.format == Image::R8G8B8) {
     if(binary)
@@ -358,4 +358,12 @@ bool ExportImagePPM(const char* fn, Image& img,bool binary)
   }
   LOG4CXX_ERROR(KrisLibrary::logger(),"ExportImagePPM: invalid image type, must be RGB8 or A8\n");
   return false;
+}
+
+bool ExportImagePPM(const char* fn, const Image& img)
+{
+  if(img.w * img.h > 128*128)  //large images are written in binary
+    return ExportImagePPM(fn,img,true);
+  else
+    return ExportImagePPM(fn,img,false);
 }
