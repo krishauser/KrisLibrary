@@ -2002,12 +2002,6 @@ Geometry3D* Geometry3DTriangleMesh::ConvertTo(Type restype, Real param, Real exp
 {
     switch (restype)
     {
-    case Type::TriangleMesh:
-        {
-        auto* res = new Geometry3DTriangleMesh();
-        res->data = data;
-        return res;
-        }
     case Type::ConvexHull:
         {
         auto* res = new Geometry3DConvexHull();
@@ -2061,8 +2055,12 @@ bool Geometry3DTriangleMesh::Load(const char *fn)
         return false;
     if (temp.faceColor != blank.faceColor ||
         !temp.vertexColors.empty() ||
-        !temp.faceColors.empty()) //loaded appearance data
+        !temp.faceColors.empty()) { //loaded appearance data
         appearance.reset(new GLDraw::GeometryAppearance(temp));
+    }
+    else {
+        appearance.reset();
+    }
     return true;
 }
 
@@ -2082,11 +2080,14 @@ bool Geometry3DTriangleMesh::Load(istream &in)
         in >> data;
         if(!in) return false;
     }
+    appearance.reset();
     return true;
 }
 
 bool Geometry3DTriangleMesh::Save(const char *fn) const
 {
+    if(appearance)
+        return Meshing::Export(fn, data, *appearance);
     return Meshing::Export(fn, data);
 }
 
@@ -2123,7 +2124,24 @@ bool Geometry3DTriangleMesh::Support(const Vector3& dir,Vector3& pt) const
   return true;
 }
 
-bool Geometry3DTriangleMesh::Merge(const vector<Geometry3D*>& geoms)
+
+bool Geometry3DTriangleMesh::Merge(const Geometry3D* geom,const RigidTransform* Tgeom)
+{
+  if(geom->GetType() != Type::TriangleMesh) return false;
+  auto* meshgeom = dynamic_cast<const Geometry3DTriangleMesh*>(geom);
+  if(Tgeom) {
+    Meshing::TriMesh temp;
+    temp = meshgeom->data;
+    temp.Transform(*Tgeom);
+    data.MergeWith(temp);
+  }
+  else {
+    data.MergeWith(meshgeom->data);
+  }
+  return true;
+}
+
+bool Geometry3DTriangleMesh::Union(const vector<Geometry3D*>& geoms)
 {
     for(size_t i=0;i<geoms.size();i++) {
         if(geoms[i]->GetType() != Type::TriangleMesh) return false;
@@ -2133,7 +2151,7 @@ bool Geometry3DTriangleMesh::Merge(const vector<Geometry3D*>& geoms)
     vector<Meshing::TriMesh> items(geoms.size());
     for(size_t i=0;i<geoms.size();i++)
         items[i] = dynamic_cast<const Geometry3DTriangleMesh*>(geoms[i])->data;
-    data.Merge(items);
+    data.Union(items);
     return true;
 }
 
@@ -2327,6 +2345,7 @@ bool Collider3DTriangleMesh::WithinDistance(Collider3D* geom,Real d,
 bool Collider3DTriangleMesh::RayCast(const Ray3D& r,Real margin,Real& distance,int& element) 
 {
   Vector3 worldpt;
+  element = -1;
   int tri = Geometry::RayCast(collisionData, r, worldpt);
   if (tri >= 0)
   {
@@ -2335,7 +2354,6 @@ bool Collider3DTriangleMesh::RayCast(const Ray3D& r,Real margin,Real& distance,i
     distance -= margin;
     element = tri;
   }
-  element = -1;
   return true;
 }
 

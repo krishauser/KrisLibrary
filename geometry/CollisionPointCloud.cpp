@@ -82,7 +82,7 @@ void CollisionPointCloud::InitCollisions(int hints)
   Real res = gridResolution;
   if(gridResolution <= 0) {
     Vector3 dims = bblocal.bmax-bblocal.bmin;
-    Real maxdim = Max(dims.x,dims.y,dims.z);
+    //Real maxdim = Max(dims.x,dims.y,dims.z);
     Real mindim = Min(dims.x,dims.y,dims.z);
     //default grid size: assume points are evenly distributed on a 2D manifold
     //in space, try to get 50 points per grid cell
@@ -154,6 +154,7 @@ static Real gWithinDistanceTestThreshold = 0;
 static GeometricPrimitive3D* gWithinDistanceTestObject = NULL;
 bool withinDistanceTest(void* obj)
 {
+  Assert(gWithinDistanceTestObject != NULL);
   Point3D* p = reinterpret_cast<Point3D*>(obj);
   if(gWithinDistanceTestObject->Distance(*p) <= gWithinDistanceTestThreshold)
     return false;
@@ -1036,7 +1037,24 @@ Geometry3DPointCloud::Geometry3DPointCloud(Meshing::PointCloud3D&& _data)
 Geometry3DPointCloud::~Geometry3DPointCloud ()
 {}
 
-bool Geometry3DPointCloud::Merge(const vector<Geometry3D*>& geoms)
+bool Geometry3DPointCloud::Merge(const Geometry3D* geom, const RigidTransform* Tgeom)
+{
+  if(geom->GetType() != Type::PointCloud) return false;
+  if(Tgeom != NULL) {
+    Geometry3D* temp = geom->Copy();
+    temp->Transform(*Tgeom);
+    bool res = Merge(temp);
+    delete temp;
+    return res;
+  }
+  const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geom)->data;
+  if(pc.propertyNames.size() != data.propertyNames.size()) return false;
+  data.points.insert(data.points.end(),pc.points.begin(),pc.points.end());
+  data.properties.insert(data.properties.end(),pc.properties.begin(),pc.properties.end());
+  return true;
+}
+
+bool Geometry3DPointCloud::Union(const vector<Geometry3D*>& geoms)
 {
     size_t numProperties = 0;
     for(size_t i=0;i<geoms.size();i++) {
@@ -1060,12 +1078,6 @@ bool Geometry3DPointCloud::Merge(const vector<Geometry3D*>& geoms)
 Geometry3D* Geometry3DPointCloud::ConvertTo(Type restype, Real param, Real expansionParameter) const
 {
     switch (restype) {
-    case Type::PointCloud:
-        {
-        auto* res = new Geometry3DPointCloud();
-        res->data = data;
-        return res;
-        }
     case Type::TriangleMesh:
         {
         if (!data.IsStructured()) return NULL;
@@ -1095,8 +1107,10 @@ bool Geometry3DPointCloud::ConvertFrom(const Geometry3D* geom,Real param,Real do
     switch(geom->GetType()) {
     case Type::Primitive:
     {
+        printf("1\n");
         const auto& prim = dynamic_cast<const Geometry3DPrimitive*>(geom)->data;
         if(prim.type == GeometricPrimitive3D::Segment) {
+            printf("2\n");
             //special-purpose construction for segments
             const Math3D::Segment3D& s = *AnyCast<Math3D::Segment3D>(&prim.data);
 
@@ -1118,10 +1132,13 @@ bool Geometry3DPointCloud::ConvertFrom(const Geometry3D* geom,Real param,Real do
             return true;
         }
         else {
+            printf("3\n");
             auto* tmesh = geom->ConvertTo(Type::TriangleMesh, param);
             if (param == 0)
                 param = Inf;
+            printf("4\n");
             ConvertFrom(tmesh,param);
+            printf("5\n");
             delete tmesh;
             return true;
         }

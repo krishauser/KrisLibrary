@@ -2,6 +2,7 @@
 #define MESHING_RASTERIZE_H
 
 #include <KrisLibrary/structs/array2d.h>
+#include <KrisLibrary/math3d/Ray2D.h>
 #include <KrisLibrary/math3d/Triangle2D.h>
 #include <KrisLibrary/math3d/AABB2D.h>
 #include <KrisLibrary/math3d/Polygon2D.h>
@@ -22,7 +23,11 @@ namespace Meshing {
 
 /// @brief Returns a list of cells that the segment overlaps, given
 /// an infinite unit grid.
-void GetSegmentCells(const Segment2D& tri,std::vector<IntPair>& cells);
+void GetSegmentCells(const Segment2D& seg,std::vector<IntPair>& cells);
+
+/// @brief Returns a list of cells that the ray overlaps, given
+/// a bounded grid with domain [imin,imax)x[jmin,jmax)
+void GetRayCells(const Ray2D& ray,std::vector<IntPair>& cells,int imin,int jmin,int imax,int jmax);
 
 /// @brief Returns a list of cells that the triangle overlaps, given
 /// an infinite unit grid.

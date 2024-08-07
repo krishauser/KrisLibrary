@@ -85,14 +85,15 @@ public:
   ///Sets this as a transformed version of hull
   void SetTrans(const ConvexHull3D &hull, const RigidTransform& xform);
   void SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
-  bool Contains(const Vector3& pt);
-  Real Distance(const Vector3& pt);
-  bool Collides(const ConvexHull3D& g,Vector3* common_point=NULL);
-  Real Distance(const ConvexHull3D & g);
+  bool Contains(const Vector3& pt) const;
+  Real Distance(const Vector3& pt) const;
+  bool Collides(const ConvexHull3D& g,Vector3* common_point=NULL) const;
+  Real Distance(const ConvexHull3D & g) const;
   ///Returns distance, point on this geometry, and point on the other geometry
   std::tuple<Real, Vector3, Vector3> ClosestPoints(const ConvexHull3D & other) const;
   Real ClosestPoint(const Vector3& pt,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction) const;
+  bool RayCast(const Ray3D& r,Real* param=NULL,Real maxParam=Inf) const;
   void Transform(const Matrix4 &T);
   AABB3D GetAABB() const;
   Box3D GetBB() const;

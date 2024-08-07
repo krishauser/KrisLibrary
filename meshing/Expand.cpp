@@ -375,7 +375,7 @@ void Expand2Sided(const TriMeshWithTopology& in,Real distance,int divs,TriMesh& 
 
     expandedTris.push_back(tris);
   }
-  m.Merge(expandedTris);
+  m.Union(expandedTris);
 }
 
 

@@ -1,8 +1,45 @@
 #include "Heightmap.h"
 #include "Rasterize.h"
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
+#include <KrisLibrary/utils/AnyCollection.h>
+#include <KrisLibrary/utils/stringutils.h>
+#include <KrisLibrary/image/io.h>
+#include <memory.h>
+#include <fstream>
 
 using namespace Meshing;
+
+/// Used for rendering meshes into heightmaps 
+template <class T>
+struct HeightmapRasterizer2D : public Meshing::SmoothFillRasterizer2D<T>
+{
+    HeightmapRasterizer2D(bool _maximize)
+        : maximize(_maximize)
+        {}
+    
+    inline void Rasterize(const Triangle3D& tri) {
+        Triangle2D tri2;
+        this->fillA = tri.a.z;
+        this->fillB = tri.b.z; 
+        this->fillC = tri.c.z;
+        tri2.a.set(tri.a);
+        tri2.b.set(tri.b);
+        tri2.c.set(tri.c);
+        Meshing::SmoothFillRasterizer2D<T>::Rasterize(tri2);
+    }
+
+    virtual void Fill(const Vector3& bary,T& cell) {
+        T val = bary.x*this->fillA+bary.y*this->fillB+bary.z*this->fillC;
+        if(maximize)
+            cell = Max(val,cell);
+        else
+            cell = Min(val,cell);
+    }
+
+    bool maximize;
+};
+
+
 
 Heightmap::Heightmap()
 :xysize(1,1),offset(Zero),perspective(false)
@@ -20,16 +57,247 @@ Heightmap::Heightmap(const Array2D<double>& _heights,const Vector2& xydims)
 :heights(_heights),xysize(xydims),offset(Zero),perspective(false)
 {}
 
-Heightmap::Heightmap(const Image& _heights,const Vector2& xydims,Real zscale,bool bottom_row_first)
+Heightmap::Heightmap(const Image& _heights,const Vector2& xydims,float hscale,float hoffset,bool bottom_row_first)
 :xysize(xydims),offset(Zero),perspective(false)
 {
-    SetImage(_heights,zscale,bottom_row_first);
+    SetImage(_heights,hscale,hoffset,bottom_row_first);
 }
 
-Heightmap::Heightmap(const Image& _heights,const Image& colors,const Vector2& xydims,Real zscale,bool bottom_row_first)
+Heightmap::Heightmap(const Image& _heights,const Image& colors,const Vector2& xydims,float hscale,float hoffset,bool bottom_row_first)
 :xysize(xydims),offset(Zero),perspective(false)
 {
-    SetImage(_heights,colors,zscale,bottom_row_first);
+    SetImage(_heights,colors,hscale,hoffset,bottom_row_first);
+}
+
+bool Heightmap::Load(const char* fn)
+{
+    ifstream in(fn,ios::in);
+    if(!in) return false;
+    if(!Load(in)) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error reading heightmap file from "<<fn);
+        return false;
+    }
+    return true;
+}
+
+bool Heightmap::Save(const char* fn) const
+{
+    ofstream out(fn,ios::out);
+    if(!out) return false;
+    string hfn = fn;
+    string cfn = fn;
+    auto pos = hfn.rfind('.');
+    cfn = hfn.substr(0,pos) + "_color.ppm";
+    hfn = hfn.substr(0,pos) + "_height.ppm";
+    return Save(out,hfn.c_str(),cfn.c_str());
+}
+
+bool Heightmap::Load(std::istream& in)
+{
+    AnyCollection items;
+    if(!items.read(in)) {
+        return false;
+    }
+    if(items.find("width")) {
+        if(!items["width"].as(xysize.x)) return false;
+        if(!items["height"].as(xysize.y)) return false;
+        perspective = false;
+    }
+    else {
+        if(!items["xfov"].as(xysize.x)) return false;
+        if(!items["yfov"].as(xysize.y)) return false;
+        perspective = true;
+    }
+    if(items.find("offset")) {
+        if(!items["offset"][0].as(offset.x)) return false;
+        if(!items["offset"][1].as(offset.y)) return false;
+        if(!items["offset"][2].as(offset.z)) return false;
+    }
+    else {
+        offset.setZero();
+    }
+    float hmin,hmax;
+    if(!items["height_range"].isarray()) return false;
+    if(!items["height_range"][0].as(hmin)) return false;
+    if(!items["height_range"][1].as(hmax)) return false;
+
+    string heightFn;
+    if(!items["heights"].as(heightFn)) return false;
+    Image himg;
+    if(!ImportImage(heightFn.c_str(),himg)) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing height image from "<<heightFn);
+        return false;
+    }
+    SetImage(himg,hmax-hmin,hmin);
+    if(items.find("colors")) {
+        string colorFn;
+        if(!items["colors"].as(colorFn)) return false;
+        Image cimg;
+        if(!ImportImage(colorFn.c_str(),cimg)) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing color image from "<<colorFn);
+            return false;
+        }
+        if(cimg.w != himg.w || cimg.h != himg.h) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Color image has different dimensions from height image");
+            return false;
+        }
+        colors = cimg;
+        //colors.initialize(cimg.w,cimg.h,Image::R8G8B8);
+        //cimg.blit(colors);
+    }
+    return true;
+}
+
+bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorFn) const
+{
+    AnyCollection items;
+    if(perspective) {
+        items["width"] = xysize.x;
+        items["height"] = xysize.y;
+    }
+    else {
+        items["xfov"] = 2.0*Atan(xysize.x);
+        items["yfov"] = 2.0*Atan(xysize.y);
+    }
+    if(offset.maxAbsElement() > 0) {
+        AnyCollection joffset = items["offset"];
+        joffset.resize(3);
+        joffset[0] = offset.x;
+        joffset[1] = offset.y;
+        joffset[2] = offset.z;
+    }
+    Image himg;
+    float hmin = *std::min_element(heights.begin(),heights.end());
+    float hmax = *std::min_element(heights.begin(),heights.end());
+    items["height_range"].resize(2);
+    items["height_range"][0] = hmin;
+    items["height_range"][1] = hmax;
+
+    GetImage(himg,hmin,hmax);
+    if(!ExportImage(heightFn,himg)) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting height image to "<<heightFn);
+        return false;
+    }
+    items["heights"] = heightFn;
+    if(HasColors()) {
+        if(colorFn == NULL) {
+            FatalError("Heightmap::Save: must provide a color filename to save a color image");
+        }
+        if(!ExportImage(colorFn,colors)) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting color image to "<<colorFn);
+            return false;
+        }
+        items["colors"] = colorFn;
+    }
+    out<<items<<endl;
+    return true;
+}
+
+void Heightmap::SetImage(const Image& _heights,float hscale,float hoffset,bool bottom_row_first)
+{
+    if(!(_heights.format == Image::FloatA || _heights.format == Image::A8)) {
+        FatalError("Heightmap::SetImage: heights must be a single channel float image or an 8-bit grayscale image");
+    }
+    heights.resize(_heights.w,_heights.h);
+    float h;
+    const static float bytescale = 1.0/255.0;
+    for(int i=0;i<_heights.w;i++) {
+        for(int j=0;j<_heights.h;j++) {
+            unsigned char* pix = _heights.getData(i,j);
+            if(_heights.format == Image::A8) {
+                h = float(*pix)*bytescale;
+            }
+            else {
+                float* fpix = (float*)pix;
+                h = *fpix;
+            }
+            h = h*hscale + hoffset;
+            if(bottom_row_first)
+                heights(i,_heights.h - 1 - j) = h;
+            else
+                heights(i,j) = h;
+        }
+    }
+}
+
+void Heightmap::SetImage(const Image& _heights,const Image& _colors,float hscale,float hoffset,bool bottom_row_first)
+{
+    if(_heights.w != _colors.w || _heights.h != _colors.h) {
+        FatalError("Heightmap::SetImage: heights and colors must have the same dimensions");
+    }
+    SetImage(_heights,hscale,hoffset,bottom_row_first);
+    colors.initialize(_colors.w,_colors.h,Image::R8G8B8);
+    _colors.blit(colors);
+
+    if(!bottom_row_first) {
+        //flip color image -- color image is expected to go from top down
+        unsigned int rowbytes = colors.pitch();
+        unsigned char* tmp = new unsigned char[rowbytes];
+        for(int j=0;j<colors.h/2;j++) {
+            unsigned char* d1 = colors.getData(0,j);
+            unsigned char* d2 = colors.getData(0,colors.h-1-j);
+            memcpy(tmp,d1,rowbytes);
+            memcpy(d1,d2,rowbytes);
+            memcpy(d2,tmp,rowbytes);
+        }
+        delete [] tmp;
+    }
+}
+
+   
+void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first) const
+{      
+    if(IsInf(hmin)) {
+        float hmin_ = *std::min_element(heights.begin(),heights.end());
+        if(hmin_ > 0)
+            hmin = 0;
+        else
+            hmin = hmin_;
+    }
+    if(IsInf(hmax)) {
+        hmax = *std::max_element(heights.begin(),heights.end());
+    }
+    if(hmax == hmin)
+        hmax = hmin+1;
+    out.initialize(heights.n,heights.m,Image::FloatA);
+    float* fdata = (float*)out.data;
+    float hscale = 1.0/(hmax-hmin);
+    if(bottom_row_first) {
+        for(int i=0;i<heights.n;i++) {
+            for(int j=0;j<heights.m;j++) {
+                *fdata = (heights(j,i)-hmin)*hscale;
+                fdata += 1;
+            }
+        }
+    }
+    else {
+        for(int i=heights.n-1;i>=0;i--) {
+            for(int j=0;j<heights.m;j++) {
+                *fdata = (heights(j,i)-hmin)*hscale;
+                fdata += 1;
+            }
+        }
+    }
+}
+
+void Heightmap::SetSize(Real width, Real height)
+{
+    if(height == 0) {
+        height = width/(heights.m-1)*(heights.n-1);
+    }
+    xysize.set(width,height);
+    perspective = false;
+}
+
+void Heightmap::SetFOV(Real xfov,Real yfov)
+{
+    Real xscale = Tan(xfov*0.5);
+    Real yscale = Tan(yfov*0.5);
+    if(yfov==0) {
+        yscale = xscale/(heights.m-1)*(heights.n-1);
+    }
+    xysize.set(xscale,yscale);
+    perspective = true;
 }
 
 void Heightmap::GetCell(int i,int j,AABB2D& bb) const
@@ -146,23 +414,42 @@ Vector3 Heightmap::FromNormalized(const Vector3& params) const
     return res + offset;
 }
 
+Vector3 Heightmap::Project(const Vector3& pt) const
+{
+    Vector3 res=ToNormalized(pt);
+    res.x  = (res.x+0.5)*(heights.m-1);
+    res.y  = (res.y+0.5)*(heights.n-1);
+    return res;
+}
+
+Vector3 Heightmap::Deproject(const Vector3& params) const
+{
+    Vector3 temp=params;
+    temp.x = temp.x/(heights.m-1) - 0.5;
+    temp.y = temp.y/(heights.n-1) - 0.5;
+    return FromNormalized(temp);
+}
+
 IntPair Heightmap::GetIndex(const Vector3& pt,bool clamp) const
 {
+    Vector3 proj = Project(pt);
     IntPair index;
-    Vector2 params;
-    GetIndexAndParams(pt,index,params,clamp);
+    index.a = int(Floor(proj.x));
+    index.b = int(Floor(proj.y));
+    if(clamp) {
+        index.a = (index.a < 0 ? 0 : (index.a > heights.m-1 ? heights.m-1 : index.a));
+        index.b = (index.b < 0 ? 0 : (index.b > heights.n-1 ? heights.n-1 : index.b));
+    }
     return index;
 }
 
 void Heightmap::GetIndexAndParams(const Vector3& pt,IntPair& index,Vector2& params,bool clamp) const
 {
-    if(perspective) FatalError("TODO perspective projection");
-    params.x = (heights.m-1)*((pt.x-offset.x)/xysize.x + 0.5);
-    params.y = (heights.n-1)*((pt.y-offset.y)/xysize.y + 0.5);
-    index.a = int(Floor(params.x));
-    index.b = int(Floor(params.y));
-    params.x -= Real(index.a);
-    params.y -= Real(index.b);
+    Vector3 proj = Project(pt);
+    index.a = int(Floor(proj.x));
+    index.b = int(Floor(proj.y));
+    params.x = proj.x-Real(index.a);
+    params.y = proj.y-Real(index.b);
     if(clamp) {
         if(index.a < 0) {
             index.a = 0;
@@ -206,19 +493,7 @@ Vector3 Heightmap::GetColor(const Vector3& pt,int interpolation) const
     IntPair index;
     Vector2 params;
     GetIndexAndParams(pt,index,params);
-    if(interpolation == InterpNearest) {
-        if(params.x > 0.5) index.a += 1;
-        if(params.y > 0.5) index.b += 1;
-        index.a = ::Min(::Max(0,index.a),heights.m-1);
-        index.b = ::Min(::Max(0,index.b),heights.n-1);
-        float col[4];
-        colors.getNormalizedColor(index.a,heights.n-1-index.b,col);
-        if(colors.pixelChannels()==1) 
-            return Vector3(col[0]);
-        else
-            return Vector3(col[0],col[1],col[2]);
-    }
-    FatalError("TODO: bilinear and bicubic interpolation");
+    return GetVertexColor(index.a,index.b,params.x,params.y,interpolation);
 }
 
 
@@ -276,6 +551,28 @@ Vector3 Heightmap::GetVertex(int i,int j,Real vu,Real vv,int interpolation) cons
     return res + offset;
 }
 
+Vector3 Heightmap::GetVertexColor(int i,int j) const
+{
+    i = ::Min(::Max(0,i),heights.m-1);
+    j = ::Min(::Max(0,j),heights.n-1);
+    float col[4];
+    colors.getNormalizedColor(i,heights.n-1-j,col);
+    if(colors.pixelChannels()==1) 
+        return Vector3(col[0]);
+    else
+        return Vector3(col[0],col[1],col[2]);
+}
+
+Vector3 Heightmap::GetVertexColor(int i,int j,Real u,Real v,int interpolation) const
+{
+    if(interpolation == InterpNearest) {
+        if(u > 0.5) i += 1;
+        if(v > 0.5) j += 1;
+        return GetVertexColor(i,j);
+    }
+    FatalError("TODO: bilinear and bicubic interpolation");
+}
+
 void Heightmap::GetVertices(vector<Vector3>& verts) const
 {
     verts.resize(heights.m*heights.n);
@@ -325,39 +622,37 @@ void Heightmap::GetVertices(Array2D<Vector3>& verts) const
         }
     }
 }
-   
-void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first)
-{      
-    if(IsInf(hmin)) {
-        float hmin_ = *std::min_element(heights.begin(),heights.end());
-        if(hmin_ > 0)
-            hmin = 0;
-        else
-            hmin = hmin_;
+
+void Heightmap::GetVertexColors(vector<Vector3>& colors_out) const
+{
+    if(colors.num_bytes==0) {
+        colors_out.resize(0);
+        return;
     }
-    if(IsInf(hmax)) {
-        hmax = *std::max_element(heights.begin(),heights.end());
-    }
-    if(hmax == hmin)
-        hmax = hmin+1;
-    out.initialize(heights.n,heights.m,Image::FloatA);
-    float* fdata = (float*)out.data;
-    float hscale = 1.0/(hmax-hmin);
-    if(bottom_row_first) {
-        for(int i=0;i<heights.n;i++) {
-            for(int j=0;j<heights.m;j++) {
-                *fdata = (heights(j,i)-hmin)*hscale;
-                fdata += 1;
-            }
+    colors_out.resize(heights.m*heights.n);
+    int k=0;
+    for(int i=0;i<heights.m;i++) {
+        for(int j=0;j<heights.n;j++,k++) {
+            colors_out[k]=GetVertexColor(i,j);
         }
+    }
+}
+
+void Heightmap::GetVertexRay(int i,int j,Vector3& source,Vector3& dir) const
+{
+    Real u = Real(i)/(Real)(heights.m-1) - 0.5;
+    Real v = Real(j)/(Real)(heights.n-1) - 0.5;
+    if(perspective) {
+        source = offset;
+        dir.z = 1.0;
+        dir.x = xysize[0]*u;
+        dir.y = xysize[1]*v;
     }
     else {
-        for(int i=heights.n-1;i>=0;i--) {
-            for(int j=0;j<heights.m;j++) {
-                *fdata = (heights(j,i)-hmin)*hscale;
-                fdata += 1;
-            }
-        }
+        source.x = offset.x + u*xysize[0];
+        source.y = offset.y + v*xysize[1];
+        source.z = offset.z;
+        dir.set(0,0,1);
     }
 }
 
@@ -420,7 +715,10 @@ void Heightmap::Max(const Array2D<float>& values)
 
 void Heightmap::Remesh(const Heightmap& hm)
 {
-    if(hm.perspective) FatalError("TODO: perspective remeshing");
+    if(hm.perspective || perspective) {
+        if(hm.offset != offset || hm.xysize != xysize)
+            FatalError("TODO: perspective remeshing");
+    }
     Array2D<Vector3> verts;
     hm.GetVertices(verts);
     Array2D<float> newheights(verts.m,verts.n);
@@ -448,7 +746,7 @@ void Heightmap::Remesh(const Camera::Viewport& vp)
     Remesh(temp);
 }
 
-void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,bool topdown)
+void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform* Tmesh,bool topdown)
 {
     Vector3 bmin,bmax;
     mesh.GetAABB(bmin,bmax);
@@ -466,36 +764,25 @@ void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,bool topdown)
         offset.z = bmin.z;
     else
         offset.z = bmax.z;
-    FuseMesh(mesh,topdown,OpReplace);
+    FuseMesh(mesh,NULL,topdown);
 }
 
-void Heightmap::FuseMesh(const TriMesh& mesh,bool topdown,int op)
+void Heightmap::FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh,bool topdown)
 {
-    if(perspective) FatalError("TODO: render perspective");
-    if(op != OpReplace) FatalError("TODO: raster operations except for OpReplace");
-    SmoothFillRasterizer2D<float> rasterizer;
+    Math3D::Triangle3D tri;
+    HeightmapRasterizer2D<float> rasterizer(perspective != topdown);
     rasterizer.grid = &heights;
-    Triangle2D tri;
-    vector<IntPair> cells;
-    Vector3 lower = offset;
-    Real fx = (heights.m-1)/xysize.x;
-    Real fy = (heights.n-1)/xysize.y;
-    lower.x -= xysize.x*0.5;
-    lower.y -= xysize.y*0.5;
-    for(size_t i=0;i<mesh.tris.size();i++) {
-        tri.a.set(mesh.verts[mesh.tris[i].a]-lower);
-        tri.b.set(mesh.verts[mesh.tris[i].b]-lower);
-        tri.c.set(mesh.verts[mesh.tris[i].c]-lower);
-        tri.a.x *= fx;
-        tri.a.y *= fy;
-        tri.b.x *= fx;
-        tri.b.y *= fy;
-        tri.c.x *= fx;
-        tri.c.y *= fy;
-        float ha = mesh.verts[mesh.tris[i].a].z-offset.z;
-        float hb = mesh.verts[mesh.tris[i].b].z-offset.z;
-        float hc = mesh.verts[mesh.tris[i].c].z-offset.z;
-        rasterizer.Rasterize(tri,ha,hb,hc);
+    for (size_t i=0;i<mesh.tris.size();i++) {
+        mesh.GetTriangle(i,tri);
+        if(Tmesh) {
+            tri.a = (*Tmesh)*tri.a;
+            tri.b = (*Tmesh)*tri.b;
+            tri.c = (*Tmesh)*tri.c;
+        }
+        tri.a = Project(tri.a);
+        tri.b = Project(tri.b);
+        tri.c = Project(tri.c);
+        rasterizer.Rasterize(tri);
     }
 }
 
@@ -525,13 +812,14 @@ void Heightmap::GetMesh(TriMesh& mesh,GLDraw::GeometryAppearance& app) const
         int k=0;
         for(int i=0;i<heights.m;i++) {
             for(int j=0;i<heights.n;j++,k++) {
-                
+                auto rgb = GetVertexColor(i,j);
+                app.vertexColors[k].set(rgb.x,rgb.y,rgb.z);
             }
         }
     }
 }
 
-void Heightmap::SetPointCloud(const PointCloud3D& pc,Real resolution,bool topdown)
+void Heightmap::SetPointCloud(const PointCloud3D& pc,Real resolution,const RigidTransform* Tpc,bool topdown)
 {
     Vector3 bmin,bmax;
     pc.GetAABB(bmin,bmax);
@@ -552,21 +840,27 @@ void Heightmap::SetPointCloud(const PointCloud3D& pc,Real resolution,bool topdow
         offset.z = bmin.z;
     else
         offset.z = bmax.z;
-    FusePointCloud(pc,topdown,OpReplace);
+    FusePointCloud(pc,Tpc,topdown);
 }
 
-void Heightmap::FusePointCloud(const PointCloud3D& pc,bool topdown,int op)
+void Heightmap::FusePointCloud(const PointCloud3D& pc,const RigidTransform* Tpc,bool topdown)
 {
-    if(op == OpReplace) heights.set(0.0);
     bool useColor = (pc.HasColor() && colors.num_bytes != 0);
     vector<Vector4> pointColors;
     if(useColor) pc.GetColors(pointColors);
+    IntPair ind;
+    Vector3 ptemp;
     for(size_t i=0;i<pc.points.size();i++) {
-        IntPair ind = GetIndex(pc.points[i]);
+        if(Tpc) {
+            Tpc->mulInverse(pc.points[i],ptemp);
+            ind = GetIndex(ptemp);
+        }
+        else
+            ind = GetIndex(pc.points[i]);
         if(ind.a < 0 || ind.a >= heights.m) continue;
         if(ind.b < 0 || ind.b >= heights.n) continue;
         float z = pc.points[i].z-offset.z;
-        if((op == OpReplace && topdown) || op == OpMax)
+        if(perspective != topdown)
             heights(ind.a,ind.b) = ::Max(z,heights(ind.a,ind.b));
         else
             heights(ind.a,ind.b) = ::Min(z,heights(ind.a,ind.b));

@@ -90,6 +90,16 @@ void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::Volum
 void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mesh,Real levelSet=0.0);
 
 /** @ingroup Geometry
+ * @brief Creates a mesh from a heightmap.
+ */
+void HeightmapToMesh(const Meshing::Heightmap& hmap, Meshing::TriMesh& mesh);
+
+/** @ingroup Geometry
+ * @brief Creates a mesh from a heightmap with appearance information.
+ */
+void HeightmapToMesh(const Meshing::Heightmap& hmap, Meshing::TriMesh& mesh,GLDraw::GeometryAppearance& appearance);
+
+/** @ingroup Geometry
  * @brief Creates a convex hull from a mesh. 
  */
 void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch);
@@ -111,6 +121,28 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
  * Computes a mesh from a ConvexHull.  Uses Qhull.
  */
 void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh);
+
+/** @ingroup geometry
+ * Computes a signed distance field from a ConvexHull.
+ */
+void ConvexHullToImplicitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion=0);
+
+/// Like a conversion but keeps the same grid dimensions and size
+void PrimitiveOccupancyGridFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real value=1,Real expansion=0);
+/// Like a conversion but keeps the same grid dimensions and size
+void PrimitiveImplicitSurfaceFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real truncation=0);
+/// Like a conversion but keeps the same grid dimensions and size 
+void MeshOccupancyGridFill(const Meshing::TriMesh& mesh,Meshing::VolumeGrid& grid,Real value=1,Real expansion=0);
+/// Like a conversion but keeps the same grid dimensions and size -- may not be accurate if the mesh is out of bounds
+void MeshImplicitSurfaceFill_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real truncation=0);
+/// Like a conversion but keeps the same grid dimensions and size
+void ConvexHullOccupancyGridFill(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real value=1,Real expansion=0);
+/// Like a conversion but keeps the same grid dimensions and size
+void ConvexHullImplicitSurfaceFill(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real truncation=0);
+/// Like a conversion but keeps the same grid dimensions and size 
+void PointCloudOccupancyGridFill(const Meshing::PointCloud3D& pc,Meshing::VolumeGrid& grid,Real value=1,Real expansion=0);
+/// Like a conversion but keeps the same grid dimensions and size -- may not be accurate if the point cloud is out of bounds
+void PointCloudImplicitSurfaceFill_FMM(const Meshing::PointCloud3D& pc,Meshing::VolumeGrid& grid,Real truncation=0);
 
 } //namespace Geometry
 

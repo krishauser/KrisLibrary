@@ -2,8 +2,8 @@
 #define GEOMETRY_COLLISION_CONVEXHULL3D_H
 
 #include "ConvexHull3D.h"
-#include "AnyGeometryType.h"
-#include "AnyGeometryTypeImpl.h"
+#include "GeometryType.h"
+#include "GeometryTypeImpl.h"
 
 
 namespace Geometry {
@@ -54,7 +54,6 @@ public:
     DT_ObjectHandle data;
   };
   std::shared_ptr<ObjectHandleContainer> objectHandle;
-  DT_ShapeHandle shapeHandle;
   RigidTransform T;
 };
 

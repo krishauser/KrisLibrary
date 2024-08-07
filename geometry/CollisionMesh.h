@@ -1,8 +1,8 @@
 #ifndef GEOMETRY_COLLISION_MESH_H
 #define GEOMETRY_COLLISION_MESH_H
 
-#include "AnyGeometryType.h"
-#include "AnyGeometryTypeImpl.h"
+#include "GeometryType.h"
+#include "GeometryTypeImpl.h"
 #include <KrisLibrary/meshing/TriMeshTopology.h>
 #include <KrisLibrary/math3d/geometry3d.h>
 #include <limits.h>

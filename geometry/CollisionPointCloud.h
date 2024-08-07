@@ -7,8 +7,8 @@
 #include <limits>
 #include "GridSubdivision.h"
 #include "Octree.h"
-#include "AnyGeometryType.h"
-#include "AnyGeometryTypeImpl.h"
+#include "GeometryType.h"
+#include "GeometryTypeImpl.h"
 
 namespace Geometry {
 

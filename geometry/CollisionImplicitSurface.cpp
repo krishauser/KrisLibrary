@@ -895,34 +895,45 @@ bool Collides(const CollisionImplicitSurface &a, const CollisionMesh &b, Real ma
 
 bool Geometry3DVolume::Empty() const
 {
-    return data.value.empty();
+  return data.value.empty();
 }
 
 size_t Geometry3DVolume::NumElements() const 
 {
-    IntTriple size = data.value.size();
-    return size.a * size.b * size.c;
+  IntTriple size = data.value.size();
+  return size.a * size.b * size.c;
 }
 
 shared_ptr<Geometry3D> Geometry3DVolume::GetElement(int elem) const
 {
-    const Meshing::VolumeGrid &grid = data;
-    IntTriple size = grid.value.size();
-    //elem = cell.a*size.b*size.c + cell.b*size.c + cell.c;
-    IntTriple cell;
-    cell.a = elem / (size.b * size.c);
-    cell.b = (elem / size.c) % size.b;
-    cell.c = elem % size.c;
-    AABB3D bb;
-    grid.GetCell(cell, bb);
-    return make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
+  const Meshing::VolumeGrid &grid = data;
+  IntTriple cell = ElementToIndex(elem);
+  AABB3D bb;
+  grid.GetCell(cell, bb);
+  return make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
+}
+
+int Geometry3DVolume::IndexToElement(const IntTriple& idx) const
+{
+  IntTriple size = data.value.size();
+  return idx.a * size.b * size.c + idx.b * size.c + idx.c;
+}
+
+IntTriple Geometry3DVolume::ElementToIndex(int elem) const
+{
+  IntTriple size = data.value.size();
+  IntTriple cell;
+  cell.a = elem / (size.b * size.c);
+  cell.b = (elem / size.c) % size.b;
+  cell.c = elem % size.c;
+  return cell;
 }
 
 bool Geometry3DVolume::Load(istream& in) 
 {
-    in >> data;
-    if(!in) return false;
-    return true;
+  in >> data;
+  if(!in) return false;
+  return true;
 }
 
 bool Geometry3DVolume::Save(ostream& out) const
@@ -933,19 +944,19 @@ bool Geometry3DVolume::Save(ostream& out) const
 
 bool Geometry3DVolume::Transform(const Matrix4 &T)
 {
-    if (T(0, 1) != 0 || T(0, 2) != 0 || T(1, 2) != 0 || T(1, 0) != 0 || T(2, 0) != 0 || T(2, 1) != 0)
-    {
-       LOG4CXX_ERROR(GET_LOGGER(Geometry),"Cannot transform volume grid except via translation / scale");
-       return false;
-    }
-    data.bb.bmin = T * data.bb.bmin;
-    data.bb.bmax = T * data.bb.bmax;
-    return true;
+  if (T(0, 1) != 0 || T(0, 2) != 0 || T(1, 2) != 0 || T(1, 0) != 0 || T(2, 0) != 0 || T(2, 1) != 0)
+  {
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Cannot transform volume grid except via translation / scale");
+    return false;
+  }
+  data.bb.bmin = T * data.bb.bmin;
+  data.bb.bmax = T * data.bb.bmax;
+  return true;
 }
 
 AABB3D Geometry3DVolume::GetAABB() const
 {
-    return data.bb;
+  return data.bb;
 }
 
 void Geometry3DVolume::ResizeTo(const Geometry3D* geom,Real resolution,Real domainExpansion)
@@ -954,6 +965,19 @@ void Geometry3DVolume::ResizeTo(const Geometry3D* geom,Real resolution,Real doma
   Assert(resolution > 0);
   FitGridToBB(bb,data,resolution,domainExpansion/resolution);
 }
+
+
+Geometry3DImplicitSurface::Geometry3DImplicitSurface(Real _truncation)
+: truncationDistance(_truncation)
+{}
+
+Geometry3DImplicitSurface::Geometry3DImplicitSurface(const Meshing::VolumeGrid& _data, Real _truncation)
+: Geometry3DVolume(_data), truncationDistance(_truncation)
+{}
+
+Geometry3DImplicitSurface::Geometry3DImplicitSurface(Meshing::VolumeGrid&& _data, Real _truncation)
+: Geometry3DVolume(_data), truncationDistance(_truncation)
+{}
 
 bool Geometry3DImplicitSurface::ConvertFrom(const Geometry3D* geom,Real param,Real domainExpansion)  
 {
@@ -1002,11 +1026,19 @@ Geometry3D* Geometry3DImplicitSurface::ConvertTo(Type restype, Real param,Real d
 {
     switch (restype)
     {
-    case Type::ImplicitSurface:
+    case Type::PointCloud:
         {
-        auto* res = new Geometry3DImplicitSurface();
-        res->data = data;
-        return res;
+        auto* pc = new Geometry3DPointCloud();
+        Meshing::VolumeGridIterator<Real> it=data.getIterator();
+        Vector3 c;
+        while(!it.isDone()) {
+            if(*it <= param) {
+                it.getCellCenter(c);
+                pc->data.points.push_back(c);
+            }
+            ++it;
+        }
+        return pc;
         }
     case Type::TriangleMesh:
         {
@@ -1035,24 +1067,79 @@ Geometry3D* Geometry3DImplicitSurface::ConvertTo(Type restype, Real param,Real d
 
 Geometry3D* Geometry3DImplicitSurface::Remesh(Real resolution,bool refine,bool coarsen) const
 {
-    const Meshing::VolumeGrid& grid = data;
-    auto* res = new Geometry3DImplicitSurface;
-    Vector3 size=grid.GetCellSize();
-    if((resolution < size.x && refine) || (resolution > size.x && coarsen) ||
-       (resolution < size.y && refine) || (resolution > size.y && coarsen) ||
-       (resolution < size.z && refine) || (resolution > size.z && coarsen)) {
-        int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
-        int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
-        int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
-        Meshing::VolumeGrid& output = res->data;
-        output.Resize(m,n,p);
-        output.bb = grid.bb;
-        output.ResampleTrilinear(grid);
+  const Meshing::VolumeGrid& grid = data;
+  auto* res = new Geometry3DImplicitSurface;
+  Vector3 size=grid.GetCellSize();
+  if((resolution < size.x && refine) || (resolution > size.x && coarsen) ||
+    (resolution < size.y && refine) || (resolution > size.y && coarsen) ||
+    (resolution < size.z && refine) || (resolution > size.z && coarsen)) {
+    int m = (int)Ceil((grid.bb.bmax.x-grid.bb.bmin.x) / resolution);
+    int n = (int)Ceil((grid.bb.bmax.y-grid.bb.bmin.y) / resolution);
+    int p = (int)Ceil((grid.bb.bmax.z-grid.bb.bmin.z) / resolution);
+    Meshing::VolumeGrid& output = res->data;
+    output.Resize(m,n,p);
+    output.bb = grid.bb;
+    output.ResampleTrilinear(grid);
+  }
+  else {
+    res->data = grid;
+  }
+  return res;
+}
+
+bool Geometry3DImplicitSurface::Merge(const Geometry3D* geom,const RigidTransform* Tgeom)
+{
+  if(Tgeom) {
+      Geometry3D* temp = geom->Copy();
+      if(!temp->Transform(*Tgeom)) return false;
+      bool res = Merge(temp);
+      delete temp;
+      return res;
+  }
+  if(geom->GetType() == Type::ImplicitSurface) {
+    auto* g = dynamic_cast<const Geometry3DImplicitSurface*>(geom);
+    if(g->data.value.empty()) return true;
+    if(data.value.empty()) {
+      data = g->data;
+      return true;
+    }
+    if(data.IsSimilar(g->data)) {
+      data.Min(g->data);
     }
     else {
-        res->data = grid;
+      Meshing::VolumeGrid temp;
+      temp.MakeSimilar(data);
+      temp.ResampleTrilinear(g->data);
+      data.Min(temp);
     }
-    return res;
+    return true;
+  }
+  else if(geom->GetType() == Type::ConvexHull) {
+    auto* g = dynamic_cast<const Geometry3DConvexHull*>(geom);
+    Meshing::VolumeGrid temp;
+    temp.MakeSimilar(data);
+    temp.value.set(Inf);
+    ConvexHullImplicitSurfaceFill(g->data, temp, truncationDistance);
+    data.Min(temp);
+    return true;
+  }
+  else if(geom->GetType() == Type::Primitive) {
+    auto* g = dynamic_cast<const Geometry3DPrimitive*>(geom);
+    Meshing::VolumeGrid temp;
+    temp.MakeSimilar(data);
+    temp.value.set(Inf);
+    PrimitiveImplicitSurfaceFill(g->data, temp, truncationDistance);
+    data.Min(temp);
+    return true;
+  }
+  else if(geom->GetType() == Type::PointCloud) {
+    auto* g = dynamic_cast<const Geometry3DPointCloud*>(geom);
+    PointCloudImplicitSurfaceFill_FMM(g->data, data, truncationDistance);
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 Collider3DImplicitSurface::Collider3DImplicitSurface(shared_ptr<Geometry3DImplicitSurface> _data)
@@ -1384,18 +1471,9 @@ bool Collider3DImplicitSurface::ConvertFrom(Collider3D* geom,Real param,Real dom
     SetTransform(geom->GetTransform());
     return true;
   }
-  return false;
+  return Collider3D::ConvertFrom(geom, param, domainExpansion);
 }
 
-Collider3D* Collider3DImplicitSurface::Slice(const RigidTransform& T,Real tol) const {
-  return NULL;
-}
-Collider3D* Collider3DImplicitSurface::ExtractROI(const AABB3D& bb,int flag) const {
-  return NULL;
-}
-Collider3D* Collider3DImplicitSurface::ExtractROI(const Box3D& bb,int flag) const {
-  return NULL;
-}
 
 
 

@@ -1,6 +1,7 @@
 #include "CollisionOccupancyGrid.h"
 #include "Conversions.h"
 #include "GridSubdivision.h"
+#include "CollisionPrimitive.h"
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/utils/stl_tr1.h>
 #include <KrisLibrary/meshing/Voxelize.h>
@@ -13,24 +14,37 @@ DECLARE_LOGGER(Geometry)
 
 int PointIndex(const Collider3DOccupancyGrid &s, const Vector3 &ptworld)
 {
-  Vector3 plocal;
-  s.currentTransform.mulInverse(ptworld, plocal);
-  IntTriple cell;
-  s.data->data.GetIndex(plocal, cell);
-  if (cell.a < 0)
-    cell.a = 0;
-  if (cell.a >= s.data->data.value.m)
-    cell.a = s.data->data.value.m - 1;
-  if (cell.b < 0)
-    cell.b = 0;
-  if (cell.b >= s.data->data.value.n)
-    cell.b = s.data->data.value.n - 1;
-  if (cell.c < 0)
-    cell.c = 0;
-  if (cell.c >= s.data->data.value.p)
-    cell.c = s.data->data.value.p - 1;
-  return cell.a * s.data->data.value.n * s.data->data.value.p + cell.b * s.data->data.value.p + cell.c;
+    Vector3 plocal;
+    s.currentTransform.mulInverse(ptworld, plocal);
+    IntTriple cell;
+    s.data->data.GetIndex(plocal, cell);
+    if (cell.a < 0)
+        cell.a = 0;
+    if (cell.a >= s.data->data.value.m)
+        cell.a = s.data->data.value.m - 1;
+    if (cell.b < 0)
+        cell.b = 0;
+    if (cell.b >= s.data->data.value.n)
+        cell.b = s.data->data.value.n - 1;
+    if (cell.c < 0)
+        cell.c = 0;
+    if (cell.c >= s.data->data.value.p)
+        cell.c = s.data->data.value.p - 1;
+    return s.data->IndexToElement(cell);
 }
+
+Geometry3DOccupancyGrid::Geometry3DOccupancyGrid(Real _threshold)
+: occupancyThreshold(_threshold)
+{}
+
+Geometry3DOccupancyGrid::Geometry3DOccupancyGrid(const Meshing::VolumeGrid& _data,Real _threshold)
+: Geometry3DVolume(_data), occupancyThreshold(_threshold)
+{}
+
+Geometry3DOccupancyGrid::Geometry3DOccupancyGrid(Meshing::VolumeGrid&& _data,Real _threshold)
+: Geometry3DVolume(_data), occupancyThreshold(_threshold)
+{}
+
 
 Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real domainExpansion) const
 {
@@ -41,7 +55,7 @@ Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real doma
         Meshing::VolumeGridIterator<Real> it=data.getIterator();
         Vector3 c;
         while(!it.isDone()) {
-            if(*it > 0) {
+            if(*it > param) {
                 it.getCellCenter(c);
                 pc->data.points.push_back(c);
             }
@@ -136,6 +150,7 @@ bool Geometry3DOccupancyGrid::ConvertFrom(const Geometry3D* geom,Real param,Real
 {
     switch(geom->GetType()) {
     case Type::Primitive:
+    case Type::ConvexHull:
         {
         auto* isurf = geom->ConvertTo(Type::ImplicitSurface, param, domainExpansion);
         if(!isurf) return false;
@@ -189,6 +204,64 @@ bool Geometry3DOccupancyGrid::ConvertFrom(const Geometry3D* geom,Real param,Real
     }
 }
 
+bool Geometry3DOccupancyGrid::Merge(const Geometry3D* geom,const RigidTransform* Tgeom)
+{
+    if(Tgeom) {
+        Geometry3D* temp = geom->Copy();
+        if(!temp->Transform(*Tgeom)) return false;
+        bool res = Merge(temp);
+        delete temp;
+        return res;
+    }
+    if(geom->GetType() == Type::OccupancyGrid) {
+        auto* g = dynamic_cast<const Geometry3DOccupancyGrid*>(geom);
+        if(g->data.value.empty()) return true;
+        if(data.value.empty()) {
+            data = g->data;
+            return true;
+        }
+        if(data.IsSimilar(g->data)) {
+            data.Max(g->data);
+        }
+        else {
+            Meshing::VolumeGrid temp;
+            temp.MakeSimilar(data);
+            temp.ResampleAverage(g->data);
+            data.Max(temp);
+        }
+        return true;
+    }
+    else if(geom->GetType() == Type::ImplicitSurface) {
+        auto* temp = geom->ConvertTo(Type::OccupancyGrid);
+        bool res=Merge(temp,Tgeom);
+        delete temp;
+        return res;
+    }
+    else if(geom->GetType() == Type::ConvexHull) {
+        auto* g = dynamic_cast<const Geometry3DConvexHull*>(geom);
+        ConvexHullOccupancyGridFill(g->data, data);
+        return true;
+    }
+    else if(geom->GetType() == Type::Primitive) {
+        auto* g = dynamic_cast<const Geometry3DPrimitive*>(geom);
+        PrimitiveOccupancyGridFill(g->data, data);
+        return true;
+    }
+    else if(geom->GetType() == Type::TriangleMesh) {
+        auto* g = dynamic_cast<const Geometry3DTriangleMesh*>(geom);
+        MeshOccupancyGridFill(g->data, data);
+        return true;
+    }
+    else if(geom->GetType() == Type::PointCloud) {
+        auto* g = dynamic_cast<const Geometry3DPointCloud*>(geom);
+        PointCloudOccupancyGridFill(g->data, data);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 Geometry3D* Geometry3DOccupancyGrid::Remesh(Real resolution,bool refine,bool coarsen) const
 {
     const Meshing::VolumeGrid& grid = data;
@@ -221,18 +294,91 @@ void Collider3DOccupancyGrid::Reset()
 {}
 
 bool Collider3DOccupancyGrid::Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
-{ return false; }
+{
+    elements1.resize(0);
+    elements2.resize(0);
+
+    ///brute force method -- collide geom with boxes of the occupancy grid
+    RigidTransform Tinv;
+    Tinv.setInverse(currentTransform);
+    Box3D gb = geom->GetBB();
+    Box3D gblocal;
+    gblocal.setTransformed(gb,Tinv);
+    AABB3D gbb;
+    gblocal.getAABB(gbb);
+    Meshing::VolumeGridIterator<Real> it = data->data.getIterator(gbb);
+
+    AABB3D bb;
+    shared_ptr<Geometry3DPrimitive> prim = make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
+    shared_ptr<Collider3DPrimitive> cprim = make_shared<Collider3DPrimitive>(prim);
+    cprim->SetTransform(currentTransform);
+    vector<int> elems_g,elems_p;
+    for(;!it.isDone();++it) {
+        if(*it > data->occupancyThreshold) {
+            it.getCell(bb);
+            prim->data.data = bb;
+            elems_g.resize(0);
+            elems_p.resize(0);
+            if(!geom->Collides(cprim.get(),elems_g,elems_p,maxcollisions)) return false;
+            if(!elems_g.empty()) {
+                elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
+                int gridelem = data->IndexToElement(it.index);
+                for(auto e:elems_g) 
+                    elements1.push_back(gridelem);
+            }
+        }
+    }
+    return false;
+}
 
 bool Collider3DOccupancyGrid::Contains(const Vector3& pt,bool& result)
 { 
     Vector3 ptlocal;
     currentTransform.mulInverse(pt,ptlocal);
-    result = data->data.GetValue(ptlocal) > 0;
+    result = (data->data.GetValue(ptlocal) > data->occupancyThreshold);
     return true;
 }
 
 bool Collider3DOccupancyGrid::WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
-{ return false; }
+{ 
+    elements1.resize(0);
+    elements2.resize(0);
+
+    ///brute force method -- collide geom with boxes of the occupancy grid
+    RigidTransform Tinv;
+    Tinv.setInverse(currentTransform);
+    Box3D gb = geom->GetBB();
+    Box3D gblocal;
+    gblocal.setTransformed(gb,Tinv);
+    AABB3D gbb;
+    gblocal.getAABB(gbb);
+    gbb.bmin -= Vector3(d);
+    gbb.bmax += Vector3(d);
+    Meshing::VolumeGridIterator<Real> it = data->data.getIterator(gbb);
+
+    AABB3D bb;
+    shared_ptr<Geometry3DPrimitive> prim = make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
+    shared_ptr<Collider3DPrimitive> cprim = make_shared<Collider3DPrimitive>(prim);
+    cprim->SetTransform(currentTransform);
+    vector<int> elems_g,elems_p;
+    for(;!it.isDone();++it) {
+        if(*it > data->occupancyThreshold) {
+            it.getCell(bb);
+            prim->data.data = bb;
+            elems_g.resize(0);
+            elems_p.resize(0);
+            if(!geom->WithinDistance(cprim.get(),d,elems_g,elems_p,maxcollisions)) return false;
+            if(!elems_g.empty()) {
+                elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
+                int gridelem = data->IndexToElement(it.index);
+                for(auto e:elems_g) 
+                    elements1.push_back(gridelem);
+            }
+        }
+    }
+    return false;
+
+}
 
 bool Collider3DOccupancyGrid::RayCast(const Ray3D& r,Real margin,Real& distance,int& element)
 {
@@ -259,7 +405,7 @@ bool Collider3DOccupancyGrid::RayCast(const Ray3D& r,Real margin,Real& distance,
     Meshing::GetSegmentCells(s,data->data.value.m,data->data.value.n,data->data.value.p,data->data.bb,cells,&params);
     for(size_t i=0;i<cells.size();i++) {
         const auto& c=cells[i];
-        if(data->data.value(c) > 0) {
+        if(data->data.value(c) > data->occupancyThreshold) {
             Vector3 pt = s.a + params[i]*(s.b-s.a);
             distance = (pt-rlocal.source).dot(rlocal.direction);
             element = PointIndex(*this,currentTransform*pt);
@@ -270,10 +416,3 @@ bool Collider3DOccupancyGrid::RayCast(const Ray3D& r,Real margin,Real& distance,
     element = -1;
     return true;
 }
-
-Collider3D* Collider3DOccupancyGrid::Slice(const RigidTransform& T,Real tol) const
-{ return NULL; }
-Collider3D* Collider3DOccupancyGrid::ExtractROI(const AABB3D& bb,int flag) const
-{ return NULL; }
-Collider3D* Collider3DOccupancyGrid::ExtractROI(const Box3D& bb,int flag) const
-{ return NULL; }

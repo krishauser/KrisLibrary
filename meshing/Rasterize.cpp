@@ -1,9 +1,10 @@
 #include <KrisLibrary/Logger.h>
 #include "Rasterize.h"
 #include "Meshing.h"
-#include <math/cast.h>
-#include <geometry/primitives.h>
-#include <utils/shift.h>
+#include <KrisLibrary/math/cast.h>
+#include <KrisLibrary/math3d/clip.h>
+#include <KrisLibrary/geometry/primitives.h>
+#include <KrisLibrary/utils/shift.h>
 #include <errors.h>
 using namespace Geometry;
 using namespace std;
@@ -92,6 +93,25 @@ void GetSegmentCells(const Segment2D& s,vector<IntPair>& cells)
     case -1: i.a--; cellCorner.x-=1.0; break;
     case 2: i.b++; cellCorner.y+=1.0; break;
     case -2: i.b--; cellCorner.y-=1.0; break;
+    }
+  }
+}
+
+void GetRayCells(const Ray2D& ray,std::vector<IntPair>& cells,int imin,int jmin,int imax,int jmax)
+{
+  cells.resize(0);
+  Real u1=0,u2=Inf;
+  AABB2D bb(Vector2((Real)imin,(Real)jmin),Vector2((Real)imax-0.25,(Real)jmax-0.25));
+  if(!ClipLine(ray.source,ray.direction,bb,u1,u2)) return;
+  Segment2D s;
+  s.a = ray.source + ray.direction*u1;
+  s.b = ray.source + ray.direction*u2;
+  GetSegmentCells(s,cells);
+  for(size_t i=0;i<cells.size();i++) {
+    if(cells[i].a < imin || cells[i].a >= imax ||
+       cells[i].b < jmin || cells[i].b >= jmax) {
+      cells.erase(cells.begin()+i);
+      i--;
     }
   }
 }

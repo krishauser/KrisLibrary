@@ -1,8 +1,8 @@
 #ifndef GEOMETRY_COLLISION_PRIMITIVE_H
 #define GEOMETRY_COLLISION_PRIMITIVE_H
 
-#include "AnyGeometryType.h"
-#include "AnyGeometryTypeImpl.h"
+#include "GeometryType.h"
+#include "GeometryTypeImpl.h"
 
 namespace Geometry {
 

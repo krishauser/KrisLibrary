@@ -1,4 +1,4 @@
-#include "AnyGeometryTypeImpl.h"
+#include "GeometryTypeImpl.h"
 #include <KrisLibrary/Logger.h>
 #include "Conversions.h"
 #include "ROI.h"
@@ -12,6 +12,7 @@
 #include "CollisionPointCloud.h"
 #include "CollisionImplicitSurface.h"
 #include "CollisionOccupancyGrid.h"
+#include "CollisionHeightmap.h"
 #include <fstream>
 
 DECLARE_LOGGER(Geometry)
@@ -21,90 +22,90 @@ namespace Geometry {
 
 void Flip(DistanceQueryResult &res)
 {
-  std::swap(res.elem1, res.elem2);
-  std::swap(res.group_elem1, res.group_elem2);
-  std::swap(res.cp1, res.cp2);
-  std::swap(res.dir1, res.dir2);
+    std::swap(res.elem1, res.elem2);
+    std::swap(res.group_elem1, res.group_elem2);
+    std::swap(res.cp1, res.cp2);
+    std::swap(res.dir1, res.dir2);
 }
 
 void Transform1(DistanceQueryResult &res, const RigidTransform &T)
 {
-  if (res.hasClosestPoints)
-    res.cp1 = T * res.cp1;
-  if (res.hasDirections)
-    res.dir1 = T.R * res.dir1;
+    if (res.hasClosestPoints)
+        res.cp1 = T * res.cp1;
+    if (res.hasDirections)
+        res.dir1 = T.R * res.dir1;
 }
 
 void Transform2(DistanceQueryResult &res, const RigidTransform &T)
 {
-  if (res.hasClosestPoints)
-    res.cp2 = T * res.cp2;
-  if (res.hasDirections)
-    res.dir2 = T.R * res.dir2;
+    if (res.hasClosestPoints)
+        res.cp2 = T * res.cp2;
+    if (res.hasDirections)
+        res.dir2 = T.R * res.dir2;
 }
 
 void Offset1(DistanceQueryResult &res, Real offset)
 {
-  res.d -= offset;
-  if (res.hasDirections)
-    res.cp1.madd(res.dir1, offset);
+    res.d -= offset;
+    if (res.hasDirections)
+        res.cp1.madd(res.dir1, offset);
 }
 
 void Offset2(DistanceQueryResult &res, Real offset)
 {
-  res.d -= offset;
-  if (res.hasDirections)
-    res.cp2.madd(res.dir2, offset);
+    res.d -= offset;
+    if (res.hasDirections)
+        res.cp2.madd(res.dir2, offset);
 }
 
 void Offset(DistanceQueryResult &res, Real offset1, Real offset2)
 {
-  Offset1(res,offset1);
-  Offset2(res,offset2);
+    Offset1(res,offset1);
+    Offset2(res,offset2);
 }
 
 void SetCP2(DistanceQueryResult &res)
 {
-  res.cp2 = res.cp1;
-  res.cp2.madd(res.dir1, res.d);
-  res.dir2.setNegative(res.dir1);
+    res.cp2 = res.cp1;
+    res.cp2.madd(res.dir1, res.d);
+    res.dir2.setNegative(res.dir1);
 }
 
 void PushGroup1(DistanceQueryResult &res, int i)
 {
-  if (res.group_elem1.empty())
-  {
-    res.group_elem1.resize(2);
-    res.group_elem1[0] = i;
-    res.group_elem1[1] = res.elem1;
-  }
-  else
-  {
-    res.group_elem1.insert(res.group_elem1.begin(), i);
-  }
-  res.elem1 = i;
+    if (res.group_elem1.empty())
+    {
+        res.group_elem1.resize(2);
+        res.group_elem1[0] = i;
+        res.group_elem1[1] = res.elem1;
+    }
+    else
+    {
+        res.group_elem1.insert(res.group_elem1.begin(), i);
+    }
+    res.elem1 = i;
 }
 
 void PushGroup2(DistanceQueryResult &res, int i)
 {
-  if (res.group_elem2.empty())
-  {
-    res.group_elem2.resize(2);
-    res.group_elem2[0] = i;
-    res.group_elem2[1] = res.elem2;
-  }
-  else
-  {
-    res.group_elem2.insert(res.group_elem2.begin(), i);
-  }
-  res.elem2 = i;
+    if (res.group_elem2.empty())
+    {
+        res.group_elem2.resize(2);
+        res.group_elem2[0] = i;
+        res.group_elem2[1] = res.elem2;
+    }
+    else
+    {
+        res.group_elem2.insert(res.group_elem2.begin(), i);
+    }
+    res.elem2 = i;
 }
 
 void ReverseContact(ContactsQueryResult::ContactPair &contact)
 {
-  std::swap(contact.p1, contact.p2);
-  contact.n.inplaceNegative();
-  std::swap(contact.elem1, contact.elem2);
+    std::swap(contact.p1, contact.p2);
+    contact.n.inplaceNegative();
+    std::swap(contact.elem1, contact.elem2);
 }
 
 } //Geometry
@@ -143,6 +144,7 @@ Geometry3D* Geometry3D::Make(Type type)
     case Type::ImplicitSurface: return new Geometry3DImplicitSurface();
     case Type::OccupancyGrid: return new Geometry3DOccupancyGrid();
     case Type::ConvexHull: return new Geometry3DConvexHull();
+    case Type::Heightmap: return new Geometry3DHeightmap();
     case Type::Group: return new Geometry3DGroup();
     default:
         return NULL;
@@ -151,14 +153,15 @@ Geometry3D* Geometry3D::Make(Type type)
 
 Geometry3D* Geometry3D::Make(const char* typestr)
 {
-  if (0==strcmp(typestr,"Primitive")) return new Geometry3DPrimitive();
-  else if(0==strcmp(typestr,"TriangleMesh")) return new Geometry3DTriangleMesh();
-  else if(0==strcmp(typestr,"PointCloud")) return new Geometry3DPointCloud();
-  else if(0==strcmp(typestr,"ImplicitSurface")) return new Geometry3DImplicitSurface();
-  else if(0==strcmp(typestr,"OccupancyGrid")) return new Geometry3DOccupancyGrid();
-  else if(0==strcmp(typestr,"ConvexHull")) return new Geometry3DConvexHull();
-  else if(0==strcmp(typestr,"Group")) return new Geometry3DGroup();
-  else return NULL;
+    if (0==strcmp(typestr,"Primitive")) return new Geometry3DPrimitive();
+    else if(0==strcmp(typestr,"TriangleMesh")) return new Geometry3DTriangleMesh();
+    else if(0==strcmp(typestr,"PointCloud")) return new Geometry3DPointCloud();
+    else if(0==strcmp(typestr,"ImplicitSurface")) return new Geometry3DImplicitSurface();
+    else if(0==strcmp(typestr,"OccupancyGrid")) return new Geometry3DOccupancyGrid();
+    else if(0==strcmp(typestr,"ConvexHull")) return new Geometry3DConvexHull();
+    else if(0==strcmp(typestr,"Heightmap")) return new Geometry3DHeightmap();
+    else if(0==strcmp(typestr,"Group")) return new Geometry3DGroup();
+    else return NULL;
 }
 
 const char *Geometry3D::TypeName(Type type)
@@ -177,6 +180,8 @@ const char *Geometry3D::TypeName(Type type)
     return "ImplicitSurface";
   case Type::OccupancyGrid:
     return "OccupancyGrid";
+  case Type::Heightmap:
+    return "Heightmap";
   case Type::Group:
     return "Group";
   default:
@@ -227,13 +232,23 @@ bool Geometry3DGroup::Empty() const { return data.empty(); }
 
 size_t Geometry3DGroup::NumElements() const { return data.size(); }
 
-bool Geometry3DGroup::Merge(const vector<Geometry3D*>& geoms) 
+bool Geometry3DGroup::Union(const vector<Geometry3D*>& geoms) 
 {
   data.resize(geoms.size());
   for(size_t i=0;i<geoms.size();i++) {
     data[i].type = geoms[i]->GetType();
     data[i].data.reset(geoms[i]->Copy());
   }
+  return true;
+}
+
+bool Geometry3DGroup::Merge(const Geometry3D* geom,const RigidTransform* Tgeom)
+{
+  data.resize(data.size()+1);
+  data.back().type = geom->GetType();
+  data.back().data.reset(geom->Copy());
+  if(Tgeom) 
+    data.back().Transform(*Tgeom);
   return true;
 }
 
@@ -251,7 +266,7 @@ Geometry3D* Geometry3DGroup::ConvertTo(Type restype, Real param,Real domainExpan
     vector<Geometry3D*> impls(convert.size());
     for(size_t i=0;i<convert.size();i++) 
         impls[i] = convert[i].data.get();
-    if(!res->Merge(impls)) {
+    if(!res->Union(impls)) {
         delete res;
         return NULL;
     }
@@ -363,17 +378,17 @@ shared_ptr<Geometry3D> Geometry3DGroup::GetElement(int elem) const
 
 bool Geometry3DGroup::Support(const Vector3& dir,Vector3& pt) const
 {
-  Real farthest = -Inf;
-  Vector3 temp;
-  for (size_t i = 0; i < data.size(); i++) {
-    if(!data[i].data->Support(dir,temp)) return false;
-    Real d = dir.dot(temp);
-    if(d > farthest) {
-      farthest = d;
-      pt = temp;
+    Real farthest = -Inf;
+    Vector3 temp;
+    for (size_t i = 0; i < data.size(); i++) {
+        if(!data[i].data->Support(dir,temp)) return false;
+        Real d = dir.dot(temp);
+        if(d > farthest) {
+            farthest = d;
+            pt = temp;
+        }
     }
-  }
-  return true;
+    return true;
 }
 
 Collider3D* Collider3D::Make(shared_ptr<Geometry3D> data)
@@ -385,6 +400,7 @@ Collider3D* Collider3D::Make(shared_ptr<Geometry3D> data)
     case Type::ConvexHull: return new Collider3DConvexHull(dynamic_pointer_cast<Geometry3DConvexHull>(data));
     case Type::ImplicitSurface: return new Collider3DImplicitSurface(dynamic_pointer_cast<Geometry3DImplicitSurface>(data));
     case Type::OccupancyGrid: return new Collider3DOccupancyGrid(dynamic_pointer_cast<Geometry3DOccupancyGrid>(data));
+    case Type::Heightmap: return new Collider3DHeightmap(dynamic_pointer_cast<Geometry3DHeightmap>(data));
     case Type::Group: return new Collider3DGroup(dynamic_pointer_cast<Geometry3DGroup>(data));
     }
     return NULL;
@@ -437,7 +453,11 @@ Collider3D* Collider3D::Slice(const RigidTransform& T,Real tol) const
 
 Collider3D* Collider3D::ExtractROI(const AABB3D& bb,int flag) const
 {
-    Geometry3D* sgeom = GetData()->ExtractROI(bb,flag);
+    RigidTransform Tinv;
+    Tinv.setInverse(GetTransform());
+    Box3D b;
+    b.setTransformed(bb,Tinv);
+    Geometry3D* sgeom = GetData()->ExtractROI(b,flag);
     if(!sgeom) return NULL;
     shared_ptr<Geometry3D> sgeom_ptr(sgeom);
     return Collider3D::Make(sgeom_ptr);
@@ -445,7 +465,11 @@ Collider3D* Collider3D::ExtractROI(const AABB3D& bb,int flag) const
 
 Collider3D* Collider3D::ExtractROI(const Box3D& bb,int flag) const
 {
-    Geometry3D* sgeom = GetData()->ExtractROI(bb,flag);
+    RigidTransform Tinv;
+    Tinv.setInverse(GetTransform());
+    Box3D b;
+    b.setTransformed(bb,Tinv);
+    Geometry3D* sgeom = GetData()->ExtractROI(b,flag);
     if(!sgeom) return NULL;
     shared_ptr<Geometry3D> sgeom_ptr(sgeom);
     return Collider3D::Make(sgeom_ptr);
@@ -456,21 +480,38 @@ Collider3D* Collider3D::Copy() const
     return Make(shared_ptr<Geometry3D>(GetData()->Copy()));
 }
 
-bool Collider3D::Merge(const vector<Collider3D*>& cgeoms)
+bool Collider3D::Union(const vector<Collider3D*>& cgeoms)
 {
     if(cgeoms.empty()) return false;
     RigidTransform T0 = GetTransform();
     vector<Geometry3D*> geoms(geoms.size());
     for (size_t i = 0; i < cgeoms.size(); i++) {
+        geoms[i] = cgeoms[i]->GetData().get();
+        if(geoms[i]->GetType() == geoms[0]->GetType()) {
+            geoms[i] = geoms[i]->Copy();
+        }
+        else {
+            geoms[i] = geoms[i]->ConvertTo(geoms[0]->GetType());
+        }
         RigidTransform Ti = cgeoms[i]->GetTransform();
         RigidTransform Trel; Trel.mulInverseA(T0,Ti);
-        geoms[i] = cgeoms[i]->GetData().get();
-        geoms[i] = geoms[i]->ConvertTo(geoms[i]->GetType());
         geoms[i]->Transform(Trel);
     }
-    if(!GetData()->Merge(geoms)) {
+    if(!GetData()->Union(geoms)) {
         return false;
     }
+    Reset();
+    return true;
+}
+
+bool Collider3D::Merge(const Collider3D* cgeom)
+{
+    RigidTransform T0 = GetTransform();
+    RigidTransform Ti = cgeom->GetTransform();
+    RigidTransform Trel; Trel.mulInverseA(T0,Ti);
+    RigidTransform Tident; Tident.setIdentity();
+    RigidTransform* Tgeom = (Trel == Tident ? NULL : &Trel);
+    if(!GetData()->Merge(cgeom->GetData().get(),Tgeom)) return false;
     Reset();
     return true;
 }
@@ -494,18 +535,18 @@ bool Collider3D::ConvertFrom(Collider3D* geom,Real param,Real domainExpansion)
 Collider3DGroup::Collider3DGroup(shared_ptr<Geometry3DGroup> _data)
 :data(_data)
 {
-  Reset();
+    Reset();
 }
 
 Collider3DGroup::~Collider3DGroup() {}
 
 void Collider3DGroup::Reset()
 {
-  collisionData.resize(data->data.size());
-  for(size_t i=0;i<data->data.size();i++) {
-    collisionData[i].type = data->data[i].type;
-    collisionData[i].data = data->data[i].data;
-  }
+    collisionData.resize(data->data.size());
+    for(size_t i=0;i<data->data.size();i++) {
+      collisionData[i].type = data->data[i].type;
+      collisionData[i].data = data->data[i].data;
+    }
 }
 
 AABB3D Collider3DGroup::GetAABBTight() const
@@ -528,20 +569,20 @@ AABB3D Collider3D::GetAABB() const
 
 Box3D Collider3D::GetBB() const
 {
-  Box3D b;
-  AABB3D bblocal = GetData()->GetAABB();
-  b.setTransformed(bblocal, GetTransform());
-  return b;
+    Box3D b;
+    AABB3D bblocal = GetData()->GetAABB();
+    b.setTransformed(bblocal, GetTransform());
+    return b;
 }
 
 bool Collider3D::Support(const Vector3& dir,Vector3& pt)
 {
-  Vector3 dirlocal,localpt;
-  RigidTransform T = GetTransform();
-  T.R.mulTranspose(dir,dirlocal);
-  if(!GetData()->Support(dirlocal,localpt)) return false;
-  pt = T*localpt;
-  return true;
+    Vector3 dirlocal,localpt;
+    RigidTransform T = GetTransform();
+    T.R.mulTranspose(dir,dirlocal);
+    if(!GetData()->Support(dirlocal,localpt)) return false;
+    pt = T*localpt;
+    return true;
 }
 
 AABB3D Collider3DGroup::GetAABB() const
@@ -570,13 +611,44 @@ void Collider3DGroup::SetTransform(const RigidTransform& T)
 
 RigidTransform Collider3DGroup::GetTransform() const
 {
-  const vector<AnyCollisionGeometry3D> &items = collisionData;
-  if(items.size()==0) {
-    RigidTransform res;
-    res.setIdentity();
-    return res;
-  }
-  return items[0].GetTransform();
+    const vector<AnyCollisionGeometry3D> &items = collisionData;
+    if(items.size()==0) {
+      RigidTransform res;
+      res.setIdentity();
+      return res;
+    }
+    return items[0].GetTransform();
+}
+
+bool Collider3DGroup::Union(const vector<Collider3D*>& geoms)
+{
+    vector<Geometry3D*> geoms2(geoms.size());
+    for(size_t i=0;i<geoms.size();i++) {
+        geoms2[i] = geoms[i]->GetData().get();
+        if(i > 0) {
+          RigidTransform Tba;
+          Tba.mulInverseA(geoms[0]->GetTransform(),geoms[i]->GetTransform());
+          geoms2[i]->Transform(Tba);
+        }
+    }
+    if(!data->Union(geoms2)) return false;
+    Reset();
+    for(size_t i=0;i<collisionData.size();i++)
+        collisionData[i].SetTransform(geoms[0]->GetTransform());
+    return true;
+}
+
+bool Collider3DGroup::Merge(const Collider3D* geom)
+{
+    RigidTransform Tba;
+    Tba.mulInverseA(GetTransform(), geom->GetTransform());
+    RigidTransform Tident;
+    Tident.setIdentity();
+    RigidTransform* Tgeom = (Tba == Tident ? NULL : &Tba);
+    if(!data->Merge(geom->GetData().get(),Tgeom)) return false;
+    Reset();
+    collisionData.back().SetTransform(geom->GetTransform());
+    return true;
 }
 
 bool Collider3DGroup::Contains(const Vector3& pt,bool& result)
@@ -845,7 +917,7 @@ Collider3D* Collider3DGroup::ConvertTo(Type restype, Real param,Real domainExpan
     vector<Collider3D*> resgeoms(resitems.size());
     for(size_t i=0;i<resitems.size();i++)
         resgeoms[i] = resitems[i].collider.get();
-    if(!res->Merge(resgeoms)) {
+    if(!res->Union(resgeoms)) {
         delete res;
         return NULL;
     }
