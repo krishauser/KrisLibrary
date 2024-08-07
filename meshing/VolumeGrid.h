@@ -21,6 +21,7 @@ struct VolumeGridIterator
 {
   VolumeGridIterator(const Array3D<T>& cells,const AABB3D& bb);
   void setRange(const IntTriple& bmin,const IntTriple& bmax);
+  void setBoxRange(const Vector3& bmin,const Vector3& bmax);
   inline const T& operator *() const { return *it; }
   inline T& operator *() { return *it; }
   inline const IntTriple& getIndex() const { return index; }
@@ -85,6 +86,7 @@ class VolumeGridTemplate
   inline void GetCell(const IntTriple& index,AABB3D& cell) const { GetCell(index.a,index.b,index.c,cell); }
   inline void GetCenter(const IntTriple& index,Vector3& center) const { GetCellCenter(index.a,index.b,index.c,center); }
   inline void GetIndex(const Vector3& pt,IntTriple& index) const { GetIndex(pt,index.a,index.b,index.c); }
+  inline bool GetIndexChecked(const Vector3& pt,IntTriple& index) const { return GetIndexChecked(pt,index.a,index.b,index.c); }
   inline void SetValue(int i,int j,int k,const T& v) { value(i,j,k)=v; }
   inline void SetValue(const Vector3& pt,const T& v) { int i,j,k; GetIndex(pt,i,j,k); value(i,j,k)=v; }
   inline T GetValue(int i,int j,int k) const { return value(i,j,k); }
@@ -119,6 +121,12 @@ class VolumeGridTemplate
 
   typedef VolumeGridIterator<T> iterator;
   iterator getIterator() const { return iterator(value,bb); }
+  /// Returns an iterator over a range of indexed cells (inclusive of endpoints)
+  iterator getIterator(const IntTriple& lo,const IntTriple& hi) const { auto res= iterator(value,bb);  res.setRange(lo,hi); return res; }
+  /// Returns an iterator over a range of cells that overlap the given box 
+  iterator getIterator(const Vector3& lo,const Vector3& hi) const { auto res= iterator(value,bb);  res.setBoxRange(lo,hi); return res; }
+  /// Returns an iterator over a range of cells that overlap the given box 
+  iterator getIterator(const AABB3D& query) const { return getIterator(query.bmin,query.bmax); }
 
   Array3D<T> value;
   AABB3D bb;
@@ -186,6 +194,34 @@ void VolumeGridIterator<T>::setRange(const IntTriple& bmin,const IntTriple& bmax
 				 lo.c,hi.c+1));
   index=lo;
 }
+
+template <class T>
+void VolumeGridIterator<T>::setBoxRange(const Vector3& bmin,const Vector3& bmax)
+{
+  IntTriple imin,imax;
+  Vector3 scale(cells.m / (bb.bmax.x-bb.bmin.x), cells.n / (bb.bmax.y-bb.bmin.y), cells.p / (bb.bmax.z-bb.bmin.z));
+  imin.a = (int)Floor((bmin.x - bb.bmin.x)*scale.x);
+  imin.b = (int)Floor((bmin.y - bb.bmin.y)*scale.y);
+  imin.c = (int)Floor((bmin.z - bb.bmin.z)*scale.z);
+
+  imax.a = (int)Floor((bmax.x - bb.bmin.x)*scale.x);
+  imax.b = (int)Floor((bmax.y - bb.bmin.y)*scale.y);
+  imax.c = (int)Floor((bmax.z - bb.bmin.z)*scale.z);
+
+  if(imax.a < 0 || imax.b < 0 || imax.c < 0 || imin.a >= cells.m || imin.b >= cells.n || imin.c >= cells.p) {
+    index = hi;
+    index.a++;  //indicate done
+    return;
+  }
+  imin.a = Max(imin.a,0);
+  imin.b = Max(imin.b,0);
+  imin.c = Max(imin.c,0);
+  imax.a = Min(imax.a,cells.m-1);
+  imax.b = Min(imax.b,cells.n-1);
+  imax.c = Min(imax.c,cells.p-1);
+  setRange(imin,imax);
+}
+
 
 template <class T>
 void VolumeGridIterator<T>::operator ++()
