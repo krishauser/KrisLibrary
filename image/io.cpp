@@ -92,7 +92,7 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 			memcpy(img.getData(0,h-1-i),line,w*img.pixelSize());
 		}
 	}
-	if(fmt == Image::R8G8B8) {
+	else if(fmt == Image::R8G8B8) {
 		RGBQUAD rgb;
 		for(int i=0;i<h;i++) {
 			unsigned char* d = img.getData(0,h-1-i);
@@ -120,12 +120,13 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 		}
 	}
 	else { //A8
-		RGBQUAD rgb;
+		RGBQUAD* palette = FreeImage_GetPalette(fimg);
+		BYTE idx;
 		for(int i=0;i<h;i++) {
 			unsigned char* d = img.getData(0,h-1-i);
 			for(int j=0;j<w;j++) {
-				FreeImage_GetPixelColor(fimg,j,h-i-1,&rgb);
-				d[0] = rgb.rgbBlue;
+				FreeImage_GetPixelIndex(fimg,j,i,&idx);
+				d[0] = palette[idx].rgbRed;
 				d ++;
 			}
 		}
