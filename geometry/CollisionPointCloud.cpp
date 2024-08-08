@@ -1107,10 +1107,8 @@ bool Geometry3DPointCloud::ConvertFrom(const Geometry3D* geom,Real param,Real do
     switch(geom->GetType()) {
     case Type::Primitive:
     {
-        printf("1\n");
         const auto& prim = dynamic_cast<const Geometry3DPrimitive*>(geom)->data;
         if(prim.type == GeometricPrimitive3D::Segment) {
-            printf("2\n");
             //special-purpose construction for segments
             const Math3D::Segment3D& s = *AnyCast<Math3D::Segment3D>(&prim.data);
 
@@ -1132,13 +1130,20 @@ bool Geometry3DPointCloud::ConvertFrom(const Geometry3D* geom,Real param,Real do
             return true;
         }
         else {
-            printf("3\n");
             auto* tmesh = geom->ConvertTo(Type::TriangleMesh, param);
+            if(tmesh == NULL) {
+              Geometry3DTriangleMesh tmesh;
+              if(!tmesh.ConvertFrom(geom,param)) {
+                LOG4CXX_WARN(GET_LOGGER(Geometry),"Geometry "<<Geometry3D::TypeName(geom->GetType())<<" could not be converted to TriangleMesh");
+                return false;
+              }
+              if (param == 0)
+                  param = Inf;
+              return ConvertFrom(&tmesh,param);
+            }
             if (param == 0)
                 param = Inf;
-            printf("4\n");
             ConvertFrom(tmesh,param);
-            printf("5\n");
             delete tmesh;
             return true;
         }

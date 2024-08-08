@@ -147,36 +147,14 @@ bool AnyGeometry3D::Merge(const AnyGeometry3D& other, const RigidTransform* Tgeo
 
 bool AnyGeometry3D::Convert(Type restype, AnyGeometry3D &res, Real param) const
 {
-  if(!data) return false;
-  if (type == restype)
-  {
-    res.type = type;
-    res.data.reset(data->Copy());
+  if(!data) {
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"AnyGeometry3D::Convert(): Converting empty geometry");
+    return false;
+  }
+  res.data.reset(data->Convert(restype,param));
+  if(res.data) {
+    res.type = restype;
     return true;
-  }
-  if(type < restype) {
-    //try res -> this
-    res.data.reset(Geometry3D::Make(restype));
-    res.type = restype;
-    if(res.data->ConvertFrom(data.get(),param)) return true;
-    Geometry3D* newgeom = data->ConvertTo(restype,param);
-    if(newgeom) {
-      res.type = newgeom->GetType();
-      res.data.reset(newgeom);
-      return true;
-    }
-  }
-  else {
-    //try this -> res first
-    Geometry3D* newgeom = data->ConvertTo(restype,param);
-    if(newgeom) {
-      res.type = newgeom->GetType();
-      res.data.reset(newgeom);
-      return true;
-    }
-    res.data.reset(Geometry3D::Make(restype));
-    res.type = restype;
-    return res.data->ConvertFrom(data.get(),param);
   }
   return false;
 }
@@ -250,7 +228,7 @@ GeometricPrimitive3D AnyGeometry3D::GetElement(int elem) const
 
 bool AnyGeometry3D::CanLoadExt(const char *ext)
 {
-  if(Meshing::CanLoadTriMeshExt(ext) || 0 == strcmp(ext, "pcd") || 0 == strcmp(ext, "vol") || 0 == strcmp(ext, "geom")) return true;
+  if(Meshing::CanLoadTriMeshExt(ext) || 0 == strcmp(ext, "pcd") || 0 == strcmp(ext, "vol") || 0 == strcmp(ext, "sdf") || 0 == strcmp(ext, "occ") || 0 == strcmp(ext, "geom") || 0 == strcmp(ext, "json") ) return true;
   for(int i=0;i<=int(Type::Group);i++) {
     auto* test = Geometry3D::Make(Type(i));
     auto exts = test->FileExtensions();
@@ -264,7 +242,7 @@ bool AnyGeometry3D::CanLoadExt(const char *ext)
 
 bool AnyGeometry3D::CanSaveExt(const char *ext)
 {
-  if(Meshing::CanSaveTriMeshExt(ext) || 0 == strcmp(ext, "pcd") || 0 == strcmp(ext, "vol") || 0 == strcmp(ext, "geom")) return true;
+  if(Meshing::CanSaveTriMeshExt(ext) || 0 == strcmp(ext, "pcd") || 0 == strcmp(ext, "vol") || 0 == strcmp(ext, "sdf") || 0 == strcmp(ext, "occ") || 0 == strcmp(ext, "geom") || 0 == strcmp(ext, "json") ) return true;
   for(int i=0;i<=int(Type::Group);i++) {
     auto* test = Geometry3D::Make(Type(i));
     auto exts = test->FileExtensions();
@@ -278,6 +256,11 @@ bool AnyGeometry3D::CanSaveExt(const char *ext)
 
 bool AnyGeometry3D::Load(const char *fn)
 {
+  if(data && (type != Type::Primitive && AsPrimitive().type != GeometricPrimitive3D::Empty)) {
+    //try loading with the current data type
+    if(data->Load(fn)) return true;
+  }
+
   const char *ext = FileExtension(fn);
   if (Meshing::CanLoadTriMeshExt(ext))
   {
@@ -319,6 +302,7 @@ bool AnyGeometry3D::Load(const char *fn)
         }
       }
       data.reset(group);
+      type = data->GetType();
     }
     return true;
     /*
@@ -343,13 +327,22 @@ bool AnyGeometry3D::Load(const char *fn)
     type = Type::PointCloud;
     return true;
   }
-  else if (0 == strcmp(ext, "vol"))
+  else if (0 == strcmp(ext, "vol") || 0 == strcmp(ext, "sdf"))
   {
     data.reset(new Geometry3DImplicitSurface());
     if(!data->Load(fn)) {
       return false;
     }
     type = Type::ImplicitSurface;
+    return true;
+  }
+  else if (0 == strcmp(ext, "occ"))
+  {
+    data.reset(new Geometry3DOccupancyGrid());
+    if(!data->Load(fn)) {
+      return false;
+    }
+    type = Type::OccupancyGrid;
     return true;
   }
   else if (0 == strcmp(ext, "geom"))
@@ -361,8 +354,18 @@ bool AnyGeometry3D::Load(const char *fn)
     type = Type::Primitive;
     return true;
   }
+  else if (0 == strcmp(ext, "json"))
+  {
+    data.reset(new Geometry3DHeightmap());
+    if(!data->Load(fn)) {
+      return false;
+    }
+    type = Type::Heightmap;
+    return true;
+  }
   else
   {
+    //unknown extension, try all types
     for(int i=0;i<=int(Type::Group);i++) {
       auto* res = Geometry3D::Make(Type(i));
       if(res->Load(fn)) {
@@ -584,59 +587,29 @@ bool AnyCollisionGeometry3D::Merge(const AnyCollisionGeometry3D& other)
 
 bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, Real param)
 {
+  if(!data) {
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"AnyGeometry3D::Convert(): Converting empty geometry");
+    return false;
+  }
   res.type = restype;
   res.margin = margin;
   res.currentTransform = currentTransform;
   if(!collider) {
     //default: convert geometry only, leave collider empty
     res.collider.reset();
-    if(type == restype) {
-      res.data.reset(data->Copy());
-      return true;
-    }
-    else if(type < restype) {
-      res.data.reset(Geometry3D::Make(restype));
-      if(res.data->ConvertFrom(data.get(),param,margin)) 
-        return true;
-      res.data.reset(data->ConvertTo(restype,param,margin));
-      if(res.data) return true;
-      return false;
-    }
-    else {
-      res.data.reset(data->ConvertTo(restype,param,margin));
-      if(res.data) return true;
-      res.data.reset(Geometry3D::Make(restype));
-      if(res.data->ConvertFrom(data.get(),param,margin)) 
-        return true;
-      return false;
-    }
-  }
-  if(type == restype) {
-    res.collider.reset(collider->Copy());
-    res.data = collider->GetData();
-  }
-  if(type < restype) {
-    res.data.reset(Geometry3D::Make(restype));
-    res.collider.reset(Collider3D::Make(res.data));
-    if(res.collider->ConvertFrom(collider.get(),param,margin)) 
-      return true;
-    res.collider.reset(collider->ConvertTo(restype,param,margin));
-    if(res.collider) {
-      res.data = res.collider->GetData();
+    res.data.reset(data->Convert(restype,param,margin));
+    if(res.data) {
+      res.type = restype;
       return true;
     }
     return false;
   }
-  else {
-    res.collider.reset(collider->ConvertTo(restype,param,margin));
-    if(res.collider) {
-      res.data = res.collider->GetData();
-      return true;
-    }
-    res.data.reset(Geometry3D::Make(restype));
-    res.collider.reset(Collider3D::Make(res.data));
-    return res.collider->ConvertFrom(collider.get(),param,margin);
+  res.collider.reset(collider->Convert(restype,param,margin));
+  if(res.collider) {
+    res.data = collider->GetData();
+    return true;
   }
+  return false;
 }
 
 AABB3D AnyCollisionGeometry3D::GetAABBTight() const

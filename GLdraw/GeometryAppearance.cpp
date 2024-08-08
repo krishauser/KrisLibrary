@@ -523,9 +523,10 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   }
   else if(geom->type == AnyGeometry3D::Type::OccupancyGrid) {
     //TODO: draw as blocks with density
-    const Meshing::VolumeGrid* g = &geom->AsOccupancyGrid();
+    AnyGeometry3D gmesh;
+    geom->Convert(AnyGeometry3D::Type::TriangleMesh,gmesh);
     if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    ImplicitSurfaceToMesh(*g,*tempMesh);
+    *tempMesh = gmesh.AsTriangleMesh();
     drawFaces = true;
     drawEdges = false;
     drawVertices = false;
@@ -639,6 +640,31 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     drawEdges = false;
     drawVertices = false;
   }
+  else if(geom->type == AnyGeometry3D::Type::Heightmap) {
+    const Meshing::Heightmap* g = &geom->AsHeightmap();
+    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
+    HeightmapToMesh(*g,*tempMesh,*this);
+    if(g->HasColors() && !tex2D) {
+      tex2D = make_shared<Image>(g->colors);
+      if(g->perspective) {
+        //u = (x - g->offset.x)/(z*g->xysize.x) + 0.5
+        texgen.resize(4);
+        texgen[0].set(1/g->xysize.x,0,0.5-g->offset.x*g->xysize.x,0);
+        texgen[1].set(0,1/g->xysize.y,0.5-g->offset.y*g->xysize.y,0);
+        texgen[2].set(0,0,1,0);
+        texgen[3].set(0,0,1,0);
+      }
+      else {
+        //u = (x - g->offset.x)/g->xysize.x + 0.5
+        texgen.resize(2);
+        texgen[0].set(1.0/g->xysize.x,0,0,0.5-g->offset.x/g->xysize.x);
+        texgen[1].set(0,1.0/g->xysize.y,0,0.5-g->offset.y/g->xysize.y);
+      }
+    }
+    drawFaces = true;
+    drawEdges = false;
+    drawVertices = false;
+  }
   else if(geom->type == AnyGeometry3D::Type::Group) {
     drawFaces = true;
     drawEdges = true;
@@ -709,7 +735,10 @@ void GeometryAppearance::DrawGL(Element e)
     FatalError("Invalid Element specified");
   if(doDrawVertices) {   
     const vector<Vector3>* verts = NULL;  
-    if(geom->type == AnyGeometry3D::Type::ImplicitSurface || geom->type == AnyGeometry3D::Type::ConvexHull) 
+    if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+      geom->type == AnyGeometry3D::Type::OccupancyGrid ||
+      geom->type == AnyGeometry3D::Type::Heightmap ||
+      geom->type == AnyGeometry3D::Type::ConvexHull) 
       verts = &tempMesh->verts;
     else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
       verts = &geom->AsTriangleMesh().verts;
@@ -893,7 +922,11 @@ void GeometryAppearance::DrawGL(Element e)
       Timer timer;
       const Meshing::TriMesh* trimesh = NULL;
       const Meshing::TriMeshWithTopology* trimesh_topology = NULL;
-      if(geom->type == AnyGeometry3D::Type::ImplicitSurface || geom->type == AnyGeometry3D::Type::PointCloud || geom->type == AnyGeometry3D::Type::ConvexHull) 
+      if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+        geom->type == AnyGeometry3D::Type::OccupancyGrid ||
+        geom->type == AnyGeometry3D::Type::Heightmap ||
+        geom->type == AnyGeometry3D::Type::PointCloud ||
+        geom->type == AnyGeometry3D::Type::ConvexHull) 
         trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::Type::TriangleMesh) {
         trimesh = &geom->AsTriangleMesh();
@@ -1135,7 +1168,11 @@ void GeometryAppearance::DrawGL(Element e)
 
   if(doDrawEdges) {
     const Meshing::TriMesh* trimesh = NULL;
-    if(geom->type == AnyGeometry3D::Type::ImplicitSurface || geom->type == AnyGeometry3D::Type::PointCloud || geom->type == AnyGeometry3D::Type::ConvexHull) 
+    if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+      geom->type == AnyGeometry3D::Type::OccupancyGrid || 
+      geom->type == AnyGeometry3D::Type::Heightmap ||
+      geom->type == AnyGeometry3D::Type::PointCloud ||
+      geom->type == AnyGeometry3D::Type::ConvexHull) 
       trimesh = tempMesh.get();
     else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
       trimesh = &geom->AsTriangleMesh();
@@ -1188,7 +1225,7 @@ void GeometryAppearance::DrawGL(Element e)
   }
 
   if(doDrawSilhouette) {
-    //TODO: do we want to try silhouettes around point clounds?
+    //TODO: do we want to try silhouettes around point clounds or occupancy grids?
     /*
       if(silhouetteRadius > 0) {
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_POINT_BIT);
@@ -1210,7 +1247,9 @@ void GeometryAppearance::DrawGL(Element e)
     if(!weldMesh) {
       //make the weld mesh from the triangle mesh
       const Meshing::TriMesh* trimesh = NULL;
-      if(geom->type == AnyGeometry3D::Type::ImplicitSurface) 
+      if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+        geom->type == AnyGeometry3D::Type::Heightmap ||
+        geom->type == AnyGeometry3D::Type::ConvexHull ) 
         trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::Type::PointCloud) 
         trimesh = tempMesh.get();

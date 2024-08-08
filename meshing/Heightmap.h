@@ -61,7 +61,7 @@ public:
 
     bool Load(const char* fn);
     bool Save(const char* fn) const;
-    bool Load(std::istream& in);
+    bool Load(std::istream& in,const char* folder=NULL);
     bool Save(std::ostream& out,const char* heightsFn,const char* colorsFn=NULL) const;
     
     /** @The height image must be of format Float or A8. In the former case the heights

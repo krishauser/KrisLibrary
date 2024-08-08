@@ -3,9 +3,9 @@
 #include "Conversions.h"
 #include "ROI.h"
 #include "Slice.h"
-#include <math3d/geometry3d.h>
-#include <meshing/VolumeGrid.h>
-#include <meshing/Voxelize.h>
+#include <KrisLibrary/math3d/geometry3d.h>
+#include <KrisLibrary/meshing/VolumeGrid.h>
+#include <KrisLibrary/meshing/Voxelize.h>
 #include "CollisionPrimitive.h"
 #include "CollisionConvexHull.h"
 #include "CollisionMesh.h"
@@ -166,27 +166,27 @@ Geometry3D* Geometry3D::Make(const char* typestr)
 
 const char *Geometry3D::TypeName(Type type)
 {
-  switch (type)
-  {
-  case Type::Primitive:
-    return "Primitive";
-  case Type::ConvexHull:
-    return "ConvexHull";
-  case Type::TriangleMesh:
-    return "TriangleMesh";
-  case Type::PointCloud:
-    return "PointCloud";
-  case Type::ImplicitSurface:
-    return "ImplicitSurface";
-  case Type::OccupancyGrid:
-    return "OccupancyGrid";
-  case Type::Heightmap:
-    return "Heightmap";
-  case Type::Group:
-    return "Group";
-  default:
-    return "Error";
-  }
+    switch (type)
+    {
+    case Type::Primitive:
+        return "Primitive";
+    case Type::ConvexHull:
+        return "ConvexHull";
+    case Type::TriangleMesh:
+        return "TriangleMesh";
+    case Type::PointCloud:
+        return "PointCloud";
+    case Type::ImplicitSurface:
+        return "ImplicitSurface";
+    case Type::OccupancyGrid:
+       return "OccupancyGrid";
+    case Type::Heightmap:
+       return "Heightmap";
+    case Type::Group:
+        return "Group";
+    default:
+       return "Error";
+    }
 }
 
 
@@ -218,6 +218,49 @@ bool Geometry3D::Transform(const RigidTransform& T)
     return Transform(Matrix4(T));
 }
 
+Geometry3D* Geometry3D::Convert(Type restype,Real param,Real domainExpansion) const
+{
+    if (GetType() == restype)
+    {
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to itself, succeeded!");
+        return Copy();
+    }
+    else if(GetType() < restype) {
+        //try res -> this
+        Geometry3D* res = Geometry3D::Make(restype);
+        if(res->ConvertFrom(this,param)) {
+            LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" succeeded!");
+            return res;
+        }
+        delete res;
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" failed");
+        Geometry3D* newgeom = ConvertTo(restype,param);
+        if(newgeom) {
+            LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" succeeded!");
+            return newgeom;
+        }
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" failed");
+        return NULL;
+    }
+    else {
+        //try this -> res first
+        Geometry3D* newgeom = ConvertTo(restype,param);
+        if(newgeom) {
+          LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" succeeded!");
+          return newgeom;
+        }
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" failed");
+        Geometry3D* res = Geometry3D::Make(restype);
+        if(res->ConvertFrom(this,param)) {
+            LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" succeeded!");
+            return res;
+        }
+        delete res;
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" failed");
+        return NULL;
+    }
+}
+
 Geometry3DGroup::Geometry3DGroup()
 {}
 
@@ -234,22 +277,22 @@ size_t Geometry3DGroup::NumElements() const { return data.size(); }
 
 bool Geometry3DGroup::Union(const vector<Geometry3D*>& geoms) 
 {
-  data.resize(geoms.size());
-  for(size_t i=0;i<geoms.size();i++) {
-    data[i].type = geoms[i]->GetType();
-    data[i].data.reset(geoms[i]->Copy());
-  }
-  return true;
+    data.resize(geoms.size());
+    for(size_t i=0;i<geoms.size();i++) {
+        data[i].type = geoms[i]->GetType();
+        data[i].data.reset(geoms[i]->Copy());
+    }
+    return true;
 }
 
 bool Geometry3DGroup::Merge(const Geometry3D* geom,const RigidTransform* Tgeom)
 {
-  data.resize(data.size()+1);
-  data.back().type = geom->GetType();
-  data.back().data.reset(geom->Copy());
-  if(Tgeom) 
-    data.back().Transform(*Tgeom);
-  return true;
+    data.resize(data.size()+1);
+    data.back().type = geom->GetType();
+    data.back().data.reset(geom->Copy());
+    if(Tgeom) 
+        data.back().Transform(*Tgeom);
+    return true;
 }
 
 Geometry3D* Geometry3DGroup::ConvertTo(Type restype, Real param,Real domainExpansion) const
@@ -405,6 +448,34 @@ Collider3D* Collider3D::Make(shared_ptr<Geometry3D> data)
     }
     return NULL;
 }
+
+Collider3D* Collider3D::Convert(Type restype,Real param,Real domainExpansion)
+{
+    if(GetType() == restype) {
+        return Copy();
+    }
+    else if(GetType() < restype) {
+        Collider3D* res = Collider3D::Make(shared_ptr<Geometry3D>(Geometry3D::Make(restype)));
+        if(res->ConvertFrom(this,param,domainExpansion)) return res;
+        delete res;
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Collider3D::Convert(): converting "<<Geometry3D::TypeName(restype)<<" from "<<Geometry3D::TypeName(GetType())<<" failed");
+        Collider3D* newgeom = ConvertTo(restype,param,domainExpansion);
+        if(newgeom) return newgeom;
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Collider3D::Convert(): converting "<<Geometry3D::TypeName(GetType())<<" to "<<Geometry3D::TypeName(restype)<<" failed");
+        return NULL;
+    }
+    else {
+        Collider3D* newgeom = ConvertTo(restype,param,domainExpansion);
+        if(newgeom) return newgeom;
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Collider3D::Convert(): converting "<<Geometry3D::TypeName(GetType())<<" to "<<Geometry3D::TypeName(restype)<<" failed");
+        Collider3D* res = Collider3D::Make(shared_ptr<Geometry3D>(Geometry3D::Make(restype)));
+        if(res->ConvertFrom(this,param,domainExpansion)) return res;
+        delete res;
+        LOG4CXX_INFO(GET_LOGGER(Geometry),"Collider3D::Convert(): converting "<<Geometry3D::TypeName(restype)<<" from "<<Geometry3D::TypeName(GetType())<<" failed");
+        return NULL;
+    }
+}
+
 
 bool Collider3D::Collides(Collider3D* geom,bool& result)
 {
@@ -670,44 +741,44 @@ bool Collider3DGroup::Collides(Collider3D* geom,vector<int>& elements1,vector<in
         if(collisionData[i].margin==0) {
             if (collisionData[i].collider->Collides(geom, ei1, ei2, maxContacts - (int)elements1.size()))
             {
-              for (size_t j = 0; j < ei1.size(); j++)
-              {
-                elements1.push_back((int)i);
-                elements2.push_back((int)ei2[j]);
-              }
-              if (elements2.size() >= maxContacts)
-                return true;
+                for (size_t j = 0; j < ei1.size(); j++)
+                {
+                  elements1.push_back((int)i);
+                  elements2.push_back((int)ei2[j]);
+                }
+                if (elements2.size() >= maxContacts)
+                  return true;
             }
             else if (geom->Collides(collisionData[i].collider.get(), ei2, ei1, maxContacts - (int)elements1.size())) {
-              for (size_t j = 0; j < ei1.size(); j++)
-              {
-                elements1.push_back((int)i);
-                elements2.push_back((int)ei2[j]);
-              }
-              if (elements2.size() >= maxContacts)
-                return true;
+                for (size_t j = 0; j < ei1.size(); j++)
+                {
+                  elements1.push_back((int)i);
+                  elements2.push_back((int)ei2[j]);
+                }
+                if (elements2.size() >= maxContacts)
+                  return true;
             }
             else return false;
         }
         else {
             if (collisionData[i].collider->WithinDistance(geom, collisionData[i].margin, ei1, ei2, maxContacts - (int)elements1.size()))
             {
-              for (size_t j = 0; j < ei1.size(); j++)
-              {
-                elements1.push_back((int)i);
-                elements2.push_back((int)ei2[j]);
-              }
-              if (elements2.size() >= maxContacts)
-                return true;
+                for (size_t j = 0; j < ei1.size(); j++)
+                {
+                  elements1.push_back((int)i);
+                  elements2.push_back((int)ei2[j]);
+                }
+                if (elements2.size() >= maxContacts)
+                  return true;
             }
             else if (geom->WithinDistance(collisionData[i].collider.get(), collisionData[i].margin, ei2, ei1, maxContacts - (int)elements1.size())) {
-              for (size_t j = 0; j < ei1.size(); j++)
-              {
-                elements1.push_back((int)i);
-                elements2.push_back((int)ei2[j]);
-              }
-              if (elements2.size() >= maxContacts)
-                return true;
+                for (size_t j = 0; j < ei1.size(); j++)
+                {
+                  elements1.push_back((int)i);
+                  elements2.push_back((int)ei2[j]);
+                }
+                if (elements2.size() >= maxContacts)
+                  return true;
             }
             else return false;
         }
@@ -734,15 +805,15 @@ bool Collider3DGroup::Distance(const Vector3 &pt, const DistanceQuerySettings &s
     res.d = settings.upperBound;
     for (size_t i = 0; i < items.size(); i++)
     {
-      DistanceQueryResult ires;
-      modsettings.upperBound = res.d + items[i].margin;
-      if(!items[i].collider->Distance(pt, modsettings, ires)) return false;
-      if (ires.d < res.d)
-      {
-        res = ires;
-        PushGroup1(res, (int)i);
-        Offset1(res, items[i].margin);
-      }
+        DistanceQueryResult ires;
+        modsettings.upperBound = res.d + items[i].margin;
+        if(!items[i].collider->Distance(pt, modsettings, ires)) return false;
+        if (ires.d < res.d)
+        {
+            res = ires;
+            PushGroup1(res, (int)i);
+            Offset1(res, items[i].margin);
+        }
     }
     return true;
 }
@@ -754,26 +825,26 @@ bool Collider3DGroup::Distance(Collider3D* geom,const DistanceQuerySettings& set
     res.d = settings.upperBound;
     for (size_t i = 0; i < items.size(); i++)
     {
-      DistanceQueryResult ires;
-      modsettings.upperBound = res.d + items[i].margin;
-      if(items[i].collider->Distance(geom, modsettings, ires)) {
-        if (ires.d < res.d)
-        {
-          res = ires;
-          PushGroup1(res, (int)i);
-          Offset1(res, items[i].margin);
+        DistanceQueryResult ires;
+        modsettings.upperBound = res.d + items[i].margin;
+        if(items[i].collider->Distance(geom, modsettings, ires)) {
+            if (ires.d < res.d)
+            {
+              res = ires;
+              PushGroup1(res, (int)i);
+              Offset1(res, items[i].margin);
+            }
         }
-      }
-      else if(geom->Distance(items[i].collider.get(),modsettings,ires)) {
-        if (ires.d < res.d)
-        {
-          res = ires;
-          Flip(res);
-          PushGroup1(res, (int)i);
-          Offset1(res, items[i].margin);
+        else if(geom->Distance(items[i].collider.get(),modsettings,ires)) {
+            if (ires.d < res.d)
+            {
+              res = ires;
+              Flip(res);
+              PushGroup1(res, (int)i);
+              Offset1(res, items[i].margin);
+            }
         }
-      }
-      else return false;
+        else return false;
     }
     return true;
 }
@@ -781,53 +852,53 @@ bool Collider3DGroup::Distance(Collider3D* geom,const DistanceQuerySettings& set
 bool Collider3DGroup::WithinDistance(Collider3D* geom,Real d,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
 {
-  for (size_t i = 0; i < collisionData.size(); i++)
-  {
-    vector<int> ei1, ei2;
-    if (collisionData[i].collider->WithinDistance(geom, d-collisionData[i].margin, ei1, ei2, maxContacts - (int)elements1.size()))
+    for (size_t i = 0; i < collisionData.size(); i++)
     {
-      for (size_t j = 0; j < ei1.size(); j++)
-      {
-        elements1.push_back((int)i);
-        elements2.push_back((int)ei2[j]);
-      }
-      if (elements2.size() >= maxContacts)
-        return true;
+        vector<int> ei1, ei2;
+        if (collisionData[i].collider->WithinDistance(geom, d-collisionData[i].margin, ei1, ei2, maxContacts - (int)elements1.size()))
+        {
+            for (size_t j = 0; j < ei1.size(); j++)
+            {
+              elements1.push_back((int)i);
+              elements2.push_back((int)ei2[j]);
+            }
+            if (elements2.size() >= maxContacts)
+              return true;
+        }
+        else if (geom->WithinDistance(collisionData[i].collider.get(), d-collisionData[i].margin, ei2, ei1, maxContacts - (int)elements1.size())) {
+            for (size_t j = 0; j < ei1.size(); j++)
+            {
+              elements1.push_back((int)i);
+              elements2.push_back((int)ei2[j]);
+            }
+            if (elements2.size() >= maxContacts)
+              return true;
+        }
+        else return false;
     }
-    else if (geom->WithinDistance(collisionData[i].collider.get(), d-collisionData[i].margin, ei2, ei1, maxContacts - (int)elements1.size())) {
-      for (size_t j = 0; j < ei1.size(); j++)
-      {
-        elements1.push_back((int)i);
-        elements2.push_back((int)ei2[j]);
-      }
-      if (elements2.size() >= maxContacts)
-        return true;
-    }
-    else return false;
-  }
-  return true;
+    return true;
 }
 
 bool Collider3DGroup::RayCast(const Ray3D& r,Real margin,Real& distance,int& element) 
 {
-  vector<AnyCollisionGeometry3D> &items = collisionData;
-  distance = Inf;
-  element = -1;
-  for (size_t i = 0; i < items.size(); i++)
-  {
-    Real d;
-    int elem;
-    if (items[i].collider->RayCast(r, margin + items[i].margin, d, elem))
+    vector<AnyCollisionGeometry3D> &items = collisionData;
+    distance = Inf;
+    element = -1;
+    for (size_t i = 0; i < items.size(); i++)
     {
-      if (d < distance)
-      {
-        distance = d;
-        element = (int)i;
-      }
+        Real d;
+        int elem;
+        if (items[i].collider->RayCast(r, margin + items[i].margin, d, elem))
+        {
+            if (d < distance)
+            {
+                distance = d;
+                element = (int)i;
+            }
+        }
+        else return false;
     }
-    else return false;
-  }
-  return true;
+    return true;
 }
 
 bool Collider3DGroup::Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) 

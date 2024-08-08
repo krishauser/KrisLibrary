@@ -72,8 +72,17 @@ Heightmap::Heightmap(const Image& _heights,const Image& colors,const Vector2& xy
 bool Heightmap::Load(const char* fn)
 {
     ifstream in(fn,ios::in);
-    if(!in) return false;
-    if(!Load(in)) {
+    if(!in) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error opening file "<<fn<<" for reading");
+        return false;
+    }
+    //may need to load images from the same folder as fn
+    string path = GetFilePath(string(fn));
+    const char* folder = NULL;
+    if(!path.empty()) {
+        folder = path.c_str();
+    }
+    if(!Load(in,folder)) {
         LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error reading heightmap file from "<<fn);
         return false;
     }
@@ -83,24 +92,45 @@ bool Heightmap::Load(const char* fn)
 bool Heightmap::Save(const char* fn) const
 {
     ofstream out(fn,ios::out);
-    if(!out) return false;
+    if(!out) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error opening file "<<fn<<" for writing");
+        return false;
+    }
     string hfn = fn;
     string cfn = fn;
     auto pos = hfn.rfind('.');
+    #if HAVE_FREE_IMAGE || defined(_WIN32)
+    cfn = hfn.substr(0,pos) + "_color.png";
+    hfn = hfn.substr(0,pos) + "_height.png";
+    #else
     cfn = hfn.substr(0,pos) + "_color.ppm";
     hfn = hfn.substr(0,pos) + "_height.ppm";
+    #endif //HAVE_FREE_IMAGE || defined(_WIN32)
     return Save(out,hfn.c_str(),cfn.c_str());
 }
 
-bool Heightmap::Load(std::istream& in)
+bool Heightmap::Load(std::istream& in, const char* folder)
 {
     AnyCollection items;
     if(!items.read(in)) {
         return false;
     }
-    if(items.find("width")) {
-        if(!items["width"].as(xysize.x)) return false;
-        if(!items["height"].as(xysize.y)) return false;
+    if(!items.find("type")) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: No type field in heightmap file");
+        return false;
+    }
+    string type;
+    if(!items["type"].as(type)) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error reading type field in heightmap file");
+        return false;
+    }
+    if(type != "Heightmap") {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Not a heightmap file, type is "<<type);
+        return false;
+    }
+    if(items.find("xsize")) {
+        if(!items["xsize"].as(xysize.x)) return false;
+        if(!items["ysize"].as(xysize.y)) return false;
         perspective = false;
     }
     else {
@@ -124,14 +154,22 @@ bool Heightmap::Load(std::istream& in)
     string heightFn;
     if(!items["heights"].as(heightFn)) return false;
     Image himg;
+    if(folder) {
+        heightFn = JoinPath(folder,heightFn);
+    }
     if(!ImportImage(heightFn.c_str(),himg)) {
         LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing height image from "<<heightFn);
         return false;
     }
+    unsigned char imgmin = *std::min_element(himg.data,himg.data+himg.w*himg.h);
+    unsigned char imgmax = *std::max_element(himg.data,himg.data+himg.w*himg.h);
     SetImage(himg,hmax-hmin,hmin);
     if(items.find("colors")) {
         string colorFn;
         if(!items["colors"].as(colorFn)) return false;
+        if(folder) {
+            colorFn = JoinPath(folder,colorFn);
+        }
         Image cimg;
         if(!ImportImage(colorFn.c_str(),cimg)) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing color image from "<<colorFn);
@@ -151,34 +189,55 @@ bool Heightmap::Load(std::istream& in)
 bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorFn) const
 {
     AnyCollection items;
-    if(perspective) {
-        items["width"] = xysize.x;
-        items["height"] = xysize.y;
+    items["type"] = "Heightmap";
+    if(!perspective) {
+        items["xsize"] = xysize.x;
+        items["ysize"] = xysize.y;
     }
     else {
         items["xfov"] = 2.0*Atan(xysize.x);
         items["yfov"] = 2.0*Atan(xysize.y);
     }
     if(offset.maxAbsElement() > 0) {
-        AnyCollection joffset = items["offset"];
+        AnyCollection joffset;
         joffset.resize(3);
         joffset[0] = offset.x;
         joffset[1] = offset.y;
         joffset[2] = offset.z;
+        items["offset"] = joffset;
     }
     Image himg;
     float hmin = *std::min_element(heights.begin(),heights.end());
-    float hmax = *std::min_element(heights.begin(),heights.end());
+    float hmax = *std::max_element(heights.begin(),heights.end());
     items["height_range"].resize(2);
     items["height_range"][0] = hmin;
     items["height_range"][1] = hmax;
 
     GetImage(himg,hmin,hmax);
-    if(!ExportImage(heightFn,himg)) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting height image to "<<heightFn);
-        return false;
+    //this is a float image.  Only certain image formats support floating point images.
+    if(0==strcmp(FileExtension(heightFn),"tif") || 0==strcmp(FileExtension(heightFn),"tiff")) {
+        //TIF/TIFF can output 32-bit float  
     }
-    items["heights"] = heightFn;
+    else if(0==strcmp(FileExtension(heightFn),"png")) {
+        //TODO: Output 16-bit grayscale
+        Image h8;
+        h8.initialize(himg.w,himg.h,Image::A8);
+        himg.blit(h8);
+        if(!ExportImage(heightFn,h8)) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting height image to "<<heightFn);
+            return false;
+        }
+    }
+    else {
+        Image h8;
+        h8.initialize(himg.w,himg.h,Image::A8);
+        himg.blit(h8);
+        if(!ExportImage(heightFn,h8)) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting height image to "<<heightFn);
+            return false;
+        }
+    }
+    items["heights"] = GetFileName(heightFn);  //assumes these are the same directory as the heightmap json file
     if(HasColors()) {
         if(colorFn == NULL) {
             FatalError("Heightmap::Save: must provide a color filename to save a color image");
@@ -187,7 +246,7 @@ bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorF
             LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting color image to "<<colorFn);
             return false;
         }
-        items["colors"] = colorFn;
+        items["colors"] = GetFileName(colorFn);
     }
     out<<items<<endl;
     return true;
@@ -201,8 +260,8 @@ void Heightmap::SetImage(const Image& _heights,float hscale,float hoffset,bool b
     heights.resize(_heights.w,_heights.h);
     float h;
     const static float bytescale = 1.0/255.0;
-    for(int i=0;i<_heights.w;i++) {
-        for(int j=0;j<_heights.h;j++) {
+    for(int j=0;j<_heights.h;j++) {
+        for(int i=0;i<_heights.w;i++) {
             unsigned char* pix = _heights.getData(i,j);
             if(_heights.format == Image::A8) {
                 h = float(*pix)*bytescale;
@@ -259,7 +318,7 @@ void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first)
     }
     if(hmax == hmin)
         hmax = hmin+1;
-    out.initialize(heights.n,heights.m,Image::FloatA);
+    out.initialize(heights.m,heights.n,Image::FloatA);
     float* fdata = (float*)out.data;
     float hscale = 1.0/(hmax-hmin);
     if(bottom_row_first) {
@@ -332,8 +391,8 @@ void Heightmap::GetGrid(vector<Real>& xgrid,vector<Real>& ygrid) const
     Vector2 cellSize = GetCellSize();
     xgrid.resize(heights.m);
     ygrid.resize(heights.n);
-    Real xshift = -Real(heights.m-1)*0.5*xysize.x;
-    Real yshift = -Real(heights.n-1)*0.5*xysize.y;
+    Real xshift = -0.5*xysize.x;
+    Real yshift = -0.5*xysize.y;
     xgrid[0] = xshift + offset.x;
     for(int i=1;i<heights.m;i++)
         xgrid[i] = xgrid[i-1] + cellSize.x;
@@ -346,12 +405,12 @@ AABB3D Heightmap::GetAABB() const
 {
     if(perspective) FatalError("TODO perspective projection");
     AABB3D res;
-    Real xscale = Real(heights.m-1)*0.5*xysize.x;
-    Real yscale = Real(heights.n-1)*0.5*xysize.y;
+    Real xscale = 0.5*xysize.x;
+    Real yscale = 0.5*xysize.y;
     res.bmin.x = -xscale + offset.x;
-    res.bmax.x = -xscale + offset.x;
+    res.bmax.x = xscale + offset.x;
     res.bmin.y = -yscale + offset.y;
-    res.bmax.y = -yscale + offset.y;
+    res.bmax.y = yscale + offset.y;
     if(heights.empty()) {
         res.bmin.z = Inf;
         res.bmax.z = -Inf;
@@ -597,6 +656,8 @@ void Heightmap::GetVertices(vector<Vector3>& verts) const
             }
         }
     }
+    if(offset.maxAbsElement() > 0) 
+        for(auto& v:verts) v += offset;
 }
 
 void Heightmap::GetVertices(Array2D<Vector3>& verts) const

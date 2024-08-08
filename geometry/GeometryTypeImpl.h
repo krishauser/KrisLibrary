@@ -198,6 +198,8 @@ public:
   virtual ~Geometry3DHeightmap () {}
   virtual Type GetType() const override { return Type::Heightmap; }
   virtual Geometry3D* Copy() const override { return new Geometry3DHeightmap(data); }
+  virtual bool Load(const char* fn);
+  virtual bool Save(const char* fn) const;
   virtual bool Load(istream& in) override;
   virtual bool Save(ostream& out) const override;
   virtual bool Empty() const override;

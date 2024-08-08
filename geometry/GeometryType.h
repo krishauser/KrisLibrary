@@ -97,6 +97,8 @@ public:
     ///
     ///domainExpansion specifies a domain buffer for certain types, such as ImplicitSurface.
     virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) { return NULL; }
+    ///Performs a type conversion, trying both ConvertTo and ConvertFrom.
+    Geometry3D* Convert(Type restype,Real param=0,Real domainExpansion=0) const;
     ///Re-meshes the geometry at the desired resolution, allocating a new object and returning it
     ///
     ///Resolution is interpreted  in a type-dependent manner
@@ -155,10 +157,6 @@ public:
     virtual RigidTransform GetTransform() const=0;
     ///Sets the *active* transform without modifying the underlying geometry. 
     virtual void SetTransform(const RigidTransform& T)=0;
-    ///Performs a type conversion, also copying the active transform.
-    ///May be a bit faster than Geometry3D.Convert for some conversions
-    ///(TriangleMesh->ImplicitSurface, specifically)
-    virtual Collider3D* Convert(Type restype,Real param=0,Real domainExpansion=0) { return NULL; }
     ///Returns an axis-aligned bounding box in the world coordinate frame
     ///containing the transformed geometry.  
     virtual AABB3D GetAABB() const;
@@ -187,6 +185,8 @@ public:
     /// for volumetric types.  It is a buffer around the domain of the geometry
     /// that is used to compute the conversion.  
     virtual bool ConvertFrom(Collider3D* geom,Real param=0,Real domainExpansion=0);
+    ///Performs a type conversion, trying both ConvertTo and ConvertFrom.
+    Collider3D* Convert(Type restype,Real param=0,Real domainExpansion=0);
     virtual bool Union(const vector<Collider3D*>& geoms);
     virtual bool Merge(const Collider3D* geom);
     ///Extracts a slice from the geometry at a given plane.  The plane is specified

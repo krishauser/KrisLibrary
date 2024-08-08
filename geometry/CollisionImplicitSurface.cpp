@@ -1049,15 +1049,11 @@ Geometry3D* Geometry3DImplicitSurface::ConvertTo(Type restype, Real param,Real d
     case Type::OccupancyGrid:
         {
         auto* res = new Geometry3DOccupancyGrid();
-        Meshing::VolumeGrid& g2 = res->data;
-        g2 = data;
-        for(int i=0;i<g2.value.m;i++)
-            for(int j=0;j<g2.value.n;j++)
-                for(int k=0;k<g2.value.p;k++)
-                    if(g2.value(i,j,k) < 0)
-                        g2.value(i,j,k) = 1.0;
-                    else
-                        g2.value(i,j,k) = 0.0;
+        if(!res->ConvertFrom(this)) {
+          LOG4CXX_ERROR(GET_LOGGER(Geometry),"Geometry3DImplicitSurface::ConvertTo: Error converting to occupancy grid");
+          delete res;
+          return NULL;
+        }
         return res;
         }
     default:

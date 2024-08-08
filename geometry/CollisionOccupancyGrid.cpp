@@ -74,7 +74,7 @@ Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real doma
             {0,0,0,  1,0,0,   1,0,1,  0,0,1}, //#-y
             {0,0,0,  0,0,1,   0,1,1,  0,1,0}, //#-x
             {0,0,0,  0,0,0,   0,0,0,  0,0,0}, //#null
-            {1,0,0,  0,1,0,   1,1,1,  1,0,1}, //#+x
+            {1,0,0,  1,1,0,   1,1,1,  1,0,1}, //#+x
             {0,1,0,  0,1,1,   1,1,1,  1,1,0}, //#+y
             {0,0,1,  1,0,1,   1,1,1,  0,1,1}, //#+z
         };
@@ -88,19 +88,19 @@ Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real doma
                 ind.a -= 1;
                 ind.a -= 1;
                 if(ind.a >= 0 && data.value(ind) <= 0) faces.push_back(-1);
-                ind.a -= 1;
+                ind.a += 1;
                 ind.b += 1;
-                if(ind.b < data.value.m && data.value(ind) <= 0) faces.push_back(2);
+                if(ind.b < data.value.n && data.value(ind) <= 0) faces.push_back(2);
                 ind.b -= 1;
                 ind.b -= 1;
                 if(ind.b >= 0 && data.value(ind) <= 0) faces.push_back(-2);
-                ind.b -= 1;
+                ind.b += 1;
                 ind.c += 1;
-                if(ind.c < data.value.m && data.value(ind) <= 0) faces.push_back(3);
+                if(ind.c < data.value.p && data.value(ind) <= 0) faces.push_back(3);
                 ind.c -= 1;
                 ind.c -= 1;
                 if(ind.c >= 0 && data.value(ind) <= 0) faces.push_back(-3);
-                ind.c -= 1;
+                ind.c += 1;
                 it.getCell(bb);
                 for(size_t i=0;i<faces.size();i++) {
                     int f=faces[i]+3;
@@ -152,11 +152,12 @@ bool Geometry3DOccupancyGrid::ConvertFrom(const Geometry3D* geom,Real param,Real
     case Type::Primitive:
     case Type::ConvexHull:
         {
-        auto* isurf = geom->ConvertTo(Type::ImplicitSurface, param, domainExpansion);
-        if(!isurf) return false;
-        ConvertFrom(isurf);
-        delete isurf;
-        return true;
+        shared_ptr<Geometry3D> g2(geom->Convert(Type::ImplicitSurface, param, domainExpansion));
+        if(g2) {
+            return ConvertFrom(g2.get());
+        }
+        LOG4CXX_WARN(GET_LOGGER(Geometry),"Geometry "<<Geometry3D::TypeName(geom->GetType())<<" could not be converted to ImplicitSurface");
+        return false;
         }
     case Type::PointCloud:
         {
@@ -199,6 +200,19 @@ bool Geometry3DOccupancyGrid::ConvertFrom(const Geometry3D* geom,Real param,Real
         MeshToOccupancyGrid(mesh,data,param,domainExpansion);
         return true;
         }
+    case Type::ImplicitSurface:
+        {
+        const Meshing::VolumeGrid& gdata = dynamic_cast<const Geometry3DImplicitSurface*>(geom)->data;
+        data.MakeSimilar(gdata);
+        for(int i=0;i<gdata.value.m;i++)
+            for(int j=0;j<gdata.value.n;j++)
+                for(int k=0;k<gdata.value.p;k++)
+                    if(gdata.value(i,j,k) < 0)
+                        data.value(i,j,k) = 1.0;
+                    else
+                        data.value(i,j,k) = 0.0;
+        return true;
+        }
     default:
         return false;
     }
@@ -232,7 +246,11 @@ bool Geometry3DOccupancyGrid::Merge(const Geometry3D* geom,const RigidTransform*
         return true;
     }
     else if(geom->GetType() == Type::ImplicitSurface) {
-        auto* temp = geom->ConvertTo(Type::OccupancyGrid);
+        auto* temp = geom->Convert(Type::OccupancyGrid);
+        if(!temp) {
+            LOG4CXX_WARN(GET_LOGGER(Geometry),"Geometry "<<Geometry3D::TypeName(geom->GetType())<<" could not be converted to OccupancyGrid");
+            return false;
+        }
         bool res=Merge(temp,Tgeom);
         delete temp;
         return res;

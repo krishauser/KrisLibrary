@@ -4,8 +4,6 @@
 #include "GeometryType.h"
 #include "CollisionMesh.h"
 
-class TiXmlElement;
-
 //forward declarations
 namespace Meshing { template <class T> class VolumeGridTemplate; typedef VolumeGridTemplate<Math::Real> VolumeGrid; class PointCloud3D; }
 namespace Math3D { class GeometricPrimitive3D; }
@@ -117,8 +115,6 @@ class AnyGeometry3D
   bool Save(const char* fn) const;
   bool Load(istream& in);
   bool Save(ostream& out) const;
-  bool Load(TiXmlElement* in);
-  bool Save(TiXmlElement* out) const;
   bool Empty() const;
   size_t NumElements() const;
   GeometricPrimitive3D GetElement(int elem) const;

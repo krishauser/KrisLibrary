@@ -635,16 +635,18 @@ bool Geometry3DConvexHull::ConvertFrom(const Geometry3D* geom,Real param,Real do
         return true;
     }
     else {
-        auto* tmesh = geom->ConvertTo(Type::TriangleMesh,param);
-        if(!tmesh) {
-            auto* pc = geom->ConvertTo(Type::PointCloud,param);
-            if(!pc) return false;
-            if (param == 0) param = Inf;
-            return ConvertFrom(pc,param);
+        shared_ptr<Geometry3D> g2(geom->Convert(Type::TriangleMesh,param));
+        if(g2) {
+            if (param == 0)
+                param = Inf;
+            return ConvertFrom(g2.get(),param);
         }
-        if (param == 0)
-            param = Inf;
-        return ConvertFrom(tmesh,param);
+        g2.reset(geom->Convert(Type::PointCloud,param));
+        if(g2) {
+            if (param == 0) param = Inf;
+            return ConvertFrom(g2.get(),param);
+        }
+        return false;
     }
 }
 

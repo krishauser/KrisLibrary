@@ -52,6 +52,11 @@ bool Geometry3DPrimitive::Transform(const Matrix4& mat)
     return true;
 }
 
+Geometry3D* Geometry3DPrimitive::ConvertTo(Type restype,Real param,Real domainExpansion) const
+{
+    return NULL;
+}
+
 Collider3DPrimitive::Collider3DPrimitive(shared_ptr<Geometry3DPrimitive> _data)
 :data(_data)
 {
@@ -74,15 +79,6 @@ AABB3D Collider3DPrimitive::GetAABB() const
     return res;
 }
 
-Geometry3D* Geometry3DPrimitive::ConvertTo(Type restype,Real param,Real domainExpansion) const
-{
-    if(restype == Type::Primitive) {
-        auto* res = new Geometry3DPrimitive();
-        res->data = data;
-        return res;
-    }
-    return NULL;
-}
 
 bool Collider3DPrimitive::Distance(const Vector3 &pt,Real& result)
 {

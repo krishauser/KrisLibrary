@@ -12,14 +12,25 @@ DECLARE_LOGGER(Geometry)
 
 using namespace Geometry;
 
+bool Geometry3DHeightmap::Load(const char* fn)
+{
+    return data.Load(fn);
+}
+
+bool Geometry3DHeightmap::Save(const char* fn) const
+{
+    return data.Save(fn);
+}
+
 bool Geometry3DHeightmap::Load(istream& in)
 {
-    return false;
+    return data.Load(in);
 }
 
 bool Geometry3DHeightmap::Save(ostream& out) const
 {
-    return false;
+    LOG4CXX_WARN(GET_LOGGER(Geometry),"Geometry3DHeightmap::Save: saving to ostream, using default height / color file names height.ppm / color.ppm");
+    return data.Save(out,"height.ppm","color.ppm");
 }
 
 bool Geometry3DHeightmap::Empty() const
@@ -124,7 +135,9 @@ bool Geometry3DHeightmap::ConvertFrom(const Geometry3D* geom,Real param,Real dom
 {
     data.perspective = false;
     auto bb=geom->GetAABB();
-    data.offset = bb.bmin+bb.bmax;
+    bb.bmin -= Vector3(domainExpansion);
+    bb.bmax += Vector3(domainExpansion);
+    data.offset = (bb.bmin+bb.bmax)*0.5;
     data.offset.z = bb.bmin.z;
     data.xysize.set(bb.bmax.x-bb.bmin.x,bb.bmax.y-bb.bmin.y);
     int m,n;
@@ -133,8 +146,8 @@ bool Geometry3DHeightmap::ConvertFrom(const Geometry3D* geom,Real param,Real dom
         n=256;
     }
     else {
-        m = int(data.xysize.x / param);
-        n = int(data.xysize.y / param);
+        m = int(data.xysize.x / param) + 1;
+        n = int(data.xysize.y / param) + 1;
     }
     data.heights.resize(m,n);
     fill(data.heights.begin(),data.heights.end(),0);
@@ -174,23 +187,26 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         }
     case Type::OccupancyGrid:
         {
-        Geometry3D* pc = geom->ConvertTo(Type::PointCloud,0.5);
-        bool res = Merge(pc,Tgeom);
-        delete pc;
-        return res;
+        shared_ptr<Geometry3D> g2(geom->Convert(Type::PointCloud,0.5));
+        if(g2) {
+            return Merge(g2.get(),Tgeom);
+        }
+        return false;
         }
     case Type::ImplicitSurface:
         {
-        Geometry3D* pc = geom->ConvertTo(Type::PointCloud,0.0);
-        bool res = Merge(pc,Tgeom);
-        delete pc;
-        return res;
+        shared_ptr<Geometry3D> g2(geom->Convert(Type::PointCloud,0.0));
+        if(g2) {
+            return Merge(g2.get(),Tgeom);
+        }
+        return false;
         }
     case Type::ConvexHull:
         {
         const Geometry3DConvexHull* ch = dynamic_cast<const Geometry3DConvexHull*>(geom);
         ConvexHull3D hull = ch->data;
-        hull.Transform(*Tgeom);
+        if(Tgeom)
+            hull.Transform(*Tgeom);
         auto bb = hull.GetAABB();
         //get range of bb to minimize # of rays cast
         IntPair lo = data.GetIndex(bb.bmin);
@@ -212,9 +228,9 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
                 Real dist;
                 if(hull.RayCast(ray,&dist,data.heights(i,j))) {
                     if(data.perspective)
-                        data.heights(i,j) = Max(float(dist),data.heights(i,j));
+                        data.heights(i,j) = Min(float(dist),data.heights(i,j));
                     else
-                        data.heights(i,j) = Min(float(bb.bmax.z + 1.0 - dist),data.heights(i,j));
+                        data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.offset.z),data.heights(i,j));
                 }
             }
         }
@@ -224,7 +240,8 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         {
         const Geometry3DPrimitive* p = dynamic_cast<const Geometry3DPrimitive*>(geom);
         GeometricPrimitive3D prim = p->data;
-        prim.Transform(*Tgeom);
+        if(Tgeom)
+            prim.Transform(*Tgeom);
         auto bb = prim.GetAABB();
         //get range of bb to minimize # of rays cast
         IntPair lo = data.GetIndex(bb.bmin);
@@ -234,6 +251,7 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         hi.b = Min(hi.b,data.heights.n-1);
         lo.a = Max(lo.a,0);
         lo.b = Max(lo.b,0);
+        int nhits = 0;
         Ray3D ray;
         for(int i=lo.a;i<=hi.a;i++) {
             for(int j=lo.b;j<hi.b;j++) {
@@ -245,11 +263,12 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
                 }
                 Vector3 pt;
                 if(prim.RayCast(ray,pt)) {
+                    nhits ++;
                     Real dist = ray.closestPointParameter(pt);
                     if(data.perspective)
-                        data.heights(i,j) = Max(float(dist),data.heights(i,j));
+                        data.heights(i,j) = Min(float(dist),data.heights(i,j));
                     else
-                        data.heights(i,j) = Min(float(bb.bmax.z + 1.0 - dist),data.heights(i,j));
+                        data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.offset.z),data.heights(i,j));
                 }
             }
         }
