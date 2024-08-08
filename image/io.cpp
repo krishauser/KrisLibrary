@@ -88,7 +88,7 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 	//Important! Freeimage stores images from bottom up
 	if(fmt == Image::FloatA || fmt == Image::FloatRGB || fmt == Image::FloatRGBA) {
 		for(int i=0;i<h;i++) {
-			const unsigned char* FreeImage_GetScanLine(fimg,i);	
+			const unsigned char* line = FreeImage_GetScanLine(fimg,i);	
 			memcpy(img.getData(0,h-1-i),line,w*img.pixelSize());
 		}
 	}
@@ -132,11 +132,11 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 	}
 }
 
-void ImageToFreeImageBitmap(const Image& img)
+FIBITMAP* ImageToFreeImageBitmap(const Image& img)
 {
-	int imgtype = FIT_BITMAP;
+	FREE_IMAGE_TYPE imgtype = FIT_BITMAP;
 	unsigned int red_mask = 0, green_mask = 0, blue_mask = 0;
-	switch (img.format))
+	switch (img.format)
 	{
 	case Image::FloatRGB:
 		imgtype = FIT_RGBF;
@@ -160,7 +160,7 @@ void ImageToFreeImageBitmap(const Image& img)
 	default:
 		break;
 	}
-	FIBITMAP* fimg = FreeImage_AllocateT(type,img.w,img.h,img.pixelBPP(),red_mask,green_mask,blue_mask);
+	FIBITMAP* fimg = FreeImage_AllocateT(imgtype,img.w,img.h,img.pixelBPP(),red_mask,green_mask,blue_mask);
 	//Important! Freeimage stores images from bottom up
 	for(int i=0;i<img.h;i++) {
 		unsigned char* line = FreeImage_GetScanLine(fimg,i);	
