@@ -272,9 +272,9 @@ void Heightmap::SetImage(const Image& _heights,float hscale,float hoffset,bool b
             }
             h = h*hscale + hoffset;
             if(bottom_row_first)
-                heights(i,_heights.h - 1 - j) = h;
-            else
                 heights(i,j) = h;
+            else
+                heights(i,_heights.h - 1 - j) = h;
         }
     }
 }
@@ -288,7 +288,7 @@ void Heightmap::SetImage(const Image& _heights,const Image& _colors,float hscale
     colors.initialize(_colors.w,_colors.h,Image::R8G8B8);
     _colors.blit(colors);
 
-    if(!bottom_row_first) {
+    if(bottom_row_first) {
         //flip color image -- color image is expected to go from top down
         unsigned int rowbytes = colors.pitch();
         unsigned char* tmp = new unsigned char[rowbytes];
