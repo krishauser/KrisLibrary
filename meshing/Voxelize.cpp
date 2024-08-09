@@ -286,6 +286,7 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
     return;
   }
   Vector3 d = s.b - s.a;
+  Vector3 dinv(PseudoInv(d.x),PseudoInv(d.y),PseudoInv(d.z));
 
   IntTriple i;
   Vector3 aparam = (s.a+tmin*d - bb.bmin);
@@ -318,34 +319,34 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
     int closest=0;  //1=+x,-1=-x,2=+y,-2=-y,3=+z,-3=-z
     param=Inf;
     if(d.x > 0) { //check +x face
-      param = ((cellCorner.x+cellSize.x)-s.a.x)/d.x;
+      param = ((cellCorner.x+cellSize.x)-s.a.x)*dinv.x;
       closest = 1;
     }
     else if(d.x < 0) { //check -x face
-      param = (cellCorner.x-s.a.x)/d.x;
+      param = (cellCorner.x-s.a.x)*dinv.x;
       closest = -1;
     }
     if(d.y > 0) { //check +y face
       if((cellCorner.y+cellSize.y)-s.a.y < param*d.y) {
-        param = ((cellCorner.y+cellSize.y)-s.a.y)/d.y;
+        param = ((cellCorner.y+cellSize.y)-s.a.y)*dinv.y;
         closest = 2;
       }
     }
     else if(d.y < 0) { //check -y face
       if(cellCorner.y-s.a.y > param*d.y) {
-        param = (cellCorner.y-s.a.y)/d.y;
+        param = (cellCorner.y-s.a.y)*dinv.y;
         closest = -2;
       }
     }
     if(d.z > 0) { //check +z face
       if((cellCorner.z+cellSize.z)-s.a.z < param*d.z) {
-        param = ((cellCorner.z+cellSize.z)-s.a.z)/d.z;
+        param = ((cellCorner.z+cellSize.z)-s.a.z)*dinv.z;
         closest = 3;
       }
     }
     else if(d.z < 0) { //check -y face
       if(cellCorner.z-s.a.z > param*d.z) {
-        param = (cellCorner.z-s.a.z)/d.z;
+        param = (cellCorner.z-s.a.z)*dinv.z;
         closest = -3;
       }
     }
