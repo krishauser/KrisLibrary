@@ -292,10 +292,34 @@ Collider3DHeightmap::Collider3DHeightmap(shared_ptr<Geometry3DHeightmap> _data)
 {
     data = _data;
     currentTransform.setIdentity();
+    Reset();
 }
 
 void Collider3DHeightmap::Reset()
-{}
+{
+    hmin = *std::min_element(data->data.heights.begin(),data->data.heights.end());
+    hmax = *std::max_element(data->data.heights.begin(),data->data.heights.end());
+}
+
+Box3D Collider3DHeightmap::GetBB() const
+{
+    ///faster than min/maxing over heights
+    AABB3D localBB;
+    if(data->data.perspective) FatalError("TODO: perspective BB");
+    Real xscale = 0.5*data->data.xysize.x;
+    Real yscale = 0.5*data->data.xysize.y;
+    localBB.bmin.x = -xscale;
+    localBB.bmax.x = xscale;
+    localBB.bmin.y = -yscale;
+    localBB.bmax.y = yscale;
+    localBB.bmin.z = hmin;
+    localBB.bmax.z = hmax;
+    localBB.bmin += data->data.offset;
+    localBB.bmax += data->data.offset;
+    Box3D res;
+    res.setTransformed(localBB,currentTransform);
+    return res;
+}
 
 bool Collider3DHeightmap::Contains(const Vector3& pt,bool& result)
 {
@@ -341,7 +365,7 @@ bool Collider3DHeightmap::RayCast(const Ray3D& r,Real margin,Real& distance,int&
         cell.bmax.x = c.a+1;
         cell.bmax.y = c.b+1;
         cell.bmax.z = Inf;
-        Real tmin,tmax;
+        Real tmin=0,tmax=Inf;
         if(rimg.intersects(cell,tmin,tmax)) {
             Real zray1 = rimg.source.z + tmin*rimg.direction.z;
             Real zray2 = rimg.source.z + tmax*rimg.direction.z;
