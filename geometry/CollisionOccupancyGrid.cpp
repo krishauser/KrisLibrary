@@ -408,8 +408,9 @@ bool Collider3DOccupancyGrid::RayCast(const Ray3D& r,Real margin,Real& distance,
         printf("TODO: ray cast with margin\n");
         return false;
     }
-    Real u1,u2;
-    if(!ClipLine(rlocal.source,rlocal.direction,data->data.bb,u1,u2)) {
+
+    Real u1=0,u2=Inf;
+    if(!r.intersects(data->data.bb,u1,u2)) {
         distance = Inf;
         element = -1;
         return true;
