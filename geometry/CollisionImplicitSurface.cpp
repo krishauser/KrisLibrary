@@ -9,6 +9,7 @@
 #include <KrisLibrary/Logger.h>
 #include <Timer.h>
 #include <tuple>
+#include <vector>
 DECLARE_LOGGER(Geometry)
 
 #define DEBUG_DISTANCE_CHECKING 0
@@ -1149,6 +1150,36 @@ void Collider3DImplicitSurface::Reset()
   collisionData.baseGrid = data->data;
   collisionData.InitCollisions();
 }
+
+bool Collider3DImplicitSurface::Merge(Collider3D* geom)
+{
+  if(geom->GetType() == Type::TriangleMesh) {
+    auto* mesh = dynamic_cast<Collider3DTriangleMesh*>(geom);
+    //copy mesh collision data and transform it to this geometry's frame
+    CollisionMesh temp = mesh->collisionData;
+    RigidTransform Tg_this;
+    Tg_this.mulInverseA(collisionData.currentTransform, temp.currentTransform);
+    temp.Transform(Tg_this);
+    Array3D<Vector3> gradient;
+    std::vector<IntTriple> surfaceCells;
+    /*
+    //TODO: see why this doesn't work well.  It doesn't seem to update the internal cells well
+    Meshing::FastMarchingMethod_Fill(temp,data->data.value,gradient,data->data.bb,surfaceCells,true);
+    */
+    ///more expensive but higher accuracy
+    Meshing::VolumeGrid vg;
+    vg.MakeSimilar(data->data);
+    MeshImplicitSurfaceFill_FMM(temp,vg);
+    data->data.Min(vg);
+    
+    Reset();
+    return true;
+  }
+  else {
+    return Collider3D::Merge(geom);
+  }
+}
+
 
 bool Collider3DImplicitSurface::Contains(const Vector3& pt,bool& result)
 {

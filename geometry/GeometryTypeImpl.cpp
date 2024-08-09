@@ -575,7 +575,7 @@ bool Collider3D::Union(const vector<Collider3D*>& cgeoms)
     return true;
 }
 
-bool Collider3D::Merge(const Collider3D* cgeom)
+bool Collider3D::Merge(Collider3D* cgeom)
 {
     RigidTransform T0 = GetTransform();
     RigidTransform Ti = cgeom->GetTransform();

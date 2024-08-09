@@ -188,7 +188,7 @@ public:
     ///Performs a type conversion, trying both ConvertTo and ConvertFrom.
     Collider3D* Convert(Type restype,Real param=0,Real domainExpansion=0);
     virtual bool Union(const vector<Collider3D*>& geoms);
-    virtual bool Merge(const Collider3D* geom);
+    virtual bool Merge(Collider3D* geom);
     ///Extracts a slice from the geometry at a given plane.  The plane is specified
     ///as the local X-Y plane of the given world coordinates T.  The resulting values are
     ///given with data in T's local coordinates, with active transform T.

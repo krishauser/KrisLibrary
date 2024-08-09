@@ -94,15 +94,19 @@ void SweepVisibilityGrid(const TriMesh& m,int direction,Array3D<bool>& visible,A
  *
  * If bb is empty, automatically fits the bounding box to contain the mesh
  * in the non-border cells of the grid.
+ * 
+ * If keepExisting = false (default) then the distance field is initialized
+ * to Inf.  If keepExisting = true, then the distance field starts at the
+ * existing values.
  */
-void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells);
+void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells,bool keepExisting=false);
 
 
 /** @ingroup Meshing
  * @brief Same as FastMarchingMethod but constrains start points to the exterior
  * of the mesh (sometimes avoids artifacts from internal structures)
  */
-void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells);
+void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells,bool keepExisting=false);
 
 
 /** @ingroup Meshing

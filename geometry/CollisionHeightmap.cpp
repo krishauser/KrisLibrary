@@ -182,7 +182,7 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         {
         //TODO: colors
         const Geometry3DTriangleMesh* mesh = dynamic_cast<const Geometry3DTriangleMesh*>(geom);
-        data.FuseMesh(mesh->data);
+        data.FuseMesh(mesh->data,Tgeom);
         return true;
         }
     case Type::OccupancyGrid:

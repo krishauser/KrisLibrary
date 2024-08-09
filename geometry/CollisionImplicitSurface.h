@@ -44,18 +44,20 @@ class Collider3DImplicitSurface : public Collider3D
 public:
     Collider3DImplicitSurface(shared_ptr<Geometry3DImplicitSurface> data);
     virtual ~Collider3DImplicitSurface() {}
-    virtual shared_ptr<Geometry3D> GetData() const { return dynamic_pointer_cast<Geometry3D>(data); }
+    virtual shared_ptr<Geometry3D> GetData() const override { return dynamic_pointer_cast<Geometry3D>(data); }
     virtual void Reset();
-    virtual RigidTransform GetTransform() const { return collisionData.currentTransform; }
-    virtual bool ConvertFrom(Collider3D* geom,Real param=0,Real domainExpansion=0);
-    virtual void SetTransform(const RigidTransform& T) { collisionData.currentTransform = T; }
-    virtual bool Contains(const Vector3& pt,bool& result);
-    virtual bool Distance(const Vector3& pt,Real& result);
-    virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res);
-    virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res);
-    virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
-    virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res);
-    virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element);
+    virtual RigidTransform GetTransform() const override { return collisionData.currentTransform; }
+    virtual bool ConvertFrom(Collider3D* geom,Real param=0,Real domainExpansion=0) override;
+    virtual bool Merge(Collider3D* geom) override;
+
+    virtual void SetTransform(const RigidTransform& T) override { collisionData.currentTransform = T; }
+    virtual bool Contains(const Vector3& pt,bool& result) override;
+    virtual bool Distance(const Vector3& pt,Real& result) override;
+    virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
+    virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) override;
+    virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
 
     shared_ptr<Geometry3DImplicitSurface> data;
     CollisionImplicitSurface collisionData;

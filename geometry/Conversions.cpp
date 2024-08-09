@@ -456,7 +456,7 @@ void MeshToOccupancyGrid(const Meshing::TriMesh& mesh,Meshing::VolumeGrid& grid,
 void MeshImplicitSurfaceFill_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real truncation)
 {
 	if(!(truncation == 0 || !IsFinite(truncation))) LOG4CXX_WARN(KrisLibrary::logger(),"MeshImplicitSurfaceFill_FMM: truncation not implemented yet");
-	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
+	Array3D<Vector3> gradient;
 	vector<IntTriple> surfaceCells;
 	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
 	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
