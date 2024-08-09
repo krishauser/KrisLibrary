@@ -16,6 +16,8 @@ namespace Meshing {
 /** @ingroup Meshing
  * @brief Returns a list of cells that the segment overlaps, given
  * an infinite unit grid.
+ * 
+ * Cell (i,j,k) covers the domain [i,i+1)x[j,j+1)x[k,k+1).
  *
  * If params is not null, the segment parameters that indicate the
  * beginnings / endings of each overlap are output in params.
@@ -25,7 +27,11 @@ void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells,vector<Real>* p
 /** @ingroup Meshing
  * @brief Returns a list of cells that the segment overlaps, given
  * a grid of size m,n,p over range bb.
- *
+ * 
+ * Cell (i,j,k) covers the domain [u,u+du)x[v,v+dv)x[w,w+dw) where
+ * u = bmin.x + i / m * (bmax.x - bmin.x), v = bmin.y + j / n * (bmax.y - bmin.y),
+ * and w = bmin.z + k / p * (bmax.z - bmin.z).
+ * 
  * If params is not null, the segment parameters that indicate the
  * beginnings / endings of each overlap are output in params.
  */
@@ -34,12 +40,23 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
 /** @ingroup Meshing
  * @brief Returns a list of cells that the triangle overlaps, given
  * an infinite unit grid.
+ * 
+ * Cell (i,j,k) covers the domain [i,i+1)x[j,j+1)x[k,k+1).
+ * 
+ * Note: this is not particularly efficient for long and thin
+ * triangles that are not axis-aligned because it loops over all
+ * cells that overlap the triangle's bounding box and determines
+ * the triangle-box distance.
  */
 void GetTriangleCells(const Triangle3D& tri,vector<IntTriple>& cells);
 
 /** @ingroup Meshing
  * @brief Returns a list of cells that the triangle overlaps, given
  * a grid of size m,n,p over range bb.
+ * 
+ * Cell (i,j,k) covers the domain [u,u+du)x[v,v+dv)x[w,w+dw) where
+ * u = bmin.x + i / m * (bmax.x - bmin.x), v = bmin.y + j / n * (bmax.y - bmin.y),
+ * and w = bmin.z + k / p * (bmax.z - bmin.z).
  */
 void GetTriangleCells(const Triangle3D& tri,int m,int n,int p,const AABB3D& bb,vector<IntTriple>& cells);
 
