@@ -84,22 +84,22 @@ Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real doma
                 vector<int> faces;
                 IntTriple ind = it.getIndex();
                 ind.a += 1;
-                if(ind.a < data.value.m && data.value(ind) <= 0) faces.push_back(1);
+                if(ind.a >= data.value.m || data.value(ind) <= 0) faces.push_back(1);
                 ind.a -= 1;
                 ind.a -= 1;
-                if(ind.a >= 0 && data.value(ind) <= 0) faces.push_back(-1);
+                if(ind.a < 0 || data.value(ind) <= 0) faces.push_back(-1);
                 ind.a += 1;
                 ind.b += 1;
-                if(ind.b < data.value.n && data.value(ind) <= 0) faces.push_back(2);
+                if(ind.b >= data.value.n || data.value(ind) <= 0) faces.push_back(2);
                 ind.b -= 1;
                 ind.b -= 1;
-                if(ind.b >= 0 && data.value(ind) <= 0) faces.push_back(-2);
+                if(ind.b < 0 || data.value(ind) <= 0) faces.push_back(-2);
                 ind.b += 1;
                 ind.c += 1;
-                if(ind.c < data.value.p && data.value(ind) <= 0) faces.push_back(3);
+                if(ind.c >= data.value.p || data.value(ind) <= 0) faces.push_back(3);
                 ind.c -= 1;
                 ind.c -= 1;
-                if(ind.c >= 0 && data.value(ind) <= 0) faces.push_back(-3);
+                if(ind.c < 0 || data.value(ind) <= 0) faces.push_back(-3);
                 ind.c += 1;
                 it.getCell(bb);
                 for(size_t i=0;i<faces.size();i++) {
@@ -222,7 +222,7 @@ bool Geometry3DOccupancyGrid::Merge(const Geometry3D* geom,const RigidTransform*
 {
     if(Tgeom) {
         Geometry3D* temp = geom->Copy();
-        if(!temp->Transform(*Tgeom)) return false;
+        if(!temp->Transform(*Tgeom)) return false; //TODO: transformed occupancy grids / implicit surfaces
         bool res = Merge(temp);
         delete temp;
         return res;
