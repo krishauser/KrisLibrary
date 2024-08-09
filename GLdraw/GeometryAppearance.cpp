@@ -15,6 +15,7 @@
 #include <graph/ConnectedComponents.h>
 #include <KrisLibrary/Timer.h>
 #include <memory.h>
+#include <unordered_map>
 
 #ifdef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_MODE GL_CLAMP_TO_EDGE
@@ -224,6 +225,8 @@ void VertexNormals(const Meshing::TriMesh& mesh,vector<Vector3>& normals)
 
 void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real creaseRads,bool dropDegenerate=true)
 {
+  //double graphTime = 0, ccTime = 0, overheadTime = 0;
+  Timer timer;
   if(in.incidentTris.empty())
     in.CalcIncidentTris();
   if(in.triNeighbors.empty())
@@ -233,51 +236,59 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
   vector<Vector3> triNormals(in.tris.size());
   for(size_t i=0;i<in.tris.size();i++)
     triNormals[i] = in.TriangleNormal(i);
+  out.verts.resize(in.verts.size());
   out.tris.resize(in.tris.size());
   fill(out.tris.begin(),out.tris.end(),IntTriple(-1,-1,-1));
-  vector<int> outVertToIn;
+  vector<int> triGraphIndex(in.tris.size());  //temporary, used only for each vertex's incidient triangles
   for(size_t i=0;i<in.verts.size();i++) {
     //theres a potential graph of creases here
-    auto tris = in.incidentTris[i];
+    //timer.Reset();
+    const auto& tris = in.incidentTris[i];
     Graph::UndirectedGraph<int,int> tgraph;
-    map<int,int> triGraphIndex;
-    for(auto t: tris)
-      triGraphIndex[t] = tgraph.AddNode(t);
+    tgraph.Resize(tris.size());
     for(size_t s=0;s<tris.size();s++) {
+      tgraph.nodes[s] = tris[s];
+      triGraphIndex[tris[s]] = (int)s;
+    }
+    for(size_t s=0;s<tris.size();s++) {
+      int n=tris[s];
       int iprev,inext;
-      if(in.tris[tris[s]].a == int(i)) {
-        iprev = in.triNeighbors[tris[s]].b;
-        inext = in.triNeighbors[tris[s]].c;
+      if(in.tris[n].a == int(i)) {
+        iprev = in.triNeighbors[n].b;
+        inext = in.triNeighbors[n].c;
       }
-      else if(in.tris[tris[s]].b == int(i)) {
-        iprev = in.triNeighbors[tris[s]].c;
-        inext = in.triNeighbors[tris[s]].a;
+      else if(in.tris[n].b == int(i)) {
+        iprev = in.triNeighbors[n].c;
+        inext = in.triNeighbors[n].a;
       }
       else {
-        iprev = in.triNeighbors[tris[s]].a;
-        inext = in.triNeighbors[tris[s]].b;
+        iprev = in.triNeighbors[n].a;
+        inext = in.triNeighbors[n].b;
       }
-      if (iprev >= 0 && triNormals[tris[s]].dot(triNormals[iprev]) >= cosCreaseRads) {
+      if (iprev >= 0 && triNormals[n].dot(triNormals[iprev]) >= cosCreaseRads) {
         int previndex = triGraphIndex[iprev];
         if(!tgraph.HasEdge(s,previndex)) 
           tgraph.AddEdge(s,previndex);
       }
-      if (inext >= 0 && triNormals[tris[s]].dot(triNormals[inext]) >= cosCreaseRads) {
+      if (inext >= 0 && triNormals[n].dot(triNormals[inext]) >= cosCreaseRads) {
         int nextindex = triGraphIndex[inext];
         if(!tgraph.HasEdge(s,nextindex))
           tgraph.AddEdge(s,nextindex);
       }
     }
+    //graphTime += timer.ElapsedTime();
+    //timer.Reset();
     Graph::ConnectedComponents ccs;
     ccs.Compute(tgraph);
     vector<int> reps;
     ccs.GetRepresentatives(reps);
+    //ccTime += timer.ElapsedTime();
+    //timer.Reset();
     //add a new vertex for each cc
     vector<int> cc;
     for(auto r:reps) {
       ccs.EnumerateComponent(r,cc);
       int nvout = (int)out.verts.size();
-      outVertToIn.push_back(nvout);
       for(auto n:cc) {
         int t=tgraph.nodes[n];
         Assert(in.tris[t].getIndex(i) >= 0);
@@ -285,7 +296,9 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
       }
       out.verts.push_back(in.verts[i]);
     }
+    //overheadTime += timer.ElapsedTime();
   }
+  timer.Reset();
   if(dropDegenerate) {
     size_t validTriangles = 0;
     for(size_t i=0;i<out.tris.size();i++) {
@@ -309,6 +322,8 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
         t.a = t.b = t.c = 0;
     }
   }
+  //overheadTime += timer.ElapsedTime();
+  //printf("Time for graph %g, cc %g, overhead %g\n",graphTime,ccTime,overheadTime);
 }
 
 
@@ -944,13 +959,13 @@ void GeometryAppearance::DrawGL(Element e)
         vector<Vector3> vertexNormals;
 
         if(vertexColors.size() != trimesh->verts.size() && texcoords.size() != trimesh->verts.size() && (creaseAngle > 0 || silhouetteRadius > 0)) {
-          Meshing::TriMeshWithTopology* weldMesh = new Meshing::TriMeshWithTopology;
+          shared_ptr<Meshing::TriMeshWithTopology> weldMesh = make_shared<Meshing::TriMeshWithTopology>();
+          tempMesh2 = weldMesh;
           weldMesh->verts = trimesh->verts;
           weldMesh->tris = trimesh->tris;
-          tempMesh2.reset(weldMesh);
           bool drop = faceColors.empty();
           Meshing::MergeVertices(*weldMesh,1e-5,drop);
-          if(weldMesh->verts.size() == trimesh->verts.size() && trimesh_topology) {
+          if((weldMesh->verts.size() == trimesh->verts.size()) && trimesh_topology) {
             //copy topology
             weldMesh->vertexNeighbors = trimesh_topology->vertexNeighbors;
             weldMesh->incidentTris = trimesh_topology->incidentTris;
