@@ -4,6 +4,7 @@
 #include <KrisLibrary/structs/array2d.h>
 #include <KrisLibrary/math3d/Ray2D.h>
 #include <KrisLibrary/math3d/Triangle2D.h>
+#include <KrisLibrary/math3d/Triangle3D.h>
 #include <KrisLibrary/math3d/AABB2D.h>
 #include <KrisLibrary/math3d/Polygon2D.h>
 #include <KrisLibrary/utils/IntPair.h>
@@ -36,6 +37,14 @@ void GetTriangleCells(const Triangle2D& tri,std::vector<IntPair>& cells);
 /// @brief Returns a list of cells that the triangle overlaps, in
 /// a unit grid from [imin,imax)x[jmin,jmax)
 void GetTriangleCells_Clipped(const Triangle2D& tri,std::vector<IntPair>& cells,int imin,int jmin,int imax,int jmax);
+
+/// @brief Returns a list of unit cells that the triangle overlaps in the x-y plane
+/// along with their heights, over an infinite unit grid.
+void GetTriangleHeights(const Triangle3D& tri,std::vector<IntPair>& cells,std::vector<Real>& heights);
+
+/// @brief Returns a list of cells that the triangle overlaps in the x-y plane
+/// over a unit grid from [imin,imax)x[jmin,jmax), along with their heights.
+void GetTriangleHeights_Clipped(const Triangle3D& tri,std::vector<IntPair>& cells,std::vector<Real>& heights,int imin,int jmin,int imax,int jmax);
 
 
 /** @brief A base class that allows rasterizing of 2D triangles into a grid.
@@ -87,7 +96,7 @@ struct FillRasterizer2D : public Rasterizer2D
     Rasterizer2D::Rasterize(b);
   }
 
-  virtual void VisitCell(const Vector3& bary,int i,int j)
+  virtual void VisitCell(const Vector3& bary,int i,int j) override
   {
     if(grid&& i>=0 && j>=0 && i<grid->m && j<grid->n) {
       Fill(bary,(*grid)(i,j)); 
@@ -120,7 +129,7 @@ struct SmoothFillRasterizer2D : public FillRasterizer2D<T>
     Rasterizer2D::Rasterize(tri);
   }
 
-  virtual void Fill(const Vector3& bary,T& cell) { cell = bary.x*fillA+bary.y*fillB+bary.z*fillC; }
+  virtual void Fill(const Vector3& bary,T& cell)  override { cell = bary.x*fillA+bary.y*fillB+bary.z*fillC; }
 
   //set these to the desired values at the corners of the triangle
   T fillA,fillB,fillC;

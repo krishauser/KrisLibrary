@@ -6,6 +6,7 @@
 #include <KrisLibrary/geometry/primitives.h>
 #include <KrisLibrary/utils/shift.h>
 #include <errors.h>
+#include <limits.h>
 using namespace Geometry;
 using namespace std;
 
@@ -480,6 +481,56 @@ void GetTriangleCells(const Triangle2D& t,vector<IntPair>& cells)
       z3 += m3;
     }
   }
+}
+
+class TriangleHeightRasterizer : public Rasterizer2D
+{
+  public:
+    std::vector<IntPair>& cells;
+    std::vector<Real>& heights;
+    int imin,jmin,imax,jmax;
+    Real hA,hB,hC;
+    TriangleHeightRasterizer(std::vector<IntPair>& _cells,std::vector<Real>& _heights)
+      :cells(_cells),heights(_heights)
+    {
+      imax = INT_MAX;
+      jmax = INT_MAX;
+      imin = INT_MIN;
+      jmin = INT_MIN;
+    }
+    virtual void VisitCell(const Vector3& params,int i,int j) override {
+
+      if(i>=imin && j>=jmin && i<imax && j<jmax) {
+        Real h = hA*params.x + hB*params.y + hC*params.z;
+        cells.push_back(IntPair(i,j));
+        heights.push_back(h);
+      }
+    }
+};
+
+void GetTriangleHeights(const Triangle3D& tri,std::vector<IntPair>& cells,std::vector<Real>& heights)
+{
+  TriangleHeightRasterizer rast(cells,heights);
+  rast.hA = tri.a.z;
+  rast.hB = tri.b.z;
+  rast.hC = tri.c.z;
+  rast.Rasterize(Triangle2D(Vector2(tri.a.x,tri.a.y),Vector2(tri.b.x,tri.b.y),Vector2(tri.c.x,tri.c.y)));
+}
+
+void GetTriangleHeights_Clipped(const Triangle3D& tri,std::vector<IntPair>& cells,std::vector<Real>& heights,int imin,int jmin,int imax,int jmax)
+{
+  TriangleHeightRasterizer rast(cells,heights);
+  rast.hA = tri.a.z;
+  rast.hB = tri.b.z;
+  rast.hC = tri.c.z;
+  rast.imin = imin;
+  rast.jmin = jmin;
+  rast.imax = imax;
+  rast.jmax = jmax;
+  AABB2D bb;
+  bb.bmin.set(imin,jmin);
+  bb.bmax.set(imax+1,jmax+1);
+  rast.ClippedRasterize(Triangle2D(Vector2(tri.a.x,tri.a.y),Vector2(tri.b.x,tri.b.y),Vector2(tri.c.x,tri.c.y)),bb);
 }
 
 
