@@ -57,6 +57,11 @@ void GetTriangleCells(const Triangle3D& tri,vector<IntTriple>& cells);
  * Cell (i,j,k) covers the domain [u,u+du)x[v,v+dv)x[w,w+dw) where
  * u = bmin.x + i / m * (bmax.x - bmin.x), v = bmin.y + j / n * (bmax.y - bmin.y),
  * and w = bmin.z + k / p * (bmax.z - bmin.z).
+ * 
+ * Note: this is not particularly efficient for long and thin
+ * triangles that are not axis-aligned because it loops over all
+ * cells that overlap the triangle's bounding box and determines
+ * the triangle-box distance.
  */
 void GetTriangleCells(const Triangle3D& tri,int m,int n,int p,const AABB3D& bb,vector<IntTriple>& cells);
 

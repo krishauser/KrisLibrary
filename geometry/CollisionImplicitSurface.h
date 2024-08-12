@@ -84,11 +84,18 @@ bool Collides(const CollisionImplicitSurface& s,const GeometricPrimitive3D& geom
 Real Distance(const CollisionImplicitSurface& s,const Vector3& pt,Vector3& surfacePt,Vector3& direction);
 
 ///Same as above, except that:
-///- geomPt is the closest/deepest point on geom.
+///- triPt is the closest/deepest point on tri.
 ///- direction is the unit normal of decreasing distance, in that if geom is moved in this direction, the distance decreases.
+///- upperBound: if the distance to tri is > upperBound, the function will return upperBound quickly.
+Real Distance(const CollisionImplicitSurface& s,const Triangle3D& tri,Vector3& surfacePt,Vector3& triPt,Vector3& direction,Real upperBound=Inf);
+
+///Same as above, generalized to arbitrary primitives. 
 ///
-///Only points and spheres are currently supported
-Real Distance(const CollisionImplicitSurface& s,const GeometricPrimitive3D& geom,Vector3& surfacePt,Vector3& geomPt,Vector3& direction);
+///Here:
+///- geomPt is the closest/deepest point on geom.
+///
+///Only points, segments, spheres, and triangles are currently supported
+Real Distance(const CollisionImplicitSurface& s,const GeometricPrimitive3D& geom,Vector3& surfacePt,Vector3& geomPt,Vector3& direction,Real upperBound=Inf);
 
 ///Returns true if the point cloud is within margin distance of the geometry represented by s. One or more colliding 
 ///points can also be returned in collidingPoints.

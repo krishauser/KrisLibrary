@@ -23,6 +23,7 @@ public:
     virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
 
     shared_ptr<Geometry3DOccupancyGrid> data;
+    vector<IntTriple> occupiedCells;
     RigidTransform currentTransform;
 };
 

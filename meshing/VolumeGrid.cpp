@@ -104,6 +104,19 @@ bool VolumeGridTemplate<T>::GetIndexChecked(const Vector3& pt,int& i,int& j,int&
 }
 
 template <class T>
+void VolumeGridTemplate<T>::GetIndexClamped(const Vector3& pt,int& i,int& j,int& k) const
+{
+  GetIndex(pt,i,j,k);
+  if(i < 0) i = 0;
+  else if(i >= value.m) i = value.m-1;
+  if(j < 0) j = 0;
+  else if(j >= value.n) j = value.n-1;
+  if(k < 0) k = 0;
+  else if(k >= value.p) k = value.p-1;
+}
+
+
+template <class T>
 bool VolumeGridTemplate<T>::GetIndexAndParamsChecked(const Vector3& pt,IntTriple& index,Vector3& params) const
 {
   GetIndexAndParams(pt,index,params);
@@ -112,6 +125,19 @@ bool VolumeGridTemplate<T>::GetIndexAndParamsChecked(const Vector3& pt,IntTriple
   if(index.c < 0 || index.c >= value.p) return false;
   return true;
 }
+
+template <class T>
+void VolumeGridTemplate<T>::GetIndexAndParamsClamped(const Vector3& pt,IntTriple& index,Vector3& params) const
+{
+  GetIndexAndParams(pt,index,params);
+  if(index.a < 0) { index.a = 0; params.x = 0; }
+  else if(index.a >= value.m) { index.a = value.m-1; params.x = 1; }
+  if(index.b < 0) { index.b = 0; params.y = 0; }
+  else if(index.b >= value.n) { index.b = value.n-1; params.y = 1; }
+  if(index.c < 0) { index.c = 0; params.z = 0; }
+  else if(index.c >= value.p) { index.c = value.p-1; params.z = 1; }
+}
+
 
 template <class T>
 bool VolumeGridTemplate<T>::GetIndexRangeClamped(const AABB3D& range,IntTriple& imin,IntTriple& imax) const

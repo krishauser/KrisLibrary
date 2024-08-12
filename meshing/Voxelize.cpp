@@ -1609,7 +1609,7 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
         //TODO: use triangle neighborhood information
         cp.Calculate(m,i,cellCenter);
 
-        int heapIndex = (index.a*N+index.b)*P+index.c;
+        //int heapIndex = (index.a*N+index.b)*P+index.c;
         auto old = surfaceSet.find(index);
         if(old == surfaceSet.end()) {
           surfaceSet[index] = cp.signedDistance;
@@ -1859,6 +1859,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
     query.expand(tri.b);
     query.expand(tri.c);
     bool q=QueryGrid(distance,bb,query,lo,hi);
+    if(!q) continue;
     VolumeGridIterator<Real> it(distance,bb);
     it.setRange(lo,hi);
     for(;!it.isDone();++it) {

@@ -1,6 +1,10 @@
 #include "CollisionHeightmap.h"
 #include "GeometryTypeImpl.h"
 #include "Conversions.h"
+#include "CollisionPointCloud.h"
+#include "CollisionConvexHull.h"
+#include "CollisionOccupancyGrid.h"
+#include "CollisionPrimitive.h"
 #include <KrisLibrary/meshing/PointCloud.h>
 #include <KrisLibrary/meshing/MeshPrimitives.h>
 #include <KrisLibrary/meshing/Rasterize.h>
@@ -40,12 +44,16 @@ bool Geometry3DHeightmap::Empty() const
 
 size_t Geometry3DHeightmap::NumElements() const
 {
+    //(i,j) => i+j*m
     return data.heights.m*data.heights.n;
 }
 
 shared_ptr<Geometry3D> Geometry3DHeightmap::GetElement(int elem) const
 {
-    return shared_ptr<Geometry3D>();
+    int i=elem % data.heights.m;
+    int j=elem / data.heights.m;
+    GeometricPrimitive3D g(Vector3(data.GetVertex(i,j)));
+    return make_shared<Geometry3DPrimitive>(g);
 }
 
 AABB3D Geometry3DHeightmap::GetAABB() const
@@ -173,14 +181,14 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
     switch(geom->GetType()) {
     case Type::PointCloud:
         {
-        //TODO: colors
+        //TODO: do we add colors to an existing non-colored heightmap?
         const Geometry3DPointCloud* pc = dynamic_cast<const Geometry3DPointCloud*>(geom);
         data.FusePointCloud(pc->data,Tgeom);
         return true;
         }
     case Type::TriangleMesh:
         {
-        //TODO: colors
+        //TODO: if mesh has colors, add these to the heightmap
         const Geometry3DTriangleMesh* mesh = dynamic_cast<const Geometry3DTriangleMesh*>(geom);
         data.FuseMesh(mesh->data,Tgeom);
         return true;
@@ -217,6 +225,7 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         lo.a = Max(lo.a,0);
         lo.b = Max(lo.b,0);
         Ray3D ray;
+        Real dscale = 1.0;
         for(int i=lo.a;i<=hi.a;i++) {
             for(int j=lo.b;j<hi.b;j++) {
                 data.GetVertexRay(i,j,ray.source,ray.direction);
@@ -225,10 +234,17 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
                     ray.source.z = bb.bmax.z + 1.0;
                     ray.direction.set(0,0,-1);
                 }
+                else {
+                    //ray is unnormalized, normalize it
+                    dscale = ray.direction.norm();
+                    ray.direction /= dscale;
+                }
                 Real dist;
                 if(hull.RayCast(ray,&dist,data.heights(i,j))) {
-                    if(data.perspective)
+                    if(data.perspective) {
+                        dist *= dscale;
                         data.heights(i,j) = Min(float(dist),data.heights(i,j));
+                    }
                     else
                         data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.offset.z),data.heights(i,j));
                 }
@@ -251,8 +267,8 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         hi.b = Min(hi.b,data.heights.n-1);
         lo.a = Max(lo.a,0);
         lo.b = Max(lo.b,0);
-        int nhits = 0;
         Ray3D ray;
+        Real dscale = 1.0;
         for(int i=lo.a;i<=hi.a;i++) {
             for(int j=lo.b;j<hi.b;j++) {
                 data.GetVertexRay(i,j,ray.source,ray.direction);
@@ -261,12 +277,18 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
                     ray.source.z = bb.bmax.z + 1.0;
                     ray.direction.set(0,0,-1);
                 }
+                else {
+                    //ray is unnormalized, normalize it
+                    dscale = ray.direction.norm();
+                    ray.direction /= dscale;
+                }
                 Vector3 pt;
                 if(prim.RayCast(ray,pt)) {
-                    nhits ++;
                     Real dist = ray.closestPointParameter(pt);
-                    if(data.perspective)
+                    if(data.perspective) {
+                        dist *= dscale;
                         data.heights(i,j) = Min(float(dist),data.heights(i,j));
+                    }
                     else
                         data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.offset.z),data.heights(i,j));
                 }
@@ -332,11 +354,285 @@ bool Collider3DHeightmap::Contains(const Vector3& pt,bool& result)
     return true;
 }
 
-bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
+bool LowerHeight(int i, int j, const Meshing::Heightmap& hm, Real hmax, const GeometricPrimitive3D& prim, Real& dist) 
 {
-    //TODO
+    Ray3D ray;
+    hm.GetVertexRay(i,j,ray.source,ray.direction);
+    Real dmax = hm.heights(i,j);
+    if(hm.perspective)  {
+        //ray needs to go from back to origin
+        ray.source = hm.offset + ray.direction*(hmax + 1.0);
+        ray.direction *= -1;
+        Real dscale = ray.direction.norm();
+        dmax = dscale*(hmax  + 1 - dmax);  //limit is for unnormalized ray
+        ray.direction /= dscale;
+    }
+    Vector3 pt;
+    if(prim.RayCast(ray,pt)) {
+        dist = ray.closestPointParameter(pt);
+        if(hm.perspective) {
+            dist = (ray.source.z + dist*ray.direction.z - hm.offset.z);
+            return true;
+        }
+        else {
+            return true;
+        }
+    }
     return false;
 }
+
+bool LowerHeight(int i, int j, const Meshing::Heightmap& hm, Real hmax, const ConvexHull3D& hull, Real& dist) 
+{
+    Ray3D ray;
+    hm.GetVertexRay(i,j,ray.source,ray.direction);
+    Real dmax = hm.heights(i,j);
+    if(hm.perspective)  {
+        //ray needs to go from back to origin
+        ray.source = hm.offset + ray.direction*(hmax + 1.0);
+        ray.direction *= -1;
+        Real dscale = ray.direction.norm();
+        dmax = dscale*(hmax  + 1 - dmax);  //limit is for unnormalized ray
+        ray.direction /= dscale;
+    }
+    if(hull.RayCast(ray,&dist,dmax)) {
+        if(hm.perspective) {
+            dist = (ray.source.z + dist*ray.direction.z - hm.offset.z);
+            return true;
+        }
+        else {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
+{
+    RigidTransform Tlocal;
+    Tlocal.mulInverseA(currentTransform,geom->GetTransform());
+    switch(geom->GetType()) {
+    case Type::PointCloud:
+        {
+        const Collider3DPointCloud* pc = dynamic_cast<const Collider3DPointCloud*>(geom);
+        for(size_t i=0;i<pc->data->data.points.size();i++) {
+            Vector3 pt;
+            Tlocal.mul(pc->data->data.points[i],pt);
+            IntPair idx = data->data.GetIndex(pt);
+            if(idx.a < 0 || idx.b < 0 || idx.a >= data->data.heights.m || idx.b >= data->data.heights.n) continue;
+            if(data->data.perspective) {
+                if(data->data.heights(idx) <= pt.z - data->data.offset.z) {
+                    elements2.push_back(i);
+                    elements1.push_back(idx.a + idx.b*data->data.heights.m);
+                    if(elements1.size() >= maxcollisions) return true;
+                }
+            }
+            else {
+                if(data->data.heights(idx) >= pt.z - data->data.offset.z) {
+                    elements2.push_back(i);
+                    elements1.push_back(idx.a + idx.b*data->data.heights.m);
+                    if(elements1.size() >= maxcollisions) return true;
+                }
+            }
+        }
+        return true;
+        }
+    case Type::TriangleMesh:
+        {
+        const Collider3DTriangleMesh* mesh = dynamic_cast<const Collider3DTriangleMesh*>(geom);
+        Math3D::Triangle3D tri;
+        vector<IntPair> tcells;
+        vector<Real> theights;
+        for (size_t i=0;i<mesh->data->data.tris.size();i++) {
+            mesh->data->data.GetTriangle(i,tri);
+            tri.a = data->data.Project(Tlocal*tri.a);
+            tri.b = data->data.Project(Tlocal*tri.b);
+            tri.c = data->data.Project(Tlocal*tri.c);
+            tcells.resize(0);
+            theights.resize(0);
+            Meshing::GetTriangleHeights_Clipped(tri,tcells,theights,0,0,data->data.heights.m,data->data.heights.n);
+            for(size_t k=0;k<tcells.size();k++) {
+                float& cell = data->data.heights(tcells[k]);
+                const auto& idx = tcells[k];
+                if(data->data.perspective) {
+                    if(cell <= theights[k]) {
+                        elements2.push_back(i);
+                        elements1.push_back(idx.a + idx.b*data->data.heights.m);
+                        if(elements1.size() >= maxcollisions) return true;
+                    }
+                }
+                else {
+                    if(cell <= theights[k]) {
+                        elements2.push_back(i);
+                        elements1.push_back(idx.a + idx.b*data->data.heights.m);
+                        if(elements1.size() >= maxcollisions) return true;
+                    }
+                }
+            }
+        }
+        return true;
+        }
+    case Type::OccupancyGrid:
+        {
+        const Collider3DOccupancyGrid* grid = dynamic_cast<const Collider3DOccupancyGrid*>(geom);
+        Vector3 pt;
+        for(const auto& cell : grid->occupiedCells) {
+            grid->data->data.GetCellCenter(cell.a,cell.b,cell.c,pt);
+            pt = Tlocal*pt;
+            IntPair idx = data->data.GetIndex(pt);
+            if(idx.a < 0 || idx.b < 0 || idx.a >= data->data.heights.m || idx.b >= data->data.heights.n) continue;
+            if(data->data.perspective) {
+                if(data->data.heights(idx) <= pt.z - data->data.offset.z) {
+                    elements2.push_back(grid->data->IndexToElement(cell));
+                    elements1.push_back(idx.a + idx.b*data->data.heights.m);
+                    if(elements1.size() >= maxcollisions) return true;
+                }
+            }
+            else {
+                if(data->data.heights(idx) >= pt.z - data->data.offset.z) {
+                    elements2.push_back(grid->data->IndexToElement(cell));
+                    elements1.push_back(idx.a + idx.b*data->data.heights.m);
+                    if(elements1.size() >= maxcollisions) return true;
+                }
+            }
+
+        }
+        return true;
+        }
+    case Type::ImplicitSurface:
+        {
+        shared_ptr<Collider3D> g2(geom->Convert(Type::PointCloud,0.0));
+        if(g2) {
+            //TODO: wrong element indices for elements2
+            return Collides(g2.get(),elements1,elements2,maxcollisions);
+        }
+        return false;
+        }
+    case Type::ConvexHull:
+        {
+        Collider3DConvexHull* ch = dynamic_cast<Collider3DConvexHull*>(geom);
+        ConvexHull3D hull = ch->data->data;
+        hull.Transform(Tlocal);
+        auto bb = hull.GetAABB();
+        //get range of bb to minimize # of rays cast
+        IntPair lo = data->data.GetIndex(bb.bmin);
+        IntPair hi = data->data.GetIndex(bb.bmax);
+        if(hi.a < 0 || hi.b < 0 || lo.a >= data->data.heights.m || lo.b >= data->data.heights.n) return true;
+        hi.a = Min(hi.a,data->data.heights.m-1);
+        hi.b = Min(hi.b,data->data.heights.n-1);
+        lo.a = Max(lo.a,0);
+        lo.b = Max(lo.b,0);
+        Real dist;
+        if(maxcollisions <= 1) {
+            //check center
+            IntPair c = data->data.GetIndex((bb.bmax + bb.bmin)*0.5);
+            c.a = Min(Max(c.a,0),data->data.heights.m-1);
+            c.b = Min(Max(c.b,0),data->data.heights.n-1);
+            if(LowerHeight(c.a,c.b,data->data,this->hmax,hull,dist)) {
+                if(data->data.perspective) {
+                    if(float(dist) >= data->data.heights(c)) {
+                        elements1.push_back(c.a + c.b*data->data.heights.m);
+                        elements2.push_back(-1);
+                        return true;
+                    }
+                }
+                else {
+                    if(float(dist) <= data->data.heights(c)) {
+                        elements1.push_back(c.a + c.b*data->data.heights.m);
+                        elements2.push_back(-1);
+                        return true;
+                    }
+                }
+            }
+        }
+        //check all rays
+        for(int i=lo.a;i<=hi.a;i++) {
+            for(int j=lo.b;j<hi.b;j++) {
+                if(LowerHeight(i,j,data->data,this->hmax,hull,dist)) {
+                    if(data->data.perspective) {
+                        if(float(dist) >= data->data.heights(i,j)) {
+                            elements1.push_back(i+j*data->data.heights.m);
+                            elements2.push_back(-1);
+                            if(elements1.size() >= maxcollisions) return true;
+                        }
+                    }
+                    else {
+                        if(float(dist) <= data->data.heights(i,j)) {
+                            elements1.push_back(i+j*data->data.heights.m);
+                            elements2.push_back(-1);
+                            if(elements1.size() >= maxcollisions) return true;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+        }
+    case Type::Primitive:
+        {
+        Collider3DPrimitive* p = dynamic_cast<Collider3DPrimitive*>(geom);
+        GeometricPrimitive3D prim = p->data->data;
+        prim.Transform(Tlocal);
+        auto bb = prim.GetAABB();
+        //get range of bb to minimize # of rays cast
+        IntPair lo = data->data.GetIndex(bb.bmin);
+        IntPair hi = data->data.GetIndex(bb.bmax);
+        if(hi.a < 0 || hi.b < 0 || lo.a >= data->data.heights.m || lo.b >= data->data.heights.n) {
+            return true;
+        }
+        hi.a = Min(hi.a,data->data.heights.m-1);
+        hi.b = Min(hi.b,data->data.heights.n-1);
+        lo.a = Max(lo.a,0);
+        lo.b = Max(lo.b,0);
+        Real dist;
+        if(maxcollisions <= 1) {
+            //check center
+            IntPair c = data->data.GetIndex((bb.bmax + bb.bmin)*0.5);
+            c.a = Min(Max(c.a,0),data->data.heights.m-1);
+            c.b = Min(Max(c.b,0),data->data.heights.n-1);
+            if(LowerHeight(c.a,c.b,data->data,this->hmax,prim,dist)) {
+                if(data->data.perspective) {
+                    if(float(dist) >= data->data.heights(c)) {
+                        elements1.push_back(c.a + c.b*data->data.heights.m);
+                        elements2.push_back(-1);
+                        return true;
+                    }
+                }
+                else {
+                    if(float(dist) <= data->data.heights(c)) {
+                        elements1.push_back(c.a + c.b*data->data.heights.m);
+                        elements2.push_back(-1);
+                        return true;
+                    }
+                }
+            }
+        }
+        for(int i=lo.a;i<=hi.a;i++) {
+            for(int j=lo.b;j<hi.b;j++) {
+                if(LowerHeight(i,j,data->data,this->hmax,prim,dist)) {
+                    if(data->data.perspective) {
+                        if(float(dist) >= data->data.heights(i,j)) {
+                            elements1.push_back(i+j*data->data.heights.m);
+                            elements2.push_back(-1);
+                            if(elements1.size() >= maxcollisions) return true;
+                        }
+                    }
+                    else {
+                        if(float(dist) <= data->data.heights(i,j)) {
+                            elements1.push_back(i+j*data->data.heights.m);
+                            elements2.push_back(-1);
+                            if(elements1.size() >= maxcollisions) return true;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+        }
+    default:
+        return false;
+    }
+}
+
 bool Collider3DHeightmap::WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
 {
     //TODO

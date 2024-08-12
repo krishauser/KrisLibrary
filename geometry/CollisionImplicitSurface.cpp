@@ -3,9 +3,10 @@
 #include "CollisionPointCloud.h"
 #include "CollisionMesh.h"
 #include "Conversions.h"
-#include <meshing/Voxelize.h>
-#include <spline/TimeSegmentation.h>
-#include <structs/Heap.h>
+#include <KrisLibrary/meshing/Voxelize.h>
+#include <KrisLibrary/meshing/MarchingCubes.h>
+#include <KrisLibrary/spline/TimeSegmentation.h>
+#include <KrisLibrary/structs/Heap.h>
 #include <KrisLibrary/Logger.h>
 #include <Timer.h>
 #include <tuple>
@@ -77,7 +78,7 @@ void CollisionImplicitSurface::InitCollisions()
   Real h = Min(res.x,res.y,res.z);
   Assert(h > 0);
   h = h*2;
-  Real h0 = h;
+  //Real h0 = h;
   //first resize
   resolutionMap.resize(0);
   while(int(maxdim / h) >= 2) {
@@ -188,7 +189,84 @@ Real Distance(const CollisionImplicitSurface& s,const Vector3& pt,Vector3& surfa
   return d;
 }
 
-Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a,Vector3& gridclosest,Vector3& geomclosest,Vector3& direction)
+
+Real DistanceLocal(const CollisionImplicitSurface& s,const Triangle3D& tri,Vector3& surfacePt,Vector3& triPt,Vector3& direction,Real minDistance=Inf)
+{
+  vector<IntTriple> tcells;
+  Vector3 cellSize = s.baseGrid.GetCellSize();
+  AABB3D center_bb = s.baseGrid.bb;
+  center_bb.bmin += cellSize * 0.5;
+  center_bb.bmax -= cellSize * 0.5;
+  Real cellRad = cellSize.norm() * 0.5;
+
+  //quickly test whether a sphere containing the triangle is within the margin
+  Vector3 tempPt,tempDir;
+  Vector3 c = (tri.a+tri.b+tri.c) / 3.0;
+  Real d = Geometry::DistanceLocal(s.baseGrid,c,&surfacePt,&direction);
+  if(d > minDistance) {
+    return minDistance;
+  }
+  triPt = c;
+  minDistance = d;
+  d = Geometry::DistanceLocal(s.baseGrid,tri.a,&tempPt,&tempDir);
+  if(d < minDistance) {
+    surfacePt = tempPt;
+    triPt = tri.a;
+    direction = tempDir;
+    minDistance = d;
+  }
+  d = Geometry::DistanceLocal(s.baseGrid,tri.b,&tempPt,&tempDir);
+  if(d < minDistance) {
+    surfacePt = tempPt;
+    triPt = tri.b;
+    direction = tempDir;
+    minDistance = d;
+  }
+  d = Geometry::DistanceLocal(s.baseGrid,tri.c,&tempPt,&tempDir);
+  if(d < minDistance) {
+    surfacePt = tempPt;
+    triPt = tri.c;
+    direction = tempDir;
+    minDistance = d;
+  }
+
+  //high-resolution checking
+  tcells.resize(0);
+  Meshing::GetTriangleCells(tri,s.baseGrid.value.m-1,s.baseGrid.value.n-1,s.baseGrid.value.p-1,center_bb,tcells);
+  for(const auto& cell: tcells) {
+    if(s.baseGrid.value(cell) >= minDistance + cellRad) continue;
+    AABB3D cellbb;
+    cellbb.bmin = center_bb.bmin;
+    cellbb.bmin.x += cell.a*cellSize.x;
+    cellbb.bmin.y += cell.b*cellSize.y;
+    cellbb.bmin.z += cell.c*cellSize.z;
+    cellbb.bmax = cellbb.bmin + cellSize;
+    Vector3 triTemp = tri.closestPoint((cellbb.bmin+cellbb.bmax)*0.5);
+    d = Geometry::DistanceLocal(s.baseGrid,triTemp,&tempPt,&tempDir);
+    if(d < minDistance) {
+      surfacePt = tempPt;
+      triPt = triTemp;
+      direction = tempDir;
+      minDistance = d;
+    }
+  }
+  return minDistance;
+}
+
+Real Distance(const CollisionImplicitSurface& s,const Triangle3D& triw,Vector3& surfacePt,Vector3& triPt,Vector3& direction,Real minDistance)
+{
+  Triangle3D tri;
+  s.currentTransform.mulInverse(triw.a,tri.a);
+  s.currentTransform.mulInverse(triw.b,tri.b);
+  s.currentTransform.mulInverse(triw.c,tri.c);
+  Real d = DistanceLocal(s,triw,surfacePt,triPt,direction,minDistance);
+  surfacePt = s.currentTransform*surfacePt;
+  direction = s.currentTransform.R*direction;
+  return d;
+}
+
+
+Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a,Vector3& gridclosest,Vector3& geomclosest,Vector3& direction,Real upperBound)
 {
   if(a.type == GeometricPrimitive3D::Point) {
     const Vector3& pt = *AnyCast_Raw<Vector3>(&a.data);
@@ -207,6 +285,36 @@ Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a
     Segment3D slocal;
     grid.currentTransform.mulInverse(s->a,slocal.a);
     grid.currentTransform.mulInverse(s->b,slocal.b);
+    if(!IsInf(upperBound)) {
+      if(slocal.distance(grid.baseGrid.bb) > upperBound) {
+        return upperBound;
+      }
+      
+      //shrink the range considered by examining the endpoint distances
+      Real da = DistanceLocal(grid.baseGrid,slocal.a);
+      Real db = DistanceLocal(grid.baseGrid,slocal.b);
+      Real t1,t2;
+      Real slength = slocal.a.distance(slocal.b);
+      if(da <= upperBound) t1=0;
+      else {
+        if(da - slength > upperBound) {
+          return false;
+        }
+        t1 = (da - upperBound)/slength;
+      }
+      if(db <= upperBound) t2=1;
+      else {
+        if(db - slength > upperBound) {
+          return false;
+        }
+        t2 = 1 - (db - upperBound)/slength;
+      }
+      Vector3 a,b;
+      a = slocal.a + t1*(slocal.b-slocal.a);
+      b = slocal.a + t2*(slocal.b-slocal.a);
+      slocal.a = a;
+      slocal.b = b;
+    }
     Vector3 cellsize = grid.baseGrid.GetCellSize();
     Real cellbnd = Max(cellsize.x,cellsize.y,cellsize.z)*0.5;
     Segment3D sgrid;
@@ -237,7 +345,7 @@ Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a
       }
     }
     Assert(candidates.size() > 0);
-    Real dmin=Inf;
+    Real dmin=upperBound;
     Real tmin=0;
     sort(candidates.begin(),candidates.end());
     Vector3 disp=slocal.b-slocal.a;
@@ -275,8 +383,13 @@ Real Distance(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a
     direction = grid.currentTransform.R*direction;
     return geomclosest.distance(gridclosest);
   }
+  else if(a.type == GeometricPrimitive3D::Triangle) {
+    const Triangle3D& t = *AnyCast_Raw<Triangle3D>(&a.data);
+    Real d= Distance(grid,t,gridclosest,geomclosest,direction,upperBound);
+    return d;
+  }
   else {
-    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can't collide an implicit surface and a non-sphere primitive yet");
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can only query distance between implicit surface and primitives of type point, sphere, segment, and triangle");
     return 0;
   }
 }
@@ -288,98 +401,15 @@ bool Collides(const CollisionImplicitSurface& grid,const GeometricPrimitive3D& a
     return Distance(grid,a,gridclosest,temp,temp2) <= margin;
   }
   else if(a.type == GeometricPrimitive3D::Segment) {
-    const Segment3D* s=AnyCast_Raw<Segment3D>(&a.data);
-    Segment3D slocal;
-    grid.currentTransform.mulInverse(s->a,slocal.a);
-    grid.currentTransform.mulInverse(s->b,slocal.b);
-    if(slocal.distance(grid.baseGrid.bb) > margin) {
-      return false;
-    }
-
-    //shrink the range considered by examining the endpoint distances
-    Real da = DistanceLocal(grid.baseGrid,slocal.a);
-    Real db = DistanceLocal(grid.baseGrid,slocal.b);
-    Real t1,t2;
-    Real slength = slocal.a.distance(slocal.b);
-    if(da <= margin) t1=0;
-    else {
-      if(da - slength > margin) {
-        return false;
-      }
-      t1 = (da - margin)/slength;
-    }
-    if(db <= margin) t2=1;
-    else {
-      if(db - slength > margin) {
-        return false;
-      }
-      t2 = 1 - (db - margin)/slength;
-    }
-    Vector3 a,b;
-    a = slocal.a + t1*(slocal.b-slocal.a);
-    b = slocal.a + t2*(slocal.b-slocal.a);
-    slocal.a = a;
-    slocal.b = b;
-
-    Vector3 cellsize = grid.baseGrid.GetCellSize();
-    Real cellbnd = Max(cellsize.x,cellsize.y,cellsize.z)*0.5;
-    Segment3D sgrid;
-    sgrid.a.x = (slocal.a.x - grid.baseGrid.bb.bmin.x) / cellsize.x;
-    sgrid.a.y = (slocal.a.y - grid.baseGrid.bb.bmin.y) / cellsize.y;
-    sgrid.a.z = (slocal.a.z - grid.baseGrid.bb.bmin.z) / cellsize.z;
-    sgrid.b.x = (slocal.b.x - grid.baseGrid.bb.bmin.x) / cellsize.x;
-    sgrid.b.y = (slocal.b.y - grid.baseGrid.bb.bmin.y) / cellsize.y;
-    sgrid.b.z = (slocal.b.z - grid.baseGrid.bb.bmin.z) / cellsize.z;
-    vector<Real> params;
-    vector<IntTriple> cells;
-    Meshing::GetSegmentCells(sgrid,cells,&params);
-    cells.push_back(cells.back());
-    vector<tuple<Real,IntTriple,Real> > candidates;
-    for(size_t i=0;i<cells.size();i++) {
-      IntTriple c = cells[i];
-      if(c.a < 0) c.a=0; else if(c.a >= grid.baseGrid.value.m) c.a = grid.baseGrid.value.m-1;
-      if(c.b < 0) c.b=0; else if(c.b >= grid.baseGrid.value.n) c.b = grid.baseGrid.value.n-1;
-      if(c.c < 0) c.c=0; else if(c.c >= grid.baseGrid.value.p) c.c = grid.baseGrid.value.p-1;
-      Real d=grid.baseGrid.value(c);
-      if(d - cellbnd >= margin) continue;
-      if(candidates.empty() || get<1>(candidates.back()) != c) {
-        candidates.push_back(make_tuple(d,c,params[i]));
-        candidates.push_back(make_tuple(d,c,(params[i]+params[i+1])*0.5));
-      }
-      else if(!candidates.empty()) {
-        ///same grid cell -- start in middle
-        get<2>(candidates.back()) = 0.5*(get<2>(candidates.back())+params[i]);
-      }
-    }
-    if(candidates.empty()) return false;
-    Real dmin=Max(margin+1e-7,1e-5);
-    Real tmin=0;
-    sort(candidates.begin(),candidates.end());
-    Vector3 disp=slocal.b-slocal.a;
-    for(size_t i=0;i<candidates.size();i++) {
-      Real d = get<0>(candidates[i]);
-      if(d - cellbnd >= dmin) break;
-      Real t = get<2>(candidates[i]);
-      Vector3 x = slocal.a + t*disp;
-      Vector3 xclamped;
-      Real d_bb = grid.baseGrid.bb.distance(x,xclamped);
-      if(d_bb >= dmin) continue;
-      if(d_bb + d - cellbnd >= dmin) continue;
-      Real sdf_value = grid.baseGrid.TrilinearInterpolate(xclamped);
-      if(d_bb + sdf_value < dmin) {
-        tmin = t;
-        dmin = d_bb + sdf_value;
-      }
-    }
-    Vector3 geomclosest = slocal.a + tmin*disp;
-    Vector3 direction;
-    DistanceLocal(grid.baseGrid,geomclosest,&gridclosest,&direction);
-
-    gridclosest = grid.currentTransform*gridclosest;
-    return (dmin < Max(margin+1e-6,1e-5));
+    Vector3 temp,temp2;
+    return Distance(grid,a,gridclosest,temp,temp2,margin+Epsilon) <= margin;
+  }
+  else if(a.type == GeometricPrimitive3D::Triangle) {
+    Vector3 temp,temp2;
+    return Distance(grid,a,gridclosest,temp,temp2,margin+Epsilon) <= margin;
   }
   else {
-    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can't collide an implicit surface and a non-sphere primitive yet");
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"Can only check collisions between implicit surface and primitives of type point, sphere, segment, and triangle");
     return 0;
   }
 }
@@ -785,7 +815,7 @@ Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelS
         if(smin.value(c) <= levelSet && smax.value(c) >= levelSet)
           lastLevelCells.push_back(c);
       }
-      printf("%d cells at top level (res %f)\n",lastLevelCells.size(),s.resolutionMap[level]);
+      printf("%d cells at top level (res %f)\n",(int)lastLevelCells.size(),s.resolutionMap[level]);
     }
     else {
       const Meshing::VolumeGrid& snmin = s.minHierarchy[level+1];
@@ -814,7 +844,7 @@ Real RayCast(const CollisionImplicitSurface& s,const Ray3D& rayWorld,Real levelS
           temp.push_back(i.second);
       }
       lastLevelCells = temp;
-      printf("%d cells at level res %f\n",lastLevelCells.size(),s.resolutionMap[level]);
+      printf("%d cells at level res %f\n",(int)lastLevelCells.size(),s.resolutionMap[level]);
     }
   }
   const Meshing::VolumeGrid& snmin = s.minHierarchy[0];
@@ -888,8 +918,89 @@ bool Collides(const CollisionImplicitSurface &a, const CollisionImplicitSurface 
 bool Collides(const CollisionImplicitSurface &a, const CollisionMesh &b, Real margin,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
 {
-  LOG4CXX_ERROR(GET_LOGGER(Geometry), "Volume grid to triangle mesh collisions not done");
-  return false;
+  RigidTransform Tlocal;
+  Tlocal.mulInverseA(a.currentTransform, b.currentTransform);
+  Triangle3D tri;
+  vector<IntTriple> tcells;
+  Real cell_corner_values[8];
+  Vector3 cellSize = a.baseGrid.GetCellSize();
+  AABB3D center_bb = a.baseGrid.bb;
+  center_bb.bmin += cellSize * 0.5;
+  center_bb.bmax -= cellSize * 0.5;
+  Real cellRad = cellSize.norm() * 0.5;
+  Meshing::TriMesh cube_mesh;
+  cube_mesh.verts.reserve(8);
+  for(size_t i=0;i<b.tris.size();i++) {
+    b.GetTriangle(i,tri);
+    tri.a = Tlocal*tri.a;
+    tri.b = Tlocal*tri.b;
+    tri.c = Tlocal*tri.c;
+
+    //quickly test whether a sphere containing the triangle is within the margin
+    Real test = a.baseGrid.TrilinearInterpolate(tri.a);
+    Vector3 pt_clamped;
+    test += a.baseGrid.bb.distance(tri.a,pt_clamped);
+    Real triDiam = Max(tri.a.distance(tri.b),tri.a.distance(tri.c));
+    bool collides = false;
+    IntTriple collide_cell;
+    if(test <= margin - cellRad) {
+      collides = true;
+      a.baseGrid.GetIndexClamped(tri.a,collide_cell);
+    }
+    else if(test > margin + triDiam + cellRad) {
+      continue;
+    }
+    else {
+      //TODO: if margin extends implicit surface outside of bounding box, this may be incorrect 
+      //high-resolution checking
+      tcells.resize(0);
+      Meshing::GetTriangleCells(tri,a.baseGrid.value.m-1,a.baseGrid.value.n-1,a.baseGrid.value.p-1,center_bb,tcells);
+      for(const auto& cell: tcells) {
+        cell_corner_values[0] = a.baseGrid.value(cell.a,cell.b,cell.c);
+        if(cell_corner_values[0] > margin + cellRad) continue;
+        if(cell_corner_values[0] <= margin - cellRad) {
+          collides = true;
+          collide_cell = cell;
+          break;
+        }
+        cell_corner_values[1] = a.baseGrid.value(cell.a,cell.b,cell.c+1);
+        cell_corner_values[2] = a.baseGrid.value(cell.a,cell.b+1,cell.c);
+        cell_corner_values[3] = a.baseGrid.value(cell.a,cell.b+1,cell.c+1);
+        cell_corner_values[4] = a.baseGrid.value(cell.a+1,cell.b,cell.c);
+        cell_corner_values[5] = a.baseGrid.value(cell.a+1,cell.b,cell.c+1);
+        cell_corner_values[6] = a.baseGrid.value(cell.a+1,cell.b+1,cell.c);
+        cell_corner_values[7] = a.baseGrid.value(cell.a+1,cell.b+1,cell.c+1);
+        AABB3D cellbb;
+        cellbb.bmin = center_bb.bmin;
+        cellbb.bmin.x += cell.a*cellSize.x;
+        cellbb.bmin.y += cell.b*cellSize.y;
+        cellbb.bmin.z += cell.c*cellSize.z;
+        cellbb.bmax = cellbb.bmin + cellSize;
+        cube_mesh.verts.resize(0);
+        cube_mesh.tris.resize(0);
+        Meshing::CubeToMesh(cell_corner_values,margin,cellbb,cube_mesh);
+        Triangle3D tri2;
+        Vector3 P,Q;
+        for(size_t j=0;j<cube_mesh.tris.size();j++) {
+          cube_mesh.GetTriangle(j,tri2);
+          if((margin == 0 && tri.intersects(tri2)) || (tri.distance(tri2,P,Q) <= margin)) {
+            collides = true;
+            collide_cell = cell;
+            break;
+          }
+        }
+        if(collides) break;
+      }
+    }
+    if(collides) { 
+      elements1.push_back(collide_cell.a*a.baseGrid.value.n*a.baseGrid.value.p + collide_cell.b*a.baseGrid.value.p + collide_cell.c);
+      elements2.push_back(int(i));
+      if(elements1.size() >= maxContacts) {
+        return true;
+      }
+    }
+  }
+  return !elements1.empty();
 }
 
 
@@ -1349,6 +1460,30 @@ void PointCloudImplicitSurfaceContacts(CollisionPointCloud &pc1, Real outerMargi
   }
 }
 
+void TriangleMeshImplicitSurfaceContacts(CollisionMesh &m1, Real outerMargin1, CollisionImplicitSurface &s2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  contacts.resize(0);
+  Real tol = outerMargin1 + outerMargin2;
+  vector<int> points;
+  Triangle3D tri;
+  Vector3 surfacePt, triPt, direction;
+  for(size_t i=0;i<m1.tris.size();i++) {
+    m1.GetTriangle(i,tri);
+    Real d=Distance(s2,tri,surfacePt,triPt,direction,tol+Epsilon);
+    if(d <= tol) {
+      size_t k = contacts.size();
+      contacts.resize(k + 1);
+      contacts[k].p1 = triPt + direction * outerMargin1;
+      contacts[k].p2 = surfacePt - direction * outerMargin2;
+      contacts[k].n = direction;
+      contacts[k].depth = tol - d;
+      contacts[k].elem1 = i;
+      contacts[k].elem2 = PointIndex(s2, surfacePt);
+      contacts[k].unreliable = false;
+    }
+  }
+}
+
 void ImplicitSurfaceSphereContacts(CollisionImplicitSurface &s1, Real outerMargin1, const Sphere3D &s, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
 {
   //NOTE: this does not allow for multiple points of contact, e.g., for non-convex implicit surfaces
@@ -1392,6 +1527,27 @@ void ImplicitSurfaceSegmentContacts(CollisionImplicitSurface &s1, Real outerMarg
   contacts[0].unreliable = false;
 }
 
+void ImplicitSurfaceTriangleContacts(CollisionImplicitSurface &s1, Real outerMargin1, const Triangle3D &t, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  //NOTE: this does not allow for multiple points of contact, e.g., for non-convex implicit surfaces
+  contacts.resize(0);
+  Real tol = outerMargin1 + outerMargin2;
+  Vector3 cpgrid, cpseg, dir;
+  Real d = Geometry::Distance(s1, GeometricPrimitive3D(t), cpgrid, cpseg, dir);
+  if (d > tol)
+    return;
+  contacts.resize(1);
+  Vector3 n;
+  n.setNegative(dir);
+  contacts[0].p1 = cpgrid + outerMargin1 * n;
+  contacts[0].p2 = cpseg - outerMargin2 * n;
+  contacts[0].n = n;
+  contacts[0].depth = tol - d;
+  contacts[0].elem1 = PointIndex(s1, cpgrid);
+  contacts[0].elem2 = -1;
+  contacts[0].unreliable = false;
+}
+
 void ImplicitSurfacePrimitiveContacts(CollisionImplicitSurface &s1, Real outerMargin1, GeometricPrimitive3D &g2, const RigidTransform &T2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
 {
   GeometricPrimitive3D gworld = g2;
@@ -1414,6 +1570,11 @@ void ImplicitSurfacePrimitiveContacts(CollisionImplicitSurface &s1, Real outerMa
     const Segment3D &s = *AnyCast<Segment3D>(&gworld.data);
     ImplicitSurfaceSegmentContacts(s1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
   }
+  else if (gworld.type == GeometricPrimitive3D::Triangle)
+  {
+    const Triangle3D &s = *AnyCast<Triangle3D>(&gworld.data);
+    ImplicitSurfaceTriangleContacts(s1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
+  }
   else
   {
     LOG4CXX_WARN(GET_LOGGER(Geometry), "Contact computations between ImplicitSurface and " << gworld.TypeName() << " not supported");
@@ -1432,8 +1593,13 @@ bool Collider3DImplicitSurface::Contacts(Collider3D* other,const ContactsQuerySe
         return true;
       }
     case Type::TriangleMesh:
-      LOG4CXX_ERROR(GET_LOGGER(Geometry), "TODO: implicit surface-triangle mesh contacts");
-      break;
+      {
+        auto* m = dynamic_cast<Collider3DTriangleMesh*>(other);
+        TriangleMeshImplicitSurfaceContacts(m->collisionData, settings.padding2, collisionData, settings.padding1, res.contacts, settings.maxcontacts);
+        for (auto &c : res.contacts)
+          ReverseContact(c);
+      }
+      return true;
     case Type::PointCloud:
       {
         auto* pc = dynamic_cast<Collider3DPointCloud*>(other);

@@ -132,8 +132,8 @@ bool Heightmap::Load(std::istream& in, const char* folder)
         LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing height image from "<<heightFn);
         return false;
     }
-    unsigned char imgmin = *std::min_element(himg.data,himg.data+himg.w*himg.h);
-    unsigned char imgmax = *std::max_element(himg.data,himg.data+himg.w*himg.h);
+    //unsigned char imgmin = *std::min_element(himg.data,himg.data+himg.w*himg.h);
+    //unsigned char imgmax = *std::max_element(himg.data,himg.data+himg.w*himg.h);
     SetImage(himg,hmax-hmin,hmin);
     if(items.find("colors")) {
         string colorFn;
