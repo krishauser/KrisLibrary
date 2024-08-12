@@ -9,35 +9,6 @@
 
 using namespace Meshing;
 
-/// Used for rendering meshes into heightmaps 
-template <class T>
-struct HeightmapRasterizer2D : public Meshing::SmoothFillRasterizer2D<T>
-{
-    HeightmapRasterizer2D(bool _maximize)
-        : maximize(_maximize)
-        {}
-    
-    inline void Rasterize(const Triangle3D& tri) {
-        Triangle2D tri2;
-        this->fillA = tri.a.z;
-        this->fillB = tri.b.z; 
-        this->fillC = tri.c.z;
-        tri2.a.set(tri.a);
-        tri2.b.set(tri.b);
-        tri2.c.set(tri.c);
-        Meshing::SmoothFillRasterizer2D<T>::Rasterize(tri2);
-    }
-
-    virtual void Fill(const Vector3& bary,T& cell) {
-        T val = bary.x*this->fillA+bary.y*this->fillB+bary.z*this->fillC;
-        if(maximize)
-            cell = Max(val,cell);
-        else
-            cell = Min(val,cell);
-    }
-
-    bool maximize;
-};
 
 
 
@@ -836,8 +807,9 @@ void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform
 void Heightmap::FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh,bool topdown)
 {
     Math3D::Triangle3D tri;
-    HeightmapRasterizer2D<float> rasterizer(perspective != topdown);
-    rasterizer.grid = &heights;
+    bool maximize = (perspective != topdown);
+    vector<IntPair> tcells;
+    vector<Real> theights;
     for (size_t i=0;i<mesh.tris.size();i++) {
         mesh.GetTriangle(i,tri);
         if(Tmesh) {
@@ -848,7 +820,16 @@ void Heightmap::FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh,bool to
         tri.a = Project(tri.a);
         tri.b = Project(tri.b);
         tri.c = Project(tri.c);
-        rasterizer.Rasterize(tri);
+        tcells.resize(0);
+        theights.resize(0);
+        GetTriangleHeights_Clipped(tri,tcells,theights,0,0,heights.m,heights.n);
+        for(size_t k=0;k<tcells.size();k++) {
+            float& cell = heights(tcells[k]);
+            if(maximize)
+                cell = ::Max(float(theights[k]),cell);
+            else
+                cell = ::Min(float(theights[k]),cell);
+        }
     }
 }
 
