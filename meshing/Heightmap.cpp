@@ -809,10 +809,15 @@ void Heightmap::Remesh(const Camera::Viewport& vp)
 
 void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform* Tmesh,bool topdown)
 {
-    Vector3 bmin,bmax;
-    mesh.GetAABB(bmin,bmax);
-    Vector3 center = (bmin+bmax)*0.5;
-    Vector3 dims = bmax-bmin;
+    AABB3D bb;
+    if(Tmesh) {
+        bb.minimize();
+        for(size_t i=0;i<mesh.verts.size();i++)
+            bb.expand((*Tmesh)*mesh.verts[i]);
+    }
+    mesh.GetAABB(bb.bmin,bb.bmax);
+    Vector3 center = (bb.bmin+bb.bmax)*0.5;
+    Vector3 dims = bb.bmax-bb.bmin;
     Vector3 dims_padded = dims + Vector3(2*resolution);
     IntPair size((int)Ceil(dims_padded.x/resolution),(int)Ceil(dims_padded.y/resolution));
 
@@ -822,10 +827,10 @@ void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform
     xysize.set(dims_padded.x,dims_padded.y);
     offset = center;
     if(topdown)
-        offset.z = bmin.z;
+        offset.z = bb.bmin.z;
     else
-        offset.z = bmax.z;
-    FuseMesh(mesh,NULL,topdown);
+        offset.z = bb.bmax.z;
+    FuseMesh(mesh,Tmesh,topdown);
 }
 
 void Heightmap::FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh,bool topdown)
