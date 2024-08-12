@@ -236,8 +236,18 @@ public:
     /** Remeshes the heightmap domain to match the given viewport's domain. May lose information. */
     void Remesh(const Camera::Viewport& vp);
 
-    /** Resizes and rasterizes a triangle mesh into the height array */
+    /** @brief Rasterizes a triangle mesh into the height array, resizing to fit. 
+     * 
+     * If topdown=true, the front (+z in orthographic, -z in perspective) of the
+     * mesh is rasterized.  Otherwise, the back is rasterized.
+     */
     void SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform* Tmesh=NULL,bool topdown=true);
+    /** @brief Rasterizes a triangle mesh into the height array, using the current
+     * position / size of the heightmap. 
+     * 
+     * If topdown=true, the front (+z in orthographic, -z in perspective) of the
+     * mesh is rasterized.  Otherwise, the back is rasterized.
+     */
     void FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh=NULL,bool topdown=true);
     /** Resizes and rasterizes a point cloud into the height array, and 
      * the colors image if the point cloud is colored.
