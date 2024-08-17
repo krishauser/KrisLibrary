@@ -5,7 +5,7 @@
 #include <KrisLibrary/utils/stringutils.h>
 #include <KrisLibrary/utils/fileutils.h>
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
-#include <KrisLibrary/image/import.h>
+#include <KrisLibrary/image/io.h>
 #include <KrisLibrary/image/ppm.h>
 #include <iostream>
 #include <sstream>
