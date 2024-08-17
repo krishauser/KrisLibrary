@@ -167,7 +167,7 @@ struct NormScalarFieldFunction : public ScalarFieldFunction
 class MinimumScalarFieldFunction : public ScalarFieldFunction
 {
 public:
-  virtual std::string Label() const { return "<min_i xi>"; }
+  virtual std::string Label() const override { return "<min_i xi>"; }
   virtual void PreEval(const Vector& x) override;
   virtual Real Eval(const Vector& x) override;
   virtual void Gradient(const Vector& x,Vector& grad) override;
@@ -183,7 +183,7 @@ public:
 class MaximumScalarFieldFunction : public ScalarFieldFunction
 {
 public:
-  virtual std::string Label() const { return "<max_i xi>"; }
+  virtual std::string Label() const override { return "<max_i xi>"; }
   virtual void PreEval(const Vector& x) override;
   virtual Real Eval(const Vector& x) override;
   virtual void Gradient(const Vector& x,Vector& grad) override;
@@ -290,7 +290,7 @@ class Compose_VF_VF_Function : public VectorFieldFunction
 {
 public:
   Compose_VF_VF_Function(VectorFieldFunction* _f,VectorFieldFunction* _g) : f(_f), g(_g) {}
-  virtual std::string Label() const;
+  virtual std::string Label() const override;
   virtual void PreEval(const Vector& x) override;
   virtual void Eval(const Vector& x,Vector& v) override { f->Eval(gx,v); }
   virtual Real Eval_i(const Vector& x,int i) override { return f->Eval_i(gx,i); }
