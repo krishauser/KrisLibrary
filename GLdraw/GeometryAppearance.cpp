@@ -1258,6 +1258,7 @@ void GeometryAppearance::DrawGL(Element e)
         const auto& p = geom->AsPrimitive();
         if(p.type == GeometricPrimitive3D::Point || p.type == GeometricPrimitive3D::Segment) {
           //can't draw silhouette
+          printf("Can't draw silhouette for geometry of type %d\n",p.type);
         }
         else {
           tempMesh.reset(new Meshing::TriMesh);
@@ -1311,9 +1312,6 @@ void GeometryAppearance::DrawGL(Element e)
         silhouetteDisplayList.call();
       }
     }
-  }
-  else {
-    printf("Can't draw silhouette\n");
   }
 
   if(!subAppearances.empty()) {
