@@ -947,6 +947,7 @@ void GeometryAppearance::DrawGL(Element e)
         Meshing::TriMesh creaseMesh;
         vector<Vector3> vertexNormals;
 
+        //determine whether to re-compute the creased mesh in case the triangle mesh has changed -- note this will not work if only the vertices have changed
         if(vertexColors.size() != trimesh->verts.size() && texcoords.size() != trimesh->verts.size() && (creaseAngle > 0 || silhouetteRadius > 0)) {
           shared_ptr<Meshing::TriMeshWithTopology> weldMesh = make_shared<Meshing::TriMeshWithTopology>();
           tempMesh2 = weldMesh;
@@ -1253,7 +1254,17 @@ void GeometryAppearance::DrawGL(Element e)
         trimesh = tempMesh.get();
       else if(geom->type == AnyGeometry3D::TriangleMesh) 
         trimesh = &geom->AsTriangleMesh();
-      
+      else if(geom->type == AnyGeometry3D::Primitive) { 
+        const auto& p = geom->AsPrimitive();
+        if(p.type == GeometricPrimitive3D::Point || p.type == GeometricPrimitive3D::Segment) {
+          //can't draw silhouette
+        }
+        else {
+          tempMesh.reset(new Meshing::TriMesh);
+          PrimitiveToMesh(p,*tempMesh,32);
+          trimesh = tempMesh.get(); 
+        }
+      }
       if(trimesh) {
         weldMesh = new Meshing::TriMeshWithTopology;
         tempMesh2.reset(weldMesh);
@@ -1300,6 +1311,9 @@ void GeometryAppearance::DrawGL(Element e)
         silhouetteDisplayList.call();
       }
     }
+  }
+  else {
+    printf("Can't draw silhouette\n");
   }
 
   if(!subAppearances.empty()) {
