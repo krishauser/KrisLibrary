@@ -347,12 +347,18 @@ bool AnyGeometry3D::Load(const char *fn)
   }
   else if (0 == strcmp(ext, "geom"))
   {
-    data.reset(new Geometry3DPrimitive());
-    if(!data->Load(fn)) {
+    ifstream in(fn,ios::in);
+    if(!in) {
+      LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyGeometry::Load(): Could not open file "<<fn);
       return false;
     }
-    type = Type::Primitive;
-    return true;
+    return Load(in);
+    // data.reset(new Geometry3DPrimitive());
+    // if(!data->Load(fn)) {
+    //   return false;
+    // }
+    // type = Type::Primitive;
+    // return true;
   }
   else if (0 == strcmp(ext, "json"))
   {
