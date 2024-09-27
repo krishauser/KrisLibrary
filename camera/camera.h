@@ -7,61 +7,62 @@ namespace Camera {
 
 using namespace Math3D;
 
-// Notes:
-// Remember: multiplying by the transform of the camera gets you
-// from camera to world frame.  camera->world
-//
-// For free cameras, Rz(roll)Rx(pitch)Ry(yaw) gives the camera frame
-// in C0 coords.  The "rot" vector has (x,y,z) = (pitch,yaw,roll),
-// which gives the intuition that you're rotating about the camera's
-// rotation axes.  Positive roll rotates the camera ccw.  Positive
-// pitch tilts the camera upward.  Positive yaw rotates the camera
-// left.
-//
-// C0 coords define how the world coords line up with the initial free
-// camera coords by the Orientation enum.  It basically defines the
-// y axis of the camera for the yaw.
-//
-// Orientation ABC denotes A=right in world coordinates,B=up,C=backward(!!).
-// An 'n' denotes the negative direction.
-//
-// Target cameras explicitly give the up direction in world coordinates
-// and therefore there is no need for a C0 orientation.
-
-struct Camera
+/** @brief Converts between different camera conventions.
+ * 
+ * Orientation ABC denotes A=right in world coordinates,B=up,C=backward(!!).
+ * An 'n' denotes the negative direction.  OpenGL uses XYZ orientation.
+ * Other common conventions (OpenCV, ROS) use XYnZ.
+ * 
+ * The pose of the camera is a rigid transform from the camera to
+ * the world frame.  camera->world
+ * 
+ * OpenGL camera matrix maps from world -> camera.
+ *
+ * For free cameras, Rz(roll)Rx(pitch)Ry(yaw) gives the camera frame
+ * in C0 coords.  The "rot" vector has (x,y,z) = (pitch,yaw,roll),
+ * which gives the intuition that you're rotating about the camera's
+ * rotation axes.  Positive roll rotates the camera ccw.  Positive
+ * pitch tilts the camera upward.  Positive yaw rotates the camera
+ * left.
+ *
+ * C0 coords define how the world coords line up with the initial free
+ * camera coords by the Orientation enum.  It basically defines the
+ * y axis of the camera for the yaw.
+ *
+ * Target cameras explicitly give the up direction in world coordinates
+ * and therefore there is no need for a C0 orientation.
+ */
+class CameraConventions
 {
+public:
   enum Orientation {XYZ,XYnZ,XZY,XZnY};
-  static void GetOrientationMatrix(Orientation o,Matrix3& mat);
-  static void Orient(Orientation o,Matrix3& mat);
-  static void Unorient(Orientation o,Matrix3& mat);
+  static Orientation OpenGL; // = XYZ
+  static Orientation OpenCV;    // = XYnZ
+  static Orientation ROS;    // = XYnZ
+  static void getOrientationMatrix(Orientation o,Matrix3& mat);
+  static void orient(Orientation o,Matrix3& mat);
+  static void unorient(Orientation o,Matrix3& mat);
 
-  inline const Real* xDir() const { return xform.R.col1(); }
-  inline const Real* yDir() const { return xform.R.col2(); }
-  inline const Real* zDir() const { return xform.R.col3(); }
-  inline const Vector3& position() const { return xform.t; }
-
-  void setFree(const Vector3& pos, const Vector3& rot, Orientation o=XYZ);
-  void setTarget(const Vector3& pos, const Vector3& tgt, const Vector3& up);
-  void setOrbit(const Vector3& rot, const Vector3& target, Real dist, Orientation o=XYZ);
-  void setCameraMatrix(const Matrix4&);
-
-  void getCameraMatrix(Matrix4&) const;
-  void getFree(Vector3& pos, Vector3& rot, Orientation o=XYZ) const;
-  void getTarget(Vector3& pos, Vector3& tgt, Vector3& up, Real tgtdist=One) const;
-  void getOrbit(Vector3& rot, Vector3& target, Real tgtdist=One, Orientation o=XYZ) const;
-
-  RigidTransform xform;
+  static RigidTransform setFree(const Vector3& pos, const Vector3& rot, Orientation o=XYZ);
+  static RigidTransform setTarget(const Vector3& pos, const Vector3& tgt, const Vector3& up);
+  static RigidTransform setOrbit(const Vector3& rot, const Vector3& target, Real dist, Orientation o=XYZ);
+  /// Returns an extrinsic transform from an OpenGL camera matrix 
+  static RigidTransform setGLCameraMatrix(const Matrix4&);
+  static void getGLCameraMatrix(const RigidTransform& xform, Matrix4&);
+  static void getFree(const RigidTransform& xform, Vector3& pos, Vector3& rot, Orientation o=XYZ);
+  static void getTarget(const RigidTransform& xform, Vector3& pos, Vector3& tgt, Vector3& up, Real tgtdist=One);
+  static void getOrbit(const RigidTransform& xform, Vector3& rot, Vector3& target, Real tgtdist=One, Orientation o=XYZ);
 };
 
 // CameraController_XXXX
 // These classes hold the state that is attached to different camera
-// control types.  Use toCamera and fromCamera to create the camera
-// structure.
+// control types.  Use toCameraPose and fromCameraPose to get the camera
+// pose.
 
 struct CameraController_Free
 {
-  void toCamera(Camera&) const;
-  void fromCamera(const Camera&);
+  void toCameraPose(RigidTransform&) const;
+  void fromCameraPose(const RigidTransform&);
 
   inline Real& pitch() { return rot.x; }
   inline Real& yaw() { return rot.y; }
@@ -69,13 +70,13 @@ struct CameraController_Free
 
   Vector3 pos;
   Vector3 rot;
-  Camera::Orientation ori;
+  CameraConventions::Orientation ori;
 };
 
 struct CameraController_Target
 {
-  void toCamera(Camera&) const;
-  void fromCamera(const Camera&, Real tgtdist);
+  void toCameraPose(RigidTransform&) const;
+  void fromCameraPose(const RigidTransform&, Real tgtdist);
 
   Vector3 pos;
   Vector3 tgt;
@@ -84,8 +85,8 @@ struct CameraController_Target
 
 struct CameraController_Orbit
 {
-  void toCamera(Camera&) const;
-  void fromCamera(const Camera&, Real tgtdist);
+  void toCameraPose(RigidTransform&) const;
+  void fromCameraPose(const RigidTransform&, Real tgtdist);
 
   inline Real& pitch() { return rot.x; }
   inline Real& yaw() { return rot.z; }
@@ -94,7 +95,7 @@ struct CameraController_Orbit
   Vector3 rot;
   Vector3 tgt;
   Real dist;
-  Camera::Orientation ori;
+  CameraConventions::Orientation ori;
 };
 
 } //namespace Camera

@@ -40,7 +40,7 @@ bool TransformWidget::Hover(int x,int y,Camera::Viewport& viewport,double& dista
   if(scaleToScreen) {
     float sx,sy,sz;
     viewport.project(T.t,sx,sy,sz);
-    globalScale = sz/viewport.scale;
+    globalScale = 0.5*viewport.w/viewport.getSizeAtDistance(1.0,sz);
   }
   distance = Inf;
   int oldHoverItem = hoverItem;
@@ -218,7 +218,7 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
   if(scaleToScreen) {
     float sx,sy,sz;
     viewport.project(T.t,sx,sy,sz);
-    globalScale = sz/viewport.scale;
+    globalScale = 0.5*viewport.w/viewport.getSizeAtDistance(1.0,sz);
   }
 
   glPushMatrix();

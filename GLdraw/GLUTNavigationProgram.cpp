@@ -55,7 +55,7 @@ GLUTNavigationProgram::GLUTNavigationProgram()
   camera.tgt.setZero();
   camera.rot.setZero();
   camera.dist=100;
-  camera.ori=Camera::Camera::XZnY;
+  camera.ori=Camera::CameraConventions::XZnY;
 }
 
 bool GLUTNavigationProgram::Initialize()
@@ -75,7 +75,7 @@ void GLUTNavigationProgram::Handle_Display()
   glLoadIdentity();
   //SetWorldLights();
 
-  camera.toCamera(viewport);
+  camera.toCameraPose(viewport.pose);
 
   GLView view;
   view.setViewport(viewport);
@@ -206,13 +206,14 @@ void GLUTNavigationProgram::DragRotate(int dx,int dy)
 
 void GLUTNavigationProgram::DragZoom(int dx,int dy)
 {
-  viewport.scale *= (1+float(dy)*0.01);
+  viewport.fx *= (1+float(dy)*0.01);
+  viewport.fy *= (1+float(dy)*0.01);
   SHOW_VIEW_TARGET(0.5);
 }
 
 void GLUTNavigationProgram::DragTruck(int dx,int dy)
 {
-  Vector3 v(viewport.zDir());
+  Vector3 v(viewport.forward());
   //camera.tgt.madd(v,Real(dy)/viewport.scale/**camera.dist*/);
   camera.dist *= (1+float(dy)*0.01);
   SHOW_VIEW_TARGET(0.5);
@@ -340,7 +341,7 @@ void GLUTNavigationProgram::ReadDisplaySettings(istream& in)
   if(str != "ORBITDIST") { in.setstate(ios::badbit); return; }
   in>>camera.dist;
 
-  camera.fromCamera(viewport,camera.dist);
+  camera.fromCameraPose(viewport.pose,camera.dist);
   glutReshapeWindow(viewport.w,viewport.h);
 }
 
@@ -363,7 +364,7 @@ GLUTNavigationProgram::GLUTNavigationProgram()
   camera.tgt.setZero();
   camera.rot.setZero();
   camera.dist=100;
-  camera.ori=Camera::Camera::XZnY;
+  camera.ori=Camera::CameraConventions::XZnY;
 }
 
 bool GLUTNavigationProgram::Initialize()

@@ -71,7 +71,7 @@ bool BoxWidget::Hover(int x,int y,Camera::Viewport& viewport,double& distance)
   if(scaleToScreen) {
     float sx,sy,sz;
     viewport.project((bb.bmin+bb.bmax)*0.5,sx,sy,sz);
-    globalScale = sz/viewport.scale;
+    globalScale = 0.5*viewport.w/viewport.getSizeAtDistance(1.0,sz);
   }
   distance = Inf;
   IntTriple oldHoverItem = hoverItem;
@@ -334,7 +334,7 @@ void BoxWidget::DrawGL(Camera::Viewport& viewport)
   if(scaleToScreen) {
     float sx,sy,sz;
     viewport.project((bb.bmin+bb.bmax)*0.5,sx,sy,sz);
-    globalScale = sz/viewport.scale;
+    globalScale = 0.5*viewport.w/viewport.getSizeAtDistance(1.0,sz);
   }
 
   glPushMatrix();
