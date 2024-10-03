@@ -10,8 +10,9 @@ namespace Camera {
 Viewport::Viewport(int _w,int _h,bool opengl_orientation)
   :perspective(true),
    x(0),y(0),w(_w),h(_h), n(0.1), f(1000),
-   fx(_w*0.5),fy(_w*0.5),cx(_w*0.5),cy(_h*0.5),ori(CameraConventions::XYZ)
+   fx(_w*0.5),fy(_w*0.5),cx(_w*0.5),cy(_h*0.5),ori(CameraConventions::OpenGL)
 {
+	pose.setIdentity();
 	if(!opengl_orientation)
 		ori = CameraConventions::ROS;
 }
@@ -28,19 +29,61 @@ void Viewport::resize(int _w, int _h)
 	fy *= xratio;
 }
 
+void Viewport::setOrientation(CameraConventions::CamOrientation o)
+{
+	if(o != ori) {
+		pose.R = CameraConventions::orientationMatrix(ori,o)*pose.R;
+		ori = o;
+	}
+}
+
 void Viewport::setScale(float _scale)
 {
 	fx = _scale*w*0.5;
 	fy = _scale*w*0.5;
 }
 
-void Viewport::setFOV(float rads)
+AABB2D Viewport::getViewRectangle(float depth, bool halfPixelAdjustment) const
 {
-	if(perspective) {
-		setScale(float(1.0/Tan(rads*0.5)));
+	AABB2D bb;
+	if(halfPixelAdjustment) {
+		bb.bmin.x = (0.5-cx)/fx;
+		bb.bmax.x = (w-0.5*cx)/fx;
+		bb.bmin.y = (0.5-cy)/fy;
+		bb.bmax.y = (h-0.5-cy)/fy;
 	}
 	else {
-		setScale(2.0/rads);
+		bb.bmin.x = (-cx)/fx;
+		bb.bmax.x = (w-cx)/fx;
+		bb.bmin.y = (-cy)/fy;
+		bb.bmax.y = (h-cy)/fy;
+	}
+	if(perspective) {
+		if(depth <= 0) depth = n;
+		bb.bmin.x *= depth;
+		bb.bmax.x *= depth;
+		bb.bmin.y *= depth;
+		bb.bmax.y *= depth;
+	}
+	return bb;
+}
+
+
+void Viewport::setFOV(float xrads, float yrads)
+{
+	if(perspective) {
+		fx = float(w)*0.5/Tan(xrads*0.5);
+		if(yrads < 0)
+			fy = fx;
+		else
+			fy = float(h)*0.5/Tan(yrads*0.5);
+	}
+	else {
+		fx = float(w)/xrads;
+		if(yrads < 0)
+			fy = fx;
+		else
+			fy = float(h)/yrads;
 	}
 }
 
@@ -185,8 +228,6 @@ void Viewport::getViewVector(Vector3& v) const
 
 void Viewport::getClickSource(float mx, float my, Vector3& v) const 
 {
-
-	Vector3 vv;
 	v = pose.t;
 
 	if(perspective)
@@ -194,8 +235,8 @@ void Viewport::getClickSource(float mx, float my, Vector3& v) const
 	}
 	else
 	{
-		mx = mx - x - cx;
-		my = my - y - cy;
+		mx = mx + 0.5 - x - cx;
+		my = my + 0.5 - y - cy;
 		Vector3 vlocal(mx/fx,my/fy,0);
 		v += pose.R*vlocal;
 	}
@@ -203,21 +244,87 @@ void Viewport::getClickSource(float mx, float my, Vector3& v) const
 
 void Viewport::getClickVector(float mx, float my, Vector3& v) const
 {
-	//world vector is
-	//x*screen's x basis +
-	//y*screen's y basis -
-	//(screen width / 2 / tan lens angle) * screen's z basis
 	getViewVector(v);
 	if(perspective)
 	{
-		mx = mx - cx;
-		my = my - cy;
+		mx = mx + 0.5 - x - cx;
+		my = my + 0.5 - x  - cy;
 
 		Vector3 vlocal(mx/fx,my/fy,0);
 		v += pose.R*vlocal;
 		v.inplaceNormalize();
 	}
 }
+
+void Viewport::deproject(float mx, float my, Vector3& src,Vector3& dir) const 
+{
+	getViewVector(dir);
+	src = pose.t;
+
+	mx = mx - cx;
+	my = my - cy;
+	Vector3 vlocal(mx/fx,my/fy,0);
+
+	if(perspective)
+	{
+		dir += pose.R*vlocal;
+		dir.inplaceNormalize();
+	}
+	else
+	{
+		Vector3 vlocal(mx/fx,my/fy,0);
+		src += pose.R*vlocal;
+	}
+}
+
+
+void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions, bool halfPixelAdjustment, bool normalize) const
+{
+	sources.resize(w*h);
+	directions.resize(w*h);
+	Real invfx = 1.0/fx;
+	Real invfy = 1.0/fy;
+	if(perspective) {
+		Real mz = (ori == CameraConventions::ROS ? 1 : -1);
+		int k=0;
+		Real my = -cy;
+		if(halfPixelAdjustment) my += 0.5;
+		my *= invfy;
+		for(int i=0;i<h;i++) {
+			Real mx = -cx;
+			if(halfPixelAdjustment) mx += 0.5;
+			mx *= invfx;
+			for(int j=0;j<w;j++,k++) {	
+				sources[k] = pose.t;
+				directions[k] = pose.R*Vector3(mx,my,mz);
+				mx += invfx;
+			}
+			my += invfy;
+		}
+		if(normalize) 
+			for(auto& d:directions) d.inplaceNormalize();
+	}
+	else {
+		Vector3 z(pose.R.col3());
+		if(ori == CameraConventions::OpenGL) z.inplaceNegative();
+		int k=0;
+		Real my = -cy;
+		if(halfPixelAdjustment) my += 0.5;
+		my *= invfy;
+		for(int i=0;i<h;i++) {
+			Real mx = -cx;
+			if(halfPixelAdjustment) mx += 0.5;
+			mx *= invfx;
+			for(int j=0;j<w;j++,k++) {	
+				sources[k] = pose.t + pose.R*Vector3(mx,my,0);
+				directions[k] = z;
+				mx += invfx;
+			}
+			my += invfy;
+		}
+	}
+}
+
 
 bool Viewport::project(const Vector3& pt,float& mx,float& my,float& mz) const
 {
@@ -273,6 +380,15 @@ void Viewport::projectionMatrix(Matrix4& P) const
 		P(2,2) = 1;
 }
 
+
+bool Viewport::operator == (const Viewport& rhs) const
+{
+	return (perspective == rhs.perspective &&
+		x == rhs.x && y == rhs.y && w == rhs.w && h == rhs.h &&
+		n == rhs.n && f == rhs.f &&
+		fx == rhs.fx && fy == rhs.fy && cx == rhs.cx && cy == rhs.cy &&
+		pose == rhs.pose && ori == rhs.ori);
+}
 
 ostream& operator << (ostream& out, const Viewport& v)
 {

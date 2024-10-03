@@ -661,19 +661,31 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     HeightmapToMesh(*g,*tempMesh,*this);
     if(g->HasColors() && !tex2D) {
       tex2D = make_shared<Image>(g->colors);
-      if(g->perspective) {
-        //u = (x - g->offset.x)/(z*g->xysize.x) + 0.5
+      Vector3 xb(g->viewport.pose.R.col1());
+      Vector3 yb(g->viewport.pose.R.col2());
+      Vector3 zb(g->viewport.pose.R.col3());
+      if(g->viewport.perspective) {
+        //x = e1^T(R^-1*(p - t)) = xb^T p - xb^T t
+        //y = e2^T(R^-1*(p - t)) = yb^T p - yb^T t
+        //z = e3^T(R^-1*(p - t)) = zb^T p - zb^T t
+        //u = (x/z*fx + cx)/w = (x*fx/w + cx/w*z) / z 
+        //v = (y/z*fy + cy)/h = (y*fy/h + cy/h*z) / z
+        Vector3 ub = xb*g->viewport.fx/g->viewport.w + zb*g->viewport.cx/g->viewport.w;
+        Vector3 vb = yb*g->viewport.fy/g->viewport.h + zb*g->viewport.cy/g->viewport.h;
         texgen.resize(4);
-        texgen[0].set(1/g->xysize.x,0,0.5-g->offset.x*g->xysize.x,0);
-        texgen[1].set(0,1/g->xysize.y,0.5-g->offset.y*g->xysize.y,0);
-        texgen[2].set(0,0,1,0);
-        texgen[3].set(0,0,1,0);
+        texgen[0].set(ub.x,ub.y,ub.z -xb.dot(g->viewport.pose.t)*g->viewport.fx/g->viewport.w);
+        texgen[1].set(vb.x,vb.y,vb.z -yb.dot(g->viewport.pose.t)*g->viewport.fy/g->viewport.h);
+        texgen[2].set(zb.x,zb.y,zb.z,0);
+        texgen[3].set(zb.x,zb.y,zb.z,0);
       }
       else {
-        //u = (x - g->offset.x)/g->xysize.x + 0.5
+        //u = (x*fx + cx)/w = (x*fx/w + cx/w) 
+        //v = (y*fy + cy)/h = (y*fy/h + cy/h)
+        Vector3 ub = xb*g->viewport.fx/g->viewport.w;
+        Vector3 vb = yb*g->viewport.fy/g->viewport.h;
         texgen.resize(2);
-        texgen[0].set(1.0/g->xysize.x,0,0,0.5-g->offset.x/g->xysize.x);
-        texgen[1].set(0,1.0/g->xysize.y,0,0.5-g->offset.y/g->xysize.y);
+        texgen[0].set(ub.x,ub.y,ub.z,g->viewport.cx/g->viewport.w-xb.dot(g->viewport.pose.t)*g->viewport.fx/g->viewport.w);
+        texgen[1].set(vb.x,vb.y,vb.z,g->viewport.cx/g->viewport.w-yb.dot(g->viewport.pose.t)*g->viewport.fy/g->viewport.h);
       }
     }
     drawFaces = true;

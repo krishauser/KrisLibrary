@@ -55,7 +55,8 @@ GLUTNavigationProgram::GLUTNavigationProgram()
   camera.tgt.setZero();
   camera.rot.setZero();
   camera.dist=100;
-  camera.ori=Camera::CameraConventions::XZnY;
+  camera.ori=Camera::CameraConventions::OpenGL;
+  camera.wori=Camera::CameraConventions::Zup;
 }
 
 bool GLUTNavigationProgram::Initialize()
@@ -364,7 +365,8 @@ GLUTNavigationProgram::GLUTNavigationProgram()
   camera.tgt.setZero();
   camera.rot.setZero();
   camera.dist=100;
-  camera.ori=Camera::CameraConventions::XZnY;
+  camera.ori=Camera::CameraConventions::OpenGL;
+  camera.wori=Camera::CameraConventions::Zup;
 }
 
 bool GLUTNavigationProgram::Initialize()

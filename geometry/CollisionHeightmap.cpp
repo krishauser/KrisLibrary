@@ -66,42 +66,74 @@ bool Geometry3DHeightmap::Transform(const Matrix4& mat)
     if(mat(1,0) != 0.0 || mat(2,0) != 0.0 || mat(0,1) != 0.0 || mat(2,1) != 0.0 || mat(0,2) != 0.0 || mat(1,2) != 0.0) {
         return false;
     }
-    data.xysize.x *= mat(0,0);
-    data.xysize.y *= mat(1,1);
-    data.offset.x *= mat(0,0);
-    data.offset.y *= mat(1,1);
-    data.offset.z *= mat(2,2);
+    data.viewport.fx /= mat(0,0);
+    data.viewport.fy /= mat(1,1);
+    data.viewport.pose.t.x *= mat(0,0);
+    data.viewport.pose.t.y *= mat(1,1);
+    data.viewport.pose.t.z *= mat(2,2);
     data.Scale(mat(2,2));
-    data.offset += Vector3(mat(0,3),mat(1,3),mat(2,3));
+    data.viewport.pose.t += Vector3(mat(0,3),mat(1,3),mat(2,3));
     return true;
 }
 
 Geometry3D* Geometry3DHeightmap::ConvertTo(Type restype,Real param,Real domainExpansion) const
 {
     if(restype == Type::ImplicitSurface || restype == Type::OccupancyGrid) {
-        if(data.perspective) {
-            LOG4CXX_WARN(GET_LOGGER(Geometry),"Cannot convert perspective heightmap to implicit surface");
-            return NULL;
-        }
         if(param <= 0) {
             //heightmap's height range / 256
-            auto bb=data.GetAABB();
-            Real res = (bb.bmax.z-bb.bmin.z)/256;
+            float zmin = *std::min_element(data.heights.begin(),data.heights.end(),[] (float x, float y) { return x < y ? true : !isnan(x); });
+            float zmax = *std::max_element(data.heights.begin(),data.heights.end(),[] (float x, float y) { return x < y ? true : isnan(x); });
+            Real res = (zmax-zmin)/256;
+            if(res==0) res=1;
             param = res;
         }
         Meshing::VolumeGrid grid;
         grid.bb = data.GetAABB();
-        grid.value.resize(data.heights.m,data.heights.n,int(grid.bb.bmax.z - grid.bb.bmin.z)/param);
-        Vector3 c;
-        for(int i=0;i<data.heights.m;i++)
-            for(int j=0;j<data.heights.n;j++)
-                for(int k=0;k<grid.value.p;k++) {
-                    grid.GetCellCenter(i,j,k,c);
-                    if(restype == Type::ImplicitSurface)
-                        grid.value(i,j,k) = c.z - data.heights(i,j);
-                    else
-                        grid.value(i,j,k) = (c.z > data.heights(i,j) ? 0.0 : 1.0);
-                }
+        Matrix3 I;
+        I.setIdentity();
+        if(!data.viewport.perspective && data.viewport.pose.R == I) {  //fast method
+            int zdivs = int(grid.bb.bmax.z - grid.bb.bmin.z)/param;
+            if(zdivs <= 0) zdivs = 1;
+            grid.value.resize(data.heights.m,data.heights.n,zdivs);
+            Vector3 c;
+            for(int i=0;i<data.heights.m;i++)
+                for(int j=0;j<data.heights.n;j++)
+                    for(int k=0;k<grid.value.p;k++) {
+                        grid.GetCellCenter(i,j,k,c);
+                        if(restype == Type::ImplicitSurface)
+                            grid.value(i,j,k) = c.z - data.heights(i,j);
+                        else
+                            grid.value(i,j,k) = (c.z > data.heights(i,j) ? 0.0 : 1.0);
+                    }
+        }
+        else {
+            int xdivs = int(grid.bb.bmax.x - grid.bb.bmin.x)/param;
+            int ydivs = int(grid.bb.bmax.y - grid.bb.bmin.y)/param;
+            int zdivs = int(grid.bb.bmax.z - grid.bb.bmin.z)/param;
+            if(xdivs <= 0) xdivs = 1;
+            if(ydivs <= 0) ydivs = 1;
+            if(zdivs <= 0) zdivs = 1;
+            grid.value.resize(xdivs,ydivs,zdivs);
+            Vector3 c;
+            for(int i=0;i<data.heights.m;i++)
+                for(int j=0;j<data.heights.n;j++)
+                    for(int k=0;k<grid.value.p;k++) {
+                        grid.GetCellCenter(i,j,k,c);
+                        Real dh = data.GetHeightDifference(c);
+                        if(data.viewport.perspective) {  //higher values are "behind"
+                            if(restype == Type::ImplicitSurface)
+                                grid.value(i,j,k) = -dh;
+                            else
+                                grid.value(i,j,k) = (dh < 0 ? 0.0 : 1.0);
+                        }
+                        else {
+                            if(restype == Type::ImplicitSurface)
+                                grid.value(i,j,k) = dh;
+                            else
+                                grid.value(i,j,k) = (dh > 0 ? 0.0 : 1.0);
+                        }
+                    }
+        }
         if(restype == Type::ImplicitSurface)
             return new Geometry3DImplicitSurface(grid);
         else
@@ -141,21 +173,22 @@ Geometry3D* Geometry3DHeightmap::ConvertTo(Type restype,Real param,Real domainEx
 
 bool Geometry3DHeightmap::ConvertFrom(const Geometry3D* geom,Real param,Real domainExpansion)
 {
-    data.perspective = false;
     auto bb=geom->GetAABB();
     bb.bmin -= Vector3(domainExpansion);
     bb.bmax += Vector3(domainExpansion);
-    data.offset = (bb.bmin+bb.bmax)*0.5;
-    data.offset.z = bb.bmin.z;
-    data.xysize.set(bb.bmax.x-bb.bmin.x,bb.bmax.y-bb.bmin.y);
+    data.viewport.perspective = false;
+    data.viewport.pose.R.setIdentity();
+    data.viewport.pose.t = (bb.bmin+bb.bmax)*0.5;
+    data.viewport.pose.t.z = bb.bmin.z;
+    data.SetSize(bb.bmax.x-bb.bmin.x,bb.bmax.y-bb.bmin.y);
     int m,n;
     if(param == 0) {
         m=256;
         n=256;
     }
     else {
-        m = int(data.xysize.x / param) + 1;
-        n = int(data.xysize.y / param) + 1;
+        m = int((bb.bmax.x-bb.bmin.x) / param) + 1;
+        n = int((bb.bmax.y-bb.bmin.y) / param) + 1;
     }
     data.heights.resize(m,n);
     fill(data.heights.begin(),data.heights.end(),0);
@@ -167,7 +200,8 @@ Geometry3D* Geometry3DHeightmap::Remesh(Real resolution,bool refine,bool coarsen
 {
     if(resolution <= 0) return NULL;
     Meshing::Heightmap res = data;
-    res.heights.resize(int(data.xysize.x/resolution)+1,int(data.xysize.y/resolution)+1);
+    Vector2 xysize = data.GetSize();
+    res.heights.resize(int(xysize.x/resolution)+1,int(xysize.y/resolution)+1);
     if(data.HasColors()) {
         res.colors.initialize(res.heights.m,res.heights.n,data.colors.format);
     }
@@ -229,7 +263,7 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         for(int i=lo.a;i<=hi.a;i++) {
             for(int j=lo.b;j<hi.b;j++) {
                 data.GetVertexRay(i,j,ray.source,ray.direction);
-                if(!data.perspective)  {
+                if(!data.viewport.perspective)  {
                     //ray needs to go from top down
                     ray.source.z = bb.bmax.z + 1.0;
                     ray.direction.set(0,0,-1);
@@ -241,12 +275,12 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
                 }
                 Real dist;
                 if(hull.RayCast(ray,&dist,data.heights(i,j))) {
-                    if(data.perspective) {
+                    if(data.viewport.perspective) {
                         dist *= dscale;
                         data.heights(i,j) = Min(float(dist),data.heights(i,j));
                     }
                     else
-                        data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.offset.z),data.heights(i,j));
+                        data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.viewport.pose.t.z),data.heights(i,j));
                 }
             }
         }
@@ -272,7 +306,7 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         for(int i=lo.a;i<=hi.a;i++) {
             for(int j=lo.b;j<hi.b;j++) {
                 data.GetVertexRay(i,j,ray.source,ray.direction);
-                if(!data.perspective)  {
+                if(!data.viewport.perspective)  {
                     //ray needs to go from top down
                     ray.source.z = bb.bmax.z + 1.0;
                     ray.direction.set(0,0,-1);
@@ -285,12 +319,12 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
                 Vector3 pt;
                 if(prim.RayCast(ray,pt)) {
                     Real dist = ray.closestPointParameter(pt);
-                    if(data.perspective) {
+                    if(data.viewport.perspective) {
                         dist *= dscale;
                         data.heights(i,j) = Min(float(dist),data.heights(i,j));
                     }
                     else
-                        data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.offset.z),data.heights(i,j));
+                        data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.viewport.pose.t.z),data.heights(i,j));
                 }
             }
         }
@@ -319,39 +353,39 @@ Collider3DHeightmap::Collider3DHeightmap(shared_ptr<Geometry3DHeightmap> _data)
 
 void Collider3DHeightmap::Reset()
 {
-    hmin = *std::min_element(data->data.heights.begin(),data->data.heights.end());
-    hmax = *std::max_element(data->data.heights.begin(),data->data.heights.end());
+    hmin = *std::min_element(data->data.heights.begin(),data->data.heights.end(),[] (float x, float y) { return x < y ? true : !isnan(x); });
+    hmax = *std::max_element(data->data.heights.begin(),data->data.heights.end(),[] (float x, float y) { return x < y ? true : isnan(x); });
 }
 
 Box3D Collider3DHeightmap::GetBB() const
 {
     ///faster than min/maxing over heights
     AABB3D localBB;
-    if(data->data.perspective) FatalError("TODO: perspective BB");
-    Real xscale = 0.5*data->data.xysize.x;
-    Real yscale = 0.5*data->data.xysize.y;
-    localBB.bmin.x = -xscale;
-    localBB.bmax.x = xscale;
-    localBB.bmin.y = -yscale;
-    localBB.bmax.y = yscale;
-    localBB.bmin.z = hmin;
-    localBB.bmax.z = hmax;
-    localBB.bmin += data->data.offset;
-    localBB.bmax += data->data.offset;
+    if(data->data.viewport.perspective) FatalError("TODO: perspective BB");
+    AABB2D bb2d = data->data.viewport.getViewRectangle(0,true);
+    localBB.bmin.set(bb2d.bmin.x,bb2d.bmin.y,hmin);
+    localBB.bmax.set(bb2d.bmax.x,bb2d.bmax.y,hmax);
     Box3D res;
-    res.setTransformed(localBB,currentTransform);
+    res.setTransformed(localBB,currentTransform*data->data.viewport.pose);
     return res;
 }
 
 bool Collider3DHeightmap::Contains(const Vector3& pt,bool& result)
 {
-    if(data->data.GetHeight(pt) > pt.z) {
-        result = !data->data.perspective;
+    Vector3 ptLocal;
+    currentTransform.mulInverse(pt,ptLocal);
+    Real h = data->data.GetHeight(ptLocal);
+    Vector3 phm;
+    data->data.viewport.pose.mulInverse(ptLocal,phm);
+    if(data->data.viewport.perspective) {
+        if(!IsFinite(h) && h > 0)
+            return phm.z >= h;
     }
     else {
-        result = data->data.perspective;
+        if(IsFinite(h))
+            return phm.z <= h;
     }
-    return true;
+    return false;
 }
 
 bool LowerHeight(int i, int j, const Meshing::Heightmap& hm, Real hmax, const GeometricPrimitive3D& prim, Real& dist) 
@@ -359,9 +393,9 @@ bool LowerHeight(int i, int j, const Meshing::Heightmap& hm, Real hmax, const Ge
     Ray3D ray;
     hm.GetVertexRay(i,j,ray.source,ray.direction);
     Real dmax = hm.heights(i,j);
-    if(hm.perspective)  {
+    if(hm.viewport.perspective)  {
         //ray needs to go from back to origin
-        ray.source = hm.offset + ray.direction*(hmax + 1.0);
+        ray.source = hm.viewport.pose.t + ray.direction*(hmax + 1.0);
         ray.direction *= -1;
         Real dscale = ray.direction.norm();
         dmax = dscale*(hmax  + 1 - dmax);  //limit is for unnormalized ray
@@ -370,8 +404,8 @@ bool LowerHeight(int i, int j, const Meshing::Heightmap& hm, Real hmax, const Ge
     Vector3 pt;
     if(prim.RayCast(ray,pt)) {
         dist = ray.closestPointParameter(pt);
-        if(hm.perspective) {
-            dist = (ray.source.z + dist*ray.direction.z - hm.offset.z);
+        if(hm.viewport.perspective) {
+            dist = hm.Project(ray.source + dist*ray.direction).z;
             return true;
         }
         else {
@@ -386,17 +420,17 @@ bool LowerHeight(int i, int j, const Meshing::Heightmap& hm, Real hmax, const Co
     Ray3D ray;
     hm.GetVertexRay(i,j,ray.source,ray.direction);
     Real dmax = hm.heights(i,j);
-    if(hm.perspective)  {
+    if(hm.viewport.perspective)  {
         //ray needs to go from back to origin
-        ray.source = hm.offset + ray.direction*(hmax + 1.0);
+        ray.source = hm.viewport.pose.t + ray.direction*(hmax + 1.0);
         ray.direction *= -1;
         Real dscale = ray.direction.norm();
         dmax = dscale*(hmax  + 1 - dmax);  //limit is for unnormalized ray
         ray.direction /= dscale;
     }
     if(hull.RayCast(ray,&dist,dmax)) {
-        if(hm.perspective) {
-            dist = (ray.source.z + dist*ray.direction.z - hm.offset.z);
+        if(hm.viewport.perspective) {
+            dist = hm.Project(ray.source + dist*ray.direction).z;
             return true;
         }
         else {
@@ -417,17 +451,19 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
         for(size_t i=0;i<pc->data->data.points.size();i++) {
             Vector3 pt;
             Tlocal.mul(pc->data->data.points[i],pt);
-            IntPair idx = data->data.GetIndex(pt);
+            Vector3 phm  = data->data.Project(pt);
+            IntPair idx(int(Floor(phm.x)),int(Floor(phm.y)));
             if(idx.a < 0 || idx.b < 0 || idx.a >= data->data.heights.m || idx.b >= data->data.heights.n) continue;
-            if(data->data.perspective) {
-                if(data->data.heights(idx) <= pt.z - data->data.offset.z) {
+            if(data->data.viewport.perspective) {
+                Real hidx = data->data.heights(idx);
+                if(hidx > 0 && hidx <= phm.z) {
                     elements2.push_back(i);
                     elements1.push_back(idx.a + idx.b*data->data.heights.m);
                     if(elements1.size() >= maxcollisions) return true;
                 }
             }
             else {
-                if(data->data.heights(idx) >= pt.z - data->data.offset.z) {
+                if(data->data.heights(idx) >= phm.z) {
                     elements2.push_back(i);
                     elements1.push_back(idx.a + idx.b*data->data.heights.m);
                     if(elements1.size() >= maxcollisions) return true;
@@ -453,7 +489,7 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
             for(size_t k=0;k<tcells.size();k++) {
                 float& cell = data->data.heights(tcells[k]);
                 const auto& idx = tcells[k];
-                if(data->data.perspective) {
+                if(data->data.viewport.perspective) {
                     if(cell <= theights[k]) {
                         elements2.push_back(i);
                         elements1.push_back(idx.a + idx.b*data->data.heights.m);
@@ -478,17 +514,18 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
         for(const auto& cell : grid->occupiedCells) {
             grid->data->data.GetCellCenter(cell.a,cell.b,cell.c,pt);
             pt = Tlocal*pt;
-            IntPair idx = data->data.GetIndex(pt);
+            Vector3 phm  = data->data.Project(pt);
+            IntPair idx(int(Floor(phm.x)),int(Floor(phm.y)));
             if(idx.a < 0 || idx.b < 0 || idx.a >= data->data.heights.m || idx.b >= data->data.heights.n) continue;
-            if(data->data.perspective) {
-                if(data->data.heights(idx) <= pt.z - data->data.offset.z) {
+            if(data->data.viewport.perspective) {
+                if(data->data.heights(idx) <= phm.z) {
                     elements2.push_back(grid->data->IndexToElement(cell));
                     elements1.push_back(idx.a + idx.b*data->data.heights.m);
                     if(elements1.size() >= maxcollisions) return true;
                 }
             }
             else {
-                if(data->data.heights(idx) >= pt.z - data->data.offset.z) {
+                if(data->data.heights(idx) >= phm.z) {
                     elements2.push_back(grid->data->IndexToElement(cell));
                     elements1.push_back(idx.a + idx.b*data->data.heights.m);
                     if(elements1.size() >= maxcollisions) return true;
@@ -528,7 +565,7 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
             c.a = Min(Max(c.a,0),data->data.heights.m-1);
             c.b = Min(Max(c.b,0),data->data.heights.n-1);
             if(LowerHeight(c.a,c.b,data->data,this->hmax,hull,dist)) {
-                if(data->data.perspective) {
+                if(data->data.viewport.perspective) {
                     if(float(dist) >= data->data.heights(c)) {
                         elements1.push_back(c.a + c.b*data->data.heights.m);
                         elements2.push_back(-1);
@@ -548,7 +585,7 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
         for(int i=lo.a;i<=hi.a;i++) {
             for(int j=lo.b;j<hi.b;j++) {
                 if(LowerHeight(i,j,data->data,this->hmax,hull,dist)) {
-                    if(data->data.perspective) {
+                    if(data->data.viewport.perspective) {
                         if(float(dist) >= data->data.heights(i,j)) {
                             elements1.push_back(i+j*data->data.heights.m);
                             elements2.push_back(-1);
@@ -590,7 +627,7 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
             c.a = Min(Max(c.a,0),data->data.heights.m-1);
             c.b = Min(Max(c.b,0),data->data.heights.n-1);
             if(LowerHeight(c.a,c.b,data->data,this->hmax,prim,dist)) {
-                if(data->data.perspective) {
+                if(data->data.viewport.perspective) {
                     if(float(dist) >= data->data.heights(c)) {
                         elements1.push_back(c.a + c.b*data->data.heights.m);
                         elements2.push_back(-1);
@@ -609,7 +646,7 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
         for(int i=lo.a;i<=hi.a;i++) {
             for(int j=lo.b;j<hi.b;j++) {
                 if(LowerHeight(i,j,data->data,this->hmax,prim,dist)) {
-                    if(data->data.perspective) {
+                    if(data->data.viewport.perspective) {
                         if(float(dist) >= data->data.heights(i,j)) {
                             elements1.push_back(i+j*data->data.heights.m);
                             elements2.push_back(-1);
@@ -665,7 +702,7 @@ bool Collider3DHeightmap::RayCast(const Ray3D& r,Real margin,Real& distance,int&
         if(rimg.intersects(cell,tmin,tmax)) {
             Real zray1 = rimg.source.z + tmin*rimg.direction.z;
             Real zray2 = rimg.source.z + tmax*rimg.direction.z;
-            if(data->data.perspective) {
+            if(data->data.viewport.perspective) {
                 if(zray1 >= z || zray2 >= z) {
                     distance = tmin;
                     element = c.a + c.b*data->data.heights.m;

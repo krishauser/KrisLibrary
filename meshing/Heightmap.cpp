@@ -13,30 +13,42 @@ using namespace Meshing;
 
 
 Heightmap::Heightmap()
-:xysize(1,1),offset(Zero),perspective(false)
-{}
+:viewport(1,1)
+{
+    viewport.perspective = false;
+    viewport.setScale(2.0);
+}
 
 Heightmap::Heightmap(int xdivs,int ydivs,const Vector2& xydims)
-:heights(xdivs,ydivs),xysize(xydims),offset(Zero),perspective(false)
-{}
+:heights(xdivs,ydivs),viewport(xdivs,ydivs)
+{
+    viewport.perspective = false;
+    viewport.setScale(2.0);
+}
 
 Heightmap::Heightmap(const Array2D<float>& _heights,const Vector2& xydims)
-:heights(_heights),xysize(xydims),offset(Zero),perspective(false)
-{}
+:heights(_heights),viewport(_heights.m,heights.n)
+{
+    SetSize(xydims.x,xydims.y);
+}
 
 Heightmap::Heightmap(const Array2D<double>& _heights,const Vector2& xydims)
-:heights(_heights),xysize(xydims),offset(Zero),perspective(false)
-{}
+:heights(_heights),viewport(_heights.m,heights.n)
+{
+    SetSize(xydims.x,xydims.y);
+}
 
 Heightmap::Heightmap(const Image& _heights,const Vector2& xydims,float hscale,float hoffset,bool bottom_row_first)
-:xysize(xydims),offset(Zero),perspective(false)
+:viewport(_heights.w,_heights.h)
 {
+    SetSize(xydims.x,xydims.y);
     SetImage(_heights,hscale,hoffset,bottom_row_first);
 }
 
 Heightmap::Heightmap(const Image& _heights,const Image& colors,const Vector2& xydims,float hscale,float hoffset,bool bottom_row_first)
-:xysize(xydims),offset(Zero),perspective(false)
+:viewport(_heights.w,_heights.h)
 {
+    SetSize(xydims.x,xydims.y);
     SetImage(_heights,colors,hscale,hoffset,bottom_row_first);
 }
 
@@ -100,22 +112,41 @@ bool Heightmap::Load(std::istream& in, const char* folder)
         return false;
     }
     if(items.find("xsize")) {
+        Vector2 xysize;
         if(!items["xsize"].as(xysize.x)) return false;
         if(!items["ysize"].as(xysize.y)) return false;
-        perspective = false;
+        SetSize(xysize.x,xysize.y);
     }
     else {
-        if(!items["xfov"].as(xysize.x)) return false;
-        if(!items["yfov"].as(xysize.y)) return false;
-        perspective = true;
+        Vector2 xyfov;
+        if(!items["xfov"].as(xyfov.x)) return false;
+        if(!items["yfov"].as(xyfov.y)) return false;
+        SetFOV(xyfov.x,xyfov.y);
     }
     if(items.find("offset")) {
-        if(!items["offset"][0].as(offset.x)) return false;
-        if(!items["offset"][1].as(offset.y)) return false;
-        if(!items["offset"][2].as(offset.z)) return false;
+        if(!items["offset"][0].as(viewport.pose.t.x)) return false;
+        if(!items["offset"][1].as(viewport.pose.t.y)) return false;
+        if(!items["offset"][2].as(viewport.pose.t.z)) return false;
     }
     else {
-        offset.setZero();
+        viewport.pose.t.setZero();
+    }
+    if(items.find("orientation")) {
+        auto o1 = items["orientation"][0];
+        auto o2 = items["orientation"][1];
+        auto o3 = items["orientation"][2];
+        if(!o1[0].as(viewport.pose.R(0,0))) return false;
+        if(!o1[1].as(viewport.pose.R(0,1))) return false;
+        if(!o1[2].as(viewport.pose.R(0,2))) return false;
+        if(!o2[0].as(viewport.pose.R(1,0))) return false;
+        if(!o2[1].as(viewport.pose.R(1,1))) return false;
+        if(!o2[2].as(viewport.pose.R(1,2))) return false;
+        if(!o3[0].as(viewport.pose.R(2,0))) return false;
+        if(!o3[1].as(viewport.pose.R(2,1))) return false;
+        if(!o3[2].as(viewport.pose.R(2,2))) return false;
+    }
+    else {
+        viewport.pose.R.setIdentity();
     }
     float hmin,hmax;
     if(!items["height_range"].isarray()) return false;
@@ -161,22 +192,26 @@ bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorF
 {
     AnyCollection items;
     items["type"] = "Heightmap";
-    if(!perspective) {
-        items["xsize"] = xysize.x;
-        items["ysize"] = xysize.y;
+    if(!viewport.perspective) {
+        AABB2D bb = viewport.getViewRectangle(0,true);
+        items["xsize"] = bb.bmax.x-bb.bmin.x;
+        items["ysize"] = bb.bmax.y-bb.bmin.y;
     }
     else {
-        items["xfov"] = 2.0*Atan(xysize.x);
-        items["yfov"] = 2.0*Atan(xysize.y);
+        float xfov = viewport.getFOV();
+        float yfov = viewport.getVerticalFOV();
+        items["xfov"] = xfov;
+        items["yfov"] = yfov;
     }
-    if(offset.maxAbsElement() > 0) {
+    if(viewport.pose.t.maxAbsElement() > 0) {
         AnyCollection joffset;
         joffset.resize(3);
-        joffset[0] = offset.x;
-        joffset[1] = offset.y;
-        joffset[2] = offset.z;
+        joffset[0] = viewport.pose.t.x;
+        joffset[1] = viewport.pose.t.y;
+        joffset[2] = viewport.pose.t.z;
         items["offset"] = joffset;
     }
+    //TODO: orientation
     Image himg;
     float hmin = *std::min_element(heights.begin(),heights.end());
     float hmax = *std::max_element(heights.begin(),heights.end());
@@ -229,6 +264,10 @@ void Heightmap::SetImage(const Image& _heights,float hscale,float hoffset,bool b
         FatalError("Heightmap::SetImage: heights must be a single channel float image or an 8-bit grayscale image");
     }
     heights.resize(_heights.w,_heights.h);
+    viewport.w = _heights.w;
+    viewport.h = _heights.h;
+    viewport.cx = _heights.w*0.5;
+    viewport.cy = _heights.h*0.5;
     float h;
     const static float bytescale = 1.0/255.0;
     for(int j=0;j<_heights.h;j++) {
@@ -313,48 +352,69 @@ void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first)
 void Heightmap::SetSize(Real width, Real height)
 {
     if(height == 0) {
-        height = width/(heights.m-1)*(heights.n-1);
+        height = width/(viewport.w-1)*(viewport.h-1);
     }
-    xysize.set(width,height);
-    perspective = false;
+    viewport.perspective = false;
+    viewport.fx = (viewport.w-1)/width;  //point 0.5*width maps to w / 2 when multiplied by fx
+    viewport.fy = (viewport.h-1)/height;
+    viewport.cx = 0.5 * viewport.w;
+    viewport.cy = 0.5 * viewport.h;
 }
 
 void Heightmap::SetFOV(Real xfov,Real yfov)
 {
-    Real xscale = Tan(xfov*0.5);
-    Real yscale = Tan(yfov*0.5);
+    Real xsize_2 = Tan(xfov*0.5);
+    Real ysize_2 = Tan(yfov*0.5);
     if(yfov==0) {
-        yscale = xscale/(heights.m-1)*(heights.n-1);
+        ysize_2 = xsize_2/(viewport.w-1)*(viewport.h-1);
     }
-    xysize.set(xscale,yscale);
-    perspective = true;
+    viewport.perspective = true;
+    viewport.fx = 0.5*(viewport.w-1)/xsize_2;
+    viewport.fy = 0.5*(viewport.h-1)/ysize_2;
+    viewport.cx = 0.5 * viewport.w;
+    viewport.cy = 0.5 * viewport.h;
+}
+
+Vector2 Heightmap::GetSize() const 
+{
+    if(viewport.perspective) {
+        float xscale = 2.0*viewport.fx/(viewport.w-1);
+        float yscale = 2.0*viewport.fy/(viewport.h-1);
+        Real xfov = (Atan(1.0/xscale)*2);
+        Real yfov = (Atan(1.0/yscale)*2);
+        return Vector2(xfov,yfov);
+    }
+    else {
+        AABB2D bb = viewport.getViewRectangle(0,true);    
+        return bb.bmax-bb.bmin;
+    }
 }
 
 void Heightmap::GetCell(int i,int j,AABB2D& bb) const
 {
-    Real di = 1.0/(heights.m-1);
-    Real dj = 1.0/(heights.n-1);
-    Real u = Real(i)*di - 0.5;
-    Real v = Real(j)*dj - 0.5;
-    bb.bmin.x = u*xysize.x+offset.x;
-    bb.bmin.y = v*xysize.y+offset.y;
-    bb.bmax.x = bb.bmin.x + di*xysize.x;
-    bb.bmax.y = bb.bmin.y + dj*xysize.y;
+    Real invfx = 1.0/viewport.fx;
+    Real invfy = 1.0/viewport.fy;
+    Real u = (Real(i)-viewport.cx)*invfx;
+    Real v = (Real(j)-viewport.cy)*invfy;
+    bb.bmin.x = u;
+    bb.bmin.y = v;
+    bb.bmax.x = bb.bmin.x + invfx;
+    bb.bmax.y = bb.bmin.y + invfx;
 }
 
 Vector2 Heightmap::GetCellCenter(int i,int j) const
 {
-    Real di = 1.0/(heights.m-1);
-    Real dj = 1.0/(heights.n-1);
-    Real u = Real(i+0.5)*di - 0.5;
-    Real v = Real(j+0.5)*dj - 0.5;
-    return Vector2(u*xysize.x+offset.x,v*xysize.y+offset.y);
+    Real invfx = 1.0/viewport.fx;
+    Real invfy = 1.0/viewport.fy;
+    Real u = (Real(i)+0.5-viewport.cx)*invfx;
+    Real v = (Real(j)+0.5-viewport.cy)*invfy;
+    return Vector2(u,v);
 }
 
 Vector2 Heightmap::GetCellSize() const
 {
     if(heights.m <= 1 || heights.n <= 1) return Vector2(0,0);
-    return Vector2(xysize.x/(heights.m-1),xysize.y/(heights.n-1));
+    return Vector2(1.0/viewport.fx,1.0/viewport.fy);
 }
 
 void Heightmap::GetGrid(vector<Real>& xgrid,vector<Real>& ygrid) const
@@ -362,102 +422,70 @@ void Heightmap::GetGrid(vector<Real>& xgrid,vector<Real>& ygrid) const
     Vector2 cellSize = GetCellSize();
     xgrid.resize(heights.m);
     ygrid.resize(heights.n);
-    Real xshift = -0.5*xysize.x;
-    Real yshift = -0.5*xysize.y;
-    xgrid[0] = xshift + offset.x;
+    Real xshift = (0.5-viewport.cx)*cellSize.x;
+    Real yshift = (0.5-viewport.cy)*cellSize.y;
+    xgrid[0] = xshift;
     for(int i=1;i<heights.m;i++)
         xgrid[i] = xgrid[i-1] + cellSize.x;
-    ygrid[1] = yshift + offset.y;
+    ygrid[1] = yshift;
     for(int j=1;j<heights.n;j++)
         ygrid[j] = ygrid[j-1] + cellSize.y;
 }
 
 AABB3D Heightmap::GetAABB() const
 {
-    if(perspective) FatalError("TODO perspective projection");
     AABB3D res;
-    Real xscale = 0.5*xysize.x;
-    Real yscale = 0.5*xysize.y;
-    res.bmin.x = -xscale + offset.x;
-    res.bmax.x = xscale + offset.x;
-    res.bmin.y = -yscale + offset.y;
-    res.bmax.y = yscale + offset.y;
+    AABB2D bb2d;
     if(heights.empty()) {
         res.bmin.z = Inf;
         res.bmax.z = -Inf;
     }
     else {
-        res.bmin.z = *std::min_element(heights.begin(),heights.end()) + offset.z;
-        res.bmax.z = *std::max_element(heights.begin(),heights.end()) + offset.z;
+        res.bmin.z = *std::min_element(heights.begin(),heights.end(),[] (float x, float y) { return x < y ? true : !isnan(x); });
+        res.bmax.z = *std::max_element(heights.begin(),heights.end(),[] (float x, float y) { return x < y ? true : isnan(x); });
     }
-    return res;
-}
-
-void Heightmap::SetViewport(const Camera::Viewport& vp)
-{
-    perspective = vp.perspective;
-    offset = vp.xform.t;
-    if(vp.x != 0 || vp.y != 0) {
-        FatalError("TODO: non-centered viewports");
+    if(viewport.perspective) {
+        bb2d = viewport.getViewRectangle(res.bmin.z,true);
+        vector<Vector3> corners(8);
+        corners[0].set(bb2d.bmin.x,bb2d.bmin.y,res.bmin.z);
+        corners[1].set(bb2d.bmax.x,bb2d.bmin.y,res.bmin.z);
+        corners[2].set(bb2d.bmax.x,bb2d.bmax.y,res.bmin.z);
+        corners[3].set(bb2d.bmin.x,bb2d.bmax.y,res.bmin.z);
+        bb2d = viewport.getViewRectangle(res.bmax.z,true);
+        corners[0].set(bb2d.bmin.x,bb2d.bmin.y,res.bmax.z);
+        corners[1].set(bb2d.bmax.x,bb2d.bmin.y,res.bmax.z);
+        corners[2].set(bb2d.bmax.x,bb2d.bmax.y,res.bmax.z);
+        corners[3].set(bb2d.bmin.x,bb2d.bmax.y,res.bmax.z);
+        res.minimize();
+        for(size_t i=0;i<8;i++)
+            res.expand(viewport.pose*corners[i]);
+        return res;
     }
-    heights.resize(vp.w,vp.h);
-    xysize.set(vp.scale,vp.scale);
-}
+    else {
+        bb2d = viewport.getViewRectangle(true);
+        res.bmin.x = bb2d.bmin.x;
+        res.bmax.x = bb2d.bmax.x;
+        res.bmin.y = bb2d.bmin.y;
+        res.bmax.y = bb2d.bmax.y;
 
-void Heightmap::GetViewport(Camera::Viewport & vp) const
-{
-    vp.perspective = perspective;
-    vp.xform.R.setIdentity();
-    vp.xform.t = offset;
-    if(xysize.x != xysize.y)
-        printf("Warning: Heightmap has non-square pixels, can't map exactly onto viewport");
-    vp.scale = (xysize.x+xysize.y)*0.5;
-    vp.x = 0;
-    vp.y = 0;
-    vp.w = heights.m;
-    vp.h = heights.n;
-}
-
-Vector3 Heightmap::ToNormalized(const Vector3& pt) const
-{
-    Vector3 res;
-    res = pt - offset;
-    res.x /= xysize.x;
-    res.y /= xysize.y;
-    if(perspective) {
-        res.x /= res.z;
-        res.y /= res.z;
+        AABB3D bb;
+        bb.setTransform(res,Matrix4(viewport.pose));
+        return bb;
     }
-    return res;
-}
-
-Vector3 Heightmap::FromNormalized(const Vector3& params) const
-{
-    Vector3 res;
-    res.z = params.z;
-    res.x = params.x*xysize.x;
-    res.y = params.y*xysize.y;
-    if(perspective) {
-        res.x *= res.z;
-        res.y *= res.z;
-    }
-    return res + offset;
 }
 
 Vector3 Heightmap::Project(const Vector3& pt) const
 {
-    Vector3 res=ToNormalized(pt);
-    res.x  = (res.x+0.5)*(heights.m-1);
-    res.y  = (res.y+0.5)*(heights.n-1);
-    return res;
+    float mx,my,mz;
+    viewport.project(pt,mx,my,mz);
+    return Vector3(mx,my,mz);
 }
 
 Vector3 Heightmap::Deproject(const Vector3& params) const
 {
-    Vector3 temp=params;
-    temp.x = temp.x/(heights.m-1) - 0.5;
-    temp.y = temp.y/(heights.n-1) - 0.5;
-    return FromNormalized(temp);
+    Vector3 src,dir;
+    viewport.deproject(params.x,params.y,src,dir);
+    return src + dir*params.z;
 }
 
 IntPair Heightmap::GetIndex(const Vector3& pt,bool clamp) const
@@ -515,6 +543,48 @@ float Heightmap::GetHeight(const Vector3& pt,int interpolation) const
     FatalError("TODO: bilinear and bicubic interpolation");
 }
 
+bool Heightmap::HasHeight(const Vector3& pt) const
+{
+    IntPair index;
+    Vector2 params;
+    GetIndexAndParams(pt,index,params);
+    if(params.x > 0.5) index.a += 1;
+    if(params.y > 0.5) index.b += 1;
+    index.a = ::Min(::Max(0,index.a),heights.m-1);
+    index.b = ::Min(::Max(0,index.b),heights.n-1);
+    Real v = heights(index.a,index.b);
+    if(viewport.perspective)
+        return v != 0 && IsFinite(v);
+    return IsFinite(v);
+}
+
+Real Heightmap::GetHeightDifference(const Vector3& pt,int interpolation) const
+{
+    Vector3 ptlocal = Project(pt);
+    Real xf = Floor(ptlocal.x);
+    Real yf = Floor(ptlocal.y);
+    IntPair index((int)xf,(int)yf);
+    Vector2 params(ptlocal.x-xf,ptlocal.y-yf);
+    float v;
+    if(interpolation == InterpNearest) {
+        if(params.x > 0.5) index.a += 1;
+        if(params.y > 0.5) index.b += 1;
+        index.a = ::Min(::Max(0,index.a),heights.m-1);
+        index.b = ::Min(::Max(0,index.b),heights.n-1);
+        v=heights(index.a,index.b);
+    }
+    else
+        FatalError("TODO: bilinear and bicubic interpolation");
+    if(viewport.perspective) {
+        if(v==0 || !IsFinite(v)) return NAN;
+    }
+    else {
+        if(!IsFinite(v)) return NAN;
+    }
+    return ptlocal.z - v;
+}
+
+
 Vector3 Heightmap::GetColor(const Vector3& pt,int interpolation) const
 {
     if(colors.num_bytes==0) return Vector3(0,0,0);
@@ -529,39 +599,36 @@ Vector3 Heightmap::GetColor(const Vector3& pt,int interpolation) const
 
 Vector3 Heightmap::GetVertex(int i,int j) const
 { 
+    Vector2 uv = GetCellCenter(i,j);
     Vector3 res;
-    Real di = 1.0/(heights.m-1);
-    Real dj = 1.0/(heights.n-1);
-    Real u = Real(i)*di - 0.5;
-    Real v = Real(j)*dj - 0.5;
-    res.x = u*xysize.x;
-    res.y = v*xysize.y;
+    res.x = uv.x;
+    res.y = uv.y;
     if(heights.empty()) {
         res.z = 0;
-        return res + offset;
+        return viewport.pose*res;
     }
     i = ::Min(::Max(i,0),heights.m-1);
     j = ::Min(::Max(j,0),heights.n-1);
     res.z = heights(i,j);
-    if(perspective) {
+    if(viewport.perspective) {
         res.x *= res.z;
         res.y *= res.z;
     }
-    return res + offset;
+    return viewport.pose*res;
 }
 
 Vector3 Heightmap::GetVertex(int i,int j,Real vu,Real vv,int interpolation) const
 {
+    Real invfx = 1.0/viewport.fx;
+    Real invfy = 1.0/viewport.fy;
+    Real u = (Real(i)+0.5+vu-viewport.cx)*invfx;
+    Real v = (Real(j)+0.5+vv-viewport.cy)*invfy;
     Vector3 res;
-    Real di = 1.0/(heights.m-1);
-    Real dj = 1.0/(heights.n-1);
-    Real u = Real(i+vu)*di - 0.5;
-    Real v = Real(j+vv)*dj - 0.5;
-    res.x = u*xysize.x;
-    res.y = v*xysize.y;
+    res.x = u;
+    res.y = v;
     if(heights.empty()) {
         res.z = 0;
-        return res + offset;
+        return viewport.pose*res;
     }
     if(interpolation == InterpNearest) {
         if(u>0.5) i++;
@@ -574,11 +641,11 @@ Vector3 Heightmap::GetVertex(int i,int j,Real vu,Real vv,int interpolation) cons
         FatalError("TODO: bilinear and bicubic interpolation");
     }
     
-    if(perspective) {
+    if(viewport.perspective) {
         res.x *= res.z;
         res.y *= res.z;
     }
-    return res + offset;
+    return viewport.pose*res;
 }
 
 Vector3 Heightmap::GetVertexColor(int i,int j) const
@@ -606,53 +673,28 @@ Vector3 Heightmap::GetVertexColor(int i,int j,Real u,Real v,int interpolation) c
 void Heightmap::GetVertices(vector<Vector3>& verts) const
 {
     verts.resize(heights.m*heights.n);
-
-    Real di = 1.0/(heights.m-1);
-    Real dj = 1.0/(heights.n-1);
-    Real fx = di*xysize.x;
-    Real fy = dj*xysize.y;
-    Vector3 res;
-    Real u = -0.5*xysize.x;
+    vector<Vector3> src,dir;
+    viewport.getAllRays(src,dir,true,false);
     int k=0;
-    for(int i=0;i<heights.m;i++,u+=fx) {
-        Real v = -0.5*xysize.y;
-        for(int j=0;j<heights.n;j++,k++,v+=fy) {
-            auto& res = verts[k];
-            res.x = u;
-            res.y = v;
-            res.z = heights(i,j);
-            if(perspective) {
-                res.x *= res.z;
-                res.y *= res.z;
-            }
+    for(int i=0;i<heights.m;i++) {
+        for(int j=0;j<heights.n;j++,k++) {
+            verts[k] = src[k] + heights(i,j)*dir[k];
         }
     }
-    if(offset.maxAbsElement() > 0) 
-        for(auto& v:verts) v += offset;
 }
 
 void Heightmap::GetVertices(Array2D<Vector3>& verts) const
 {
     verts.resize(heights.m,heights.n);
-    Real di = 1.0/(heights.m-1);
-    Real dj = 1.0/(heights.n-1);
-    Real fx = di*xysize.x;
-    Real fy = dj*xysize.y;
-    Vector3 res;
-    Real u = -0.5*xysize.x;
-    for(int i=0;i<heights.m;i++,u+=fx) {
-        Real v = -0.5*xysize.y;
-        for(int j=0;j<heights.n;j++,v+=fy) {
-            res.x = u;
-            res.y = v;
-            res.z = heights(i,j);
-            if(perspective) {
-                res.x *= res.z;
-                res.y *= res.z;
-            }
-            verts(i,j) = res + offset;
+    vector<Vector3> src,dir;
+    viewport.getAllRays(src,dir,true,false);
+    int k=0;
+    for(int i=0;i<heights.m;i++) {
+        for(int j=0;j<heights.n;j++,k++) {
+            verts(i,j) = src[k] + heights(i,j)*dir[k];
         }
     }
+
 }
 
 void Heightmap::GetVertexColors(vector<Vector3>& colors_out) const
@@ -672,20 +714,7 @@ void Heightmap::GetVertexColors(vector<Vector3>& colors_out) const
 
 void Heightmap::GetVertexRay(int i,int j,Vector3& source,Vector3& dir) const
 {
-    Real u = Real(i)/(Real)(heights.m-1) - 0.5;
-    Real v = Real(j)/(Real)(heights.n-1) - 0.5;
-    if(perspective) {
-        source = offset;
-        dir.z = 1.0;
-        dir.x = xysize[0]*u;
-        dir.y = xysize[1]*v;
-    }
-    else {
-        source.x = offset.x + u*xysize[0];
-        source.y = offset.y + v*xysize[1];
-        source.z = offset.z;
-        dir.set(0,0,1);
-    }
+    viewport.deproject(i+0.5,j+0.5,source,dir);
 }
 
 
@@ -747,8 +776,8 @@ void Heightmap::Max(const Array2D<float>& values)
 
 void Heightmap::Remesh(const Heightmap& hm)
 {
-    if(hm.perspective || perspective) {
-        if(hm.offset != offset || hm.xysize != xysize)
+    if(hm.viewport.perspective || viewport.perspective) {
+        if(hm.viewport != viewport)
             FatalError("TODO: perspective remeshing");
     }
     Array2D<Vector3> verts;
@@ -766,15 +795,14 @@ void Heightmap::Remesh(const Heightmap& hm)
                 newcolors.setNormalizedColor(i,verts.n-1-j,col);
             }
         }
-    offset = hm.offset;
-    xysize = hm.xysize;
+    viewport = hm.viewport;
     heights = newheights;
 }
 
 void Heightmap::Remesh(const Camera::Viewport& vp)
 {
     Heightmap temp;
-    temp.SetViewport(vp);
+    temp.viewport = vp;
     Remesh(temp);
 }
 
@@ -795,19 +823,20 @@ void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform
     heights.resize(size.a,size.b);
     heights.set(0.0);
     colors.clear();
-    xysize.set(dims_padded.x,dims_padded.y);
-    offset = center;
+    SetSize(dims_padded.x,dims_padded.y);
+    viewport.pose.R.setIdentity();
+    viewport.pose.t = center;
     if(topdown)
-        offset.z = bb.bmin.z;
+        viewport.pose.t.z = bb.bmin.z;
     else
-        offset.z = bb.bmax.z;
+        viewport.pose.t.z = bb.bmax.z;
     FuseMesh(mesh,Tmesh,topdown);
 }
 
 void Heightmap::FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh,bool topdown)
 {
     Math3D::Triangle3D tri;
-    bool maximize = (perspective != topdown);
+    bool maximize = (viewport.perspective != topdown);
     vector<IntPair> tcells;
     vector<Real> theights;
     for (size_t i=0;i<mesh.tris.size();i++) {
@@ -881,12 +910,13 @@ void Heightmap::SetPointCloud(const PointCloud3D& pc,Real resolution,const Rigid
         colors.initialize(size.b,size.a,Image::R8G8B8);
     else
         colors.clear();
-    xysize.set(dims_padded.x,dims_padded.y);
-    offset = center;
+    SetSize(dims_padded.x,dims_padded.y);
+    viewport.pose.R.setIdentity();
+    viewport.pose.t = center;
     if(topdown)
-        offset.z = bmin.z;
+        viewport.pose.t.z = bmin.z;
     else
-        offset.z = bmax.z;
+        viewport.pose.t.z = bmax.z;
     FusePointCloud(pc,Tpc,topdown);
 }
 
@@ -906,8 +936,9 @@ void Heightmap::FusePointCloud(const PointCloud3D& pc,const RigidTransform* Tpc,
             ind = GetIndex(pc.points[i]);
         if(ind.a < 0 || ind.a >= heights.m) continue;
         if(ind.b < 0 || ind.b >= heights.n) continue;
-        float z = pc.points[i].z-offset.z;
-        if(perspective != topdown)
+        viewport.pose.mulInverse(pc.points[i],ptemp);
+        float z = ptemp.z;
+        if(viewport.perspective != topdown)
             heights(ind.a,ind.b) = ::Max(z,heights(ind.a,ind.b));
         else
             heights(ind.a,ind.b) = ::Min(z,heights(ind.a,ind.b));

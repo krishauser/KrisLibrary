@@ -21,24 +21,24 @@ namespace Meshing {
  * The canonical (non-perspective) frame has the image centered 
  * at the origin with (u,v) coordinates [-0.5,-0.5]x[-0.5,0.5].  An 
  * array index (i,j) gives coordinates (u,v)=(i/m-0.5,j/n-0.5). Note 
- * that this differs from standard matrix and image coordinates (row,col)!
+ * that this differs from standard matrix coordinates (row,col) and
+ * image coordinates (x, distance from top)!
  * 
- * offset is set to 0 upon initialization.  If nonzero, the output mesh is translated 
- * uniformly by this amount. 
+ * In orthographic coordinates, height is positive above 0-plane (z direction).
+ * In perspective coordinates, height is depth in the forward direction of the
+ * camera.  The world-space domain, including pose, is specified by the `viewport`
+ * attribute.  Note that the `viewport.ori` attribute is generally XYnZ for an
+ * orthographic projection and XnYZ for a perspective projection.
  * 
- * If perspective = false, the output geometry (x,y,z) has the range
- * [-xysize[0]/2,xysize[0]/2] x [-xysize[1]/2,xysize[1]/2] x [zmin,zmax].
- * 
- * If perspective = true, then this is assumed to take the form of a depth map
- * from a perspective projection camera at the origin, pointing in the +z direction.
- * xysize[0] gives the scaling from horizontal coordinate u to the x coordinate
- * xysize[0]*u*z and xysize[1] gives the scaling from vertical coordinate v to
- * the y coordinate xysize[1]*v*z where z = height[i,j]*zscale.
- * 
+ * A height value of NaN indicates a missing value for orthographic heightmaps.
+ * A value of NaN or 0 for a perspective heightmap indicates a missing value.
+ * Some functions may interpret missing values as a hole in the map.
+  * 
  * Vertex colors can be provided in the `colors` attribute.  The `colors` image
  * must have the same dimensions as the `heights` array.  As in standard image
  * convention, the rows in the colors image are assumed to go from top to bottom
  * whereas the heights array goes from bottom to top.
+ * 
  */ 
 class Heightmap
 {
@@ -113,31 +113,25 @@ public:
      * in radians, with origin at the center.  yfov=0 sets the vertical FOV for square
      * pixels. */ 
     void SetFOV(Real xfov,Real yfov=0);
+    /// If an orthographic projection, returns the width and height of the heightmap in
+    /// world coordinates.  If a perspective projection, returns the field of view in
+    /// radians.
+    Vector2 GetSize() const;
 
     IntPair NumPoints() const { return IntPair(heights.m,heights.n); }
     IntPair NumCells() const { return IntPair(heights.m-1,heights.n-1); }
     bool HasColors() const { return colors.num_bytes > 0; }
-    /** Converts from a grid index to a cell.  Only meaningful if perspective = false. */
+    /** Converts from a grid index to the local dimensions of a cell with point (i,j) in its center.  Only meaningful if perspective = false. */
     void GetCell(int i,int j,AABB2D& bb) const;
-    /** Converts from a grid index to a cell xy center.  Only meaningful if perspective = false. */
+    /** Converts from a grid index to a vertex x,y location (in local coordinates).  Only meaningful if perspective = false. */
     Vector2 GetCellCenter(int i,int j) const;
     /** Gets the dimensions of each cell. Only meaningful if perspective = false. */
     Vector2 GetCellSize() const;
-    ///Returns the x,y coordinates of the grid.  Only meaningful if perspective = false
+    ///Returns the local x,y coordinates of vertices on the grid.  Only meaningful if perspective = false
     void GetGrid(vector<Real>& xgrid,vector<Real>& ygrid) const;
 
     /** Retrieves overall bounding box, including heights. */
     AABB3D GetAABB() const;
-
-    /** Sets projection according to a viewport. */
-    void SetViewport(const Camera::Viewport& vp);
-    /** Gets viewport according to this projection. */
-    void GetViewport(Camera::Viewport & vp) const;
-
-    /** Converts from a point to normalized coordinates [-0.5,0.5]x[-0.5,0.5],z */
-    Vector3 ToNormalized(const Vector3& pt) const;
-    /** Converts normalized coordinates [-0.5,0.5]x[-0.5,0.5],z to a point */
-    Vector3 FromNormalized(const Vector3& params) const;
 
     /** Converts from a point to image coordinates [0,w-1]x[0,h-1],z */
     Vector3 Project(const Vector3& pt) const;
@@ -175,12 +169,24 @@ public:
      *
      * Args:
      *      pt (list or tuple): a 2D or 3D point
-     *      local (bool): whether the point is in local coordinates or world
-     *          coordinates.
      *      interpolation (str): either 'nearest' or 'bilinear' describing how
      *          the interpolation is done between nearby heightmap values.
      */
     float GetHeight(const Vector3& pt,int interpolation=InterpNearest) const;
+    /// @brief Returns true if the point has a valid height value.
+    bool HasHeight(const Vector3& pt) const;
+    /** @brief Reads difference between the height of a point and the height
+     * of the heightmap along the ray through the point.
+     * 
+     * The heightmap value is clamped to the boundaries.  If no heightmap
+     * value is available, NaN is returned.
+     *
+     * Args:
+     *      pt (list or tuple): a 2D or 3D point
+     *      interpolation (str): either 'nearest' or 'bilinear' describing how
+     *          the interpolation is done between nearby heightmap values.
+     */
+    Real GetHeightDifference(const Vector3& pt,int interpolation=InterpNearest) const;
 
     /** @brief Reads the color of a point projected to the heightmap. Arguments
      * are the same as in GetHeight()
@@ -260,9 +266,7 @@ public:
    
     Array2D<float> heights;
     Image colors;
-    Vector2 xysize;
-    Vector3 offset;
-    bool perspective;
+    Camera::Viewport viewport;
 };
 
 } //namespace Meshing

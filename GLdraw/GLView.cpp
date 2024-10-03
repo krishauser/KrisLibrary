@@ -57,21 +57,14 @@ void GLView::setViewport(const Camera::Viewport& v)
 	h=(Real)v.h;
 	modelview.setInverse(v.pose);
 
+	AABB2D bb=v.getViewRectangle(v.n,false);
 	if(v.perspective)
-	{
-		Real xmin = (-v.cx)/v.fx;
-		Real xmax = (v.w-v.cx)/v.fx;
-		Real ymin = (-v.cy)/v.fy;
-		Real ymax = (v.h-v.cy)/v.fy;
-		getFrustumMatrix(v.n*xmin, v.n*xmax, v.n*ymin, v.n*ymax, v.n, v.f, projection);
+	{		
+		getFrustumMatrix(bb.bmin.x, bb.bmax.x, bb.bmin.y, bb.bmax.y, v.n, v.f, projection);
 	}
 	else
 	{
-		Real xmin = (-v.cx)/v.fx;
-		Real xmax = (v.w-v.cx)/v.fx;
-		Real ymin = (-v.cy)/v.fy;
-		Real ymax = (v.h-v.cy)/v.fy;
-		getOrthoMatrix(xmin, xmax, ymin, ymax, v.n, v.f, projection);
+		getOrthoMatrix(bb.bmin.x, bb.bmax.x, bb.bmin.y, bb.bmax.y, v.n, v.f, projection);
 	}
 	updateInverses();
 }
