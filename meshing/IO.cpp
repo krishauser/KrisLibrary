@@ -852,6 +852,8 @@ void Cast(const aiMatrix4x4& a,Matrix4& out)
 
 void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const aiScene* scene,GeometryAppearance& app)
 {
+  if(mat->GetName().length == 0 || mat->GetName() == aiString(AI_DEFAULT_MATERIAL_NAME))
+    return;
   if(mesh->mColors[0]) {
     //per-vertex coloring
     app.vertexColors.resize(mesh->mNumVertices);
