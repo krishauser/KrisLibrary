@@ -221,7 +221,6 @@ void TransformWidget::DrawGL(Camera::Viewport& viewport)
     globalScale = 0.5*viewport.w/viewport.getSizeAtDistance(1.0,sz);
   }
 
-
   glPushMatrix();
   glTranslate(T.t);
   //draw origin
