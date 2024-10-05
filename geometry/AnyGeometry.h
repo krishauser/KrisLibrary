@@ -87,7 +87,7 @@ class AnyGeometry3D
   AnyGeometry3D(const vector<AnyGeometry3D>& items);
   AnyGeometry3D(const AnyGeometry3D& geom) = default;
   AnyGeometry3D(AnyGeometry3D&& geom) = default;
-  AnyGeometry3D& operator = (const AnyGeometry3D& rhs) = default;
+  AnyGeometry3D& operator = (const AnyGeometry3D& rhs);
   AnyGeometry3D& operator = (AnyGeometry3D&& rhs) = default;
   static const char* TypeName(Type type) { return Geometry3D::TypeName(type); }
   const char* TypeName() const { return Geometry3D::TypeName(type); }
