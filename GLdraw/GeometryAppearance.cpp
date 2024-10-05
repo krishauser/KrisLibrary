@@ -459,6 +459,8 @@ void GeometryAppearance::CopyCache(const GeometryAppearance& rhs,bool if_cache_e
 
 void GeometryAppearance::Refresh()
 {
+  tempMesh.reset();
+  tempMesh2.reset();
   vertexDisplayList.erase();
   edgeDisplayList.erase();
   faceDisplayList.erase();
