@@ -1,3 +1,7 @@
+.vscode
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+
 # Compiled source #
 ###################
 *.com
