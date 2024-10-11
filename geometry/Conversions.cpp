@@ -585,6 +585,34 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh)
 {
 	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
 	hm.GetVertices(mesh.verts);
+
+	vector<pair<int,int> > invalidIndices;
+	for(int i=0;i<hm.heights.m;i++) {
+		for(int j=0;j<hm.heights.n;j++) {
+			if(hm.viewport.perspective) {
+		        if(hm.heights(i,j) == 0 || !IsFinite(hm.heights(i,j))) {
+					invalidIndices.push_back(pair<int,int>(i,j));	
+				}
+			}
+			else {
+				if(!IsFinite(hm.heights(i,j))) {
+					invalidIndices.push_back(pair<int,int>(i,j));
+				}
+			}
+		}
+	}
+	if(invalidIndices.empty()) return;
+	printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
+
+	vector<int> invalidVertices;
+	invalidVertices.reserve(invalidIndices.size());
+	for(const auto& p : invalidIndices) {
+		invalidVertices.push_back(p.first*hm.heights.n+p.second);
+	}
+	vector<int> newVertMap, newTriMap;
+	Meshing::DropVertices(mesh,invalidVertices,newVertMap,newTriMap);
+	for(size_t i=0;i<mesh.verts.size();i++)
+		Assert(IsFinite(mesh.verts[i].x) && IsFinite(mesh.verts[i].y) && IsFinite(mesh.verts[i].z));
 }
 
 void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDraw::GeometryAppearance& appearance)
@@ -601,6 +629,41 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDra
 	}
 	else
 		appearance.vertexColors.resize(0);
+
+	vector<pair<int,int> > invalidIndices;
+	for(int i=0;i<hm.heights.m;i++) {
+		for(int j=0;j<hm.heights.n;j++) {
+			if(hm.viewport.perspective) {
+		        if(hm.heights(i,j) == 0 || !IsFinite(hm.heights(i,j))) {
+					invalidIndices.push_back(pair<int,int>(i,j));	
+				}
+			}
+			else {
+				if(!IsFinite(hm.heights(i,j))) {
+					invalidIndices.push_back(pair<int,int>(i,j));
+				}
+			}
+		}
+	}
+	if(invalidIndices.empty()) return;
+	printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
+
+	vector<int> invalidVertices;
+	invalidVertices.reserve(invalidIndices.size());
+	for(const auto& p : invalidIndices) {
+		invalidVertices.push_back(p.first*hm.heights.n+p.second);
+	}
+	vector<int> newVertMap, newTriMap;
+	Meshing::DropVertices(mesh,invalidVertices,newVertMap,newTriMap);
+	if(!appearance.vertexColors.empty()) {
+		vector<GLDraw::GLColor> newColors(mesh.verts.size());
+		for(size_t i=0;i<newVertMap.size();i++) 
+			if(newVertMap[i] >= 0)
+				newColors[newVertMap[i]] = appearance.vertexColors[(int)i];
+		swap(appearance.vertexColors,newColors);
+	}
+	for(size_t i=0;i<mesh.verts.size();i++)
+		Assert(IsFinite(mesh.verts[i].x) && IsFinite(mesh.verts[i].y) && IsFinite(mesh.verts[i].z));
 }
 
 void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.SetPoints(mesh.verts); }
