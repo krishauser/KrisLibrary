@@ -9,7 +9,31 @@
 
 using namespace Meshing;
 
+void ImageToArray(const Image& img,Array2D<float>& arr,float scale,float offset,bool bottom_row_first)
+{
+    Assert(img.w == arr.m && img.h == arr.n);
+    Assert(img.format == Image::FloatA || img.format == Image::A8);
 
+    float h;
+    const static float bytescale = 1.0/255.0;
+    for(int j=0;j<img.h;j++) {
+        for(int i=0;i<img.w;i++) {
+            unsigned char* pix = img.getData(i,j);
+            if(img.format == Image::A8) {
+                h = float(*pix)*bytescale;
+            }
+            else {
+                float* fpix = (float*)pix;
+                h = *fpix;
+            }
+            h = h*scale + offset;
+            if(bottom_row_first)
+                arr(i,j) = h;
+            else
+                arr(i,img.h - 1 - j) = h;
+        }
+    }
+}
 
 
 Heightmap::Heightmap()
@@ -20,20 +44,20 @@ Heightmap::Heightmap()
 }
 
 Heightmap::Heightmap(int xdivs,int ydivs,const Vector2& xydims)
-:heights(xdivs,ydivs),viewport(xdivs,ydivs)
+:viewport(xdivs,ydivs),heights(xdivs,ydivs)
 {
     viewport.perspective = false;
     viewport.setScale(2.0);
 }
 
 Heightmap::Heightmap(const Array2D<float>& _heights,const Vector2& xydims)
-:heights(_heights),viewport(_heights.m,heights.n)
+:viewport(_heights.m,_heights.n),heights(_heights)
 {
     SetSize(xydims.x,xydims.y);
 }
 
 Heightmap::Heightmap(const Array2D<double>& _heights,const Vector2& xydims)
-:heights(_heights),viewport(_heights.m,heights.n)
+:viewport(_heights.m,_heights.n),heights(_heights)
 {
     SetSize(xydims.x,xydims.y);
 }
@@ -50,6 +74,30 @@ Heightmap::Heightmap(const Image& _heights,const Image& colors,const Vector2& xy
 {
     SetSize(xydims.x,xydims.y);
     SetImage(_heights,colors,hscale,hoffset,bottom_row_first);
+}
+
+void Heightmap::Resize(int w, int h)
+{
+    if(viewport.w > 1) {
+        viewport.cx = viewport.cx / viewport.w * w;
+        viewport.fx = viewport.fx / viewport.w * w;
+    }
+    else {
+        viewport.cx = w*0.5;
+    }
+    if(viewport.h > 1) {
+        viewport.cy = viewport.cy / viewport.h * h;
+        viewport.fy = viewport.fy / viewport.h * h;
+    }
+    else {
+        viewport.cy = h*0.5;
+    }
+    heights.resize(w,h);
+    viewport.w = w;
+    viewport.h = h;
+    if(colors.num_bytes > 0) {
+        colors.initialize(w,h,colors.format);
+    }
 }
 
 bool Heightmap::Load(const char* fn)
@@ -185,6 +233,41 @@ bool Heightmap::Load(std::istream& in, const char* folder)
         //colors.initialize(cimg.w,cimg.h,Image::R8G8B8);
         //cimg.blit(colors);
     }
+    if(items.find("properties")) {
+        vector<AnyKeyable> keys;
+        vector<AnyCollection::AnyCollectionPtr> values;
+        items["properties"].enumerate_keys(keys);
+        items["properties"].enumerate(values);
+        properties.resize(0);
+        propertyNames.resize(0);
+        for(size_t i=0;i<keys.size();i++) {
+            string* s = AnyCast<string>(&keys[i].value);
+            if(!s) {
+                LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Property name "<<i<<" is not a string?");
+                return false;
+            }
+            string imageFn;
+            double min=0,max=1;
+            if((*values[i]).as(imageFn)) {
+            }
+            else {
+                if(!(*values[i])["image"].as(imageFn)) return false;
+                if((*values[i])["range"].isarray()) {
+                    if(!(*values[i])["range"][0].as(min)) return false;
+                    if(!(*values[i])["range"][1].as(max)) return false;
+                }
+            }
+            Image pimg;
+            if(folder) {
+                imageFn = JoinPath(folder,imageFn);
+            }
+            if(!ImportImage(imageFn.c_str(),pimg)) {
+                LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing property "<<*s<<" image from "<<imageFn);
+                return false;
+            }
+            AddProperty(*s,pimg,max-min,min);
+        }
+    }
     return true;
 }
 
@@ -254,6 +337,10 @@ bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorF
         }
         items["colors"] = GetFileName(colorFn);
     }
+    if(!properties.empty()) {
+        //TODO
+        LOG4CXX_WARN(KrisLibrary::logger(),"Heightmap::Save: Can't save properties yet");
+    }
     out<<items<<endl;
     return true;
 }
@@ -263,30 +350,9 @@ void Heightmap::SetImage(const Image& _heights,float hscale,float hoffset,bool b
     if(!(_heights.format == Image::FloatA || _heights.format == Image::A8)) {
         FatalError("Heightmap::SetImage: heights must be a single channel float image or an 8-bit grayscale image");
     }
-    heights.resize(_heights.w,_heights.h);
-    viewport.w = _heights.w;
-    viewport.h = _heights.h;
-    viewport.cx = _heights.w*0.5;
-    viewport.cy = _heights.h*0.5;
-    float h;
-    const static float bytescale = 1.0/255.0;
-    for(int j=0;j<_heights.h;j++) {
-        for(int i=0;i<_heights.w;i++) {
-            unsigned char* pix = _heights.getData(i,j);
-            if(_heights.format == Image::A8) {
-                h = float(*pix)*bytescale;
-            }
-            else {
-                float* fpix = (float*)pix;
-                h = *fpix;
-            }
-            h = h*hscale + hoffset;
-            if(bottom_row_first)
-                heights(i,j) = h;
-            else
-                heights(i,_heights.h - 1 - j) = h;
-        }
-    }
+    colors.unload();
+    Resize(_heights.w,_heights.h);
+    ImageToArray(_heights,heights,hscale,hoffset,bottom_row_first);
 }
 
 void Heightmap::SetImage(const Image& _heights,const Image& _colors,float hscale,float hoffset,bool bottom_row_first)
@@ -312,7 +378,6 @@ void Heightmap::SetImage(const Image& _heights,const Image& _colors,float hscale
         delete [] tmp;
     }
 }
-
    
 void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first) const
 {      
@@ -349,8 +414,49 @@ void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first)
     }
 }
 
+void Heightmap::AddProperty(const string& name)
+{
+    if(PropertyIndex(name) >= 0) {
+        FatalError("Heightmap::AddProperty: property already exists");
+    }
+    properties.resize(properties.size()+1);
+    properties.back().resize(heights.m,heights.n);
+    propertyNames.push_back(name);
+}
+
+void Heightmap::AddProperty(const string& name, const Array2D<float>& property)
+{
+    if(PropertyIndex(name) >= 0) {
+        FatalError("Heightmap::AddProperty: property already exists");
+    }
+    if(property.m != heights.m || property.n != heights.n) {
+        FatalError("Heightmap::AddProperty: property must have the same dimensions as the heightmap");
+    }
+    properties.push_back(property);
+    propertyNames.push_back(name);
+}
+
+void Heightmap::AddProperty(const string& name, const Image& property,float pscale,float poffset,bool bottom_row_first)
+{
+    if(PropertyIndex(name) >= 0) {
+        FatalError("Heightmap::AddProperty: property already exists");
+    }
+    if(property.w != heights.m || property.h != heights.n) {
+        FatalError("Heightmap::AddProperty: property must have the same dimensions as the heightmap");
+    }
+    if(!(property.format == Image::FloatA || property.format == Image::A8)) {
+        FatalError("Heightmap::AddProperty: heights must be a single channel float image or an 8-bit grayscale image");
+    }
+    properties.resize(properties.size()+1);
+    properties.back().resize(heights.m,heights.n);
+    propertyNames.push_back(name);
+    ImageToArray(property,properties.back(),pscale,poffset,bottom_row_first);
+}
+
 void Heightmap::SetSize(Real width, Real height)
 {
+    if(viewport.w <= 1 || viewport.h <= 1)
+        FatalError("Heightmap::SetSize: viewport must have a nontrivial size");
     if(height == 0) {
         height = width/(viewport.w-1)*(viewport.h-1);
     }
@@ -363,6 +469,8 @@ void Heightmap::SetSize(Real width, Real height)
 
 void Heightmap::SetFOV(Real xfov,Real yfov)
 {
+    if(viewport.w <= 1 || viewport.h <= 1)
+        FatalError("Heightmap::SetSize: viewport must have a nontrivial size");
     Real xsize_2 = Tan(xfov*0.5);
     Real ysize_2 = Tan(yfov*0.5);
     if(yfov==0) {
@@ -377,6 +485,8 @@ void Heightmap::SetFOV(Real xfov,Real yfov)
 
 Vector2 Heightmap::GetSize() const 
 {
+    if(viewport.w <= 1 || viewport.h <= 1)
+        FatalError("Heightmap::SetSize: viewport must have a nontrivial size");
     if(viewport.perspective) {
         float xscale = 2.0*viewport.fx/(viewport.w-1);
         float yscale = 2.0*viewport.fy/(viewport.h-1);
@@ -388,6 +498,13 @@ Vector2 Heightmap::GetSize() const
         AABB2D bb = viewport.getViewRectangle(0,true);    
         return bb.bmax-bb.bmin;
     }
+}
+
+int Heightmap::PropertyIndex(const string& name) const
+{
+    for(size_t i=0;i<propertyNames.size();i++)
+        if(propertyNames[i] == name) return (int)i;
+    return -1;
 }
 
 void Heightmap::GetCell(int i,int j,AABB2D& bb) const
@@ -462,7 +579,7 @@ AABB3D Heightmap::GetAABB() const
         return res;
     }
     else {
-        bb2d = viewport.getViewRectangle(true);
+        bb2d = viewport.getViewRectangle(0.0,true);
         res.bmin.x = bb2d.bmin.x;
         res.bmax.x = bb2d.bmax.x;
         res.bmin.y = bb2d.bmin.y;
@@ -558,6 +675,19 @@ bool Heightmap::HasHeight(const Vector3& pt) const
     return IsFinite(v);
 }
 
+void Heightmap::ValidHeightMask(Array2D<bool>& mask) const
+{
+    mask.resize(heights.m,heights.n);
+    for(int i=0;i<heights.m;i++)
+        for(int j=0;j<heights.n;j++) {
+            Real v = heights(i,j);
+            if(viewport.perspective)
+                mask(i,j) = v != 0 && IsFinite(v);
+            else
+                mask(i,j) = IsFinite(v);
+        }
+}
+
 Real Heightmap::GetHeightDifference(const Vector3& pt,int interpolation) const
 {
     Vector3 ptlocal = Project(pt);
@@ -594,6 +724,18 @@ Vector3 Heightmap::GetColor(const Vector3& pt,int interpolation) const
     Vector2 params;
     GetIndexAndParams(pt,index,params);
     return GetVertexColor(index.a,index.b,params.x,params.y,interpolation);
+}
+
+void Heightmap::GetProperties(const Vector3& pt,vector<float>& out,int interpolation) const
+{
+    if(properties.empty()) {
+        out.resize(0);
+        return;
+    }
+    IntPair index;
+    Vector2 params;
+    GetIndexAndParams(pt,index,params);
+    GetVertexProperties(index.a,index.b,params.x,params.y,out,interpolation);
 }
 
 
@@ -670,15 +812,38 @@ Vector3 Heightmap::GetVertexColor(int i,int j,Real u,Real v,int interpolation) c
     FatalError("TODO: bilinear and bicubic interpolation");
 }
 
+void Heightmap::GetVertexProperties(int i,int j,vector<float>& out,int interpolation) const
+{
+    out.resize(properties.size());
+    i = ::Min(::Max(0,i),heights.m-1);
+    j = ::Min(::Max(0,j),heights.n-1);    
+    for(size_t k=0;k<properties.size();k++) {
+        out[k] = properties[k](i,j);
+    }
+}
+
+void Heightmap::GetVertexProperties(int i,int j,Real u,Real v,vector<float>& out,int interpolation) const
+{
+    if(interpolation == InterpNearest) {
+        if(u > 0.5) i += 1;
+        if(v > 0.5) j += 1;
+        GetVertexProperties(i,j,out);
+    }
+    else {
+        FatalError("TODO: bilinear and bicubic interpolation");
+    }
+}
+
 void Heightmap::GetVertices(vector<Vector3>& verts) const
 {
     verts.resize(heights.m*heights.n);
     vector<Vector3> src,dir;
-    viewport.getAllRays(src,dir,true,false);
-    int k=0;
+    viewport.getAllRays(src,dir,true,false);  //these are in scan-line order, i.e., y*w + x
+    int l=0;
     for(int i=0;i<heights.m;i++) {
-        for(int j=0;j<heights.n;j++,k++) {
-            verts[k] = src[k] + heights(i,j)*dir[k];
+        int k=i;
+        for(int j=0;j<heights.n;j++,k+=heights.m,l++) {
+            verts[l] = src[k] + heights(i,j)*dir[k];
         }
     }
 }
@@ -687,10 +852,10 @@ void Heightmap::GetVertices(Array2D<Vector3>& verts) const
 {
     verts.resize(heights.m,heights.n);
     vector<Vector3> src,dir;
-    viewport.getAllRays(src,dir,true,false);
-    int k=0;
+    viewport.getAllRays(src,dir,true,false);  //these are in scan-line order, i.e., y*w + x
     for(int i=0;i<heights.m;i++) {
-        for(int j=0;j<heights.n;j++,k++) {
+        int k=i;
+        for(int j=0;j<heights.n;j++,k+=heights.m) {
             verts(i,j) = src[k] + heights(i,j)*dir[k];
         }
     }
@@ -786,6 +951,8 @@ void Heightmap::Remesh(const Heightmap& hm)
     Image newcolors;
     if(colors.num_bytes != 0)
         newcolors.initialize(verts.m,verts.n,colors.format);
+    propertyNames = hm.propertyNames;
+    properties.resize(hm.properties.size());
     for(int i=0;i<verts.m;i++)
         for(int j=0;j<verts.n;j++) {
             newheights(i,j) = GetHeight(verts(i,j));
@@ -793,6 +960,12 @@ void Heightmap::Remesh(const Heightmap& hm)
                 Vector3 c = GetColor(verts(i,j));
                 float col[4] = {(float)c.x,(float)c.y,(float)c.z,1.0f};
                 newcolors.setNormalizedColor(i,verts.n-1-j,col);
+            }
+            if(!properties.empty()) {
+                vector<float> prop;
+                hm.GetProperties(verts(i,j),prop);
+                for(size_t k=0;k<properties.size();k++)
+                    properties[k](i,j) = prop[k];
             }
         }
     viewport = hm.viewport;

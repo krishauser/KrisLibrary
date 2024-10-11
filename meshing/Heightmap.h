@@ -39,6 +39,10 @@ namespace Meshing {
  * convention, the rows in the colors image are assumed to go from top to bottom
  * whereas the heights array goes from bottom to top.
  * 
+ * Other properties can also be given in the `properties` attribute.  Each property
+ * is an array of the same dimensions as the `heights` array.  The `propertyNames`
+ * attribute gives the names of each property. 
+ * 
  */ 
 class Heightmap
 {
@@ -64,7 +68,13 @@ public:
     bool Load(std::istream& in,const char* folder=NULL);
     bool Save(std::ostream& out,const char* heightsFn,const char* colorsFn=NULL) const;
     
-    /** @The height image must be of format Float or A8. In the former case the heights
+    /** Initializes the height image and viewport.  The FOV and focal point are preserved
+     * proportionally to the size of the current image, if one is set.
+     */
+    void Resize(int w, int h);
+    /**  @brief Sets a height image.
+     * 
+     * The height image must be of format Float or A8. In the former case the heights
      * are just multiplied by hscale, and in the A8 case they are divided by 255 and
      * multiplied by hscale.  They are then offset by hoffset.
      * 
@@ -73,7 +83,9 @@ public:
      * to-top (Windows BMP style).
      */
     void SetImage(const Image& heights,float hscale=1,float hoffset=0,bool bottom_row_first=false);
-    /** @The height image must be of format Float or A8. In the former case the heights
+    /** @brief Sets a height image with colors.
+     * 
+     * The height image must be of format Float or A8. In the former case the heights
      * are just multiplied by hscale, and in the A8 case they are divided by 255 and
      * multiplied by hscale.  They are then offset by hoffset.
      * 
@@ -82,6 +94,12 @@ public:
      * to-top (Windows BMP style).
      */
     void SetImage(const Image& heights,const Image& colors,float hscale=1,float hoffset=0,bool bottom_row_first=false);
+    /** @brief Adds a new property channel */
+    void AddProperty(const string& name);
+    /** @brief Adds a new property channel */
+    void AddProperty(const string& name, const Array2D<float>& property);
+    /** @brief Adds a new property channel as an image */
+    void AddProperty(const string& name, const Image& property,float pscale=1,float poffset=0,bool bottom_row_first=false);
 
     /** @brief Exports only the height component as an image.  The image format is
      * FloatA, which usually needs to be converted to A8 format.
@@ -121,6 +139,7 @@ public:
     IntPair NumPoints() const { return IntPair(heights.m,heights.n); }
     IntPair NumCells() const { return IntPair(heights.m-1,heights.n-1); }
     bool HasColors() const { return colors.num_bytes > 0; }
+    int PropertyIndex(const string& name) const;
     /** Converts from a grid index to the local dimensions of a cell with point (i,j) in its center.  Only meaningful if perspective = false. */
     void GetCell(int i,int j,AABB2D& bb) const;
     /** Converts from a grid index to a vertex x,y location (in local coordinates).  Only meaningful if perspective = false. */
@@ -168,13 +187,15 @@ public:
      * The value is clamped to the boundaries.
      *
      * Args:
-     *      pt (list or tuple): a 2D or 3D point
-     *      interpolation (str): either 'nearest' or 'bilinear' describing how
+     *      pt (Vector3): a 2D or 3D point (z is ignored)
+     *      interpolation (int): either InterpNearest or InterpBilinear describing how
      *          the interpolation is done between nearby heightmap values.
      */
     float GetHeight(const Vector3& pt,int interpolation=InterpNearest) const;
     /// @brief Returns true if the point has a valid height value.
     bool HasHeight(const Vector3& pt) const;
+    /// @brief Returns the mask of valid height values. 
+    void ValidHeightMask(Array2D<bool>& mask) const;
     /** @brief Reads difference between the height of a point and the height
      * of the heightmap along the ray through the point.
      * 
@@ -182,8 +203,8 @@ public:
      * value is available, NaN is returned.
      *
      * Args:
-     *      pt (list or tuple): a 2D or 3D point
-     *      interpolation (str): either 'nearest' or 'bilinear' describing how
+     *      pt (Vector3): a 2D or 3D point (z is ignored)
+     *      interpolation (int): either InterpNearest or InterpBilinear describing how
      *          the interpolation is done between nearby heightmap values.
      */
     Real GetHeightDifference(const Vector3& pt,int interpolation=InterpNearest) const;
@@ -196,6 +217,15 @@ public:
      */
     Vector3 GetColor(const Vector3& pt,int interpolation=InterpNearest) const;
 
+    /** @brief Reads the properties of a point projected to the heightmap. 
+     *
+     * Args:
+     *      pt (Vector3): a 2D or 3D point, same as in GetHeight
+     *      out (vector<float>&): the returned list of property values at the point
+     *      interpolation (int): same as in GetHeight
+     */
+    void GetProperties(const Vector3& pt,vector<float>& out,int interpolation=InterpNearest) const;
+
     /** Returns the coordinates of vertex (i,j) including height. */
     Vector3 GetVertex(int i,int j) const;
     /** Returns the coordinates of vertex (i,j) with height interpolated over cell coordinates (u,v). */
@@ -204,6 +234,10 @@ public:
     Vector3 GetVertexColor(int i,int j) const;
     /** Returns the color of vertex (i,j) as an (R,G,B) tuple interpolated over cell coordinates (u,v). */
     Vector3 GetVertexColor(int i,int j,Real u,Real v,int interpolation=InterpNearest) const;
+    /** Returns the properties of vertex (i,j) in the out vector. */
+    void GetVertexProperties(int i,int j,vector<float>& out,int interpolation=InterpNearest) const;
+    /** Returns the properties of vertex (i,j) in the out vector, interpolated over cell coordinates (u,v). */
+    void GetVertexProperties(int i,int j,Real u,Real v,vector<float>& out,int interpolation=InterpNearest) const;
 
     ///Returns w*h vertices
     void GetVertices(vector<Vector3>& verts) const;
@@ -264,9 +298,11 @@ public:
     void GetMesh(TriMesh& mesh,GLDraw::GeometryAppearance& app) const;
     void GetPointCloud(PointCloud3D& pc) const;
    
+    Camera::Viewport viewport;
     Array2D<float> heights;
     Image colors;
-    Camera::Viewport viewport;
+    vector<Array2D<float> > properties;
+    vector<string> propertyNames;
 };
 
 } //namespace Meshing
