@@ -48,7 +48,7 @@ AABB2D Viewport::getViewRectangle(float depth, bool halfPixelAdjustment) const
 	AABB2D bb;
 	if(halfPixelAdjustment) {
 		bb.bmin.x = (0.5-cx)/fx;
-		bb.bmax.x = (w-0.5*cx)/fx;
+		bb.bmax.x = (w-0.5-cx)/fx;
 		bb.bmin.y = (0.5-cy)/fy;
 		bb.bmax.y = (h-0.5-cy)/fy;
 	}

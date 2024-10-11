@@ -99,9 +99,9 @@ public:
 	///similar to getClickSource / getClickVector, but assumes mx and my are already
 	///adjusted by (x,y) and does not perform a half-pixel adjustment.
 	void deproject(float mx, float my, Vector3& src, Vector3& dest) const;
-	///Gets all rays corresponding to all pixels.  Faster than calling
-	///getClickVector/getClickSource for each pixel because many floating
-	///point operations are avoided.
+	///Gets all rays corresponding to all pixels, in scan-line order.
+	///Faster than calling getClickVector/getClickSource for each pixel
+	///because many floating point operations are avoided.
 	void getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false) const;
 
 	///Computes the screen coordinates of a point pt in world space.
