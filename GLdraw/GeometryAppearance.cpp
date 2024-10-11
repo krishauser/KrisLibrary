@@ -459,13 +459,47 @@ void GeometryAppearance::CopyCache(const GeometryAppearance& rhs,bool if_cache_e
 
 void GeometryAppearance::Refresh()
 {
-  tempMesh.reset();
-  tempMesh2.reset();
   vertexDisplayList.erase();
   edgeDisplayList.erase();
   faceDisplayList.erase();
   silhouetteDisplayList.erase();
   textureObject.cleanup();
+
+  tempMesh.reset();
+  tempMesh2.reset();
+  if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
+    const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
+    tempMesh.reset(new Meshing::TriMesh);
+    ImplicitSurfaceToMesh(*g,*tempMesh);
+  }
+  else if(geom->type == AnyGeometry3D::Type::OccupancyGrid) {
+    //TODO: draw as blocks with density
+    AnyGeometry3D gmesh;
+    geom->Convert(AnyGeometry3D::Type::TriangleMesh,gmesh);
+    tempMesh.reset(new Meshing::TriMesh);
+    *tempMesh = gmesh.AsTriangleMesh();
+  }
+  else if(geom->type == AnyGeometry3D::Type::PointCloud) {
+    const Meshing::PointCloud3D& pc = geom->AsPointCloud();
+    if(pc.IsStructured()) {
+      //draw mesh rather than points
+      drawFaces = true;
+      drawVertices = false;
+      tempMesh.reset(new Meshing::TriMesh);
+      //PointCloudToMesh(pc,*tempMesh,*this,0.02);
+      PointCloudToMesh(pc,*tempMesh,0.02);
+    }
+  }
+  else if(geom->type == AnyGeometry3D::Type::ConvexHull) {
+    const Geometry::ConvexHull3D* g = &geom->AsConvexHull();
+    tempMesh.reset(new Meshing::TriMesh);
+    ConvexHullToMesh(*g,*tempMesh);
+  }
+  else if(geom->type == AnyGeometry3D::Type::Heightmap) {
+    const Meshing::Heightmap* g = &geom->AsHeightmap();
+    tempMesh.reset(new Meshing::TriMesh);
+    HeightmapToMesh(*g,*tempMesh,*this);
+  }
 }
 
 void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
@@ -491,12 +525,12 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
         subAppearances[i].Set(subgeoms[i]);
       }
     }
+    Refresh();
   }
   else {
     Set(*geom);
   }
   collisionGeom = &_geom;
-  Refresh();
 }
 
 void GeometryAppearance::Set(const AnyGeometry3D& _geom)
@@ -531,19 +565,12 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     }
   }
   else if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
-    const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
-    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    ImplicitSurfaceToMesh(*g,*tempMesh);
     drawFaces = true;
     drawEdges = false;
     drawVertices = false;
   }
   else if(geom->type == AnyGeometry3D::Type::OccupancyGrid) {
     //TODO: draw as blocks with density
-    AnyGeometry3D gmesh;
-    geom->Convert(AnyGeometry3D::Type::TriangleMesh,gmesh);
-    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    *tempMesh = gmesh.AsTriangleMesh();
     drawFaces = true;
     drawEdges = false;
     drawVertices = false;
@@ -555,112 +582,107 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     vector<Real> rgb;
     const Meshing::PointCloud3D& pc = geom->AsPointCloud();
     const static Real scale = 1.0/255.0;
-    if(pc.GetProperty("rgb",rgb)) {
-      //convert real to hex to GLcolor
-      vertexColors.resize(rgb.size());
-      for(size_t i=0;i<rgb.size();i++) {
-        unsigned int col = (unsigned int)rgb[i];
-        vertexColors[i].set(((col&0xff0000)>>16) * scale,
-        ((col&0xff00)>>8) * scale,
-        (col&0xff) * scale);
-      }
+    if(vertexColors.size() == pc.points.size()) {
+      //already assigned color
     }
-    if(pc.GetProperty("rgba",rgb)) {
-      //convert real to hex to GLcolor
-      //following PCD, this is actuall A-RGB
-      vertexColors.resize(rgb.size());
-      for(size_t i=0;i<rgb.size();i++) {
-        unsigned int col = (unsigned int)rgb[i];
-        vertexColors[i].set(((col&0xff0000)>>16) * scale,
-        ((col&0xff00)>>8) * scale,
-        (col&0xff) * scale,
-        ((col&0xff000000)>>24) * scale);
-      }
-    }
-    if(pc.GetProperty("r",rgb)) {
-      if(!vertexColors.empty()) 
-        //already assigned color?
-        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has both r channel and either rgb or rgba channel");
-      vertexColors.resize(rgb.size(),vertexColor.rgba);
-      for(size_t i=0;i<rgb.size();i++) 
-        vertexColors[i].rgba[0] = rgb[i];
-    }
-    if(pc.GetProperty("g",rgb)) {
-      if(vertexColors.empty()) {
-        //already assigned color?
-        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has g channel but not r channel?");
-      }
-      else {
-        for(size_t i=0;i<rgb.size();i++) 
-          vertexColors[i].rgba[1] = rgb[i];
-      }
-    }
-    if(pc.GetProperty("b",rgb)) {
-      if(vertexColors.empty()) {
-        //already assigned color?
-        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has a channel but not r channel?");
-      }
-      else {
-        for(size_t i=0;i<rgb.size();i++) 
-          vertexColors[i].rgba[2] = rgb[i];
-      }
-    }
-    if(pc.GetProperty("opacity",rgb) || pc.GetProperty("a",rgb)) {
-      if(!vertexColors.empty()) {
-        //already assigned color, just get opacity
-        for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i].rgba[3] = rgb[i];
-        }
-      }
-      else {
+    else {
+      if(pc.GetProperty("rgb",rgb)) {
+        //convert real to hex to GLcolor
         vertexColors.resize(rgb.size());
         for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i] = vertexColor.rgba;
-          vertexColors[i].rgba[3] = rgb[i];
+          unsigned int col = (unsigned int)rgb[i];
+          vertexColors[i].set(((col&0xff0000)>>16) * scale,
+          ((col&0xff00)>>8) * scale,
+          (col&0xff) * scale);
         }
       }
-    }
-    if(pc.GetProperty("c",rgb)) {
-      //this is a weird opacity in UINT byte format
-      if(!vertexColors.empty()) {
-        //already assigned color, just get opacity
-        for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i].rgba[3] = rgb[i] * scale;
-        }
-      }
-      else {
+      if(pc.GetProperty("rgba",rgb)) {
+        //convert real to hex to GLcolor
+        //following PCD, this is actuall A-RGB
         vertexColors.resize(rgb.size());
         for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i] = vertexColor.rgba;
-          vertexColors[i].rgba[3] = rgb[i] * scale;
+          unsigned int col = (unsigned int)rgb[i];
+          vertexColors[i].set(((col&0xff0000)>>16) * scale,
+          ((col&0xff00)>>8) * scale,
+          (col&0xff) * scale,
+          ((col&0xff000000)>>24) * scale);
+        }
+      }
+      if(pc.GetProperty("r",rgb)) {
+        if(!vertexColors.empty()) 
+          //already assigned color?
+          LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has both r channel and either rgb or rgba channel");
+        vertexColors.resize(rgb.size(),vertexColor.rgba);
+        for(size_t i=0;i<rgb.size();i++) 
+          vertexColors[i].rgba[0] = rgb[i];
+      }
+      if(pc.GetProperty("g",rgb)) {
+        if(vertexColors.empty()) {
+          //already assigned color?
+          LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has g channel but not r channel?");
+        }
+        else {
+          for(size_t i=0;i<rgb.size();i++) 
+            vertexColors[i].rgba[1] = rgb[i];
+        }
+      }
+      if(pc.GetProperty("b",rgb)) {
+        if(vertexColors.empty()) {
+          //already assigned color?
+          LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has a channel but not r channel?");
+        }
+        else {
+          for(size_t i=0;i<rgb.size();i++) 
+            vertexColors[i].rgba[2] = rgb[i];
+        }
+      }
+      if(pc.GetProperty("opacity",rgb) || pc.GetProperty("a",rgb)) {
+        if(!vertexColors.empty()) {
+          //already assigned color, just get opacity
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i].rgba[3] = rgb[i];
+          }
+        }
+        else {
+          vertexColors.resize(rgb.size());
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i] = vertexColor.rgba;
+            vertexColors[i].rgba[3] = rgb[i];
+          }
+        }
+      }
+      if(pc.GetProperty("c",rgb)) {
+        //this is a weird opacity in UINT byte format
+        if(!vertexColors.empty()) {
+          //already assigned color, just get opacity
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i].rgba[3] = rgb[i] * scale;
+          }
+        }
+        else {
+          vertexColors.resize(rgb.size());
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i] = vertexColor.rgba;
+            vertexColors[i].rgba[3] = rgb[i] * scale;
+          }
         }
       }
     }
     drawFaces = false;
     drawVertices = true;
-    tempMesh = NULL;
-    tempMesh2 = NULL;
     if(pc.IsStructured()) {
       //draw mesh rather than points
       drawFaces = true;
       drawVertices = false;
-      if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-      //PointCloudToMesh(pc,*tempMesh,*this,0.02);
-      PointCloudToMesh(pc,*tempMesh,0.02);
     }
   }
   else if(geom->type == AnyGeometry3D::Type::ConvexHull) {
-    const Geometry::ConvexHull3D* g = &geom->AsConvexHull();
-    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    ConvexHullToMesh(*g,*tempMesh);
     drawFaces = true;
     drawEdges = false;
     drawVertices = false;
   }
   else if(geom->type == AnyGeometry3D::Type::Heightmap) {
     const Meshing::Heightmap* g = &geom->AsHeightmap();
-    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    HeightmapToMesh(*g,*tempMesh,*this);
     if(g->HasColors() && !tex2D) {
       tex2D = make_shared<Image>(g->colors);
       Vector3 xb(g->viewport.pose.R.col1());
@@ -955,8 +977,9 @@ void GeometryAppearance::DrawGL(Element e)
         geom->type == AnyGeometry3D::Type::OccupancyGrid ||
         geom->type == AnyGeometry3D::Type::Heightmap ||
         geom->type == AnyGeometry3D::Type::PointCloud ||
-        geom->type == AnyGeometry3D::Type::ConvexHull) 
+        geom->type == AnyGeometry3D::Type::ConvexHull) {
         trimesh = tempMesh.get();
+      }
       else if(geom->type == AnyGeometry3D::Type::TriangleMesh) {
         trimesh = &geom->AsTriangleMesh();
         if(collisionGeom && collisionGeom->CollisionDataInitialized())
@@ -966,7 +989,6 @@ void GeometryAppearance::DrawGL(Element e)
         draw(geom->AsPrimitive());
 
       //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling face display list "<<trimesh->tris.size());
-
       //draw the mesh
       if(trimesh) {
         Meshing::TriMesh creaseMesh;
