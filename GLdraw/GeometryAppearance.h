@@ -71,6 +71,10 @@ class GeometryAppearance
   enum Element { ALL, VERTICES, EDGES, FACES, SILHOUETTE, ALL_TRANSPARENT, ALL_OPAQUE };
   
   GeometryAppearance();
+  /// Initializes / resets this appearance to a given geometry. The appearance is copied from the geometry.
+  void Set(const Geometry::AnyGeometry3D& geom);
+  /// Initializes / resets this appearance to a given geometry. The appearance is copied from the geometry.
+  void Set(const Geometry::AnyCollisionGeometry3D& geom);
   ///This copies over the "material" information but doesn't change the display lists (if possible)
   void CopyMaterial(const GeometryAppearance& rhs);
   ///This copies over the "material" information except for vertex and face-specific info (colors and texcoords).
@@ -81,10 +85,11 @@ class GeometryAppearance
   ///overridden.  If if_cache_exists=false (default), then any existing cached
   ///information is preserved
   void CopyCache(const GeometryAppearance& rhs,bool if_cache_exists=false);
-  void Set(const Geometry::AnyGeometry3D& geom);
-  void Set(const Geometry::AnyCollisionGeometry3D& geom);
-  ///Call this if the underlying geometry, per-element colors, texture
-  ///coordinates, or silhouette radius change
+  ///Rebuilds display lists.  Call this if the underlying geometry
+  ///changes but you would like to keep the current appearance.
+  void RefreshGeometry();
+  ///Rebuilds display lists.  Call this if the underlying geometry
+  ///per-element colors, texture coordinates, or silhouette radius change
   void Refresh();
   ///Draws the geometry using OpenGL
   void DrawGL(Element e=ALL);
