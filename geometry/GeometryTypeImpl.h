@@ -206,6 +206,7 @@ public:
   virtual size_t NumElements() const override;
   virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
   virtual AABB3D GetAABB() const override;
+  virtual bool Transform(const RigidTransform& T) override;
   virtual bool Transform(const Matrix4& mat) override;
   virtual Geometry3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) const override;
   virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) override;

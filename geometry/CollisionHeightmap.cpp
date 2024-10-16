@@ -61,10 +61,26 @@ AABB3D Geometry3DHeightmap::GetAABB() const
     return data.GetAABB();
 }
 
+bool Geometry3DHeightmap::Transform(const RigidTransform& T)
+{
+    data.viewport.pose = T*data.viewport.pose;
+    return true;
+}
+
 bool Geometry3DHeightmap::Transform(const Matrix4& mat) 
 {
     if(mat(1,0) != 0.0 || mat(2,0) != 0.0 || mat(0,1) != 0.0 || mat(2,1) != 0.0 || mat(0,2) != 0.0 || mat(1,2) != 0.0) {
-        return false;
+        Matrix3 R;
+        mat.get(R);
+        Matrix3 RRt, I;
+        RRt.mulTransposeB(R,R);
+        I.setIdentity();
+        if(!RRt.isEqual(I,1e-5)) {
+            LOG4CXX_ERROR(GET_LOGGER(Geometry),"Geometry3DHeightmap::Transform: matrix is not a pure scaling or pure rotation matrix");
+            return false;
+        }
+        Vector3 t = mat.getTranslation();
+        return Transform(RigidTransform(R,t));
     }
     data.viewport.fx /= mat(0,0);
     data.viewport.fy /= mat(1,1);
