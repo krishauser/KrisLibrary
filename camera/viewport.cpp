@@ -278,7 +278,7 @@ void Viewport::deproject(float mx, float my, Vector3& src,Vector3& dir) const
 }
 
 
-void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions, bool halfPixelAdjustment, bool normalize) const
+void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions, bool halfPixelAdjustment, bool normalize, bool topdown) const
 {
 	sources.resize(w*h);
 	directions.resize(w*h);
@@ -290,6 +290,10 @@ void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& d
 		Real my = -cy;
 		if(halfPixelAdjustment) my += 0.5;
 		my *= invfy;
+		if(topdown) {
+			my = (h-1)*invfy+my;
+			invfy = -invfy;
+		}
 		for(int i=0;i<h;i++) {
 			Real mx = -cx;
 			if(halfPixelAdjustment) mx += 0.5;
@@ -311,6 +315,10 @@ void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& d
 		Real my = -cy;
 		if(halfPixelAdjustment) my += 0.5;
 		my *= invfy;
+		if(topdown) {
+			my = (h-1)*invfy+my;
+			invfy = -invfy;
+		}
 		for(int i=0;i<h;i++) {
 			Real mx = -cx;
 			if(halfPixelAdjustment) mx += 0.5;
@@ -318,6 +326,61 @@ void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& d
 			for(int j=0;j<w;j++,k++) {	
 				sources[k] = pose.t + pose.R*Vector3(mx,my,0);
 				directions[k] = z;
+				mx += invfx;
+			}
+			my += invfy;
+		}
+	}
+}
+
+void Viewport::getAllRays(Array2D<Vector3>& sources, Array2D<Vector3>& directions, bool halfPixelAdjustment, bool normalize, bool topdown) const
+{
+	sources.resize(w,h);
+	directions.resize(w,h);
+	Real invfx = 1.0/fx;
+	Real invfy = 1.0/fy;
+	if(perspective) {
+		Real mz = (ori == CameraConventions::ROS ? 1 : -1);
+		int k=0;
+		Real my = -cy;
+		if(halfPixelAdjustment) my += 0.5;
+		my *= invfy;
+		if(topdown) {
+			my = (h-1)*invfy+my;
+			invfy = -invfy;
+		}
+		for(int i=0;i<h;i++) {
+			Real mx = -cx;
+			if(halfPixelAdjustment) mx += 0.5;
+			mx *= invfx;
+			for(int j=0;j<w;j++,k++) {	
+				sources(j,i) = pose.t;
+				directions(j,i) = pose.R*Vector3(mx,my,mz);
+				mx += invfx;
+			}
+			my += invfy;
+		}
+		if(normalize) 
+			for(auto& d:directions) d.inplaceNormalize();
+	}
+	else {
+		Vector3 z(pose.R.col3());
+		if(ori == CameraConventions::OpenGL) z.inplaceNegative();
+		int k=0;
+		Real my = -cy;
+		if(halfPixelAdjustment) my += 0.5;
+		my *= invfy;
+		if(topdown) {
+			my = (h-1)*invfy+my;
+			invfy = -invfy;
+		}
+		for(int i=0;i<h;i++) {
+			Real mx = -cx;
+			if(halfPixelAdjustment) mx += 0.5;
+			mx *= invfx;
+			for(int j=0;j<w;j++,k++) {	
+				sources(j,i) = pose.t + pose.R*Vector3(mx,my,0);
+				directions(j,i) = z;
 				mx += invfx;
 			}
 			my += invfy;
@@ -362,7 +425,7 @@ bool Viewport::project(const Vector3& pt,float& mx,float& my,float& mz) const
 }
 
 
-void Viewport::projectionMatrix(Matrix4& P) const
+void Viewport::imageMatrix(Matrix4& P) const
 {
 	P.setZero();
 	P(3,3) = 1;
@@ -378,6 +441,47 @@ void Viewport::projectionMatrix(Matrix4& P) const
 	}
 	else
 		P(2,2) = 1;
+}
+
+void Viewport::projectionMatrix(Matrix4& P,bool world) const
+{
+	P.setZero();
+	Vector3 xb(pose.R.col1());
+	Vector3 yb(pose.R.col2());
+	Vector3 zb(pose.R.col3());
+	if(!world) {
+		xb.set(1.0,0.0,0.0);
+		yb.set(0.0,1.0,0.0);
+		zb.set(0.0,0.0,1.0);
+	}
+	if(perspective) {
+		//x = e1^T(R^-1*(p - t)) = xb^T p - xb^T t
+		//y = e2^T(R^-1*(p - t)) = yb^T p - yb^T t
+		//z = e3^T(R^-1*(p - t)) = zb^T p - zb^T t
+		//u = (x/z*fx + cx)/w = (x*fx/w + cx/w*z) / z = r / q
+		//v = (y/z*fy + cy)/h = (y*fy/h + cy/h*z) / z = s / q
+		//w = t/q  so  w(pf) = 1 = t(pf)/q(pf) and w(pn) = 0 = t(pn)/q(pn) for pf all far points and pn all near points
+		//    f = t(pf) and 0 = t(pn).   Letting t(p) = c*z(p) + d, we have c*f + d = f and c*n + d = 0 so
+		//    c = f/(f-n), d = -n*f/(f-n)
+		//q = z
+		Vector3 ub = xb*fx/w + zb*cx/w;
+		Vector3 vb = yb*fy/h + zb*cy/h;
+		P.setRow1(ub);  P(0,3) = (-xb.dot(pose.t)*fx-zb.dot(pose.t)*cx)/w;
+		P.setRow2(vb);  P(1,3) = (-yb.dot(pose.t)*fy-zb.dot(pose.t)*cy)/h;
+		P.setRow3(zb*(f/(f-n))); P(2,3) = -n*f/(f-n);
+		P.setRow4(zb); P(3,3) = -zb.dot(pose.t);
+	}
+	else {
+		//u = (x*fx + cx)/w = (x*fx/w + cx/w) 
+		//v = (y*fy + cy)/h = (y*fy/h + cy/h)
+		//w = (z-n)/(f-n) = z/(f-n) - n/(f-n)
+		Vector3 ub = xb*fx/w;
+		Vector3 vb = yb*fy/h;
+        P.setRow1(ub); P(0,3) = cx/w-xb.dot(pose.t)*fx/w;
+        P.setRow2(vb); P(1,3) = cx/w-yb.dot(pose.t)*fy/h;
+		P.setRow3(zb/(f-n)); P(2,3) = (-zb.dot(pose.t)-n)/(f-n);
+		P(3,3) = 1;
+	}
 }
 
 

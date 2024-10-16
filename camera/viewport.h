@@ -3,6 +3,7 @@
 
 #include "camera.h"
 #include <KrisLibrary/math3d/AABB2D.h>
+#include <KrisLibrary/structs/array2d.h>
 #include <vector>
 
 namespace Camera {
@@ -101,20 +102,34 @@ public:
 	void deproject(float mx, float my, Vector3& src, Vector3& dest) const;
 	///Gets all rays corresponding to all pixels, in scan-line order.
 	///Faster than calling getClickVector/getClickSource for each pixel
-	///because many floating point operations are avoided.
-	void getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false) const;
+	///because many floating point operations are avoided.  Default
+	///ordering is in OpenGL (bottom-up) convention. 
+	void getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false,bool topdown=false) const;
+	///Gets all rays corresponding to all pixels.
+	///Faster than calling getClickVector/getClickSource for each pixel
+	///because many floating point operations are avoided.  Default
+	///ordering is in OpenGL (bottom-up) convention. 
+	void getAllRays(Array2D<Vector3>& sources, Array2D<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false,bool topdown=false) const;
 
 	///Computes the screen coordinates of a point pt in world space.
 	///Returns true if the point is within the view frustum.  Take the
 	///floor of mx, my to get the pixel index.
 	bool project(const Vector3& pt,float& mx,float& my,float& mz) const;
 
-	///Returns the camera's projection matrix.  That is, the screen coordinates are
-	///proj*(q.x/q.z,q.y/q.z,q.z,1) for a perspective
-	///camera quere q is the local coordinates q=pose^-1*p.  The output z value has
+	///Returns the camera's image matrix.  That is, the screen coordinates are
+	///mat*(q.x/q.z,q.y/q.z,q.z,1) for a perspective
+	///camera where q is the local coordinates q=pose^-1*p.  The output z value has
 	///positive z indicating forward.
-	///For an orthographic camera, the screen coordinates are proj*(q.x,q.y,q.z,1).
-	void projectionMatrix(Matrix4& proj) const;
+	///For an orthographic camera, the screen coordinates are mat*(q.x,q.y,q.z,1).
+	void imageMatrix(Matrix4& mat) const;
+
+	///Returns the camera's full projection matrix.  The local coordinates
+	///of a point p are given by (r,s,t,q) = proj*p.  These are converted
+	///to screen coordinates by the projection (u,v,w) = (r/q,s/q,t/q).
+	///Here, w is the relative depth mapping [n,f] to the range [0,1].
+	///If world=true, then p is interpreted as being in world coordinates,
+	///otherwise in camera coordinates. 
+	void projectionMatrix(Matrix4& proj,bool world=true) const;
 
 	bool operator == (const Viewport& rhs) const;
 	bool operator != (const Viewport& rhs) const { return !(*this == rhs); }
