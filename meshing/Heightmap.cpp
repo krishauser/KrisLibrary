@@ -461,6 +461,7 @@ void Heightmap::SetSize(Real width, Real height)
         height = width/(viewport.w-1)*(viewport.h-1);
     }
     viewport.perspective = false;
+    viewport.ori = Camera::CameraConventions::OpenGL;
     viewport.fx = (viewport.w-1)/width;  //point 0.5*width maps to w / 2 when multiplied by fx
     viewport.fy = (viewport.h-1)/height;
     viewport.cx = 0.5 * viewport.w;
@@ -477,6 +478,7 @@ void Heightmap::SetFOV(Real xfov,Real yfov)
         ysize_2 = xsize_2/(viewport.w-1)*(viewport.h-1);
     }
     viewport.perspective = true;
+    viewport.ori = Camera::CameraConventions::OpenCV;
     viewport.fx = 0.5*(viewport.w-1)/xsize_2;
     viewport.fy = 0.5*(viewport.h-1)/ysize_2;
     viewport.cx = 0.5 * viewport.w;
@@ -558,8 +560,17 @@ AABB3D Heightmap::GetAABB() const
         res.bmax.z = -Inf;
     }
     else {
-        res.bmin.z = *std::min_element(heights.begin(),heights.end(),[] (float x, float y) { return x < y ? true : !isnan(x); });
-        res.bmax.z = *std::max_element(heights.begin(),heights.end(),[] (float x, float y) { return x < y ? true : isnan(x); });
+        res.bmin.z = Inf;
+        res.bmax.z = -Inf;
+        for(auto z: heights) {
+            if(ValidHeight(z)) {
+                res.bmin.z = std::min(res.bmin.z,Real(z));
+                res.bmax.z = std::max(res.bmax.z,Real(z));
+            }
+        }
+        if(!IsFinite(res.bmin.z) || !IsFinite(res.bmax.z)) {
+            LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::GetAABB: error getting bounds with non-finite values");
+        }
     }
     if(viewport.perspective) {
         bb2d = viewport.getViewRectangle(res.bmin.z,true);
@@ -569,10 +580,10 @@ AABB3D Heightmap::GetAABB() const
         corners[2].set(bb2d.bmax.x,bb2d.bmax.y,res.bmin.z);
         corners[3].set(bb2d.bmin.x,bb2d.bmax.y,res.bmin.z);
         bb2d = viewport.getViewRectangle(res.bmax.z,true);
-        corners[0].set(bb2d.bmin.x,bb2d.bmin.y,res.bmax.z);
-        corners[1].set(bb2d.bmax.x,bb2d.bmin.y,res.bmax.z);
-        corners[2].set(bb2d.bmax.x,bb2d.bmax.y,res.bmax.z);
-        corners[3].set(bb2d.bmin.x,bb2d.bmax.y,res.bmax.z);
+        corners[4].set(bb2d.bmin.x,bb2d.bmin.y,res.bmax.z);
+        corners[5].set(bb2d.bmax.x,bb2d.bmin.y,res.bmax.z);
+        corners[6].set(bb2d.bmax.x,bb2d.bmax.y,res.bmax.z);
+        corners[7].set(bb2d.bmin.x,bb2d.bmax.y,res.bmax.z);
         res.minimize();
         for(size_t i=0;i<8;i++)
             res.expand(viewport.pose*corners[i]);
@@ -660,16 +671,32 @@ float Heightmap::GetHeight(const Vector3& pt,int interpolation) const
     FatalError("TODO: bilinear and bicubic interpolation");
 }
 
-bool Heightmap::HasHeight(const Vector3& pt) const
+bool Heightmap::ValidHeight(const Vector3& pt,bool clamp) const
 {
     IntPair index;
     Vector2 params;
     GetIndexAndParams(pt,index,params);
     if(params.x > 0.5) index.a += 1;
     if(params.y > 0.5) index.b += 1;
-    index.a = ::Min(::Max(0,index.a),heights.m-1);
-    index.b = ::Min(::Max(0,index.b),heights.n-1);
-    Real v = heights(index.a,index.b);
+    return ValidHeight(index.a,index.b,clamp);
+}
+
+bool Heightmap::ValidHeight(int i,int j,bool clamp) const
+{
+    if(clamp) {
+        i = ::Min(::Max(0,i),heights.m-1);
+        j = ::Min(::Max(0,j),heights.n-1);
+    }
+    else {
+        if(i < 0 || i >= heights.m) return false;
+        if(j < 0 || j >= heights.n) return false;
+    }
+    Real v = heights(i,j);
+    return ValidHeight(v);
+}
+
+bool Heightmap::ValidHeight(Real v) const
+{
     if(viewport.perspective)
         return v != 0 && IsFinite(v);
     return IsFinite(v);
@@ -681,10 +708,7 @@ void Heightmap::ValidHeightMask(Array2D<bool>& mask) const
     for(int i=0;i<heights.m;i++)
         for(int j=0;j<heights.n;j++) {
             Real v = heights(i,j);
-            if(viewport.perspective)
-                mask(i,j) = v != 0 && IsFinite(v);
-            else
-                mask(i,j) = IsFinite(v);
+            mask(i,j) = ValidHeight(v);
         }
 }
 
@@ -705,12 +729,7 @@ Real Heightmap::GetHeightDifference(const Vector3& pt,int interpolation) const
     }
     else
         FatalError("TODO: bilinear and bicubic interpolation");
-    if(viewport.perspective) {
-        if(v==0 || !IsFinite(v)) return NAN;
-    }
-    else {
-        if(!IsFinite(v)) return NAN;
-    }
+    if(!ValidHeight(v)) return NAN;
     return ptlocal.z - v;
 }
 
@@ -812,7 +831,53 @@ Vector3 Heightmap::GetVertexColor(int i,int j,Real u,Real v,int interpolation) c
     FatalError("TODO: bilinear and bicubic interpolation");
 }
 
-void Heightmap::GetVertexProperties(int i,int j,vector<float>& out,int interpolation) const
+Vector4 Heightmap::GetVertexRGBA(int i,int j) const
+{
+    i = ::Min(::Max(0,i),heights.m-1);
+    j = ::Min(::Max(0,j),heights.n-1);
+    float col[4];
+    colors.getNormalizedColor(i,heights.n-1-j,col);
+    if(colors.pixelChannels()==1) 
+        return Vector4(col[0],col[0],col[0],1.0);
+    else if(colors.pixelChannels()==3) 
+        return Vector4(col[0],col[1],col[2],1.0);
+    else
+        return Vector4(col[0],col[1],col[2],col[3]);
+}
+
+Vector4 Heightmap::GetVertexRGBA(int i,int j,Real u,Real v,int interpolation) const
+{
+    if(interpolation == InterpNearest) {
+        if(u > 0.5) i += 1;
+        if(v > 0.5) j += 1;
+        return GetVertexRGBA(i,j);
+    }
+    FatalError("TODO: bilinear and bicubic interpolation");
+}
+
+void Heightmap::SetVertexColor(int i,int j,const Vector3& color)
+{
+    if(i<0 || i >=heights.m || j<0 || j >= heights.n) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::SetVertexColor: index out of bounds");
+        return;
+    }
+    float col[4] = {color.x,color.y,color.z,1.0};
+    colors.setNormalizedColor(i,heights.n-1-j,col);
+}
+
+void Heightmap::SetVertexColor(int i,int j,const Vector4& color)
+{
+    if(i<0 || i >=heights.m || j<0 || j >= heights.n) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::SetVertexColor: index out of bounds");
+        return;
+    }
+    float col[4] = {color.x,color.y,color.z,color.w};
+    colors.setNormalizedColor(i,heights.n-1-j,col);
+}
+
+
+
+void Heightmap::GetVertexProperties(int i,int j,vector<float>& out) const
 {
     out.resize(properties.size());
     i = ::Min(::Max(0,i),heights.m-1);
@@ -834,16 +899,47 @@ void Heightmap::GetVertexProperties(int i,int j,Real u,Real v,vector<float>& out
     }
 }
 
-void Heightmap::GetVertices(vector<Vector3>& verts) const
+void Heightmap::SetVertexProperties(int i,int j,const vector<float>& props)
+{
+    if(properties.size() != props.size()) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::SetVertexProperties: property size mismatch");
+        return;
+    }
+    if(i<0 || i >=heights.m || j<0 || j >= heights.n) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::SetVertexProperties: index out of bounds");
+        return;
+    }
+    for(size_t k=0;k<properties.size();k++) {
+        properties[k](i,j) = props[k];
+    }
+}
+
+void Heightmap::GetVertices(vector<Vector3>& verts, bool rowMajor) const
 {
     verts.resize(heights.m*heights.n);
     vector<Vector3> src,dir;
-    viewport.getAllRays(src,dir,true,false);  //these are in scan-line order, i.e., y*w + x
-    int l=0;
-    for(int i=0;i<heights.m;i++) {
-        int k=i;
-        for(int j=0;j<heights.n;j++,k+=heights.m,l++) {
-            verts[l] = src[k] + heights(i,j)*dir[k];
+    bool topdown = !rowMajor;
+    viewport.getAllRays(src,dir,true,false,topdown);  //these are in scan-line order, i.e., y*w + x
+    if(!viewport.perspective) {
+        for(auto& v:dir) v.inplaceNegative();
+    }
+    if(rowMajor) {
+        int l=0;
+        for(int i=0;i<heights.m;i++) {
+            int k=i;
+            for(int j=0;j<heights.n;j++,k+=heights.m,l++) {
+                verts[l] = src[k] + heights(i,j)*dir[k];
+                //verts[l] = GetVertex(i,j);
+            }
+        }
+    }
+    else {
+        for(int i=0;i<heights.m;i++) {
+            int k=i;
+            for(int j=0;j<heights.n;j++,k+=heights.m) {
+                verts[k] = src[k] + heights(i,heights.n-1-j)*dir[k];
+                //verts[k] = GetVertex(i,j);
+            }
         }
     }
 }
@@ -862,17 +958,54 @@ void Heightmap::GetVertices(Array2D<Vector3>& verts) const
 
 }
 
-void Heightmap::GetVertexColors(vector<Vector3>& colors_out) const
+void Heightmap::GetVertexColors(vector<Vector3>& colors_out, bool rowMajor) const
 {
     if(colors.num_bytes==0) {
         colors_out.resize(0);
         return;
     }
     colors_out.resize(heights.m*heights.n);
-    int k=0;
-    for(int i=0;i<heights.m;i++) {
-        for(int j=0;j<heights.n;j++,k++) {
-            colors_out[k]=GetVertexColor(i,j);
+    if(rowMajor) {
+        int k=0;
+        for(int i=0;i<heights.m;i++) {
+            for(int j=0;j<heights.n;j++,k++) {
+                colors_out[k]=GetVertexColor(i,j);
+            }
+        }
+    }
+    else {
+        //top-down scanline order
+        int l=0;
+        for(int j=0;j<heights.n;j++) {
+            for(int i=0;i<heights.m;i++,l++) {
+                colors_out[l]=GetVertexColor(i,heights.n-1-j);
+            }
+        }
+    }
+}
+
+void Heightmap::GetVertexColors(vector<Vector4>& colors_out, bool rowMajor) const
+{
+    if(colors.num_bytes==0) {
+        colors_out.resize(0);
+        return;
+    }
+    colors_out.resize(heights.m*heights.n);
+    if(rowMajor) {
+        int k=0;
+        for(int i=0;i<heights.m;i++) {
+            for(int j=0;j<heights.n;j++,k++) {
+                colors_out[k]=GetVertexRGBA(i,j);
+            }
+        }
+    }
+    else {
+        //top-down scanline order
+        int l=0;
+        for(int j=0;j<heights.n;j++) {
+            for(int i=0;i<heights.m;i++,l++) {
+                colors_out[l]=GetVertexRGBA(i,heights.n-1-j);
+            }
         }
     }
 }
@@ -1035,6 +1168,7 @@ void Heightmap::FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh,bool to
     }
 }
 
+/*
 void Heightmap::GetMesh(TriMesh& mesh) const
 {
     if(heights.m < 2 || heights.n < 2) return;
@@ -1067,6 +1201,7 @@ void Heightmap::GetMesh(TriMesh& mesh,GLDraw::GeometryAppearance& app) const
         }
     }
 }
+*/
 
 void Heightmap::SetPointCloud(const PointCloud3D& pc,Real resolution,const RigidTransform* Tpc,bool topdown)
 {
@@ -1124,19 +1259,43 @@ void Heightmap::FusePointCloud(const PointCloud3D& pc,const RigidTransform* Tpc,
     }
 }
 
-void Heightmap::GetPointCloud(PointCloud3D& pc) const
+void Heightmap::GetPointCloud(PointCloud3D& pc, bool structured) const
 {
-    GetVertices(pc.points);
+    //second argument is whether to use scan-line order or row-major
+    GetVertices(pc.points,false);
+    if(structured) {
+        pc.SetStructured(heights.m,heights.n);
+        //setting scan-line order already goes from top to bottom
+    }
     if(colors.num_bytes != 0) {
-        vector<Vector4> rgba(pc.points.size());
-        int k=0;
-        for(int i=0;i<heights.m;i++) {
-            for(int j=0;j<heights.n;j++,k++) {
-                float col[4];
-                colors.getNormalizedColor(i,heights.n-1-j,col);
-                rgba[k].set(col[0],col[1],col[2],col[3]);
-            }
+        if(colors.pixelChannels() == 4) {
+            vector<Vector4> rgba(pc.points.size());
+            GetVertexColors(rgba,false);
+            pc.SetColors(rgba);
         }
-        pc.SetColors(rgba,(colors.pixelChannels()==4));
+        else {
+            vector<Vector3> rgb(pc.points.size());
+            GetVertexColors(rgb,false);
+            pc.SetColors(rgb);
+        }
+    }
+    if(!structured) {
+        vector<int> toDrop;
+        for(int i=0;i<heights.m;i++)
+            for(int j=0;j<heights.n;j++)
+                if(!ValidHeight(i,j))
+                    toDrop.push_back(i+(heights.n-1-j)*heights.m);
+        if(!toDrop.empty()) {
+            pc.settings.clear();
+            vector<int> toKeep;
+            toKeep.reserve(pc.points.size()-toDrop.size());
+            for(int i=0;i<heights.m;i++)
+                for(int j=0;j<heights.n;j++)
+                    if(ValidHeight(i,j))
+                        toKeep.push_back(i+(heights.n-1-j)*heights.m);
+            PointCloud3D pc_new;
+            pc.GetSubCloud(toKeep,pc_new);
+            pc = pc_new;
+        }
     }
 }

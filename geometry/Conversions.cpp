@@ -583,6 +583,11 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
 
 void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh)
 {
+    if(hm.heights.m < 2 || hm.heights.n < 2) {
+		mesh.verts.clear();
+		mesh.tris.clear();
+		return;
+	}
 	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
 	hm.GetVertices(mesh.verts);
 
@@ -617,7 +622,19 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh)
 
 void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDraw::GeometryAppearance& appearance)
 {
+	if(hm.heights.m < 2 || hm.heights.n < 2) {
+		mesh.verts.clear();
+		mesh.tris.clear();
+		return;
+	}
+
 	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
+	if(hm.viewport.perspective) {
+		//bottom-up view, so need to flip triangles
+		for(size_t i=0;i<mesh.tris.size();i++) {
+			swap(mesh.tris[i].b,mesh.tris[i].c);
+		}
+	}
 	hm.GetVertices(mesh.verts);
 	if(hm.HasColors()) {
 		vector<Vector3> rgb(mesh.verts.size());
@@ -633,15 +650,8 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDra
 	vector<pair<int,int> > invalidIndices;
 	for(int i=0;i<hm.heights.m;i++) {
 		for(int j=0;j<hm.heights.n;j++) {
-			if(hm.viewport.perspective) {
-		        if(hm.heights(i,j) == 0 || !IsFinite(hm.heights(i,j))) {
-					invalidIndices.push_back(pair<int,int>(i,j));	
-				}
-			}
-			else {
-				if(!IsFinite(hm.heights(i,j))) {
-					invalidIndices.push_back(pair<int,int>(i,j));
-				}
+			if(!hm.ValidHeight(hm.heights(i,j))) {
+				invalidIndices.push_back(pair<int,int>(i,j));	
 			}
 		}
 	}

@@ -28,16 +28,18 @@ namespace Meshing {
  * In perspective coordinates, height is depth in the forward direction of the
  * camera.  The world-space domain, including pose, is specified by the `viewport`
  * attribute.  Note that the `viewport.ori` attribute is generally XYnZ for an
- * orthographic projection and XnYZ for a perspective projection.
+ * orthographic projection (indicating a "camera" pointing down from the top of
+ * the heightmap) and XnYZ for a perspective projection (indicating a camera
+ * pointing up from the origin).
  * 
  * A height value of NaN indicates a missing value for orthographic heightmaps.
  * A value of NaN or 0 for a perspective heightmap indicates a missing value.
  * Some functions may interpret missing values as a hole in the map.
   * 
  * Vertex colors can be provided in the `colors` attribute.  The `colors` image
- * must have the same dimensions as the `heights` array.  As in standard image
- * convention, the rows in the colors image are assumed to go from top to bottom
- * whereas the heights array goes from bottom to top.
+ * must match that of the `heights` array, with width=heights.m, height=heights.n.
+ * As in standard image convention, the rows in the colors image are assumed to
+ * go from top to bottom whereas the heights array goes from bottom to top.
  * 
  * Other properties can also be given in the `properties` attribute.  Each property
  * is an array of the same dimensions as the `heights` array.  The `propertyNames`
@@ -193,7 +195,11 @@ public:
      */
     float GetHeight(const Vector3& pt,int interpolation=InterpNearest) const;
     /// @brief Returns true if the point has a valid height value.
-    bool HasHeight(const Vector3& pt) const;
+    bool ValidHeight(const Vector3& pt,bool clamp=false) const;
+    /// @brief Returns true if the index has a valid height value.
+    bool ValidHeight(int i,int j,bool clamp=false) const;
+    /// @brief Returns true if the height value is valid.
+    bool ValidHeight(Real h) const;
     /// @brief Returns the mask of valid height values. 
     void ValidHeightMask(Array2D<bool>& mask) const;
     /** @brief Reads difference between the height of a point and the height
@@ -234,17 +240,31 @@ public:
     Vector3 GetVertexColor(int i,int j) const;
     /** Returns the color of vertex (i,j) as an (R,G,B) tuple interpolated over cell coordinates (u,v). */
     Vector3 GetVertexColor(int i,int j,Real u,Real v,int interpolation=InterpNearest) const;
+    /** Returns the color of vertex (i,j) as an (R,G,B,A) tuple. */
+    Vector4 GetVertexRGBA(int i,int j) const;
+    /** Returns the color of vertex (i,j) as an (R,G,B,A) tuple interpolated over cell coordinates (u,v). */
+    Vector4 GetVertexRGBA(int i,int j,Real u,Real v,int interpolation=InterpNearest) const;
+    /** Sets the color of vertex (i,j) */
+    void SetVertexColor(int i,int j,const Vector3& color);
+    /** Sets the color of vertex (i,j) */
+    void SetVertexColor(int i,int j,const Vector4& color);
     /** Returns the properties of vertex (i,j) in the out vector. */
-    void GetVertexProperties(int i,int j,vector<float>& out,int interpolation=InterpNearest) const;
+    void GetVertexProperties(int i,int j,vector<float>& out) const;
     /** Returns the properties of vertex (i,j) in the out vector, interpolated over cell coordinates (u,v). */
     void GetVertexProperties(int i,int j,Real u,Real v,vector<float>& out,int interpolation=InterpNearest) const;
+    /** Sets the properties of vertex (i,j) */
+    void SetVertexProperties(int i,int j,const vector<float>& props);
 
-    ///Returns w*h vertices
-    void GetVertices(vector<Vector3>& verts) const;
+    ///Returns w*h vertices.  If rowMajor=true, the vertices are in row-major
+    ///order, i.e., (i,j) => index i*heights.n + j.  Otherwise, the vertices
+    ///are in scan-line order, i.e., (i,j) => index (heights.n-1-j)*heights.m + i.
+    void GetVertices(vector<Vector3>& verts, bool rowMajor=true) const;
     ///Returns a w x h array of vertices
     void GetVertices(Array2D<Vector3>& verts) const;
     ///Returns the colors of w*h vertices.  If no colors are available, this returns an empty list.
-    void GetVertexColors(vector<Vector3>& colors) const;
+    void GetVertexColors(vector<Vector3>& colors, bool rowMajor=true) const;
+    ///Returns the RGBA colors of w*h vertices.  If no colors are available, this returns an empty list.
+    void GetVertexColors(vector<Vector4>& colors, bool rowMajor=true) const;
    
     /** Returns the source / direction of a free space ray leading to vertex i,j.
      * The heightmap vertex will be equal to source + dir * height[i,j].
@@ -294,9 +314,11 @@ public:
      */
     void SetPointCloud(const PointCloud3D& pc,Real resolution,const RigidTransform* Tpc=NULL,bool topdown=true);
     void FusePointCloud(const PointCloud3D& pc,const RigidTransform* Tpc=NULL,bool topdown=true);
-    void GetMesh(TriMesh& mesh) const;
-    void GetMesh(TriMesh& mesh,GLDraw::GeometryAppearance& app) const;
-    void GetPointCloud(PointCloud3D& pc) const;
+    //void GetMesh(TriMesh& mesh) const;
+    //void GetMesh(TriMesh& mesh,GLDraw::GeometryAppearance& app) const;
+    /// Converts to a point cloud, keeping colors as rgb properties, and maintaining
+    /// the structure if there are no invalid points or structured=true 
+    void GetPointCloud(PointCloud3D& pc, bool structured=true) const;
    
     Camera::Viewport viewport;
     Array2D<float> heights;
