@@ -464,7 +464,11 @@ void GeometryAppearance::Refresh()
   faceDisplayList.erase();
   silhouetteDisplayList.erase();
   textureObject.cleanup();
+}
 
+void GeometryAppearance::RefreshGeometry()
+{
+  Refresh();
   tempMesh.reset();
   tempMesh2.reset();
   if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
@@ -525,7 +529,7 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
         subAppearances[i].Set(subgeoms[i]);
       }
     }
-    Refresh();
+    RefreshGeometry();
   }
   else {
     Set(*geom);
@@ -685,31 +689,19 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
     const Meshing::Heightmap* g = &geom->AsHeightmap();
     if(g->HasColors() && !tex2D) {
       tex2D = make_shared<Image>(g->colors);
-      Vector3 xb(g->viewport.pose.R.col1());
-      Vector3 yb(g->viewport.pose.R.col2());
-      Vector3 zb(g->viewport.pose.R.col3());
+      Matrix4 proj;
+      g->viewport.projectionMatrix(proj);
       if(g->viewport.perspective) {
-        //x = e1^T(R^-1*(p - t)) = xb^T p - xb^T t
-        //y = e2^T(R^-1*(p - t)) = yb^T p - yb^T t
-        //z = e3^T(R^-1*(p - t)) = zb^T p - zb^T t
-        //u = (x/z*fx + cx)/w = (x*fx/w + cx/w*z) / z 
-        //v = (y/z*fy + cy)/h = (y*fy/h + cy/h*z) / z
-        Vector3 ub = xb*g->viewport.fx/g->viewport.w + zb*g->viewport.cx/g->viewport.w;
-        Vector3 vb = yb*g->viewport.fy/g->viewport.h + zb*g->viewport.cy/g->viewport.h;
         texgen.resize(4);
-        texgen[0].set(ub.x,ub.y,ub.z -xb.dot(g->viewport.pose.t)*g->viewport.fx/g->viewport.w);
-        texgen[1].set(vb.x,vb.y,vb.z -yb.dot(g->viewport.pose.t)*g->viewport.fy/g->viewport.h);
-        texgen[2].set(zb.x,zb.y,zb.z,0);
-        texgen[3].set(zb.x,zb.y,zb.z,0);
+        proj.getRow1(texgen[0]);
+        proj.getRow2(texgen[1]);
+        proj.getRow3(texgen[2]);
+        proj.getRow4(texgen[3]);
       }
       else {
-        //u = (x*fx + cx)/w = (x*fx/w + cx/w) 
-        //v = (y*fy + cy)/h = (y*fy/h + cy/h)
-        Vector3 ub = xb*g->viewport.fx/g->viewport.w;
-        Vector3 vb = yb*g->viewport.fy/g->viewport.h;
         texgen.resize(2);
-        texgen[0].set(ub.x,ub.y,ub.z,g->viewport.cx/g->viewport.w-xb.dot(g->viewport.pose.t)*g->viewport.fx/g->viewport.w);
-        texgen[1].set(vb.x,vb.y,vb.z,g->viewport.cx/g->viewport.w-yb.dot(g->viewport.pose.t)*g->viewport.fy/g->viewport.h);
+        proj.getRow1(texgen[0]);
+        proj.getRow2(texgen[1]);
       }
     }
     drawFaces = true;
@@ -729,7 +721,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
   }
   else 
     drawFaces = true;
-  Refresh();
+  RefreshGeometry();
 }
 
 inline void SetTintedColor(const GLColor& col,const GLColor& tintColor,float tintStrength)
@@ -784,6 +776,7 @@ void GeometryAppearance::DrawGL(Element e)
   }
   else
     FatalError("Invalid Element specified");
+  
   if(doDrawVertices) {   
     const vector<Vector3>* verts = NULL;  
     if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
@@ -1221,7 +1214,6 @@ void GeometryAppearance::DrawGL(Element e)
     const Meshing::TriMesh* trimesh = NULL;
     if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
       geom->type == AnyGeometry3D::Type::OccupancyGrid || 
-      geom->type == AnyGeometry3D::Type::Heightmap ||
       geom->type == AnyGeometry3D::Type::PointCloud ||
       geom->type == AnyGeometry3D::Type::ConvexHull) 
       trimesh = tempMesh.get();
@@ -1234,6 +1226,33 @@ void GeometryAppearance::DrawGL(Element e)
           glDisable(GL_LIGHTING);
           glDepthFunc(GL_LEQUAL);
           draw(geom->AsPrimitive());
+        glPopAttrib();
+        edgeDisplayList.endCompile();
+      }
+    }
+    else if (geom->type == AnyGeometry3D::Type::Heightmap) {
+      if(!edgeDisplayList) {
+        edgeDisplayList.beginCompile();
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
+          glDisable(GL_LIGHTING);
+          glDepthFunc(GL_LEQUAL);
+          glBegin(GL_LINES);
+          const Meshing::Heightmap* g = &geom->AsHeightmap();
+          Array2D<Vector3> vertices;
+          g->GetVertices(vertices);
+          for(int i=0;i<vertices.m;i++) {
+            for(int j=0;j<vertices.n;j++) {
+              if(i+1 < vertices.m) {
+                glVertex3v(vertices(i,j));
+                glVertex3v(vertices(i+1,j));
+              }
+              if(j+1 < vertices.n) {
+                glVertex3v(vertices(i,j));
+                glVertex3v(vertices(i,j+1));
+              }
+            }
+          }
+          glEnd();
         glPopAttrib();
         edgeDisplayList.endCompile();
       }
