@@ -137,6 +137,7 @@ class PointCloud3D
   bool GetColors(vector<Vector4>& rgba) const;
   void SetColors(const vector<Real>& r,const vector<Real>& g,const vector<Real>& b,bool includeAlpha = false);
   void SetColors(const vector<Real>& r,const vector<Real>& g,const vector<Real>& b,const vector<Real>& a,bool includeAlpha = true);
+  void SetColors(const vector<Vector3>& rgb,bool includeAlpha=false);
   void SetColors(const vector<Vector4>& rgba,bool includeAlpha=true);
   bool HasUV() const;
   bool GetUV(vector<Vector2>& uvs) const;

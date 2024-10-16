@@ -441,9 +441,9 @@ bool PointCloud3D::SavePCL(ostream& out) const
 
 void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const std::vector<float>& depths,const std::vector<unsigned int>& rgb,float invalidDepth)
 {
-  Assert(depths.size() == w*h);
+  Assert((int)depths.size() == w*h);
   if(!rgb.empty())
-    Assert(rgb.size() == w*h);
+    Assert((int)rgb.size() == w*h);
   FromDepthImage(w,h,wfov,hfov,&depths[0],&rgb[0],invalidDepth);
 }
 
@@ -915,6 +915,37 @@ void PointCloud3D::SetColors(const vector<Real>& r,const vector<Real>& g,const v
   }
 }
 
+void PointCloud3D::SetColors(const vector<Vector3>& rgb,bool includeAlpha)
+{
+  Assert(points.size()==rgb.size());
+  Real r,g,b,a=1.0;
+  if(!includeAlpha) {
+    //pack it
+    vector<Real> packed(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) {
+      rgb[i].get(r,g,b);
+      int col = ((int(r*255.0) & 0xff) << 16) |
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
+      packed[i] = Real(col);
+    }
+    SetProperty("rgb",packed);
+  }
+  else {
+    //pack it
+    vector<Real> packed(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) {
+      rgb[i].get(r,g,b);
+      int col = ((int(a*255.0) & 0xff) << 24) |
+        ((int(r*255.0) & 0xff) << 16) |
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
+      packed[i] = Real(col);
+    }
+    SetProperty("rgba",packed);
+  }
+}
+
 void PointCloud3D::SetColors(const vector<Vector4>& rgba,bool includeAlpha)
 {
   Assert(points.size()==rgba.size());
@@ -1042,7 +1073,8 @@ void PointCloud3D::GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud
   for(size_t i=0;i<indices.size();i++) {
     Assert(indices[i] >= 0 && indices[i] < (int)points.size());
     subcloud.points.push_back(points[indices[i]]);
-    subcloud.properties.push_back(properties[indices[i]]);
+    if(!properties.empty())
+      subcloud.properties.push_back(properties[indices[i]]);
   }
 }
 
@@ -1059,7 +1091,8 @@ void PointCloud3D::GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointClou
   for(size_t i=0;i<points.size();i++)
     if(bb.contains(points[i])) {
       subcloud.points.push_back(points[i]);
-      subcloud.properties.push_back(properties[i]);
+      if(!properties.empty())
+        subcloud.properties.push_back(properties[i]);
     }
 }
 
@@ -1080,34 +1113,37 @@ void PointCloud3D::GetSubCloud(const string& property,Real minValue,Real maxValu
   if(property == "x") {
     for(size_t i=0;i<points.size();i++)
       if(minValue <= points[i].x && points[i].x <= maxValue) {
-    subcloud.points.push_back(points[i]);
-    subcloud.properties.push_back(properties[i]);
+        subcloud.points.push_back(points[i]);
+        if(!properties.empty())
+          subcloud.properties.push_back(properties[i]);
       }
   }
   else if(property == "y") {
     for(size_t i=0;i<points.size();i++)
       if(minValue <= points[i].y && points[i].y <= maxValue) {
-    subcloud.points.push_back(points[i]);
-    subcloud.properties.push_back(properties[i]);
+        subcloud.points.push_back(points[i]);
+        if(!properties.empty())
+          subcloud.properties.push_back(properties[i]);
       }
   }
   else if(property == "z") {
     for(size_t i=0;i<points.size();i++)
       if(minValue <= points[i].z && points[i].z <= maxValue) {
-    subcloud.points.push_back(points[i]);
-    subcloud.properties.push_back(properties[i]);
+        subcloud.points.push_back(points[i]);
+        if(!properties.empty())
+          subcloud.properties.push_back(properties[i]);
       }
   }
   else {
     int i=PropertyIndex(property);
     if(i < 0) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::GetSubCloud: warning, property "<<property.c_str());
+      LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::GetSubCloud: warning, property "<<property.c_str());
       return;
     }
     for(size_t k=0;k<properties.size();k++)
       if(minValue <= properties[k][i] && properties[k][i] <= maxValue) {
-    subcloud.points.push_back(points[k]);
-    subcloud.properties.push_back(properties[k]);
+        subcloud.points.push_back(points[k]);
+        subcloud.properties.push_back(properties[k]);
       }
   }
 }
