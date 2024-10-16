@@ -294,6 +294,8 @@ void Image::blit(Image& dest, int sx, int sy, int bw, int bh, int dx, int dy) co
 	//now do the blit
 	unsigned char* src = getData(sx, sy);
 	unsigned char* dst = dest.getData(dx, dy);
+	Assert(src != NULL);
+	Assert(dst != NULL);
 	int ss = pixelSize(), ds = dest.pixelSize();
 	int sp = pitch(), dp = dest.pitch();
 	COLOROPTYPE col;
@@ -377,6 +379,7 @@ void Image::getNormalizedColor(int x, int y, float* out) const
 {
 	int nc = pixelChannels();
 	unsigned char* pixeldat = getData(x,y);
+	Assert(pixeldat != NULL);
 	PIXELGETPROC get = pixel_get_proc(format);
 	COLOROPTYPE col;
 	get(pixeldat,col);
@@ -388,6 +391,7 @@ void Image::setNormalizedColor(int x, int y, const float* in)
 {
 	int nc = pixelChannels();
 	unsigned char* pixeldat = getData(x,y);
+	Assert(pixeldat != NULL);
 	PIXELSETPROC set = pixel_set_proc(format);
 	COLOROPTYPE col;
 	for(int i=0;i<nc;i++)
