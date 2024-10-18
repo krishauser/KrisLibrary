@@ -662,13 +662,10 @@ bool Geometry3DConvexHull::ConvertFrom(const Geometry3D* geom,Real param,Real do
     else {
         shared_ptr<Geometry3D> g2(geom->Convert(Type::TriangleMesh,param));
         if(g2) {
-            if (param == 0)
-                param = Inf;
             return ConvertFrom(g2.get(),param);
         }
         g2.reset(geom->Convert(Type::PointCloud,param));
         if(g2) {
-            if (param == 0) param = Inf;
             return ConvertFrom(g2.get(),param);
         }
         return false;
