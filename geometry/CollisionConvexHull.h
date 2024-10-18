@@ -23,19 +23,19 @@ public:
   Collider3DConvexHull(shared_ptr<Geometry3DConvexHull> data);  
   virtual ~Collider3DConvexHull() {}
   virtual shared_ptr<Geometry3D> GetData() const { return dynamic_pointer_cast<Geometry3D>(data); }
-  virtual void Reset();
-  virtual AABB3D GetAABB() const;
-  virtual RigidTransform GetTransform() const { return T; }
-  virtual void SetTransform(const RigidTransform& T);
-  virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
-  virtual bool Contains(const Vector3& pt,bool& result);
-  virtual bool Distance(const Vector3& pt,Real& result);
-  virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res);
-  virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res);
-  virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
-  virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) { return false; }
-  virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element);
-  virtual bool Support(const Vector3& dir,Vector3& pt) const;
+  virtual void Reset() override;
+  virtual AABB3D GetAABB() const override;
+  virtual RigidTransform GetTransform() const override { return T; }
+  virtual void SetTransform(const RigidTransform& T) override;
+  virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
+  virtual bool Contains(const Vector3& pt,bool& result) override;
+  virtual bool Distance(const Vector3& pt,Real& result) override;
+  virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+  virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+  virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
+  virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res)  override { return false; }
+  virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
+  virtual bool Support(const Vector3& dir,Vector3& pt) override;
   
   bool Collides(const GeometricPrimitive3D& primitive,bool& result);
   bool Collides(const Collider3DConvexHull& geometry, Vector3* common_point=nullptr) const;

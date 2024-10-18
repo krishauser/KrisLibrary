@@ -76,6 +76,8 @@ public:
   /// Hull means the hull of two objects.
   enum Type { Empty, Polytope, Box, Cone, Cylinder, Sphere, Point, LineSegment, Minkowski, Trans, Hull};
   ConvexHull3D();
+  ConvexHull3D(const ConvexHull3D& rhs);
+  const ConvexHull3D& operator = (const ConvexHull3D& rhs); 
   void SetPoint(const Vector3& a);
   void SetPoints(const Vector& a);
   void SetPoints(const std::vector<double>& a);
