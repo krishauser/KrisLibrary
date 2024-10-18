@@ -11,6 +11,7 @@
 #include <KrisLibrary/math3d/Triangle2D.h>
 #include <KrisLibrary/math3d/Ray2D.h>
 #include "AnyGeometry.h"
+#include <numeric>
 
 DECLARE_LOGGER(Geometry)
 
@@ -96,43 +97,44 @@ Geometry3D* Geometry3DHeightmap::ConvertTo(Type restype,Real param,Real domainEx
 {
     if(restype == Type::ImplicitSurface || restype == Type::OccupancyGrid) {
         if(param <= 0) {
-            //heightmap's height range / 256
-            float zmin = *std::min_element(data.heights.begin(),data.heights.end(),[] (float x, float y) { return x < y ? true : !isnan(x); });
-            float zmax = *std::max_element(data.heights.begin(),data.heights.end(),[] (float x, float y) { return x < y ? true : isnan(x); });
-            Real res = (zmax-zmin)/256;
+            //heightmap's height range / 128
+            Vector2 hrange = data.ValidHeightRange();
+            Real res = (hrange.y-hrange.x)/128;
             if(res==0) res=1;
             param = res;
         }
         Meshing::VolumeGrid grid;
         grid.bb = data.GetAABB();
+        grid.bb.bmax.z += Max(domainExpansion,0.5*param);
         Matrix3 I;
         I.setIdentity();
         if(!data.viewport.perspective && data.viewport.pose.R == I) {  //fast method
-            int zdivs = int(grid.bb.bmax.z - grid.bb.bmin.z)/param;
+            int zdivs = int((grid.bb.bmax.z - grid.bb.bmin.z)/param);
             if(zdivs <= 0) zdivs = 1;
             grid.value.resize(data.heights.m,data.heights.n,zdivs);
             Vector3 c;
             for(int i=0;i<data.heights.m;i++)
-                for(int j=0;j<data.heights.n;j++)
+                for(int j=0;j<data.heights.n;j++) {
                     for(int k=0;k<grid.value.p;k++) {
-                        grid.GetCellCenter(i,j,k,c);
+                        Real z= grid.bb.bmin.z + (Real(k)+0.5)*(grid.bb.bmax.z-grid.bb.bmin.z)/grid.value.p;
                         if(restype == Type::ImplicitSurface)
-                            grid.value(i,j,k) = c.z - data.heights(i,j);
+                            grid.value(i,j,k) = z - data.viewport.pose.t.z - data.heights(i,j);
                         else
-                            grid.value(i,j,k) = (c.z > data.heights(i,j) ? 0.0 : 1.0);
+                            grid.value(i,j,k) = (z - data.viewport.pose.t.z > data.heights(i,j) ? 0.0 : 1.0);
                     }
+                }
         }
         else {
-            int xdivs = int(grid.bb.bmax.x - grid.bb.bmin.x)/param;
-            int ydivs = int(grid.bb.bmax.y - grid.bb.bmin.y)/param;
-            int zdivs = int(grid.bb.bmax.z - grid.bb.bmin.z)/param;
+            int xdivs = int((grid.bb.bmax.x - grid.bb.bmin.x)/param);
+            int ydivs = int((grid.bb.bmax.y - grid.bb.bmin.y)/param);
+            int zdivs = int((grid.bb.bmax.z - grid.bb.bmin.z)/param);
             if(xdivs <= 0) xdivs = 1;
             if(ydivs <= 0) ydivs = 1;
             if(zdivs <= 0) zdivs = 1;
             grid.value.resize(xdivs,ydivs,zdivs);
             Vector3 c;
-            for(int i=0;i<data.heights.m;i++)
-                for(int j=0;j<data.heights.n;j++)
+            for(int i=0;i<grid.value.m;i++)
+                for(int j=0;j<grid.value.n;j++)
                     for(int k=0;k<grid.value.p;k++) {
                         grid.GetCellCenter(i,j,k,c);
                         Real dh = data.GetHeightDifference(c);
@@ -150,6 +152,18 @@ Geometry3D* Geometry3DHeightmap::ConvertTo(Type restype,Real param,Real domainEx
                         }
                     }
         }
+        // if(restype == Type::ImplicitSurface) {
+        //     printf("IMPLICIT SURFACE RANGE %f %f\n",*std::min_element(grid.value.begin(),grid.value.end()),*std::max_element(grid.value.begin(),grid.value.end()));
+        //     int nocc = 0;
+        //     for(int i=0;i<grid.value.m;i++)
+        //         for(int j=0;j<grid.value.n;j++)
+        //             for(int k=0;k<grid.value.p;k++) 
+        //                 nocc += (grid.value(i,j,k) < 0 ? 1 : 0);
+        //     printf("NUMBER OF OCCUPIED CELLS: %d / %d\n",nocc,grid.value.m*grid.value.n*grid.value.p);
+        // }
+        // else {
+        //     printf("NUMBER OF OCCUPIED CELLS: %f / %d\n",std::accumulate(grid.value.begin(),grid.value.end(),0.0),grid.value.m*grid.value.n*grid.value.p);
+        // }
         if(restype == Type::ImplicitSurface)
             return new Geometry3DImplicitSurface(grid);
         else
@@ -197,13 +211,20 @@ bool Geometry3DHeightmap::ConvertFrom(const Geometry3D* geom,Real param,Real dom
     data.viewport.pose.t = (bb.bmin+bb.bmax)*0.5;
     data.viewport.pose.t.z = bb.bmin.z;
     int m,n;
-    if(param == 0) {
-        m=256;
-        n=256;
+    if(geom->GetType() ==  Type::OccupancyGrid || geom->GetType() ==  Type::ImplicitSurface) {
+        const Geometry3DVolume* vol = dynamic_cast<const Geometry3DVolume*>(geom);
+        m = vol->data.value.m;
+        n = vol->data.value.n;
     }
     else {
-        m = int((bb.bmax.x-bb.bmin.x) / param) + 1;
-        n = int((bb.bmax.y-bb.bmin.y) / param) + 1;
+        if(param == 0) {
+            m=256;
+            n=256;
+        }
+        else {
+            m = int((bb.bmax.x-bb.bmin.x) / param) + 1;
+            n = int((bb.bmax.y-bb.bmin.y) / param) + 1;
+        }
     }
     data.viewport.w = m;
     data.viewport.h = n;
@@ -261,49 +282,6 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
         }
         return false;
         }
-    case Type::ConvexHull:
-        {
-        const Geometry3DConvexHull* ch = dynamic_cast<const Geometry3DConvexHull*>(geom);
-        ConvexHull3D hull = ch->data;
-        if(Tgeom)
-            hull.Transform(*Tgeom);
-        auto bb = hull.GetAABB();
-        //get range of bb to minimize # of rays cast
-        IntPair lo = data.GetIndex(bb.bmin);
-        IntPair hi = data.GetIndex(bb.bmax);
-        if(hi.a < 0 || hi.b < 0 || lo.a >= data.heights.m || lo.b >= data.heights.n) return true;
-        hi.a = Min(hi.a,data.heights.m-1);
-        hi.b = Min(hi.b,data.heights.n-1);
-        lo.a = Max(lo.a,0);
-        lo.b = Max(lo.b,0);
-        Ray3D ray;
-        Real dscale = 1.0;
-        for(int i=lo.a;i<=hi.a;i++) {
-            for(int j=lo.b;j<hi.b;j++) {
-                data.GetVertexRay(i,j,ray.source,ray.direction);
-                if(!data.viewport.perspective)  {
-                    //ray needs to go from top down
-                    ray.source.z = bb.bmax.z + 1.0;
-                    ray.direction.set(0,0,-1);
-                }
-                else {
-                    //ray is unnormalized, normalize it
-                    dscale = ray.direction.norm();
-                    ray.direction /= dscale;
-                }
-                Real dist;
-                if(hull.RayCast(ray,&dist,data.heights(i,j))) {
-                    if(data.viewport.perspective) {
-                        dist *= dscale;
-                        data.heights(i,j) = Min(float(dist),data.heights(i,j));
-                    }
-                    else
-                        data.heights(i,j) = Max(float(bb.bmax.z + 1.0 - dist - data.viewport.pose.t.z),data.heights(i,j));
-                }
-            }
-        }
-        return true;
-        }
     case Type::Primitive:
         {
         const Geometry3DPrimitive* p = dynamic_cast<const Geometry3DPrimitive*>(geom);
@@ -327,7 +305,6 @@ bool Geometry3DHeightmap::Merge(const Geometry3D* geom,const RigidTransform* Tge
                 if(!data.viewport.perspective)  {
                     //ray needs to go from top down
                     ray.source.z = bb.bmax.z + 1.0;
-                    ray.direction.set(0,0,-1);
                 }
                 else {
                     //ray is unnormalized, normalize it
@@ -371,8 +348,9 @@ Collider3DHeightmap::Collider3DHeightmap(shared_ptr<Geometry3DHeightmap> _data)
 
 void Collider3DHeightmap::Reset()
 {
-    hmin = *std::min_element(data->data.heights.begin(),data->data.heights.end(),[] (float x, float y) { return x < y ? true : !isnan(x); });
-    hmax = *std::max_element(data->data.heights.begin(),data->data.heights.end(),[] (float x, float y) { return x < y ? true : isnan(x); });
+    Vector2 hrange = data->data.ValidHeightRange();
+    hmin = hrange.x;
+    hmax = hrange.y;
 }
 
 Box3D Collider3DHeightmap::GetBB() const
