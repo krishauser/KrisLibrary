@@ -196,7 +196,6 @@ bool Geometry3DHeightmap::ConvertFrom(const Geometry3D* geom,Real param,Real dom
     data.viewport.pose.R.setIdentity();
     data.viewport.pose.t = (bb.bmin+bb.bmax)*0.5;
     data.viewport.pose.t.z = bb.bmin.z;
-    data.SetSize(bb.bmax.x-bb.bmin.x,bb.bmax.y-bb.bmin.y);
     int m,n;
     if(param == 0) {
         m=256;
@@ -206,6 +205,9 @@ bool Geometry3DHeightmap::ConvertFrom(const Geometry3D* geom,Real param,Real dom
         m = int((bb.bmax.x-bb.bmin.x) / param) + 1;
         n = int((bb.bmax.y-bb.bmin.y) / param) + 1;
     }
+    data.viewport.w = m;
+    data.viewport.h = n;
+    data.SetSize(bb.bmax.x-bb.bmin.x,bb.bmax.y-bb.bmin.y);
     data.heights.resize(m,n);
     fill(data.heights.begin(),data.heights.end(),0);
     if(!Merge(geom)) return false;
@@ -377,10 +379,17 @@ Box3D Collider3DHeightmap::GetBB() const
 {
     ///faster than min/maxing over heights
     AABB3D localBB;
-    if(data->data.viewport.perspective) FatalError("TODO: perspective BB");
-    AABB2D bb2d = data->data.viewport.getViewRectangle(0,true);
-    localBB.bmin.set(bb2d.bmin.x,bb2d.bmin.y,hmin);
-    localBB.bmax.set(bb2d.bmax.x,bb2d.bmax.y,hmax);
+    if(data->data.viewport.perspective) {
+        AABB2D bb2d = data->data.viewport.getViewRectangle(hmin,true);
+        localBB.bmin.set(bb2d.bmin.x,bb2d.bmin.y,hmin);
+        bb2d = data->data.viewport.getViewRectangle(hmax,true);
+        localBB.bmax.set(bb2d.bmax.x,bb2d.bmax.y,hmax);
+    }
+    else {
+        AABB2D bb2d = data->data.viewport.getViewRectangle(0,true);
+        localBB.bmin.set(bb2d.bmin.x,bb2d.bmin.y,hmin);
+        localBB.bmax.set(bb2d.bmax.x,bb2d.bmax.y,hmax);
+    }
     Box3D res;
     res.setTransformed(localBB,currentTransform*data->data.viewport.pose);
     return res;
@@ -393,15 +402,16 @@ bool Collider3DHeightmap::Contains(const Vector3& pt,bool& result)
     Real h = data->data.GetHeight(ptLocal);
     Vector3 phm;
     data->data.viewport.pose.mulInverse(ptLocal,phm);
+    result = false;
     if(data->data.viewport.perspective) {
         if(!IsFinite(h) && h > 0)
-            return phm.z >= h;
+            result = phm.z >= h;
     }
     else {
         if(IsFinite(h))
-            return phm.z <= h;
+            result = phm.z <= h;
     }
-    return false;
+    return true;
 }
 
 bool LowerHeight(int i, int j, const Meshing::Heightmap& hm, Real hmax, const GeometricPrimitive3D& prim, Real& dist) 
