@@ -568,7 +568,7 @@ void GeometricPrimitive3D::Transform(const RigidTransform& T)
   }
 }
 
-void GeometricPrimitive3D::Transform(const Matrix4& T)
+bool GeometricPrimitive3D::Transform(const Matrix4& T)
 {
   /*
   bool rotation = (T(0,1)!=0||T(0,2)!=0||T(1,2)!=0||T(1,0)!=0||T(2,0)!=0||T(2,1)!=0);
@@ -617,10 +617,9 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
       temp.mulTransposeB(R,R);
       bool nonuniform = (!FuzzyEquals(temp(0,0),temp(1,1)) || !FuzzyEquals(temp(1,1),temp(2,2)));
       if(nonuniform) {
-	//convert to ellipsoid type
-	FatalError("Can't yet convert spheres to ellipsoids\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Nonuniform scaling of sphere not supported yet");
+        return false;
       }
-
       Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
       Vector3 ctemp=s->center;
       T.mulPoint(ctemp,s->center);
@@ -634,7 +633,8 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
       temp.mulTransposeB(R,R);
       bool scale = (!FuzzyEquals(temp(0,0),1.0) || !FuzzyEquals(temp(1,1),1.0) || !FuzzyEquals(temp(2,2),1.0));
       if(scale) {
-	FatalError("Can't yet scale / transform AABBs\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Nonuniform scaling of AABB not supported yet");
+        return false;
       }
       Box3D b = GetBB();
       b.setTransformed(b,T);
@@ -649,7 +649,8 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
       temp.mulTransposeB(R,R);
       bool scale = (!FuzzyEquals(temp(0,0),1.0) || !FuzzyEquals(temp(1,1),1.0) || !FuzzyEquals(temp(2,2),1.0));
       if(scale) {
-	FatalError("Can't yet scale / transform Box's\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Nonuniform scaling of Box not supported yet");
+        return false;
       }
       Box3D* b = AnyCast_Raw<Box3D>(&data);
       b->setTransformed(*b,T);
@@ -662,7 +663,8 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
       temp.mulTransposeB(R,R);
       bool scale = (!FuzzyEquals(temp(0,0),1.0) || !FuzzyEquals(temp(1,1),1.0) || !FuzzyEquals(temp(2,2),1.0));
       if(scale) {
-	FatalError("Can't yet scale / transform Cylinders\n");
+        LOG4CXX_INFO(KrisLibrary::logger(),"Nonuniform scaling of AABB not supported yet");
+        return false;
       }
       Cylinder3D* c=AnyCast_Raw<Cylinder3D>(&data);
       c->setTransformed(*c,T);
@@ -672,6 +674,7 @@ void GeometricPrimitive3D::Transform(const Matrix4& T)
     FatalError("Invalid primitive type");
     break;
   }
+  return true;
 }
 
 vector<double> GeometricPrimitive3D::ClosestPointParameters(const Vector3& pt) const

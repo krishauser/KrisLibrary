@@ -52,7 +52,7 @@ class GeometricPrimitive3D
   Box3D GetBB() const;
   RigidTransform GetFrame() const;
   void Transform(const RigidTransform& T);
-  void Transform(const Matrix4& T);
+  bool Transform(const Matrix4& T);
 
   static bool SupportsCollides(Type a,Type b);
   bool SupportsCollides(Type b) const { return GeometricPrimitive3D::SupportsCollides(type,b); }
