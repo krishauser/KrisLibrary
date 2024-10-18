@@ -139,11 +139,11 @@ Geometry3D* Geometry3D::Make(Type type)
 {
     switch(type) {
     case Type::Primitive: return new Geometry3DPrimitive();
+    case Type::ConvexHull: return new Geometry3DConvexHull();
     case Type::TriangleMesh: return new Geometry3DTriangleMesh();
     case Type::PointCloud: return new Geometry3DPointCloud();
     case Type::ImplicitSurface: return new Geometry3DImplicitSurface();
     case Type::OccupancyGrid: return new Geometry3DOccupancyGrid();
-    case Type::ConvexHull: return new Geometry3DConvexHull();
     case Type::Heightmap: return new Geometry3DHeightmap();
     case Type::Group: return new Geometry3DGroup();
     default:
@@ -154,11 +154,11 @@ Geometry3D* Geometry3D::Make(Type type)
 Geometry3D* Geometry3D::Make(const char* typestr)
 {
     if (0==strcmp(typestr,"Primitive")) return new Geometry3DPrimitive();
+    else if(0==strcmp(typestr,"ConvexHull")) return new Geometry3DConvexHull();
     else if(0==strcmp(typestr,"TriangleMesh")) return new Geometry3DTriangleMesh();
     else if(0==strcmp(typestr,"PointCloud")) return new Geometry3DPointCloud();
     else if(0==strcmp(typestr,"ImplicitSurface")) return new Geometry3DImplicitSurface();
     else if(0==strcmp(typestr,"OccupancyGrid")) return new Geometry3DOccupancyGrid();
-    else if(0==strcmp(typestr,"ConvexHull")) return new Geometry3DConvexHull();
     else if(0==strcmp(typestr,"Heightmap")) return new Geometry3DHeightmap();
     else if(0==strcmp(typestr,"Group")) return new Geometry3DGroup();
     else return NULL;
@@ -438,9 +438,9 @@ Collider3D* Collider3D::Make(shared_ptr<Geometry3D> data)
 {
     switch (data->GetType()) {
     case Type::Primitive: return new Collider3DPrimitive(dynamic_pointer_cast<Geometry3DPrimitive>(data));
+    case Type::ConvexHull: return new Collider3DConvexHull(dynamic_pointer_cast<Geometry3DConvexHull>(data));
     case Type::TriangleMesh: return new Collider3DTriangleMesh(dynamic_pointer_cast<Geometry3DTriangleMesh>(data));
     case Type::PointCloud: return new Collider3DPointCloud(dynamic_pointer_cast<Geometry3DPointCloud>(data));
-    case Type::ConvexHull: return new Collider3DConvexHull(dynamic_pointer_cast<Geometry3DConvexHull>(data));
     case Type::ImplicitSurface: return new Collider3DImplicitSurface(dynamic_pointer_cast<Geometry3DImplicitSurface>(data));
     case Type::OccupancyGrid: return new Collider3DOccupancyGrid(dynamic_pointer_cast<Geometry3DOccupancyGrid>(data));
     case Type::Heightmap: return new Collider3DHeightmap(dynamic_pointer_cast<Geometry3DHeightmap>(data));
