@@ -48,8 +48,7 @@ bool Geometry3DPrimitive::Support(const Vector3& dir,Vector3& pt) const
 
 bool Geometry3DPrimitive::Transform(const Matrix4& mat)
 {
-    data.Transform(mat);
-    return true;
+    return data.Transform(mat);
 }
 
 Geometry3D* Geometry3DPrimitive::ConvertTo(Type restype,Real param,Real domainExpansion) const
