@@ -2392,7 +2392,8 @@ bool Collider3DTriangleMesh::Contains(const Vector3& pt,bool& result)
     }
     else numOutside += 1;
   }
-  return numInside > numOutside; //majority voting
+  result = numInside > numOutside; //majority voting
+  return true;
 }
 
 AnyDistanceQueryResult Distance(const GeometricPrimitive3D &a, const CollisionMesh &b, const AnyDistanceQuerySettings &settings)
