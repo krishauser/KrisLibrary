@@ -106,6 +106,7 @@ Geometry3D* Geometry3DHeightmap::ConvertTo(Type restype,Real param,Real domainEx
         Meshing::VolumeGrid grid;
         grid.bb = data.GetAABB();
         grid.bb.bmax.z += Max(domainExpansion,0.5*param);
+        Real large = grid.bb.bmax.distance(grid.bb.bmin);
         Matrix3 I;
         I.setIdentity();
         if(!data.viewport.perspective && data.viewport.pose.R == I) {  //fast method
@@ -117,10 +118,22 @@ Geometry3D* Geometry3DHeightmap::ConvertTo(Type restype,Real param,Real domainEx
                 for(int j=0;j<data.heights.n;j++) {
                     for(int k=0;k<grid.value.p;k++) {
                         Real z= grid.bb.bmin.z + (Real(k)+0.5)*(grid.bb.bmax.z-grid.bb.bmin.z)/grid.value.p;
-                        if(restype == Type::ImplicitSurface)
-                            grid.value(i,j,k) = z - data.viewport.pose.t.z - data.heights(i,j);
-                        else
-                            grid.value(i,j,k) = (z - data.viewport.pose.t.z > data.heights(i,j) ? 0.0 : 1.0);
+                        if(restype == Type::ImplicitSurface) {
+                            if(!IsFinite(data.heights(i,j))) {
+                                grid.value(i,j,k) = large;
+                            }
+                            else {
+                                grid.value(i,j,k) = z - data.viewport.pose.t.z - data.heights(i,j);
+                            }
+                        }
+                        else {
+                            if(!IsFinite(data.heights(i,j))) {
+                                grid.value(i,j,k) = 0.0;
+                            }
+                            else {
+                                grid.value(i,j,k) = (z - data.viewport.pose.t.z > data.heights(i,j) ? 0.0 : 1.0);
+                            }
+                        }
                     }
                 }
         }
@@ -138,17 +151,25 @@ Geometry3D* Geometry3DHeightmap::ConvertTo(Type restype,Real param,Real domainEx
                     for(int k=0;k<grid.value.p;k++) {
                         grid.GetCellCenter(i,j,k,c);
                         Real dh = data.GetHeightDifference(c);
-                        if(data.viewport.perspective) {  //higher values are "behind"
-                            if(restype == Type::ImplicitSurface)
-                                grid.value(i,j,k) = -dh;
-                            else
-                                grid.value(i,j,k) = (dh < 0 ? 0.0 : 1.0);
+                        if(IsFinite(dh)) {
+                            if(data.viewport.perspective) {  //higher values are "behind"
+                                if(restype == Type::ImplicitSurface)
+                                    grid.value(i,j,k) = -dh;
+                                else
+                                    grid.value(i,j,k) = (dh < 0 ? 0.0 : 1.0);
+                            }
+                            else {
+                                if(restype == Type::ImplicitSurface)
+                                    grid.value(i,j,k) = dh;
+                                else
+                                    grid.value(i,j,k) = (dh > 0 ? 0.0 : 1.0);
+                            }
                         }
                         else {
                             if(restype == Type::ImplicitSurface)
-                                grid.value(i,j,k) = dh;
+                                grid.value(i,j,k) = large;
                             else
-                                grid.value(i,j,k) = (dh > 0 ? 0.0 : 1.0);
+                                grid.value(i,j,k) = 0.0;
                         }
                     }
         }
