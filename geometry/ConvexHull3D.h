@@ -116,6 +116,7 @@ public:
     ShapeHandleContainer(DT_ShapeHandle data);
     ~ShapeHandleContainer();
     DT_ShapeHandle data;
+    DT_ObjectHandle object_ref;  //object corresponding to data at rest
   };
   std::shared_ptr<ShapeHandleContainer> shapeHandle; //internal SOLID data
 };

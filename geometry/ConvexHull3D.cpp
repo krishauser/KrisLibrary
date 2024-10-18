@@ -165,11 +165,16 @@ bool ConvexHull3D_Qhull(const std::vector<Vector3>& points,std::vector<IntTriple
 ConvexHull3D::ShapeHandleContainer::ShapeHandleContainer(DT_ShapeHandle _data)
 :data(_data)
 {
+  Assert(data!=NULL);
   //printf("CREATING SHAPE HANDLE CONTAINER WITH DATA %p\n",data);
+  object_ref = DT_CreateObject(NULL, data);
 }
 
 ConvexHull3D::ShapeHandleContainer::~ShapeHandleContainer()
 {
+  if(object_ref) {
+    DT_DestroyObject(object_ref);
+  }
   if(data) {
     //printf("DELETING SHAPE HANDLE %p IN CONTAINER\n",data);
     DT_DeleteShape(data);
@@ -293,19 +298,21 @@ bool ConvexHull3D::Contains(const Vector3& pnt) const
 bool ConvexHull3D::RayCast(const Ray3D& r,Real* param,Real maxParam) const
 {
   if(!shapeHandle) return false;
-  DT_ObjectHandle obj = DT_CreateObject(NULL, shapeHandle->data);
-  
-  maxParam = Max(maxParam,10000.0);
+  if(type != ConvexHull3D::Type::Box && type != ConvexHull3D::Type::Sphere) {
+    //SOLID has not implemented these yet
+    return false;
+  }
+  maxParam = Min(maxParam,10000.0);
+  Vector3 target = r.source + r.direction;
   Vector3 pt;
   DT_Scalar distance;
   DT_Vector3 normal;
-  DT_Bool collide = DT_ObjectRayCast(obj, r.source, r.direction, maxParam, &distance, normal);
-  DT_DestroyObject(obj);
+  DT_Bool collide = DT_ObjectRayCast(shapeHandle->object_ref, r.source, target, maxParam, &distance, normal);
   if(collide) {
     if(param) *param = distance;
     return true;
   }
-  return true;
+  return false;
 }
 
 
@@ -314,11 +321,7 @@ bool ConvexHull3D::Collides(const ConvexHull3D& g,Vector3* common_point) const
   DT_SetAccuracy((DT_Scalar)1e-6);
   DT_SetTolerance((DT_Scalar)(1e-6));
   DT_Vector3 point1;
-  DT_ObjectHandle object1 = DT_CreateObject(NULL, shapeHandle->data);
-  DT_ObjectHandle object2 = DT_CreateObject(NULL, g.shapeHandle->data);
-  DT_Bool collide = DT_GetCommonPoint(object1, object2, point1);
-  DT_DestroyObject(object1);
-  DT_DestroyObject(object2);
+  DT_Bool collide = DT_GetCommonPoint(shapeHandle->object_ref, g.shapeHandle->object_ref, point1);
   if(collide && common_point) 
     common_point->set(point1);
   return collide;
@@ -408,11 +411,7 @@ Real ConvexHull3D::ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& di
 
 std::tuple<Real, Vector3, Vector3> ConvexHull3D::ClosestPoints(const ConvexHull3D &h) const {
   if(!shapeHandle || !h.shapeHandle) return std::make_tuple(Inf,Vector3(0.0),Vector3(0.0));
-  DT_ObjectHandle object1 = DT_CreateObject(NULL, shapeHandle->data);
-  DT_ObjectHandle object2 = DT_CreateObject(NULL, h.shapeHandle->data);
-  auto res = dist_func(object1, object2);
-  DT_DestroyObject(object1);
-  DT_DestroyObject(object2);
+  auto res = dist_func(shapeHandle->object_ref, h.shapeHandle->object_ref);
   return res;
 }
 
@@ -1025,11 +1024,16 @@ bool Collider3DConvexHull::Support(const Vector3& dir,Vector3& pt)
 
 bool Collider3DConvexHull::RayCast(const Ray3D& r,Real margin,Real& distance,int& element)
 {
+  if(type != ConvexHull3D::Type::Box && type != ConvexHull3D::Type::Sphere) {
+    //SOLID has not implemented these yet
+    return false;
+  }
   element = -1;
   Vector3 pt;
   if(!Support(r.direction,pt)) return true;
+  Vector3 target = r.source + r.direction;
   DT_Vector3 normal;
-  if(DT_ObjectRayCast(objectHandle->data, r.source, r.direction,10000,&distance,normal))
+  if(DT_ObjectRayCast(objectHandle->data, r.source, target, 10000,&distance,normal))
   {
     element = 0;
     distance -= margin;
