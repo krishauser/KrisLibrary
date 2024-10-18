@@ -148,7 +148,15 @@ Real AABB3D::signedDistance(const Point3D& pt,Point3D& out) const
   if(out.z > bmax.z) { out.z=bmax.z; inside=false; }
   else dmin = Min(dmin,bmax.z-out.z); 
   if(!inside) return out.distance(pt);
-  else return -dmin;
+  else {
+    if(dmin == out.x-bmin.x) out.x = bmin.x;
+    else if(dmin == bmax.x-out.x) out.x = bmax.x;
+    else if(dmin == out.y-bmin.y) out.y = bmin.y;
+    else if(dmin == bmax.y-out.y) out.y = bmax.y;
+    else if(dmin == out.z-bmin.z) out.z = bmin.z;
+    else if(dmin == bmax.z-out.z) out.z = bmax.z;
+    return -dmin;
+  }
 }
 
 Real AABB3D::distance(const AABB3D& bb) const

@@ -107,6 +107,16 @@ Real Box3D::signedDistance(const Point3D& pt,Point3D& out) const
   else dmin = Min(dmin,dims.y-loc.y);
   if(loc.z > dims.z) { out.z = dims.z; inside=false; }
   else dmin = Min(dmin,dims.z-loc.z);
+  if(inside) {
+    //signed distance is negative, out point is on surface
+    if(loc.x == dmin) out.x = 0;
+    else if(loc.y == dmin) out.y = 0;
+    else if(loc.z == dmin) out.z = 0;
+    else if(dims.x-loc.x == dmin) out.x = dims.x;
+    else if(dims.y-loc.y == dmin) out.y = dims.y;
+    else if(dims.z-loc.z == dmin) out.z = dims.z;
+    return -dmin;
+  }
   Real norm = loc.distance(out);
   loc = out;
   fromLocal(loc,out);
