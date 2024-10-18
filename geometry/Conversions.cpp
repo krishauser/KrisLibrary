@@ -702,21 +702,29 @@ void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) {
 
 void _HACD_CallBack(const char * msg, double progress, double concavity, size_t nVertices)
 {
+	//VERBOSE OR NOT?
     LOG4CXX_INFO(KrisLibrary::logger(),msg);
 }
 
 void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Real concavity)
 {
+	if(concavity > 0) {
+		LOG4CXX_WARN(KrisLibrary::logger(),"MeshConvexDecomposition: concavity not supported yet in single ConvexHull object");
+		concavity = 0;
+	}
     if(concavity <= 0) {
-        MeshToConvexHull(mesh,ch);
+	    MeshToConvexHull(mesh,ch);
         return;
     }
+  
   int minClusters = 1;  // so I allow conversion directly from convex objects
-//  bool invert = false;
+  int maxVerticesPerCH = mesh.verts.size();
   bool addExtraDistPoints = true;
   bool addFacesPoints = true;
-  float ccConnectDist = 30;
-  int targetNTrianglesDecimatedMesh = 3000;
+  Vector3 bmin,bmax;
+  mesh.GetAABB(bmin,bmax);
+  float ccConnectDist = (bmax-bmin).maxAbsElement()*0.1*1000.0; //there's a scale factor in HACD
+  int targetNTrianglesDecimatedMesh = mesh.tris.size();
 
   vector<HACD::Vec3<Real> > points;
   vector<HACD::Vec3<long> > triangles;
@@ -749,7 +757,7 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
                                                       // the simplification process
 
   myHACD->SetNClusters(minClusters);                     // minimum number of clusters
-  myHACD->SetNVerticesPerCH(100);                      // max of 100 vertices per convex-hull
+  myHACD->SetNVerticesPerCH(maxVerticesPerCH);                      // max of 100 vertices per convex-hull
   myHACD->SetConcavity(concavity);                     // maximum concavity
   myHACD->SetSmallClusterThreshold(0.25);              // threshold to detect small clusters
   myHACD->SetNTargetTrianglesDecimatedMesh(targetNTrianglesDecimatedMesh); // # triangles in the decimated mesh

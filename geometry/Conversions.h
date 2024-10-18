@@ -114,6 +114,8 @@ void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch);
  * approximate convex decomposition using the HACD algorithm.
  * 
  * Note: the ConvexHull3D class can store a composite of convex hulls.
+ * 
+ * TODO: we have not yet set up an API to store a composite of convex hulls.
  */
 void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Real concavity);
 
