@@ -202,6 +202,8 @@ public:
     bool ValidHeight(Real h) const;
     /// @brief Returns the mask of valid height values. 
     void ValidHeightMask(Array2D<bool>& mask) const;
+    /// @brief Returns the min / max valid height value.
+    Vector2 ValidHeightRange() const;
     /** @brief Reads difference between the height of a point and the height
      * of the heightmap along the ray through the point.
      * 

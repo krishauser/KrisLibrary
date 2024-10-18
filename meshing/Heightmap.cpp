@@ -560,14 +560,9 @@ AABB3D Heightmap::GetAABB() const
         res.bmax.z = -Inf;
     }
     else {
-        res.bmin.z = Inf;
-        res.bmax.z = -Inf;
-        for(auto z: heights) {
-            if(ValidHeight(z)) {
-                res.bmin.z = std::min(res.bmin.z,Real(z));
-                res.bmax.z = std::max(res.bmax.z,Real(z));
-            }
-        }
+        Vector2 hrange=ValidHeightRange();
+        res.bmin.z = hrange.x;
+        res.bmax.z = hrange.y;
         if(!IsFinite(res.bmin.z) || !IsFinite(res.bmax.z)) {
             LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::GetAABB: error getting bounds with non-finite values");
         }
@@ -712,6 +707,18 @@ void Heightmap::ValidHeightMask(Array2D<bool>& mask) const
             Real v = heights(i,j);
             mask(i,j) = ValidHeight(v);
         }
+}
+
+Vector2 Heightmap::ValidHeightRange() const
+{
+    Vector2 hrange(Inf,-Inf);
+    for(auto z: heights) {
+        if(ValidHeight(z)) {
+            hrange.x = std::min(hrange.x,Real(z));
+            hrange.y = std::max(hrange.y,Real(z));
+        }
+    }
+    return hrange;
 }
 
 Real Heightmap::GetHeightDifference(const Vector3& pt,int interpolation) const
