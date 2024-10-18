@@ -73,7 +73,7 @@ inline int OddMan(Real a,Real b,Real c,Real tol)
   return -1;
 }
 
-int SplitTriangle(const Triangle3D& _t,const Plane3D& p,Vector3 newPts[2],IntTriple newTris[3],bool triPositive[3],Real tol) 
+int SplitTriangle(const Triangle3D& _t,const Plane3D& p,Vector3 newPts[2],Vector3 newPtBary[2],IntTriple newTris[3],bool triPositive[3],Real tol) 
 {
   Triangle3D t;//=_t;
   int indices[3]; //={0,1,2};
@@ -119,6 +119,7 @@ int SplitTriangle(const Triangle3D& _t,const Plane3D& p,Vector3 newPts[2],IntTri
     //only split edge 0,2
     Real u=SegmentInterpolation(d[0],d[2]);
     interpolate(t.a,t.c,u,newPts[0]);
+    newPtBary[0].set(1-u,0,u);
     newTris[0].set(indices[0],indices[1],3);
     newTris[1].set(indices[1],indices[2],3);
     triPositive[1] = !triPositive[0];
@@ -129,6 +130,7 @@ int SplitTriangle(const Triangle3D& _t,const Plane3D& p,Vector3 newPts[2],IntTri
     //only split edge 0,1
     Real u=SegmentInterpolation(d[0],d[1]);
     interpolate(t.a,t.b,u,newPts[0]);
+    newPtBary[0].set(1-u,u,0);
     newTris[0].set(indices[0],3,indices[2]);
     newTris[1].set(indices[2],3,indices[1]);
     triPositive[1] = !triPositive[0];
@@ -141,6 +143,8 @@ int SplitTriangle(const Triangle3D& _t,const Plane3D& p,Vector3 newPts[2],IntTri
   Real u2=SegmentInterpolation(d[0],d[2]);
   interpolate(t.a,t.b,u1,newPts[0]);
   interpolate(t.a,t.c,u2,newPts[1]);
+  newPtBary[0].set(1-u1,u1,0);
+  newPtBary[1].set(1-u2,0,u2);
   newTris[0].set(indices[0],3,4);
   //pick the delaunay triangulation of the remaining 4 points
   int choice=DelaunaySplit(newPts[0],t.b,t.c,newPts[1]);
@@ -158,14 +162,14 @@ int SplitTriangle(const Triangle3D& _t,const Plane3D& p,Vector3 newPts[2],IntTri
 }
 
 
-int SplitTriangle(const Triangle2D& _t,const Plane2D& p,Vector2 newPts[2],IntTriple newTris[3],bool triPositive[3],Real tol) 
+int SplitTriangle(const Triangle2D& _t,const Plane2D& p,Vector2 newPts[2],Vector3 newPtBary[2],IntTriple newTris[3],bool triPositive[3],Real tol) 
 {
   Triangle2D t; //=_t; 
   int indices[3]; //={0,1,2}
-  Real d[3];
-  d[0] = p.distance(t.a);
-  d[1] = p.distance(t.b);
-  d[2] = p.distance(t.c);
+   Real d[3];
+  d[0] = p.distance(_t.a);
+  d[1] = p.distance(_t.b);
+  d[2] = p.distance(_t.c);
   //find the "odd man" on the opposite side of the plane as the other 2
   //rotate the points so index 0 is the odd man
   int oddman = OddMan(d[0],d[1],d[2],tol);
@@ -204,6 +208,7 @@ int SplitTriangle(const Triangle2D& _t,const Plane2D& p,Vector2 newPts[2],IntTri
     //only split edge 0,2
     Real u=SegmentInterpolation(d[0],d[2]);
     interpolate(t.a,t.c,u,newPts[0]);
+    newPtBary[0].set(1-u,0,u);
     newTris[0].set(indices[0],indices[1],3);
     newTris[1].set(indices[1],indices[2],3);
     triPositive[1] = !triPositive[0];
@@ -214,6 +219,7 @@ int SplitTriangle(const Triangle2D& _t,const Plane2D& p,Vector2 newPts[2],IntTri
     //only split edge 0,1
     Real u=SegmentInterpolation(d[0],d[1]);
     interpolate(t.a,t.b,u,newPts[0]);
+    newPtBary[0].set(1-u,u,0);
     newTris[0].set(indices[0],3,indices[2]);
     newTris[1].set(3,indices[1],indices[2]);
     triPositive[1] = !triPositive[0];
@@ -226,6 +232,8 @@ int SplitTriangle(const Triangle2D& _t,const Plane2D& p,Vector2 newPts[2],IntTri
   Real u2=SegmentInterpolation(d[0],d[2]);
   interpolate(t.a,t.b,u1,newPts[0]);
   interpolate(t.a,t.c,u2,newPts[1]);
+  newPtBary[0].set(1-u1,u1,0);
+  newPtBary[1].set(1-u2,0,u2);
   newTris[0].set(indices[0],3,4);
   //pick the delaunay triangulation of the remaining 4 points
   int choice=DelaunaySplit(newPts[0],t.b,t.c,newPts[1]);

@@ -18,25 +18,51 @@ struct BarycentricCoords
 };
 
 //crop to the positive side of plane p, adds the resulting triangles to res
-void CropTriangles(vector<Triangle2D>& tris,const Plane2D& p)
+void CropTriangles(vector<Triangle2D>& tris,const Plane2D& p,vector<BarycentricCoords>& coords)
 {
+  Assert(tris.size() == coords.size());
   Vector2 newPts[2];
+  Vector3 newCoords[2];
+  Vector3 newCoordsLocal[2];
   IntTriple newTris[3];
   bool triPositive[3];
   size_t n=tris.size();
   for(size_t i=0;i<n;i++) {
-    int nt=SplitTriangle(tris[i],p,newPts,newTris,triPositive,1e-5);
+    newPts[0].set(Inf);
+    newPts[1].set(Inf);
+    newCoordsLocal[0].set(Inf);
+    newCoordsLocal[1].set(Inf);
+    int nt=SplitTriangle(tris[i],p,newPts,newCoordsLocal,newTris,triPositive,1e-5);
+    newCoords[0] = newCoordsLocal[0].x*coords[i].a + newCoordsLocal[0].y*coords[i].b + newCoordsLocal[0].z*coords[i].c;
+    newCoords[1] = newCoordsLocal[1].x*coords[i].a + newCoordsLocal[1].y*coords[i].b + newCoordsLocal[1].z*coords[i].c;
     const Vector2* p[5]={&tris[i].a,&tris[i].b,&tris[i].c,&newPts[0],&newPts[1]};
-    for(int k=0;k<nt;k++)
+    const Vector3* b[5]={&coords[i].a,&coords[i].b,&coords[i].c,&newCoords[0],&newCoords[1]};
+    for(int k=0;k<nt;k++) {
+      Assert(newTris[k][0] >= 0 && newTris[k][0] < 5);
+      Assert(newTris[k][1] >= 0 && newTris[k][1] < 5);
+      Assert(newTris[k][2] >= 0 && newTris[k][2] < 5);
       if(triPositive[k]) {
 	Triangle2D temp;
 	temp.a = *p[newTris[k][0]];
 	temp.b = *p[newTris[k][1]];
 	temp.c = *p[newTris[k][2]];
+  Assert(IsFinite(temp.a.x));
+  Assert(IsFinite(temp.b.x));
+  Assert(IsFinite(temp.c.x));
 	tris.push_back(temp);
+  BarycentricCoords tempb;
+  tempb.a = *b[newTris[k][0]];
+  tempb.b = *b[newTris[k][1]];
+  tempb.c = *b[newTris[k][2]];
+  Assert(IsFinite(tempb.a.x));
+  Assert(IsFinite(tempb.b.x));
+  Assert(IsFinite(tempb.c.x));
+  coords.push_back(tempb);
       }
+    }
   }
   tris.erase(tris.begin(),tris.begin()+n);
+  coords.erase(coords.begin(),coords.begin()+n);
 }
 
 
@@ -44,13 +70,13 @@ void Clip(const AABB2D& aabb,std::vector<Triangle2D>& tris,std::vector<Barycentr
 {
   Plane2D p;
   p.normal.set(1,0); p.offset = aabb.bmin.x;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
   p.normal.set(-1,0); p.offset = -aabb.bmax.x;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
   p.normal.set(0,1); p.offset = aabb.bmin.y;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
   p.normal.set(0,-1); p.offset = -aabb.bmax.y;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
 }
 
 void GetSegmentCells(const Segment2D& s,vector<IntPair>& cells)
@@ -730,6 +756,8 @@ void Rasterizer2D::ClippedRasterize(const Triangle2D& t,const AABB2D& aabb)
   bary[0].b.set(0,1,0);
   bary[0].c.set(0,0,1);
   Clip(aabb,tris,bary);
+  Assert(tris.size() == bary.size());
+  
   for(size_t i=0;i<tris.size();i++) {
     Rasterize(tris[i],bary[i].a,bary[i].b,bary[i].c);
   }
