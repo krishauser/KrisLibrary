@@ -114,7 +114,7 @@ class Geometry3DConvexHull : public Geometry3D
 {
 public:
   Geometry3DConvexHull() {}
-  Geometry3DConvexHull(const ConvexHull3D& _data) : data(_data) {}
+  Geometry3DConvexHull(const ConvexHull3D& _data);
   virtual ~Geometry3DConvexHull () {}
   virtual Type GetType() const { return Type::ConvexHull; }
   virtual bool Load(istream& in) override;
@@ -123,7 +123,7 @@ public:
   virtual size_t NumElements() const override;
   virtual shared_ptr<Geometry3D> GetElement(int elem) const override;
   virtual bool Transform(const Matrix4& mat) override;
-  virtual Geometry3D* Copy() const override { return new Geometry3DConvexHull(data); }
+  virtual Geometry3D* Copy() const override;
   virtual AABB3D GetAABB() const override;
   virtual bool Support(const Vector3& dir,Vector3& pt) const override;
   virtual Geometry3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) const override;
