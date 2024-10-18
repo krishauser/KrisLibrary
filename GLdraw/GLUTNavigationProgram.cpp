@@ -117,8 +117,9 @@ void GLUTNavigationProgram::Handle_Display()
 
 void GLUTNavigationProgram::Handle_Reshape(int w,int h)
 {
-  width=viewport.w=w;
-  height=viewport.h=h;
+  width=w;
+  height=h;
+  viewport.resize(w,h);
   glViewport(0,0,(GLsizei)width,(GLsizei)height);
   Refresh();
 }

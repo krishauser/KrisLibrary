@@ -116,7 +116,9 @@ void GLUINavigationProgram::Handle_Display()
 void GLUINavigationProgram::Handle_Reshape(int w,int h)
 {
   GLUIProgramBase::Handle_Reshape(w,h);
-  GLUI_Master.get_viewport_area(&viewport.x,&viewport.y,&viewport.w,&viewport.h);
+  int vw,vh;
+  GLUI_Master.get_viewport_area(&viewport.x,&viewport.y,&vw,&vh);
+  viewport.resize(vw,vh);
   glViewport(viewport.x,viewport.y,viewport.w,viewport.h);
   Refresh();
 }
