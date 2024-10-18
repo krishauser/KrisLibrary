@@ -1103,6 +1103,15 @@ bool Geometry3DImplicitSurface::ConvertFrom(const Geometry3D* geom,Real param,Re
         }
         PrimitiveToImplicitSurface(dynamic_cast<const Geometry3DPrimitive*>(geom)->data, data, param, domainExpansion);
         return true;
+    case Type::ConvexHull:
+        if (param == 0)
+        {
+            AABB3D bb = geom->GetAABB();
+            Real w = (bb.bmax - bb.bmin).maxAbsElement();
+            param = w * 0.05;
+        }
+        ConvexHullToImplicitSurface(dynamic_cast<const Geometry3DConvexHull*>(geom)->data, data, param, domainExpansion);
+        return true;
     case Type::TriangleMesh:
         {
         const auto& mesh = dynamic_cast<const Geometry3DTriangleMesh*>(geom)->data;
