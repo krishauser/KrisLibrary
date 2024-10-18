@@ -606,6 +606,7 @@ Vector3 Heightmap::Project(const Vector3& pt) const
 {
     float mx,my,mz;
     viewport.project(pt,mx,my,mz);
+    if(!viewport.perspective) mz = -mz;
     return Vector3(mx,my,mz);
 }
 
@@ -613,6 +614,7 @@ Vector3 Heightmap::Deproject(const Vector3& params) const
 {
     Vector3 src,dir;
     viewport.deproject(params.x,params.y,src,dir);
+    if(!viewport.perspective) src - dir*params.z;
     return src + dir*params.z;
 }
 
@@ -1161,6 +1163,7 @@ void Heightmap::FuseMesh(const TriMesh& mesh,const RigidTransform* Tmesh,bool to
         tcells.resize(0);
         theights.resize(0);
         GetTriangleHeights_Clipped(tri,tcells,theights,0,0,heights.m,heights.n);
+        Assert(theights.size() == tcells.size());
         for(size_t k=0;k<tcells.size();k++) {
             float& cell = heights(tcells[k]);
             if(maximize)
