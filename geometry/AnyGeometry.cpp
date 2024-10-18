@@ -83,6 +83,11 @@ AnyGeometry3D& AnyGeometry3D::operator = (const AnyGeometry3D& rhs)
   return *this;
 }
 
+AnyGeometry3D::AnyGeometry3D(const AnyGeometry3D& geom)
+{
+  *this = geom;
+}
+
 const GeometricPrimitive3D &AnyGeometry3D::AsPrimitive() const { return dynamic_cast<Geometry3DPrimitive*>(data.get())->data; }
 const ConvexHull3D& AnyGeometry3D::AsConvexHull() const { return dynamic_cast<Geometry3DConvexHull*>(data.get())->data; };
 const Meshing::TriMesh &AnyGeometry3D::AsTriangleMesh() const { return dynamic_cast<Geometry3DTriangleMesh*>(data.get())->data; };

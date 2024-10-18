@@ -85,7 +85,7 @@ class AnyGeometry3D
   AnyGeometry3D(const Meshing::VolumeGrid& grid,int value_type=VolumeGridImplicitSurface);
   AnyGeometry3D(const Meshing::Heightmap& hm);
   AnyGeometry3D(const vector<AnyGeometry3D>& items);
-  AnyGeometry3D(const AnyGeometry3D& geom) = default;
+  AnyGeometry3D(const AnyGeometry3D& geom);
   AnyGeometry3D(AnyGeometry3D&& geom) = default;
   AnyGeometry3D& operator = (const AnyGeometry3D& rhs);
   AnyGeometry3D& operator = (AnyGeometry3D&& rhs) = default;
