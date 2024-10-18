@@ -949,6 +949,9 @@ void Heightmap::GetVertices(Array2D<Vector3>& verts) const
     verts.resize(heights.m,heights.n);
     vector<Vector3> src,dir;
     viewport.getAllRays(src,dir,true,false);  //these are in scan-line order, i.e., y*w + x
+    if(!viewport.perspective) {
+        for(auto& v:dir) v.inplaceNegative();
+    }
     for(int i=0;i<heights.m;i++) {
         int k=i;
         for(int j=0;j<heights.n;j++,k+=heights.m) {

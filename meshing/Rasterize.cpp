@@ -545,6 +545,10 @@ void Rasterizer2D::Rasterize(const Triangle2D& t)
 
 void Rasterizer2D::Rasterize(const Triangle2D& t,const Vector3& ba,const Vector3& bb,const Vector3& bc)
 {
+  Math3D::AABB2D aabb;
+  t.getAABB(aabb);
+  if((aabb.bmax-aabb.bmin).maxAbsElement() > 1e5)
+    FatalError("Rasterizer2D: Triangle is too large to rasterize");
   //LOG4CXX_INFO(KrisLibrary::logger(),"Rasterizing triangle "<<t.a<<", "<<t.b<<", "<<t.c<<"...");
   const Vector2* v[3]={&t.a,&t.b,&t.c};
   const Vector3* b[3]={&ba,&bb,&bc};

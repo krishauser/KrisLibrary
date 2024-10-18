@@ -184,6 +184,17 @@ bool TriMeshWithTopology::IsConsistent()
             cout<<"  Mismatch for tri "<<i<<": "<<triNeighbors[i]<<" vs "<<tempTriNeighbors[i]<<endl;
       return false;
     }
+    for(size_t i=0;i<triNeighbors.size();i++) {
+      for(int j=0;j<3;j++) {
+        int a = triNeighbors[i][j];
+        if(a >= 0) {
+          if(triNeighbors[a].getIndex((int)i) < 0) {
+            LOG4CXX_WARN(KrisLibrary::logger(),"TriMeshTopology: tri neighbor mismatch "<<i<<" "<<a<<" "<<triNeighbors[a][1]);
+            return false;
+          }
+        }
+      }
+    }
   }
   return true;
 }
@@ -218,7 +229,7 @@ int TriMeshWithTopology::MakeConsistent()
         else {
           int t2a = t2.getIndex(t.a);
           int t2b = t2.getIndex(t.b);
-          if((t2a + 1)%3 == t2b) { //forward ordering, invalid
+          if(t2a >= 0 && (t2a + 1)%3 == t2b) { //forward ordering, invalid
             triNeighbors[i].c=-1;
             suspectTris.insert(k);
             //suspectTris.insert(i);
@@ -238,7 +249,7 @@ int TriMeshWithTopology::MakeConsistent()
         else {
           int t2a = t2.getIndex(t.a);
           int t2c = t2.getIndex(t.b);
-          if((t2c + 1)%3 == t2a) { //forward ordering, invalid
+          if(t2c >= 0 && (t2c + 1)%3 == t2a) { //forward ordering, invalid
             suspectTris.insert(k);
             //suspectTris.insert(i);
           }
@@ -264,7 +275,7 @@ int TriMeshWithTopology::MakeConsistent()
         else {
           int t2b = t2.getIndex(t.b);
           int t2c = t2.getIndex(t.c);
-          if((t2b + 1)%3 == t2c) { //forward ordering, invalid
+          if(t2b >= 0 && (t2b + 1)%3 == t2c) { //forward ordering, invalid
             suspectTris.insert(k);
             //suspectTris.insert(i);
           }
@@ -364,6 +375,8 @@ void TriMeshWithTopology::SplitEdge(int tri,int e,const Vector3& newPt)
   if(adj >= 0) {
     int t3 = triNeighbors[adj][(ea+1)%3];
     int t4 = triNeighbors[adj][(ea+2)%3];
+    Assert(triNeighbors[t3].getIndex(adj) >= 0);
+    Assert(triNeighbors[t4].getIndex(adj) >= 0);
     // printf("Non-edge neighbors of adjacent: %d %d\n",t3,t4);
     tris[adj].set(v,b,d);
     tris.push_back(IntTriple(v,d,c));
