@@ -231,6 +231,8 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
     in.CalcIncidentTris();
   if(in.triNeighbors.empty())
     in.CalcTriNeighbors();
+  Assert(in.incidentTris.size() == in.verts.size());
+  Assert(in.triNeighbors.size() == in.tris.size());
   Real cosCreaseRads = Cos(creaseRads);
 
   vector<Vector3> triNormals(in.tris.size());
@@ -975,8 +977,14 @@ void GeometryAppearance::DrawGL(Element e)
       }
       else if(geom->type == AnyGeometry3D::Type::TriangleMesh) {
         trimesh = &geom->AsTriangleMesh();
-        if(collisionGeom && collisionGeom->CollisionDataInitialized())
+        if(collisionGeom && collisionGeom->CollisionDataInitialized()) {
           trimesh_topology = &collisionGeom->TriangleMeshCollisionData();
+          //sanity check
+          Assert(trimesh_topology->verts.size() == trimesh->verts.size());
+          Assert(trimesh_topology->tris.size() == trimesh->tris.size());
+          Assert(trimesh_topology->verts.size() == trimesh_topology->incidentTris.size());
+          Assert(trimesh_topology->tris.size() == trimesh_topology->triNeighbors.size());
+        }
       }
       else if(geom->type == AnyGeometry3D::Type::Primitive) 
         draw(geom->AsPrimitive());
@@ -995,6 +1003,8 @@ void GeometryAppearance::DrawGL(Element e)
           bool drop = faceColors.empty();
           Meshing::MergeVertices(*weldMesh,1e-5,drop);
           if((weldMesh->verts.size() == trimesh->verts.size()) && trimesh_topology) {
+            Assert(trimesh_topology->incidentTris.size() == weldMesh->verts.size());
+            Assert(trimesh_topology->triNeighbors.size() == weldMesh->tris.size());
             //copy topology
             weldMesh->vertexNeighbors = trimesh_topology->vertexNeighbors;
             weldMesh->incidentTris = trimesh_topology->incidentTris;
