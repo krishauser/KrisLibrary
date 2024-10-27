@@ -64,12 +64,12 @@ struct Rasterizer2D
   void Rasterize(const Triangle2D& t);
   void ClippedRasterize(const Triangle2D& t,const AABB2D& aabb);
   void Rasterize(const AABB2D& b);
-  void ClippedRasterize(const AABB2D& t,const AABB2D& aabb);
 
   //helpers
   void Rasterize(const Triangle2D& t,const Vector3& baryA,const Vector3& baryB,const Vector3& baryC);
   //Rasterizes the segment with x coordinate i, y coordinates [y1,y2]
   void RasterizeVerticalSegment(int i,Real y1,Real y2,const Vector3& baryA,const Vector3& baryB);
+  void ClippedRasterizeVerticalSegment(int i,Real y1,Real y2,const Vector3& baryA,const Vector3& baryB,Real ymin,Real ymax);
 
   //fill a point
   //params = barycentric coords of triangle, or (u,v) parameters of rect
