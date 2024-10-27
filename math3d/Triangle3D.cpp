@@ -653,9 +653,10 @@ Real Triangle3D::distance(const Triangle3D& other,Vector3& P,Vector3& Q) const
       s1.closestPoint(s2,t1,t2);
       s1.eval(t1,P);
       s2.eval(t2,Q);
-      VEC.sub(Q,P);
-      
-      Real dd = VEC.dot(VEC);
+ 
+      V.sub(Q,P);
+      Real dd = V.dot(V);
+      VEC = V; //not sure if there's something more to this
 
       // Verify this closest point pair only if the distance 
       // squared is less than the minimum found thus far.
@@ -674,7 +675,6 @@ Real Triangle3D::distance(const Triangle3D& other,Vector3& P,Vector3& Q) const
         if ((a <= 0) && (b >= 0)) return sqrt(dd);
 
         Real p = V.dot(VEC);
-
         if (a < 0) a = 0;
         if (b > 0) b = 0;
         if ((p - a + b) > 0) shown_disjoint = 1;  
