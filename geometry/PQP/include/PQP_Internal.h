@@ -141,7 +141,6 @@ struct PQP_DistanceResult
   PQP_REAL p1[3]; 
   PQP_REAL p2[3];
   int t1,t2;     // triangle indices of the closest pair
-  int tid1,tid2; // id's of the triangles of the closest pair
   int qsize;
   
   // statistics
@@ -178,7 +177,6 @@ struct PQP_ToleranceResult
   PQP_REAL p1[3]; 
   PQP_REAL p2[3]; 
   int t1,t2;     // triangle indices of the closest pair
-  int tid1,tid2; // id's of the triangles of the closest pair
   int qsize;
 
   // statistics
