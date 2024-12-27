@@ -773,8 +773,64 @@ Vector3 GeometricPrimitive3D::ParametersToPoint(const vector<double>& params) co
 
 Vector3 GeometricPrimitive3D::ParametersToNormal(const vector<double>& params) const
 {
-  FatalError("Not done yet");
-  return Vector3(0.0);
+  switch(type) {
+  case Triangle:
+    {
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
+      return t->normal();
+    }
+  case Sphere:
+    {
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
+      Vector3 n = (ParametersToPoint(params)-s->center);
+      n.inplaceNormalize();
+      return n;
+    }
+  case AABB:
+    {
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
+      Vector3 p=ParametersToPoint(params),cp;
+      Real d = b->signedDistance(p,cp);
+      if(d > 0) {
+        Vector3 n = p-cp;
+        n.inplaceNormalize();
+        return n;
+      }
+      else {
+        if(cp.x == b->bmin.x) return Vector3(-1,0,0);
+        if(cp.x == b->bmax.x) return Vector3(1,0,0);
+        if(cp.y == b->bmin.y) return Vector3(0,-1,0);
+        if(cp.y == b->bmax.y) return Vector3(0,1,0);
+        if(cp.z == b->bmin.z) return Vector3(0,0,-1);
+        if(cp.z == b->bmax.z) return Vector3(0,0,1);
+      }
+      return Vector3(0.0);
+    }
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      Vector3 p=ParametersToPoint(params),cp;
+      Real d = b->signedDistance(p,cp);
+      Vector3 cpLocal;
+      b->toLocal(cp,cpLocal);
+      if(d > 0) {
+        Vector3 n = p-cp;
+        n.inplaceNormalize();
+        return n;
+      }
+      else {
+        if(FuzzyEquals(cpLocal.x,0.0)) return -b->xbasis;
+        if(FuzzyEquals(cpLocal.x,b->dims.x)) return b->xbasis;
+        if(FuzzyEquals(cpLocal.y,0.0)) return -b->ybasis;
+        if(FuzzyEquals(cpLocal.y,b->dims.y)) return b->ybasis;
+        if(FuzzyEquals(cpLocal.z,0.0)) return -b->zbasis;
+        if(FuzzyEquals(cpLocal.z,b->dims.z)) return b->zbasis;
+      }
+      return Vector3(0.0);
+    }
+  default:
+    return Vector3(0.0);
+  }
 }
 
 bool GeometricPrimitive3D::RayCast(const Ray3D& ray,Vector3& pt) const
