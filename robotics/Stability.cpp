@@ -288,21 +288,46 @@ bool TestForceClosure(const vector<CustomContactPoint> & cps)
 {
   int n=NumForceVariables(cps),m=NumConstraints(cps);
 
-  //min_{f} c1^T sum fi + c2^T sum (fi x pi) s.t.
+  //min_{f,z} z s.t.
   //Ai*fi <= bi
+  //sum fi + z * c1 = 0
+  //sum (fi x pi) + z * c2 = 0
   //solve with different vectors c whose convex hull contain the origin.  If all solns are nonzero, the wrench space contains the origin
   Optimization::LinearProgram_Sparse lp;
-  lp.Resize(m,n);
+  lp.Resize(m + 6,n + 1);
+  lp.c.setZero();
+  lp.c(n) = 1;
   lp.A.setZero();
-  //we can bound it... does this change anything?
-  //lp.l.set(-1);
-  //lp.u.set(1);
-  lp.l.set(-Inf);
-  lp.u.set(Inf);
+  //we can bound forces... does this change anything?
+  lp.l.set(-1);
+  lp.u.set(1);
+  lp.l(n) = -Inf;
+  lp.u(n) = Inf;
+  // lp.l.set(-Inf);
+  // lp.u.set(Inf);
   lp.q.set(-Inf);
   lp.p.set(Inf);
   lp.minimize = true;
-  GetFrictionConePlanes(cps,lp.A,lp.p);
+  //friction constraints
+  SparseMatrix Af;
+  Vector pf;
+  GetFrictionConePlanes(cps,Af,pf);
+  lp.A.copySubMatrix(0,0,Af);
+  lp.p.copySubVector(0,pf);
+  //force / torque equalities
+  for(size_t i=0;i<cps.size();i++) {
+    lp.A.insertEntry(m+0,i*3,1.0);
+    lp.A.insertEntry(m+1,i*3+1,1.0);
+    lp.A.insertEntry(m+2,i*3+2,1.0);
+    Matrix3 cp;
+    cp.setCrossProduct(cps[i].x);
+    for(int p=0;p<3;p++)
+      for(int q=0;q<3;q++)
+        if(cp(p,q) != 0) lp.A.insertEntry(m+3+p,i*3+q,cp(p,q));
+  }
+  for(int i=m;i<m+6;i++)
+    lp.q(i) = lp.p(i) = 0;
+  //lp.Print(cout);
 
   Optimization::RobustLPSolver lps;
   //simplex containing the origin
@@ -310,17 +335,20 @@ bool TestForceClosure(const vector<CustomContactPoint> & cps)
     Vector c(6,0.0);
     if(i == 6) c.set(-1.0);
     else c[i] = 1.0;
-    for(size_t j=0;j<cps.size();j++) {
-      int col = int(j*3);
-      lp.c(col) = c[0];
-      lp.c(col+1) = c[1];
-      lp.c(col+2) = c[2];
-      Vector3 c2(c[3],c[4],c[5]);
-      Vector3 coeffs; coeffs.setCross(c2,cps[j].x);
-      lp.c(col) += coeffs.x;
-      lp.c(col+1) += coeffs.y;
-      lp.c(col+2) += coeffs.z;
-    }
+    for(int j=0;j<6;j++)
+      lp.A.insertEntry(m+j,n,c[i]);
+    // OLD
+    // for(size_t j=0;j<cps.size();j++) {
+    //   int col = int(j*3);
+    //   lp.c(col) = c[0];
+    //   lp.c(col+1) = c[1];
+    //   lp.c(col+2) = c[2];
+    //   Vector3 c2(c[3],c[4],c[5]);
+    //   Vector3 coeffs; coeffs.setCross(c2,cps[j].x);
+    //   lp.c(col) += coeffs.x;
+    //   lp.c(col+1) += coeffs.y;
+    //   lp.c(col+2) += coeffs.z;
+    // }
 
     Optimization::LinearProgram::Result res;
     if(i==0) res=lps.Solve(lp);
@@ -329,19 +357,20 @@ bool TestForceClosure(const vector<CustomContactPoint> & cps)
       return false;
     }
     if(res == Optimization::LinearProgram::Unbounded)  {
-      /*
-      LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<c<<" unbounded");
-      LOG4CXX_INFO(KrisLibrary::logger(),"GLPK result "<<lps.xopt);
-      LOG4CXX_INFO(KrisLibrary::logger(),"Objective result "<<lps.xopt.dot(lp.c));
-      */
+      // LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<c<<" unbounded");
+      // LOG4CXX_INFO(KrisLibrary::logger(),"GLPK result "<<lps.xopt);
+      // LOG4CXX_INFO(KrisLibrary::logger(),"Objective result "<<lps.xopt.dot(lp.c));
       continue;
     }
     if(res == Optimization::LinearProgram::Feasible) {
-      /*
-      LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<c);
-      LOG4CXX_INFO(KrisLibrary::logger(),"GLPK result "<<lps.xopt);
-      LOG4CXX_INFO(KrisLibrary::logger(),"Objective result "<<lps.xopt.dot(lp.c));
-      */
+      // LOG4CXX_INFO(KrisLibrary::logger(),"Direction "<<c);
+      // LOG4CXX_INFO(KrisLibrary::logger(),"GLPK result "<<lps.xopt);
+      // LOG4CXX_INFO(KrisLibrary::logger(),"Objective result "<<lps.xopt.dot(lp.c));
+      // Vector Ax(m+6);
+      // lp.A.mul(lps.xopt,Ax);
+      // Vector Aeq(6);
+      // Ax.getSubVectorCopy(m,Aeq);
+      // LOG4CXX_INFO(KrisLibrary::logger(),"Equality value "<<Aeq);
       //test for zero
       if(lps.xopt.dot(lp.c) > -Epsilon) {
         //got a zero, not force closure
@@ -349,6 +378,7 @@ bool TestForceClosure(const vector<CustomContactPoint> & cps)
       }
     }
   }
+  printf("FORCE CLOSURE HOLDS\n");
   return true;
 }
 
