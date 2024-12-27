@@ -177,6 +177,8 @@ IKGoalFunction::IKGoalFunction(RobotKinematics3D& _robot,const IKGoal& _goal,con
   :robot(_robot),goal(_goal),activeDofs(active),
    positionScale(1),rotationScale(1)
 {
+  Assert(goal.link >= 0 and goal.link < robot.q.n);
+  Assert(goal.destLink >= -1 and goal.destLink < robot.q.n);
   Assert(goal.posConstraint != IKGoal::PosNone || goal.rotConstraint != IKGoal::RotNone);
 }
 
