@@ -290,7 +290,7 @@ void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& d
 		Real my = -cy;
 		if(halfPixelAdjustment) my += 0.5;
 		my *= invfy;
-		if(topdown) {
+		if(topdown != (ori==CameraConventions::ROS)) {
 			my = (h-1)*invfy+my;
 			invfy = -invfy;
 		}
@@ -315,7 +315,7 @@ void Viewport::getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& d
 		Real my = -cy;
 		if(halfPixelAdjustment) my += 0.5;
 		my *= invfy;
-		if(topdown) {
+		if(topdown == (ori == CameraConventions::OpenGL)) {
 			my = (h-1)*invfy+my;
 			invfy = -invfy;
 		}
@@ -345,7 +345,7 @@ void Viewport::getAllRays(Array2D<Vector3>& sources, Array2D<Vector3>& direction
 		Real my = -cy;
 		if(halfPixelAdjustment) my += 0.5;
 		my *= invfy;
-		if(topdown) {
+		if(topdown != (ori==CameraConventions::ROS)) {
 			my = (h-1)*invfy+my;
 			invfy = -invfy;
 		}
@@ -370,7 +370,7 @@ void Viewport::getAllRays(Array2D<Vector3>& sources, Array2D<Vector3>& direction
 		Real my = -cy;
 		if(halfPixelAdjustment) my += 0.5;
 		my *= invfy;
-		if(topdown) {
+		if(topdown == (ori == CameraConventions::OpenGL)) {
 			my = (h-1)*invfy+my;
 			invfy = -invfy;
 		}
