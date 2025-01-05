@@ -905,7 +905,7 @@ void Heightmap::SetVertexColor(int i,int j,const Vector3& color)
         LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::SetVertexColor: index out of bounds");
         return;
     }
-    float col[4] = {color.x,color.y,color.z,1.0};
+    float col[4] = {(float)color.x,(float)color.y,(float)color.z,1.0};
     colors.setNormalizedColor(i,heights.n-1-j,col);
 }
 
@@ -915,7 +915,7 @@ void Heightmap::SetVertexColor(int i,int j,const Vector4& color)
         LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::SetVertexColor: index out of bounds");
         return;
     }
-    float col[4] = {color.x,color.y,color.z,color.w};
+    float col[4] = {(float)color.x,(float)color.y,(float)color.z,(float)color.w};
     colors.setNormalizedColor(i,heights.n-1-j,col);
 }
 
@@ -1060,6 +1060,7 @@ void Heightmap::GetVertexColors(vector<Vector4>& colors_out, bool rowMajor) cons
 void Heightmap::GetVertexRay(int i,int j,Vector3& source,Vector3& dir) const
 {
     viewport.deproject(i+0.5,j+0.5,source,dir);
+    if(!viewport.perspective) dir.inplaceNegative();  //orthographic projection is from top down but heights go from bottom up
 }
 
 
