@@ -120,7 +120,7 @@ const ValueType * AnyCast(const AnyValue * operand)
 /// Retreive the data within the operand, or NULL if the operand is NULL.
 /// This differs from AnyCast in that it does not check for the correct type,
 /// which slightly improves performance, at the cost of requiring the caller
-/// to first verify type  The caller must be very sure that the item's type
+/// to first verify type.  The caller must be very sure that the item's type
 /// is correct!
 template<typename ValueType>
 ValueType * AnyCast_Raw(AnyValue * operand)
@@ -133,7 +133,7 @@ ValueType * AnyCast_Raw(AnyValue * operand)
 /// Retreive the data within the operand, or NULL if the operand is NULL.
 /// This differs from AnyCast in that it does not check for the correct type,
 /// which slightly improves performance, at the cost of requiring the caller
-/// to first verify type  The caller must be very sure that the item's type
+/// to first verify type.  The caller must be very sure that the item's type
 /// is correct!
 template<typename ValueType>
 const ValueType * AnyCast_Raw(const AnyValue * operand)
