@@ -143,7 +143,7 @@ class GeometryAppearance
   ///ofs the dot product of the viewing direction and origin.
   std::vector<Math3D::Vector4> texgen;
   ///Optional: if texture generation is used, you can specify world coordinates
-  ///rather than object coordinates (default) by setting this to true.
+  ///rather than object coordinates (default) by setting this to a transform.
   ///World coordinates are used for projection mapping.
   ///
   ///If an AnyCollisionGeometry is drawn, the object's inverse transform
