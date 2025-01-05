@@ -12,15 +12,19 @@ using namespace Meshing;
 void ImageToArray(const Image& img,Array2D<float>& arr,float scale,float offset,bool bottom_row_first)
 {
     Assert(img.w == arr.m && img.h == arr.n);
-    Assert(img.format == Image::FloatA || img.format == Image::A8);
+    Assert(img.format == Image::FloatA || img.format == Image::A8 || img.format == Image::A16);
 
     float h;
     const static float bytescale = 1.0/255.0;
+    const static float bytescale16 = 1.0/(256*256-1);
     for(int j=0;j<img.h;j++) {
         for(int i=0;i<img.w;i++) {
             unsigned char* pix = img.getData(i,j);
             if(img.format == Image::A8) {
                 h = float(*pix)*bytescale;
+            }
+            else if(img.format == Image::A16) {
+                h = float(*(unsigned short*)pix)*bytescale16;
             }
             else {
                 float* fpix = (float*)pix;
@@ -98,6 +102,9 @@ void Heightmap::Resize(int w, int h)
     if(colors.num_bytes > 0) {
         colors.initialize(w,h,colors.format);
     }
+    for(size_t i=0;i<propertyNames.size();i++) {
+        properties[i].resize(w,h);
+    }
 }
 
 bool Heightmap::Load(const char* fn)
@@ -144,6 +151,7 @@ bool Heightmap::Load(std::istream& in, const char* folder)
 {
     AnyCollection items;
     if(!items.read(in)) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Invalid JSON file");
         return false;
     }
     if(!items.find("type")) {
@@ -159,17 +167,41 @@ bool Heightmap::Load(std::istream& in, const char* folder)
         LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Not a heightmap file, type is "<<type);
         return false;
     }
+
+    float hmin,hmax;
+    if(!items["height_range"].isarray()) return false;
+    if(!items["height_range"][0].as(hmin)) return false;
+    if(!items["height_range"][1].as(hmax)) return false;
+
+    string heightFn;
+    if(!items["heights"].as(heightFn)) return false;
+    Image himg;
+    if(folder) {
+        heightFn = JoinPath(folder,heightFn);
+    }
+    if(!ImportImage(heightFn.c_str(),himg)) {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing height image from "<<heightFn);
+        return false;
+    }
+    //unsigned char imgmin = *std::min_element(himg.data,himg.data+himg.w*himg.h);
+    //unsigned char imgmax = *std::max_element(himg.data,himg.data+himg.w*himg.h);
+    SetImage(himg,hmax-hmin,hmin);
+
     if(items.find("xsize")) {
         Vector2 xysize;
         if(!items["xsize"].as(xysize.x)) return false;
         if(!items["ysize"].as(xysize.y)) return false;
         SetSize(xysize.x,xysize.y);
     }
-    else {
+    else if(items.find("xfov")) {
         Vector2 xyfov;
         if(!items["xfov"].as(xyfov.x)) return false;
         if(!items["yfov"].as(xyfov.y)) return false;
         SetFOV(xyfov.x,xyfov.y);
+    }
+    else {
+        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Either xsize or xfov must be specified");
+    
     }
     if(items.find("offset")) {
         if(!items["offset"][0].as(viewport.pose.t.x)) return false;
@@ -196,24 +228,6 @@ bool Heightmap::Load(std::istream& in, const char* folder)
     else {
         viewport.pose.R.setIdentity();
     }
-    float hmin,hmax;
-    if(!items["height_range"].isarray()) return false;
-    if(!items["height_range"][0].as(hmin)) return false;
-    if(!items["height_range"][1].as(hmax)) return false;
-
-    string heightFn;
-    if(!items["heights"].as(heightFn)) return false;
-    Image himg;
-    if(folder) {
-        heightFn = JoinPath(folder,heightFn);
-    }
-    if(!ImportImage(heightFn.c_str(),himg)) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Load: Error importing height image from "<<heightFn);
-        return false;
-    }
-    //unsigned char imgmin = *std::min_element(himg.data,himg.data+himg.w*himg.h);
-    //unsigned char imgmax = *std::max_element(himg.data,himg.data+himg.w*himg.h);
-    SetImage(himg,hmax-hmin,hmin);
     if(items.find("colors")) {
         string colorFn;
         if(!items["colors"].as(colorFn)) return false;
@@ -308,13 +322,19 @@ bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorF
         //TIF/TIFF can output 32-bit float  
     }
     else if(0==strcmp(FileExtension(heightFn),"png")) {
-        //TODO: Output 16-bit grayscale
-        Image h8;
-        h8.initialize(himg.w,himg.h,Image::A8);
-        himg.blit(h8);
-        if(!ExportImage(heightFn,h8)) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting height image to "<<heightFn);
-            return false;
+        //Output 16-bit grayscale
+        Image h16;
+        h16.initialize(himg.w,himg.h,Image::A16);
+        himg.blit(h16);
+        if(!ExportImage(heightFn,h16)) {
+            //try 8-bit output
+            Image h8;
+            h8.initialize(himg.w,himg.h,Image::A8);
+            himg.blit(h8);
+            if(!ExportImage(heightFn,h8)) {
+                LOG4CXX_ERROR(KrisLibrary::logger(),"Heightmap::Save: Error exporting height image to "<<heightFn);
+                return false;
+            }
         }
     }
     else {
@@ -347,7 +367,7 @@ bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorF
 
 void Heightmap::SetImage(const Image& _heights,float hscale,float hoffset,bool bottom_row_first)
 {
-    if(!(_heights.format == Image::FloatA || _heights.format == Image::A8)) {
+    if(!(_heights.format == Image::FloatA || _heights.format == Image::A8 || _heights.format == Image::A16)) {
         FatalError("Heightmap::SetImage: heights must be a single channel float image or an 8-bit grayscale image");
     }
     colors.unload();
@@ -414,6 +434,21 @@ void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first)
     }
 }
 
+void Heightmap::AddColors(const Vector3& initial_rgb)
+{
+    colors.initialize(heights.m,heights.n,Image::R8G8B8);
+    unsigned char r = (unsigned char)(initial_rgb.x*255);
+    unsigned char g = (unsigned char)(initial_rgb.y*255);
+    unsigned char b = (unsigned char)(initial_rgb.z*255);
+    for(int i=0;i<heights.m;i++)
+        for(int j=0;j<heights.n;j++) {
+            unsigned char* pix = colors.getData(i,j);
+            pix[0] = r;
+            pix[1] = g;
+            pix[2] = b;
+        }
+}
+
 void Heightmap::AddProperty(const string& name)
 {
     if(PropertyIndex(name) >= 0) {
@@ -444,8 +479,8 @@ void Heightmap::AddProperty(const string& name, const Image& property,float psca
     if(property.w != heights.m || property.h != heights.n) {
         FatalError("Heightmap::AddProperty: property must have the same dimensions as the heightmap");
     }
-    if(!(property.format == Image::FloatA || property.format == Image::A8)) {
-        FatalError("Heightmap::AddProperty: heights must be a single channel float image or an 8-bit grayscale image");
+    if(!(property.format == Image::FloatA || property.format == Image::A8  || property.format == Image::A16)) {
+        FatalError("Heightmap::AddProperty: heights must be a single channel float image or an 8-bit / 16-bit grayscale image");
     }
     properties.resize(properties.size()+1);
     properties.back().resize(heights.m,heights.n);
@@ -1030,22 +1065,34 @@ void Heightmap::GetVertexRay(int i,int j,Vector3& source,Vector3& dir) const
 
 void Heightmap::Shift(float value)
 {
-    for(auto& i:heights) i+=value;
+    auto d = heights.getData();
+    for(int i=0;i<heights.m*heights.n;i++)
+        d[i] += value;
+    //for(auto& i:heights) i+=value;
 }
 
 void Heightmap::Scale(float value)
 {
-    for(auto& i:heights) i*=value;
+    auto d = heights.getData();
+    for(int i=0;i<heights.m*heights.n;i++)
+        d[i] *= value;
+    //for(auto& i:heights) i*=value;
 }
 
 void Heightmap::Min(float value)
 {
-    for(auto& i:heights) i = ::Min(i,value);
+    auto d = heights.getData();
+    for(int i=0;i<heights.m*heights.n;i++)
+        d[i] = ::Min(d[i],value);
+    //for(auto& i:heights) i = ::Min(i,value);
 }
 
 void Heightmap::Max(float value)
 {
-    for(auto& i:heights) i = ::Max(i,value);
+    auto d = heights.getData();
+    for(int i=0;i<heights.m*heights.n;i++)
+        d[i] = ::Max(d[i],value);
+    //for(auto& i:heights) i = ::Max(i,value);
 }
 
 void Heightmap::Shift(const Array2D<float>& values)
@@ -1084,44 +1131,122 @@ void Heightmap::Max(const Array2D<float>& values)
     }
 }
 
-void Heightmap::Remesh(const Heightmap& hm)
+void Heightmap::Remesh(const Heightmap& hm,const Camera::Viewport& vp)
 {
-    if(hm.viewport.perspective || viewport.perspective) {
-        if(hm.viewport != viewport)
+    if(&hm == this) {
+        Heightmap temp;
+        std::swap(temp.heights,heights);
+        std::swap(temp.colors,colors);
+        std::swap(temp.properties,properties);
+        std::swap(temp.propertyNames,propertyNames);
+        Remesh(temp,vp);
+        return;
+    }
+    if(vp.perspective || hm.viewport.perspective) {
+        if(vp != viewport)
             FatalError("TODO: perspective remeshing");
     }
-    Array2D<Vector3> verts;
-    hm.GetVertices(verts);
-    Array2D<float> newheights(verts.m,verts.n);
-    Image newcolors;
-    if(colors.num_bytes != 0)
-        newcolors.initialize(verts.m,verts.n,colors.format);
+    Array2D<Vector3> src,dir;
+    vp.getAllRays(src,dir,true,false);  //these are in scan-line order, i.e., y*w + x
+    if(!vp.perspective) {
+        for(auto& v:dir) v.inplaceNegative();
+    }
+
+    viewport = vp;
+    heights.resize(vp.w,vp.h);
+    if(hm.colors.num_bytes != 0)
+        colors.initialize(vp.w,vp.h,colors.format);
+    else
+        colors.clear();
     propertyNames = hm.propertyNames;
     properties.resize(hm.properties.size());
-    for(int i=0;i<verts.m;i++)
-        for(int j=0;j<verts.n;j++) {
-            newheights(i,j) = GetHeight(verts(i,j));
+    for(size_t i=0;i<properties.size();i++)
+        properties[i].resize(vp.w,vp.h);
+    for(int i=0;i<vp.w;i++)
+        for(int j=0;j<vp.h;j++) {
+            heights(i,j) = hm.GetHeight(src(i,j));
             if(colors.num_bytes != 0) {
-                Vector3 c = GetColor(verts(i,j));
+                Vector3 c = hm.GetColor(src(i,j));
                 float col[4] = {(float)c.x,(float)c.y,(float)c.z,1.0f};
-                newcolors.setNormalizedColor(i,verts.n-1-j,col);
+                colors.setNormalizedColor(i,vp.h-1-j,col);
             }
             if(!properties.empty()) {
                 vector<float> prop;
-                hm.GetProperties(verts(i,j),prop);
+                hm.GetProperties(src(i,j),prop);
                 for(size_t k=0;k<properties.size();k++)
                     properties[k](i,j) = prop[k];
             }
         }
-    viewport = hm.viewport;
-    heights = newheights;
 }
 
-void Heightmap::Remesh(const Camera::Viewport& vp)
+void Heightmap::GetIndexRange(const AABB3D& bb,IntPair& lo,IntPair& hi) const
 {
-    Heightmap temp;
-    temp.viewport = vp;
-    Remesh(temp);
+    //get range of bb to minimize # of rays cast
+    if(viewport.pose.R(0,1) == 0 && viewport.pose.R(0,2) == 0 && viewport.pose.R(1,2) == 0) {
+        lo = GetIndex(bb.bmin);
+        hi = GetIndex(bb.bmax);
+        if(hi.a < 0 || hi.b < 0 || lo.a >= heights.m || lo.b >= heights.n) {
+            lo.a = hi.a + 1;
+            return;
+        }
+        hi.a = ::Min(hi.a,heights.m-1);
+        hi.b = ::Min(hi.b,heights.n-1);
+        lo.a = ::Max(lo.a,0);
+        lo.b = ::Max(lo.b,0);
+        return;
+    }
+    Math3D::Box3D box;
+    box.set(bb);
+    GetIndexRange(box,lo,hi);
+}
+
+
+void Heightmap::GetIndexRange(const Box3D& box,IntPair& lo,IntPair& hi) const
+{
+    lo = hi = GetIndex(box.origin);
+    IntPair temp = GetIndex(box.origin + box.dims[0]*box.xbasis);
+    lo.a = ::Min(lo.a,temp.a);
+    hi.a = ::Max(hi.a,temp.a);
+    lo.b = ::Min(lo.b,temp.b);
+    hi.b = ::Max(hi.b,temp.b);
+    temp = GetIndex(box.origin + box.dims[1]*box.ybasis);
+    lo.a = ::Min(lo.a,temp.a);
+    hi.a = ::Max(hi.a,temp.a);
+    lo.b = ::Min(lo.b,temp.b);
+    hi.b = ::Max(hi.b,temp.b);
+    temp = GetIndex(box.origin + box.dims[2]*box.zbasis);
+    lo.a = ::Min(lo.a,temp.a);
+    hi.a = ::Max(hi.a,temp.a);
+    lo.b = ::Min(lo.b,temp.b);
+    hi.b = ::Max(hi.b,temp.b);
+    temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[1]*box.ybasis);
+    lo.a = ::Min(lo.a,temp.a);
+    hi.a = ::Max(hi.a,temp.a);
+    lo.b = ::Min(lo.b,temp.b);
+    hi.b = ::Max(hi.b,temp.b);
+    temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[2]*box.zbasis);
+    lo.a = ::Min(lo.a,temp.a);
+    hi.a = ::Max(hi.a,temp.a);
+    lo.b = ::Min(lo.b,temp.b);
+    hi.b = ::Max(hi.b,temp.b);
+    temp = GetIndex(box.origin + box.dims[1]*box.ybasis + box.dims[2]*box.zbasis);
+    lo.a = ::Min(lo.a,temp.a);
+    hi.a = ::Max(hi.a,temp.a);
+    lo.b = ::Min(lo.b,temp.b);
+    hi.b = ::Max(hi.b,temp.b);
+    temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[1]*box.ybasis + box.dims[2]*box.zbasis);
+    lo.a = ::Min(lo.a,temp.a);
+    hi.a = ::Max(hi.a,temp.a);
+    lo.b = ::Min(lo.b,temp.b);
+    hi.b = ::Max(hi.b,temp.b);
+    if(hi.a < 0 || hi.b < 0 || lo.a >= heights.m || lo.b >= heights.n) {
+        lo.a = hi.a + 1;
+        return;
+    }
+    hi.a = ::Min(hi.a,heights.m-1);
+    hi.b = ::Min(hi.b,heights.n-1);
+    lo.a = ::Max(lo.a,0);
+    lo.b = ::Max(lo.b,0);
 }
 
 void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform* Tmesh,bool topdown)

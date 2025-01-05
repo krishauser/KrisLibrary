@@ -4,6 +4,7 @@
 #include "TriMesh.h"
 #include "PointCloud.h"
 #include <KrisLibrary/math3d/AABB2D.h>
+#include <KrisLibrary/math3d/Box3D.h>
 #include <KrisLibrary/structs/array2d.h>
 #include <KrisLibrary/image/image.h>
 #include <KrisLibrary/camera/viewport.h>
@@ -96,6 +97,8 @@ public:
      * to-top (Windows BMP style).
      */
     void SetImage(const Image& heights,const Image& colors,float hscale=1,float hoffset=0,bool bottom_row_first=false);
+    /** Adds colors, if not already present */
+    void AddColors(const Vector3& initial_rgb); 
     /** @brief Adds a new property channel */
     void AddProperty(const string& name);
     /** @brief Adds a new property channel */
@@ -250,6 +253,7 @@ public:
     void SetVertexColor(int i,int j,const Vector3& color);
     /** Sets the color of vertex (i,j) */
     void SetVertexColor(int i,int j,const Vector4& color);
+ 
     /** Returns the properties of vertex (i,j) in the out vector. */
     void GetVertexProperties(int i,int j,vector<float>& out) const;
     /** Returns the properties of vertex (i,j) in the out vector, interpolated over cell coordinates (u,v). */
@@ -293,10 +297,12 @@ public:
     void Min(const Array2D<float>& values);
     /** Takes the max of all heights and these values */
     void Max(const Array2D<float>& values);
-    /** Remeshes the heightmap domain to match the given heightmap's domain. May lose information. */
-    void Remesh(const Heightmap& hm);
-    /** Remeshes the heightmap domain to match the given viewport's domain. May lose information. */
-    void Remesh(const Camera::Viewport& vp);
+    /** Sets this heightmap to interpolate hm over the given domain. May lose information. */
+    void Remesh(const Heightmap& hm,const Camera::Viewport& vp);
+
+    /** Returns a range of indices that contain the projection of the given box (inclusive) */
+    void GetIndexRange(const AABB3D& bb,IntPair& lo,IntPair& hi) const;
+    void GetIndexRange(const Box3D& box,IntPair& lo,IntPair& hi) const;
 
     /** @brief Rasterizes a triangle mesh into the height array, resizing to fit. 
      * 
