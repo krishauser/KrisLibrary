@@ -216,6 +216,7 @@ void VolumeGridIterator<T>::setBoxRange(const Vector3& bmin,const Vector3& bmax)
   if(imax.a < 0 || imax.b < 0 || imax.c < 0 || imin.a >= cells.m || imin.b >= cells.n || imin.c >= cells.p) {
     index = hi;
     index.a++;  //indicate done
+    assert(isDone());
     return;
   }
   imin.a = Max(imin.a,0);
