@@ -62,6 +62,9 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 	case FIT_FLOAT:
 		fmt = Image::FloatA;
 		break;
+	case FIT_UINT16:
+		fmt = Image::A16;
+		break;
 	default:
 		switch(coltype) {
 		case FIC_MINISWHITE:
@@ -119,7 +122,7 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 			}
 		}
 	}
-	else { //A8
+	else if(fmt == Image::A8) { //A8
 		RGBQUAD* palette = FreeImage_GetPalette(fimg);
 		BYTE idx;
 		for(int i=0;i<h;i++) {
@@ -130,6 +133,17 @@ void FreeImageBitmapToImage(FIBITMAP* fimg,Image& img)
 				d ++;
 			}
 		}
+	}
+	else if(fmt == Image::A16) { //A8
+		BYTE idx;
+		for(int i=0;i<h;i++) {
+			unsigned char* d = img.getData(0,h-1-i);
+			unsigned char* scanline = FreeImage_GetScanLine(fimg,i);
+			memcpy(d,scanline,w*sizeof(unsigned short));
+		}
+	}
+	else {
+		FatalError("Can't read specified image type");
 	}
 }
 

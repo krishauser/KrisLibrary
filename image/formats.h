@@ -129,6 +129,19 @@ void a8_set (unsigned char* bits, const COLOROPTYPE col)
 	*bits     = col[0];
 }
 
+void a16_get (const unsigned char* bits, COLOROPTYPE col)
+{
+	col[0] = *(const unsigned short*)bits;
+	col[1] = col[2] = col[0];
+}
+
+void a16_set (unsigned char* bits, const COLOROPTYPE col)
+{
+	unsigned short* ubits = (unsigned short*)bits;
+	*ubits = col[0];
+}
+
+
 
 const static float one_over_255 = 1.0f/255.0f;
 

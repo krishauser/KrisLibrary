@@ -36,6 +36,8 @@ PIXELGETPROC pixel_get_proc(Image::PixelFormat format)
 		return r5g5b5x1_get;
 	case Image::A8:
 		return a8_get;
+	case Image::A16:
+		return a16_get;
 	case Image::FloatRGB:
 		return frgb_get;
 	case Image::FloatRGBA:
@@ -66,6 +68,8 @@ PIXELSETPROC pixel_set_proc(Image::PixelFormat format)
 		return r5g5b5x1_set;
 	case Image::A8:
 		return a8_set;
+	case Image::A16:
+		return a16_set;
 	case Image::FloatRGB:
 		return frgb_set;
 	case Image::FloatRGBA:
@@ -89,6 +93,7 @@ static unsigned int pfsizes [] =
 	2,
 	2,
 	1,
+	2,
 	12,
 	16,
 	4
@@ -352,6 +357,8 @@ unsigned int Image::pixelChannels() const
 	case Image::R5G5B5X1:
 		return 3;
 	case Image::A8:
+		return 1;
+	case Image::A16:
 		return 1;
 	case Image::FloatRGB:
 		return 3;
