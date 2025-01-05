@@ -143,18 +143,18 @@ template <class T>
 bool VolumeGridTemplate<T>::GetIndexRangeClamped(const AABB3D& range,IntTriple& imin,IntTriple& imax) const
 {
   GetIndexRange(range,imin,imax);
-  if(imax.a < 0) imax.a = 0;
-  else if(imax.a >= value.m) return false;
-  if(imin.a >= value.m) imin.a = value.m-1;
-  else if(imin.a < 0) return false;
-  if(imax.b < 0) imax.b = 0;
-  else if(imax.b >= value.n) return false;
-  if(imin.b >= value.n) imin.b = value.n-1;
-  else if(imin.b < 0) return false;
-  if(imax.c < 0) imax.c = 0;
-  else if(imax.c >= value.p) return false;
-  if(imin.c >= value.p) imin.c = value.p-1;
-  else if(imin.c < 0) return false;
+  if(imin.a < 0) imin.a = 0;
+  else if(imin.a >= value.m) return false;
+  if(imax.a >= value.m) imax.a = value.m-1;
+  else if(imax.a < 0) return false;
+  if(imin.b < 0) imin.b = 0;
+  else if(imin.b >= value.n) return false;
+  if(imax.b >= value.n) imax.b = value.n-1;
+  else if(imax.b < 0) return false;
+  if(imin.c < 0) imin.c = 0;
+  else if(imin.c >= value.p) return false;
+  if(imax.c >= value.p) imax.c = value.p-1;
+  else if(imax.c < 0) return false;
   return true;
 }
 
