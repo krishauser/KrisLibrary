@@ -607,7 +607,7 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh)
 		}
 	}
 	if(invalidIndices.empty()) return;
-	printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
+	//printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
 
 	vector<int> invalidVertices;
 	invalidVertices.reserve(invalidIndices.size());
@@ -631,9 +631,9 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDra
 	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
 	if(hm.viewport.perspective) {
 		//bottom-up view, so need to flip triangles
-		for(size_t i=0;i<mesh.tris.size();i++) {
-			swap(mesh.tris[i].b,mesh.tris[i].c);
-		}
+		// for(size_t i=0;i<mesh.tris.size();i++) {
+		// 	swap(mesh.tris[i].b,mesh.tris[i].c);
+		// }
 	}
 	hm.GetVertices(mesh.verts);
 	if(hm.HasColors()) {
@@ -656,7 +656,7 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDra
 		}
 	}
 	if(invalidIndices.empty()) return;
-	printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
+	//printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
 
 	vector<int> invalidVertices;
 	invalidVertices.reserve(invalidIndices.size());
