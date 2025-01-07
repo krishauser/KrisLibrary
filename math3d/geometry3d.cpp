@@ -1234,7 +1234,7 @@ Real GeometricPrimitive3D::Distance(const AABB3D& b) const
   case AABB:
     return b.distance(*AnyCast_Raw<AABB3D>(&data));
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1246,7 +1246,7 @@ Real GeometricPrimitive3D::Distance(const Box3D& b) const
   case Sphere:
     return Max(0.0,b.signedDistance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   default:
-    return false;
+    return Inf;
   }
 }
 
@@ -1258,7 +1258,7 @@ Real GeometricPrimitive3D::Distance(const Triangle3D& t) const
   case Sphere:
     return Max(0.0,t.closestPoint(AnyCast_Raw<Sphere3D>(&data)->center).distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   default:
-    return false;
+    return Inf;
   }
 }
 
