@@ -89,6 +89,13 @@ void Segment3D::eval(Real t, Point3D& out) const
   interpolate(a,b,t,out);
 }
 
+Point3D Segment3D::eval(Real t) const
+{
+  Point3D out;
+  interpolate(a,b,t,out);
+  return out;
+}
+
 bool Segment3D::intersects(const AABB3D& bb) const
 {
 	Real u1,u2;
