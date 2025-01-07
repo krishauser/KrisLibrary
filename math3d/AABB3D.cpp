@@ -80,6 +80,14 @@ void AABB3D::getSize(Vector3& v) const
 
 Vector3 AABB3D::size() const { return bmax-bmin; }
 
+Real AABB3D::volume() const
+{
+  Vector3 v;
+  getSize(v);
+  if(v.x <= 0 || v.y <= 0 || v.z <= 0) return 0;
+  return v.x*v.y*v.z;
+}
+
 void AABB3D::getMidpoint(Point3D& p) const
 {
   p.add(bmax,bmin);
@@ -238,6 +246,19 @@ Real AABB3D::maxDistance(const AABB3D& bb,Point3D& thisfarthest,Point3D& bbfarth
   else  { thisfarthest.z = bmax.z; bbfarthest.z = bb.bmin.z; }
   return thisfarthest.distance(bbfarthest);
 }
+
+Vector3 AABB3D::support(const Vector3& dir) const
+{
+  Vector3 res;
+  if(dir.x >= 0) res.x = bmax.x;
+  else res.x = bmin.x;
+  if(dir.y >= 0) res.y = bmax.y;
+  else res.y = bmin.y;
+  if(dir.z >= 0) res.z = bmax.z;
+  else res.z = bmin.z;
+  return res;
+}
+
 
 bool AABB3D::intersects(const AABB3D& a) const
 {
