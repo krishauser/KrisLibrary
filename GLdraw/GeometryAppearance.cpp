@@ -505,6 +505,8 @@ void GeometryAppearance::RefreshGeometry()
     const Meshing::Heightmap* g = &geom->AsHeightmap();
     tempMesh.reset(new Meshing::TriMesh);
     HeightmapToMesh(*g,*tempMesh,*this);
+    //will use the heightmap colors as a texture
+    vertexColors.clear();
   }
 }
 
@@ -697,6 +699,7 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
         texgen.resize(4);
         proj.getRow1(texgen[0]);
         proj.getRow2(texgen[1]);
+        texgen[1].inplaceNegative();  //not sure why this is necessary
         proj.getRow3(texgen[2]);
         proj.getRow4(texgen[3]);
       }
@@ -986,8 +989,9 @@ void GeometryAppearance::DrawGL(Element e)
           Assert(trimesh_topology->tris.size() == trimesh_topology->triNeighbors.size());
         }
       }
-      else if(geom->type == AnyGeometry3D::Type::Primitive) 
+      else if(geom->type == AnyGeometry3D::Type::Primitive) {
         draw(geom->AsPrimitive());
+      }
 
       //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling face display list "<<trimesh->tris.size());
       //draw the mesh
