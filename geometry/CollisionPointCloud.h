@@ -56,8 +56,9 @@ public:
     virtual AABB3D GetAABBTight() const override;
     virtual Box3D GetBB() const override;
     virtual RigidTransform GetTransform() const override { return collisionData.currentTransform; }
-    virtual Collider3D* Copy() const override { return new Collider3DPointCloud(*this); }
+    virtual Collider3D* Copy(shared_ptr<Geometry3D> geom) const override;
     virtual void SetTransform(const RigidTransform& T) override { collisionData.currentTransform = T; }
+    virtual bool Contains(const Vector3& pt,bool& result) override;
     virtual bool Distance(const Vector3& pt,Real& result) override;
     virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
     virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;

@@ -25,7 +25,7 @@ namespace Geometry {
 	
 void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersion2)
 {
-	Vector3 c = (t.a+t.b+t.c)/3.0;
+	Vector3 c = t.centroid();
 	if(c.distanceSquared(t.a) > maxDispersion2 || c.distanceSquared(t.b) > maxDispersion2 || c.distanceSquared(t.c) > maxDispersion2) {
 		Real ab = t.a.distanceSquared(t.b);
 		Real bc = t.b.distanceSquared(t.c);

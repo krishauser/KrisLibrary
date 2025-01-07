@@ -1,4 +1,5 @@
 #include "CollisionOccupancyGrid.h"
+#include "CollisionImplicitSurface.h"
 #include "Conversions.h"
 #include "GridSubdivision.h"
 #include "CollisionPrimitive.h"
@@ -8,30 +9,167 @@
 #include <KrisLibrary/math3d/clip.h>
 #include <KrisLibrary/math3d/Segment3D.h>
 
-using namespace Geometry;
-
 DECLARE_LOGGER(Geometry)
 
-int PointIndex(const Collider3DOccupancyGrid &s, const Vector3 &ptworld)
-{
-    Vector3 plocal;
-    s.currentTransform.mulInverse(ptworld, plocal);
-    IntTriple cell;
-    s.data->data.GetIndex(plocal, cell);
-    if (cell.a < 0)
-        cell.a = 0;
-    if (cell.a >= s.data->data.value.m)
-        cell.a = s.data->data.value.m - 1;
-    if (cell.b < 0)
-        cell.b = 0;
-    if (cell.b >= s.data->data.value.n)
-        cell.b = s.data->data.value.n - 1;
-    if (cell.c < 0)
-        cell.c = 0;
-    if (cell.c >= s.data->data.value.p)
-        cell.c = s.data->data.value.p - 1;
-    return s.data->IndexToElement(cell);
-}
+namespace Geometry {
+
+    bool CollidesBruteForce(const Collider3DOccupancyGrid& a, Collider3D* b, Real d, vector<int>& elements1, vector<int>& elements2, size_t maxcollisions)
+    {
+        ///brute force method -- collide geom with boxes of the occupancy grid
+        RigidTransform Tinv;
+        Tinv.setInverse(a.currentTransform);
+        Box3D gb = b->GetBB();
+        Box3D gblocal;
+        gblocal.setTransformed(gb,Tinv);
+        AABB3D gbb;
+        gblocal.getAABB(gbb);
+        if(d != 0) {
+            gbb.bmin -= Vector3(d);
+            gbb.bmax += Vector3(d);
+        }
+        AABB3D bb;  //temp bb for occupied cells
+        shared_ptr<Geometry3DPrimitive> prim = make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
+        shared_ptr<Collider3DPrimitive> cprim = make_shared<Collider3DPrimitive>(prim);
+        cprim->SetTransform(a.currentTransform);
+        vector<int> elems_g,elems_p;
+
+        //either use the BB overlap to determine which cells to check, or use occupiedCells
+        Meshing::VolumeGridIterator<Real> it = a.data->data.getIterator(gbb);
+        if(it.isDone()) return false;
+        int ncells = (it.hi.a - it.lo.a + 1) * (it.hi.b - it.lo.b + 1) * (it.hi.c - it.lo.c + 1);
+        size_t nchecked = 0;
+        if(ncells < (int)a.occupiedCells.size()) {
+            //use BB overlap
+            for(;!it.isDone();++it) {
+                if(*it > a.data->occupancyThreshold) {
+                    it.getCell(bb);
+                    prim->data = GeometricPrimitive3D(bb);
+                    elems_g.resize(0);
+                    elems_p.resize(0);
+                    nchecked += 1;
+                    if(d > 0) {
+                        if(!b->WithinDistance(cprim.get(),d,elems_g,elems_p,maxcollisions)) return false;
+                    }
+                    else {
+                        if(!b->Collides(cprim.get(),elems_g,elems_p,maxcollisions)) return false;
+                    }
+                    if(!elems_g.empty()) {
+                    elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
+                    int gridelem = a.data->IndexToElement(it.index);
+                    for(auto e:elems_g) 
+                        elements1.push_back(gridelem);
+                    if(elements1.size() >= maxcollisions) return true;
+                    }
+                }
+            }
+        }
+        else {
+            //check all occupied cells
+            for(const auto &cell : a.occupiedCells) {
+                a.data->data.GetCell(cell,bb);
+                prim->data = GeometricPrimitive3D(bb);
+                elems_g.resize(0);
+                elems_p.resize(0);
+                nchecked += 1;
+                if(d > 0) {
+                    if(!b->WithinDistance(cprim.get(),d,elems_g,elems_p,maxcollisions)) return false;
+                }
+                else {
+                    if(!b->Collides(cprim.get(),elems_g,elems_p,maxcollisions)) return false;
+                }
+                if(!elems_g.empty()) {
+                    elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
+                    int gridelem = a.data->IndexToElement(cell);
+                    for(auto e:elems_g) 
+                        elements1.push_back(gridelem);
+                    if(elements1.size() >= maxcollisions) return true;
+                }
+            }
+        }
+        //printf("OccupancyGrid: Checked %d elements of volume with %d cells in range, %d occupied\n",(int)nchecked,ncells,(int)a.occupiedCells.size());
+        return true;
+    }
+
+    bool Collides(Collider3DOccupancyGrid& a, Collider3DOccupancyGrid& b, Real d, vector<int>& elements1, vector<int>& elements2, size_t maxCollisions)
+    {
+        if(d != 0) {
+            LOG4CXX_ERROR(GET_LOGGER(Geometry),"Occupancy grid Collides with nonzero d not supported yet");
+            return false;
+        }
+        Vector3 asize = a.data->data.GetCellSize();
+        Vector3 bsize = b.data->data.GetCellSize();
+        Assert(IsFinite(asize.maxAbsElement()) && IsFinite(bsize.maxAbsElement()));
+        if(asize.maxAbsElement() > bsize.maxAbsElement())
+            return Collides(b,a,d,elements2,elements1,maxCollisions);
+        Box3D bba=a.GetBB(),bbb = b.GetBB();
+        if(!bba.intersects(bbb)) return false;
+        AABB3D bb;
+        Vector3 centerLocal,center;
+        for(const auto &cell : a.occupiedCells) {
+            a.data->data.GetCell(cell,bb);
+            centerLocal = (bb.bmin + bb.bmax)*0.5;
+            a.currentTransform.mul(centerLocal,center);
+            if(b.Contains(center)) {
+                int aelem = a.data->IndexToElement(cell);
+                int belem = b.PointToElement(center);
+                elements1.push_back(aelem);
+                elements2.push_back(belem);
+                if(elements1.size() >= maxCollisions) return true;
+            }
+        }
+        return !elements1.empty();
+    }
+
+    bool Collides(Collider3DImplicitSurface& a, Collider3DOccupancyGrid& b, Real dthresh, vector<int>& elements1, vector<int>& elements2, size_t maxCollisions)
+    {
+        Box3D bba=a.GetBB(),bbb = b.GetBB();
+        if(!bba.intersects(bbb)) return false;
+        Vector3 asize = a.data->data.GetCellSize();
+        Vector3 bsize = b.data->data.GetCellSize();
+        Assert(IsFinite(asize.maxAbsElement()) && IsFinite(bsize.maxAbsElement()));
+        if(asize.maxAbsElement() > bsize.maxAbsElement()) {
+            //occupancy grid is finer
+            AABB3D bb;
+            Vector3 centerLocal,center;
+            for(const auto &cell :b.occupiedCells) {
+                b.data->data.GetCell(cell,bb);
+                centerLocal = (bb.bmin + bb.bmax)*0.5;
+                b.currentTransform.mul(centerLocal,center);
+                Real d = a.Distance(center);
+                if(d <= dthresh) {
+                    int belem = b.data->IndexToElement(cell);
+                    int aelem = a.PointToElement(center);
+                    elements1.push_back(aelem);
+                    elements2.push_back(belem);
+                    if(elements1.size() >= maxCollisions) return true;
+                }
+            }
+            return !elements1.empty();
+        }
+        else {
+            //implicit surface is finer
+            Vector3 centerLocal,center;
+            for(Meshing::VolumeGrid::iterator i=a.data->data.getIterator();!i.isDone();++i) {
+                if(*i <= dthresh) {
+                    i.getCellCenter(centerLocal);
+                    a.currentTransform.mul(centerLocal,center);
+                    if(b.Contains(center)) {
+                        int aelem = a.data->IndexToElement(i.getIndex());
+                        int belem = b.PointToElement(center);
+                        elements1.push_back(aelem);
+                        elements2.push_back(belem);
+                        if(elements1.size() >= maxCollisions) return true;
+                    }
+                }   
+            }
+            return !elements1.empty();
+        }
+    }
+
+} //namespace Geometry
+
+
+using namespace Geometry;
 
 Geometry3DOccupancyGrid::Geometry3DOccupancyGrid(Real _threshold)
 : occupancyThreshold(_threshold)
@@ -306,17 +444,48 @@ Collider3DOccupancyGrid::Collider3DOccupancyGrid(shared_ptr<Geometry3DOccupancyG
 :data(_data)
 {
     currentTransform.setIdentity();
+    Reset();
 }
 
 void Collider3DOccupancyGrid::Reset()
 {
+    //recompute occupied cells and surface cells
     occupiedCells.resize(0);
+    surfaceCells.resize(0);
     Meshing::VolumeGrid::iterator it = data->data.getIterator();
     for(;!it.isDone();++it) {
         if(*it > data->occupancyThreshold) {
             occupiedCells.push_back(it.getIndex());
+            IntTriple temp = it.getIndex();
+            if(temp.a <= 0 || temp.a+1 >= data->data.value.m) surfaceCells.push_back(it.getIndex());
+            else if(temp.b <= 0 || temp.b+1 >= data->data.value.n) surfaceCells.push_back(it.getIndex());
+            else if(temp.c <= 0 || temp.c+1 >= data->data.value.p) surfaceCells.push_back(it.getIndex());
+            else {
+                temp.a--;
+                if(data->data.value(temp) <= data->occupancyThreshold) surfaceCells.push_back(it.getIndex());
+                temp.a+=2;
+                if(data->data.value(temp) <= data->occupancyThreshold) surfaceCells.push_back(it.getIndex());
+                temp.a--;
+                temp.b--;
+                if(data->data.value(temp) <= data->occupancyThreshold) surfaceCells.push_back(it.getIndex());
+                temp.b+=2;
+                if(data->data.value(temp) <= data->occupancyThreshold) surfaceCells.push_back(it.getIndex());
+                temp.b--;
+                temp.c--;
+                if(data->data.value(temp) <= data->occupancyThreshold) surfaceCells.push_back(it.getIndex());
+                temp.c+=2;
+                if(data->data.value(temp) <= data->occupancyThreshold) surfaceCells.push_back(it.getIndex());
+            }
         }
     }
+}
+
+
+int Collider3DOccupancyGrid::PointToElement(const Vector3 &ptworld) const
+{
+  Vector3 plocal;
+  currentTransform.mulInverse(ptworld, plocal);
+  return data->PointToElement(plocal);
 }
 
 bool Collider3DOccupancyGrid::Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
@@ -324,130 +493,59 @@ bool Collider3DOccupancyGrid::Collides(Collider3D* geom,vector<int>& elements1,v
     elements1.resize(0);
     elements2.resize(0);
 
-    ///brute force method -- collide geom with boxes of the occupancy grid
-    RigidTransform Tinv;
-    Tinv.setInverse(currentTransform);
-    Box3D gb = geom->GetBB();
-    Box3D gblocal;
-    gblocal.setTransformed(gb,Tinv);
-    AABB3D gbb;
-    gblocal.getAABB(gbb);
-    AABB3D bb;
-    shared_ptr<Geometry3DPrimitive> prim = make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
-    shared_ptr<Collider3DPrimitive> cprim = make_shared<Collider3DPrimitive>(prim);
-    cprim->SetTransform(currentTransform);
-    vector<int> elems_g,elems_p;
-
-    //either use the BB overlap to determine which cells to check, or use occupiedCells
-    Meshing::VolumeGridIterator<Real> it = data->data.getIterator(gbb);
-    int ncells = (it.hi.a - it.lo.a + 1) * (it.hi.b - it.lo.b + 1) * (it.hi.c - it.lo.c + 1);
-    if(ncells < (int)occupiedCells.size()) {
-        //use BB overlap
-        for(;!it.isDone();++it) {
-            if(*it > data->occupancyThreshold) {
-                it.getCell(bb);
-                prim->data.data = bb;
-                elems_g.resize(0);
-                elems_p.resize(0);
-                if(!geom->Collides(cprim.get(),elems_g,elems_p,maxcollisions)) return false;
-                if(!elems_g.empty()) {
-                    elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
-                    int gridelem = data->IndexToElement(it.index);
-                    for(auto e:elems_g) 
-                        elements1.push_back(gridelem);
-                    if(elements1.size() >= maxcollisions) return true;
-                }
-            }
-        }
+    if(geom->GetType() == AnyGeometry3D::Type::Primitive ||
+       geom->GetType() == AnyGeometry3D::Type::ConvexHull ||
+       geom->GetType() == AnyGeometry3D::Type::PointCloud || 
+       geom->GetType() == AnyGeometry3D::Type::TriangleMesh) {
+        return ::CollidesBruteForce(*this,geom,0.0,elements1,elements2,maxcollisions);
+    }
+    else if(geom->GetType() == AnyGeometry3D::Type::OccupancyGrid) {
+        Collider3DOccupancyGrid* grid = dynamic_cast<Collider3DOccupancyGrid*>(geom);
+        bool res=Geometry::Collides(*this,*grid,0.0,elements1,elements2,maxcollisions);
+        Assert(res == (!elements1.empty()));
+        Assert(elements1.size()==elements2.size());
+        return true;
+    }
+    else if(geom->GetType() == AnyGeometry3D::Type::ImplicitSurface) {
+        Collider3DImplicitSurface* grid = dynamic_cast<Collider3DImplicitSurface*>(geom);
+        bool res=Geometry::Collides(*grid, *this, 0, elements2, elements1, maxcollisions);
+        Assert(res == (!elements1.empty()));
+        Assert(elements1.size()==elements2.size());
+        return true;   
     }
     else {
-        //use occupied cells
-        for(const auto &cell : occupiedCells) {
-            data->data.GetCell(cell,bb);
-            prim->data.data = bb;
-            elems_g.resize(0);
-            elems_p.resize(0);
-            if(!geom->Collides(cprim.get(),elems_g,elems_p,maxcollisions)) return false;
-            if(!elems_g.empty()) {
-                elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
-                int gridelem = data->IndexToElement(cell);
-                for(auto e:elems_g) 
-                    elements1.push_back(gridelem);
-                if(elements1.size() >= maxcollisions) return true;
-            }
-        }
+        LOG4CXX_ERROR(GET_LOGGER(Geometry),"OccupancyGrid::Collides: Unsupported geometry type "<<Geometry3D::TypeName(geom->GetType()));
+        return false;
     }
-    return true;
 }
 
-bool Collider3DOccupancyGrid::Contains(const Vector3& pt,bool& result)
+bool Collider3DOccupancyGrid::Contains(const Vector3& pt) const
 { 
     Vector3 ptlocal;
     currentTransform.mulInverse(pt,ptlocal);
-    result = (data->data.GetValue(ptlocal) > data->occupancyThreshold);
-    return true;
+    IntTriple ind;
+    Vector3 u;
+    if(!data->data.GetIndexAndParamsChecked(ptlocal,ind,u)) return false;
+    else 
+        return (data->data.value(ind) > data->occupancyThreshold);
 }
 
 bool Collider3DOccupancyGrid::WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions)
 { 
-    elements1.resize(0);
-    elements2.resize(0);
-
-    ///brute force method -- collide geom with boxes of the occupancy grid
-    RigidTransform Tinv;
-    Tinv.setInverse(currentTransform);
-    Box3D gb = geom->GetBB();
-    Box3D gblocal;
-    gblocal.setTransformed(gb,Tinv);
-    AABB3D gbb;
-    gblocal.getAABB(gbb);
-    gbb.bmin -= Vector3(d);
-    gbb.bmax += Vector3(d);
-    AABB3D bb;
-    shared_ptr<Geometry3DPrimitive> prim = make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(bb));
-    shared_ptr<Collider3DPrimitive> cprim = make_shared<Collider3DPrimitive>(prim);
-    cprim->SetTransform(currentTransform);
-    vector<int> elems_g,elems_p;
-
-    //either use the BB overlap to determine which cells to check, or use occupiedCells
-    Meshing::VolumeGridIterator<Real> it = data->data.getIterator(gbb);
-    int ncells = (it.hi.a - it.lo.a + 1) * (it.hi.b - it.lo.b + 1) * (it.hi.c - it.lo.c + 1);
-    if(ncells < (int)occupiedCells.size()) {
-        for(;!it.isDone();++it) {
-            if(*it > data->occupancyThreshold) {
-                it.getCell(bb);
-                prim->data.data = bb;
-                elems_g.resize(0);
-                elems_p.resize(0);
-                if(!geom->WithinDistance(cprim.get(),d,elems_g,elems_p,maxcollisions)) return false;
-                if(!elems_g.empty()) {
-                    elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
-                    int gridelem = data->IndexToElement(it.index);
-                    for(auto e:elems_g) 
-                        elements1.push_back(gridelem);
-                    if(elements1.size() >= maxcollisions) return true;
-                }
-            }
-        }
+    if(geom->GetType() == AnyGeometry3D::Type::Primitive ||
+       geom->GetType() == AnyGeometry3D::Type::ConvexHull ||
+       geom->GetType() == AnyGeometry3D::Type::PointCloud || 
+       geom->GetType() == AnyGeometry3D::Type::TriangleMesh) {
+        return ::CollidesBruteForce(*this,geom,d,elements1,elements2,maxcollisions);
     }
-    else {
-        //use occupied cells
-        for(const auto &cell : occupiedCells) {
-            data->data.GetCell(cell,bb);
-            prim->data.data = bb;
-            elems_g.resize(0);
-            elems_p.resize(0);
-            if(!geom->WithinDistance(cprim.get(),d,elems_g,elems_p,maxcollisions)) return false;
-            if(!elems_g.empty()) {
-                elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
-                int gridelem = data->IndexToElement(cell);
-                for(auto e:elems_g) 
-                    elements1.push_back(gridelem);
-                if(elements1.size() >= maxcollisions) return true;
-            }
-        }
+    else if(geom->GetType() == AnyGeometry3D::Type::ImplicitSurface) {
+        Collider3DImplicitSurface* grid = dynamic_cast<Collider3DImplicitSurface*>(geom);
+        bool res=::Collides(*grid, *this, d, elements2, elements1, maxcollisions);
+        Assert(res == (!elements1.empty()));
+        Assert(elements1.size()==elements2.size());
+        return true;   
     }
-    return true;
+    return false;
 }
 
 bool Collider3DOccupancyGrid::RayCast(const Ray3D& r,Real margin,Real& distance,int& element)
@@ -479,11 +577,77 @@ bool Collider3DOccupancyGrid::RayCast(const Ray3D& r,Real margin,Real& distance,
         if(data->data.value(c) > data->occupancyThreshold) {
             Vector3 pt = s.a + params[i]*(s.b-s.a);
             distance = (pt-rlocal.source).dot(rlocal.direction);
-            element = PointIndex(*this,currentTransform*pt);
+            element = PointToElement(currentTransform*pt);
             return true;
         }
     }
     distance = Inf;
     element = -1;
     return true;
+}
+
+
+Geometry3D* Geometry3DOccupancyGrid::ExtractROI(const AABB3D& bb,int flag) const
+{
+  if(flag & ExtractROIFlagInvert) return NULL;
+  const Meshing::VolumeGrid& grid = data;
+  auto* res = new Geometry3DOccupancyGrid;
+  IntTriple imin,imax;
+  Vector3 umin,umax;
+  grid.GetIndexAndParamsClamped(bb.bmin,imin,umin);
+  grid.GetIndexAndParamsClamped(bb.bmax,imax,umax);
+  if(flag & ExtractROIFlagWithin || flag & ExtractROIFlagTouching) {
+    //get only cells entirely within or touching the bbox
+    if(umax.x == 1) imax.a += 1;
+    if(umax.y == 1) imax.b += 1;
+    if(umax.z == 1) imax.c += 1;
+    if(umin.x == 0) imin.a -= 1;
+    if(umin.y == 0) imin.b -= 1;
+    if(umin.z == 0) imin.c -= 1;
+    if(flag & ExtractROIFlagWithin) {
+      imax.a -= 1;
+      imax.b -= 1;
+      imax.c -= 1;
+      imin.a += 1;
+      imin.b += 1;
+      imin.c += 1;
+    }
+    AABB3D cellmin,cellmax;
+    grid.GetCell(imin,cellmin);
+    grid.GetCell(imax,cellmax);
+    res->data.bb.bmin = cellmin.bmin;
+    res->data.bb.bmax = cellmax.bmax;
+    if(imin.a > imax.a || imin.b > imax.b || imin.c > imax.c) {
+      res->data.value.resize(0,0,0);
+      return res;
+    }
+    res->data.Resize(imax.a-imin.a+1,imax.b-imin.b+1,imax.c-imin.c+1);
+    for(int i=imin.a;i<=imax.a;i++)
+      for(int j=imin.b;j<=imax.b;j++)
+        for(int k=imin.c;k<=imax.c;k++)
+          res->data.value(i-imin.a,j-imin.b,k-imin.c) = grid.value(i,j,k);
+    return res;
+  }
+  else if(flag & ExtractROIFlagIntersection) {
+    //need to resample
+    AABB3D cellmin,cellmax;
+    grid.GetCell(imin,cellmin);
+    grid.GetCell(imax,cellmax);
+    Vector3 bmin = cellmin.bmin;
+    bmin.x += umin.x*(cellmax.bmin.x-cellmin.bmin.x); 
+    bmin.y += umin.y*(cellmax.bmin.y-cellmin.bmin.y);
+    bmin.z += umin.z*(cellmax.bmin.z-cellmin.bmin.z);
+    Vector3 bmax = cellmax.bmax;
+    bmax.x += umax.x*(cellmax.bmax.x-cellmin.bmax.x);
+    bmax.y += umax.y*(cellmax.bmax.y-cellmin.bmax.y);
+    bmax.z += umax.z*(cellmax.bmax.z-cellmin.bmax.z);
+    res->data.bb.bmin = bmin;
+    res->data.bb.bmax = bmax;
+    Vector3 size=grid.GetCellSize();
+    res->data.ResizeByResolution(size);
+    res->data.ResampleAverage(grid);
+    return res;
+  }
+  delete res;
+  return NULL;
 }

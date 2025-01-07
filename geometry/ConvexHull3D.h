@@ -64,7 +64,9 @@ class ConvexHull3D
 public:
   typedef std::vector<double> PolytopeData;
   typedef Vector3 PointData;
+  typedef Sphere3D SphereData;
   typedef Segment3D LineSegmentData;
+  typedef Box3D BoxData;
   typedef std::pair<ConvexHull3D, ConvexHull3D> MinkowskiData;
   typedef std::pair<ConvexHull3D, RigidTransform> TransData;
   typedef std::pair<ConvexHull3D, ConvexHull3D> HullData;
@@ -75,17 +77,23 @@ public:
   /// Trans means a transformed version of another ConvexHull3D.
   /// Hull means the hull of two objects.
   enum Type { Empty, Polytope, Box, Cone, Cylinder, Sphere, Point, LineSegment, Minkowski, Trans, Hull};
+  
   ConvexHull3D();
   ConvexHull3D(const ConvexHull3D& rhs);
   const ConvexHull3D& operator = (const ConvexHull3D& rhs); 
-  void SetPoint(const Vector3& a);
-  void SetPoints(const Vector& a);
-  void SetPoints(const std::vector<double>& a);
+  bool Set(const GeometricPrimitive3D& g);
+  void Set(const Vector3& a);
+  void Set(const Sphere3D& s);
+  void Set(const Segment3D& s);
+  void Set(const Triangle3D& tri);  ///Note: triangle is stored as a polytope
+  void Set(const AABB3D& bb);
+  void Set(const Box3D& b);
   void SetPoints(const std::vector<Vector3> & a);
-  void SetPoints(const std::vector<Vector> & a);
-  void SetLineSegment(const Segment3D& s);
-  ///Sets this as a transformed version of hull
+  void SetPointBuffer(const Vector& a);
+  void SetPointBuffer(const std::vector<double>& a);
+  /// Sets this as a transformed version of hull.  Note: this stores a reference to hull, and it must be kept alive.
   void SetTrans(const ConvexHull3D &hull, const RigidTransform& xform);
+  /// Sets this as the convex hull of two other objects.  Note: this stores a reference to hull1 and hull2, and they must be kept alive.
   void SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
   bool Contains(const Vector3& pt) const;
   Real Distance(const Vector3& pt) const;
@@ -102,7 +110,9 @@ public:
   PolytopeData& AsPolytope();
   const PolytopeData& AsPolytope() const;
   const PointData& AsPoint() const;
+  const SphereData& AsSphere() const;
   const LineSegmentData& AsLineSegment() const;
+  const BoxData& AsBox() const;
   const TransData& AsTrans() const;
   const HullData& AsHull() const;
   size_t NumPrimitives() const;
@@ -113,9 +123,10 @@ public:
   Type type;
 
   struct ShapeHandleContainer {
-    ShapeHandleContainer(DT_ShapeHandle data);
+    ShapeHandleContainer(DT_ShapeHandle data, DT_ShapeHandle data2=NULL);
     ~ShapeHandleContainer();
     DT_ShapeHandle data;
+    DT_ShapeHandle data2;
     DT_ObjectHandle object_ref;  //object corresponding to data at rest
   };
   std::shared_ptr<ShapeHandleContainer> shapeHandle; //internal SOLID data

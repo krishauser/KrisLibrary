@@ -16,8 +16,6 @@
 using namespace Meshing;
 using namespace std;
 
-const static Real third = 1.0/3.0;
-
 #include "PQP/include/PQP.h"
 #include "PQP/src/MatVec.h"
 #include "PQP/src/OBB_Disjoint.h"
@@ -114,6 +112,7 @@ CollisionMesh::~CollisionMesh()
 void CollisionMesh::InitCollisions()
 {
   SafeDelete(pqpModel);
+  ClearTopology();
   if(!tris.empty()) {
     pqpModel = new PQP_Model;
     ConvertTriToPQP(*this,*pqpModel);
@@ -137,6 +136,15 @@ void CopyPQPModel(const PQP_Model* source, PQP_Model* dest)
   dest->b = new BV[source->num_bvs];  
   for(int i=0;i<source->num_bvs;i++)
     dest->b[i] = source->b[i];
+}
+
+const CollisionMesh& CollisionMesh::operator = (const Meshing::TriMesh& mesh)
+{
+  verts = mesh.verts;
+  tris = mesh.tris;
+  currentTransform.setIdentity();
+  InitCollisions();
+  return *this;
 }
 
 const CollisionMesh& CollisionMesh::operator = (const CollisionMesh& model)
@@ -472,14 +480,14 @@ bool CollisionMeshQuery::WithinDistance(Real tol)
   pqpResults->toleranceAll.triPartner2.clear();
   pqpResults->toleranceAll.triCp1.clear();
   pqpResults->toleranceAll.triCp2.clear();
-  pqpResults->toleranceAll.triDist1[pqpResults->tolerance.tid1] = pqpResults->tolerance.distance;
-  pqpResults->toleranceAll.triDist2[pqpResults->tolerance.tid2] = pqpResults->tolerance.distance;
-  pqpResults->toleranceAll.triPartner1[pqpResults->tolerance.tid1] = pqpResults->tolerance.tid2;
-  pqpResults->toleranceAll.triPartner2[pqpResults->tolerance.tid2] = pqpResults->tolerance.tid1;
-  VEC3_COPY(pqpResults->toleranceAll.triCp1[pqpResults->tolerance.tid1].p1,pqpResults->tolerance.p1);
-  VEC3_COPY(pqpResults->toleranceAll.triCp1[pqpResults->tolerance.tid1].p2,pqpResults->tolerance.p2);
-  VEC3_COPY(pqpResults->toleranceAll.triCp2[pqpResults->tolerance.tid2].p1,pqpResults->tolerance.p1);
-  VEC3_COPY(pqpResults->toleranceAll.triCp2[pqpResults->tolerance.tid2].p2,pqpResults->tolerance.p2);
+  pqpResults->toleranceAll.triDist1[pqpResults->tolerance.t1] = pqpResults->tolerance.distance;
+  pqpResults->toleranceAll.triDist2[pqpResults->tolerance.t2] = pqpResults->tolerance.distance;
+  pqpResults->toleranceAll.triPartner1[pqpResults->tolerance.t1] = pqpResults->tolerance.t2;
+  pqpResults->toleranceAll.triPartner2[pqpResults->tolerance.t2] = pqpResults->tolerance.t1;
+  VEC3_COPY(pqpResults->toleranceAll.triCp1[pqpResults->tolerance.t1].p1,pqpResults->tolerance.p1);
+  VEC3_COPY(pqpResults->toleranceAll.triCp1[pqpResults->tolerance.t1].p2,pqpResults->tolerance.p2);
+  VEC3_COPY(pqpResults->toleranceAll.triCp2[pqpResults->tolerance.t2].p1,pqpResults->tolerance.p1);
+  VEC3_COPY(pqpResults->toleranceAll.triCp2[pqpResults->tolerance.t2].p2,pqpResults->tolerance.p2);
   return pqpResults->tolerance.CloserThanTolerance();
 }
 
@@ -508,8 +516,8 @@ void CollisionMeshQuery::ClosestPoints(Vector3& p1,Vector3& p2) const
 
 void CollisionMeshQuery::ClosestPair(int& t1,int& t2) const
 {
-  t1 = pqpResults->distance.tid1;
-  t2 = pqpResults->distance.tid2;
+  t1 = pqpResults->distance.t1;
+  t2 = pqpResults->distance.t2;
 }
 
 void CollisionMeshQuery::TolerancePoints(Vector3& p1,Vector3& p2) const
@@ -523,8 +531,8 @@ void CollisionMeshQuery::TolerancePoints(Vector3& p1,Vector3& p2) const
 
 void CollisionMeshQuery::TolerancePair(int& t1,int& t2) const
 {
-  t1 = pqpResults->tolerance.tid1;
-  t2 = pqpResults->tolerance.tid2;
+  t1 = pqpResults->tolerance.t1;
+  t2 = pqpResults->tolerance.t2;
 }
 
 
@@ -710,6 +718,18 @@ void CollisionMeshQueryEnhanced::TolerancePoints(vector<Vector3>& p1,vector<Vect
   }
 }
 
+Real CollisionMeshQueryEnhanced::Distance_Cached() const
+{
+  //TODO: what about when only the margins overlap?
+  if(margin1 + margin2 > 0 ) {
+    FatalError("Can't do PenetrationDepth_Cached yet");
+    return 0;
+  }
+  else {
+    return CollisionMeshQuery::Distance_Cached();
+  }
+}
+
 Real CollisionMeshQueryEnhanced::PenetrationDepth_Cached() const
 {
   //TODO: what about when only the margins overlap?
@@ -786,6 +806,8 @@ inline Real distance(const Segment3D& s,const Point3D& p)
   return p.distance(temp);
 }
 
+/*
+
 bool Collide(const Meshing::TriMesh& m1,const Meshing::TriMesh& m2)
 {
   CollisionMesh cm1(m1),cm2(m2);
@@ -814,6 +836,8 @@ Real ClosestPoints(const Meshing::TriMesh& m1,const Meshing::TriMesh& m2,Real ab
   q.ClosestPoints(p1,p2);
   return d;
 }
+
+*/
 
 
 
@@ -1107,7 +1131,7 @@ int CollideRecurse(const Geom& g,const PQP_Model& m,int b,Vector3& pt)
       Copy(m.tris[t].p2,tri.b);
       Copy(m.tris[t].p3,tri.c);
       if(Collide(tri,g,pt))
-	return m.tris[t].id;
+        return m.tris[t].id;
     }
     else {
       int c1=m.b[b].first_child;
@@ -1366,6 +1390,14 @@ int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp,Real bou
   return cb.closestTri;
 }
 
+void ClosestPoints(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,Real relErr,Vector3& v1local,Vector3& v2local,Real bound)
+{
+  CollisionMeshQuery query(m1,m2);
+  query.Distance(absErr,relErr,bound);
+  query.ClosestPoints(v1local,v2local);
+}
+
+
 
 
 
@@ -1384,6 +1416,13 @@ bool Collide(const CollisionMesh& m,const Sphere3D& s)
   slocal.radius = s.radius;
   Vector3 pt;
   return CollideRecurse(slocal,*m.pqpModel,0,pt)>=0;
+}
+
+bool Collide(const CollisionMesh& m,const Triangle3D& t)
+{
+  vector<int> tris;
+  NearbyTriangles(m,t,0.0,tris,1);
+  return (!tris.empty());
 }
 
 
@@ -1463,11 +1502,9 @@ bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
   case GeometricPrimitive3D::AABB:
   case GeometricPrimitive3D::Box:
     {
-      if(d != 0) {
-	LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to within-distance test of "<<a.TypeName()<<" vs CollisionMesh");
-  return false;
-      }
-      return Collide(c,a);
+      vector<int> tris;
+      NearbyTriangles(c,a,d,tris,1);
+      return !tris.empty();
     }
   case GeometricPrimitive3D::Sphere:
     {
@@ -1481,9 +1518,10 @@ bool WithinDistance(const CollisionMesh& c,const GeometricPrimitive3D& a,Real d)
   }
 }
 
+
+
 bool Collide(const CollisionMesh& m1,const CollisionMesh& m2)
 {
-
   if(m1.tris.empty() || m2.tris.empty()) return false;
   if(m1.pqpModel == NULL || m2.pqpModel == NULL) return false;
   PQP_REAL R1[3][3],T1[3],R2[3][3],T2[3];
@@ -1498,6 +1536,13 @@ bool Collide(const CollisionMesh& m1,const CollisionMesh& m2)
   return (collide.Colliding()!=0);
 }
 
+bool WithinDistance(const CollisionMesh& m1,const CollisionMesh& m2,Real d)
+{
+  if(m1.tris.empty() || m2.tris.empty()) return false;
+  if(m1.pqpModel == NULL || m2.pqpModel == NULL) return false;
+  CollisionMeshQuery query(m1,m2);
+  return query.WithinDistance(d);
+}
 
 
 
@@ -1650,9 +1695,12 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
         CollideAll(m,bbox,temptris,tempmax);
         //check which ones are actually within the given distance
         tris.resize(0);
-        Triangle3D tri;
+        Triangle3D tri,triLocal;
         for(size_t i=0;i<temptris.size();i++) {
-          m.GetTriangle(temptris[i],tri);
+          m.GetTriangle(temptris[i],triLocal);
+          m.currentTransform.mulPoint(triLocal.a,tri.a);
+          m.currentTransform.mulPoint(triLocal.b,tri.b);
+          m.currentTransform.mulPoint(triLocal.c,tri.c);
           if(g.Distance(tri) <= d) {
             tris.push_back(temptris[i]);
             if((int)tris.size()==max) return; //done!
@@ -1744,8 +1792,15 @@ Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestT
         LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to within-distance test of "<<a.TypeName()<<" vs CollisionMesh");
         return Inf;
       }
-      LOG4CXX_DEBUG(GET_LOGGER(Geometry),"CollisionMesh-"<<a.TypeName()<<" distance uses inefficient linear search");
-      LOG4CXX_DEBUG(GET_LOGGER(Geometry),"CollisionMesh-"<<a.TypeName()<<" distance does not return correct closest point and direction");
+      static bool warned = false;
+      if(!warned) {
+        LOG4CXX_DEBUG(GET_LOGGER(Geometry),"CollisionMesh-"<<a.TypeName()<<" distance uses inefficient linear search");
+        warned = true;
+      }
+      bool use_cp = a.SupportsClosestPoints(GeometricPrimitive3D::Triangle);
+      if(!use_cp) {
+        LOG4CXX_DEBUG(GET_LOGGER(Geometry),"CollisionMesh-"<<a.TypeName()<<" distance does not return correct closest point and direction");
+      }
       RigidTransform Tlocal;
       Tlocal.setInverse(c.currentTransform);
       GeometricPrimitive3D alocal = a;
@@ -1753,14 +1808,36 @@ Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestT
       Real d=bound;
       closestTri = -1;
       Triangle3D tri;
+      Vector3 cptemp,dirtemp;
       for(size_t i=0;i<c.tris.size();i++) {
         c.GetTriangle(i,tri);
-        Real di = alocal.Distance(tri);
-        if(di < d) {
-          d = di;
-          closestTri = (int)i;
+        if(use_cp) {
+          Real di = alocal.ClosestPoints(tri,cptemp,dirtemp);
+          if(di < d) {
+            d = di;
+            closestTri = (int)i;
+            cp = cptemp;
+            dir = dirtemp;
+          }
         }
+        else {
+          Real di = alocal.Distance(tri);
+          if(di < d) {
+            d = di;
+            closestTri = (int)i;
+            cp = Tlocal.t;
+            cptemp = tri.centroid();
+            dirtemp = cptemp - cp;
+            dirtemp.inplaceNormalize();
+          }
+        }
+        if(d == 0) break;
       }
+      //convert cp and dir to world coordinates, flip them to be on the mesh
+      cp = c.currentTransform*cp;
+      dir = c.currentTransform.R*dir;
+      cp = cp + d*dir;
+      dir = -dir;
       return d;
     }
   case GeometricPrimitive3D::Sphere:
@@ -1775,6 +1852,10 @@ Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestT
   }
 }
 
+Real Distance(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,Real relErr,Real bound)
+{
+  return CollisionMeshQuery(m1,m2).Distance(absErr,relErr,bound);
+}
 
 
 
@@ -1967,8 +2048,8 @@ TriDistance(PQP_REAL R[3][3], PQP_REAL T[3], Tri *t1, Tri *t2,
     bool res=a.intersects(b,s);
     if(!res) {
       LOG4CXX_WARN(GET_LOGGER(Geometry),"Warning: PQP says triangles intersect, but I don't find an intersection");
-      Copy((a.a+a.b+a.c)/3.0,p);
-      Copy((b.a+b.b+b.c)/3.0,q);
+      Copy(a.centroid(),p);
+      Copy(b.centroid(),q);
     }
     else {
       Copy((s.a+s.b)*0.5,p);
@@ -2129,6 +2210,10 @@ bool Geometry3DTriangleMesh::Merge(const Geometry3D* geom,const RigidTransform* 
 {
   if(geom->GetType() != Type::TriangleMesh) return false;
   auto* meshgeom = dynamic_cast<const Geometry3DTriangleMesh*>(geom);
+  if(appearance || meshgeom->appearance) {
+    LOG4CXX_WARN(GET_LOGGER(Geometry),"Geometry3DTriangleMesh::Merge: cannot merge appearance data");
+    return false;
+  }
   if(Tgeom) {
     Meshing::TriMesh temp;
     temp = meshgeom->data;
@@ -2238,12 +2323,19 @@ Collider3DTriangleMesh::Collider3DTriangleMesh(const Collider3DTriangleMesh& rhs
 
 void Collider3DTriangleMesh::Reset()
 {
-  collisionData.InitCollisions();
+  collisionData = data->data;
+  Assert(collisionData.verts.size() == data->data.verts.size());
+  Assert(collisionData.tris.size() == data->data.tris.size());
+  Assert(collisionData.incidentTris.size() == data->data.verts.size());
+  Assert(collisionData.triNeighbors.size() == data->data.tris.size());
+  //will internally call collisionData.InitCollisions();
 }
 
-Collider3D* Collider3DTriangleMesh::Copy() const
+Collider3D* Collider3DTriangleMesh::Copy(shared_ptr<Geometry3D> geom) const
 {
-  return new Collider3DTriangleMesh(*this);
+  auto* res = new Collider3DTriangleMesh(*this);
+  res->data = dynamic_pointer_cast<Geometry3DTriangleMesh>(geom);
+  return res;
 }
 
 Collider3D* Collider3DTriangleMesh::ConvertTo(Type restype, Real param,Real domainExpansion)
@@ -2313,6 +2405,46 @@ bool Collides(const GeometricPrimitive3D &a, const CollisionMesh &c, Real margin
   return !meshelements.empty();
 }
 
+bool Collides(const Box3D& hull_bb, const Collider3DConvexHull& hull, const CollisionMesh& m, Real margin,
+              vector<int>& meshelements, size_t maxContacts)
+{
+  Box3D bbox = hull_bb;
+  bbox.origin -= margin*(bbox.xbasis+bbox.ybasis+bbox.zbasis);
+  bbox.dims += Vector3(margin*2);
+  vector<int> temptris;
+  int tempmax = (int)maxContacts;
+  if(maxContacts < INT_MAX/2) tempmax *= 2;
+  RigidTransform T_mesh_to_hull;
+  T_mesh_to_hull.mulInverseA(hull.T, m.currentTransform);
+  while(true) {
+    temptris.resize(0);
+    meshelements.resize(0);
+    CollideAll(m,bbox,temptris,tempmax);
+    //check which ones are actually within the given distance
+    Triangle3D tri, tri_hull;
+    ConvexHull3D ch_tri;
+    for(size_t i=0;i<temptris.size();i++) {
+      m.GetTriangle(temptris[i],tri);
+      T_mesh_to_hull.mulPoint(tri.a, tri_hull.a);
+      T_mesh_to_hull.mulPoint(tri.b, tri_hull.b);
+      T_mesh_to_hull.mulPoint(tri.c, tri_hull.c);
+      ch_tri.Set(tri_hull);
+      if(hull.data->data.Distance(ch_tri) <= margin) {
+        meshelements.push_back(temptris[i]);
+        if(meshelements.size()==maxContacts) return true; //done!
+      }
+    }
+    if((int)temptris.size()<tempmax) 
+      return true;
+    else if(tempmax >= INT_MAX/2)
+      return true;
+    else
+      //filled out all the temp triangles, but may have missed some due to filtering
+      tempmax *= 2;
+  }
+  return !meshelements.empty();
+}
+
 bool Collider3DTriangleMesh::WithinDistance(Collider3D* geom,Real d,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
 {
@@ -2324,13 +2456,21 @@ bool Collider3DTriangleMesh::WithinDistance(Collider3D* geom,Real d,
     bw.Transform(geom->GetTransform());
     if (Geometry::Collides(bw, collisionData, d, elements1, maxContacts))
     {
-      elements2.push_back(0);
+      elements2.resize(elements1.size());
+      std::fill(elements2.begin(),elements2.end(),0);
     }
     return true;
   }
   case Type::ConvexHull:
-    LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do convex hull-anything collision yet");
-    return false;
+  {
+    auto* chull = dynamic_cast<Collider3DConvexHull*>(geom);
+    auto box=geom->GetBB();
+    if(Geometry::Collides(box, *chull, collisionData, d, elements1, maxContacts)) {
+      elements2.resize(elements1.size());
+      std::fill(elements2.begin(),elements2.end(),0);
+    }
+    return true;
+  }
   case Type::TriangleMesh:
   {
         auto& b = dynamic_cast<Collider3DTriangleMesh*>(geom)->collisionData;

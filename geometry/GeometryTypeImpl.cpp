@@ -222,41 +222,41 @@ Geometry3D* Geometry3D::Convert(Type restype,Real param,Real domainExpansion) co
 {
     if (GetType() == restype)
     {
-        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to itself, succeeded!");
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to itself, succeeded!");
         return Copy();
     }
     else if(GetType() < restype) {
         //try res -> this
         Geometry3D* res = Geometry3D::Make(restype);
         if(res->ConvertFrom(this,param)) {
-            LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" succeeded!");
+            //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" succeeded!");
             return res;
         }
         delete res;
-        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" failed");
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" failed");
         Geometry3D* newgeom = ConvertTo(restype,param);
         if(newgeom) {
-            LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" succeeded!");
+            //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" succeeded!");
             return newgeom;
         }
-        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" failed");
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" failed");
         return NULL;
     }
     else {
         //try this -> res first
         Geometry3D* newgeom = ConvertTo(restype,param);
         if(newgeom) {
-          LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" succeeded!");
+          //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" succeeded!");
           return newgeom;
         }
-        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" failed");
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(GetType())<<" to "<<TypeName(restype)<<" failed");
         Geometry3D* res = Geometry3D::Make(restype);
         if(res->ConvertFrom(this,param)) {
-            LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" succeeded!");
+            //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" succeeded!");
             return res;
         }
         delete res;
-        LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" failed");
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3D::Convert(): converting "<<TypeName(restype)<<" from "<<TypeName(GetType())<<" failed");
         return NULL;
     }
 }
@@ -452,7 +452,8 @@ Collider3D* Collider3D::Make(shared_ptr<Geometry3D> data)
 Collider3D* Collider3D::Convert(Type restype,Real param,Real domainExpansion)
 {
     if(GetType() == restype) {
-        return Copy();
+        shared_ptr<Geometry3D> newgeom(GetData()->Copy());
+        return Copy(newgeom);
     }
     else if(GetType() < restype) {
         Collider3D* res = Collider3D::Make(shared_ptr<Geometry3D>(Geometry3D::Make(restype)));
@@ -524,11 +525,18 @@ Collider3D* Collider3D::Slice(const RigidTransform& T,Real tol) const
 
 Collider3D* Collider3D::ExtractROI(const AABB3D& bb,int flag) const
 {
-    RigidTransform Tinv;
-    Tinv.setInverse(GetTransform());
-    Box3D b;
-    b.setTransformed(bb,Tinv);
-    Geometry3D* sgeom = GetData()->ExtractROI(b,flag);
+    RigidTransform I; I.setIdentity();
+    Geometry3D* sgeom;
+    if(GetTransform() == I) {
+        sgeom = GetData()->ExtractROI(bb,flag);
+    }
+    else {
+        RigidTransform Tinv;
+        Tinv.setInverse(GetTransform());
+        Box3D b;
+        b.setTransformed(bb,Tinv);
+        sgeom = GetData()->ExtractROI(b,flag);
+    }
     if(!sgeom) return NULL;
     shared_ptr<Geometry3D> sgeom_ptr(sgeom);
     return Collider3D::Make(sgeom_ptr);
@@ -540,15 +548,27 @@ Collider3D* Collider3D::ExtractROI(const Box3D& bb,int flag) const
     Tinv.setInverse(GetTransform());
     Box3D b;
     b.setTransformed(bb,Tinv);
-    Geometry3D* sgeom = GetData()->ExtractROI(b,flag);
+    Matrix4 I; I.setIdentity();
+    Matrix4 T;
+    b.getBasis(T);
+    Geometry3D* sgeom;
+    if((I-T).maxAbsElement() > 1e-5) {
+        sgeom = GetData()->ExtractROI(b,flag);
+    }
+    else {
+        //use AABB if possible
+        AABB3D aabb;
+        b.getAABB(aabb);
+        sgeom = GetData()->ExtractROI(aabb,flag);
+    }
     if(!sgeom) return NULL;
     shared_ptr<Geometry3D> sgeom_ptr(sgeom);
     return Collider3D::Make(sgeom_ptr);
 }
 
-Collider3D* Collider3D::Copy() const
+Collider3D* Collider3D::Copy(shared_ptr<Geometry3D> geom) const
 {
-    return Make(shared_ptr<Geometry3D>(GetData()->Copy()));
+    return Make(geom);
 }
 
 bool Collider3D::Union(const vector<Collider3D*>& cgeoms)

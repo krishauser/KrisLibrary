@@ -1056,23 +1056,23 @@ bool Geometry3DPointCloud::Merge(const Geometry3D* geom, const RigidTransform* T
 
 bool Geometry3DPointCloud::Union(const vector<Geometry3D*>& geoms)
 {
-    size_t numProperties = 0;
-    for(size_t i=0;i<geoms.size();i++) {
-        if(geoms[i]->GetType() != Type::PointCloud) return false;
-        const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geoms[i])->data;
-        if(i == 0) numProperties = pc.propertyNames.size();
-        if(pc.propertyNames.size() != numProperties) return false;
-    }
-    data.points.resize(0);
-    data.properties.resize(0);
-    for (size_t i = 0; i < geoms.size(); i++) {
-        const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geoms[i])->data;
-        if(i == 0)
-            data.propertyNames = pc.propertyNames;
-        data.points.insert(data.points.end(),pc.points.begin(),pc.points.end());
-        data.properties.insert(data.properties.end(),pc.properties.begin(),pc.properties.end());
-    }
-    return true;
+  size_t numProperties = 0;
+  for(size_t i=0;i<geoms.size();i++) {
+    if(geoms[i]->GetType() != Type::PointCloud) return false;
+    const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geoms[i])->data;
+    if(i == 0) numProperties = pc.propertyNames.size();
+    if(pc.propertyNames.size() != numProperties) return false;
+  }
+  data.points.resize(0);
+  data.properties.resize(0);
+  for (size_t i = 0; i < geoms.size(); i++) {
+    const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geoms[i])->data;
+    if(i == 0)
+      data.propertyNames = pc.propertyNames;
+    data.points.insert(data.points.end(),pc.points.begin(),pc.points.end());
+    data.properties.insert(data.properties.end(),pc.properties.begin(),pc.properties.end());
+  }
+  return true;
 }
 
 Geometry3D* Geometry3DPointCloud::ConvertTo(Type restype, Real param, Real expansionParameter) const
@@ -1236,40 +1236,40 @@ Geometry3D* Geometry3DPointCloud::Remesh(Real resolution,bool refine,bool coarse
 
 Geometry3D* Geometry3DPointCloud::Slice(const RigidTransform& T,Real tol) const
 {
-    const Meshing::PointCloud3D& pc=data;
-    vector<Vector2> pts;
-    vector<int> inds;
-    Geometry::SliceXY(pc,T,tol,pts,inds);
-    auto* res = new Geometry3DPointCloud;
-    Meshing::PointCloud3D& pc_out = res->data;
-    pc_out.propertyNames = pc.propertyNames;
-    pc_out.settings = pc.settings;
-    pc_out.settings.remove("width");
-    pc_out.settings.remove("height");
-    for(size_t i=0;i<pts.size();i++) {
-        pc_out.points.push_back(Vector3(pts[i].x,pts[i].y,0));
-        pc_out.properties.push_back(pc.properties[inds[i]]);
-    }
-    return res;
+  const Meshing::PointCloud3D& pc=data;
+  vector<Vector2> pts;
+  vector<int> inds;
+  Geometry::SliceXY(pc,T,tol,pts,inds);
+  auto* res = new Geometry3DPointCloud;
+  Meshing::PointCloud3D& pc_out = res->data;
+  pc_out.propertyNames = pc.propertyNames;
+  pc_out.settings = pc.settings;
+  pc_out.settings.remove("width");
+  pc_out.settings.remove("height");
+  for(size_t i=0;i<pts.size();i++) {
+    pc_out.points.push_back(Vector3(pts[i].x,pts[i].y,0));
+    pc_out.properties.push_back(pc.properties[inds[i]]);
+  }
+  return res;
 }
   
 Geometry3D* Geometry3DPointCloud::ExtractROI(const AABB3D& bb,int flags) const
 {
-    auto* res = new Geometry3DPointCloud;
-    Geometry::ExtractROI(data,bb,res->data,flags);
-    return res;
+  auto* res = new Geometry3DPointCloud;
+  Geometry::ExtractROI(data,bb,res->data,flags);
+  return res;
 }
 
 Geometry3D* Geometry3DPointCloud::ExtractROI(const Box3D& bb,int flags) const
 {
-    auto* res = new Geometry3DPointCloud;
-    Geometry::ExtractROI(data,bb,res->data,flags);
-    return res;
+  auto* res = new Geometry3DPointCloud;
+  Geometry::ExtractROI(data,bb,res->data,flags);
+  return res;
 }
 
 shared_ptr<Geometry3D> Geometry3DPointCloud::GetElement(int elem) const
 {
-    return make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(data.points[elem]));
+  return make_shared<Geometry3DPrimitive>(GeometricPrimitive3D(data.points[elem]));
 }
 
 AABB3D Geometry3DPointCloud::GetAABB() const
@@ -1295,44 +1295,44 @@ bool Geometry3DPointCloud::Support(const Vector3& dir,Vector3& pt) const
 
 bool Geometry3DPointCloud::Load(const char *fn)
 {
-    const char *ext = ::FileExtension(fn);
-    if (0 == strcmp(ext, "pcd"))
-    {
-        data = Meshing::PointCloud3D();
-        return data.LoadPCL(fn);
-    }
-    return false;
+  const char *ext = ::FileExtension(fn);
+  if (0 == strcmp(ext, "pcd"))
+  {
+    data = Meshing::PointCloud3D();
+    return data.LoadPCL(fn);
+  }
+  return false;
 }
 
     
 bool Geometry3DPointCloud::Save(const char* fn) const
 {
-    const char *ext = ::FileExtension(fn);
-    if (0 == strcmp(ext, "pcd"))
-    {
-        return data.SavePCL(fn);
-    }
-    else
-    {
-        LOG4CXX_WARN(GET_LOGGER(Geometry), "Save: Unknown point cloud file extension " << fn);
-        return false;
-    }
+  const char *ext = ::FileExtension(fn);
+  if (0 == strcmp(ext, "pcd"))
+  {
+    return data.SavePCL(fn);
+  }
+  else
+  {
+    LOG4CXX_WARN(GET_LOGGER(Geometry), "Save: Unknown point cloud file extension " << fn);
+    return false;
+  }
 }
   
 bool Geometry3DPointCloud::Load(istream& in)
 {
-    return data.LoadPCL(in);
+  return data.LoadPCL(in);
 }
 
 bool Geometry3DPointCloud::Save(ostream& out) const
 {
-    return data.SavePCL(out);
+  return data.SavePCL(out);
 }
 
 bool Geometry3DPointCloud::Transform(const Matrix4 &T)
 {
-    data.Transform(T);
-    return true;
+  data.Transform(T);
+  return true;
 }
 
 Collider3DPointCloud::Collider3DPointCloud(shared_ptr<Geometry3DPointCloud> _data)
@@ -1347,8 +1347,20 @@ Collider3DPointCloud::Collider3DPointCloud(const Collider3DPointCloud& rhs)
 
 void Collider3DPointCloud::Reset()
 {
+  collisionData.points = data->data.points;
+  collisionData.settings = data->data.settings;
+  collisionData.properties = data->data.properties;
+  collisionData.propertyNames = data->data.propertyNames;
   collisionData.InitCollisions();
 }
+
+Collider3D* Collider3DPointCloud::Copy(shared_ptr<Geometry3D> geom) const
+{
+  auto* res = new Collider3DPointCloud(*this);
+  res->data = dynamic_pointer_cast<Geometry3DPointCloud>(geom);
+  return res;
+}
+    
 
 AABB3D Collider3DPointCloud::GetAABB() const
 {
@@ -1360,80 +1372,125 @@ AABB3D Collider3DPointCloud::GetAABB() const
 
 AABB3D Collider3DPointCloud::GetAABBTight() const
 {
-    const CollisionPointCloud &pc = collisionData;
-    AABB3D bb;
-    bb.minimize();
-    for (size_t i = 0; i < pc.points.size(); i++)
-      bb.expand(pc.currentTransform * pc.points[i]);
-    return bb;
+  const CollisionPointCloud &pc = collisionData;
+  AABB3D bb;
+  bb.minimize();
+  for (size_t i = 0; i < pc.points.size(); i++)
+    bb.expand(pc.currentTransform * pc.points[i]);
+  return bb;
 }
 
 Box3D Collider3DPointCloud::GetBB() const
 {
-    Box3D b;
-    b.setTransformed(collisionData.bblocal,collisionData.currentTransform);
-    return b;
+  Box3D b;
+  b.setTransformed(collisionData.bblocal,collisionData.currentTransform);
+  return b;
 }
 
 bool Collider3DPointCloud::Distance(const Vector3& pt,Real& result)
 {
-    result = Geometry::Distance(collisionData, pt);
-    return true;
+  result = Geometry::Distance(collisionData, pt);
+  return true;
 }
 
 bool Collider3DPointCloud::Distance(const Vector3 &pt, const AnyDistanceQuerySettings &settings,AnyDistanceQueryResult& res)
 {
-    res.hasClosestPoints = true;
-    res.hasElements = true;
-    res.elem2 = 0;
-    res.cp2 = pt;
-    Vector3 ptlocal;
+  res.hasClosestPoints = true;
+  res.hasElements = true;
+  res.elem2 = 0;
+  res.cp2 = pt;
+  Vector3 ptlocal;
 
-    GetTransform().mulInverse(pt, ptlocal);
-    const CollisionPointCloud &pc = collisionData;
-    if (!pc.octree->NearestNeighbor(ptlocal, res.cp1, res.elem1, settings.upperBound)) {
-      res.d = settings.upperBound;
-      return true;
-    }
-    res.d = res.cp1.distance(ptlocal);
-    Transform1(res, GetTransform());
+  GetTransform().mulInverse(pt, ptlocal);
+  const CollisionPointCloud &pc = collisionData;
+  if (!pc.octree->NearestNeighbor(ptlocal, res.cp1, res.elem1, settings.upperBound)) {
+    res.d = settings.upperBound;
     return true;
+  }
+  res.d = res.cp1.distance(ptlocal);
+  Transform1(res, GetTransform());
+  return true;
+}
+
+bool Collider3DPointCloud::Contains(const Vector3& pt,bool& result) 
+{
+  GeometricPrimitive3D gpt(pt);
+  vector<int> elements;
+  if (Geometry::Collides(gpt, collisionData, 0.0, elements, 1)) {
+    result = true;
+  }
+  else {
+    result = false;
+  }
+  return true;  
 }
 
 bool Collider3DPointCloud::WithinDistance(Collider3D* geom,Real d,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
 {
-    switch (geom->GetType())
+  switch (geom->GetType())
+  {
+  case Type::Primitive:
+  {
+    GeometricPrimitive3D bw = dynamic_cast<Collider3DPrimitive*>(geom)->data->data;
+    bw.Transform(geom->GetTransform());
+    if (Geometry::Collides(bw, collisionData, d, elements1, maxContacts))
     {
-    case Type::Primitive:
-    {
-        GeometricPrimitive3D bw = dynamic_cast<Collider3DPrimitive*>(geom)->data->data;
-        bw.Transform(geom->GetTransform());
-        if (Geometry::Collides(bw, collisionData, d, elements1, maxContacts))
-        {
-          elements2.push_back(0);
+      elements2.resize(elements1.size());
+      std::fill(elements2.begin(),elements2.end(),0);
+    }
+    return true;
+  }
+  case Type::TriangleMesh:
+  {
+    auto& b = dynamic_cast<Collider3DTriangleMesh*>(geom)->collisionData;
+    bool res = Geometry::Collides(collisionData, d, b, elements1, elements2, maxContacts);
+    if(res) Assert(!elements1.empty());
+    else Assert(elements1.empty());
+    return true;
+  }
+  case Type::PointCloud:
+  {
+    auto& b = dynamic_cast<Collider3DPointCloud*>(geom)->collisionData;
+    bool res = Geometry::Collides(collisionData, d, b, elements1, elements2, maxContacts);
+    if(res) Assert(!elements1.empty());
+    else Assert(elements1.empty());
+    return true;
+  }
+  case Type::ConvexHull:
+  {
+    auto* b = dynamic_cast<Collider3DConvexHull*>(geom);
+    AABB3D bb = b->GetAABBTight();
+    GeometricPrimitive3D gbb(bb);
+    vector<int> cand_elements1;
+    size_t extra_maxContacts = maxContacts;
+    if(maxContacts < INT_MAX/2) extra_maxContacts *= 2;
+    while(true) {   //check hull bbox for candidate points.  Increase extra points until we find some that intersect the hull
+        cand_elements1.resize(0);
+        elements1.resize(0);
+        elements2.resize(0);
+        if(Geometry::Collides(gbb, collisionData, d, cand_elements1, extra_maxContacts)) {
+            for(size_t i=0;i<cand_elements1.size();i++) {
+                Vector3 pt = collisionData.currentTransform * collisionData.points[cand_elements1[i]];
+                bool inside;
+                if(!b->Contains(pt,inside)) return false;
+                if(inside) {
+                    elements1.push_back(cand_elements1[i]);
+                    elements2.push_back(0);
+                    if(elements1.size() >= maxContacts) break;
+                }
+            }
         }
-        return true;
+        if(cand_elements1.size() < extra_maxContacts) break;
+        if(extra_maxContacts >= INT_MAX/2) break;
+        if(elements1.size() >= maxContacts) break;
+        extra_maxContacts *= 2;   //try again with a larger limit 
     }
-    case Type::TriangleMesh:
-    {
-          auto& b = dynamic_cast<Collider3DTriangleMesh*>(geom)->collisionData;
-          bool res = Geometry::Collides(collisionData, d, b, elements1, elements2, maxContacts);
-          if(res) Assert(!elements1.empty());
-          return true;
-    }
-    case Type::PointCloud:
-    {
-          auto& b = dynamic_cast<Collider3DPointCloud*>(geom)->collisionData;
-          bool res = Geometry::Collides(collisionData, d, b, elements1, elements2, maxContacts);
-          return res;
-    }
-    case Type::ConvexHull:
-        LOG4CXX_ERROR(GET_LOGGER(Geometry), "Can't do point cloud-convex hull collisions yet");
-        return false;
-    default:
-        return false;
-    } 
+    return true;
+  }
+  default:
+    return false;
+  } 
 }
 
 bool Collider3DPointCloud::RayCast(const Ray3D& r,Real margin,Real& distance,int& element)
@@ -2004,7 +2061,13 @@ bool Collider3DPointCloud::Distance(Collider3D* other,const DistanceQuerySetting
   }
   case Type::ConvexHull:
   {
+    static bool warned = false;
+    if(!warned) {
+      LOG4CXX_DEBUG(GET_LOGGER(Geometry),"Warning, point cloud-convex hull distance uses slow linear search");
+      warned = true;
+    }
     DistanceQuerySettings modsettings = settings;
+    DistanceQueryResult tempres;
     Collider3DConvexHull* b = dynamic_cast<Collider3DConvexHull*>(other);
     //bound check
     if(!IsInf(settings.upperBound)) {
@@ -2016,10 +2079,14 @@ bool Collider3DPointCloud::Distance(Collider3D* other,const DistanceQuerySetting
     }
     //brute force
     for(size_t i=0;i<data->data.points.size();i++) {
-      if(b->Distance(data->data.points[i],modsettings,res)) {
-        modsettings.upperBound = res.d;
+      if(b->Distance(collisionData.currentTransform*data->data.points[i],modsettings,tempres)) {
+        if(tempres.d < modsettings.upperBound) {
+          res = tempres;
+          modsettings.upperBound = tempres.d;
+        }
       }
     }
+    Flip(res);
     return true;
   }
   default:

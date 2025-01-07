@@ -151,6 +151,8 @@ public:
   void ResizeTo(const Geometry3D* geom,Real resolution,Real domainExpansion=0);
   int IndexToElement(const IntTriple& idx) const;
   IntTriple ElementToIndex(int elem) const;
+  /// Returns the closest element to the point pt 
+  int PointToElement(const Vector3& pt) const;
 
   Meshing::VolumeGrid data;
 };
@@ -168,6 +170,7 @@ public:
   virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) override;
   virtual Geometry3D* Remesh(Real resolution,bool refine,bool coarsen) const override;
   virtual bool Merge(const Geometry3D* geom,const RigidTransform* Tgeom=NULL) override;
+  virtual Geometry3D* ExtractROI(const AABB3D& bb,int flag=1) const override;
 
   Real truncationDistance;
 };
@@ -185,6 +188,7 @@ public:
   virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) override;
   virtual Geometry3D* Remesh(Real resolution,bool refine,bool coarsen) const override;
   virtual bool Merge(const Geometry3D* geom,const RigidTransform* Tgeom=NULL) override;
+  virtual Geometry3D* ExtractROI(const AABB3D& bb,int flag=1) const override;
 
   Real occupancyThreshold;
 };
@@ -212,6 +216,7 @@ public:
   virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) override;
   virtual Geometry3D* Remesh(Real resolution,bool refine,bool coarsen) const override;
   virtual bool Merge(const Geometry3D* geom,const RigidTransform* Tgeom=NULL) override;
+  virtual Geometry3D* ExtractROI(const AABB3D& bb,int flag=1) const override;
 
   Meshing::Heightmap data;
 };

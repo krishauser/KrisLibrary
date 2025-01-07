@@ -27,6 +27,7 @@ public:
   virtual AABB3D GetAABB() const override;
   virtual RigidTransform GetTransform() const override { return T; }
   virtual void SetTransform(const RigidTransform& T) override;
+  virtual bool Merge(Collider3D* cgeom) override;
   virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
   virtual bool Contains(const Vector3& pt,bool& result) override;
   virtual bool Distance(const Vector3& pt,Real& result) override;

@@ -23,6 +23,9 @@ public:
     virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
     virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
 
+    /// Returns index of grid cell closest to the projection of ptworld 
+    int PointToElement(const Vector3& ptworld) const;
+
     shared_ptr<Geometry3DHeightmap> data;
     RigidTransform currentTransform;
     Real hmin,hmax;

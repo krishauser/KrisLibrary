@@ -118,22 +118,26 @@ bool AnyGeometry3D::Empty() const
 
 void AnyGeometry3D::Union(const vector<AnyGeometry3D> &geoms)
 {
-  vector<Geometry3D*> nonempty;
+  vector<shared_ptr<Geometry3D> > nonempty;
   for (size_t i = 0; i < geoms.size(); i++)
     if (!geoms[i].Empty())
-      nonempty.push_back(geoms[i].data.get());
+      nonempty.push_back(geoms[i].data);
   if (nonempty.empty())
     *this = AnyGeometry3D();
   else if (nonempty.size() == 1)
   {
-    data.reset(nonempty[0]);
+    data = nonempty[0];
+    type = nonempty[0]->GetType();
   }
   else
   {
     //TODO: merge to a different type?
     type = nonempty[0]->GetType();
     auto* geom = Geometry3D::Make(type);
-    if(geom->Union(nonempty)) {
+    vector<Geometry3D*> nonempty_ptrs(nonempty.size());
+    for(size_t i=0;i<nonempty.size();i++)
+      nonempty_ptrs[i] = nonempty[i].get();
+    if(geom->Union(nonempty_ptrs)) {
       data.reset(geom);
     }
     else {
@@ -517,7 +521,8 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
   currentTransform = geom.currentTransform;
   collisionHint = geom.collisionHint;
 
-  if (geom.collider) collider.reset(geom.collider->Copy());
+  //TODO: collider copies don't preserve references to the copied geometry pointer
+  if (geom.collider) collider.reset(geom.collider->Copy(data));
   return *this;
 }
 
@@ -525,7 +530,7 @@ const Collider3DPrimitive &AnyCollisionGeometry3D::PrimitiveCollisionData() cons
 const Collider3DConvexHull &AnyCollisionGeometry3D::ConvexHullCollisionData() const { return *dynamic_cast<const Collider3DConvexHull*>(collider.get()); }
 const CollisionMesh &AnyCollisionGeometry3D::TriangleMeshCollisionData() const { return dynamic_cast<const Collider3DTriangleMesh*>(collider.get())->collisionData; }
 const CollisionPointCloud &AnyCollisionGeometry3D::PointCloudCollisionData() const { return dynamic_cast<const Collider3DPointCloud*>(collider.get())->collisionData; }
-const CollisionImplicitSurface &AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() const { return dynamic_cast<const Collider3DImplicitSurface*>(collider.get())->collisionData; }
+const Collider3DImplicitSurface &AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() const { return *dynamic_cast<const Collider3DImplicitSurface*>(collider.get()); }
 const Collider3DOccupancyGrid &AnyCollisionGeometry3D::OccupancyGridCollisionData() const { return *dynamic_cast<const Collider3DOccupancyGrid*>(collider.get()); }
 const Collider3DHeightmap &AnyCollisionGeometry3D::HeightmapCollisionData() const { return *dynamic_cast<const Collider3DHeightmap*>(collider.get()); }
 const vector<AnyCollisionGeometry3D> &AnyCollisionGeometry3D::GroupCollisionData() const { return dynamic_cast<const Collider3DGroup*>(collider.get())->collisionData; }
@@ -533,7 +538,7 @@ Collider3DPrimitive &AnyCollisionGeometry3D::PrimitiveCollisionData() { return *
 Collider3DConvexHull &AnyCollisionGeometry3D::ConvexHullCollisionData() { return *dynamic_cast<Collider3DConvexHull*>(collider.get()); }
 CollisionMesh &AnyCollisionGeometry3D::TriangleMeshCollisionData() { return dynamic_cast<Collider3DTriangleMesh*>(collider.get())->collisionData; }
 CollisionPointCloud &AnyCollisionGeometry3D::PointCloudCollisionData() { return dynamic_cast<Collider3DPointCloud*>(collider.get())->collisionData; }
-CollisionImplicitSurface &AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return dynamic_cast<Collider3DImplicitSurface*>(collider.get())->collisionData; }
+Collider3DImplicitSurface &AnyCollisionGeometry3D::ImplicitSurfaceCollisionData() { return *dynamic_cast<Collider3DImplicitSurface*>(collider.get()); }
 Collider3DOccupancyGrid &AnyCollisionGeometry3D::OccupancyGridCollisionData() { return *dynamic_cast<Collider3DOccupancyGrid*>(collider.get()); }
 Collider3DHeightmap &AnyCollisionGeometry3D::HeightmapCollisionData() { return *dynamic_cast<Collider3DHeightmap*>(collider.get()); }
 vector<AnyCollisionGeometry3D> &AnyCollisionGeometry3D::GroupCollisionData() { return dynamic_cast<Collider3DGroup*>(collider.get())->collisionData; }
@@ -546,6 +551,7 @@ void AnyCollisionGeometry3D::InitCollisionData()
 
 void AnyCollisionGeometry3D::ReinitCollisionData()
 {
+  Assert(type == data->GetType());
   RigidTransform T = GetTransform();
   collider.reset(Collider3D::Make(data));
   collider->SetTransform(T);
@@ -561,9 +567,15 @@ void AnyCollisionGeometry3D::Union(const vector<AnyGeometry3D>& geoms)
 void AnyCollisionGeometry3D::Union(const vector<AnyCollisionGeometry3D> &geoms)
 {
   vector<int> nonempty;
-  for (size_t i = 0; i < geoms.size(); i++)
-    if (!geoms[i].Empty())
+  for (size_t i = 0; i < geoms.size(); i++) {
+    if (!geoms[i].Empty()) {
       nonempty.push_back((int)i);
+      if(&geoms[i] == this) {
+        LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyCollisionGeometry3D::Union(): Cannot union with self");
+        return;
+      }
+    }
+  }
   if (nonempty.empty())
     *this = AnyGeometry3D();
   else if (nonempty.size() == 1)
@@ -591,8 +603,14 @@ void AnyCollisionGeometry3D::Union(const vector<AnyCollisionGeometry3D> &geoms)
 
 bool AnyCollisionGeometry3D::Merge(const AnyCollisionGeometry3D& other)
 {
+  if(this == &other) {
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyCollisionGeometry3D::Merge(): Cannot merge with self");
+    return false;
+  }
+  Assert(collider != other.collider);
   if(collider && other.collider) {
-    if(collider->Merge(other.collider.get())) return true;
+    if(collider->Merge(other.collider.get())) 
+      return true;
     return false;
   }
   RigidTransform Tlocal;
@@ -688,10 +706,30 @@ RigidTransform AnyCollisionGeometry3D::GetTransform() const
 
 void AnyCollisionGeometry3D::SetTransform(const RigidTransform &T)
 {
+  Assert(type == data->GetType());
   currentTransform = T;
   if(collider) collider->SetTransform(T);
 }
 
+bool AnyCollisionGeometry3D::Transform(const RigidTransform& T)
+{
+  if(!AnyGeometry3D::Transform(T)) return false;
+  if(collider) {
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"AnyCollisionGeometry3D::Transform(): Collision data structure will need to be reset (performance warning)");
+    ReinitCollisionData();
+  }
+  return true;
+}
+
+bool AnyCollisionGeometry3D::Transform(const Matrix4& mat)
+{
+  if(!AnyGeometry3D::Transform(mat)) return false;
+  if(collider) {
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"AnyCollisionGeometry3D::Transform(): Collision data structure will need to be reset (performance warning)");
+    ReinitCollisionData();
+  }
+  return true;
+}
 
 Real AnyCollisionGeometry3D::Distance(const Vector3 &pt)
 {
@@ -729,14 +767,14 @@ bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D &geom)
   if(margin + geom.margin == 0) {
     if(type < geom.type) {
       bool result;
-      if(geom.collider->Collides(collider.get(),result)) return result;
-      if(collider->Collides(geom.collider.get(),result)) return result;
+      if(geom.collider->Collides(collider.get(),result)) { return result; }
+      if(collider->Collides(geom.collider.get(),result)) { return result; }
       return false;
     }
     else {
       bool result;
-      if(collider->Collides(geom.collider.get(),result)) return result;
-      if(geom.collider->Collides(collider.get(),result)) return result;
+      if(collider->Collides(geom.collider.get(),result)) { return result; }
+      if(geom.collider->Collides(collider.get(),result)) { return result; }
       return false;
     }
   }
@@ -949,6 +987,12 @@ AnyContactsQueryResult AnyCollisionGeometry3D::Contacts(AnyCollisionGeometry3D &
 {
   InitCollisionData();
   other.InitCollisionData();
+  Assert(type == data->GetType());
+  Assert(collider->GetType() == type);
+  Assert(collider->GetData().get()  == data.get());
+  Assert(other.type == other.data->GetType());
+  Assert(other.collider->GetType() == other.type);
+  Assert(other.collider->GetData().get()  == other.data.get());
   AnyContactsQueryResult res;
   AnyContactsQuerySettings modsettings = settings;
   if (settings.cluster)

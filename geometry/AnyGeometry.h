@@ -23,7 +23,7 @@ class Collider3DPrimitive;
 class Collider3DConvexHull;
 class CollisionMesh;
 class CollisionPointCloud;
-class CollisionImplicitSurface;
+class Collider3DImplicitSurface;
 class Collider3DOccupancyGrid;
 class Collider3DHeightmap;
 
@@ -216,7 +216,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   const Collider3DConvexHull& ConvexHullCollisionData() const;
   const CollisionMesh& TriangleMeshCollisionData() const;
   const CollisionPointCloud& PointCloudCollisionData() const;
-  const CollisionImplicitSurface& ImplicitSurfaceCollisionData() const;
+  const Collider3DImplicitSurface& ImplicitSurfaceCollisionData() const;
   const Collider3DOccupancyGrid& OccupancyGridCollisionData() const;
   const Collider3DHeightmap& HeightmapCollisionData() const;
   const vector<AnyCollisionGeometry3D>& GroupCollisionData() const;
@@ -224,7 +224,7 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   Collider3DConvexHull& ConvexHullCollisionData();
   CollisionMesh& TriangleMeshCollisionData();
   CollisionPointCloud& PointCloudCollisionData();
-  CollisionImplicitSurface& ImplicitSurfaceCollisionData();
+  Collider3DImplicitSurface& ImplicitSurfaceCollisionData();
   Collider3DOccupancyGrid& OccupancyGridCollisionData();
   Collider3DHeightmap& HeightmapCollisionData();
   vector<AnyCollisionGeometry3D>& GroupCollisionData();
@@ -254,6 +254,12 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   ///modify the geometry using Transform(), ReinitCollisions() should be
   ///called.
   void SetTransform(const RigidTransform& T);
+  /// Modifies the underlying geometry in the *local* frame by T.  This is
+  /// equivalent to AnyGeometry3D::Transform except that it will warn if
+  /// the collision data needs to be re-initialized.
+  bool Transform(const RigidTransform& T);
+  bool Transform(const Matrix4& mat);
+
   ///Groups together these geometries, as usual
   void Union(const vector<AnyGeometry3D>& geoms);
   ///Groups together these geometries.  For compatible types, they are merged

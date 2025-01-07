@@ -148,8 +148,13 @@ public:
 
     virtual ~Collider3D() {}
     virtual Type GetType() const { return GetData()->GetType(); }
-    virtual Collider3D* Copy() const;
     virtual shared_ptr<Geometry3D> GetData() const=0;
+    /// Copies the current collider but changes all references to another
+    /// Geometry3D pointer.
+    ///
+    /// Default just creates a blank collider.  A subclass can implement
+    /// this to accelerate copying data structures 
+    virtual Collider3D* Copy(shared_ptr<Geometry3D> geom) const;
     ///Resets the collision data structure. Must be called when the geometry
     ///data has changed.
     virtual void Reset() {}
