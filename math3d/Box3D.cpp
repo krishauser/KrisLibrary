@@ -239,6 +239,81 @@ bool Box3D::intersects(const Sphere3D& s) const
   return sloc.intersects(bbloc);
 }
 
+Real Box3D::distance(const Sphere3D& s) const
+{
+  return Max(0.0,signedDistance(s.center) - s.radius);
+}
+
+Real Box3D::signedDistance(const Sphere3D& s) const
+{
+  return signedDistance(s.center) - s.radius;
+}
+
+Real Box3D::distance(const Segment3D& s) const
+{
+  Segment3D sloc;
+  toLocal(s,sloc);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  return sloc.distance(bbloc);
+}
+
+Real Box3D::distance(const Segment3D& s, Vector3& bclosest, Vector3& sclosest) const
+{
+  Segment3D sloc;
+  toLocal(s,sloc);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  Real uclosest;
+  Vector3 bclosest_local;
+  Real d = sloc.distance(bbloc,uclosest,bclosest_local);
+  s.eval(uclosest,sclosest);
+  fromLocal(bclosest_local,bclosest);
+  return d;
+}
+
+Real Box3D::distance(const Triangle3D& t) const
+{
+  Triangle3D tloc;
+  toLocal(t.a,tloc.a);
+  toLocal(t.b,tloc.b);
+  toLocal(t.c,tloc.c);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  return tloc.distance(bbloc);
+}
+
+Real Box3D::distance(const Triangle3D& t, Vector3& bclosest, Vector3& tclosest) const
+{
+  Triangle3D tloc;
+  toLocal(t.a,tloc.a);
+  toLocal(t.b,tloc.b);
+  toLocal(t.c,tloc.c);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  Vector3 tclosest_local, bclosest_local;
+  Real d = tloc.distance(bbloc,tclosest_local, bclosest_local);
+  fromLocal(tclosest_local,tclosest);
+  fromLocal(bclosest_local,bclosest);
+  return d;
+}
+
+Vector3 Box3D::support(const Vector3& dir) const
+{
+  Vector3 dir_local;
+  toLocalReorient(dir,dir_local);
+  Vector3 supp_local;
+  supp_local.x = (dir_local.x >= 0 ? dims.x : 0);
+  supp_local.y = (dir_local.y >= 0 ? dims.y : 0);
+  supp_local.z = (dir_local.z >= 0 ? dims.z : 0);
+  Vector3 supp;
+  fromLocal(supp_local,supp);
+  return supp;
+}
 
 std::ostream& operator << (std::ostream& out,const Box3D& b)
 {

@@ -39,6 +39,14 @@ struct Box3D : public ScaledLocalCoordinates3D
   bool intersects(const Line3D& l) const;
   bool intersects(const Triangle3D& t) const;
   bool intersects(const Sphere3D& b) const;
+  Real distance(const Sphere3D& s) const;
+  Real signedDistance(const Sphere3D& s) const;
+  Real distance(const Segment3D& s) const;
+  Real distance(const Segment3D& s, Vector3& bclosest, Vector3& sclosest) const;
+  Real distance(const Triangle3D& t) const;
+  Real distance(const Triangle3D& s, Vector3& bclosest, Vector3& tclosest) const;
+  /// Returns the point in this box that is farthest in the direction dir 
+  Vector3 support(const Vector3& dir) const;
 };
 
 std::ostream& operator << (std::ostream& out,const Box3D& b);
