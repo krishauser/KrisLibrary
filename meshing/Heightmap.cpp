@@ -688,12 +688,16 @@ void Heightmap::GetIndexAndParams(const Vector3& pt,IntPair& index,Vector2& para
     }
 }
 
-float Heightmap::GetHeight(const Vector3& pt,int interpolation) const
+float Heightmap::GetHeight(const Vector3& pt,int interpolation,bool clamp) const
 {
     IntPair index;
     Vector2 params;
     GetIndexAndParams(pt,index,params);
     if(interpolation == InterpNearest) {
+        if(!clamp) {
+            if(index.a < 0 || index.a >= heights.m) return NAN;
+            if(index.b < 0 || index.b >= heights.n) return NAN;
+        }
         if(params.x > 0.5) index.a += 1;
         if(params.y > 0.5) index.b += 1;
         index.a = ::Min(::Max(0,index.a),heights.m-1);
@@ -756,7 +760,7 @@ Vector2 Heightmap::ValidHeightRange() const
     return hrange;
 }
 
-Real Heightmap::GetHeightDifference(const Vector3& pt,int interpolation) const
+Real Heightmap::GetHeightDifference(const Vector3& pt,int interpolation,bool clamp) const
 {
     Vector3 ptlocal = Project(pt);
     Real xf = Floor(ptlocal.x);
@@ -765,6 +769,10 @@ Real Heightmap::GetHeightDifference(const Vector3& pt,int interpolation) const
     Vector2 params(ptlocal.x-xf,ptlocal.y-yf);
     float v;
     if(interpolation == InterpNearest) {
+        if(!clamp) {
+            if(index.a < 0 || index.a >= heights.m) return NAN;
+            if(index.b < 0 || index.b >= heights.n) return NAN;
+        }
         if(params.x > 0.5) index.a += 1;
         if(params.y > 0.5) index.b += 1;
         index.a = ::Min(::Max(0,index.a),heights.m-1);

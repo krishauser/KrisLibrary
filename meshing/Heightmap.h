@@ -35,8 +35,9 @@ namespace Meshing {
  * 
  * A height value of NaN indicates a missing value for orthographic heightmaps.
  * A value of NaN or 0 for a perspective heightmap indicates a missing value.
- * Some functions may interpret missing values as a hole in the map.
-  * 
+ * Some functions may interpret missing values as a hole in the map.  Infinite
+ * values can also indicate missing values.
+ * 
  * Vertex colors can be provided in the `colors` attribute.  The `colors` image
  * must match that of the `heights` array, with width=heights.m, height=heights.n.
  * As in standard image convention, the rows in the colors image are assumed to
@@ -188,15 +189,15 @@ public:
     void GetIndexAndParams(const Vector3& pt,IntPair& index,Vector2& params,bool clamp=false) const;
 
     /** @brief Reads the height of a point.
-     * 
-     * The value is clamped to the boundaries.
      *
      * Args:
      *      pt (Vector3): a 2D or 3D point (z is ignored)
      *      interpolation (int): either InterpNearest or InterpBilinear describing how
      *          the interpolation is done between nearby heightmap values.
+     *      clamp (bool): if true, the height value is clamped to the boundaries.  Otherwise,
+     *          an invalid height (NaN) is returned
      */
-    float GetHeight(const Vector3& pt,int interpolation=InterpNearest) const;
+    float GetHeight(const Vector3& pt,int interpolation=InterpNearest,bool clamp=false) const;
     /// @brief Returns true if the point has a valid height value.
     bool ValidHeight(const Vector3& pt,bool clamp=false) const;
     /// @brief Returns true if the index has a valid height value.
@@ -210,15 +211,18 @@ public:
     /** @brief Reads difference between the height of a point and the height
      * of the heightmap along the ray through the point.
      * 
-     * The heightmap value is clamped to the boundaries.  If no heightmap
-     * value is available, NaN is returned.
+     * If clamp=true, the heightmap value is clamped to the boundaries.  If no
+     * heightmap value is available, or clamp=false and the point is out of bounds,
+     * NaN is returned.
      *
      * Args:
      *      pt (Vector3): a 2D or 3D point (z is ignored)
      *      interpolation (int): either InterpNearest or InterpBilinear describing how
      *          the interpolation is done between nearby heightmap values.
+     *      clamp (bool): if true, the height value is clamped to the boundaries. 
+     *          Otherwise, an invalid height (NaN) is returned for out-of-bounds points.
      */
-    Real GetHeightDifference(const Vector3& pt,int interpolation=InterpNearest) const;
+    Real GetHeightDifference(const Vector3& pt,int interpolation=InterpNearest,bool clamp=false) const;
 
     /** @brief Reads the color of a point projected to the heightmap. Arguments
      * are the same as in GetHeight()
