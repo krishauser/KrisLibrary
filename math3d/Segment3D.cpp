@@ -148,7 +148,7 @@ Real Segment3D::distance(const AABB3D& bb, Real& tclosest, Point3D& bbclosest) c
   Real dl = l.distance(bb,tl,cl);
   if(tl >= 0 && tl <= 1 && dl < dmin) {
     tclosest = tl;
-    bbclosest = cb;
+    bbclosest = cl;
     return dl;
   }
   return dmin;
