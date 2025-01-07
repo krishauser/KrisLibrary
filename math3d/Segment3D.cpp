@@ -121,39 +121,30 @@ Real Segment3D::distance(const AABB3D& bb, Real& tclosest, Point3D& bbclosest) c
   Vector3 ca,cb;
   Real da2 = bb.distanceSquared(a,ca);
   Real db2 = bb.distanceSquared(b,cb);
-  //if these points are on the same face then the middle is not closest
-  bool matchx,matchy,matchz;
-  matchx = (ca.x==cb.x);
-  matchy = (ca.y==cb.y);
-  matchz = (ca.z==cb.z);
-  int nmatch = 0;
-  if(matchx) nmatch++;
-  if(matchy) nmatch++;
-  if(matchz) nmatch++;
-  if(nmatch <= 1) {
-    //the closest must be middle-edge or middle point
-    Line3D l;
-    l.source = a;
-    l.direction = b;
-    Real tl;
-    Vector3 cl;
-    Real dl = l.distance(bb,tl,cl);
-    if(tl >= 0 && tl <= 1 && dl*dl < Min(da2,db2)) {
-      tclosest = tl;
-      bbclosest = cb;
-      return dl;
-    }
-  }
+  Real dmin = Inf;
   if(da2 < db2) {
     tclosest = 0;
     bbclosest = ca;
-    return Sqrt(da2);
+    dmin = Sqrt(da2);
   }
   else {
     tclosest = 1;
     bbclosest = cb;
-    return Sqrt(db2);
+    dmin = Sqrt(db2);
   }
+  //check for middle-edge closest points
+  Line3D l;
+  l.source = a;
+  l.direction = b-a;
+  Real tl;
+  Vector3 cl;
+  Real dl = l.distance(bb,tl,cl);
+  if(tl >= 0 && tl <= 1 && dl < dmin) {
+    tclosest = tl;
+    bbclosest = cb;
+    return dl;
+  }
+  return dmin;
 }
 
 
