@@ -250,8 +250,7 @@ void ExtractROI(const Meshing::TriMesh& m,const AABB3D& bb,Meshing::TriMesh& m_r
                         m_roi.verts.push_back(tmesh.verts[j]);
                     for(size_t j=0;j<tmesh.tris.size();j++) {
                         tmesh.GetTriangle(j,tri);
-                        Vector3 centroid = (tri.a+tri.b+tri.c)/3.0;
-                        if(bb.contains(centroid)==truthValue) {
+                        if(bb.contains(tri.centroid())==truthValue) {
                             const auto& t=tmesh.tris[j];
                             m_roi.tris.push_back(IntTriple(t.a+vlen,t.b+vlen,t.c+vlen));
                         }

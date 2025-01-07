@@ -32,14 +32,13 @@ Real Polygon3D::areaConvex() const
 
 Vector3 Polygon3D::centroidConvex() const
 {
-  const static Real Third = 1.0/3.0;
   Vector3 c(Zero);
   Real sum=0;
   Triangle3D temp;
   for(size_t i=1;i+1<vertices.size();i++) {
     temp.set(vertices[0],vertices[i],vertices[i+1]);
     Real area = temp.area();
-    c.madd((temp.a+temp.b+temp.c),area*Third);
+    c.madd(temp.centroid(),area);
     sum += area;
   }
   if(sum == 0) return c;

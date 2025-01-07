@@ -3,6 +3,7 @@
 #include "geometry3d.h"
 #include "clip.h"
 #include "interpolate.h"
+#include "random.h"
 #include <iostream>
 #include <math/Interval.h>
 using namespace Math3D;
@@ -102,6 +103,19 @@ Real Triangle3D::area(const Point3D& a, const Point3D& b, const Point3D& c)
 	Vector3 z;
 	z.setCross(b-a,c-a);
 	return z.length()*Half;
+}
+
+Vector3 Triangle3D::centroid() const
+{
+  Vector3 res;
+  getCentroid(res);
+  return res;
+}
+
+void Triangle3D::getCentroid(Point3D& centroid) const
+{
+  const static Real third = 1.0/3.0;
+  centroid.set((a+b+c)*third);
 }
 
 void Triangle3D::getPlane(Plane3D& p) const
@@ -608,6 +622,297 @@ bool Triangle3D::intersects(const AABB3D& bb) const
   PlaneExtents(*this,p,triInt.a,triInt.b);
   if(!bbInt.intersects(triInt)) return false;
   return true;
+}
+
+bool Triangle3D::intersects(const AABB3D& bb, Vector3& witness) const
+{
+  //trival accept: contains any point
+  if(bb.contains(a)) {
+    witness = a;
+    return true;
+  }
+  if(bb.contains(b)) {
+    witness = b;
+    return true;
+  }
+  if(bb.contains(c)) {
+    witness = c;
+    return true;
+  }
+  //trivial reject: bboxes don't intersect
+  AABB3D tribb;
+  getAABB(tribb);
+  if(!bb.intersects(tribb)) {
+    ClosedInterval bbInt,triInt;
+    triInt.set(tribb.bmin.x,tribb.bmax.x);
+    bbInt.set(bb.bmin.x,bb.bmax.x);
+    if(!bbInt.intersects(triInt)) {
+      witness.set(1,0,0);
+      return false;
+    }
+    triInt.set(tribb.bmin.y,tribb.bmax.y);
+    bbInt.set(bb.bmin.y,bb.bmax.y);
+    if(!bbInt.intersects(triInt)) {
+      witness.set(0,1,0);
+      return false;
+    }
+    witness.set(0,0,1);
+    return false;
+  }
+  //check for other splitting planes
+  Plane3D p;
+  getPlane(p);
+  if(!p.intersects(bb)) {
+    witness = p.normal;
+    return false;
+  }
+
+  //check planes perpendicular to axes and planes orthogonal to edge of tri and edge of bb
+  ClosedInterval bbInt,triInt;
+  Vector3 edge;
+  p.offset = Zero;
+
+  //x dir
+  edge.set(1,0,0);
+  p.normal.setCross(b-a,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  p.normal.setCross(c-b,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  p.normal.setCross(a-c,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  //y dir
+  edge.set(0,1,0);
+  p.normal.setCross(b-a,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  p.normal.setCross(c-b,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  p.normal.setCross(a-c,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  //z dir
+  edge.set(0,0,1);
+  p.normal.setCross(b-a,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  p.normal.setCross(c-b,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  p.normal.setCross(a-c,edge);
+  p.distanceLimits(bb,bbInt.a,bbInt.b);
+  PlaneExtents(*this,p,triInt.a,triInt.b);
+  if(!bbInt.intersects(triInt)) {
+    witness = p.normal;
+    return false;
+  }
+  //determine a point in the intersection -- can be defined either by an edge of the box or where one edge of the triangle passes through a box face
+  
+  //index (xhi,yhi,zhi) is how we address the vertex (xlow,ylow,zlow), (xlow,ylow,zhi), (xlow,yhi,zlow), etc.
+  Vector3 verts[8] { bb.bmin, bb.bmin, bb.bmin, bb.bmin, bb.bmin, bb.bmin, bb.bmin, bb.bmin };
+  bool pos[8];
+  getPlane(p);
+  verts[1].z = bb.bmax.z;
+  verts[2].y = bb.bmax.y;
+  verts[3].y = bb.bmax.y;
+  verts[3].z = bb.bmax.z;
+  verts[4].x = bb.bmax.x;
+  verts[5].z = bb.bmax.z;
+  verts[5].x = bb.bmax.x;
+  verts[6].y = bb.bmax.y;
+  verts[6].x = bb.bmax.x;
+  verts[7] = bb.bmax;
+  for(int i=0;i<8;i++)
+    pos[i] = p.distance(verts[i]) >= Zero;
+  int edge_a[12] = {0,0,0,1,1,2,2,3,4,4,5,6};
+  int edge_b[12] = {1,2,4,3,5,3,6,7,5,6,7,7};
+  Matrix3 A,Ainv;
+  Vector3 rhs;
+  A.setRow1(p.normal);
+  rhs.x = p.offset;
+  for(int i=0;i<12;i++) {
+    if(pos[edge_a[i]] == pos[edge_b[i]]) //skip
+      continue;
+    const Vector3& va = verts[edge_a[i]];
+    const Vector3& vb = verts[edge_b[i]];
+    int row=1;
+    if(va.x == vb.x) {
+      A(row,0) = 1;
+      A(row,1) = 0;
+      A(row,2) = 0;
+      rhs[row] = va.x;
+      row++;
+    }
+    if(va.y == vb.y) {
+      A(row,0) = 0;
+      A(row,1) = 1;
+      A(row,2) = 0;
+      rhs[row] = va.y;
+      row++;
+    } 
+    if(va.z == vb.z) {
+      A(row,0) = 0;
+      A(row,1) = 0;
+      A(row,2) = 1;
+      rhs[row] = va.z;
+      row++;
+    } 
+    Assert(row == 3);
+  
+    if(A.getInverse(Ainv)) {
+      Vector3 x = Ainv*rhs;
+      if(this->contains(x)) {
+        witness = x;
+        return true;
+      }
+    }
+  }
+  //check face - triangle edge intersections
+  for(int i=0;i<3;i++) {
+    Segment3D s;
+    s.a = vertex(i);
+    s.b = vertex((i+1)%3);
+    Real tmin,tmax;
+    if(s.intersects(bb,tmin,tmax)) {
+      s.eval((tmin+tmax)*0.5,witness); 
+      return true;
+    }
+  }
+  //some numerical error? try sample and check
+  for(int i=0;i<100;i++) {
+    Real u,v;
+    SampleTriangle(u,v);
+    Vector3 x = a + u*(b-a) + v*(c-a);
+    if(bb.contains(x)) {
+      witness = x;
+      return true;
+    }
+  }
+  LOG4CXX_ERROR(KrisLibrary::logger(),"Triangle3D::intersects(AABB3D): Error, couldn't find intersection point");
+  LOG4CXX_ERROR(KrisLibrary::logger(),"  Triangle "<<a<<", "<<b<<", "<<c);
+  LOG4CXX_ERROR(KrisLibrary::logger(),"  AABB "<<bb.bmin<<", "<<bb.bmax);
+  witness = centroid();
+  return true;
+}
+
+
+Real Triangle3D::distance(const AABB3D& bb) const
+{
+  Vector3 tclosest, bbbclosest;
+  return distance(bb,tclosest,bbbclosest);
+}
+
+Real Triangle3D::distance(const AABB3D& bb, Vector3& tclosest, Point3D& bbclosest) const
+{
+  Real min_dist = Inf;
+  //get the plane - bb distance
+  Plane3D p;
+  getPlane(p);
+  Real dmin,dmax;
+  p.distanceLimits(bb,dmin,dmax);
+  if(dmin <= 0 && dmax >= 0) { //plane intersects bbox 
+    if(intersects(bb,tclosest)) {
+      bbclosest = tclosest;
+      return 0;
+    }
+    //otherwise a vertex / edge will be the closest feature on the triangle
+  }
+  else if (dmin > 0) {
+    //box lies on positive direction of plane
+    bbclosest = bb.support(-p.normal);
+    tclosest = closestPoint(bbclosest);
+    min_dist = tclosest.distance(bbclosest);
+  }
+  else {
+    //box lies on negative direction of plane
+    bbclosest = bb.support(p.normal);
+    tclosest = closestPoint(bbclosest);
+    min_dist = tclosest.distance(bbclosest);
+  }
+  Vector3 temp;
+  Real dtemp;
+  //get the vertex - bb distance
+  dtemp = bb.distance(a,temp);
+  if(dtemp < min_dist) {
+    min_dist = dtemp;
+    tclosest = a;
+    bbclosest = temp;
+  }
+  dtemp = bb.distance(b,temp);
+  if(dtemp < min_dist) {
+    min_dist = dtemp;
+    tclosest = b;
+    bbclosest = temp;
+  }
+  dtemp = bb.distance(c,temp);
+  if(dtemp < min_dist) {
+    min_dist = dtemp;
+    tclosest = c;
+    bbclosest = temp;
+  }
+  //get the edge - bb distance
+  Segment3D s;
+  Real ttemp;
+  s.a = a;
+  s.b = b;
+  dtemp = s.distance(bb,ttemp,temp);
+  if(dtemp < min_dist) {
+    min_dist = dtemp;
+    s.eval(ttemp,tclosest);
+    bbclosest = temp;
+  }
+  s.a = b;
+  s.b = c;
+  dtemp = s.distance(bb,ttemp,temp);
+  if(dtemp < min_dist) {
+    min_dist = dtemp;
+    s.eval(ttemp,tclosest);
+    bbclosest = temp;
+  }
+  s.a = c;
+  s.b = a;
+  dtemp = s.distance(bb,ttemp,temp);
+  if(dtemp < min_dist) {
+    min_dist = dtemp;
+    s.eval(ttemp,tclosest);
+    bbclosest = temp;
+  }
+  return min_dist;
 }
 
 Real Triangle3D::distance(const Triangle3D& other,Vector3& P,Vector3& Q) const
