@@ -1150,6 +1150,8 @@ bool GeometricPrimitive3D::SupportsDistance(Type a,Type b)
     return (a==Point || a==Sphere || a==Segment || a==AABB || a==Box || a==Triangle);
   if(a==Segment && b==Segment) return true;
   if(a==AABB && b==AABB) return true;
+  if((a == Triangle || a == Segment) && (b == AABB || b == Box)) return true;
+  if((b == Triangle || b == Segment) && (a == AABB || a == Box)) return true;
   return false;
 }
 
@@ -1219,6 +1221,10 @@ Real GeometricPrimitive3D::Distance(const Segment3D& s) const
     }
   case Sphere:
     return Max(0.0,s.distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
+  case AABB:
+    return s.distance(*AnyCast_Raw<AABB3D>(&data));
+  case Box:
+    return AnyCast_Raw<Box3D>(&data)->distance(s);
   default:
     return Inf;
   }
@@ -1233,6 +1239,10 @@ Real GeometricPrimitive3D::Distance(const AABB3D& b) const
     return Max(0.0,b.signedDistance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
   case AABB:
     return b.distance(*AnyCast_Raw<AABB3D>(&data));
+  case Segment:
+    return AnyCast_Raw<Segment3D>(&data)->distance(b);
+  case Triangle:
+    return AnyCast_Raw<Triangle3D>(&data)->distance(b);
   default:
     return Inf;
   }
@@ -1244,7 +1254,11 @@ Real GeometricPrimitive3D::Distance(const Box3D& b) const
   case Point:
     return b.signedDistance(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
-    return Max(0.0,b.signedDistance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
+    return b.signedDistance(*AnyCast_Raw<Sphere3D>(&data));
+  case Segment:
+    return b.distance(*AnyCast_Raw<Segment3D>(&data));
+  case Triangle:
+    return b.distance(*AnyCast_Raw<Triangle3D>(&data));
   default:
     return Inf;
   }
@@ -1257,6 +1271,10 @@ Real GeometricPrimitive3D::Distance(const Triangle3D& t) const
     return t.closestPoint(*AnyCast_Raw<Vector3>(&data)).distance(*AnyCast_Raw<Vector3>(&data));
   case Sphere:
     return Max(0.0,t.closestPoint(AnyCast_Raw<Sphere3D>(&data)->center).distance(AnyCast_Raw<Sphere3D>(&data)->center)-AnyCast_Raw<Sphere3D>(&data)->radius);
+  case AABB:
+    return t.distance(*AnyCast_Raw<AABB3D>(&data));
+  case Box:
+    return AnyCast_Raw<Box3D>(&data)->distance(t);
   default:
     return Inf;
   }
@@ -1288,6 +1306,8 @@ bool GeometricPrimitive3D::SupportsClosestPoints(Type a,Type b)
   if(a == AABB && b == AABB) return true;
   if(a == Segment && b == Segment) return true;
   if(a == Triangle && b == Triangle) return true;
+  if((a == Triangle || a == Segment) && (b == AABB || b == Box)) return true;
+  if((b == Triangle || b == Segment) && (a == AABB || a == Box)) return true;
   return false;
 }
 
@@ -1387,6 +1407,23 @@ Real GeometricPrimitive3D::ClosestPoints(const Segment3D& s,Vector3& cp,Vector3&
       s.eval(u,cp_other);
     }
     break;
+  case AABB:
+  {
+    const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
+    Real cp_other_t;
+    Real d = s.distance(*b,cp_other_t,cp);
+    s.eval(cp_other_t,cp_other);
+    direction = Unit(cp_other-cp);
+    return d;
+  }
+  case Box:
+  {
+    const Box3D* b = AnyCast_Raw<Box3D>(&data);
+    Real cp_other_t;
+    Real d = b->distance(s,cp,cp_other);
+    direction = Unit(cp_other-cp);
+    return d;
+  }
   default:
     return Inf;
   }
@@ -1427,6 +1464,21 @@ Real GeometricPrimitive3D::ClosestPoints(const Triangle3D& t,Vector3& cp,Vector3
       Real d = tme->distance(t,cp,cp_other);
     }
     break;
+  case AABB:
+    {
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
+      Real d = t.distance(*b,cp_other,cp);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      Real cp_other_t;
+      Real d = b->distance(t,cp,cp_other);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
   default:
     return Inf;
   }
@@ -1483,6 +1535,23 @@ Real GeometricPrimitive3D::ClosestPoints(const AABB3D& s,Vector3& cp,Vector3& di
       return d;
     }
     break;
+  case Segment:
+    {
+      const Segment3D* seg = AnyCast_Raw<Segment3D>(&data);
+      Real cp_t;
+      Real d = seg->distance(s,cp_t,cp_other);
+      seg->eval(cp_t,cp);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
+  case Triangle:
+    {
+      const Triangle3D* t = AnyCast_Raw<Triangle3D>(&data);
+      Real d = t->distance(s,cp,cp_other);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
+    break;
   default:
     return Inf;
   }
@@ -1506,6 +1575,20 @@ Real GeometricPrimitive3D::ClosestPoints(const Box3D& s,Vector3& cp,Vector3& dir
       direction.inplaceNormalize();
       cp = sme->center + sme->radius*direction;
       return d - sme->radius;
+    }
+  case Segment:
+    {
+      const Segment3D* seg = AnyCast_Raw<Segment3D>(&data);
+      Real d = s.distance(*seg,cp_other,cp);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
+  case Triangle:
+    {
+      const Triangle3D* t = AnyCast_Raw<Triangle3D>(&data);
+      Real d = s.distance(*t,cp_other,cp);
+      direction = Unit(cp_other-cp);
+      return d;
     }
   default:
     return Inf;
@@ -1536,6 +1619,62 @@ Real GeometricPrimitive3D::ClosestPoints(const GeometricPrimitive3D& g,Vector3& 
     return Inf;
   }
 }
+
+bool GeometricPrimitive3D::SupportsSupport(Type a)
+{
+  return a == Type::Point || a == Type::Sphere || a == Type::Segment || a == Type::AABB || a == Type::Box || a == Type::Triangle;
+}
+
+bool GeometricPrimitive3D::Support(const Vector3& dir,Vector3& pt) const
+{
+  switch(type) {
+  case Point:
+    pt = *AnyCast_Raw<Vector3>(&data);
+    return true;
+  case Segment:
+    {
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
+      Real da = s->a.dot(dir);
+      Real db = s->b.dot(dir);
+      if(da > db) pt = s->a;
+      else pt = s->b;
+      return true;
+    }
+  case Sphere:
+    {
+      const Sphere3D* s=AnyCast_Raw<Sphere3D>(&data);
+      pt = s->center + s->radius*dir/(dir.norm());
+      return true;
+    }
+  case AABB:
+    {
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
+      pt = b->support(dir);
+      return true;
+    }
+  case Triangle:
+    {
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
+      Real da = t->a.dot(dir);
+      Real db = t->b.dot(dir);
+      Real dc = t->c.dot(dir);
+      Real d = Max(da,db,dc);
+      if(d == da) pt = t->a;
+      else if(d == db) pt = t->b;
+      else pt = t->c;
+      return true;
+    }
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      pt = b->support(dir);
+      return true;
+    }
+  default:
+    return false;
+  }
+}
+
 
 
 
@@ -1657,5 +1796,6 @@ std::istream& operator >>(std::istream& in,GeometricPrimitive3D& g)
   }
   return in;
 }
+
 
 } // namespace Math3D

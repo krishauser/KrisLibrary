@@ -101,6 +101,10 @@ class GeometricPrimitive3D
   Real ClosestPoints(const AABB3D& s,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const Box3D& s,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const GeometricPrimitive3D& g,Vector3& cp,Vector3& direction) const;
+  static bool SupportsSupport(Type a);
+  /// The Support(d) function returns the farthest point on the object in the direction d
+  bool SupportsSupport() const { return GeometricPrimitive3D::SupportsSupport(type); }
+  bool Support(const Vector3& dir,Vector3& pt) const;
 
   Type type;
   AnyValue data;
