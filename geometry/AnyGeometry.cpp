@@ -693,8 +693,7 @@ Box3D AnyCollisionGeometry3D::GetBB() const
   //expand by the margin
   if (margin != 0)
   {
-    b.dims += Vector3(margin * 2.0);
-    b.origin -= margin * (b.xbasis + b.ybasis + b.zbasis);
+    b.expand(margin);
   }
   return b;
 }
@@ -758,6 +757,14 @@ bool AnyCollisionGeometry3D::Support(const Vector3& dir,Vector3& pt)
     return true;
   }
   return collider->Support(dir,pt);
+}
+
+bool AnyCollisionGeometry3D::Contains(const Vector3& pt)
+{
+  InitCollisionData();
+  bool res;
+  if(!collider->Contains(pt,res)) return false;
+  return res;
 }
 
 bool AnyCollisionGeometry3D::Collides(AnyCollisionGeometry3D &geom)

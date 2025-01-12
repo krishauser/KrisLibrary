@@ -281,6 +281,8 @@ class AnyCollisionGeometry3D : public AnyGeometry3D
   bool Merge(const AnyCollisionGeometry3D& other);
   ///Computes the furthest point on the geometry in the direction dir
   bool Support(const Vector3& dir,Vector3& pt);
+  /// Returns true if pt is contained within the geometry 
+  bool Contains(const Vector3& pt);
   bool Collides(AnyCollisionGeometry3D& geom);
   bool Collides(AnyCollisionGeometry3D& geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX);
   Real Distance(AnyCollisionGeometry3D& geom);
