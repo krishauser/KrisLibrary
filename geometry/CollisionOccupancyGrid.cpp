@@ -3,11 +3,13 @@
 #include "Conversions.h"
 #include "GridSubdivision.h"
 #include "CollisionPrimitive.h"
+#include "SpiralIterator.h"
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/utils/stl_tr1.h>
 #include <KrisLibrary/meshing/Voxelize.h>
 #include <KrisLibrary/math3d/clip.h>
 #include <KrisLibrary/math3d/Segment3D.h>
+#include <KrisLibrary/Timer.h>
 
 DECLARE_LOGGER(Geometry)
 
@@ -15,6 +17,7 @@ namespace Geometry {
 
     bool CollidesBruteForce(const Collider3DOccupancyGrid& a, Collider3D* b, Real d, vector<int>& elements1, vector<int>& elements2, size_t maxcollisions)
     {
+        Timer global_timer;
         ///brute force method -- collide geom with boxes of the occupancy grid
         RigidTransform Tinv;
         Tinv.setInverse(a.currentTransform);
@@ -38,32 +41,51 @@ namespace Geometry {
         if(it.isDone()) return false;
         int ncells = (it.hi.a - it.lo.a + 1) * (it.hi.b - it.lo.b + 1) * (it.hi.c - it.lo.c + 1);
         size_t nchecked = 0;
-        if(ncells < (int)a.occupiedCells.size()) {
+        double checkTime = 0;
+        if(ncells < (int)a.occupiedCells.size()*5) {  //5 is a fudge factor because the spiral method usually finds a solution relatively quickly
             //use BB overlap
-            for(;!it.isDone();++it) {
-                if(*it > a.data->occupancyThreshold) {
-                    it.getCell(bb);
+            // printf("OccupancyGrid-%s collision: Using bb overlap method, %d < %d\n",Geometry3D::TypeName(b->GetType()),ncells,(int)a.occupiedCells.size());
+            // printf("%d x %d x %d\n",it.hi.a - it.lo.a + 1,it.hi.b - it.lo.b + 1,it.hi.c - it.lo.c + 1);
+            // cout<<gbb.bmin<<" -> "<<gbb.bmax<<endl;
+            // cout<<"domain "<<a.data->data.bb.bmin<<" -> "<<a.data->data.bb.bmax<<endl;
+            // IntTriple centercell;
+            // a.data->data.GetIndex(gbb.midpoint(),centercell);
+            // SpiralIterator3D it2(centercell,it.lo,it.hi);
+            SpiralIterator3D it2(IntTriple((it.lo.a+it.hi.a)/2,(it.lo.b+it.hi.b)/2,(it.lo.c+it.hi.c)/2),it.lo,it.hi);
+            // for(;!it.isDone();++it) {
+            //    if(*it > a.data->occupancyThreshold) {
+            //        it.getCell(bb);
+            for(;!it2.isDone();++it2) {
+                if(a.data->data.GetValue(it2->a,it2->b,it2->c) > a.data->occupancyThreshold) {
+                    a.data->data.GetCell(*it2,bb);
                     prim->data = GeometricPrimitive3D(bb);
                     elems_g.resize(0);
                     elems_p.resize(0);
                     nchecked += 1;
+                    Timer timer;
                     if(d > 0) {
                         if(!b->WithinDistance(cprim.get(),d,elems_g,elems_p,maxcollisions)) return false;
                     }
                     else {
                         if(!b->Collides(cprim.get(),elems_g,elems_p,maxcollisions)) return false;
                     }
+                    checkTime += timer.ElapsedTime();
                     if(!elems_g.empty()) {
-                    elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
-                    int gridelem = a.data->IndexToElement(it.index);
-                    for(auto e:elems_g) 
-                        elements1.push_back(gridelem);
-                    if(elements1.size() >= maxcollisions) return true;
+                        elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
+                        int gridelem = a.data->IndexToElement(*it2);
+                        for(auto e:elems_g) 
+                            elements1.push_back(gridelem);
+                        if(elements1.size() >= maxcollisions) {
+                            // printf("Terminating with %d collisions after %d checks, %fms per check, final time %fms\n",(int)elements1.size(),(int)nchecked,1000*checkTime/nchecked,1000*global_timer.ElapsedTime());
+                            return true;
+                        }
                     }
                 }
             }
+            // printf("Terminating with %d collisions after %d checks, %fms per check, final time %fms\n",(int)elements1.size(),(int)nchecked,1000*checkTime/nchecked,1000*global_timer.ElapsedTime());
         }
         else {
+            // printf("OccupancyGrid-%s collision: Using occupied cell check, %d >= %d\n",Geometry3D::TypeName(b->GetType()),ncells,(int)a.occupiedCells.size());
             //check all occupied cells
             for(const auto &cell : a.occupiedCells) {
                 a.data->data.GetCell(cell,bb);
@@ -71,20 +93,26 @@ namespace Geometry {
                 elems_g.resize(0);
                 elems_p.resize(0);
                 nchecked += 1;
+                Timer timer;
                 if(d > 0) {
                     if(!b->WithinDistance(cprim.get(),d,elems_g,elems_p,maxcollisions)) return false;
                 }
                 else {
                     if(!b->Collides(cprim.get(),elems_g,elems_p,maxcollisions)) return false;
                 }
+                checkTime += timer.ElapsedTime();
                 if(!elems_g.empty()) {
                     elements2.insert(elements2.end(),elems_g.begin(),elems_g.end());
                     int gridelem = a.data->IndexToElement(cell);
                     for(auto e:elems_g) 
                         elements1.push_back(gridelem);
-                    if(elements1.size() >= maxcollisions) return true;
+                    if(elements1.size() >= maxcollisions) {
+                        // printf("Terminating with %d collisions after %d checks, %fms per check, final time %fms\n",(int)elements1.size(),(int)nchecked,1000*checkTime/nchecked,1000*global_timer.ElapsedTime());
+                        return true;
+                    }
                 }
             }
+            // printf("Terminating with %d collisions after %d checks, %fms per check, final time %fms\n",(int)elements1.size(),(int)nchecked,1000*checkTime/nchecked,1000*global_timer.ElapsedTime());
         }
         //printf("OccupancyGrid: Checked %d elements of volume with %d cells in range, %d occupied\n",(int)nchecked,ncells,(int)a.occupiedCells.size());
         return true;

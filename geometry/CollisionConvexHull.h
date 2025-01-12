@@ -34,7 +34,7 @@ public:
   virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
   virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
   virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
-  virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res)  override { return false; }
+  virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res)  override;
   virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
   virtual bool Support(const Vector3& dir,Vector3& pt) override;
   

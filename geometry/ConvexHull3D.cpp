@@ -488,8 +488,7 @@ Real ConvexHull3D::Distance(const Vector3 &pnt) const {
 Real ConvexHull3D::ClosestPoint(const Vector3& pt,Vector3& cp,Vector3& direction) const {
   // first create hull and compute a lot
   ConvexHull3D pnt_hull;
-  std::vector<Vector3> vpoint{pt};
-  pnt_hull.SetPoints(vpoint);
+  pnt_hull.Set(pt);
   return ClosestPoints(pnt_hull, cp, direction);
 }
 

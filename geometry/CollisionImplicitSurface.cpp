@@ -476,11 +476,9 @@ bool Collider3DImplicitSurface::Collides(const CollisionPointCloud& pc,Real marg
   Box3D sbb;
   sbb.setTransformed(data->data.bb,currentTransform);
   Box3D sbbexpanded = sbb;
-  sbbexpanded.dims += Vector3(margin*2.0);
-  sbbexpanded.origin -= margin*(sbb.xbasis+sbb.ybasis+sbb.zbasis);
+  sbbexpanded.expand(margin);
   if(pc.radiusIndex >= 0) {
-    sbbexpanded.dims += Vector3(pc.maxRadius*2.0);
-    sbbexpanded.origin -= pc.maxRadius*(sbb.xbasis+sbb.ybasis+sbb.zbasis);
+    sbbexpanded.expand(pc.maxRadius);
   }
   //quick reject test
   if(!pcbb.intersectsApprox(sbbexpanded)) {
@@ -955,7 +953,7 @@ bool Collides(const Collider3DImplicitSurface &a, const Collider3DImplicitSurfac
   return !elements1.empty();
 }
 
-bool Collider3DImplicitSurface::CollidesLocal(const Triangle3D& tri,Real margin,IntTriple& collides_cell) const
+bool Collider3DImplicitSurface::CollidesLocal(const Triangle3D& tri,Real margin,IntTriple& collide_cell) const
 {
   Vector3 cellSize = data->data.GetCellSize();
   Real cellRad = cellSize.norm() * 0.5;
@@ -966,7 +964,6 @@ bool Collider3DImplicitSurface::CollidesLocal(const Triangle3D& tri,Real margin,
   Vector3 pt_clamped;
   test += data->data.bb.distance(c,pt_clamped);
   Real triDiam = Max(c.distance(tri.a),c.distance(tri.b),c.distance(tri.c));
-  IntTriple collide_cell;
   if(test <= margin - cellRad) {
     data->data.GetIndexClamped(c,collide_cell);
     return true;
@@ -1015,7 +1012,7 @@ bool Collider3DImplicitSurface::CollidesLocal(const Triangle3D& tri,Real margin,
       for(size_t j=0;j<cube_mesh.tris.size();j++) {
         cube_mesh.GetTriangle(j,tri2);
         if((margin == 0 && tri.intersects(tri2)) || (tri.distance(tri2,P,Q) <= margin)) {
-          collide_cell = cell;
+          collide_cell = cell;   
           return true;
         }
       }
@@ -1044,6 +1041,11 @@ bool Collider3DImplicitSurface::Collides(const CollisionMesh &b, Real margin,
     IntTriple collide_cell;
     if(CollidesLocal(tri,margin,collide_cell)) {
       elements1.push_back(collide_cell.a*data->data.value.n*data->data.value.p + collide_cell.b*data->data.value.p + collide_cell.c);
+      Assert(collide_cell.a >= 0 && collide_cell.a < data->data.value.m);
+      Assert(collide_cell.b >= 0 && collide_cell.b < data->data.value.n);
+      Assert(collide_cell.c >= 0 && collide_cell.c < data->data.value.p);
+      Assert(elements1.back() == data->IndexToElement(collide_cell));
+      Assert(elements1.back() >= 0 && elements1.back() < data->NumElements());
       elements2.push_back(int(i));
       if(elements1.size() >= maxContacts) {
         return true;

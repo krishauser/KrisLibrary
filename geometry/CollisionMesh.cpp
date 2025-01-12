@@ -1687,8 +1687,7 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
       //compute an expanded bounding box and collide them
       Box3D bbox;
       FitBox(g,bbox);
-      bbox.origin -= d*(bbox.xbasis+bbox.ybasis+bbox.zbasis);
-      bbox.dims += Vector3(d*2);
+      bbox.expand(d);
       vector<int> temptris;
       int tempmax = max;
       while(true) {
@@ -2409,8 +2408,7 @@ bool Collides(const Box3D& hull_bb, const Collider3DConvexHull& hull, const Coll
               vector<int>& meshelements, size_t maxContacts)
 {
   Box3D bbox = hull_bb;
-  bbox.origin -= margin*(bbox.xbasis+bbox.ybasis+bbox.zbasis);
-  bbox.dims += Vector3(margin*2);
+  bbox.expand(margin);
   vector<int> temptris;
   int tempmax = (int)maxContacts;
   if(maxContacts < INT_MAX/2) tempmax *= 2;
@@ -3117,7 +3115,7 @@ void MeshSphereContacts(CollisionMesh &m1, Real outerMargin1, const Sphere3D &s,
     if (s.radius > 0)
       //adjust pw to the sphere surface
       pw -= n * (s.radius / nlen);
-    if (d < gNormalFromGeometryTolerance)
+    if (nlen < gNormalFromGeometryTolerance)
     { //compute normal from the geometry
       Vector3 plocal;
       m1.currentTransform.mulInverse(cp, plocal);
@@ -3125,7 +3123,7 @@ void MeshSphereContacts(CollisionMesh &m1, Real outerMargin1, const Sphere3D &s,
       n.inplaceNegative();
     }
     else if (d > tol)
-    { //some penetration -- we can't trust the result of PQP
+    { //farther than the contact detection tolerance, must be a numerical error in PQP -- skip
       continue;
     }
     else
@@ -3139,30 +3137,7 @@ void MeshSphereContacts(CollisionMesh &m1, Real outerMargin1, const Sphere3D &s,
     contacts[k].elem1 = tris[j];
     contacts[k].elem2 = -1;
     contacts[k].unreliable = false;
-  }
-  //filter by neighboring triangles
-  if(!m1.triNeighbors.empty()) {
-    //TODO: if the mesh is super fine, this may miss some duplicates. Instead should look for local minima?
-    map<int,int> triToContact;
-    for(size_t i=0;i<contacts.size();i++) {
-      int t = contacts[i].elem1;
-      triToContact[t] = (int)i;
-    }
-    for(size_t i=0;i<contacts.size();i++) {
-      int t = contacts[i].elem1;
-      const IntTriple& neighbors = m1.triNeighbors[t];
-      if((triToContact.count(neighbors.a) && contacts[triToContact[neighbors.a]].depth > contacts[i].depth) ||
-        (triToContact.count(neighbors.b) && contacts[triToContact[neighbors.b]].depth > contacts[i].depth) ||
-        (triToContact.count(neighbors.c) && contacts[triToContact[neighbors.c]].depth > contacts[i].depth))
-      {
-        triToContact.erase(triToContact.find(t));
-        int replaceT = contacts.back().elem1;
-        triToContact[replaceT] = i;
-        contacts[i] = contacts.back();
-        contacts.resize(contacts.size()-1);
-        i--;
-      }
-    }
+    if(contacts.size() >= maxcontacts) break;
   }
 }
 
@@ -3183,10 +3158,78 @@ void MeshPrimitiveContacts(CollisionMesh &m1, Real outerMargin1, GeometricPrimit
     const Sphere3D &s = *AnyCast<Sphere3D>(&gworld.data);
     MeshSphereContacts(m1, outerMargin1, s, outerMargin2, contacts, maxcontacts);
   }
-  else
+  else if(g2.SupportsClosestPoints(GeometricPrimitive3D::Type::Triangle))
   {
+    Sphere3D s = gworld.GetBoundingSphere();
+    contacts.resize(0);
+    Real tol = outerMargin1 + outerMargin2;
+    Triangle3D tri;
+    Vector3 cp, dir;
+    vector<int> tris;
+    if(maxcontacts < INT_MAX / 2)
+      maxcontacts = max(maxcontacts*2,(size_t)10); //get extras
+    NearbyTriangles(m1, s.center, s.radius + tol, tris, maxcontacts);
+    for (auto t : tris)
+    {
+      m1.GetTriangle(t, tri);
+      tri.a = m1.currentTransform * tri.a;
+      tri.b = m1.currentTransform * tri.b;
+      tri.c = m1.currentTransform * tri.c;
+
+      //cp is on gometry
+      Real d = gworld.ClosestPoints(tri,cp,dir);
+      if(d > tol) continue;
+      if(dir.norm() < gNormalFromGeometryTolerance) //hmm, can't estimate contact normal direction?
+      {
+        continue;
+      }
+      size_t k = contacts.size();
+      contacts.resize(k + 1);
+      contacts[k].p1 = cp + (d - outerMargin1) * dir;
+      contacts[k].p2 = cp + outerMargin2 * dir;
+      contacts[k].n = -dir;
+      contacts[k].depth = tol - d;
+      contacts[k].elem1 = t;
+      contacts[k].elem2 = -1;
+      contacts[k].unreliable = false;
+      if(contacts.size() >= maxcontacts) break;
+    }
+  }
+  else {
     LOG4CXX_WARN(GET_LOGGER(Geometry), "Distance computations between Triangles and " << gworld.TypeName() << " not supported");
     return;
+  }
+  //postprocess excessive numbers of contacts
+  //filter by neighboring triangles
+  if(!m1.triNeighbors.empty()) {
+    //TODO: if the mesh is super fine, this may miss some duplicates. Instead should look for local minima?
+    map<int,int> triToContact;
+    for(size_t i=0;i<contacts.size();i++) {
+      int t = contacts[i].elem1;
+      if(contacts[i].n.dot(m1.currentTransform.R * m1.TriangleNormal(t)) < 0) {
+        //skip this contact, back facing
+        contacts[i] = contacts.back();
+        contacts.resize(contacts.size()-1);
+        i--;
+        continue;
+      }
+      triToContact[t] = (int)i;
+    }
+    for(size_t i=0;i<contacts.size();i++) {
+      int t = contacts[i].elem1;
+      const IntTriple& neighbors = m1.triNeighbors[t];
+      if((triToContact.count(neighbors.a) && contacts[triToContact[neighbors.a]].depth > contacts[i].depth) ||
+        (triToContact.count(neighbors.b) && contacts[triToContact[neighbors.b]].depth > contacts[i].depth) ||
+        (triToContact.count(neighbors.c) && contacts[triToContact[neighbors.c]].depth > contacts[i].depth))
+      {
+        triToContact.erase(triToContact.find(t));
+        int replaceT = contacts.back().elem1;
+        triToContact[replaceT] = i;
+        contacts[i] = contacts.back();
+        contacts.resize(contacts.size()-1);
+        i--;
+      }
+    }
   }
 }
 

@@ -6,6 +6,7 @@
 #include "CollisionOccupancyGrid.h"
 #include "CollisionImplicitSurface.h"
 #include "CollisionPrimitive.h"
+#include "SpiralIterator.h"
 #include <KrisLibrary/meshing/PointCloud.h>
 #include <KrisLibrary/meshing/MeshPrimitives.h>
 #include <KrisLibrary/meshing/Rasterize.h>
@@ -772,6 +773,12 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
         if(lo.a > hi.a || lo.b > hi.b) return true;
         Real geomdiam = (bb.bmin.distance(bb.bmax));
         Real hgeom = data->data.Project((bb.bmax + bb.bmin)*0.5).z - geomdiam*0.5;
+        if(data->data.viewport.perspective) {
+            if(hgeom < hmin) return true;
+        }
+        else {
+            if(hgeom > hmax) return true;
+        }
         Vector3 s,d;
         Segment3D seg;
         if(maxcollisions <= 1) {
@@ -793,27 +800,31 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
                     return true;
                 }
             }
-            //check midpoint of range
-            int i=(lo.a+hi.a)/2;
-            int j=(lo.b+hi.b)/2;
-            if(data->data.ValidHeight(i,j) && data->data.heights(i,j) >= hgeom) { 
-                data->data.GetVertexRay(i,j,s,d);  // result is in world coordinates
-                seg.a = s + d * data->data.heights(i,j);
-                if(data->data.viewport.perspective)
-                    seg.b = s + d * (data->data.heights(i,j) + geomdiam);
-                else
-                    seg.b = s + d * (data->data.heights(i,j) - geomdiam);
-                ConvexHull3D seghull; seghull.Set(seg);
-                if(hull_local.Collides(seghull)) {
-                    elements1.push_back(i+j*data->data.heights.m);
-                    elements2.push_back(-1);
-                    return true;
-                }
-            }
+            // //check midpoint of range
+            // int i=(lo.a+hi.a)/2;
+            // int j=(lo.b+hi.b)/2;
+            // if(data->data.ValidHeight(i,j) && data->data.heights(i,j) >= hgeom) { 
+            //     data->data.GetVertexRay(i,j,s,d);  // result is in world coordinates
+            //     seg.a = s + d * data->data.heights(i,j);
+            //     if(data->data.viewport.perspective)
+            //         seg.b = s + d * (data->data.heights(i,j) + geomdiam);
+            //     else
+            //         seg.b = s + d * (data->data.heights(i,j) - geomdiam);
+            //     ConvexHull3D seghull; seghull.Set(seg);
+            //     if(hull_local.Collides(seghull)) {
+            //         elements1.push_back(i+j*data->data.heights.m);
+            //         elements2.push_back(-1);
+            //         return true;
+            //     }
+            // }
         }
         //check all rays
-        for(int i=lo.a;i<=hi.a;i++) {
-            for(int j=lo.b;j<hi.b;j++) {
+        // for(int i=lo.a;i<=hi.a;i++) {
+        //     for(int j=lo.b;j<hi.b;j++) {
+        {
+            for(SpiralIterator it(data->data.GetIndex((bb.bmax + bb.bmin)*0.5),lo,hi); !it.isDone(); ++it) {
+                int i=it->a;
+                int j=it->b;
                 if(data->data.ValidHeight(i,j) && data->data.heights(i,j) >= hgeom) { 
                     data->data.GetVertexRay(i,j,s,d);  // result is in world coordinates
                     seg.a = s + d * data->data.heights(i,j);
@@ -849,6 +860,13 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
         Real geomdiam = (bb.bmin.distance(bb.bmax));
         Real hgeom = data->data.Project((bb.bmax + bb.bmin)*0.5).z - geomdiam*0.5;
         //printf("Minimum height of geometry: %f\n",hgeom);
+        if(data->data.viewport.perspective) {
+            if(hgeom < hmin) return true;
+        }
+        else {
+            if(hgeom > hmax) 
+                return true;
+        }
         Real dist;
         if(maxcollisions <= 1) {
             //check center
@@ -872,30 +890,34 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
                 }
             }
             //check midpoint of range
-            int i=(lo.a+hi.a)/2;
-            int j=(lo.b+hi.b)/2;
-            if(data->data.ValidHeight(i,j) && data->data.heights(i,j) >= hgeom) { 
-                if(LowerHeight(i,j,data->data,this->hmax,prim_local,dist)) {
-                    if(data->data.viewport.perspective) {
-                        if(float(dist) >= data->data.heights(i,j)) {
-                            elements1.push_back(i+j*data->data.heights.m);
-                            elements2.push_back(-1);
-                            return true;
-                        }
-                    }
-                    else {
-                        if(float(dist) <= data->data.heights(i,j)) {
-                            elements1.push_back(i+j*data->data.heights.m);
-                            elements2.push_back(-1);
-                            return true;
-                        }
-                    }
-                }
-            }
+            // int i=(lo.a+hi.a)/2;
+            // int j=(lo.b+hi.b)/2;
+            // if(data->data.ValidHeight(i,j) && data->data.heights(i,j) >= hgeom) { 
+            //     if(LowerHeight(i,j,data->data,this->hmax,prim_local,dist)) {
+            //         if(data->data.viewport.perspective) {
+            //             if(float(dist) >= data->data.heights(i,j)) {
+            //                 elements1.push_back(i+j*data->data.heights.m);
+            //                 elements2.push_back(-1);
+            //                 return true;
+            //             }
+            //         }
+            //         else {
+            //             if(float(dist) <= data->data.heights(i,j)) {
+            //                 elements1.push_back(i+j*data->data.heights.m);
+            //                 elements2.push_back(-1);
+            //                 return true;
+            //             }
+            //         }
+            //     }
+            // }
         }
         //check whole range
-        for(int i=lo.a;i<=hi.a;i++) {
-            for(int j=lo.b;j<hi.b;j++) {
+        // for(int i=lo.a;i<=hi.a;i++) {
+        //     for(int j=lo.b;j<hi.b;j++) {
+        {
+            for(SpiralIterator it(data->data.GetIndex((bb.bmax + bb.bmin)*0.5),lo,hi); !it.isDone(); ++it) {
+                int i=it->a;
+                int j=it->b;
                 if(!data->data.ValidHeight(i,j) || data->data.heights(i,j) < hgeom) continue; 
                 if(LowerHeight(i,j,data->data,this->hmax,prim_local,dist)) {
                     if(data->data.viewport.perspective) {

@@ -456,6 +456,28 @@ Real Collider3DConvexHull::ClosestPoint(const Collider3DConvexHull& g, Vector3& 
   return dist;
 }
 
+bool Collider3DConvexHull::Contacts(Collider3D* geom,const ContactsQuerySettings& settings,ContactsQueryResult& result)
+{
+  DistanceQuerySettings dsettings;
+  dsettings.upperBound = settings.padding1 + settings.padding2;
+  DistanceQueryResult dresult;
+  if(!Distance(geom,dsettings,dresult)) return false;
+  result.contacts.resize(0);
+  //single point of contact from the closest points
+  if(dresult.d > settings.padding1 + settings.padding2) {
+    return true;
+  }
+  if(!dresult.hasClosestPoints) return false;
+  result.contacts.resize(1);
+  result.contacts[0].n = dresult.dir1;
+  result.contacts[0].p1 = dresult.cp1 + dresult.dir1 * settings.padding1;
+  result.contacts[0].p2 = dresult.cp2 - dresult.dir1 * settings.padding2;
+  result.contacts[0].depth = dresult.d - settings.padding1 - settings.padding2;
+  result.contacts[0].elem1 = result.contacts[0].elem2 = 0;
+  result.contacts[0].unreliable = false;
+  return true;
+}
+
 void Collider3DConvexHull::SetTransform(const RigidTransform &tran)
 {
   T = tran;

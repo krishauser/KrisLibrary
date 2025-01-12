@@ -389,7 +389,22 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
   Box3D bb;
   GetBB(pc,bb);
   //quick reject test
-  if(g.Distance(bb) > tol) return;
+  if(tol == 0) {
+    if(!g.Collides(bb)) {
+      return;
+    }
+  }
+  else if(g.SupportsDistance(GeometricPrimitive3D::Box)) {
+    if(g.Distance(bb) > tol) {
+      return;
+    }
+  }
+  else {
+    bb.expand(tol);
+    if(!g.Collides(bb)) {
+      return;
+    }
+  }
 
   GeometricPrimitive3D glocal = g;
   RigidTransform Tinv;
@@ -1470,6 +1485,7 @@ bool Collider3DPointCloud::WithinDistance(Collider3D* geom,Real d,
         elements1.resize(0);
         elements2.resize(0);
         if(Geometry::Collides(gbb, collisionData, d, cand_elements1, extra_maxContacts)) {
+            //printf("Checking %d candidate points for containment\n",(int)cand_elements1.size());
             for(size_t i=0;i<cand_elements1.size();i++) {
                 Vector3 pt = collisionData.currentTransform * collisionData.points[cand_elements1[i]];
                 bool inside;
@@ -1608,7 +1624,7 @@ void PointCloudPrimitiveContacts(CollisionPointCloud &pc1, Real outerMargin1, Ge
   contacts.resize(0);
   if (g2.type == GeometricPrimitive3D::Empty)
     return;
-  if (!g2.SupportsDistance(GeometricPrimitive3D::Point))
+  if (!g2.SupportsClosestPoints(GeometricPrimitive3D::Point))
   {
     LOG4CXX_WARN(GET_LOGGER(Geometry), "Cannot do contact checking on point cloud vs primitive " << g2.TypeName() << " yet");
     return;
@@ -1624,15 +1640,10 @@ void PointCloudPrimitiveContacts(CollisionPointCloud &pc1, Real outerMargin1, Ge
   for (size_t j = 0; j < points.size(); j++)
   {
     Vector3 pw = pc1.currentTransform * pc1.points[points[j]];
-    Real dg = gworld.Distance(pw);
-    if (dg > tol)
+    Vector3 cp, n;
+    Real d = gworld.ClosestPoints(pw,cp,n);
+    if (d > tol)
       continue;
-    vector<double> u = gworld.ClosestPointParameters(pw);
-    Vector3 cp = gworld.ParametersToPoint(u);
-    Vector3 n = cp - pw;
-    Real d = n.length();
-    if (!FuzzyEquals(d, dg))
-      LOG4CXX_WARN(GET_LOGGER(Geometry), "Hmm... point distance incorrect? " << dg << " vs " << d);
     if (d < gNormalFromGeometryTolerance)
     { //too close?
       continue;
@@ -1641,8 +1652,6 @@ void PointCloudPrimitiveContacts(CollisionPointCloud &pc1, Real outerMargin1, Ge
     { //why did this point get farther away?
       continue;
     }
-    else
-      n /= d;
     size_t k = contacts.size();
     contacts.resize(k + 1);
     contacts[k].p1 = pw + outerMargin1 * n;
@@ -1654,6 +1663,52 @@ void PointCloudPrimitiveContacts(CollisionPointCloud &pc1, Real outerMargin1, Ge
     contacts[k].unreliable = false;
   }
 }
+
+void PointCloudConvexHullContacts(CollisionPointCloud &pc1, Real outerMargin1, ConvexHull3D &g2, const RigidTransform &T2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
+{
+  contacts.resize(0);
+  if(g2.type == ConvexHull3D::Type::Empty)
+    return;
+  RigidTransform T_pc_to_ch;
+  T_pc_to_ch.mulInverseA(T2, pc1.currentTransform);
+
+  AABB3D g2bb = g2.GetAABB();
+  Box3D g2bb_world;
+  g2bb_world.setTransformed(g2bb, T2);
+
+  Real tol = outerMargin1 + outerMargin2;
+  vector<int> points;
+  NearbyPoints(pc1, GeometricPrimitive3D(g2bb_world), tol, points, maxcontacts);
+  contacts.reserve(points.size());
+  for (size_t j = 0; j < points.size(); j++)
+  {
+    Vector3 pg = T_pc_to_ch * pc1.points[points[j]];
+    Vector3 cpg, ng;
+    Real d = g2.ClosestPoint(pg,cpg,ng);
+    if (d > tol)
+      continue;
+    Vector3 n = T2.R*ng;
+    Vector3 cp = T2 * cpg;
+    if (d < gNormalFromGeometryTolerance)
+    { //too close?
+      continue;
+    }
+    else if (d > tol)
+    { //why did this point get farther away?
+      continue;
+    }
+    size_t k = contacts.size();
+    contacts.resize(k + 1);
+    contacts[k].p1 = pc1.currentTransform*pc1.points[points[j]] + outerMargin1 * n;
+    contacts[k].p2 = cp - outerMargin2 * n;
+    contacts[k].n = n;
+    contacts[k].depth = tol - d;
+    contacts[k].elem1 = points[j];
+    contacts[k].elem2 = -1;
+    contacts[k].unreliable = false;
+  }
+}
+
 
 void PointCloudPointCloudContacts(CollisionPointCloud &pc1, Real outerMargin1, CollisionPointCloud &pc2, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
 {
@@ -1745,8 +1800,11 @@ bool Collider3DPointCloud::Contacts(Collider3D* other,const ContactsQuerySetting
       return true;
     }
   case Type::ConvexHull:
-    LOG4CXX_WARN(GET_LOGGER(Geometry), "TODO: point cloud-convex hull contacts");
-    return false;
+    {
+      auto* ch = dynamic_cast<Collider3DConvexHull*>(other);
+      PointCloudConvexHullContacts(collisionData, settings.padding1, ch->data->data, ch->T, settings.padding2, res.contacts, settings.maxcontacts);
+      return true;
+    }
   default:
       return false;
   }
