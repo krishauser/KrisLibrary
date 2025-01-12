@@ -25,6 +25,7 @@ struct Box3D : public ScaledLocalCoordinates3D
   void set(const AABB3D& bb);
   void setTransformed(const AABB3D& box,const RigidTransform& T);
   void setTransformed(const Box3D& box,const RigidTransform& T);
+  void expand(Real d);
   bool contains(const Point3D& pt) const;
   Real distance(const Point3D& pt) const;
   Real distance(const Point3D& pt,Point3D& closestPt) const;

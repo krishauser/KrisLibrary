@@ -50,6 +50,7 @@ class GeometricPrimitive3D
   const char* TypeName() const { return GeometricPrimitive3D::TypeName(type); }
   AABB3D GetAABB() const;
   Box3D GetBB() const;
+  Sphere3D GetBoundingSphere() const;
   RigidTransform GetFrame() const;
   void Transform(const RigidTransform& T);
   bool Transform(const Matrix4& T);
@@ -84,9 +85,9 @@ class GeometricPrimitive3D
   bool RayCast(const Ray3D& ray,Vector3& pt) const;
   static bool SupportsClosestPoints(Type a,Type b);
   ///The ClosestPoints function returns the distance value d (negative meaning penetration)
-  ///and the closest point on this (cp).  The normalized direction to the closest point on
-  ///the other geometry is also given (direction) so that the closest point on the other
-  ///object is cp + d*direction.  If the objects are touching, direction will indicate
+  ///and the closest point on this geometry (cp).  The normalized direction to the closest 
+  ///point on the other geometry is also given (direction) so that the closest point on the
+  ///other object is cp + d*direction.  If the objects are touching, direction will indicate
   ///the normal by which this can move so that the penetration derivative is maximized
   ///(i.e., the negative distance gradient).  If direction = 0 then there's a singularity
   ///or the direction cannot be calculated.

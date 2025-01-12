@@ -14,6 +14,13 @@ using namespace std;
 
 namespace Math3D {
 
+Sphere3D::Sphere3D()
+:center(0.0,0.0,0.0),radius(1.0)
+{}
+
+Sphere3D::Sphere3D(const Vector3& _c, Real _r)
+:center(_c), radius(_r)
+{}
 
 bool Sphere3D::Read(File& f)
 {
@@ -497,6 +504,59 @@ Box3D GeometricPrimitive3D::GetBB() const
   default:
     FatalError("Invalid primitive type");
     return bb;
+  }
+}
+
+Sphere3D GeometricPrimitive3D::GetBoundingSphere() const
+{
+  switch(type) {
+  case Point:
+    {
+      const Vector3* p = AnyCast_Raw<Vector3>(&data);
+      return Sphere3D(*p,Zero);
+    }
+  case Segment:
+    {
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
+      return Sphere3D(s->a,0.5*s->a.distance(s->b));
+    }
+  case Triangle:
+    {
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
+      Vector3 c = t->a + t->b + t->c;
+      c /= 3.0;
+      Real r = Max(t->a.distance(c),t->b.distance(c));
+      r = Max(r,t->c.distance(c));
+      return Sphere3D(c,r);
+    }
+  case Polygon:
+    {
+      const Polygon3D* p=AnyCast_Raw<Polygon3D>(&data);
+      Vector3 c=p->centroidConvex();
+      Real r=0;
+      for(size_t i=0;i<p->vertices.size();i++)
+        r = Max(r,p->vertices[i].distance(c));
+      return Sphere3D(c,r);
+    }
+  case Sphere:
+    {
+      return *AnyCast_Raw<Sphere3D>(&data);
+    }
+  case AABB:
+    {
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
+      return Sphere3D(b->midpoint(),b->bmin.distance(b->bmax)*0.5);
+    }
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      return Sphere3D(b->center(),b->dims.norm()*0.5);
+    }
+  default:
+    {
+      AABB3D bb = GetAABB();
+      return Sphere3D(bb.midpoint(),bb.bmin.distance(bb.bmax)*0.5);
+    }
   }
 }
 
@@ -1419,7 +1479,6 @@ Real GeometricPrimitive3D::ClosestPoints(const Segment3D& s,Vector3& cp,Vector3&
   case Box:
   {
     const Box3D* b = AnyCast_Raw<Box3D>(&data);
-    Real cp_other_t;
     Real d = b->distance(s,cp,cp_other);
     direction = Unit(cp_other-cp);
     return d;

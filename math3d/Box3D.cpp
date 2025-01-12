@@ -45,6 +45,12 @@ void Box3D::setTransformed(const Box3D& box,const RigidTransform& T)
   dims = box.dims;
 }
 
+void Box3D::expand(Real d)
+{
+  origin -= d*(xbasis+ybasis+zbasis);
+  dims += Vector3(d*2);
+}
+
 bool Box3D::contains(const Point3D& pt) const
 {
 	Point3D out;
