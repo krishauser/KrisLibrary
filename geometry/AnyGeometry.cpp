@@ -639,6 +639,7 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
     res.collider.reset();
     res.data.reset(data->Convert(restype,param,margin));
     if(res.data) {
+      Assert(restype == res.data->GetType());
       res.type = restype;
       return true;
     }
@@ -646,7 +647,9 @@ bool AnyCollisionGeometry3D::Convert(Type restype, AnyCollisionGeometry3D &res, 
   }
   res.collider.reset(collider->Convert(restype,param,margin));
   if(res.collider) {
-    res.data = collider->GetData();
+    res.data = res.collider->GetData();
+    Assert(res.data->GetType() == restype);
+    res.type = res.data->GetType();
     return true;
   }
   return false;
