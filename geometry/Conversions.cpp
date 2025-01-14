@@ -589,8 +589,11 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh)
 		return;
 	}
 	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
+	//pixels go from top-down, so need to flip triangles
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		swap(mesh.tris[i].b,mesh.tris[i].c);
+	}
 	hm.GetVertices(mesh.verts);
-
 	vector<pair<int,int> > invalidIndices;
 	for(int i=0;i<hm.heights.m;i++) {
 		for(int j=0;j<hm.heights.n;j++) {
@@ -629,11 +632,9 @@ void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDra
 	}
 
 	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
-	if(hm.viewport.perspective) {
-		//bottom-up view, so need to flip triangles
-		// for(size_t i=0;i<mesh.tris.size();i++) {
-		// 	swap(mesh.tris[i].b,mesh.tris[i].c);
-		// }
+	//pixels go from top-down, so need to flip triangles
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		swap(mesh.tris[i].b,mesh.tris[i].c);
 	}
 	hm.GetVertices(mesh.verts);
 	if(hm.HasColors()) {

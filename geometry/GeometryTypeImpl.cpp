@@ -602,6 +602,7 @@ bool Collider3D::Merge(Collider3D* cgeom)
     RigidTransform Trel; Trel.mulInverseA(T0,Ti);
     RigidTransform Tident; Tident.setIdentity();
     RigidTransform* Tgeom = (Trel == Tident ? NULL : &Trel);
+
     if(!GetData()->Merge(cgeom->GetData().get(),Tgeom)) return false;
     Reset();
     return true;

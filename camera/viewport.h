@@ -14,7 +14,7 @@ namespace Camera {
  * Defaults: perspective camera, w x h provided to constructor, field of view
  * 90 degrees, near and far planes 0.1 and 1000.  OpenGL convention.
  * 
- * If you want to use orthographic projection, call setPerspective(false)
+ * If you want to use orthographic projection, call `setPerspective(false)`
  * first before setting other parameters.
  * 
  * A perspective camera maps the local point (x,y,z) to the pixel (fx*x/|z|+cx,fy*y/|z|+cy).
@@ -22,17 +22,21 @@ namespace Camera {
  * 
  * The OpenGL coordinate convention (default) has x is to the right of the image,
  * y is upward in the image, and z is backward. 
- * Also, up in the image corresponds with increasing pixel y coordinate. ((0,0) is lower left)
+ * Also, up in the image corresponds with increasing pixel y coordinate. (i.e.,
+ * (0,0) is lower left, and (w-1,h-1) is upper right).
  * 
- * If you want to use the other common coordinate convention, pass opengl_orientation=false
- * to the constructor or call setOrientation(CameraConventions::OpenCV).
+ * If you want to use the other common coordinate convention, pass `opengl_orientation=false`
+ * to the constructor or call `setOrientation(CameraConventions::OpenCV)`.
  * 
- * The OpenGL / ROS convention has x to the right, y is downward, and z is forward.
- * Also, up in the image corresponds to decreasing pixel y coordinate ((0,0) is upper left)
+ * The OpenCV / ROS convention has x to the right, y is downward, and z is forward.
+ * Also, up in the image corresponds to decreasing pixel y coordinate ((0,0) is upper left
+ * and (w-1,h-1) is lower right).
  */
 class Viewport
 {
 public:
+	enum class ScanOrdering { Match, BottomUp, TopDown};
+
 	Viewport(int w=640,int h=480, bool opengl_orientation=true);
 	/// Sets the width and height of the viewport, keeping the the focal lengths and
 	///principal point proportional to their current settings. 
@@ -100,16 +104,21 @@ public:
 	///similar to getClickSource / getClickVector, but assumes mx and my are already
 	///adjusted by (x,y) and does not perform a half-pixel adjustment.
 	void deproject(float mx, float my, Vector3& src, Vector3& dest) const;
+
 	///Gets all rays corresponding to all pixels, in scan-line order.
 	///Faster than calling getClickVector/getClickSource for each pixel
-	///because many floating point operations are avoided.  Default
-	///ordering is in OpenGL (bottom-up) convention. 
-	void getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false,bool topdown=false) const;
+	///because many floating point operations are avoided.
+	/// 
+	///Default row ordering matches the current convention; you can also change
+	///the ordering to BottomUp (OpenGL) or TopDown (OpenCV) conventions.
+	void getAllRays(std::vector<Vector3>& sources, std::vector<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false,ScanOrdering order=ScanOrdering::Match) const;
 	///Gets all rays corresponding to all pixels.
 	///Faster than calling getClickVector/getClickSource for each pixel
-	///because many floating point operations are avoided.  Default
-	///ordering is in OpenGL (bottom-up) convention. 
-	void getAllRays(Array2D<Vector3>& sources, Array2D<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false,bool topdown=false) const;
+	///because many floating point operations are avoided.  
+	/// 
+	///Default row ordering matches the current convention; you can also change
+	///the ordering to BottomUp (OpenGL) or TopDown (OpenCV) conventions.
+	void getAllRays(Array2D<Vector3>& sources, Array2D<Vector3>& directions,bool halfPixelAdjustment=true,bool normalize=false,ScanOrdering order=ScanOrdering::Match) const;
 
 	///Computes the screen coordinates of a point pt in world space.
 	///Returns true if the point is within the view frustum.  Take the

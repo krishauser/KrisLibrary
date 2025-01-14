@@ -14,38 +14,81 @@ namespace GLDraw { class GeometryAppearance;  } //forward declaration
 namespace Meshing {
 
 /** @brief Represents a height map or depth map, in either orthographic
- * or projective coordinates.
+ * or perspective coordinates.
  * 
- * Array points specify heights at cell *corners*. (Note that this differs
- * from cell-based convention in VolumeGrid.)
+ * Conventions - Orthographic mode
+ * -------------------------------
  * 
- * The canonical (non-perspective) frame has the image centered 
+ * Array points specify heights at cell *corners*.  The domain stretches from the
+ * minimum to the maximum, so the width of a cell is (xdim/(m-1),ydim/(n-1))
+ * where (xdim,ydim) = GetSize(). (Note that this differs from the cell-based
+ * convention in VolumeGrid.)
+ * 
+ * The canonical orthographic frame by default has the image centered 
  * at the origin with (u,v) coordinates [-0.5,-0.5]x[-0.5,0.5].  An 
- * array index (i,j) gives coordinates (u,v)=(i/m-0.5,j/n-0.5). Note 
- * that this differs from standard matrix coordinates (row,col) and
- * image coordinates (x, distance from top)!
+ * array index (i,j) gives coordinates (u,v)=(i/(m-1)-0.5,(n-1-j)/(n-1)-0.5).
+ * You will set the domain by the xydims arguments or SetSize(xdim,ydim).  In
+ * this case, the viewport is set such that array index (i,j) gives coordinates
+ * (x,y)=((i-cx)/fx,(n-1-j-cy)/fy).
+ * 
+ * Note that the index (i,j) corresponds to image coordinates rather than
+ * mathematical (x,y) coordinates or standard matrix coordinates (row,col).
+ * Use the accessors of this class (GetIndex, GetVertex etc) to handle all
+ * necessary conversions between index and spatial coordinate systems.
  * 
  * In orthographic coordinates, height is positive above 0-plane (z direction).
- * In perspective coordinates, height is depth in the forward direction of the
- * camera.  The world-space domain, including pose, is specified by the `viewport`
- * attribute.  Note that the `viewport.ori` attribute is generally XYnZ for an
- * orthographic projection (indicating a "camera" pointing down from the top of
- * the heightmap) and XnYZ for a perspective projection (indicating a camera
- * pointing up from the origin).
+ * The row index j iterates from top of the heightmap to the bottom if
+ * looking down.  The column index i iterates from left to right. 
+ * 
+ * Implementation note: the `viewport.ori` attribute is set to XYnZ / OpenGL for an
+ * orthographic projection (indicating a "camera" looking down from the top of
+ * the heightmap). So in this case using `viewport` to get camera rays will provide
+ * rays pointing down (-z) and going from the bottom of the image up.  But, if you use
+ * `Heightmap.GetVertexRay(i,j,src,dir)` to get the ray, the index will go from the
+ * top of the image down and the ray will point up (+z) from the floor.
+ * 
+ * Conventions - Perspective mode
+ * -------------------------------
+ * 
+ * In perspective coordinates (enabled using SetFOV), this class is set up for
+ * depth and RGBD cameras.  The height array indicates depth in the forward
+ * direction of the camera, which is pointing in the +z direction by default with
+ * +x pointing to the right and +y pointing down in the image frame.  Here an
+ * index (i,j) corresponds to local coordinates (d*(i-cx)/fx,d*(j-cy)/fx,d)
+ * where d is heights(i,j).  No vertical flipping is necessary.
+ * 
+ * Implementation note: in perspective mode the `viewport.ori` attribute is set
+ * to XnYZ / OpenCV, such that the default viewport indicates a camera pointing
+ * up (+z) from the origin with +y indicating down in the image frame.  Using
+ * `viewport` to get camera rays actually provides rays in the correct direction.
+ * 
+ * Missing values
+ * --------------
  * 
  * A height value of NaN indicates a missing value for orthographic heightmaps.
  * A value of NaN or 0 for a perspective heightmap indicates a missing value.
  * Some functions may interpret missing values as a hole in the map.  Infinite
- * values can also indicate missing values.
+ * values can also indicate missing values.  Use `ValidHeight()` for a standard
+ * test of whether a height is valid.
  * 
+ * Colors and properties
+ * ---------------------
+ *  
  * Vertex colors can be provided in the `colors` attribute.  The `colors` image
  * must match that of the `heights` array, with width=heights.m, height=heights.n.
  * As in standard image convention, the rows in the colors image are assumed to
- * go from top to bottom whereas the heights array goes from bottom to top.
- * 
+ * go from top to bottom.  Note this  the heights array goes from bottom to top.
+ *
  * Other properties can also be given in the `properties` attribute.  Each property
  * is an array of the same dimensions as the `heights` array.  The `propertyNames`
  * attribute gives the names of each property. 
+ * 
+ * Collision detection
+ * -------------------
+ * 
+ * For collision detection, space above the heightmap (towards the camera) is free
+ * while space below the heightmap (away) is filled.  Space outside of the bounds
+ * of the heightmap is also free.
  * 
  */ 
 class Heightmap
@@ -85,6 +128,10 @@ public:
      * If bottom_row_first=false, the image data is interpreted as going from left-to-right,
      * top-to-bottom.  Otherwise, image data is interpreted as going left-to-right, bottom-
      * to-top (Windows BMP style).
+     * 
+     * Vertical ordering in the heights array is interpreted according to whether this
+     * is currently in orthographic or perspective mode.  If you want to switch later,
+     * you may need to call VerticalFlip().
      */
     void SetImage(const Image& heights,float hscale=1,float hoffset=0,bool bottom_row_first=false);
     /** @brief Sets a height image with colors.
@@ -96,6 +143,10 @@ public:
      * If bottom_row_first=false, the image data is interpreted as going from left-to-right,
      * top-to-bottom.  Otherwise, image data is interpreted as going left-to-right, bottom-
      * to-top (Windows BMP style).
+     * 
+     * Vertical ordering in the heights array is interpreted according to whether this
+     * is currently in orthographic or perspective mode.  If you want to switch later,
+     * you may need to call VerticalFlip().
      */
     void SetImage(const Image& heights,const Image& colors,float hscale=1,float hoffset=0,bool bottom_row_first=false);
     /** Adds colors, if not already present */
@@ -158,9 +209,11 @@ public:
     /** Retrieves overall bounding box, including heights. */
     AABB3D GetAABB() const;
 
-    /** Converts from a point to image coordinates [0,w-1]x[0,h-1],z */
+    /** Converts from a point in world coordinates to image coordinates (x,y,z).
+     * The point is in view if (x,y) is in [0,w-1]x[0,h-1].  If this is a
+     * perspective heightmap, z must also be positive. */
     Vector3 Project(const Vector3& pt) const;
-    /** Converts image coordinates [0,w-1]x[0,h-1],z to a point */
+    /** Converts image coordinates [0,w-1]x[0,h-1],z to a point in world coordinates. */
     Vector3 Deproject(const Vector3& params) const;
 
     /** Projects a point to a grid index.
@@ -265,16 +318,15 @@ public:
     /** Sets the properties of vertex (i,j) */
     void SetVertexProperties(int i,int j,const vector<float>& props);
 
-    ///Returns w*h vertices.  If rowMajor=true, the vertices are in row-major
-    ///order, i.e., (i,j) => index i*heights.n + j.  Otherwise, the vertices
-    ///are in scan-line order, i.e., (i,j) => index (heights.n-1-j)*heights.m + i.
-    void GetVertices(vector<Vector3>& verts, bool rowMajor=true) const;
+    ///Returns w*h vertices.  The vertices are returned in row-major
+    ///order, i.e., (i,j) => index i*heights.n + j, following scan lines.
+    void GetVertices(vector<Vector3>& verts) const;
     ///Returns a w x h array of vertices
     void GetVertices(Array2D<Vector3>& verts) const;
     ///Returns the colors of w*h vertices.  If no colors are available, this returns an empty list.
-    void GetVertexColors(vector<Vector3>& colors, bool rowMajor=true) const;
+    void GetVertexColors(vector<Vector3>& colors) const;
     ///Returns the RGBA colors of w*h vertices.  If no colors are available, this returns an empty list.
-    void GetVertexColors(vector<Vector4>& colors, bool rowMajor=true) const;
+    void GetVertexColors(vector<Vector4>& colors) const;
    
     /** Returns the source / direction of a free space ray leading to vertex i,j.
      * The heightmap vertex will be equal to source + dir * height[i,j].

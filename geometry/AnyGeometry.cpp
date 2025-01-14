@@ -522,7 +522,10 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
   collisionHint = geom.collisionHint;
 
   //TODO: collider copies don't preserve references to the copied geometry pointer
-  if (geom.collider) collider.reset(geom.collider->Copy(data));
+  if (geom.collider) {
+    collider.reset(geom.collider->Copy(data));
+    collider->SetTransform(currentTransform);
+  }
   return *this;
 }
 
@@ -609,8 +612,9 @@ bool AnyCollisionGeometry3D::Merge(const AnyCollisionGeometry3D& other)
   }
   Assert(collider != other.collider);
   if(collider && other.collider) {
-    if(collider->Merge(other.collider.get())) 
+    if(collider->Merge(other.collider.get())) {
       return true;
+    }
     return false;
   }
   RigidTransform Tlocal;

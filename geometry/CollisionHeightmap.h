@@ -15,9 +15,9 @@ public:
     virtual ~Collider3DHeightmap() {}
     virtual shared_ptr<Geometry3D> GetData() const override { return dynamic_pointer_cast<Geometry3D>(data); }
     virtual void Reset() override;
-    virtual RigidTransform GetTransform() const override { return currentTransform; }
     virtual Box3D GetBB() const override;
-    virtual void SetTransform(const RigidTransform& T) override { currentTransform = T; }
+    virtual RigidTransform GetTransform() const override;
+    virtual void SetTransform(const RigidTransform& T) override;
     virtual bool Collides(Collider3D* geom,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
     virtual bool Contains(const Vector3& pt,bool& result) override;
     virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;

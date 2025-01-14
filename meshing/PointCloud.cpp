@@ -615,6 +615,23 @@ void PointCloud3D::Transform(const Matrix4& mat)
       temp2.get(properties[i][nxind],properties[i][nyind],properties[i][nzind]);
     }
   }
+
+  //transform viewpoint, if available
+  if(settings.count("viewpoint") > 0) {
+    stringstream ss(settings["viewpoint"]);
+    RigidTransform vpOld;
+    QuaternionRotation q;
+    ss>>vpOld.t>>q;
+    q.getMatrix(vpOld.R);
+
+    RigidTransform T(mat);
+    RigidTransform vpNew = T*vpOld;
+
+    q.setMatrix(vpNew.R);
+    stringstream ss2;
+    ss2 << vpNew.t <<" "<<q;
+    settings["viewpoint"] = ss2.str();
+  }
 }
 
 bool PointCloud3D::HasXYZAsProperties() const

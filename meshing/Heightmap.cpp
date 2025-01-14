@@ -31,7 +31,7 @@ void ImageToArray(const Image& img,Array2D<float>& arr,float scale,float offset,
                 h = *fpix;
             }
             h = h*scale + offset;
-            if(bottom_row_first)
+            if(!bottom_row_first)
                 arr(i,j) = h;
             else
                 arr(i,img.h - 1 - j) = h;
@@ -416,7 +416,7 @@ void Heightmap::GetImage(Image& out,float hmin,float hmax,bool bottom_row_first)
     out.initialize(heights.m,heights.n,Image::FloatA);
     float* fdata = (float*)out.data;
     float hscale = 1.0/(hmax-hmin);
-    if(bottom_row_first) {
+    if(!bottom_row_first) {
         for(int i=0;i<heights.n;i++) {
             for(int j=0;j<heights.m;j++) {
                 *fdata = (heights(j,i)-hmin)*hscale;
@@ -549,7 +549,11 @@ void Heightmap::GetCell(int i,int j,AABB2D& bb) const
     Real invfx = 1.0/viewport.fx;
     Real invfy = 1.0/viewport.fy;
     Real u = (Real(i)-viewport.cx)*invfx;
-    Real v = (Real(j)-viewport.cy)*invfy;
+    Real v;
+    if(!viewport.perspective)
+        v = (Real(viewport.h-1-j)-viewport.cy)*invfy;
+    else
+        v = (Real(j)-viewport.cy)*invfy;
     bb.bmin.x = u;
     bb.bmin.y = v;
     bb.bmax.x = bb.bmin.x + invfx;
@@ -561,7 +565,11 @@ Vector2 Heightmap::GetCellCenter(int i,int j) const
     Real invfx = 1.0/viewport.fx;
     Real invfy = 1.0/viewport.fy;
     Real u = (Real(i)+0.5-viewport.cx)*invfx;
-    Real v = (Real(j)+0.5-viewport.cy)*invfy;
+    Real v;
+    if(!viewport.perspective)
+        v = (Real(viewport.h-1-j)-0.5-viewport.cy)*invfy;
+    else
+        v = (Real(j)+0.5-viewport.cy)*invfy;
     return Vector2(u,v);
 }
 
@@ -577,11 +585,18 @@ void Heightmap::GetGrid(vector<Real>& xgrid,vector<Real>& ygrid) const
     xgrid.resize(heights.m);
     ygrid.resize(heights.n);
     Real xshift = (0.5-viewport.cx)*cellSize.x;
-    Real yshift = (0.5-viewport.cy)*cellSize.y;
     xgrid[0] = xshift;
     for(int i=1;i<heights.m;i++)
         xgrid[i] = xgrid[i-1] + cellSize.x;
-    ygrid[1] = yshift;
+    Real yshift;
+    if(!viewport.perspective) {
+        yshift = (Real(heights.n)-1-0.5-viewport.cy)*cellSize.y;
+        cellSize.y = -cellSize.y;
+    }
+    else {
+        yshift = (0.5-viewport.cy)*cellSize.y;
+    }
+    ygrid[0] = yshift;
     for(int j=1;j<heights.n;j++)
         ygrid[j] = ygrid[j-1] + cellSize.y;
 }
@@ -636,21 +651,28 @@ Vector3 Heightmap::Project(const Vector3& pt) const
 {
     float mx,my,mz;
     viewport.project(pt,mx,my,mz);
-    if(!viewport.perspective) mz = -mz;
+    if(!viewport.perspective) {
+        mz = -mz;
+        my = float(viewport.h-1)-my;
+    }
     return Vector3(mx,my,mz);
 }
 
 Vector3 Heightmap::Deproject(const Vector3& params) const
 {
     Vector3 src,dir;
+    if(!viewport.perspective) {
+        viewport.deproject(params.x,Real(viewport.h)-1-params.y,src,dir);
+        return src - dir*params.z;
+    }
     viewport.deproject(params.x,params.y,src,dir);
-    if(!viewport.perspective) src - dir*params.z;
     return src + dir*params.z;
 }
 
 IntPair Heightmap::GetIndex(const Vector3& pt,bool clamp) const
 {
     Vector3 proj = Project(pt);
+    if(viewport.perspective && proj.z < 0) return IntPair(-1,-1);
     IntPair index;
     index.a = int(Floor(proj.x));
     index.b = int(Floor(proj.y));
@@ -664,6 +686,11 @@ IntPair Heightmap::GetIndex(const Vector3& pt,bool clamp) const
 void Heightmap::GetIndexAndParams(const Vector3& pt,IntPair& index,Vector2& params,bool clamp) const
 {
     Vector3 proj = Project(pt);
+    if(viewport.perspective && proj.z < 0) {
+        index.set(-1,-1);
+        params.set(0,0);
+        return;
+    }
     index.a = int(Floor(proj.x));
     index.b = int(Floor(proj.y));
     params.x = proj.x-Real(index.a);
@@ -693,6 +720,7 @@ float Heightmap::GetHeight(const Vector3& pt,int interpolation,bool clamp) const
     IntPair index;
     Vector2 params;
     GetIndexAndParams(pt,index,params);
+    if(viewport.perspective && index.a == -1 && index.b == -1) return NAN;
     if(interpolation == InterpNearest) {
         if(!clamp) {
             if(index.a < 0 || index.a >= heights.m) return NAN;
@@ -832,20 +860,22 @@ Vector3 Heightmap::GetVertex(int i,int j) const
 
 Vector3 Heightmap::GetVertex(int i,int j,Real vu,Real vv,int interpolation) const
 {
-    Real invfx = 1.0/viewport.fx;
-    Real invfy = 1.0/viewport.fy;
-    Real u = (Real(i)+0.5+vu-viewport.cx)*invfx;
-    Real v = (Real(j)+0.5+vv-viewport.cy)*invfy;
+    Vector2 uv = GetCellCenter(i,j);
+    uv.x += vu/viewport.fx;
+    if(viewport.perspective)
+        uv.y += vv/viewport.fy;
+    else
+        uv.y -= vv/viewport.fy;
     Vector3 res;
-    res.x = u;
-    res.y = v;
+    res.x = uv.x;
+    res.y = uv.y;
     if(heights.empty()) {
         res.z = 0;
         return viewport.pose*res;
     }
     if(interpolation == InterpNearest) {
-        if(u>0.5) i++;
-        if(v>0.5) j++;
+        if(vu>0.5) i++;
+        if(vv>0.5) j++;
         i = ::Min(::Max(i,0),heights.m-1);
         j = ::Min(::Max(j,0),heights.n-1);
         res.z = heights(i,j);
@@ -866,7 +896,7 @@ Vector3 Heightmap::GetVertexColor(int i,int j) const
     i = ::Min(::Max(0,i),heights.m-1);
     j = ::Min(::Max(0,j),heights.n-1);
     float col[4];
-    colors.getNormalizedColor(i,heights.n-1-j,col);
+    colors.getNormalizedColor(i,j,col);
     if(colors.pixelChannels()==1) 
         return Vector3(col[0]);
     else
@@ -888,7 +918,7 @@ Vector4 Heightmap::GetVertexRGBA(int i,int j) const
     i = ::Min(::Max(0,i),heights.m-1);
     j = ::Min(::Max(0,j),heights.n-1);
     float col[4];
-    colors.getNormalizedColor(i,heights.n-1-j,col);
+    colors.getNormalizedColor(i,j,col);
     if(colors.pixelChannels()==1) 
         return Vector4(col[0],col[0],col[0],1.0);
     else if(colors.pixelChannels()==3) 
@@ -914,7 +944,7 @@ void Heightmap::SetVertexColor(int i,int j,const Vector3& color)
         return;
     }
     float col[4] = {(float)color.x,(float)color.y,(float)color.z,1.0};
-    colors.setNormalizedColor(i,heights.n-1-j,col);
+    colors.setNormalizedColor(i,j,col);
 }
 
 void Heightmap::SetVertexColor(int i,int j,const Vector4& color)
@@ -924,7 +954,7 @@ void Heightmap::SetVertexColor(int i,int j,const Vector4& color)
         return;
     }
     float col[4] = {(float)color.x,(float)color.y,(float)color.z,(float)color.w};
-    colors.setNormalizedColor(i,heights.n-1-j,col);
+    colors.setNormalizedColor(i,j,col);
 }
 
 
@@ -966,32 +996,21 @@ void Heightmap::SetVertexProperties(int i,int j,const vector<float>& props)
     }
 }
 
-void Heightmap::GetVertices(vector<Vector3>& verts, bool rowMajor) const
+void Heightmap::GetVertices(vector<Vector3>& verts) const
 {
     verts.resize(heights.m*heights.n);
     vector<Vector3> src,dir;
-    bool topdown = !rowMajor;
-    viewport.getAllRays(src,dir,true,false,topdown);  //these are in scan-line order, i.e., y*w + x
+    Camera::Viewport::ScanOrdering order = Camera::Viewport::ScanOrdering::TopDown;
+    viewport.getAllRays(src,dir,true,false,order);  //these are in scan-line order, i.e., y*w + x
     if(!viewport.perspective) {
         for(auto& v:dir) v.inplaceNegative();
     }
-    if(rowMajor) {
-        int l=0;
-        for(int i=0;i<heights.m;i++) {
-            int k=i;
-            for(int j=0;j<heights.n;j++,k+=heights.m,l++) {
-                verts[l] = src[k] + heights(i,j)*dir[k];
-                //verts[l] = GetVertex(i,j);
-            }
-        }
-    }
-    else {
-        for(int i=0;i<heights.m;i++) {
-            int k=i;
-            for(int j=0;j<heights.n;j++,k+=heights.m) {
-                verts[k] = src[k] + heights(i,heights.n-1-j)*dir[k];
-                //verts[k] = GetVertex(i,j);
-            }
+    int l=0;
+    for(int i=0;i<heights.m;i++) {
+        int k=i;
+        for(int j=0;j<heights.n;j++,k+=heights.m,l++) {
+            verts[l] = src[k] + heights(i,j)*dir[k];
+            //verts[l] = GetVertex(i,j);
         }
     }
 }
@@ -1000,7 +1019,8 @@ void Heightmap::GetVertices(Array2D<Vector3>& verts) const
 {
     verts.resize(heights.m,heights.n);
     vector<Vector3> src,dir;
-    viewport.getAllRays(src,dir,true,false);  //these are in scan-line order, i.e., y*w + x
+    Camera::Viewport::ScanOrdering order = Camera::Viewport::ScanOrdering::TopDown;
+    viewport.getAllRays(src,dir,true,false,order);  //these are in scan-line order, i.e., y*w + x
     if(!viewport.perspective) {
         for(auto& v:dir) v.inplaceNegative();
     }
@@ -1013,62 +1033,44 @@ void Heightmap::GetVertices(Array2D<Vector3>& verts) const
 
 }
 
-void Heightmap::GetVertexColors(vector<Vector3>& colors_out, bool rowMajor) const
+void Heightmap::GetVertexColors(vector<Vector3>& colors_out) const
 {
     if(colors.num_bytes==0) {
         colors_out.resize(0);
         return;
     }
     colors_out.resize(heights.m*heights.n);
-    if(rowMajor) {
-        int k=0;
-        for(int i=0;i<heights.m;i++) {
-            for(int j=0;j<heights.n;j++,k++) {
-                colors_out[k]=GetVertexColor(i,j);
-            }
-        }
-    }
-    else {
-        //top-down scanline order
-        int l=0;
-        for(int j=0;j<heights.n;j++) {
-            for(int i=0;i<heights.m;i++,l++) {
-                colors_out[l]=GetVertexColor(i,heights.n-1-j);
-            }
+    int k=0;
+    for(int i=0;i<heights.m;i++) {
+        for(int j=0;j<heights.n;j++,k++) {
+            colors_out[k]=GetVertexColor(i,j);
         }
     }
 }
 
-void Heightmap::GetVertexColors(vector<Vector4>& colors_out, bool rowMajor) const
+void Heightmap::GetVertexColors(vector<Vector4>& colors_out) const
 {
     if(colors.num_bytes==0) {
         colors_out.resize(0);
         return;
     }
     colors_out.resize(heights.m*heights.n);
-    if(rowMajor) {
-        int k=0;
-        for(int i=0;i<heights.m;i++) {
-            for(int j=0;j<heights.n;j++,k++) {
-                colors_out[k]=GetVertexRGBA(i,j);
-            }
-        }
-    }
-    else {
-        //top-down scanline order
-        int l=0;
-        for(int j=0;j<heights.n;j++) {
-            for(int i=0;i<heights.m;i++,l++) {
-                colors_out[l]=GetVertexRGBA(i,heights.n-1-j);
-            }
+    int k=0;
+    for(int i=0;i<heights.m;i++) {
+        for(int j=0;j<heights.n;j++,k++) {
+            colors_out[k]=GetVertexRGBA(i,j);
         }
     }
 }
 
 void Heightmap::GetVertexRay(int i,int j,Vector3& source,Vector3& dir) const
 {
-    viewport.deproject(i+0.5,j+0.5,source,dir);
-    if(!viewport.perspective) dir.inplaceNegative();  //orthographic projection is from top down but heights go from bottom up
+    if(viewport.perspective)
+        viewport.deproject(float(i)+0.5,float(j)+0.5,source,dir);
+    else {
+        viewport.deproject(float(i)+0.5,float(viewport.h-1-j)+0.5,source,dir);
+        dir.inplaceNegative();  //orthographic projection is from above but heights increase from below 
+    }
 }
 
 
@@ -1156,7 +1158,8 @@ void Heightmap::Remesh(const Heightmap& hm,const Camera::Viewport& vp)
             FatalError("TODO: perspective remeshing");
     }
     Array2D<Vector3> src,dir;
-    vp.getAllRays(src,dir,true,false);  //these are in scan-line order, i.e., y*w + x
+    Camera::Viewport::ScanOrdering order = Camera::Viewport::ScanOrdering::TopDown;
+    vp.getAllRays(src,dir,true,false,order);  //these are in scan-line order, i.e., y*w + x
     if(!vp.perspective) {
         for(auto& v:dir) v.inplaceNegative();
     }
@@ -1191,9 +1194,10 @@ void Heightmap::Remesh(const Heightmap& hm,const Camera::Viewport& vp)
 void Heightmap::GetIndexRange(const AABB3D& bb,IntPair& lo,IntPair& hi) const
 {
     //get range of bb to minimize # of rays cast
-    if(viewport.pose.R(0,1) == 0 && viewport.pose.R(0,2) == 0 && viewport.pose.R(1,2) == 0) {
+    if(!viewport.perspective && viewport.pose.R(0,1) == 0 && viewport.pose.R(0,2) == 0 && viewport.pose.R(1,2) == 0) {
         lo = GetIndex(bb.bmin);
         hi = GetIndex(bb.bmax);
+        swap(lo.b,hi.b);
         if(hi.a < 0 || hi.b < 0 || lo.a >= heights.m || lo.b >= heights.n) {
             lo.a = hi.a + 1;
             return;
@@ -1212,50 +1216,87 @@ void Heightmap::GetIndexRange(const AABB3D& bb,IntPair& lo,IntPair& hi) const
 
 void Heightmap::GetIndexRange(const Box3D& box,IntPair& lo,IntPair& hi) const
 {
-    lo = hi = GetIndex(box.origin);
-    IntPair temp = GetIndex(box.origin + box.dims[0]*box.xbasis);
-    lo.a = ::Min(lo.a,temp.a);
-    hi.a = ::Max(hi.a,temp.a);
-    lo.b = ::Min(lo.b,temp.b);
-    hi.b = ::Max(hi.b,temp.b);
-    temp = GetIndex(box.origin + box.dims[1]*box.ybasis);
-    lo.a = ::Min(lo.a,temp.a);
-    hi.a = ::Max(hi.a,temp.a);
-    lo.b = ::Min(lo.b,temp.b);
-    hi.b = ::Max(hi.b,temp.b);
-    temp = GetIndex(box.origin + box.dims[2]*box.zbasis);
-    lo.a = ::Min(lo.a,temp.a);
-    hi.a = ::Max(hi.a,temp.a);
-    lo.b = ::Min(lo.b,temp.b);
-    hi.b = ::Max(hi.b,temp.b);
-    temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[1]*box.ybasis);
-    lo.a = ::Min(lo.a,temp.a);
-    hi.a = ::Max(hi.a,temp.a);
-    lo.b = ::Min(lo.b,temp.b);
-    hi.b = ::Max(hi.b,temp.b);
-    temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[2]*box.zbasis);
-    lo.a = ::Min(lo.a,temp.a);
-    hi.a = ::Max(hi.a,temp.a);
-    lo.b = ::Min(lo.b,temp.b);
-    hi.b = ::Max(hi.b,temp.b);
-    temp = GetIndex(box.origin + box.dims[1]*box.ybasis + box.dims[2]*box.zbasis);
-    lo.a = ::Min(lo.a,temp.a);
-    hi.a = ::Max(hi.a,temp.a);
-    lo.b = ::Min(lo.b,temp.b);
-    hi.b = ::Max(hi.b,temp.b);
-    temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[1]*box.ybasis + box.dims[2]*box.zbasis);
-    lo.a = ::Min(lo.a,temp.a);
-    hi.a = ::Max(hi.a,temp.a);
-    lo.b = ::Min(lo.b,temp.b);
-    hi.b = ::Max(hi.b,temp.b);
-    if(hi.a < 0 || hi.b < 0 || lo.a >= heights.m || lo.b >= heights.n) {
-        lo.a = hi.a + 1;
+    if(viewport.perspective) {
+        //convert to local viewport coordinates and crop with the view frustum
+        Box3D localbox;
+        RigidTransform poseInv;
+        viewport.pose.getInverse(poseInv);
+        localbox.setTransformed(box,poseInv);
+        AABB3D localbb;
+        localbox.getAABB(localbb);
+        if(localbb.bmax.z <= 0) {
+            //behind camera, no intersection
+            lo.set(-1,-1);
+            hi.set(-2,-2);
+            return;
+        }
+        lo.a = int(Floor(localbb.bmin.x / localbb.bmax.z * viewport.fx + viewport.cx));            
+        hi.a = int(Floor(localbb.bmax.x / localbb.bmax.z * viewport.fx + viewport.cx));
+        lo.b = int(Floor(localbb.bmin.y / localbb.bmax.z * viewport.fy + viewport.cy));            
+        hi.b = int(Floor(localbb.bmax.y / localbb.bmax.z * viewport.fy + viewport.cy));
+        if(localbb.bmin.z >= 0) {
+            lo.a = ::Min(lo.a,int(Floor(localbb.bmin.x / localbb.bmin.z * viewport.fx + viewport.cx)));
+            hi.a = ::Max(hi.a,int(Floor(localbb.bmax.x / localbb.bmin.z * viewport.fx + viewport.cx)));
+            lo.b = ::Min(lo.b,int(Floor(localbb.bmin.y / localbb.bmin.z * viewport.fy + viewport.cy)));
+            hi.b = ::Max(hi.b,int(Floor(localbb.bmax.y / localbb.bmin.z * viewport.fy + viewport.cy)));
+        }
+        //may contain origin
+        lo.a = ::Max(lo.a,0);
+        hi.a = ::Min(hi.a,heights.m-1);
+        lo.b = ::Max(lo.b,0);
+        hi.b = ::Min(hi.b,heights.n-1);
+        if(lo.a > hi.a) {
+            lo.a = hi.a + 1;
+            return;
+        }
         return;
     }
-    hi.a = ::Min(hi.a,heights.m-1);
-    hi.b = ::Min(hi.b,heights.n-1);
-    lo.a = ::Max(lo.a,0);
-    lo.b = ::Max(lo.b,0);
+    else {
+        lo = hi = GetIndex(box.origin);
+        IntPair temp = GetIndex(box.origin + box.dims[0]*box.xbasis);
+        lo.a = ::Min(lo.a,temp.a);
+        hi.a = ::Max(hi.a,temp.a);
+        lo.b = ::Min(lo.b,temp.b);
+        hi.b = ::Max(hi.b,temp.b);
+        temp = GetIndex(box.origin + box.dims[1]*box.ybasis);
+        lo.a = ::Min(lo.a,temp.a);
+        hi.a = ::Max(hi.a,temp.a);
+        lo.b = ::Min(lo.b,temp.b);
+        hi.b = ::Max(hi.b,temp.b);
+        temp = GetIndex(box.origin + box.dims[2]*box.zbasis);
+        lo.a = ::Min(lo.a,temp.a);
+        hi.a = ::Max(hi.a,temp.a);
+        lo.b = ::Min(lo.b,temp.b);
+        hi.b = ::Max(hi.b,temp.b);
+        temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[1]*box.ybasis);
+        lo.a = ::Min(lo.a,temp.a);
+        hi.a = ::Max(hi.a,temp.a);
+        lo.b = ::Min(lo.b,temp.b);
+        hi.b = ::Max(hi.b,temp.b);
+        temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[2]*box.zbasis);
+        lo.a = ::Min(lo.a,temp.a);
+        hi.a = ::Max(hi.a,temp.a);
+        lo.b = ::Min(lo.b,temp.b);
+        hi.b = ::Max(hi.b,temp.b);
+        temp = GetIndex(box.origin + box.dims[1]*box.ybasis + box.dims[2]*box.zbasis);
+        lo.a = ::Min(lo.a,temp.a);
+        hi.a = ::Max(hi.a,temp.a);
+        lo.b = ::Min(lo.b,temp.b);
+        hi.b = ::Max(hi.b,temp.b);
+        temp = GetIndex(box.origin + box.dims[0]*box.xbasis + box.dims[1]*box.ybasis + box.dims[2]*box.zbasis);
+        lo.a = ::Min(lo.a,temp.a);
+        hi.a = ::Max(hi.a,temp.a);
+        lo.b = ::Min(lo.b,temp.b);
+        hi.b = ::Max(hi.b,temp.b);
+        if(hi.a < 0 || hi.b < 0 || lo.a >= heights.m || lo.b >= heights.n) {
+            lo.a = hi.a + 1;
+            return;
+        }
+        hi.a = ::Min(hi.a,heights.m-1);
+        hi.b = ::Min(hi.b,heights.n-1);
+        lo.a = ::Max(lo.a,0);
+        lo.b = ::Max(lo.b,0);
+    }
 }
 
 void Heightmap::SetMesh(const TriMesh& mesh,Real resolution,const RigidTransform* Tmesh,bool topdown)
@@ -1384,7 +1425,7 @@ void Heightmap::FusePointCloud(const PointCloud3D& pc,const RigidTransform* Tpc,
     Vector3 ptemp;
     for(size_t i=0;i<pc.points.size();i++) {
         if(Tpc) {
-            Tpc->mulInverse(pc.points[i],ptemp);
+            Tpc->mul(pc.points[i],ptemp);
             ind = GetIndex(ptemp);
         }
         else
@@ -1409,7 +1450,7 @@ void Heightmap::FusePointCloud(const PointCloud3D& pc,const RigidTransform* Tpc,
 void Heightmap::GetPointCloud(PointCloud3D& pc, bool structured) const
 {
     //second argument is whether to use scan-line order or row-major
-    GetVertices(pc.points,false);
+    GetVertices(pc.points);
     if(structured) {
         pc.SetStructured(heights.m,heights.n);
         //setting scan-line order already goes from top to bottom
@@ -1417,12 +1458,12 @@ void Heightmap::GetPointCloud(PointCloud3D& pc, bool structured) const
     if(colors.num_bytes != 0) {
         if(colors.pixelChannels() == 4) {
             vector<Vector4> rgba(pc.points.size());
-            GetVertexColors(rgba,false);
+            GetVertexColors(rgba);
             pc.SetColors(rgba);
         }
         else {
             vector<Vector3> rgb(pc.points.size());
-            GetVertexColors(rgb,false);
+            GetVertexColors(rgb);
             pc.SetColors(rgb);
         }
     }
@@ -1431,7 +1472,7 @@ void Heightmap::GetPointCloud(PointCloud3D& pc, bool structured) const
         for(int i=0;i<heights.m;i++)
             for(int j=0;j<heights.n;j++)
                 if(!ValidHeight(i,j))
-                    toDrop.push_back(i+(heights.n-1-j)*heights.m);
+                    toDrop.push_back(i+j*heights.m);
         if(!toDrop.empty()) {
             pc.settings.clear();
             vector<int> toKeep;
@@ -1439,7 +1480,7 @@ void Heightmap::GetPointCloud(PointCloud3D& pc, bool structured) const
             for(int i=0;i<heights.m;i++)
                 for(int j=0;j<heights.n;j++)
                     if(ValidHeight(i,j))
-                        toKeep.push_back(i+(heights.n-1-j)*heights.m);
+                        toKeep.push_back(i+j*heights.m);
             PointCloud3D pc_new;
             pc.GetSubCloud(toKeep,pc_new);
             pc = pc_new;

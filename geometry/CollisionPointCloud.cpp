@@ -993,7 +993,6 @@ bool Collides(const CollisionPointCloud &a, Real margin, const CollisionMesh &b,
         if(neighbors.getIndex(closest1[collider.pcpoints[i]]) >= 0) {
           continue;
         }
-        Real temp=dclosest;
         if(neighbors.a >= 0 && closest2.count(neighbors.a))
           dclosest = Min(dclosest,dclosest2[neighbors.a]);
         if(neighbors.b >= 0 && closest2.count(neighbors.b))
@@ -2119,28 +2118,62 @@ bool Collider3DPointCloud::Distance(Collider3D* other,const DistanceQuerySetting
   }
   case Type::ConvexHull:
   {
-    static bool warned = false;
-    if(!warned) {
-      LOG4CXX_DEBUG(GET_LOGGER(Geometry),"Warning, point cloud-convex hull distance uses slow linear search");
-      warned = true;
-    }
+    res.d = Inf;
     DistanceQuerySettings modsettings = settings;
     DistanceQueryResult tempres;
     Collider3DConvexHull* b = dynamic_cast<Collider3DConvexHull*>(other);
     //bound check
-    if(!IsInf(settings.upperBound)) {
-      Box3D bb = GetBB();
-      Collider3DPrimitive prim(make_shared<Geometry3DPrimitive>(bb));
-      if(b->Distance(&prim,settings,res)) {
-        if(res.d >= settings.upperBound) return true;
+    Box3D bb = GetBB();
+    Collider3DPrimitive prim(make_shared<Geometry3DPrimitive>(bb));
+    if(b->Distance(&prim,settings,tempres)) {
+      // printf("Distance between convex hull and point cloud bounding box: %f\n",tempres.d);
+      if(tempres.d >= settings.upperBound) return true; //no need to check further
+      //find points within the given distance of the closest point on the hull
+      Assert(tempres.hasClosestPoints);
+      Real d_cp_points;
+      bool supported = Distance(tempres.cp1,d_cp_points);
+      // printf("Distance between point on convex hull and point cloud: %f\n",d_cp_points);
+      Assert(supported);
+      //find all points within d_cp_points of the bound of the convex hull
+      vector<int> pc_elements,bb_elements;
+      Collider3DPrimitive bb_geom(make_shared<Geometry3DPrimitive>(other->GetAABBTight()));
+      if(WithinDistance(&bb_geom,d_cp_points+1e-5,pc_elements,bb_elements)) {
+        for(auto i:pc_elements) {
+          if(b->Distance(collisionData.currentTransform*collisionData.points[i],modsettings,tempres)) {
+            if(tempres.d < modsettings.upperBound) {
+              res = tempres;
+              res.hasElements = true;
+              res.elem1 = i;
+              res.elem2 = 0;
+              modsettings.upperBound = tempres.d;
+            }
+          }
+        }
+      }
+      else {
+        //no points within the distance bound, must be a numerical error?
+        res.d = d_cp_points;
+        return true;
       }
     }
-    //brute force
-    for(size_t i=0;i<data->data.points.size();i++) {
-      if(b->Distance(collisionData.currentTransform*data->data.points[i],modsettings,tempres)) {
-        if(tempres.d < modsettings.upperBound) {
-          res = tempres;
-          modsettings.upperBound = tempres.d;
+    else {
+      //couldn't find a convex hull - box distance?  must be a weird convex hull type
+      static bool warned = false;
+      if(!warned) {
+        LOG4CXX_DEBUG(GET_LOGGER(Geometry),"Warning, point cloud-convex hull distance using slow linear search, must be a weird convex hull type");
+        warned = true;
+      }
+
+      //brute force
+      for(size_t i=0;i<data->data.points.size();i++) {
+        if(b->Distance(collisionData.currentTransform*data->data.points[i],modsettings,tempres)) {
+          if(tempres.d < modsettings.upperBound) {
+            res = tempres;
+            res.hasElements = true;
+            res.elem1 = i;
+            res.elem2 = 0;
+            modsettings.upperBound = tempres.d;
+          }
         }
       }
     }
