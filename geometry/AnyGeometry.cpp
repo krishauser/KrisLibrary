@@ -558,6 +558,7 @@ void AnyCollisionGeometry3D::ReinitCollisionData()
   RigidTransform T = GetTransform();
   collider.reset(Collider3D::Make(data));
   collider->SetTransform(T);
+  Assert(type == collider->GetType());
 }
 
 void AnyCollisionGeometry3D::Union(const vector<AnyGeometry3D>& geoms)
