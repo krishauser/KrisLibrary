@@ -6,20 +6,13 @@ template <class Obj>
 void _ExtractROI(const Meshing::PointCloud3D& pc,const Obj& obj,Meshing::PointCloud3D& pc_roi,int flag)
 {
     bool truthValue = (flag & ExtractROIFlagInvert ? false : true);
-    pc_roi.points.resize(0);
-    pc_roi.properties.resize(0);
-    pc_roi.propertyNames = pc.propertyNames;
-    pc_roi.settings = pc.settings;
-    pc_roi.settings.remove("width");
-    pc_roi.settings.remove("height");
-    pc_roi.points.reserve(pc.points.size()/4);
-    pc_roi.properties.reserve(pc.properties.size()/4);
+    vector<int> selection;
+    selection.reserve(pc.points.size()/4);
     for(size_t i=0;i<pc.points.size();i++) {
-        if(obj.contains(pc.points[i])==truthValue) {
-            pc_roi.points.push_back(pc.points[i]);
-            pc_roi.properties.push_back(pc.properties[i]);
-        }
+        if(obj.contains(pc.points[i])==truthValue) 
+            selection.push_back(i);
     }
+    pc.GetSubCloud(selection,pc_roi);
 }
 
 ///Returns the points in pc within bb.  O(V) time, where V is the number of points.
@@ -54,7 +47,7 @@ void ExtractROI(const CollisionPointCloud& pc,const AABB3D& bb,CollisionPointClo
         if(!bblocal.intersects(pc.bblocal)) {
             if(truthValue) {
                 pc_roi.points.resize(0);
-                pc_roi.properties.resize(0);
+                pc_roi.properties.resize(0,0);
                 pc_roi.bblocal.minimize();
             }
             else {
@@ -73,7 +66,7 @@ void ExtractROI(const CollisionPointCloud& pc,const AABB3D& bb,CollisionPointClo
         if(!bb_local.intersects(pc.bblocal)) {
             if(truthValue) {
                 pc_roi.points.resize(0);
-                pc_roi.properties.resize(0);
+                pc_roi.properties.resize(0,0);
                 pc_roi.bblocal.minimize();
             }
             else {
@@ -98,7 +91,7 @@ void ExtractROI(const CollisionPointCloud& pc,const Box3D& bb,CollisionPointClou
     if(!bb_local.intersects(pc.bblocal)) {
         if(truthValue) {
             pc_roi.points.resize(0);
-            pc_roi.properties.resize(0);
+            pc_roi.properties.resize(0,0);
             pc_roi.bblocal.minimize();
         }
         else {
@@ -122,7 +115,7 @@ void ExtractROI(const CollisionPointCloud& pc,const Sphere3D& s,CollisionPointCl
     if(!slocal.intersects(pc.bblocal)) {
         if(truthValue) {
             pc_roi.points.resize(0);
-            pc_roi.properties.resize(0);
+            pc_roi.properties.resize(0,0);
             pc_roi.bblocal.minimize();
         }
         else {

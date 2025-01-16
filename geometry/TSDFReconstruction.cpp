@@ -507,7 +507,7 @@ void DenseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const PointClou
             vox.rgb[c] = (unsigned char)(vox.rgb[c] + usurf*(rgb[c] - vox.rgb[c]));
         }
         for(size_t k=0;k<auxiliaryAttributes.size();k++) {
-          float vnew = (float)pc.properties[i][auxiliaryAttributes[k]];
+          float vnew = (float)pc.properties(i,auxiliaryAttributes[k]);
           float& v = auxiliary.channels[k].value(c);
           v += (float)(usurf*(vnew - v));
         }
@@ -1025,7 +1025,7 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
                 rgb[c] = (unsigned char)(rgb[c] + usurf*(pointRgb[c] - rgb[c]));
             }
             for(size_t k=0;k<self->auxiliaryAttributes.size();k++) {
-              float vnew = (float)pc.properties[i][self->auxiliaryAttributes[k]];
+              float vnew = (float)pc.properties(i,self->auxiliaryAttributes[k]);
               float& v = b->grid.channels[self->auxiliaryChannelStart+k].value(c);
               v += usurf*(vnew - v);
             }

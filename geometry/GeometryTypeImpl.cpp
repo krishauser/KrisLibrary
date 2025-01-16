@@ -620,6 +620,7 @@ Collider3D* Collider3D::ConvertTo(Type restype,Real param,Real domainExpansion)
 bool Collider3D::ConvertFrom(Collider3D* geom,Real param,Real domainExpansion)
 {
     if(!GetData()->ConvertFrom(geom->GetData().get(),param,domainExpansion)) return false;
+    Reset();
     SetTransform(geom->GetTransform());
     return true;
 }
@@ -663,6 +664,8 @@ Box3D Collider3D::GetBB() const
 {
     Box3D b;
     AABB3D bblocal = GetData()->GetAABB();
+    if(!IsFinite(bblocal.bmin.x))
+      printf("Collider data of type %s didn't return a finite AABB\n",GetData()->TypeName(GetData()->GetType()));
     b.setTransformed(bblocal, GetTransform());
     return b;
 }

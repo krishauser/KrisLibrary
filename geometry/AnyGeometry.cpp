@@ -676,9 +676,13 @@ AABB3D AnyCollisionGeometry3D::GetAABB() const
     Box3D b = GetBB();
     AABB3D bb;
     b.getAABB(bb);
+    if(!IsFinite(bb.bmin.x))
+      printf("Geometry of type %s didn't return a finite bounding box\n",TypeName());
     return bb;
   }
   AABB3D bb=collider->GetAABB();
+  if(!IsFinite(bb.bmin.x))
+      printf("Collider of type %s didn't return a finite bounding box\n",TypeName());  
   if (margin != 0) {
     bb.bmin -= Vector3(margin);
     bb.bmax += Vector3(margin);

@@ -30,6 +30,7 @@ CollisionPointCloud::CollisionPointCloud()
   :gridResolution(0),grid(3),radiusIndex(-1),maxRadius(0)
 {
   currentTransform.setIdentity();
+  bblocal.minimize();
 }
 
 CollisionPointCloud::CollisionPointCloud(const Meshing::PointCloud3D& _pc,int hints)
@@ -53,9 +54,9 @@ void CollisionPointCloud::InitCollisions(int hints)
   if(radiusIndex >= 0) {
     Real minRadius = 0.0;
     maxRadius = 0.0;
-    for(auto& p:properties) {
-      maxRadius = Max(maxRadius,p[radiusIndex]);
-      minRadius = Min(minRadius,p[radiusIndex]);
+    for(int i=0;i<properties.m;i++) {
+      maxRadius = Max(maxRadius,properties(i,radiusIndex));
+      minRadius = Min(minRadius,properties(i,radiusIndex));
     }
     if(minRadius < 0)
       FatalError("Can't create a collision point cloud with negative radius?");
@@ -70,14 +71,15 @@ void CollisionPointCloud::InitCollisions(int hints)
   Timer timer;
   if(radiusIndex >= 0) {
     for(size_t i=0;i<points.size();i++) {
-      bblocal.expand(points[i]-Vector3(properties[i][radiusIndex]));
-      bblocal.expand(points[i]+Vector3(properties[i][radiusIndex]));
+      bblocal.expand(points[i]-Vector3(properties(i,radiusIndex)));
+      bblocal.expand(points[i]+Vector3(properties(i,radiusIndex)));
     }
   }
   else {
     for(size_t i=0;i<points.size();i++)
       bblocal.expand(points[i]);
   }
+
   //set up the grid
   Real res = gridResolution;
   if(gridResolution <= 0) {
@@ -118,7 +120,7 @@ void CollisionPointCloud::InitCollisions(int hints)
   if(radiusIndex >= 0)  {
     for(size_t i=0;i<points.size();i++) {
       if(IsFinite(points[i].x))
-        octree->AddSphere(points[i],properties[i][radiusIndex],(int)i);
+        octree->AddSphere(points[i],properties(i,radiusIndex),(int)i);
     }
   }
   else {
@@ -148,6 +150,8 @@ void CollisionPointCloud::InitCollisions(int hints)
 void GetBB(const CollisionPointCloud& pc,Box3D& b)
 {
   b.setTransformed(pc.bblocal,pc.currentTransform);
+  if(!IsFinite(pc.bblocal.bmin.x))
+    printf("CollisionPointCloud doesn't contain didn't return a finite AABB\n");
 }
 
 static Real gWithinDistanceTestThreshold = 0;
@@ -193,7 +197,7 @@ bool WithinDistance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,
       gbb.setIntersection(pc.bblocal);
       pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
       for(size_t i=0;i<points.size();i++) 
-        if(glocal.Distance(points[i]) <= tol + pc.properties[ids[i]][pc.radiusIndex]) return true;
+        if(glocal.Distance(points[i]) <= tol + pc.properties(ids[i],pc.radiusIndex)) return true;
     }
     return false;
   }
@@ -316,7 +320,7 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
       if(sbb.contains(pc.points[i])) {
         Real d = glocal.Distance(pc.points[i]);
         if(pc.radiusIndex >= 0)
-          d -= pc.properties[i][pc.radiusIndex];
+          d -= pc.properties(i,pc.radiusIndex);
         if(d < dmax) {
           closestPoint = (int)i;
           dmax = d;
@@ -332,7 +336,7 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
     for(size_t i=0;i<pc.points.size();i++) {
       Real d = glocal.Distance(pc.points[i]);
       if(pc.radiusIndex >= 0)
-        d -= pc.properties[i][pc.radiusIndex];
+        d -= pc.properties(i,pc.radiusIndex);
       if(d < dmax) {
         closestPoint = (int)i;
         dmax = d;
@@ -357,9 +361,9 @@ Real Distance(const CollisionPointCloud& pc1,const CollisionPointCloud& pc2,int&
     bool res = pc2.octree->NearestNeighbor(x,xclosest,cp2x,upperBound);
     if(res) {
       Real d = x.distance(xclosest);
-      if(pc1.radiusIndex >= 0) d -= pc1.properties[i][pc1.radiusIndex];
+      if(pc1.radiusIndex >= 0) d -= pc1.properties(i,pc1.radiusIndex);
       if(pc2.radiusIndex >= 0) {
-        d -= pc2.properties[cp2x][pc2.radiusIndex];
+        d -= pc2.properties(cp2x,pc2.radiusIndex);
       }
       if(d < upperBound) {
         upperBound = d;
@@ -438,7 +442,7 @@ void NearbyPoints(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,Re
       gbb.setIntersection(pc.bblocal);
       pc.octree->BoxQuery(gbb.bmin-Vector3(tol),gbb.bmax+Vector3(tol),points,ids);
       for(size_t i=0;i<points.size();i++) {
-        if(glocal.Distance(points[i]) <= tol + pc.properties[ids[i]][pc.radiusIndex]) {
+        if(glocal.Distance(points[i]) <= tol + pc.properties(ids[i],pc.radiusIndex)) {
           pointIds.push_back(ids[i]);
           if(pointIds.size()>=maxContacts) return;
         }
@@ -1063,28 +1067,31 @@ bool Geometry3DPointCloud::Merge(const Geometry3D* geom, const RigidTransform* T
   }
   const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geom)->data;
   if(pc.propertyNames.size() != data.propertyNames.size()) return false;
-  data.points.insert(data.points.end(),pc.points.begin(),pc.points.end());
-  data.properties.insert(data.properties.end(),pc.properties.begin(),pc.properties.end());
+  data.Concat(pc);
   return true;
 }
 
 bool Geometry3DPointCloud::Union(const vector<Geometry3D*>& geoms)
 {
   size_t numProperties = 0;
+  int numPropertyEntries = 0;
   for(size_t i=0;i<geoms.size();i++) {
     if(geoms[i]->GetType() != Type::PointCloud) return false;
     const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geoms[i])->data;
     if(i == 0) numProperties = pc.propertyNames.size();
     if(pc.propertyNames.size() != numProperties) return false;
+    numPropertyEntries += pc.properties.m;
   }
   data.points.resize(0);
-  data.properties.resize(0);
+  data.properties.resize(numPropertyEntries,numProperties);
+  int offset = 0;
   for (size_t i = 0; i < geoms.size(); i++) {
     const auto& pc = dynamic_cast<const Geometry3DPointCloud*>(geoms[i])->data;
     if(i == 0)
       data.propertyNames = pc.propertyNames;
     data.points.insert(data.points.end(),pc.points.begin(),pc.points.end());
-    data.properties.insert(data.properties.end(),pc.properties.begin(),pc.properties.end());
+    data.properties.copySubMatrix(offset,0,pc.properties);
+    offset += pc.properties.m;
   }
   return true;
 }
@@ -1198,15 +1205,16 @@ Geometry3D* Geometry3DPointCloud::Remesh(Real resolution,bool refine,bool coarse
             grid.PointToIndex(pc.points[i],index);
             grid.Insert(index,(void*)&pc.points[i]);
         }
-        output.points.reserve(grid.buckets.size());
-        output.properties.reserve(grid.buckets.size());
+        output.points.resize(grid.buckets.size());
+        output.properties.resize(grid.buckets.size(),pc.propertyNames.size());
         output.propertyNames = pc.propertyNames;
         output.settings = pc.settings;
         if(pc.IsStructured()) {
             output.settings.erase(output.settings.find("width")); 
             output.settings.erase(output.settings.find("height")); 
         }
-        for(auto i=grid.buckets.begin();i!=grid.buckets.end();i++) {
+        int count = 0;
+        for(auto i=grid.buckets.begin();i!=grid.buckets.end();i++,count++) {
             Vector3 ptavg(Zero);
             int n=(int)i->second.size();
             Real scale = 1.0/n;
@@ -1214,31 +1222,30 @@ Geometry3D* Geometry3DPointCloud::Remesh(Real resolution,bool refine,bool coarse
                 int ptindex = (const Vector3*)pt - &pc.points[0];
                 ptavg += pc.points[ptindex];
             }
-            output.points.push_back(ptavg*scale);
-            output.properties.push_back(Vector(pc.propertyNames.size()));
+            output.points[count] = ptavg*scale;
             for(size_t j=0;j<pc.propertyNames.size();j++) {
                 if(pc.propertyNames[j]=="rgb" || pc.propertyNames[j]=="rgba" || pc.propertyNames[j]=="c") {
                     //int numchannels = (int)pc.propertyNames[j].length();
                     int propavg[4] = {0,0,0,0};
                     for(auto pt:i->second) {
-                    int ptindex = (const Vector3*)pt - &pc.points[0];
-                    int prop = (int)pc.properties[ptindex][j];
-                    propavg[0] += (prop&0xff);
-                    propavg[1] += ((prop>>8)&0xff);
-                    propavg[2] += ((prop>>16)&0xff);
-                    propavg[3] += ((prop>>24)&0xff);
+                      int ptindex = (const Vector3*)pt - &pc.points[0];
+                      int prop = (int)pc.properties(ptindex,j);
+                      propavg[0] += (prop&0xff);
+                      propavg[1] += ((prop>>8)&0xff);
+                      propavg[2] += ((prop>>16)&0xff);
+                      propavg[3] += ((prop>>24)&0xff);
                     }
                     for(int k=0;k<4;k++)
                     propavg[k] = (propavg[k]/n)&0xff;
-                    output.properties.back()[j] = (Real)(propavg[0] | (propavg[1] << 8) | (propavg[2] << 16) | (propavg[3] << 24));
+                    output.properties(count,j) = (Real)(propavg[0] | (propavg[1] << 8) | (propavg[2] << 16) | (propavg[3] << 24));
                 }
                 else {
                     Real propavg = 0;
                     for(auto pt:i->second) {
                         int ptindex = (const Vector3*)pt - &pc.points[0];
-                        propavg += pc.properties[ptindex][j];
+                        propavg += pc.properties(ptindex,j);
                     }
-                    output.properties.back()[j] = propavg*scale;
+                    output.properties(count,j) = propavg*scale;
                 }
             }
         }
@@ -1260,9 +1267,13 @@ Geometry3D* Geometry3DPointCloud::Slice(const RigidTransform& T,Real tol) const
   pc_out.settings = pc.settings;
   pc_out.settings.remove("width");
   pc_out.settings.remove("height");
+  pc_out.points.resize(pts.size());
+  pc_out.properties.resize(pts.size(),pc.properties.n);
   for(size_t i=0;i<pts.size();i++) {
-    pc_out.points.push_back(Vector3(pts[i].x,pts[i].y,0));
-    pc_out.properties.push_back(pc.properties[inds[i]]);
+    pc_out.points[i].set(pts[i].x,pts[i].y,0);
+    Vector prop;
+    pc.properties.getRowRef(inds[i],prop);
+    pc_out.properties.copyRow(i,prop);
   }
   return res;
 }
@@ -1357,7 +1368,8 @@ Collider3DPointCloud::Collider3DPointCloud(shared_ptr<Geometry3DPointCloud> _dat
 
 Collider3DPointCloud::Collider3DPointCloud(const Collider3DPointCloud& rhs)
 :data(rhs.data),collisionData(rhs.collisionData)
-{}
+{
+}
 
 void Collider3DPointCloud::Reset()
 {
@@ -2204,9 +2216,13 @@ Collider3D* Collider3DPointCloud::Slice(const RigidTransform& T,Real tol) const
   pc_out.settings = data->data.settings;
   pc_out.settings.remove("width");
   pc_out.settings.remove("height");
+  pc_out.points.resize(pts.size());
+  pc_out.properties.resize(pts.size(),data->data.properties.n);
   for(size_t i=0;i<pts.size();i++) {
-    pc_out.points.push_back(Vector3(pts[i].x,pts[i].y,0));
-    pc_out.properties.push_back(data->data.properties[inds[i]]);
+    pc_out.points[i].set(pts[i].x,pts[i].y,0);
+    Vector prop;
+    data->data.properties.getRowRef(inds[i],prop);
+    pc_out.properties.copyRow(i,prop);
   }
   auto* res = new Collider3DPointCloud(shared_ptr<Geometry3DPointCloud>(pc));
   res->SetTransform(T);

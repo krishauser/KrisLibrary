@@ -960,6 +960,11 @@ void ConvexHullToImplicitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& gr
 
 void PointCloudOccupancyGridFill(const Meshing::PointCloud3D& pc,Meshing::VolumeGrid& grid,Real value,Real expansion)
 {
+	int radiusIndex = pc.PropertyIndex("radius");
+	if(radiusIndex >= 0) {
+		LOG4CXX_WARN(GET_LOGGER(Geometry),"PointCloudOccupancyGridFill: PointCloud with radius property not supported yet");
+	}
+
 	if(expansion == 0) {
 		for(size_t i=0;i<pc.points.size();i++) {
 			IntTriple idx;
@@ -990,7 +995,8 @@ void PointCloudImplicitSurfaceFill_FMM(const Meshing::PointCloud3D& pc,Meshing::
 {
 	if(truncation == 0 || !IsFinite(truncation)) grid.value.set(Inf);
 	if(truncation == 0) truncation = Inf;
-	
+	int radiusIndex = pc.PropertyIndex("radius");
+
 	int M = grid.value.m;
 	int N = grid.value.n;
 	int P = grid.value.p;
@@ -1010,6 +1016,7 @@ void PointCloudImplicitSurfaceFill_FMM(const Meshing::PointCloud3D& pc,Meshing::
 		if(!grid.GetIndexChecked(pc.points[i],idx.a,idx.b,idx.c)) continue;
 		grid.GetCellCenter(idx.a,idx.b,idx.c,c);
 		Real d = pc.points[i].distance(c);
+		if(radiusIndex >= 0) d -= pc.properties(i,radiusIndex);
 		if(d < grid.value(idx) && d <= truncation) {
 			grid.value(idx) = d;
 			closestPoint(idx) = i;
@@ -1058,6 +1065,7 @@ void PointCloudImplicitSurfaceFill_FMM(const Meshing::PointCloud3D& pc,Meshing::
 			Vector3 cellCenter;
 			grid.GetCellCenter(neighbor.a,neighbor.b,neighbor.c,cellCenter);
 			Real d = pc.points[cp].distance(cellCenter);
+			if(radiusIndex >= 0) d -= pc.properties(cp,radiusIndex);
 			if(d < grid.value(neighbor) && d <= truncation) {
 				grid.value(neighbor) = d;
 				closestPoint(neighbor) = cp;

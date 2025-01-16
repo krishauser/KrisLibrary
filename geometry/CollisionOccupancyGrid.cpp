@@ -328,6 +328,10 @@ bool Geometry3DOccupancyGrid::ConvertFrom(const Geometry3D* geom,Real param,Real
     case Type::PointCloud:
         {
         const auto* pc = dynamic_cast<const Geometry3DPointCloud*>(geom);
+        int radiusIndex = pc->data.PropertyIndex("radius");
+        if(radiusIndex >= 0) {
+            LOG4CXX_WARN(GET_LOGGER(Geometry),"OccupancyGrid: PointCloud with radius property not supported yet");
+        }
         if(param==0) {
             //auto-determine resolution to approximately have 1 point per cell
             AABB3D bb = geom->GetAABB();

@@ -4,6 +4,7 @@
 #include <KrisLibrary/utils/AnyCollection.h>
 #include <KrisLibrary/utils/stringutils.h>
 #include <KrisLibrary/image/io.h>
+#include <KrisLibrary/Logger.h>
 #include <memory.h>
 #include <fstream>
 
@@ -1419,6 +1420,10 @@ void Heightmap::SetPointCloud(const PointCloud3D& pc,Real resolution,const Rigid
 void Heightmap::FusePointCloud(const PointCloud3D& pc,const RigidTransform* Tpc,bool topdown)
 {
     bool useColor = (pc.HasColor() && colors.num_bytes != 0);
+    int radiusIndex = pc.PropertyIndex("radius");
+    if(radiusIndex >= 0) {
+        LOG4CXX_WARN(KrisLibrary::logger(),"Heightmap::FusePointCloud: PointCloud with radius property not supported yet");
+    }
     vector<Vector4> pointColors;
     if(useColor) pc.GetColors(pointColors);
     IntPair ind;

@@ -500,7 +500,7 @@ bool Collider3DImplicitSurface::Collides(const CollisionPointCloud& pc,Real marg
   for(size_t i=0;i<apoints.size();i++) {
     Vector3 p_w = pc.currentTransform*apoints[i];
     Real margini = margin;
-    if(pc.radiusIndex >= 0) margini += pc.properties[aids[i]][pc.radiusIndex];
+    if(pc.radiusIndex >= 0) margini += pc.properties(aids[i],pc.radiusIndex);
     if(Distance(p_w) <= margini) {
       collidingPoints.push_back(aids[i]);
       if(collidingPoints.size() >= maxContacts) {
@@ -618,7 +618,7 @@ Real Collider3DImplicitSurface::Distance(const CollisionPointCloud& pc,int& clos
       Vector3 pt_clamped;
       Real sdf_value = data->data.TrilinearInterpolate(ptlocal);
       if(pc.radiusIndex >= 0)
-        sdf_value -= pc.properties[i][pc.radiusIndex];
+        sdf_value -= pc.properties(i,pc.radiusIndex);
       if(sdf_value < bruteForceDmin) {
         Real d_bb = data->data.bb.distance(ptlocal,pt_clamped);
         if(sdf_value + d_bb < bruteForceDmin) {
@@ -671,7 +671,7 @@ Real Collider3DImplicitSurface::Distance(const CollisionPointCloud& pc,int& clos
   closestPoint = -1;
   d = Distance(pc.currentTransform*pc.points[0]);
   if(pc.radiusIndex >= 0)
-    d -= pc.properties[0][pc.radiusIndex];
+    d -= pc.properties(0,pc.radiusIndex);
   if(d < mindist) {
     mindist = d;
     closestPoint = 0;
@@ -696,7 +696,7 @@ Real Collider3DImplicitSurface::Distance(const CollisionPointCloud& pc,int& clos
         Vector3 pt_clamped;
         Real sdf_value = data->data.TrilinearInterpolate(ptlocal);
         if(pc.radiusIndex >= 0)
-          sdf_value -= pc.properties[id][pc.radiusIndex];
+          sdf_value -= pc.properties(id,pc.radiusIndex);
         if(sdf_value < mindist) {
           Real d_bb = data->data.bb.distance(ptlocal,pt_clamped);
           Real d = d_bb + sdf_value;
@@ -1045,7 +1045,7 @@ bool Collider3DImplicitSurface::Collides(const CollisionMesh &b, Real margin,
       Assert(collide_cell.b >= 0 && collide_cell.b < data->data.value.n);
       Assert(collide_cell.c >= 0 && collide_cell.c < data->data.value.p);
       Assert(elements1.back() == data->IndexToElement(collide_cell));
-      Assert(elements1.back() >= 0 && elements1.back() < data->NumElements());
+      Assert(elements1.back() >= 0 && elements1.back() < (int)data->NumElements());
       elements2.push_back(int(i));
       if(elements1.size() >= maxContacts) {
         return true;

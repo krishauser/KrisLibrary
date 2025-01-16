@@ -30,6 +30,8 @@ class CollisionPointCloud : public Meshing::PointCloud3D
   ///called during initialization, and needs to be called any time the point
   ///cloud changes
   void InitCollisions(int hints=0);
+  ///Returns the point radius if present, or 0 otherwise
+  Real PointRadius(int i) const { return (radiusIndex >= 0 ? properties(i,radiusIndex) : 0.0); }
 
   ///The local bounding box of the point cloud
   AABB3D bblocal;

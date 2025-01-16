@@ -681,6 +681,7 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
             if(idx.a >= data->data.heights.m || idx.b >= data->data.heights.n) continue;
             if(data->data.viewport.perspective) {
                 Real hidx = data->data.heights(idx);
+                phm.z += pc->collisionData.PointRadius(i);
                 if(hidx > 0 && hidx <= phm.z) {
                     elements2.push_back(i);
                     elements1.push_back(idx.a + idx.b*data->data.heights.m);
@@ -688,6 +689,7 @@ bool Collider3DHeightmap::Collides(Collider3D* geom,vector<int>& elements1,vecto
                 }
             }
             else {
+                phm.z -= pc->collisionData.PointRadius(i);
                 if(data->data.heights(idx) >= phm.z) {
                     elements2.push_back(i);
                     elements1.push_back(idx.a + idx.b*data->data.heights.m);
