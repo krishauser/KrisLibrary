@@ -3,6 +3,7 @@
 
 #include "math.h"
 #include <KrisLibrary/errors.h>
+#include <vector>
 #include <string>
 namespace Math
 {
@@ -128,6 +129,7 @@ public:
  * Jacobian_ij() returns the (i,j)th component of the Jacobian matrix.
  * DirectionalDeriv() returns the derivative in the direction h (i.e. J*h).
  * Divergence() returns the trace of the Jacobian.  Only valid for m=n.
+ * Hessian() returns the Hessian matrices of each component function.
  * Hessian_i() returns the Hessian matrix of the ith component function.
  * Hessian_ijk() returns the (j,k)th entry of the ith Hessian matrix.
  */
@@ -150,6 +152,7 @@ public:
   virtual void DirectionalDeriv(const Vector& x,const Vector& h,Vector& v);
   virtual Real Divergence(const Vector& x);
 
+  virtual void Hessian(const Vector& x,std::vector<Matrix>& H);
   virtual void Hessian_i(const Vector& x,int i,Matrix& Hi) { FatalError("Hessian_i() not defined in subclass of VectorFieldFunction"); }
   virtual Real Hessian_ijk(const Vector& x,int i,int j,int k) { FatalError("Hessian_ijk() not defined in subclass of VectorFieldFunction"); return 0; }
 };

@@ -6,6 +6,7 @@
 #include "Kinematics.h"
 #include <Timer.h>
 #include <math/misc.h>
+#include <math/SelfTest.h>
 #include <math3d/misc.h>
 #include <math3d/basis.h>
 #include <optimization/Minimization.h>
@@ -177,8 +178,8 @@ IKGoalFunction::IKGoalFunction(RobotKinematics3D& _robot,const IKGoal& _goal,con
   :robot(_robot),goal(_goal),activeDofs(active),
    positionScale(1),rotationScale(1)
 {
-  Assert(goal.link >= 0 and goal.link < robot.q.n);
-  Assert(goal.destLink >= -1 and goal.destLink < robot.q.n);
+  if(goal.link < 0 || goal.link >= _robot.q.n) FatalError("Invalid goal link");
+  if(goal.destLink >= _robot.q.n) FatalError("Invalid dest link");
   Assert(goal.posConstraint != IKGoal::PosNone || goal.rotConstraint != IKGoal::RotNone);
 }
 
@@ -211,7 +212,6 @@ void IKGoalFunction::PreEval(const Vector& x)
 {
   eepos.dirty=true;
   eerot.dirty=true;
-  H.dirty = true;
 }
 
 void IKGoalFunction::UpdateEEPos()
@@ -553,77 +553,82 @@ void IKGoalFunction::Jacobian_i(const Vector& x,int i,Vector& Ji)
   }
 }
 
+void IKGoalFunction::Hessian(const Vector& x,vector<Matrix>& H)
+{
+  if((int)H.size() != NumDimensions()) {
+    H.resize(NumDimensions());
+    for(int i=0;i<NumDimensions();i++) {
+      H[i].resize(x.n,x.n,Zero);
+    }
+  }
+
+  Vector3 ddr,ddp;
+  //NOTE: H(i,j) != 0 only if i,j are ancestors of k
+  //Also H(i,j) is symmetric, only need to consider j as an ancestor of i (j<i)
+  UpdateEERot();
+  for(int i=0;i<x.n;i++) {
+    int ilink = GetDOF(i);
+    for(int j=i;j<x.n;j++) {
+      int jlink = GetDOF(j);
+      if(robot.GetJacobianDeriv(goal.localPosition,goal.link,ilink,jlink,ddr,ddp)) {
+        if(goal.posConstraint == IKGoal::PosFixed) {
+          for(int k=0;k<3;k++)
+            H[k](i,j) = positionScale*ddp[k];
+        }
+        else if(goal.posConstraint == IKGoal::PosLinear) {
+          Vector3 xb,yb;
+          goal.direction.getOrthogonalBasis(xb,yb);
+          H[0](i,j) = positionScale*dot(ddp,xb);
+          H[1](i,j) = positionScale*dot(ddp,yb);
+        }
+        else if(goal.posConstraint == IKGoal::PosPlanar) {
+          H[0](i,j) = positionScale*dot(ddp,goal.direction);
+        }
+
+        int m=goal.posConstraint;
+        //!!! Why half??? !!!
+        if(goal.rotConstraint==IKGoal::RotFixed) {
+          H[m](i,j) = Half*rotationScale*ddr.x;
+          H[m+1](i,j) = Half*rotationScale*ddr.y;
+          H[m+2](i,j) = Half*rotationScale*ddr.z;
+        }
+        else if(goal.rotConstraint==IKGoal::RotAxis) {
+          Vector3 x,y;
+          goal.endRotation.getOrthogonalBasis(x,y);
+          Vector3 curAxis;
+          robot.links[goal.link].T_World.R.mul(goal.localAxis,curAxis);
+          H[m](i,j) = rotationScale*dot(cross(ddr,curAxis),x);
+          H[m+1](i,j) = rotationScale*dot(cross(ddr,curAxis),y);
+        }
+        else if(goal.rotConstraint==IKGoal::RotNone) {
+        }
+        else {
+          LOG4CXX_INFO(KrisLibrary::logger(),"GetIKJacobian(): Invalid number of rotation terms\n");
+          Abort(); 
+        }
+      }
+      else {
+        for(size_t k=0;k<H.size();k++)
+          H[k](i,j)=Zero;
+      }
+    }
+  }
+  //fill in lower triangle
+  for(size_t component=0;component<H.size();component++) {
+    for(int i=0;i<x.n;i++) {
+      for(int j=i;j<x.n;j++) {
+        H[component](j,i) = H[component](i,j);
+      }
+    }
+  }
+}
+
 void IKGoalFunction::Hessian_i(const Vector& x,int component,Matrix& Hi)
 {
-  FatalError("Does orientation have a hessian???");
-  if(H.dirty) {
-    if((int)H.size() != NumDimensions()) {
-      H.resize(NumDimensions());
-      for(int i=0;i<NumDimensions();i++) {
-	H[i].resize(x.n,x.n,Zero);
-      }
-    }
-
-    Vector3 ddr,ddp;
-    //NOTE: H(i,j) != 0 only if i,j are ancestors of k
-    //Also H(i,j) is symmetric, only need to consider j as an ancestor of i (j<i)
-    UpdateEERot();
-    for(int i=0;i<x.n;i++) {
-      int ilink = GetDOF(i);
-      for(int j=i;j<x.n;j++) {
-	int jlink = GetDOF(j);
-	if(robot.GetJacobianDeriv(goal.localPosition,goal.link,ilink,jlink,ddr,ddp)) {
-	  if(goal.posConstraint == IKGoal::PosFixed) {
-	    for(int k=0;k<3;k++)
-	      H[k](i,j) = positionScale*ddp[k];
-	  }
-	  else if(goal.posConstraint == IKGoal::PosLinear) {
-	    Vector3 xb,yb;
-	    goal.direction.getOrthogonalBasis(xb,yb);
-	    H[0](i,j) = positionScale*dot(ddp,xb);
-	    H[1](i,j) = positionScale*dot(ddp,yb);
-	  }
-	  else if(goal.posConstraint == IKGoal::PosPlanar) {
-	    H[0](i,j) = positionScale*dot(ddp,goal.direction);
-	  }
-
-	  int m=goal.posConstraint;
-	  //!!! Why half??? !!!
-	  if(goal.rotConstraint==IKGoal::RotFixed) {
-	    H[m](i,j) = Half*rotationScale*ddr.x;
-	    H[m+1](i,j) = Half*rotationScale*ddr.y;
-	    H[m+2](i,j) = Half*rotationScale*ddr.z;
-	  }
-	  else if(goal.rotConstraint==IKGoal::RotAxis) {
-	    Vector3 x,y;
-	    goal.endRotation.getOrthogonalBasis(x,y);
-	    Vector3 curAxis;
-	    robot.links[goal.link].T_World.R.mul(goal.localAxis,curAxis);
-	    H[m](i,j) = rotationScale*dot(cross(ddr,curAxis),x);
-	    H[m+1](i,j) = rotationScale*dot(cross(ddr,curAxis),y);
-	  }
-	  else if(goal.rotConstraint==IKGoal::RotNone) {
-	  }
-	  else {
-	    LOG4CXX_INFO(KrisLibrary::logger(),"GetIKJacobian(): Invalid number of rotation terms\n");
-	    Abort(); 
-	  }
-	}
-	else {
-	  for(size_t k=0;k<H.size();k++)
-	    H[k](i,j)=Zero;
-	}
-      }
-    }
-    H.dirty = false;
-  }
-
-  for(int i=0;i<x.n;i++) {
-    Hi(i,i) = H[component](i,i);
-    for(int j=i+1;j<x.n;j++) {
-      Hi(j,i) = Hi(i,j) = H[component](i,j);
-    }
-  }
+  LOG4CXX_INFO(KrisLibrary::logger(),"Hessian_i is being used instead of Hessian, much slower...");
+  vector<Matrix> H;
+  Hessian(x,H);
+  Hi = H[component];
 }
 
 
@@ -653,12 +658,6 @@ string RobotCOMFunction::Label(int i) const
 
 void RobotCOMFunction::PreEval(const Vector& x)
 {
-  if(Hx.isEmpty())
-    Hx.resize(x.n,x.n,Zero);
-  if(Hy.isEmpty())
-    Hy.resize(x.n,x.n,Zero);
-  Hx.dirty = true;
-  Hy.dirty = true;
 }
 
 void RobotCOMFunction::Eval(const Vector& x, Vector& r)
@@ -713,37 +712,46 @@ void RobotCOMFunction::Jacobian_i(const Vector& x, int i, Vector& Ji)
 
 void RobotCOMFunction::Hessian_i(const Vector& x,int component,Matrix& Hi)
 {
-  if(Hx.dirty) {
-    //Copied from DynamicChain.cpp
-    Vector3 ddtheta,ddp;
-    //NOTE: H(i,j) != 0 only if i,j are ancestors of k
-    //Also H(i,j) is symmetric, only need to consider j as an ancestor of i (j<i)
-    for(int i=0;i<x.n;i++) {
-      int ilink = GetDOF(i);
-      for(int j=i;j<x.n;j++) {
-	int jlink = GetDOF(j);
-	Hx(i,j) = Zero;
-	Hy(i,j) = Zero;
-	for(int k=0;k<robot.q.n;k++) {
-	  if(robot.GetJacobianDeriv(robot.links[k].com,k,ilink,jlink,ddtheta,ddp)) {
-	    Hx(i,j) += robot.links[k].mass*ddp.x;
-	    Hy(i,j) += robot.links[k].mass*ddp.y;
-	  }
-	}
-	Hx(i,j) *= comScale/mtotal;
-	Hy(i,j) *= comScale/mtotal;
+  LOG4CXX_INFO(KrisLibrary::logger(),"Hessian_i is being used instead of Hessian, much slower...");
+  vector<Matrix> H;
+  Hessian(x,H);
+  Hi = H[component];
+}
+
+void RobotCOMFunction::Hessian(const Vector& x,vector<Matrix>& H)
+{
+  H.resize(2);
+  H[0].resize(x.n,x.n);
+  H[1].resize(x.n,x.n);
+  Matrix& Hx = H[0];
+  Matrix& Hy = H[1];
+
+  //Copied from DynamicChain.cpp
+  Vector3 ddtheta,ddp;
+  //NOTE: H(i,j) != 0 only if i,j are ancestors of k
+  //Also H(i,j) is symmetric, only need to consider j as an ancestor of i (j<i)
+  for(int i=0;i<x.n;i++) {
+    int ilink = GetDOF(i);
+    for(int j=i;j<x.n;j++) {
+      int jlink = GetDOF(j);
+      Hx(i,j) = Zero;
+      Hy(i,j) = Zero;
+      for(int k=0;k<robot.q.n;k++) {
+        if(robot.GetJacobianDeriv(robot.links[k].com,k,ilink,jlink,ddtheta,ddp)) {
+          Hx(i,j) += robot.links[k].mass*ddp.x;
+          Hy(i,j) += robot.links[k].mass*ddp.y;
+        }
       }
+      Hx(i,j) *= comScale/mtotal;
+      Hy(i,j) *= comScale/mtotal;
     }
-    Hx.dirty = false;
-    Hy.dirty = false;
   }
+
   //fill in lower triangle
   for(int i=0;i<x.n;i++) {
     for(int j=i;j<x.n;j++) {
-      if(component == 0)
-	Hi(j,i) = Hi(i,j) = Hx(i,j);
-      else
-	Hi(j,i) = Hi(i,j) = Hy(i,j);
+      Hx(j,i) = Hx(i,j);
+      Hy(j,i) = Hy(i,j);
     }
   }
 }
@@ -1073,15 +1081,18 @@ bool RobotIKSolver::MinimizeResidual(Real tolerance,Real delta_tolerance,int& it
   problem.H *= 2;
   for(int i=0;i<solver.x.n;i++)
     problem.H(i,i) += 0.1;
-  problem.tolf = Sqr(tolerance); //squared tolerance
+  problem.tolf = Sqr(tolerance)*0.01; //squared tolerance -- this is the change between steps
   problem.tolx = tolerance*0.01;
   problem.tolgrad = delta_tolerance;
   problem.x = solver.x;
   problem.fbreak = Sqr(tolerance); //squared tolerance
-  ConvergenceResult res = problem.SolveQuasiNewton(iters);
+  //ConvergenceResult res = problem.SolveQuasiNewton(iters);
+  ConvergenceResult res = problem.SolveLM(&function,iters,0.01);
   solver.x = problem.x;
   StateToRobot();
-  if(problem.fx <= Sqr(tolerance)) return true;
+  if(problem.fx <= Sqr(tolerance)) {
+    return true;
+  }
   return false;
 }
 
@@ -1089,7 +1100,7 @@ bool RobotIKSolver::PrioritizedSolve(ScalarFieldFunction& objective,Real toleran
 {
   int maxiters = iters;
   if(!MinimizeResidual(tolerance,delta_tolerance,iters)) return false;
-  if(iters==maxiters) return false;
+  if(iters==maxiters) return true;
   //iters was the # of iterations used
   int iters_minimize = iters;
   iters = maxiters - iters_minimize;
@@ -1107,7 +1118,7 @@ bool RobotIKSolver::PrioritizedSolve(ScalarFieldFunction& objective,Real toleran
   solver.x = problem.x;
   iters += iters_minimize;
   StateToRobot();
-  if(problem.fx <= Sqr(tolerance)) return true;
+  if(problem.cx.normSquared() <= Sqr(tolerance)) return true;
   return false;
 }
 
@@ -1115,7 +1126,9 @@ bool RobotIKSolver::PrioritizedSolve(VectorFieldFunction& objective,Real toleran
 {
   int maxiters = iters;
   if(!MinimizeResidual(tolerance,delta_tolerance,iters)) return false;
-  if(iters==maxiters) return false;
+  if(iters==maxiters) {
+    return true;
+  }
   //iters was the # of iterations used
   int iters_minimize = iters;
   iters = maxiters - iters_minimize;
@@ -1137,7 +1150,9 @@ bool RobotIKSolver::PrioritizedSolve(VectorFieldFunction& objective,Real toleran
   solver.x = problem.x;
   iters += iters_minimize;
   StateToRobot();
-  if(problem.fx <= Sqr(tolerance)) return true;
+  if(problem.cx.normSquared() <= Sqr(tolerance)) {
+    return true;
+  }
   return false;
 }
 

@@ -627,6 +627,31 @@ bool TestHessian(ScalarFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
   return true;
 }
 
+bool TestHessian(VectorFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
+{
+  vector<Matrix> H,Hdiff;
+  Matrix err;
+  H.resize(f->NumDimensions());
+  Hdiff.resize(f->NumDimensions());
+  for(size_t i=0;i<H.size();i++) {
+    H[i].resize(x.n,x.n);
+    Hdiff[i].resize(x.n,x.n);
+  }
+  f->PreEval(x);
+  f->Hessian(x,H);
+  HessianCenteredDifference(*f,x,h,Hdiff);
+  for(size_t i=0;i<H.size();i++) {
+    if(CheckError(H[i],Hdiff[i],err,atol,rtol)) {
+      LOG4CXX_INFO(KrisLibrary::logger(),"Function "<<f->Label()<<" component "<<i);
+      DebugMatrix("Differentation error",err);
+      DebugMatrix("H",H[i]);
+      DebugMatrix("Hdiff",Hdiff[i]);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool TestJacobian(VectorFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
 {
   Matrix J,Jdiff,err;
@@ -687,6 +712,62 @@ bool TestJacobians(VectorFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
   return true;
 }
 
+bool TestHessians(ScalarFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
+{
+  //TODO: do testing
+  return true;
+}
+
+bool TestHessians(VectorFieldFunction* f,Vector& x,Real h,Real atol,Real rtol)
+{
+  //TODO: do testing
+  return true;
+}
+
+
+bool CheckDerivatives(RealFunction& f,Real x,Real h,Real absTolerance,Real relTolerance,
+    bool testDeriv,bool testDeriv2)
+{
+  if(testDeriv) {
+    if(!TestDeriv(&f,x,h,absTolerance,relTolerance)) return false;
+  }
+  if(testDeriv2) {
+    if(!TestDeriv2(&f,x,h,absTolerance,relTolerance)) return false;
+  }
+  return true;
+}
+
+bool CheckDerivatives(ScalarFieldFunction& f,Vector& x,Real h,Real absTolerance,Real relTolerance,
+    bool testGradient,bool testHessian,bool testComponents)
+{
+  if(testGradient) {
+    if(!TestGradient(&f,x,h,absTolerance,relTolerance)) return false;
+    if(testComponents)
+      if(!TestGradients(&f,x,h,absTolerance,relTolerance)) return false;
+  }
+  if(testHessian) {
+    if(!TestHessian(&f,x,h,absTolerance,relTolerance)) return false;
+    if(testComponents)
+      if(!TestHessians(&f,x,h,absTolerance,relTolerance)) return false;
+  }
+  return true;
+}
+
+bool CheckDerivatives(VectorFieldFunction& f,Vector& x,Real h,Real absTolerance,Real relTolerance,
+    bool testJacobian,bool testHessian,bool testComponents)
+{
+  if(testJacobian) {
+    if(!TestJacobian(&f,x,h,absTolerance,relTolerance)) return false;
+    if(testComponents)
+      if(!TestJacobians(&f,x,h,absTolerance,relTolerance)) return false;
+  }
+  if(testHessian) {
+    if(!TestHessian(&f,x,h,absTolerance,relTolerance)) return false;
+    if(testComponents)
+      if(!TestHessians(&f,x,h,absTolerance,relTolerance)) return false;
+  }
+  return true;
+}
 
 
 } //namespace Math

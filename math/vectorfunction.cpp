@@ -171,26 +171,24 @@ Real Compose_SF_VF_Function::Gradient_i(const Vector& x,int i)
 
 void Compose_SF_VF_Function::Hessian(const Vector& x,Matrix& H)
 {
-  //f''*g'*g'^t + f'*g''
+  //g'^T * f'' * g' + f' * g''
   f->Gradient(gx,gradf);
   g->Jacobian(x,Jg);
   Matrix Hf(gx.n,gx.n);
-  Matrix Hgi(x.n,x.n);
   Matrix temp;
 
   //first term
   f->Hessian(gx,Hf);
-  temp.mul(Jg,Hf);
-  H.mulTransposeB(temp,Jg);
+  temp.mul(Hf,Jg);
+  H.mulTransposeA(Jg,temp);
 
   //second term
-  for(int i=0;i<x.n;i++) {
-    g->Hessian_i(x,i,Hgi);
-    Vector Hgit_gradf;
-    Hgi.mulTranspose(gradf,Hgit_gradf);
-    for(int j=0;j<x.n;i++) {
-      H(i,j) += Hgit_gradf(j);
-    }
+  vector<Matrix> Hg(g->NumDimensions());
+  for(size_t i=0;i<Hg.size();i++)
+    Hg[i].resize(x.n,x.n);
+  g->Hessian(x,Hg);
+  for(size_t i=0;i<Hg.size();i++) {
+    H.madd(Hg[i],gradf[i]);
   }
 }
 
@@ -352,6 +350,10 @@ void VectorFieldProjectionFunction::Gradient(const Vector& x,Vector& grad)
   f->Jacobian_i(x,i,grad);
 }
 
+void VectorFieldProjectionFunction::Hessian(const Vector& x,Matrix& H) 
+{
+  f->Hessian_i(x,i,H);
+}
 
 
 
@@ -509,6 +511,19 @@ void CompositeVectorFieldFunction::Jacobian_i(const Vector& x,int i,Vector& Ji)
   functions[f]->Jacobian_i(x,i,Ji);
 }
 
+void CompositeVectorFieldFunction::Hessian(const Vector& x,vector<Matrix>& H)
+{
+  H.resize(NumDimensions());
+  int offset=0;
+  for(size_t i=0;i<functions.size();i++) {
+    vector<Matrix> Hi(functions[i]->NumDimensions());
+    for(size_t j=0;j<Hi.size();j++) 
+      Hi[j].setRef(H[offset+(int)j]);
+    functions[i]->Hessian(x,Hi);
+    offset += functions[i]->NumDimensions();
+  }
+}
+
 void CompositeVectorFieldFunction::Hessian_i(const Vector& x,int i,Matrix& Hi)
 {
   int f=GetFunction(i);
@@ -646,6 +661,11 @@ void IndexedVectorFieldFunction::DirectionalDeriv(const Vector& x,const Vector& 
   FatalError("Not done yet");  
 }
 
+void IndexedVectorFieldFunction::Hessian(const Vector& x,vector<Matrix>& H)
+{
+  FatalError("Not done yet");
+}
+
 void IndexedVectorFieldFunction::Hessian_i(const Vector& x,int i,Matrix& Hi)
 {
   FatalError("Not done yet");
@@ -709,6 +729,19 @@ void SliceVectorFieldFunction::DirectionalDeriv(const Vector& x,const Vector& h,
   function->DirectionalDeriv(xfull,hfull,vf);
   v.resize(xindices.size());
   GetElements(vf,xindices,v);  
+}
+
+void SliceVectorFieldFunction::Hessian(const Vector& x,vector<Matrix>& H)
+{
+  vector<Matrix> Hf(function->NumDimensions());
+  for(size_t i=0;i<Hf.size();i++) 
+    Hf[i].resize(x.n,x.n);
+  function->Hessian(x,Hf);
+  H.resize(function->NumDimensions());
+  for(size_t i=0;i<H.size();i++) {
+    H[i].resize(xindices.size(),xindices.size());
+    GetElements(Hf[i],xindices,xindices,H[i]);
+  }
 }
 
 void SliceVectorFieldFunction::Hessian_i(const Vector& x,int i,Matrix& Hi)

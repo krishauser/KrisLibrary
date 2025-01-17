@@ -168,6 +168,29 @@ void HessianForwardDifference_Grad(ScalarFieldFunction& f,Vector& x,Real h,Matri
   }
 }
 
+void HessianForwardDifference(VectorFieldFunction& f,Vector& x,Real h,vector<Matrix>& H)
+{
+  Assert((int)H.size() == f.NumDimensions());
+  for(size_t i=0;i<H.size();i++)
+    Assert(H[i].hasDims(x.n,x.n));
+  int n=f.NumDimensions();
+  Vector f00(n),f01(n),f10(n),f11(n);
+  f(x,f00);
+  Real scale = Inv(Sqr(h));
+  for(int i=0;i<x.n;i++) {
+    Real xi=x(i);
+    for(int j=i;j<x.n;j++) {
+      Real xj=x(j);
+      x(j) += h;   f(x,f01);
+      x(i) += h;   f(x,f11);
+      x(j) = xj;   f(x,f10);
+      x(i) = xi; 
+
+      for(size_t k=0;k<H.size();k++) 
+        H[k](i,j) = H[k](j,i) = (f11[k]-f10[k]-f01[k]+f00[k])*scale;
+    }
+  }
+}
 
 void GradientCenteredDifference(ScalarFieldFunction& f,Vector& x,Real h,Vector& g)
 {
@@ -278,6 +301,46 @@ void HessianCenteredDifference_Grad(ScalarFieldFunction& f,Vector& x,Real h,Matr
   }
 }
 
+void HessianCenteredDifference(VectorFieldFunction& f,Vector& x,Real h,vector<Matrix>& H)
+{
+  Assert((int)H.size() == f.NumDimensions());
+  int n=f.NumDimensions();
+  for(size_t i=0;i<H.size();i++)
+    Assert(H[i].hasDims(x.n,x.n));
+  Vector f0(n),f_1(n),f_2(n),f1(n),f2(n);
+  Real scale=Sqr(Inv(h))*Sqr(Half);
+  Real iiscale=Sqr(Inv(h))/12;
+  f(x,f0);
+  for(int i=0;i<x.n;i++) {
+    Real xi=x(i);
+    //get diagonal entry
+    x(i)+=h;   f(x,f1); 
+    x(i)+=h;   f(x,f2); 
+    x(i)=xi-h; f(x,f_1); 
+    x(i)-=h;   f(x,f_2); 
+    x(i) = xi;
+    for(int k=0;k<n;k++)
+      H[k](i,i) = (Real)(-f2[k]+16.0*f1[k]-30.0*f0[k]+16.0*f_1[k]-f_2[k])*iiscale;
+    /*  This is a test of this 4th order approx vs the std 2nd order
+    Real temp = (f1 - Two*f0 + f_1)/Sqr(h);
+    LOG4CXX_INFO(KrisLibrary::logger()(),"f's: "<<f_2<<" "<<f_1<<" "<<f0<<" "<<f1<<" "<<f2<<" => H: "<<H(i<<"... or "<<i)    if(KrisLibrary::logger()()->isEnabledFor(log4cxx::Level::ERROR_INT)) getchar();
+    */
+
+    for(int j=i+1;j<x.n;j++) {
+      Real xj = x(j);
+      //get dfj,df_j
+      x(j) += h;  x(i) += h;   f(x,f2);
+      x(i) -= Two*h;  f(x,f1);
+
+      x(j) -= Two*h;   f(x,f_2);
+      x(i) += Two*h;   f(x,f_1);
+      x(i) = xi; x(j) = xj;
+
+      for(int k=0;k<n;k++)
+        H[k](i,j) = H[k](j,i) = (f2[k]-f1[k]-f_1[k]+f_2[k])*scale;
+    }
+  }
+}
 
 
 
@@ -459,5 +522,6 @@ void HessianCenteredDifference_Grad(ScalarFieldFunction& f,Vector& x,const Vecto
     }
   }
 }
+
 
 } //namespace math

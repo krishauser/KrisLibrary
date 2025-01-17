@@ -20,6 +20,13 @@ using namespace Math;
  *
  * Can use sparse methods for solving for a SparseVectorFieldFunction if
  * sparse = true.  However, cannot use the bias-vector option.
+ * 
+ * Termination criteria:
+ * * MaxItersReached: iters iterations are reached
+ * * ConvergenceF: ||func(x)||_inf <= tolf
+ * * ConvergenceX: ||(x'-x)/max(|x|,1)||_inf <= tolx (division, max, and |x| taken element-wise)
+ * * LocalMinimum: ||g*max(|x|,1)*c||_inf <= tolmin where g is objective gradient and c=1/max(merit,n/2).
+ * 
  */
 class NewtonRoot
 {
