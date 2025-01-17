@@ -6,6 +6,11 @@ from Kris Hauser's lab.
 Authors:
 - Kris Hauser (kkhauser@illinois.edu)
 
+## Version history
+
+0.1 (pre-2024):
+- First numbered version. Marking this version due to an upcoming major API change.
+
 
 ## Building
 
@@ -73,7 +78,6 @@ if you have trouble building on your system.
 - JSON loading and saving via AnyCollection.
 - 2D and 3D math library, including many types of rotation representations (rotation matrix, quaternions, axis-angle).
 - Wide variety of geometries supported: triangle meshes, point clouds, volume grids, convex hulls, and geometric primitives.  Supports loading, saving, collision detection, and conversion between types.
-- 
 
 ## Known "cruft"
 
@@ -83,10 +87,8 @@ if you have trouble building on your system.
   programming solver.
 * The GLdraw/ package is capitalized, which is non-conformant
 * Image saving is very basic at the moment.
-* OFF file loading only supports triangle meshes
+* OFF/PLY file loading only supports triangle meshes
 * Eventually everything should be placed in a unified namespace.
-* The utils/stl_tr1.h file was a workaround for the unordered_set / undordered_map containers that was useful
-  while STL was in flux around the time of adoption of C++11.  Now this looks standardized... Can it be safely replaced?
 * Latest version of OMPL should be supported.
 * Logger calls are still calling LOG4CXX, even if LOG4CXX is not used.  Maybe this should be renamed to KL_LOG or something similar.
 
@@ -95,7 +97,7 @@ if you have trouble building on your system.
 We welcome fixes and contributions to KrisLibrary.  Please follow these
 guidelines when adding to the library.
 
-- C++11 is now officially supported.  Use STL whenever possible.  It keeps things standardized and fairly portable.
+- Use STL whenever possible.  It keeps things standardized and fairly portable.
 
 - Classes should be named as precisely as possible to minimize confusion.
 
