@@ -503,6 +503,9 @@ void GeometryAppearance::RefreshGeometry()
   }
   else if(geom->type == AnyGeometry3D::Type::Heightmap) {
     const Meshing::Heightmap* g = &geom->AsHeightmap();
+    if(g->HasColors() && faceColor == GLColor(0.5,0.5,0.5) && tempMesh == NULL) { //assume uninitialized color
+      faceColor = GLColor(1,1,1);
+    }
     tempMesh.reset(new Meshing::TriMesh);
     HeightmapToMesh(*g,*tempMesh,*this);
     //will use the heightmap colors as a texture
