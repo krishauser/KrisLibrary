@@ -244,6 +244,7 @@ GeometricPrimitive3D AnyGeometry3D::GetElement(int elem) const
 
 bool AnyGeometry3D::CanLoadExt(const char *ext)
 {
+  if(!ext) return false;
   if(Meshing::CanLoadTriMeshExt(ext) || 0 == strcmp(ext, "pcd") || 0 == strcmp(ext, "vol") || 0 == strcmp(ext, "sdf") || 0 == strcmp(ext, "occ") || 0 == strcmp(ext, "geom") || 0 == strcmp(ext, "json") ) return true;
   for(int i=0;i<=int(Type::Group);i++) {
     auto* test = Geometry3D::Make(Type(i));
@@ -258,6 +259,7 @@ bool AnyGeometry3D::CanLoadExt(const char *ext)
 
 bool AnyGeometry3D::CanSaveExt(const char *ext)
 {
+  if(!ext) return false;
   if(Meshing::CanSaveTriMeshExt(ext) || 0 == strcmp(ext, "pcd") || 0 == strcmp(ext, "vol") || 0 == strcmp(ext, "sdf") || 0 == strcmp(ext, "occ") || 0 == strcmp(ext, "geom") || 0 == strcmp(ext, "json") ) return true;
   for(int i=0;i<=int(Type::Group);i++) {
     auto* test = Geometry3D::Make(Type(i));
@@ -278,6 +280,10 @@ bool AnyGeometry3D::Load(const char *fn)
   }
 
   const char *ext = FileExtension(fn);
+  if(ext == NULL) {
+    LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyGeometry::Load(): Could not determine file extension of "<<fn);
+    return false;
+  }
   if (Meshing::CanLoadTriMeshExt(ext))
   {
     vector<Meshing::TriMesh> meshes;
