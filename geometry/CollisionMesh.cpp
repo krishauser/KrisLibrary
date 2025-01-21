@@ -1684,6 +1684,7 @@ void NearbyTriangles(const CollisionMesh& m,const GeometricPrimitive3D& g,Real d
         LOG4CXX_ERROR(GET_LOGGER(Geometry),"Not yet able to within-distance test of "<<g.TypeName()<<" vs CollisionMesh");
         return;
       }
+      Assert(max > 0);
       //compute an expanded bounding box and collide them
       Box3D bbox;
       FitBox(g,bbox);
@@ -2333,6 +2334,7 @@ bool Collides(const CollisionMesh &a, const CollisionMesh &b, Real margin,
     }
     return res;
   }
+  if(maxContacts > INT_MAX) maxContacts = INT_MAX;
   NearbyTriangles(a, b, margin, elements1, elements2, (int)maxContacts);
   return !elements1.empty();
 }
@@ -2427,6 +2429,7 @@ bool Collider3DTriangleMesh::Distance(const Vector3 &pt, const AnyDistanceQueryS
 bool Collides(const GeometricPrimitive3D &a, const CollisionMesh &c, Real margin,
               vector<int> &meshelements, size_t maxContacts)
 {
+  if(maxContacts > INT_MAX) maxContacts = INT_MAX;
   NearbyTriangles(c, a, margin, meshelements, (int)maxContacts);
   return !meshelements.empty();
 }
@@ -2437,6 +2440,7 @@ bool Collides(const Box3D& hull_bb, const Collider3DConvexHull& hull, const Coll
   Box3D bbox = hull_bb;
   bbox.expand(margin);
   vector<int> temptris;
+  if(maxContacts > INT_MAX) maxContacts = INT_MAX;
   int tempmax = (int)maxContacts;
   if(maxContacts < INT_MAX/2) tempmax *= 2;
   RigidTransform T_mesh_to_hull;
@@ -3122,6 +3126,7 @@ void MeshMeshContacts(CollisionMesh &m1, Real outerMargin1, CollisionMesh &m2, R
 
 void MeshSphereContacts(CollisionMesh &m1, Real outerMargin1, const Sphere3D &s, Real outerMargin2, vector<ContactPair> &contacts, size_t maxcontacts)
 {
+  if(maxcontacts > INT_MAX) maxcontacts = INT_MAX;
   contacts.resize(0);
   Real tol = outerMargin1 + outerMargin2;
   Triangle3D tri;
@@ -3187,15 +3192,27 @@ void MeshPrimitiveContacts(CollisionMesh &m1, Real outerMargin1, GeometricPrimit
   }
   else if(g2.SupportsClosestPoints(GeometricPrimitive3D::Type::Triangle))
   {
-    Sphere3D s = gworld.GetBoundingSphere();
-    contacts.resize(0);
     Real tol = outerMargin1 + outerMargin2;
     Triangle3D tri;
     Vector3 cp, dir;
     vector<int> tris;
-    if(maxcontacts < INT_MAX / 2)
-      maxcontacts = max(maxcontacts*2,(size_t)10); //get extras
-    NearbyTriangles(m1, s.center, s.radius + tol, tris, maxcontacts);
+    contacts.resize(0);
+    if(maxcontacts > INT_MAX) maxcontacts = INT_MAX;
+    //test the bounding sphere, bounding box, or the primitive?
+    if(g2.type == GeometricPrimitive3D::Point || g2.type == GeometricPrimitive3D::Sphere) {
+      //this one tests the bounding sphere
+      Sphere3D s = gworld.GetBoundingSphere();
+      if(maxcontacts < INT_MAX / 2)
+        maxcontacts = max(maxcontacts*2,(size_t)10); //get extras
+      NearbyTriangles(m1, s.center, s.radius + tol, tris, maxcontacts);
+    }
+    else {
+      Box3D b = gworld.GetBB();
+      if(maxcontacts < INT_MAX / 2)
+        maxcontacts = max(maxcontacts*2,(size_t)10); //get extras
+      NearbyTriangles(m1, b, tol, tris, maxcontacts);
+    }    
+    // NearbyTriangles(m1, g2, outerMargin1 + outerMargin2, tris, maxcontacts); //this one tests the primitive
     for (auto t : tris)
     {
       m1.GetTriangle(t, tri);
