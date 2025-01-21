@@ -242,8 +242,8 @@ void ClosestPoints(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,R
 
 ///Returns the point on the mesh that minimizes
 ///   pWeight||p-x||^2 + nWeight||n-nx||^2.
-///The point x is returned in cp, and the triangle index is the return value.
-int ClosestPointAndNormal(const Meshing::TriMesh& m,Real pWeight,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cp);
+///The point x is returned in cplocal, and the triangle index is the return value.
+int ClosestPointAndNormal(const Meshing::TriMesh& m,Real pWeight,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cplocal);
 
 ///Same as above, but uses the PQP bounding heirarchy and assumes pWeight = 1.
 ///
