@@ -138,7 +138,26 @@ bool Collider3DPrimitive::WithinDistance(Collider3D* geom,Real d,
                 elements2.push_back(0);
             }
         }
-        else {
+        else { //distance query
+            //box box / box aabb have fast reject tests -- otherwise they use SOLID which is slow
+            if(aw.type == GeometricPrimitive3D::Box && bw.type == GeometricPrimitive3D::Box) {
+                Box3D ba = *AnyCast_Raw<Box3D>(&aw.data);
+                Box3D bb = *AnyCast_Raw<Box3D>(&bw.data);
+                ba.expand(d);
+                if(!ba.intersectsApprox(bb)) return false;
+            }
+            else if(aw.type == GeometricPrimitive3D::Box && bw.type == GeometricPrimitive3D::AABB) {
+                Box3D ba = *AnyCast_Raw<Box3D>(&aw.data);
+                AABB3D bb = *AnyCast_Raw<AABB3D>(&bw.data);
+                ba.expand(d);
+                if(!ba.intersects(bb)) return false;
+            }
+            else if(aw.type == GeometricPrimitive3D::AABB && bw.type == GeometricPrimitive3D::Box) {
+                AABB3D ba = *AnyCast_Raw<AABB3D>(&aw.data);
+                Box3D bb = *AnyCast_Raw<Box3D>(&bw.data);
+                bb.expand(d);
+                if(!bb.intersects(ba)) return false;
+            }
             if(!aw.SupportsDistance(bw.type)) return false;
             if (aw.Distance(bw) <= d) {
                 elements1.push_back(0);

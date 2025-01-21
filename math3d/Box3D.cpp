@@ -4,9 +4,17 @@
 #include "Triangle3D.h"
 #include "Sphere3D.h"
 #include "Line3D.h"
+#include "SOLID.h"
+#include <tuple>
 #include <iostream>
 #include <geometry/PQP/src/OBB_Disjoint.h>
 using namespace std;
+
+//defined in ConvexHull3D.cpp
+namespace Geometry {
+using namespace Math3D;
+std::tuple<Real, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_ObjectHandle object2);
+} //namespace Geometry
 
 namespace Math3D {
 
@@ -307,6 +315,72 @@ Real Box3D::distance(const Triangle3D& t, Vector3& bclosest, Vector3& tclosest) 
   fromLocal(bclosest_local,bclosest);
   return d;
 }
+
+Real Box3D::distance(const AABB3D& bb) const 
+{
+  Vector3 bclosest,bbclosest;
+  return distance(bb,bclosest,bbclosest);
+}
+
+Real Box3D::distance(const AABB3D& bb, Vector3& bclosest, Vector3& bbclosest) const 
+{
+  RigidTransform xform;
+  getTransform(xform);
+  Vector3 bbdims = bb.bmax-bb.bmin;
+  xform.t += xform.R*dims*0.5 - bb.midpoint();  //shift to center
+  double xform_data[16];
+  Matrix4(xform).get(xform_data);
+  DT_ShapeHandle box = DT_NewBox(dims.x,dims.y,dims.z);
+  DT_ShapeHandle obox = DT_NewTransform(box,xform_data);
+  DT_ShapeHandle bbshape = DT_NewBox(bbdims.x,bbdims.y,bbdims.z);
+  DT_ObjectHandle oboxobj = DT_CreateObject(NULL,obox);
+  DT_ObjectHandle bbobj = DT_CreateObject(NULL,bbshape);
+  auto res = Geometry::dist_func(oboxobj,bbobj);
+  bclosest = std::get<1>(res);
+  bbclosest = std::get<2>(res);
+  DT_DestroyObject(oboxobj);
+  DT_DestroyObject(bbobj);
+  DT_DeleteShape(bbshape);
+  DT_DeleteShape(box);
+  DT_DeleteShape(obox);
+  return std::get<0>(res);
+}
+
+Real Box3D::distance(const Box3D& b) const 
+{
+  Vector3 bclosest,b2closest;
+  return distance(b,bclosest,b2closest);
+}
+
+
+Real Box3D::distance(const Box3D& b2, Vector3& bclosest, Vector3& b2closest) const 
+{
+  RigidTransform xform;
+  getTransform(xform);
+  xform.t += xform.R*dims*0.5;  //shift to center
+  double xform_data[16],xform_data2[16];
+  Matrix4(xform).get(xform_data);
+  b2.getTransform(xform);
+  xform.t += xform.R*b2.dims*0.5;  //shift to center
+  Matrix4(xform).get(xform_data2);
+  DT_ShapeHandle box = DT_NewBox(dims.x,dims.y,dims.z);
+  DT_ShapeHandle obox = DT_NewTransform(box,xform_data);
+  DT_ShapeHandle box2 = DT_NewBox(b2.dims.x,b2.dims.y,b2.dims.z);
+  DT_ShapeHandle obox2 = DT_NewTransform(box2,xform_data2);
+  DT_ObjectHandle oboxobj = DT_CreateObject(NULL,obox);
+  DT_ObjectHandle obox2obj = DT_CreateObject(NULL,obox2);
+  auto res = Geometry::dist_func(oboxobj,obox2obj);
+  bclosest = std::get<1>(res);
+  b2closest = std::get<2>(res);
+  DT_DestroyObject(oboxobj);
+  DT_DestroyObject(obox2obj);
+  DT_DeleteShape(box2);
+  DT_DeleteShape(obox2);
+  DT_DeleteShape(box);
+  DT_DeleteShape(obox);
+  return std::get<0>(res);
+}
+
 
 Vector3 Box3D::support(const Vector3& dir) const
 {

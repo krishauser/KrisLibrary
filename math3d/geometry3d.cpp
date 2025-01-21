@@ -1257,6 +1257,9 @@ bool GeometricPrimitive3D::SupportsDistance(Type a,Type b)
   if(a==AABB && b==AABB) return true;
   if((a == Triangle || a == Segment) && (b == AABB || b == Box)) return true;
   if((b == Triangle || b == Segment) && (a == AABB || a == Box)) return true;
+  if(a==AABB && b==Box) return true;
+  if(a==Box && b==AABB) return true;
+  if(a==Box && b==Box) return true;
   return false;
 }
 
@@ -1348,6 +1351,8 @@ Real GeometricPrimitive3D::Distance(const AABB3D& b) const
     return AnyCast_Raw<Segment3D>(&data)->distance(b);
   case Triangle:
     return AnyCast_Raw<Triangle3D>(&data)->distance(b);
+  case Box:
+    return AnyCast_Raw<Box3D>(&data)->distance(b);
   default:
     return Inf;
   }
@@ -1364,6 +1369,10 @@ Real GeometricPrimitive3D::Distance(const Box3D& b) const
     return b.distance(*AnyCast_Raw<Segment3D>(&data));
   case Triangle:
     return b.distance(*AnyCast_Raw<Triangle3D>(&data));
+  case AABB:
+    return b.distance(*AnyCast_Raw<AABB3D>(&data));
+  case Box:
+    return AnyCast_Raw<Box3D>(&data)->distance(b);
   default:
     return Inf;
   }
@@ -1413,6 +1422,9 @@ bool GeometricPrimitive3D::SupportsClosestPoints(Type a,Type b)
   if(a == Triangle && b == Triangle) return true;
   if((a == Triangle || a == Segment) && (b == AABB || b == Box)) return true;
   if((b == Triangle || b == Segment) && (a == AABB || a == Box)) return true;
+  if(a==AABB && b==Box) return true;
+  if(a==Box && b==AABB) return true;
+  if(a==Box && b==Box) return true;
   return false;
 }
 
@@ -1656,6 +1668,13 @@ Real GeometricPrimitive3D::ClosestPoints(const AABB3D& s,Vector3& cp,Vector3& di
       return d;
     }
     break;
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      Real d = b->distance(s,cp,cp_other);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
   default:
     return Inf;
   }
@@ -1691,6 +1710,21 @@ Real GeometricPrimitive3D::ClosestPoints(const Box3D& s,Vector3& cp,Vector3& dir
     {
       const Triangle3D* t = AnyCast_Raw<Triangle3D>(&data);
       Real d = s.distance(*t,cp_other,cp);
+      direction = Unit(cp_other-cp);
+      return d;
+    }
+  case AABB:
+    {
+      const AABB3D* sme=AnyCast_Raw<AABB3D>(&data);
+      Real d = s.distance(*sme,cp_other,cp);
+      direction = Unit(cp-cp_other);
+      return d;
+    }
+    break;
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      Real d = b->distance(s,cp,cp_other);
       direction = Unit(cp_other-cp);
       return d;
     }
