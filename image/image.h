@@ -18,16 +18,17 @@ public:
 
   enum PixelFormat {
     None,
-    R8G8B8,				//24 bit, 1 byte per channel, red in first byte, green in 2nd, blue in 3rd
+    R8G8B8,       //24 bit, 1 byte per channel, red in first byte, green in 2nd, blue in 3rd
     B8G8R8,       //24 bit, 1 byte per channel, blue in first byte, green in 2nd, red in 3rd
-    R8G8B8A8,			//32 bit, 1 byte per channel, red in first byte ... alpha in 4th
+    R8G8B8A8,     //32 bit, 1 byte per channel, red in first byte ... alpha in 4th
     B8G8R8A8,     //32 bit, 1 byte per channel, blue in first byte ... alpha in 4th
-    R5G6B5,				//16 bit, green has 6 bits
-    R5G5B5X1,			//15 bit, 1 padding
-    A8,					//8 bits of alpha
-    FloatRGB,			//floating point rgb, with r in the first 4 bytes, g in the 2nd 4, and b in the 3rd 4
-    FloatRGBA,			//floating point rgba, with r in the first 4 bytes ... alpha in the 4rd 4 bytes
-    FloatA,				//floating point alpha
+    R5G6B5,       //16 bit, green has 6 bits
+    R5G5B5X1,     //15 bit, 1 padding
+    A8,           //8 bits of alpha / grayscale
+    A16,          //16 bits of alpha / grayscale
+    FloatRGB,     //floating point rgb, with r in the first 4 bytes, g in the 2nd 4, and b in the 3rd 4
+    FloatRGBA,    //floating point rgba, with r in the first 4 bytes ... alpha in the 4rd 4 bytes
+    FloatA,       //floating point alpha
   };
   static bool isValidFormat(PixelFormat);
   static unsigned int pixelFormatSize(PixelFormat);
@@ -68,8 +69,8 @@ public:
   ///formats, the channels 0,1,2,3 correspond to R,G,B,A values.
   void setNormalizedColor(int x,int y,const float* col);
 
-  PixelFormat format;			///<format of image
-  unsigned short w,h;			///<width and height, in pixels
+  PixelFormat format;      ///<format of image
+  unsigned short w,h;      ///<width and height, in pixels
 
   ///the image data, stored from left to right, top to bottom
   unsigned char* data;
@@ -86,7 +87,7 @@ public:
   const ImageMipmapped& operator = (const Image&);
   const ImageMipmapped& operator = (const ImageMipmapped&);
 
-  void createMipmaps();			//creates mipmaps from the first texture level
+  void createMipmaps();      //creates mipmaps from the first texture level
   virtual void unload();
 
   virtual bool Read(File& f);

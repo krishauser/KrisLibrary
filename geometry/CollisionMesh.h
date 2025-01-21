@@ -1,6 +1,8 @@
 #ifndef GEOMETRY_COLLISION_MESH_H
 #define GEOMETRY_COLLISION_MESH_H
 
+#include "GeometryType.h"
+#include "GeometryTypeImpl.h"
 #include <KrisLibrary/meshing/TriMeshTopology.h>
 #include <KrisLibrary/math3d/geometry3d.h>
 #include <limits.h>
@@ -10,8 +12,10 @@ class PQP_Results;
 
 namespace Geometry {
 
-  class ApproximatePenetrationDepth;
-  using namespace Math3D;
+using namespace Math3D;
+class ApproximatePenetrationDepth;
+
+
 
 /** @ingroup Geometry
  * @brief A triangle mesh along with PQP bounding volume structures that
@@ -31,6 +35,7 @@ class CollisionMesh : public Meshing::TriMeshWithTopology
   explicit CollisionMesh(const Meshing::TriMesh& mesh);
   explicit CollisionMesh(const Meshing::TriMeshWithTopology& mesh);
   ~CollisionMesh();
+  const CollisionMesh& operator = (const Meshing::TriMesh& mesh);
   const CollisionMesh& operator = (const CollisionMesh& model);
   void InitCollisions();
   inline void UpdateTransform(const RigidTransform& f) {currentTransform = f;}
@@ -39,6 +44,37 @@ class CollisionMesh : public Meshing::TriMeshWithTopology
   PQP_Model* pqpModel;
   RigidTransform currentTransform;
 };
+
+class Collider3DTriangleMesh : public Collider3D
+{
+public:
+    Collider3DTriangleMesh(shared_ptr<Geometry3DTriangleMesh> data);
+    Collider3DTriangleMesh(const Collider3DTriangleMesh& rhs);
+    virtual ~Collider3DTriangleMesh() {}
+    virtual shared_ptr<Geometry3D> GetData() const override{ return dynamic_pointer_cast<Geometry3D>(data); }
+    virtual void Reset() override;
+    virtual AABB3D GetAABB() const override;
+    virtual AABB3D GetAABBTight() const override;
+    virtual Box3D GetBB() const override;
+    virtual RigidTransform GetTransform() const override { return collisionData.currentTransform; }
+    virtual void SetTransform(const RigidTransform& T) override { collisionData.currentTransform = T; }
+    virtual bool Contains(const Vector3& pt,bool& result) override;
+    virtual bool Distance(const Vector3& pt,Real& result) override;
+    virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
+    virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) override;
+    virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
+    virtual Collider3D* Copy(shared_ptr<Geometry3D>) const override;
+    virtual Collider3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) override;
+    virtual Collider3D* Slice(const RigidTransform& T,Real tol=0) const override;
+    virtual Collider3D* ExtractROI(const AABB3D& bb,int flag=1) const override;
+    virtual Collider3D* ExtractROI(const Box3D& bb,int flag=1) const override;
+
+    shared_ptr<Geometry3DTriangleMesh> data;
+    CollisionMesh collisionData;
+};
+
 
 /** @ingroup Geometry
  * @brief A general-purpose distance querying class.
@@ -146,6 +182,7 @@ bool Collide(const CollisionMesh& m,const Box3D& b);
 bool Collide(const CollisionMesh& m1,const CollisionMesh& m2);
 bool Collide(const CollisionMesh& m,const GeometricPrimitive3D& g);
 bool Collide(const CollisionMesh& m,const Plane3D& p);
+bool Collide(const CollisionMesh& m1,const CollisionMesh& m2);
 
 ///Casts a ray at the mesh. Returns the index of the first triangle hit
 ///(-1 if none) and stores the colliding point in pt (given in world coordinates).
@@ -192,7 +229,7 @@ Real Distance(const CollisionMesh& m,const GeometricPrimitive3D& g,Real bound=In
 ///- surfacePt is the closest point on the surface, in world coordinates
 ///- direction is the unit normal from the surface to the closest / deepest point on g, in world coordinates
 Real Distance(const CollisionMesh& m,const GeometricPrimitive3D& g,int& closestTri,Vector3& surfacePt,Vector3& direction,Real bound=Inf);
-/// Checks distance between two meshes (convenience function, equivalent to m1.Distance(m2))
+/// Checks distance between two meshes (convenience function, equivalent to CollisionMeshQuery(m1,m2).Distance(absErr,relErr,bound)
 Real Distance(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,Real relErr,Real bound=Inf);
 
 ///Finds the closest point pt to p on m and returns the triangle index. The closest point is cplocal, given in the mesh's local frame
@@ -205,8 +242,8 @@ void ClosestPoints(const CollisionMesh& m1,const CollisionMesh& m2,Real absErr,R
 
 ///Returns the point on the mesh that minimizes
 ///   pWeight||p-x||^2 + nWeight||n-nx||^2.
-///The point x is returned in cp, and the triangle index is the return value.
-int ClosestPointAndNormal(const Meshing::TriMesh& m,Real pWeight,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cp);
+///The point x is returned in cplocal, and the triangle index is the return value.
+int ClosestPointAndNormal(const Meshing::TriMesh& m,Real pWeight,Real nWeight,const Vector3& p,const Vector3& n,Vector3& cplocal);
 
 ///Same as above, but uses the PQP bounding heirarchy and assumes pWeight = 1.
 ///

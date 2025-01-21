@@ -30,6 +30,7 @@ struct AABB3D
   void setUnion(const AABB3D&);
   void getSize(Vector3&) const;
   Vector3 size() const;
+  Real volume() const;
   void getMidpoint(Point3D&) const;
   Vector3 midpoint() const;
   bool contains(const Point3D&) const;
@@ -48,6 +49,8 @@ struct AABB3D
   ///Returns the maximum distance of any point in the range to any point in bb
   Real maxDistance(const AABB3D& bb) const;
   Real maxDistance(const AABB3D& pt,Point3D& thisfarthest,Point3D& bbfarthest) const;
+  /// Returns the point in this box that is farthest in the direction dir 
+  Vector3 support(const Vector3& dir) const;
 
   Vector3 bmin, bmax;
 };

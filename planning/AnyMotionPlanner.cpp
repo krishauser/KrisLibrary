@@ -251,7 +251,7 @@ void ReversePath(MilestonePath& path)
   }
   if(path.edges.size()%2 == 1)
     path.edges[path.edges.size()/2] = path.edges[path.edges.size()/2]->ReverseCopy();
-    if(!path.IsValid()) LOG4CXX_ERROR(KrisLibrary::logger(),"ReversePath : Path invalidated ?!?!");
+  if(!path.IsValid()) LOG4CXX_ERROR(KrisLibrary::logger(),"ReversePath : Path invalidated ?!?!");
 }
 
 

@@ -64,7 +64,9 @@ class ConvexHull3D
 public:
   typedef std::vector<double> PolytopeData;
   typedef Vector3 PointData;
+  typedef Sphere3D SphereData;
   typedef Segment3D LineSegmentData;
+  typedef Box3D BoxData;
   typedef std::pair<ConvexHull3D, ConvexHull3D> MinkowskiData;
   typedef std::pair<ConvexHull3D, RigidTransform> TransData;
   typedef std::pair<ConvexHull3D, ConvexHull3D> HullData;
@@ -72,18 +74,26 @@ public:
   
   /// Polytope, Box, Cone, Cylinder, Sphere, Point, LineSegment, correspond to SOLID basic data types
   /// Minkowski means the minkowski sum of two ConvexHull3D's (not implemented yet)
-  /// Tran means a transformed version of another ConvexHull3D.
+  /// Trans means a transformed version of another ConvexHull3D.
   /// Hull means the hull of two objects.
   enum Type { Empty, Polytope, Box, Cone, Cylinder, Sphere, Point, LineSegment, Minkowski, Trans, Hull};
+  
   ConvexHull3D();
-  void SetPoint(const Vector3& a);
-  void SetPoints(const Vector& a);
-  void SetPoints(const std::vector<double>& a);
+  ConvexHull3D(const ConvexHull3D& rhs);
+  const ConvexHull3D& operator = (const ConvexHull3D& rhs); 
+  bool Set(const GeometricPrimitive3D& g);
+  void Set(const Vector3& a);
+  void Set(const Sphere3D& s);
+  void Set(const Segment3D& s);
+  void Set(const Triangle3D& tri);  ///Note: triangle is stored as a polytope
+  void Set(const AABB3D& bb);
+  void Set(const Box3D& b);
   void SetPoints(const std::vector<Vector3> & a);
-  void SetPoints(const std::vector<Vector> & a);
-  void SetLineSegment(const Segment3D& s);
-  ///Sets this as a transformed version of hull
+  void SetPointBuffer(const Vector& a);
+  void SetPointBuffer(const std::vector<double>& a);
+  /// Sets this as a transformed version of hull.  Note: this stores a reference to hull, and it must be kept alive.
   void SetTrans(const ConvexHull3D &hull, const RigidTransform& xform);
+  /// Sets this as the convex hull of two other objects.  Note: this stores a reference to hull1 and hull2, and they must be kept alive.
   void SetHull(const ConvexHull3D &hull1, const ConvexHull3D &hull2);
   bool Contains(const Vector3& pt) const;
   Real Distance(const Vector3& pt) const;
@@ -93,63 +103,33 @@ public:
   std::tuple<Real, Vector3, Vector3> ClosestPoints(const ConvexHull3D & other) const;
   Real ClosestPoint(const Vector3& pt,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const ConvexHull3D& g, Vector3& cp, Vector3& direction) const;
+  bool RayCast(const Ray3D& r,Real* param=NULL,Real maxParam=Inf) const;
   void Transform(const Matrix4 &T);
   AABB3D GetAABB() const;
   Box3D GetBB() const;
   PolytopeData& AsPolytope();
   const PolytopeData& AsPolytope() const;
   const PointData& AsPoint() const;
+  const SphereData& AsSphere() const;
   const LineSegmentData& AsLineSegment() const;
+  const BoxData& AsBox() const;
   const TransData& AsTrans() const;
   const HullData& AsHull() const;
   size_t NumPrimitives() const;
   GeometricPrimitive3D GetPrimitive(int index) const;
+  std::vector<Vector3> GetPoints() const;
 
   AnyValue data;  // Stored in the same format as the [Type]Data typedefs listed above
   Type type;
 
   struct ShapeHandleContainer {
-    ShapeHandleContainer(DT_ShapeHandle data);
+    ShapeHandleContainer(DT_ShapeHandle data, DT_ShapeHandle data2=NULL);
     ~ShapeHandleContainer();
     DT_ShapeHandle data;
+    DT_ShapeHandle data2;
+    DT_ObjectHandle object_ref;  //object corresponding to data at rest
   };
   std::shared_ptr<ShapeHandleContainer> shapeHandle; //internal SOLID data
-};
-
-/** @ingroup Geometry
- * @brief The collision data class for ConvexHull3D that contains the solid3 data
- * structure moved by some rigid transform.
- *
- * This also lets you update the relative transform for a Hull ConvexHull3D datatype.
- * 
- * Author: Gao Tang
- */
-class CollisionConvexHull3D
-{
-public:
-  CollisionConvexHull3D(const ConvexHull3D& hull);
-  CollisionConvexHull3D();  // no value, waiting to be initialized
-  bool Contains(const Vector3& pt) const;
-  Real Distance(const Vector3 &pt) const;
-  bool Collides(const CollisionConvexHull3D& geometry, Vector3* common_point=nullptr) const;
-  Real ClosestPoint(const Vector3& pt,Vector3& cp,Vector3& direction) const;
-  Real ClosestPoints(const CollisionConvexHull3D& g, Vector3& cp, Vector3& direction) const;
-
-  void UpdateTransform(const RigidTransform& tran);
-  ///For Hull objects, updates the relative transform of the second object
-  void UpdateHullSecondRelativeTransform(const RigidTransform& tran);
-
-  Vector3 FindSupport(const Vector3& dir) const;
-
-  ConvexHull3D::Type type;
-  struct ObjectHandleContainer {
-    ObjectHandleContainer(DT_ObjectHandle data);
-    ~ObjectHandleContainer();
-    DT_ObjectHandle data;
-  };
-  std::shared_ptr<ObjectHandleContainer> objectHandle;
-  DT_ShapeHandle shapeHandle;
-  double transform[16];
 };
 
 std::ostream& operator << (std::ostream& out,const ConvexHull3D& h);

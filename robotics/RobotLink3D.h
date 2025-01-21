@@ -45,7 +45,7 @@ public:
   Real mass;
   /// The center of mass (in local frame)
   Vector3 com;
-  /// The inertia matrix (in local frame)
+  /// The inertia matrix (in local frame, centered at COM)
   Matrix3 inertia;
   /// The initial transformation from the local to the parent frame
   Frame3D T0_Parent;

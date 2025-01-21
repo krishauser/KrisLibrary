@@ -122,7 +122,7 @@ void MatrixTemplate<T>::clear()
 }
 
 template <class T>
-void MatrixTemplate<T>::resize(int _m, int _n)
+void MatrixTemplate<T>::resizeDiscard(int _m, int _n)
 {
   Assert(_m>=0 && _n>=0);
   if(!hasDims(_m,_n))
@@ -159,9 +159,9 @@ void MatrixTemplate<T>::resize(int _m, int _n)
 }
 
 template <class T>
-void MatrixTemplate<T>::resize(int _m, int _n, T initval)
+void MatrixTemplate<T>::resizeDiscard(int _m, int _n, T initval)
 {
-  resize(_m, _n);
+  resizeDiscard(_m, _n);
   if(_m*_n != 0) set(initval);
 }
 
@@ -177,7 +177,8 @@ void MatrixTemplate<T>::resizePersist(int _m, int _n)
     else {
       Assert(isEmpty());
       Assert(vals == NULL);
-      clear();
+      resize(_m,_n);
+      return;
     }
     if(_m*_n > capacity) {
       T* oldvals=vals;
@@ -1203,6 +1204,40 @@ void MatrixTemplate<T>::inplaceComponentDiv(const MyT& a)
   for(int i=0;i<m;i++,v.nextRow(),va.nextRow())
     for(int j=0;j<n;j++,v.nextCol(),va.nextCol())
       *v /= (*va);
+}
+
+template <class T>
+void MatrixTemplate<T>::eraseRow(int i)
+{
+  CHECKROW(i);
+  for(int k=i+1;k<m;k++)
+    gen_array_equal(vals+istride*k,1,vals+istride*(k-1),jstride,istride);
+  m--;
+}
+
+template <class T>
+void MatrixTemplate<T>::eraseCol(int j)
+{
+  CHECKCOL(j);
+  for(int k=j+1;k<n;k++)
+    gen_array_equal(vals+jstride*k,1,vals+jstride*(k-1),istride,jstride);
+  n--;
+}
+
+template <class T>
+void MatrixTemplate<T>::eraseRows(const int* rows, int nrows)
+{
+  //TODO: could be faster
+  for(int i=0;i<nrows;i++)
+    eraseRow(rows[i]);
+}
+
+template <class T>
+void MatrixTemplate<T>::eraseCols(const int* cols, int ncols)
+{
+  //TODO: could be faster
+  for(int j=0;j<ncols;j++)
+    eraseCol(cols[j]);
 }
 
 

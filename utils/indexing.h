@@ -86,26 +86,6 @@ struct RangeIndices
   int start,size,stride;
 };
 
-/*
-//Note: Use IntTuple instead of this
-struct Indices : public std::vector<int>
-{
-  typedef std::vector<int> ParentT;
-
-  inline Indices() {}
-  inline Indices(const ParentT& rhs) :ParentT(rhs) {}
-  inline Indices(int element) :ParentT(1,element) {}
-  inline Indices(int e1,int e2) :ParentT(2)
-  { operator[](0)=e1; operator[](1)=e2; }
-  inline Indices(int e1,int e2,int e3) :ParentT(3)
-  { operator[](0)=e1; operator[](1)=e2; operator[](2)=e3; }
-  inline Indices(const std::list<int>& rhs):ParentT(rhs.size()) 
-  { std::copy(rhs.begin(),rhs.end(),begin()); }
-  inline Indices(const std::set<int>& rhs):ParentT(rhs.size()) 
-  { std::copy(rhs.begin(),rhs.end(),begin()); }
-  inline Indices(const RangeIndices& indices) { indices.enumerate(*this); }
-};
-*/
 
 /** @brief A 2D lattice of regular ranges.
  * 

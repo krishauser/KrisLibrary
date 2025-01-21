@@ -6,7 +6,6 @@
 #include <KrisLibrary/utils/fileutils.h>
 #include <KrisLibrary/GLdraw/GeometryAppearance.h>
 #include <KrisLibrary/image/io.h>
-#include <KrisLibrary/image/ppm.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -762,7 +761,7 @@ bool LoadAssimp(const char* fn, TriMesh& mesh)
 {
         vector<TriMesh> models;
         if(!LoadAssimp(fn,models)) return false;
-        mesh.Merge(models);
+        mesh.Union(models);
         LOG4CXX_INFO(KrisLibrary::logger(),"LoadAssimp: Loaded model "<<fn<<" ("<<mesh.verts.size()<<" verts, "<<mesh.tris.size()<<" tris)");
         return true;
 }
@@ -773,7 +772,7 @@ bool LoadAssimp(const char* fn, TriMesh& mesh, GeometryAppearance& app)
   vector<TriMesh> models;
   vector<GeometryAppearance> apps;
   if(!LoadAssimp(fn,models,apps)) return false;
-  mesh.Merge(models);
+  mesh.Union(models);
   if(!apps.empty()) {
     //need to merge appearance information
     app = apps[0];
@@ -853,6 +852,8 @@ void Cast(const aiMatrix4x4& a,Matrix4& out)
 
 void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const aiScene* scene,GeometryAppearance& app)
 {
+  if(mat->GetName().length == 0 || mat->GetName() == aiString(AI_DEFAULT_MATERIAL_NAME))
+    return;
   if(mesh->mColors[0]) {
     //per-vertex coloring
     app.vertexColors.resize(mesh->mNumVertices);

@@ -77,7 +77,7 @@ struct TriMesh
   //@{
   void Transform(const Matrix4& mat);
   void FlipFaces();
-  void Merge(const vector<TriMesh>& meshes);
+  void Union(const vector<TriMesh>& meshes);
   void MergeWith(const TriMesh& mesh);
   void RemoveUnusedVerts();
   //@}

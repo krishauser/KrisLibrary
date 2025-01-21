@@ -7,17 +7,19 @@ void Frustum::MakeFromViewport(const Viewport& view)
 	enum { UR=0,LR=1,UL=2,LL=3 };
 	Vector3 nearPoints[4];
 
-	Vector3 xb,yb,zb;
-	view.xform.R.get(xb,yb,zb);
+	Vector3 xb=view.right(),yb=view.up(),zb=view.forward();
 
-	Real aspect = Real(view.w)/Real(view.h);
-	xb/=view.scale;
-	yb/=view.scale*aspect;
-	const Vector3& cp = view.xform.t;
-	nearPoints[UR]=zb+xb+yb;
-	nearPoints[LR]=zb+xb-yb;
-	nearPoints[UL]=zb-xb+yb;
-	nearPoints[LL]=zb-xb-yb;
+    ///on image plane, the point that maps to v.x is fx*x+cy = v.x => x = (v.x-cy)/fx
+	///the point that maps to v.x+v.w is fx*(x+w)+cy = v.x+v.w => x = (v.x+v.w-cy)/fx
+	Real xmin = (view.x - view.cx)/view.fx;
+	Real xmax = (view.x + view.w - view.cx)/view.fx;
+	Real ymax = (view.y - view.cy)/view.fy;
+	Real ymin = (view.y + view.h - view.cy)/view.fy;
+	const Vector3& cp = view.pose.t;
+	nearPoints[UR]=zb+xb*xmax+yb*ymax;
+	nearPoints[LR]=zb+xb*xmax+yb*ymin;
+	nearPoints[UL]=zb+xb*xmin+yb*ymax;
+	nearPoints[LL]=zb-xb*xmin+yb*ymin;
 	nearPoints[0]*=view.n; nearPoints[1]*=view.n; nearPoints[2]*=view.n; nearPoints[3]*=view.n;
 	nearPoints[0] += cp; nearPoints[1] += cp; nearPoints[2] += cp; nearPoints[3] += cp;
 

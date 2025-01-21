@@ -50,9 +50,11 @@ class GeometricPrimitive3D
   const char* TypeName() const { return GeometricPrimitive3D::TypeName(type); }
   AABB3D GetAABB() const;
   Box3D GetBB() const;
+  Sphere3D GetBoundingSphere() const;
   RigidTransform GetFrame() const;
+  Vector3 GetCentroid() const;
   void Transform(const RigidTransform& T);
-  void Transform(const Matrix4& T);
+  bool Transform(const Matrix4& T);
 
   static bool SupportsCollides(Type a,Type b);
   bool SupportsCollides(Type b) const { return GeometricPrimitive3D::SupportsCollides(type,b); }
@@ -84,9 +86,9 @@ class GeometricPrimitive3D
   bool RayCast(const Ray3D& ray,Vector3& pt) const;
   static bool SupportsClosestPoints(Type a,Type b);
   ///The ClosestPoints function returns the distance value d (negative meaning penetration)
-  ///and the closest point on this (cp).  The normalized direction to the closest point on
-  ///the other geometry is also given (direction) so that the closest point on the other
-  ///object is cp + d*direction.  If the objects are touching, direction will indicate
+  ///and the closest point on this geometry (cp).  The normalized direction to the closest 
+  ///point on the other geometry is also given (direction) so that the closest point on the
+  ///other object is cp + d*direction.  If the objects are touching, direction will indicate
   ///the normal by which this can move so that the penetration derivative is maximized
   ///(i.e., the negative distance gradient).  If direction = 0 then there's a singularity
   ///or the direction cannot be calculated.
@@ -101,6 +103,10 @@ class GeometricPrimitive3D
   Real ClosestPoints(const AABB3D& s,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const Box3D& s,Vector3& cp,Vector3& direction) const;
   Real ClosestPoints(const GeometricPrimitive3D& g,Vector3& cp,Vector3& direction) const;
+  static bool SupportsSupport(Type a);
+  /// The Support(d) function returns the farthest point on the object in the direction d
+  bool SupportsSupport() const { return GeometricPrimitive3D::SupportsSupport(type); }
+  bool Support(const Vector3& dir,Vector3& pt) const;
 
   Type type;
   AnyValue data;

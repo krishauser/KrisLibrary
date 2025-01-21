@@ -9,6 +9,105 @@
 
 namespace Meshing {
 
+void DropTriangles(TriMesh& mesh,const vector<int>& trisToDelete,vector<int>& newVertMap,vector<int>& newTriMap)
+{
+  newVertMap.resize(mesh.verts.size(),-1);
+  newTriMap.resize(mesh.tris.size(),-1);
+  for(size_t i=0;i<mesh.tris.size();i++)
+    newTriMap[i] = (int)i;
+  for(size_t i=0;i<trisToDelete.size();i++) {
+    int t=trisToDelete[i];
+    Assert(t >= 0 && t < (int)mesh.tris.size());
+    newTriMap[t] = -1;
+  }
+  for(size_t i=0;i<mesh.tris.size();i++) {
+    if(newTriMap[i] == -1) continue;
+    IntTriple& tri=mesh.tris[i];
+    newVertMap[tri.a] = tri.a;
+    newVertMap[tri.b] = tri.b;
+    newVertMap[tri.c] = tri.c;
+  }
+  vector<int> oldVertMap;
+  vector<int> oldTriMap;
+  oldVertMap.reserve(newVertMap.size());
+  oldTriMap.reserve(newTriMap.size());
+  for(size_t i=0;i<newVertMap.size();i++) {
+    if(newVertMap[i] >= 0) oldVertMap.push_back((int)i);
+  }
+  for(size_t i=0;i<newTriMap.size();i++) {
+    if(newTriMap[i] >= 0) oldTriMap.push_back((int)i);
+  }
+  //update newTriMap/newVertMap to the new indices
+  for(size_t i=0;i<oldVertMap.size();i++)
+    newVertMap[oldVertMap[i]] = (int)i;
+  for(size_t i=0;i<oldTriMap.size();i++)
+    newTriMap[oldTriMap[i]] = (int)i;
+  vector<IntTriple> newTris;
+  newTris.reserve(oldTriMap.size());
+  for(size_t i=0;i<oldTriMap.size();i++) {
+    IntTriple& tri=mesh.tris[oldTriMap[i]];
+    newTris.push_back(IntTriple(newVertMap[tri.a],newVertMap[tri.b],newVertMap[tri.c]));
+  }
+  vector<Vector3> newVerts;
+  newVerts.reserve(oldVertMap.size());
+  for(size_t i=0;i<oldVertMap.size();i++)
+    newVerts.push_back(mesh.verts[oldVertMap[i]]);
+  swap(mesh.verts,newVerts);
+  swap(mesh.tris,newTris);
+  Assert(mesh.IsValid());
+}
+
+void DropVertices(TriMesh& mesh,const vector<int>& vertsToDelete,vector<int>& newVertMap,vector<int>& newTriMap)
+{
+  newVertMap.resize(mesh.verts.size(),-1);
+  newTriMap.resize(mesh.tris.size(),-1);
+  for(size_t i=0;i<mesh.verts.size();i++)
+    newVertMap[i] = (int)i;
+  for(size_t i=0;i<vertsToDelete.size();i++) {
+    int v=vertsToDelete[i];
+    Assert(v >= 0 && v < (int)mesh.verts.size());
+    newVertMap[v] = -1;
+  }
+  for(size_t i=0;i<mesh.tris.size();i++) {
+    IntTriple& tri=mesh.tris[i];
+    if(newVertMap[tri.a] < 0 || newVertMap[tri.b] < 0 || newVertMap[tri.c] < 0) {
+      newTriMap[i] = -1;
+    }
+    else {
+      newTriMap[i] = (int)i;
+    }
+  }
+  vector<int> oldVertMap;
+  vector<int> oldTriMap;
+  oldVertMap.reserve(newVertMap.size());
+  oldTriMap.reserve(newTriMap.size());
+  for(size_t i=0;i<newVertMap.size();i++) {
+    if(newVertMap[i] >= 0) oldVertMap.push_back((int)i);
+  }
+  for(size_t i=0;i<newTriMap.size();i++) {
+    if(newTriMap[i] >= 0) oldTriMap.push_back((int)i);
+  }
+  //update newTriMap/newVertMap to the new indices
+  for(size_t i=0;i<oldVertMap.size();i++)
+    newVertMap[oldVertMap[i]] = (int)i;
+  for(size_t i=0;i<oldTriMap.size();i++)
+    newTriMap[oldTriMap[i]] = (int)i;
+  vector<IntTriple> newTris;
+  newTris.reserve(oldTriMap.size());
+  for(size_t i=0;i<oldTriMap.size();i++) {
+    IntTriple& tri=mesh.tris[oldTriMap[i]];
+    newTris.push_back(IntTriple(newVertMap[tri.a],newVertMap[tri.b],newVertMap[tri.c]));
+  }
+  vector<Vector3> newVerts;
+  newVerts.reserve(oldVertMap.size());
+  for(size_t i=0;i<oldVertMap.size();i++)
+    newVerts.push_back(mesh.verts[oldVertMap[i]]);
+  swap(mesh.verts,newVerts);
+  swap(mesh.tris,newTris);
+  Assert(mesh.IsValid());
+}
+
+
 ///Returns true if the vertex is a boundary vertex
 bool IncidentTriangleOrdering(const TriMeshWithTopology& mesh,int v,vector<list<int> >& triStrips)
 {

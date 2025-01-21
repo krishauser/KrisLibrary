@@ -11,6 +11,7 @@
 #include <KrisLibrary/meshing/TriMeshOperators.h>
 #include <KrisLibrary/math3d/random.h>
 #include <KrisLibrary/math3d/basis.h>
+#include <KrisLibrary/structs/FixedSizeHeap.h>
 #include <KrisLibrary/Logger.h>
 #include <KrisLibrary/Timer.h>
 
@@ -24,7 +25,7 @@ namespace Geometry {
 	
 void SubdivideAdd(const Triangle3D& t,Meshing::PointCloud3D& pc,Real maxDispersion2)
 {
-	Vector3 c = (t.a+t.b+t.c)/3.0;
+	Vector3 c = t.centroid();
 	if(c.distanceSquared(t.a) > maxDispersion2 || c.distanceSquared(t.b) > maxDispersion2 || c.distanceSquared(t.c) > maxDispersion2) {
 		Real ab = t.a.distanceSquared(t.b);
 		Real bc = t.b.distanceSquared(t.c);
@@ -201,21 +202,54 @@ void FitGridToBB(const AABB3D& bb,Meshing::VolumeGrid& grid,Real resolution,Real
 	grid.Resize(m,n,p);
 }
 
+void PrimitiveOccupancyGridFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real value,Real expansion)
+{
+	AABB3D bb=primitive.GetAABB();
+	bb.bmin -= Vector3(expansion);
+	bb.bmax += Vector3(expansion);
+	Meshing::VolumeGridIterator<Real> it = grid.getIterator(bb);
+	Real cellRadius = grid.GetCellSize().norm()*0.5;
+	Vector3 c;
+	for(;!it.isDone();++it) {
+		it.getCellCenter(c);
+		if(primitive.Distance(c) <= expansion + cellRadius) {
+			*it = value;
+		}
+		++it;
+	}
+}
+
+void PrimitiveImplicitSurfaceFill(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real truncation)
+{
+	Vector3 c;
+	if(truncation == 0 || !IsFinite(truncation)) {
+		Meshing::VolumeGrid::iterator it = grid.getIterator();
+		while(!it.isDone()) {
+			it.getCellCenter(c);
+			*it = primitive.Distance(c);
+			++it;
+		}
+	}
+	else {
+		AABB3D bb=primitive.GetAABB();
+		bb.bmin -= Vector3(truncation);
+		bb.bmax += Vector3(truncation);
+		Meshing::VolumeGridIterator<Real> it=grid.getIterator(bb);
+		for(;!it.isDone();++it) {
+			it.getCellCenter(c);
+			*it = primitive.Distance(c);
+			++it;
+		}
+	}
+}
+
 void PrimitiveToImplicitSurface(const GeometricPrimitive3D& primitive,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
 {
 	AABB3D aabb = primitive.GetAABB();
 	aabb.bmin -= Vector3(expansion);
 	aabb.bmax += Vector3(expansion);
 	FitGridToBB(aabb,grid,resolution);
-	Meshing::VolumeGrid::iterator it = grid.getIterator();
-	Vector3 c;
-	while(!it.isDone()) {
-		it.getCellCenter(c);
-		//if(primitive.Collides(c)) *it = -expansion;
-		//else
-		*it = primitive.Distance(c);
-		++it;
-	}
+	PrimitiveImplicitSurfaceFill(primitive,grid);
 }
 
 void Extrema(const AABB3D& bb,const Vector3& dir,Real& a,Real& b)
@@ -377,6 +411,57 @@ void SaveSliceCSV(const Array3D<Real>& values,const char* fn)
 	fclose(f);
 }
 
+
+void MeshOccupancyGridFill(const Meshing::TriMesh& mesh,Meshing::VolumeGrid& grid,Real value,Real expansion)
+{
+	Vector3 expansionv(expansion);
+	Triangle3D tri;
+	AABB3D query,cell;
+	Real cellradius = grid.GetCellSize().norm()*0.5;
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		mesh.GetTriangle(i,tri);
+		query.setPoint(tri.a);
+		query.expand(tri.b);
+		query.expand(tri.c);
+		query.bmin -= expansionv;
+		query.bmax -= expansionv;
+		Meshing::VolumeGrid::iterator it=grid.getIterator(query);
+		for(;!it.isDone();++it) {
+			if(grid.value(it.index)>=value) continue;
+			it.getCell(cell);
+			if(tri.intersects(cell))
+				grid.value(it.index)=value;
+			else if(expansion > 0) {
+				Vector3 c = (cell.bmin+cell.bmax)*0.5;
+				Vector3 cp = tri.closestPoint(c);
+				if(c.distance(cp) < expansion + cellradius)
+					grid.value(it.index)=1;
+			}
+		}
+	}
+}
+
+void MeshToOccupancyGrid(const Meshing::TriMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+{
+	AABB3D aabb;
+	mesh.GetAABB(aabb.bmin,aabb.bmax);
+	Vector3 expansionv(expansion);
+	aabb.bmin -= expansionv;
+	aabb.bmax += expansionv;
+	FitGridToBB(aabb,grid,resolution,0.5);
+	grid.value.set(0.0);
+	MeshOccupancyGridFill(mesh,grid,1.0,expansion);
+}
+
+void MeshImplicitSurfaceFill_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real truncation)
+{
+	if(!(truncation == 0 || !IsFinite(truncation))) LOG4CXX_WARN(KrisLibrary::logger(),"MeshImplicitSurfaceFill_FMM: truncation not implemented yet");
+	Array3D<Vector3> gradient;
+	vector<IntTriple> surfaceCells;
+	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
+	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
+}
+
 void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,Real expansion)
 {
 	AABB3D aabb;
@@ -384,10 +469,7 @@ void MeshToImplicitSurface_FMM(const CollisionMesh& mesh,Meshing::VolumeGrid& gr
 	aabb.bmin -= Vector3(expansion);
 	aabb.bmax += Vector3(expansion);
 	FitGridToBB(aabb,grid,resolution,0.5);
-	Array3D<Vector3> gradient(grid.value.m,grid.value.n,grid.value.p);
-	vector<IntTriple> surfaceCells;
-	//Meshing::FastMarchingMethod(mesh,grid.value,gradient,grid.bb,surfaceCells);
-	Meshing::FastMarchingMethod_Fill(mesh,grid.value,gradient,grid.bb,surfaceCells);
+	MeshImplicitSurfaceFill_FMM(mesh,grid);
 }
 
 void MeshToImplicitSurface_SpaceCarving(const CollisionMesh& mesh,Meshing::VolumeGrid& grid,Real resolution,int numViews,Real expansion)
@@ -499,6 +581,102 @@ void ImplicitSurfaceToMesh(const Meshing::VolumeGrid& grid,Meshing::TriMesh& mes
     MergeVertices(mesh,0,true);
 }
 
+void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh)
+{
+    if(hm.heights.m < 2 || hm.heights.n < 2) {
+		mesh.verts.clear();
+		mesh.tris.clear();
+		return;
+	}
+	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
+	//pixels go from top-down, so need to flip triangles
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		swap(mesh.tris[i].b,mesh.tris[i].c);
+	}
+	hm.GetVertices(mesh.verts);
+	vector<pair<int,int> > invalidIndices;
+	for(int i=0;i<hm.heights.m;i++) {
+		for(int j=0;j<hm.heights.n;j++) {
+			if(hm.viewport.perspective) {
+		        if(hm.heights(i,j) == 0 || !IsFinite(hm.heights(i,j))) {
+					invalidIndices.push_back(pair<int,int>(i,j));	
+				}
+			}
+			else {
+				if(!IsFinite(hm.heights(i,j))) {
+					invalidIndices.push_back(pair<int,int>(i,j));
+				}
+			}
+		}
+	}
+	if(invalidIndices.empty()) return;
+	//printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
+
+	vector<int> invalidVertices;
+	invalidVertices.reserve(invalidIndices.size());
+	for(const auto& p : invalidIndices) {
+		invalidVertices.push_back(p.first*hm.heights.n+p.second);
+	}
+	vector<int> newVertMap, newTriMap;
+	Meshing::DropVertices(mesh,invalidVertices,newVertMap,newTriMap);
+	for(size_t i=0;i<mesh.verts.size();i++)
+		Assert(IsFinite(mesh.verts[i].x) && IsFinite(mesh.verts[i].y) && IsFinite(mesh.verts[i].z));
+}
+
+void HeightmapToMesh(const Meshing::Heightmap& hm, Meshing::TriMesh& mesh, GLDraw::GeometryAppearance& appearance)
+{
+	if(hm.heights.m < 2 || hm.heights.n < 2) {
+		mesh.verts.clear();
+		mesh.tris.clear();
+		return;
+	}
+
+	Meshing::MakeTriPlane(hm.heights.m-1,hm.heights.n-1,mesh);
+	//pixels go from top-down, so need to flip triangles
+	for(size_t i=0;i<mesh.tris.size();i++) {
+		swap(mesh.tris[i].b,mesh.tris[i].c);
+	}
+	hm.GetVertices(mesh.verts);
+	if(hm.HasColors()) {
+		vector<Vector3> rgb(mesh.verts.size());
+		hm.GetVertexColors(rgb);
+		appearance.vertexColors.resize(rgb.size());
+		for(size_t i=0;i<rgb.size();i++) {
+			appearance.vertexColors[i].set(rgb[i].x,rgb[i].y,rgb[i].z);
+		}
+	}
+	else
+		appearance.vertexColors.resize(0);
+
+	vector<pair<int,int> > invalidIndices;
+	for(int i=0;i<hm.heights.m;i++) {
+		for(int j=0;j<hm.heights.n;j++) {
+			if(!hm.ValidHeight(hm.heights(i,j))) {
+				invalidIndices.push_back(pair<int,int>(i,j));	
+			}
+		}
+	}
+	if(invalidIndices.empty()) return;
+	//printf("HeightmapToMesh: Dropping %d invalid vertices\n",invalidIndices.size());
+
+	vector<int> invalidVertices;
+	invalidVertices.reserve(invalidIndices.size());
+	for(const auto& p : invalidIndices) {
+		invalidVertices.push_back(p.first*hm.heights.n+p.second);
+	}
+	vector<int> newVertMap, newTriMap;
+	Meshing::DropVertices(mesh,invalidVertices,newVertMap,newTriMap);
+	if(!appearance.vertexColors.empty()) {
+		vector<GLDraw::GLColor> newColors(mesh.verts.size());
+		for(size_t i=0;i<newVertMap.size();i++) 
+			if(newVertMap[i] >= 0)
+				newColors[newVertMap[i]] = appearance.vertexColors[(int)i];
+		swap(appearance.vertexColors,newColors);
+	}
+	for(size_t i=0;i<mesh.verts.size();i++)
+		Assert(IsFinite(mesh.verts[i].x) && IsFinite(mesh.verts[i].y) && IsFinite(mesh.verts[i].z));
+}
+
 void MeshToConvexHull(const Meshing::TriMesh &mesh, ConvexHull3D& ch) { ch.SetPoints(mesh.verts); }
 
 void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) {
@@ -525,21 +703,29 @@ void PointCloudToConvexHull(const Meshing::PointCloud3D &pc, ConvexHull3D& ch) {
 
 void _HACD_CallBack(const char * msg, double progress, double concavity, size_t nVertices)
 {
+	//VERBOSE OR NOT?
     LOG4CXX_INFO(KrisLibrary::logger(),msg);
 }
 
 void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Real concavity)
 {
+	if(concavity > 0) {
+		LOG4CXX_WARN(KrisLibrary::logger(),"MeshConvexDecomposition: concavity not supported yet in single ConvexHull object");
+		concavity = 0;
+	}
     if(concavity <= 0) {
-        MeshToConvexHull(mesh,ch);
+	    MeshToConvexHull(mesh,ch);
         return;
     }
+  
   int minClusters = 1;  // so I allow conversion directly from convex objects
-//  bool invert = false;
+  int maxVerticesPerCH = mesh.verts.size();
   bool addExtraDistPoints = true;
   bool addFacesPoints = true;
-  float ccConnectDist = 30;
-  int targetNTrianglesDecimatedMesh = 3000;
+  Vector3 bmin,bmax;
+  mesh.GetAABB(bmin,bmax);
+  float ccConnectDist = (bmax-bmin).maxAbsElement()*0.1*1000.0; //there's a scale factor in HACD
+  int targetNTrianglesDecimatedMesh = mesh.tris.size();
 
   vector<HACD::Vec3<Real> > points;
   vector<HACD::Vec3<long> > triangles;
@@ -572,7 +758,7 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
                                                       // the simplification process
 
   myHACD->SetNClusters(minClusters);                     // minimum number of clusters
-  myHACD->SetNVerticesPerCH(100);                      // max of 100 vertices per convex-hull
+  myHACD->SetNVerticesPerCH(maxVerticesPerCH);                      // max of 100 vertices per convex-hull
   myHACD->SetConcavity(concavity);                     // maximum concavity
   myHACD->SetSmallClusterThreshold(0.25);              // threshold to detect small clusters
   myHACD->SetNTargetTrianglesDecimatedMesh(targetNTrianglesDecimatedMesh); // # triangles in the decimated mesh
@@ -616,6 +802,8 @@ void MeshConvexDecomposition(const Meshing::TriMesh& mesh, ConvexHull3D& ch, Rea
     }
     //ch.type = ConvexHull3D::Composite;
     ch.data = grp_hulls;
+	LOG4CXX_FATAL(KrisLibrary::logger(),"MeshConvexDecomposition: multiple convex hulls not supported yet");
+	FatalError("MeshConvexDecomposition: multiple convex hulls not supported yet");
   }
   HACD::DestroyHACD(myHACD);
   HACD::releaseHeapManager(heapManager);
@@ -720,19 +908,173 @@ void ConvexHullToMesh(const ConvexHull3D& ch, Meshing::TriMesh &mesh)
 	}
 }
 
-void ConvexHullToImplcitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion)
+void ConvexHullOccupancyGridFill(const ConvexHull3D& ch,Meshing::VolumeGrid& grid,Real value,Real expansion)
+{
+	AABB3D bb=ch.GetAABB();
+	bb.bmin -= Vector3(expansion);
+	bb.bmax += Vector3(expansion);
+	Meshing::VolumeGrid::iterator it=grid.getIterator(bb);
+	Real cellRadius = it.cellSize.norm()*0.5;
+	Vector3 c;
+	for(;!it.isDone();++it) {
+		it.getCellCenter(c);
+		if(ch.Distance(c) <= expansion + cellRadius) {
+			*it = value;
+		}
+		++it;
+	}
+}
+
+void ConvexHullImplicitSurfaceFill(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real truncation)
+{
+	Vector3 c;
+	if(truncation == 0 || !IsFinite(truncation)) {
+		Meshing::VolumeGrid::iterator it = grid.getIterator();
+		while(!it.isDone()) {
+			it.getCellCenter(c);
+			*it = ch.Distance(c);
+			++it;
+		}
+	}
+	else {
+		AABB3D bb=ch.GetAABB();
+		bb.bmin -= Vector3(truncation);
+		bb.bmax += Vector3(truncation);
+		Meshing::VolumeGrid::iterator it=grid.getIterator(bb);
+		for(;!it.isDone();++it) {
+			it.getCellCenter(c);
+			*it = ch.Distance(c);
+			++it;
+		}
+	}
+}
+
+void ConvexHullToImplicitSurface(const ConvexHull3D& ch, Meshing::VolumeGrid& grid,Real resolution,Real expansion)
 {
 	AABB3D aabb = ch.GetAABB();
 	aabb.bmin -= Vector3(expansion);
 	aabb.bmax += Vector3(expansion);
 	FitGridToBB(aabb,grid,resolution,0.5);
-	Meshing::VolumeGrid::iterator it = grid.getIterator();
-	Vector3 c;
-	while(!it.isDone()) {
-		it.getCellCenter(c);
-		*it = ch.Distance(c);
-		++it;
+	ConvexHullImplicitSurfaceFill(ch,grid);
+}
+
+void PointCloudOccupancyGridFill(const Meshing::PointCloud3D& pc,Meshing::VolumeGrid& grid,Real value,Real expansion)
+{
+	int radiusIndex = pc.PropertyIndex("radius");
+	if(radiusIndex >= 0) {
+		LOG4CXX_WARN(GET_LOGGER(Geometry),"PointCloudOccupancyGridFill: PointCloud with radius property not supported yet");
+	}
+
+	if(expansion == 0) {
+		for(size_t i=0;i<pc.points.size();i++) {
+			IntTriple idx;
+			if(!grid.GetIndexChecked(pc.points[i],idx.a,idx.b,idx.c)) continue;
+			grid.value(idx) = value;
+		}
+	}
+	else {
+		Real cellRadius = grid.GetCellSize().norm()*0.5;
+		Vector3 c;
+		Vector3 expansionv(expansion);
+		for(size_t i=0;i<pc.points.size();i++) {
+			AABB3D bb(pc.points[i],pc.points[i]);
+			bb.bmin -= expansionv;
+			bb.bmax += expansionv;
+			Meshing::VolumeGrid::iterator it=grid.getIterator(bb);
+			for(;!it.isDone();++it) {
+				it.getCellCenter(c);
+				if(c.distanceSquared(pc.points[i]) <= Sqr(expansion+cellRadius))
+					grid.value(it.index) = value;
+				++it;
+			}
+		}
 	}
 }
+
+void PointCloudImplicitSurfaceFill_FMM(const Meshing::PointCloud3D& pc,Meshing::VolumeGrid& grid,Real truncation)
+{
+	if(truncation == 0 || !IsFinite(truncation)) grid.value.set(Inf);
+	if(truncation == 0) truncation = Inf;
+	int radiusIndex = pc.PropertyIndex("radius");
+
+	int M = grid.value.m;
+	int N = grid.value.n;
+	int P = grid.value.p;
+	Array3D<int> closestPoint(M,N,P,-1);
+	//encode an index i,j,k as (i*N+j)*P+k
+	FixedSizeHeap<Real> queue(M*N*P);
+	vector<IntTriple> perturbations(6);
+	perturbations[0].set(1,0,0);
+	perturbations[1].set(-1,0,0);
+	perturbations[2].set(0,1,0);
+	perturbations[3].set(0,-1,0);
+	perturbations[4].set(0,0,1);
+	perturbations[5].set(0,0,-1);
+	Vector3 c;
+	for(size_t i=0;i<pc.points.size();i++) {
+		IntTriple idx;
+		if(!grid.GetIndexChecked(pc.points[i],idx.a,idx.b,idx.c)) continue;
+		grid.GetCellCenter(idx.a,idx.b,idx.c,c);
+		Real d = pc.points[i].distance(c);
+		if(radiusIndex >= 0) d -= pc.properties(i,radiusIndex);
+		if(d < grid.value(idx) && d <= truncation) {
+			grid.value(idx) = d;
+			closestPoint(idx) = i;
+			queue.adjust((idx.a*N+idx.b)*P+idx.c,-d);
+		}
+		for(const auto& p:perturbations) {
+			IntTriple nidx(idx.a+p.a,idx.b+p.b,idx.c+p.c);
+			if(nidx.a < 0 || nidx.a >= M || nidx.b < 0 || nidx.b >= N || nidx.c < 0 || nidx.c >= P) continue;
+			grid.GetCellCenter(nidx.a,nidx.b,nidx.c,c);
+			Real d = pc.points[i].distance(c);
+			if(d < grid.value(nidx) && d <= truncation) {
+				grid.value(nidx) = d;
+				closestPoint(nidx) = i;
+				queue.adjust((nidx.a*N+nidx.b)*P+nidx.c,-d);
+			}
+		}
+	}
+
+	IntTriple index;
+	vector<IntTriple> adj;
+	while(!queue.empty()) {
+		int heapIndex = queue.top();
+		queue.pop();
+		
+		//decode heap index
+		Assert(heapIndex >= 0);
+		index.c = heapIndex % P;
+		index.b = (heapIndex / P)%N;
+		index.a = (heapIndex / (P*N));
+		Assert(index.a < M);
+
+		int cp=closestPoint(index.a,index.b,index.c);
+		assert(cp >= 0);
+
+		//add all potentially adjacent neighbors
+		adj.resize(0);
+		if(index.a+1 < M) { adj.push_back(index); adj.back().a++; }
+		if(index.a-1 >= 0) { adj.push_back(index); adj.back().a--; }
+		if(index.b+1 < N) { adj.push_back(index); adj.back().b++; }
+		if(index.b-1 >= 0) { adj.push_back(index); adj.back().b--; }
+		if(index.c+1 < P) { adj.push_back(index); adj.back().c++; }
+		if(index.c-1 >= 0) { adj.push_back(index); adj.back().c--; }
+		//overheadTime += timer.ElapsedTime();
+		for(const auto& neighbor:adj) {
+			//timer.Reset();
+			Vector3 cellCenter;
+			grid.GetCellCenter(neighbor.a,neighbor.b,neighbor.c,cellCenter);
+			Real d = pc.points[cp].distance(cellCenter);
+			if(radiusIndex >= 0) d -= pc.properties(cp,radiusIndex);
+			if(d < grid.value(neighbor) && d <= truncation) {
+				grid.value(neighbor) = d;
+				closestPoint(neighbor) = cp;
+				int heapIndex = (neighbor.a*N+neighbor.b)*P+neighbor.c;
+				queue.adjust(heapIndex,-d);
+			}
+		}
+	}
+}
+
 
 } //namespace Geometry

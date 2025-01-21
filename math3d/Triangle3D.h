@@ -33,6 +33,8 @@ struct Triangle3D
   Segment3D edge(int e) const;
   Vector3 normal() const;
   Real area() const;
+  Vector3 centroid() const;
+  void getCentroid(Point3D& c) const;
   void getPlane(Plane3D& p) const;
   
   Vector3 barycentricCoords(const Point3D& x) const;
@@ -58,8 +60,14 @@ struct Triangle3D
 
   void getAABB(AABB3D&) const;
   bool intersects(const AABB3D&) const;
+  /// A version of the above intersection test that, if intersecting,
+  /// reports a point in the intersection, and if not intersecting,
+  /// reports the normal of a separating plane.
+  bool intersects(const AABB3D&, Vector3& witness) const;
 
   Real distance(const Triangle3D& other,Vector3& P,Vector3& Q) const;
+  Real distance(const AABB3D& bb) const;
+  Real distance(const AABB3D& bb, Vector3& tclosest, Point3D& bbclosest) const;
 
   bool Read(File& f);
   bool Write(File& f) const;

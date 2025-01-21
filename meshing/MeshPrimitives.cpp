@@ -113,7 +113,7 @@ void MakeTriBox(int m,int n,int p,Real x,Real y,Real z,TriMesh& mesh)
 		faces[0].FlipFaces();
 		faces[3].FlipFaces();
 		faces[4].FlipFaces();
-		mesh.Merge(faces);
+		mesh.Union(faces);
 		//TODO: weld vertices?
 	}
 }

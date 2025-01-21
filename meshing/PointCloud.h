@@ -3,6 +3,7 @@
 
 #include <KrisLibrary/math3d/primitives.h>
 #include <KrisLibrary/math/vector.h>
+#include <KrisLibrary/math/matrix.h>
 #include <KrisLibrary/utils/PropertyMap.h>
 #include <vector>
 #include <iosfwd>
@@ -108,13 +109,15 @@ class PointCloud3D
   ///Removes a property and its channel.  Relatively expensive (O(nm)).
   void RemoveProperty(const string& name);
     ///Extracts just the given points
-  void GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud);
+  void GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud) const;
   ///Extracts all points within the bounding box [bmin,bmax]
-  void GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud);
+  void GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud) const;
   ///Extracts all points with the named property = value
-  void GetSubCloud(const string& property,Real value,PointCloud3D& subcloud);
+  void GetSubCloud(const string& property,Real value,PointCloud3D& subcloud) const;
   ///Extracts all points with the minValue <= named property <= maxValue
-  void GetSubCloud(const string& property,Real minValue,Real maxValue,PointCloud3D& subcloud);
+  void GetSubCloud(const string& property,Real minValue,Real maxValue,PointCloud3D& subcloud) const;
+  /// Adds points and properties of another point cloud to this one.  The properties must match. 
+  void Concat(const PointCloud3D& other);
   ///Some point clouds have properties x, y, and z rather than specifying points
   bool HasXYZAsProperties() const;
   ///Convert to/from x, y, z as properties vs points
@@ -137,6 +140,7 @@ class PointCloud3D
   bool GetColors(vector<Vector4>& rgba) const;
   void SetColors(const vector<Real>& r,const vector<Real>& g,const vector<Real>& b,bool includeAlpha = false);
   void SetColors(const vector<Real>& r,const vector<Real>& g,const vector<Real>& b,const vector<Real>& a,bool includeAlpha = true);
+  void SetColors(const vector<Vector3>& rgb,bool includeAlpha=false);
   void SetColors(const vector<Vector4>& rgba,bool includeAlpha=true);
   bool HasUV() const;
   bool GetUV(vector<Vector2>& uvs) const;
@@ -144,7 +148,7 @@ class PointCloud3D
 
   vector<Vector3> points;
   vector<string> propertyNames;
-  vector<Vector> properties;
+  Matrix properties;
   PropertyMap settings;
 };
 

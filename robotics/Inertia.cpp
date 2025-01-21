@@ -15,7 +15,7 @@ Vector3 CenterOfMass(const GeometricPrimitive3D& geom)
   case GeometricPrimitive3D::Triangle:
     {
       const Triangle3D* tri = AnyCast_Raw<Triangle3D>(&geom.data);
-      return (tri->a+tri->b+tri->c)/3.0;
+      return tri->centroid();
     }
   case GeometricPrimitive3D::AABB:
     return 0.5*(AnyCast_Raw<AABB3D>(&geom.data)->bmin+AnyCast_Raw<AABB3D>(&geom.data)->bmax);

@@ -4,9 +4,17 @@
 #include "Triangle3D.h"
 #include "Sphere3D.h"
 #include "Line3D.h"
+#include "SOLID.h"
+#include <tuple>
 #include <iostream>
 #include <geometry/PQP/src/OBB_Disjoint.h>
 using namespace std;
+
+//defined in ConvexHull3D.cpp
+namespace Geometry {
+using namespace Math3D;
+std::tuple<Real, Vector3, Vector3> dist_func(DT_ObjectHandle object1, DT_ObjectHandle object2);
+} //namespace Geometry
 
 namespace Math3D {
 
@@ -43,6 +51,12 @@ void Box3D::setTransformed(const Box3D& box,const RigidTransform& T)
   ybasis = T.R*box.ybasis;
   zbasis = T.R*box.zbasis;
   dims = box.dims;
+}
+
+void Box3D::expand(Real d)
+{
+  origin -= d*(xbasis+ybasis+zbasis);
+  dims += Vector3(d*2);
 }
 
 bool Box3D::contains(const Point3D& pt) const
@@ -107,6 +121,16 @@ Real Box3D::signedDistance(const Point3D& pt,Point3D& out) const
   else dmin = Min(dmin,dims.y-loc.y);
   if(loc.z > dims.z) { out.z = dims.z; inside=false; }
   else dmin = Min(dmin,dims.z-loc.z);
+  if(inside) {
+    //signed distance is negative, out point is on surface
+    if(loc.x == dmin) out.x = 0;
+    else if(loc.y == dmin) out.y = 0;
+    else if(loc.z == dmin) out.z = 0;
+    else if(dims.x-loc.x == dmin) out.x = dims.x;
+    else if(dims.y-loc.y == dmin) out.y = dims.y;
+    else if(dims.z-loc.z == dmin) out.z = dims.z;
+    return -dmin;
+  }
   Real norm = loc.distance(out);
   loc = out;
   fromLocal(loc,out);
@@ -229,6 +253,147 @@ bool Box3D::intersects(const Sphere3D& s) const
   return sloc.intersects(bbloc);
 }
 
+Real Box3D::distance(const Sphere3D& s) const
+{
+  return Max(0.0,signedDistance(s.center) - s.radius);
+}
+
+Real Box3D::signedDistance(const Sphere3D& s) const
+{
+  return signedDistance(s.center) - s.radius;
+}
+
+Real Box3D::distance(const Segment3D& s) const
+{
+  Segment3D sloc;
+  toLocal(s,sloc);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  return sloc.distance(bbloc);
+}
+
+Real Box3D::distance(const Segment3D& s, Vector3& bclosest, Vector3& sclosest) const
+{
+  Segment3D sloc;
+  toLocal(s,sloc);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  Real uclosest;
+  Vector3 bclosest_local;
+  Real d = sloc.distance(bbloc,uclosest,bclosest_local);
+  s.eval(uclosest,sclosest);
+  fromLocal(bclosest_local,bclosest);
+  return d;
+}
+
+Real Box3D::distance(const Triangle3D& t) const
+{
+  Triangle3D tloc;
+  toLocal(t.a,tloc.a);
+  toLocal(t.b,tloc.b);
+  toLocal(t.c,tloc.c);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  return tloc.distance(bbloc);
+}
+
+Real Box3D::distance(const Triangle3D& t, Vector3& bclosest, Vector3& tclosest) const
+{
+  Triangle3D tloc;
+  toLocal(t.a,tloc.a);
+  toLocal(t.b,tloc.b);
+  toLocal(t.c,tloc.c);
+  AABB3D bbloc;
+  bbloc.bmin.setZero();
+  bbloc.bmax=dims;
+  Vector3 tclosest_local, bclosest_local;
+  Real d = tloc.distance(bbloc,tclosest_local, bclosest_local);
+  fromLocal(tclosest_local,tclosest);
+  fromLocal(bclosest_local,bclosest);
+  return d;
+}
+
+Real Box3D::distance(const AABB3D& bb) const 
+{
+  Vector3 bclosest,bbclosest;
+  return distance(bb,bclosest,bbclosest);
+}
+
+Real Box3D::distance(const AABB3D& bb, Vector3& bclosest, Vector3& bbclosest) const 
+{
+  RigidTransform xform;
+  getTransform(xform);
+  Vector3 bbdims = bb.bmax-bb.bmin;
+  xform.t += xform.R*dims*0.5 - bb.midpoint();  //shift to center
+  double xform_data[16];
+  Matrix4(xform).get(xform_data);
+  DT_ShapeHandle box = DT_NewBox(dims.x,dims.y,dims.z);
+  DT_ShapeHandle obox = DT_NewTransform(box,xform_data);
+  DT_ShapeHandle bbshape = DT_NewBox(bbdims.x,bbdims.y,bbdims.z);
+  DT_ObjectHandle oboxobj = DT_CreateObject(NULL,obox);
+  DT_ObjectHandle bbobj = DT_CreateObject(NULL,bbshape);
+  auto res = Geometry::dist_func(oboxobj,bbobj);
+  bclosest = std::get<1>(res);
+  bbclosest = std::get<2>(res);
+  DT_DestroyObject(oboxobj);
+  DT_DestroyObject(bbobj);
+  DT_DeleteShape(bbshape);
+  DT_DeleteShape(box);
+  DT_DeleteShape(obox);
+  return std::get<0>(res);
+}
+
+Real Box3D::distance(const Box3D& b) const 
+{
+  Vector3 bclosest,b2closest;
+  return distance(b,bclosest,b2closest);
+}
+
+
+Real Box3D::distance(const Box3D& b2, Vector3& bclosest, Vector3& b2closest) const 
+{
+  RigidTransform xform;
+  getTransform(xform);
+  xform.t += xform.R*dims*0.5;  //shift to center
+  double xform_data[16],xform_data2[16];
+  Matrix4(xform).get(xform_data);
+  b2.getTransform(xform);
+  xform.t += xform.R*b2.dims*0.5;  //shift to center
+  Matrix4(xform).get(xform_data2);
+  DT_ShapeHandle box = DT_NewBox(dims.x,dims.y,dims.z);
+  DT_ShapeHandle obox = DT_NewTransform(box,xform_data);
+  DT_ShapeHandle box2 = DT_NewBox(b2.dims.x,b2.dims.y,b2.dims.z);
+  DT_ShapeHandle obox2 = DT_NewTransform(box2,xform_data2);
+  DT_ObjectHandle oboxobj = DT_CreateObject(NULL,obox);
+  DT_ObjectHandle obox2obj = DT_CreateObject(NULL,obox2);
+  auto res = Geometry::dist_func(oboxobj,obox2obj);
+  bclosest = std::get<1>(res);
+  b2closest = std::get<2>(res);
+  DT_DestroyObject(oboxobj);
+  DT_DestroyObject(obox2obj);
+  DT_DeleteShape(box2);
+  DT_DeleteShape(obox2);
+  DT_DeleteShape(box);
+  DT_DeleteShape(obox);
+  return std::get<0>(res);
+}
+
+
+Vector3 Box3D::support(const Vector3& dir) const
+{
+  Vector3 dir_local;
+  toLocalReorient(dir,dir_local);
+  Vector3 supp_local;
+  supp_local.x = (dir_local.x >= 0 ? dims.x : 0);
+  supp_local.y = (dir_local.y >= 0 ? dims.y : 0);
+  supp_local.z = (dir_local.z >= 0 ? dims.z : 0);
+  Vector3 supp;
+  fromLocal(supp_local,supp);
+  return supp;
+}
 
 std::ostream& operator << (std::ostream& out,const Box3D& b)
 {

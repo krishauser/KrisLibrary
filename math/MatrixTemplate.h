@@ -88,8 +88,10 @@ public:
   inline int numRows() const { return m; }
   inline int numCols() const { return n; }
 
-  void resize(int m, int n);
-  void resize(int m, int n, T initval);
+  void resize(int m, int n) { resizeDiscard(m,n); }
+  void resize(int m, int n, T initval) { resizeDiscard(m,n,initval);}
+  void resizeDiscard(int m, int n);
+  void resizeDiscard(int m, int n, T initval);
   void resizePersist(int m, int n);
   void resizePersist(int m, int n, T initval);
   void clear();
@@ -153,6 +155,7 @@ public:
 
   inline bool isRef() const { return !allocated; }
   inline bool hasDims(int _m,int _n) const { return _m==m&&_n==n; }
+  inline bool empty() const { return vals==NULL; }
   inline bool isEmpty() const { return vals==NULL; }
   inline bool isValidRow(int i) const { return i >= 0 && i < m; }
   inline bool isValidCol(int j) const { return j >= 0 && j < n; }
@@ -219,6 +222,11 @@ public:
   inline void maddCol(int j,const MyT& m,int jm,T c) { VectorT a; m.getColRef(jm,a); maddCol(j,a,c); }
   inline T dotRow(int i,const MyT& m,int im) const { VectorT a; m.getRowRef(im,a); return dotRow(i,a); }
   inline T dotCol(int j,const MyT& m,int jm) const { VectorT a; m.getColRef(jm,a); return dotCol(j,a); }
+
+  void eraseRow(int i);
+  void eraseCol(int j);
+  void eraseRows(const int* rows, int nrows);
+  void eraseCols(const int* cols, int ncols);
 
   void componentMul(const MyT& a,const MyT& b);
   void componentDiv(const MyT& a,const MyT& b);

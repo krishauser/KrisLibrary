@@ -146,6 +146,7 @@ public:
           }
 
           vector<char> buffer(pointsize);
+          pc.properties.resize(numPoints,pc.propertyNames.size());
           for(int i=0;i<numPoints;i++) {
             in.read(&buffer[0],pointsize);
             if(!in) {
@@ -197,7 +198,7 @@ public:
               }
               ofs += sizes[j];
             }
-            pc.properties.push_back(v);
+            pc.properties.copyRow(i,v);
           }
           return Stop;
         }
@@ -206,6 +207,7 @@ public:
             LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: DATA specified before POINTS element");
             return Error;
           }
+          pc.properties.resize(numPoints,pc.propertyNames.size());
           string line;
           for(int i=0;i<numPoints;i++) {
             int c = in.get();
@@ -229,7 +231,7 @@ public:
               stringstream ss(elements[k]);
               SafeInputFloat(ss,v[k]);
             }
-            pc.properties.push_back(v);
+            pc.properties.copyRow(i,v);
           }
         }
         else {
@@ -329,7 +331,7 @@ bool PointCloud3D::LoadPCL(istream& in)
 {
   PCLParser parser(in,*this);
   if(!parser.Read()) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Unable to parse PCD file");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Unable to parse PCD file");
     return false;
   }
   int elemIndex[3] = {-1,-1,-1};
@@ -339,51 +341,50 @@ bool PointCloud3D::LoadPCL(istream& in)
     if(propertyNames[i]=="z") elemIndex[2] = (int)i;
   }
   if(elemIndex[0]<0 || elemIndex[1]<0 || elemIndex[2]<0) {
-        LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Warning, PCD file does not have x, y or z");
-        LOG4CXX_ERROR(KrisLibrary::logger(),"  Properties:");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PCD parser: Warning, PCD file does not have x, y or z");
+    LOG4CXX_ERROR(KrisLibrary::logger(),"  Properties:");
     for(size_t i=0;i<propertyNames.size();i++)
-            LOG4CXX_ERROR(KrisLibrary::logger()," \""<<propertyNames[i].c_str());
-        LOG4CXX_ERROR(KrisLibrary::logger(),"");
+      LOG4CXX_ERROR(KrisLibrary::logger()," \""<<propertyNames[i].c_str());
+    LOG4CXX_ERROR(KrisLibrary::logger(),"");
     return true;
   }
 
   //HACK: for float RGB and RGBA elements, convert float bytes
   //to integer via memory cast
   Assert(propertyNames.size() == parser.types.size());
+  Assert((int)propertyNames.size() == properties.n);
   for(size_t k=0;k<propertyNames.size();k++) {
     if(parser.types[k] == "F" && (propertyNames[k] == "rgb" || propertyNames[k] == "rgba")) { 
       bool docast = false;
-      for(size_t i=0;i<properties.size();i++) {
-    Vector& v = properties[i];
-    float f = float(v[k]);
-    if(f < 1.0 && f > 0.0) {
-      docast=true;
-      break;
-    }
+      for(int i=0;i<properties.m;i++) {
+        float f = float(properties(i,k));
+        if(f < 1.0 && f > 0.0) {
+          docast=true;
+          break;
+        }
       }
       if(docast) {
         //LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud::LoadPCL: Warning, casting RGB colors to integers via direct memory cast");
-    for(size_t i=0;i<properties.size();i++) {
-      Vector& v = properties[i];
-      float f = float(v[k]);
-      int rgb = *((int*)&f);
-      v[k] = (Real)rgb;
-    }
+        for(int i=0;i<properties.m;i++) {
+          float f = float(properties(i,k));
+          int rgb = *((int*)&f);
+          properties(i,k) = (Real)rgb;
+        }
       }
     }
   }
 
   //parse out the points
-  points.resize(properties.size());
-  for(size_t i=0;i<properties.size();i++) {
-    points[i].set(properties[i][elemIndex[0]],properties[i][elemIndex[1]],properties[i][elemIndex[2]]);
+  points.resize(properties.m);
+  for(int i=0;i<properties.m;i++) {
+    points[i].set(properties(i,elemIndex[0]),properties(i,elemIndex[1]),properties(i,elemIndex[2]));
   }
   //LOG4CXX_INFO(KrisLibrary::logger(),"PCD parser: "<<points.size());
 
-  if(properties.size()==3 && elemIndex[0]==0 && elemIndex[1]==1 && elemIndex[2]==2) {
+  if(properties.n==3 && elemIndex[0]==0 && elemIndex[1]==1 && elemIndex[2]==2) {
     //x,y,z are the only properties, go ahead and take them out
-    propertyNames.resize(0);
-    properties.resize(0);
+    propertyNames.clear();
+    properties.clear();
   }
   return true;
 }
@@ -411,7 +412,7 @@ bool PointCloud3D::SavePCL(ostream& out) const
   out<<endl;
 
   if(!properties.empty())
-    out<<"POINTS "<<properties.size();
+    out<<"POINTS "<<properties.m;
   else 
     out<<"POINTS "<<points.size();
   out<<endl;
@@ -428,11 +429,11 @@ bool PointCloud3D::SavePCL(ostream& out) const
       out<<points[i]<<endl;
   }
   else {
-    for(size_t i=0;i<properties.size();i++) {
+    for(int i=0;i<properties.m;i++) {
       if(addxyz)
         out<<points[i]<<" ";
-      for(int j=0;j<properties[i].n;j++)
-        out<<properties[i][j]<<" ";
+      for(int j=0;j<properties.n;j++)
+        out<<properties(i,j)<<" ";
       out<<endl;
     }
   }
@@ -441,9 +442,9 @@ bool PointCloud3D::SavePCL(ostream& out) const
 
 void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const std::vector<float>& depths,const std::vector<unsigned int>& rgb,float invalidDepth)
 {
-  Assert(depths.size() == w*h);
+  Assert((int)depths.size() == w*h);
   if(!rgb.empty())
-    Assert(rgb.size() == w*h);
+    Assert((int)rgb.size() == w*h);
   FromDepthImage(w,h,wfov,hfov,&depths[0],&rgb[0],invalidDepth);
 }
 
@@ -473,10 +474,9 @@ void PointCloud3D::FromDepthImage(int w,int h,float wfov,float hfov,const float*
   if(rgb) {
     propertyNames.resize(1);
     propertyNames[0] = "rgb";
-    properties.resize(points.size());
+    properties.resize(points.size(),1);
     for(size_t i=0;i<points.size();i++) {
-      properties[i].resize(1);
-      properties[i][0] = Real(rgb[i]);
+      properties(i,0) = Real(rgb[i]);
     }
   }
 }
@@ -610,10 +610,27 @@ void PointCloud3D::Transform(const Matrix4& mat)
     //transform normals if this has them
     if(hasNormals) {
       Vector3 temp2;
-      temp.set(properties[i][nxind],properties[i][nyind],properties[i][nzind]);
+      temp.set(properties(i,nxind),properties(i,nyind),properties(i,nzind));
       mat.mulVector(temp,temp2);
-      temp2.get(properties[i][nxind],properties[i][nyind],properties[i][nzind]);
+      temp2.get(properties(i,nxind),properties(i,nyind),properties(i,nzind));
     }
+  }
+
+  //transform viewpoint, if available
+  if(settings.count("viewpoint") > 0) {
+    stringstream ss(settings["viewpoint"]);
+    RigidTransform vpOld;
+    QuaternionRotation q;
+    ss>>vpOld.t>>q;
+    q.getMatrix(vpOld.R);
+
+    RigidTransform T(mat);
+    RigidTransform vpNew = T*vpOld;
+
+    q.setMatrix(vpNew.R);
+    stringstream ss2;
+    ss2 << vpNew.t <<" "<<q;
+    settings["viewpoint"] = ss2.str();
   }
 }
 
@@ -645,26 +662,37 @@ void PointCloud3D::SetXYZAsProperties(bool isprop)
     int numprops = propertyNames.size();
     for(int i=0;i<3;i++)
       if(elemIndex[i] < 0) {
-    propertyNames.push_back(elementNames[i]);
-    elemIndex[i] = numprops;
-    numprops++;
+        propertyNames.push_back(elementNames[i]);
+        elemIndex[i] = numprops;
+        numprops++;
       }
-    if(properties.empty()) 
-      properties.resize(points.size());
+    properties.resizePersist(points.size(),numprops);
     for(size_t i=0;i<points.size();i++) {
-      Vector oldprops = properties[i];
-      properties[i].resize(numprops);
-      properties[i].copySubVector(0,oldprops);
-      properties[i][elemIndex[0]] = points[i].x;
-      properties[i][elemIndex[1]] = points[i].y;
-      properties[i][elemIndex[2]] = points[i].z;
+      if(elemIndex[0] >= 0) properties(i,elemIndex[0]) = points[i].x;
+      if(elemIndex[1] >= 0) properties(i,elemIndex[1]) = points[i].y;
+      if(elemIndex[2] >= 0) properties(i,elemIndex[2]) = points[i].z;
     }
   }
   else {
-    //remove from properties
-    if(elemIndex[2] >= 0) RemoveProperty("z");
-    if(elemIndex[1] >= 0) RemoveProperty("y");
-    if(elemIndex[0] >= 0) RemoveProperty("x");
+    if(elemIndex[0] < 0 || elemIndex[0] > elemIndex[1] || elemIndex[1] > elemIndex[2]) {
+      //remove from properties
+      if(elemIndex[2] >= 0) RemoveProperty("z");
+      if(elemIndex[1] >= 0) RemoveProperty("y");
+      if(elemIndex[0] >= 0) RemoveProperty("x");
+    }
+    else {
+      //erase the columns associated with x,y,z
+      vector<int> remappedCols(properties.n-3);
+      for(int i=0;i<elemIndex[0];i++) remappedCols[i] = i;
+      for(int i=elemIndex[0]+1;i<elemIndex[1];i++) remappedCols[i-1] = i;
+      for(int i=elemIndex[1]+1;i<elemIndex[2];i++) remappedCols[i-2] = i;
+      for(int i=elemIndex[2]+1;i<properties.n;i++) remappedCols[i-3] = i;
+      Matrix newProperties(properties.m,properties.n-3);
+      for(int i=0;i<properties.m;i++)
+        for(int j=0;j<properties.n-3;j++)
+          newProperties(i,j) = properties(i,remappedCols[j]);
+      swap(properties,newProperties); 
+    }
   }
 }
 
@@ -677,9 +705,9 @@ bool PointCloud3D::GetNormals(vector<Vector3>& normals) const
 {
   int nx=PropertyIndex("normal_x"),ny=PropertyIndex("normal_y"),nz=PropertyIndex("normal_z");
   if(nx < 0 || ny < 0 || nz < 0) return false;
-  normals.resize(properties.size());
-  for(size_t i=0;i<properties.size();i++)
-    normals[i].set(properties[i][nx],properties[i][ny],properties[i][nz]);
+  normals.resize(properties.m);
+  for(int i=0;i<properties.m;i++)
+    normals[i].set(properties(i,nx),properties(i,ny),properties(i,nz));
   return true;
 }
 
@@ -699,9 +727,9 @@ void PointCloud3D::SetNormals(const vector<Vector3>& normals)
     vector<Real> items(points.size());
     nz = SetProperty("normal_z",items);
   }
-  Assert(properties.size() == points.size());
-  for(size_t i=0;i<properties.size();i++)
-    normals[i].get(properties[i][nx],properties[i][ny],properties[i][nz]);
+  Assert(properties.m == (int)points.size());
+  for(int i=0;i<properties.m;i++)
+    normals[i].get(properties(i,nx),properties(i,ny),properties(i,nz));
 }
 bool PointCloud3D::HasColor() const
 {
@@ -915,6 +943,37 @@ void PointCloud3D::SetColors(const vector<Real>& r,const vector<Real>& g,const v
   }
 }
 
+void PointCloud3D::SetColors(const vector<Vector3>& rgb,bool includeAlpha)
+{
+  Assert(points.size()==rgb.size());
+  Real r,g,b,a=1.0;
+  if(!includeAlpha) {
+    //pack it
+    vector<Real> packed(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) {
+      rgb[i].get(r,g,b);
+      int col = ((int(r*255.0) & 0xff) << 16) |
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
+      packed[i] = Real(col);
+    }
+    SetProperty("rgb",packed);
+  }
+  else {
+    //pack it
+    vector<Real> packed(rgb.size());
+    for(size_t i=0;i<rgb.size();i++) {
+      rgb[i].get(r,g,b);
+      int col = ((int(a*255.0) & 0xff) << 24) |
+        ((int(r*255.0) & 0xff) << 16) |
+        ((int(g*255.0) & 0xff) << 8) |
+        (int(b*255.0) & 0xff);
+      packed[i] = Real(col);
+    }
+    SetProperty("rgba",packed);
+  }
+}
+
 void PointCloud3D::SetColors(const vector<Vector4>& rgba,bool includeAlpha)
 {
   Assert(points.size()==rgba.size());
@@ -983,9 +1042,9 @@ bool PointCloud3D::GetProperty(const string& name,vector<Real>& items) const
 {
   int i = PropertyIndex(name);
   if(i < 0) return false;
-  items.resize(properties.size());
-  for(size_t k=0;k<properties.size();k++)
-    items[k] = properties[k][i];
+  items.resize(properties.m);
+  for(int k=0;k<properties.m;k++)
+    items[k] = properties(k,i);
   return true;
 }
 
@@ -994,8 +1053,8 @@ int PointCloud3D::SetProperty(const string& name,const vector<Real>& items)
   Assert(items.size() == points.size());
   int i = PropertyIndex(name);
   if(i >= 0) {
-    for(size_t k=0;k<properties.size();k++) {
-      properties[k][i] = items[k];
+    for(int k=0;k<properties.m;k++) {
+      properties(k,i) = items[k];
     }
     return i;
   }
@@ -1003,13 +1062,9 @@ int PointCloud3D::SetProperty(const string& name,const vector<Real>& items)
     //add it
     int m = (int)propertyNames.size();
     propertyNames.push_back(name);
-    if(properties.empty())
-      properties.resize(points.size());
-    for(size_t k=0;k<properties.size();k++) {
-      Vector oldval = properties[k];
-      properties[k].resize(m+1);
-      properties[k].copySubVector(0,oldval);
-      properties[k][m] = items[k];
+    properties.resizePersist(points.size(),m+1);
+    for(int k=0;k<properties.m;k++) {
+      properties(k,m) = items[k];
     }
     return m;
   }
@@ -1018,19 +1073,15 @@ void PointCloud3D::RemoveProperty(const string& name)
 {
   int i = PropertyIndex(name);
   if(i >= 0) {
-    for(size_t k=0;k<properties.size();k++) {
-      for(size_t j=i+1;j<propertyNames.size();j++)
-    properties[k][j-1] = properties[k][j];
-      properties[k].n--;
-    }
+    properties.eraseCol(i);
     propertyNames.erase(propertyNames.begin()+i);
     return;
   }
   else
-        LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::RemoveProperty: warning, property "<<name.c_str());
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::RemoveProperty: warning, property "<<name.c_str());
 }
 
-void PointCloud3D::GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud)
+void PointCloud3D::GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud) const
 {
   subcloud.Clear();
   subcloud.propertyNames = propertyNames;
@@ -1039,75 +1090,78 @@ void PointCloud3D::GetSubCloud(const vector<int>& indices,PointCloud3D& subcloud
     subcloud.settings.erase(subcloud.settings.find("width"));
   if(settings.count("height"))
     subcloud.settings.erase(subcloud.settings.find("height"));
+  subcloud.points.resize(indices.size());
+  if(!properties.empty())
+    subcloud.properties.resize(indices.size(),properties.n);
   for(size_t i=0;i<indices.size();i++) {
     Assert(indices[i] >= 0 && indices[i] < (int)points.size());
-    subcloud.points.push_back(points[indices[i]]);
-    subcloud.properties.push_back(properties[indices[i]]);
+    subcloud.points[i] = points[indices[i]];
+    if(!properties.empty()) {
+      Vector prop;
+      properties.getRowRef(indices[i],prop);
+      subcloud.properties.copyRow(i,prop);
+    }
   }
 }
 
-void PointCloud3D::GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud)
+void PointCloud3D::GetSubCloud(const Vector3& bmin,const Vector3& bmax,PointCloud3D& subcloud) const
 {
   AABB3D bb(bmin,bmax);
-  subcloud.Clear();
-  subcloud.propertyNames = propertyNames;
-  subcloud.settings = settings;
-  if(settings.count("width"))
-    subcloud.settings.erase(subcloud.settings.find("width"));
-  if(settings.count("height"))
-    subcloud.settings.erase(subcloud.settings.find("height"));
+  vector<int> contained;
   for(size_t i=0;i<points.size();i++)
     if(bb.contains(points[i])) {
-      subcloud.points.push_back(points[i]);
-      subcloud.properties.push_back(properties[i]);
+      contained.push_back(i);
     }
+  GetSubCloud(contained,subcloud);
 }
 
-void PointCloud3D::GetSubCloud(const string& property,Real value,PointCloud3D& subcloud)
+void PointCloud3D::GetSubCloud(const string& property,Real value,PointCloud3D& subcloud) const
 {
   GetSubCloud(property,value,value,subcloud);
 }
 
-void PointCloud3D::GetSubCloud(const string& property,Real minValue,Real maxValue,PointCloud3D& subcloud)
+void PointCloud3D::GetSubCloud(const string& property,Real minValue,Real maxValue,PointCloud3D& subcloud) const
 {
-  subcloud.Clear();
-  subcloud.propertyNames = propertyNames;
-  subcloud.settings = settings;
-  if(settings.count("width"))
-    subcloud.settings.erase(subcloud.settings.find("width"));
-  if(settings.count("height"))
-    subcloud.settings.erase(subcloud.settings.find("height"));
+  vector<int> selection;
   if(property == "x") {
     for(size_t i=0;i<points.size();i++)
-      if(minValue <= points[i].x && points[i].x <= maxValue) {
-    subcloud.points.push_back(points[i]);
-    subcloud.properties.push_back(properties[i]);
-      }
+      if(minValue <= points[i].x && points[i].x <= maxValue) 
+        selection.push_back(i);
   }
   else if(property == "y") {
     for(size_t i=0;i<points.size();i++)
-      if(minValue <= points[i].y && points[i].y <= maxValue) {
-    subcloud.points.push_back(points[i]);
-    subcloud.properties.push_back(properties[i]);
-      }
+      if(minValue <= points[i].y && points[i].y <= maxValue) 
+        selection.push_back(i);
   }
   else if(property == "z") {
     for(size_t i=0;i<points.size();i++)
-      if(minValue <= points[i].z && points[i].z <= maxValue) {
-    subcloud.points.push_back(points[i]);
-    subcloud.properties.push_back(properties[i]);
-      }
+      if(minValue <= points[i].z && points[i].z <= maxValue) 
+        selection.push_back(i);
   }
   else {
     int i=PropertyIndex(property);
     if(i < 0) {
-            LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::GetSubCloud: warning, property "<<property.c_str());
+      LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::GetSubCloud: warning, property "<<property.c_str());
       return;
     }
-    for(size_t k=0;k<properties.size();k++)
-      if(minValue <= properties[k][i] && properties[k][i] <= maxValue) {
-    subcloud.points.push_back(points[k]);
-    subcloud.properties.push_back(properties[k]);
-      }
+    for(int k=0;k<properties.m;k++)
+      if(minValue <= properties(k,i) && properties(k,i) <= maxValue) 
+        selection.push_back(k);
+  }
+  GetSubCloud(selection,subcloud);
+}
+
+void PointCloud3D::Concat(const PointCloud3D& other)
+{
+  if(propertyNames != other.propertyNames) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"PointCloud3D::Concat: property names do not match");
+    Abort();
+  }
+  points.insert(points.end(),other.points.begin(),other.points.end());
+  if(!properties.empty()) {
+    Matrix joinedProperties(properties.m+other.properties.m,properties.n);
+    joinedProperties.copySubMatrix(0,0,properties);
+    joinedProperties.copySubMatrix(properties.m,0,other.properties);
+    swap(properties,joinedProperties);
   }
 }

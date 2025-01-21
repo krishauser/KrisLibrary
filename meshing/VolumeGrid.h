@@ -79,14 +79,19 @@ class VolumeGridTemplate
   void GetIndexRange(const AABB3D& range,IntTriple& imin,IntTriple& imax) const;
   ///Note: checks whether cell is valid, returns false if cell invalid
   bool GetIndexChecked(const Vector3& pt,int& i,int& j,int& k) const;
+  ///Note: clamps to valid cells
+  void GetIndexClamped(const Vector3& pt,int& i,int& j,int& k) const;
   ///Note: checks whether cell is valid, returns false if cell invalid
   bool GetIndexAndParamsChecked(const Vector3& pt,IntTriple& index,Vector3& params) const;
+  ///Note: clamps to valid cells
+  void GetIndexAndParamsClamped(const Vector3& pt,IntTriple& index,Vector3& params) const;
   ///Note: clamps to valid cells, returns false if no cells overlapped
   bool GetIndexRangeClamped(const AABB3D& range,IntTriple& imin,IntTriple& imax) const;
   inline void GetCell(const IntTriple& index,AABB3D& cell) const { GetCell(index.a,index.b,index.c,cell); }
   inline void GetCenter(const IntTriple& index,Vector3& center) const { GetCellCenter(index.a,index.b,index.c,center); }
   inline void GetIndex(const Vector3& pt,IntTriple& index) const { GetIndex(pt,index.a,index.b,index.c); }
   inline bool GetIndexChecked(const Vector3& pt,IntTriple& index) const { return GetIndexChecked(pt,index.a,index.b,index.c); }
+  inline void GetIndexClamped(const Vector3& pt,IntTriple& index) const { return GetIndexClamped(pt,index.a,index.b,index.c); }
   inline void SetValue(int i,int j,int k,const T& v) { value(i,j,k)=v; }
   inline void SetValue(const Vector3& pt,const T& v) { int i,j,k; GetIndex(pt,i,j,k); value(i,j,k)=v; }
   inline T GetValue(int i,int j,int k) const { return value(i,j,k); }
@@ -211,6 +216,7 @@ void VolumeGridIterator<T>::setBoxRange(const Vector3& bmin,const Vector3& bmax)
   if(imax.a < 0 || imax.b < 0 || imax.c < 0 || imin.a >= cells.m || imin.b >= cells.n || imin.c >= cells.p) {
     index = hi;
     index.a++;  //indicate done
+    assert(isDone());
     return;
   }
   imin.a = Max(imin.a,0);

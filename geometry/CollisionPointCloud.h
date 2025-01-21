@@ -7,10 +7,13 @@
 #include <limits>
 #include "GridSubdivision.h"
 #include "Octree.h"
+#include "GeometryType.h"
+#include "GeometryTypeImpl.h"
 
 namespace Geometry {
 
-  using namespace Math3D;
+using namespace Math3D;
+
 
 /** @brief A point cloud with a fast collision detection data structure
  *
@@ -27,6 +30,8 @@ class CollisionPointCloud : public Meshing::PointCloud3D
   ///called during initialization, and needs to be called any time the point
   ///cloud changes
   void InitCollisions(int hints=0);
+  ///Returns the point radius if present, or 0 otherwise
+  Real PointRadius(int i) const { return (radiusIndex >= 0 ? properties(i,radiusIndex) : 0.0); }
 
   ///The local bounding box of the point cloud
   AABB3D bblocal;
@@ -38,6 +43,36 @@ class CollisionPointCloud : public Meshing::PointCloud3D
 
   int radiusIndex;   ///< the index of point radii, or -1 if not defined
   Real maxRadius;    ///< the maximum over all point radii
+};
+
+
+class Collider3DPointCloud : public Collider3D
+{
+public:
+    Collider3DPointCloud(shared_ptr<Geometry3DPointCloud> data);
+    Collider3DPointCloud(const Collider3DPointCloud& rhs);
+    virtual ~Collider3DPointCloud() {}
+    virtual shared_ptr<Geometry3D> GetData() const override { return dynamic_pointer_cast<Geometry3D>(data); }
+    virtual void Reset() override;
+    virtual AABB3D GetAABB() const override;
+    virtual AABB3D GetAABBTight() const override;
+    virtual Box3D GetBB() const override;
+    virtual RigidTransform GetTransform() const override { return collisionData.currentTransform; }
+    virtual Collider3D* Copy(shared_ptr<Geometry3D> geom) const override;
+    virtual void SetTransform(const RigidTransform& T) override { collisionData.currentTransform = T; }
+    virtual bool Contains(const Vector3& pt,bool& result) override;
+    virtual bool Distance(const Vector3& pt,Real& result) override;
+    virtual bool Distance(const Vector3& pt,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool Distance(Collider3D* geom,const DistanceQuerySettings& settings,DistanceQueryResult& res) override;
+    virtual bool WithinDistance(Collider3D* geom,Real d,vector<int>& elements1,vector<int>& elements2,size_t maxcollisions=INT_MAX) override;
+    virtual bool Contacts(Collider3D* other,const ContactsQuerySettings& settings,ContactsQueryResult& res) override;
+    virtual bool RayCast(const Ray3D& r,Real margin,Real& distance,int& element) override;
+    virtual Collider3D* Slice(const RigidTransform& T,Real tol=0) const override;
+    virtual Collider3D* ExtractROI(const AABB3D& bb,int flag=1) const override;
+    virtual Collider3D* ExtractROI(const Box3D& bb,int flag=1) const override;
+
+    shared_ptr<Geometry3DPointCloud> data;
+    CollisionPointCloud collisionData;
 };
 
 ///Returns the oriented bounding box of the point cloud

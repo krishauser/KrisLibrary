@@ -115,6 +115,21 @@ inline Real IncidentTriangleArea(const TriMeshWithTopology& mesh,int v)
   return size;
 }
 
+/// @brief Deletes some triangles from the mesh, taking out vertices that are no longer used. 
+///
+/// newVertMap gives the map from old vertices to new vertices, marking -1 for
+/// vertices that are deleted.  newTriMap gives the map from old triangles to new
+/// triangles, marking -1 for triangles that are deleted.
+void DropTriangles(TriMesh& mesh,const vector<int>& trisToDelete,vector<int>& newVertMap,vector<int>& newTriMap);
+
+/// @brief Deletes some vertices, taking out triangles that touch those vertices. 
+///
+/// newVertMap gives the map from old vertices to new vertices, marking -1 for
+/// vertices that are deleted.  newTriMap gives the map from old triangles to new
+/// triangles, marking -1 for triangles that are deleted.
+void DropVertices(TriMesh& mesh,const vector<int>& vertsToDelete,vector<int>& newVertMap,vector<int>& newTriMap);
+
+
 ///Divides the triangles connected to v in lists sorted by CCW order.
 ///Returns true if the vertex is a boundary vertex
 bool IncidentTriangleOrdering(const TriMeshWithTopology& mesh,int v,vector<list<int> >& triStrips);

@@ -1,10 +1,12 @@
 #include <KrisLibrary/Logger.h>
 #include "Rasterize.h"
 #include "Meshing.h"
-#include <math/cast.h>
-#include <geometry/primitives.h>
-#include <utils/shift.h>
+#include <KrisLibrary/math/cast.h>
+#include <KrisLibrary/math3d/clip.h>
+#include <KrisLibrary/geometry/primitives.h>
+#include <KrisLibrary/utils/shift.h>
 #include <errors.h>
+#include <limits.h>
 using namespace Geometry;
 using namespace std;
 
@@ -16,25 +18,51 @@ struct BarycentricCoords
 };
 
 //crop to the positive side of plane p, adds the resulting triangles to res
-void CropTriangles(vector<Triangle2D>& tris,const Plane2D& p)
+void CropTriangles(vector<Triangle2D>& tris,const Plane2D& p,vector<BarycentricCoords>& coords)
 {
+  Assert(tris.size() == coords.size());
   Vector2 newPts[2];
+  Vector3 newCoords[2];
+  Vector3 newCoordsLocal[2];
   IntTriple newTris[3];
   bool triPositive[3];
   size_t n=tris.size();
   for(size_t i=0;i<n;i++) {
-    int nt=SplitTriangle(tris[i],p,newPts,newTris,triPositive,1e-5);
+    newPts[0].set(Inf);
+    newPts[1].set(Inf);
+    newCoordsLocal[0].set(Inf);
+    newCoordsLocal[1].set(Inf);
+    int nt=SplitTriangle(tris[i],p,newPts,newCoordsLocal,newTris,triPositive,1e-5);
+    newCoords[0] = newCoordsLocal[0].x*coords[i].a + newCoordsLocal[0].y*coords[i].b + newCoordsLocal[0].z*coords[i].c;
+    newCoords[1] = newCoordsLocal[1].x*coords[i].a + newCoordsLocal[1].y*coords[i].b + newCoordsLocal[1].z*coords[i].c;
     const Vector2* p[5]={&tris[i].a,&tris[i].b,&tris[i].c,&newPts[0],&newPts[1]};
-    for(int k=0;k<nt;k++)
+    const Vector3* b[5]={&coords[i].a,&coords[i].b,&coords[i].c,&newCoords[0],&newCoords[1]};
+    for(int k=0;k<nt;k++) {
+      Assert(newTris[k][0] >= 0 && newTris[k][0] < 5);
+      Assert(newTris[k][1] >= 0 && newTris[k][1] < 5);
+      Assert(newTris[k][2] >= 0 && newTris[k][2] < 5);
       if(triPositive[k]) {
-	Triangle2D temp;
-	temp.a = *p[newTris[k][0]];
-	temp.b = *p[newTris[k][1]];
-	temp.c = *p[newTris[k][2]];
-	tris.push_back(temp);
+        Triangle2D temp;
+        temp.a = *p[newTris[k][0]];
+        temp.b = *p[newTris[k][1]];
+        temp.c = *p[newTris[k][2]];
+        Assert(IsFinite(temp.a.x));
+        Assert(IsFinite(temp.b.x));
+        Assert(IsFinite(temp.c.x));
+        tris.push_back(temp);
+        BarycentricCoords tempb;
+        tempb.a = *b[newTris[k][0]];
+        tempb.b = *b[newTris[k][1]];
+        tempb.c = *b[newTris[k][2]];
+        Assert(IsFinite(tempb.a.x));
+        Assert(IsFinite(tempb.b.x));
+        Assert(IsFinite(tempb.c.x));
+        coords.push_back(tempb);
       }
+    }
   }
   tris.erase(tris.begin(),tris.begin()+n);
+  coords.erase(coords.begin(),coords.begin()+n);
 }
 
 
@@ -42,13 +70,13 @@ void Clip(const AABB2D& aabb,std::vector<Triangle2D>& tris,std::vector<Barycentr
 {
   Plane2D p;
   p.normal.set(1,0); p.offset = aabb.bmin.x;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
   p.normal.set(-1,0); p.offset = -aabb.bmax.x;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
   p.normal.set(0,1); p.offset = aabb.bmin.y;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
   p.normal.set(0,-1); p.offset = -aabb.bmax.y;
-  CropTriangles(tris,p);
+  CropTriangles(tris,p,bary);
 }
 
 void GetSegmentCells(const Segment2D& s,vector<IntPair>& cells)
@@ -76,14 +104,14 @@ void GetSegmentCells(const Segment2D& s,vector<IntPair>& cells)
     }
     if(d.y > 0) { //check +y face
       if((cellCorner.y+1.0)-s.a.y < param*d.y) {
-	param = ((cellCorner.y+1.0)-s.a.y)*invdy;
-	closest = 2;
+        param = ((cellCorner.y+1.0)-s.a.y)*invdy;
+        closest = 2;
       }
     }
     else if(d.y < 0) { //check -y face
       if(cellCorner.y-s.a.y > param*d.y) {
-	param = (cellCorner.y-s.a.y)*invdy;
-	closest = -2;
+        param = (cellCorner.y-s.a.y)*invdy;
+        closest = -2;
       }
     }
     switch(closest) {
@@ -92,6 +120,25 @@ void GetSegmentCells(const Segment2D& s,vector<IntPair>& cells)
     case -1: i.a--; cellCorner.x-=1.0; break;
     case 2: i.b++; cellCorner.y+=1.0; break;
     case -2: i.b--; cellCorner.y-=1.0; break;
+    }
+  }
+}
+
+void GetRayCells(const Ray2D& ray,std::vector<IntPair>& cells,int imin,int jmin,int imax,int jmax)
+{
+  cells.resize(0);
+  Real u1=0,u2=Inf;
+  AABB2D bb(Vector2((Real)imin,(Real)jmin),Vector2((Real)imax-0.25,(Real)jmax-0.25));
+  if(!ClipLine(ray.source,ray.direction,bb,u1,u2)) return;
+  Segment2D s;
+  s.a = ray.source + ray.direction*u1;
+  s.b = ray.source + ray.direction*u2;
+  GetSegmentCells(s,cells);
+  for(size_t i=0;i<cells.size();i++) {
+    if(cells[i].a < imin || cells[i].a >= imax ||
+       cells[i].b < jmin || cells[i].b >= jmax) {
+      cells.erase(cells.begin()+i);
+      i--;
     }
   }
 }
@@ -168,9 +215,9 @@ void GetTriangleCells_Clipped(const Triangle2D& torig,std::vector<IntPair>& cell
     GetSegmentCells(s,cells);
     for(size_t i=0;i<cells.size();i++) {
       if(cells[i].a < imin || cells[i].a >= imax ||
-	 cells[i].b < jmin || cells[i].b >= jmax) {
-	cells.erase(cells.begin()+i);
-	i--;
+         cells[i].b < jmin || cells[i].b >= jmax) {
+        cells.erase(cells.begin()+i);
+        i--;
       }
     }
     return;
@@ -193,38 +240,38 @@ void GetTriangleCells_Clipped(const Triangle2D& torig,std::vector<IntPair>& cell
     Real z1 = m1*xnext+b1,z2=m2*xnext+b2;
     while(x < c.x) {
       if(xnext > b.x) {
-	z1 = b.y;
+        z1 = b.y;
       }
       if(xnext > c.x) {
-	z2 = c.y;
+        z2 = c.y;
       }
 
       //fill the segment (x,y1)->(x,y2)
       int iymin,iymax;
       if(long_end_up) {
-	if(y1 < y2-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y2,z2));
-	iymax = (int)iFloor(Max(y1,z1));
+        if(y1 < y2-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y2,z2));
+        iymax = (int)iFloor(Max(y1,z1));
       }
       else {
-	if(y2 < y1-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y1,z1));
-	iymax = (int)iFloor(Max(y2,z2));
+        if(y2 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<a<<"->"<<c<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y1,z1));
+        iymax = (int)iFloor(Max(y2,z2));
       }
       iymin = Max(iymin,jmin);
       iymax = Min(iymax,jmax-1);
       for(int iy=iymin;iy<=iymax;iy++)
-	cells.push_back(IntPair(ix,iy));
+        cells.push_back(IntPair(ix,iy));
 
       x = xnext;
       xnext += 1.0;
@@ -244,35 +291,35 @@ void GetTriangleCells_Clipped(const Triangle2D& torig,std::vector<IntPair>& cell
     Real z1 = m1*xnext+b1,z3=m3*xnext+b3;
     while(x < b.x) {
       if(xnext > b.x) {
-	z1 = z3 = b.y;
+        z1 = z3 = b.y;
       }
 
       //fill the segment (x,y1)->(x,y3)
       int iymin,iymax;
       if(long_end_up) {
-	if(y1 < y3-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y3,z3));
-	iymax = (int)iFloor(Max(y1,z1));
+        if(y1 < y3-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y3,z3));
+        iymax = (int)iFloor(Max(y1,z1));
       }
       else {
-	if(y3 < y1-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y1,z1));
-	iymax = (int)iFloor(Max(y3,z3));
+        if(y3 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<a<<"->"<<b<<", "<<c<<"->"<<b<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y1,z1));
+        iymax = (int)iFloor(Max(y3,z3));
       }
       iymin = Max(iymin,jmin);
       iymax = Min(iymax,jmax-1);
       for(int iy=iymin;iy<=iymax;iy++)
-	cells.push_back(IntPair(ix,iy));
+        cells.push_back(IntPair(ix,iy));
       x = xnext;
       xnext += 1.0;
       ix++;
@@ -376,36 +423,36 @@ void GetTriangleCells(const Triangle2D& t,vector<IntPair>& cells)
     Real z1 = m1*xnext+b1,z2=m2*xnext+b2;
     while(x < v[2]->x) {
       if(xnext > v[1]->x) {
-	z1 = v[1]->y;
+        z1 = v[1]->y;
       }
       if(xnext > v[2]->x) {
-	z2 = v[2]->y;
+        z2 = v[2]->y;
       }
 
       //fill the segment (x,y1)->(x,y2)
       int iymin,iymax;
       if(long_end_up) {
-	if(y1 < y2-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y2,z2));
-	iymax = (int)iFloor(Max(y1,z1));
+        if(y1 < y2-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y2,z2));
+        iymax = (int)iFloor(Max(y1,z1));
       }
       else {
-	if(y2 < y1-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y1,z1));
-	iymax = (int)iFloor(Max(y2,z2));
+        if(y2 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y1,z1));
+        iymax = (int)iFloor(Max(y2,z2));
       }
       for(int iy=iymin;iy<=iymax;iy++)
-	cells.push_back(IntPair(ix,iy));
+        cells.push_back(IntPair(ix,iy));
 
       x = xnext;
       xnext += 1.0;
@@ -424,33 +471,33 @@ void GetTriangleCells(const Triangle2D& t,vector<IntPair>& cells)
     Real z1 = m1*xnext+b1,z3=m3*xnext+b3;
     while(x < v[1]->x) {
       if(xnext > v[1]->x) {
-	z1 = z3 = v[1]->y;
+        z1 = z3 = v[1]->y;
       }
 
       //fill the segment (x,y1)->(x,y3)
       int iymin,iymax;
       if(long_end_up) {
-	if(y1 < y3-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y3,z3));
-	iymax = (int)iFloor(Max(y1,z1));
+        if(y1 < y3-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y3,z3));
+        iymax = (int)iFloor(Max(y1,z1));
       }
       else {
-	if(y3 < y1-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1);
-	  KrisLibrary::loggerWait();
-	}
-	iymin = (int)iFloor(Min(y1,z1));
-	iymax = (int)iFloor(Max(y3,z3));
+        if(y3 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1);
+          KrisLibrary::loggerWait();
+        }
+        iymin = (int)iFloor(Min(y1,z1));
+        iymax = (int)iFloor(Max(y3,z3));
       }
       for(int iy=iymin;iy<=iymax;iy++)
-	cells.push_back(IntPair(ix,iy));
+        cells.push_back(IntPair(ix,iy));
       x = xnext;
       xnext += 1.0;
       ix++;
@@ -460,6 +507,56 @@ void GetTriangleCells(const Triangle2D& t,vector<IntPair>& cells)
       z3 += m3;
     }
   }
+}
+
+class TriangleHeightRasterizer : public Rasterizer2D
+{
+  public:
+    std::vector<IntPair>& cells;
+    std::vector<Real>& heights;
+    int imin,jmin,imax,jmax;
+    Real hA,hB,hC;
+    TriangleHeightRasterizer(std::vector<IntPair>& _cells,std::vector<Real>& _heights)
+      :cells(_cells),heights(_heights)
+    {
+      imax = INT_MAX;
+      jmax = INT_MAX;
+      imin = INT_MIN;
+      jmin = INT_MIN;
+    }
+    virtual void VisitCell(const Vector3& params,int i,int j) override {
+
+      if(i>=imin && j>=jmin && i<imax && j<jmax) {
+        Real h = hA*params.x + hB*params.y + hC*params.z;
+        cells.push_back(IntPair(i,j));
+        heights.push_back(h);
+      }
+    }
+};
+
+void GetTriangleHeights(const Triangle3D& tri,std::vector<IntPair>& cells,std::vector<Real>& heights)
+{
+  TriangleHeightRasterizer rast(cells,heights);
+  rast.hA = tri.a.z;
+  rast.hB = tri.b.z;
+  rast.hC = tri.c.z;
+  rast.Rasterize(Triangle2D(Vector2(tri.a.x,tri.a.y),Vector2(tri.b.x,tri.b.y),Vector2(tri.c.x,tri.c.y)));
+}
+
+void GetTriangleHeights_Clipped(const Triangle3D& tri,std::vector<IntPair>& cells,std::vector<Real>& heights,int imin,int jmin,int imax,int jmax)
+{
+  TriangleHeightRasterizer rast(cells,heights);
+  rast.hA = tri.a.z;
+  rast.hB = tri.b.z;
+  rast.hC = tri.c.z;
+  rast.imin = imin;
+  rast.jmin = jmin;
+  rast.imax = imax;
+  rast.jmax = jmax;
+  AABB2D bb;
+  bb.bmin.set(imin,jmin);
+  bb.bmax.set(imax+1,jmax+1);
+  rast.ClippedRasterize(Triangle2D(Vector2(tri.a.x,tri.a.y),Vector2(tri.b.x,tri.b.y),Vector2(tri.c.x,tri.c.y)),bb);
 }
 
 
@@ -474,6 +571,10 @@ void Rasterizer2D::Rasterize(const Triangle2D& t)
 
 void Rasterizer2D::Rasterize(const Triangle2D& t,const Vector3& ba,const Vector3& bb,const Vector3& bc)
 {
+  Math3D::AABB2D aabb;
+  t.getAABB(aabb);
+  if((aabb.bmax-aabb.bmin).maxAbsElement() > 1e5)
+    FatalError("Rasterizer2D: Triangle is too large to rasterize");
   //LOG4CXX_INFO(KrisLibrary::logger(),"Rasterizing triangle "<<t.a<<", "<<t.b<<", "<<t.c<<"...");
   const Vector2* v[3]={&t.a,&t.b,&t.c};
   const Vector3* b[3]={&ba,&bb,&bc};
@@ -562,22 +663,22 @@ void Rasterizer2D::Rasterize(const Triangle2D& t,const Vector3& ba,const Vector3
     while(x < v[2]->x) {
       //fill the segment (x,y1)->(x,y2)
       if(long_end_up) {
-	if(y1 < y2-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2);
-	  KrisLibrary::loggerWait();
-	}
-	RasterizeVerticalSegment(ix,y2,y1,bary2,bary1);
+        if(y1 < y2-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2);
+          KrisLibrary::loggerWait();
+        }
+        RasterizeVerticalSegment(ix,y2,y1,bary2,bary1);
       }
       else {
-	if(y2 < y1-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1);
-	  KrisLibrary::loggerWait();
-	}
-	RasterizeVerticalSegment(ix,y1,y2,bary1,bary2);
+        if(y2 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1);
+          KrisLibrary::loggerWait();
+        }
+        RasterizeVerticalSegment(ix,y1,y2,bary1,bary2);
       }
       x += One;
       ix++;
@@ -598,25 +699,25 @@ void Rasterizer2D::Rasterize(const Triangle2D& t,const Vector3& ba,const Vector3
     while(x < v[1]->x) {
       //fill the segment (x,y1)->(x,y3)
       if(long_end_up) {
-	if(y1 < y3-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3);
-	  KrisLibrary::loggerWait();
-	}
-	RasterizeVerticalSegment(ix,y3,y1,bary3,bary1);
+        if(y1 < y3-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3);
+          KrisLibrary::loggerWait();
+        }
+        RasterizeVerticalSegment(ix,y3,y1,bary3,bary1);
       }
       else {
-	if(y3 < y1-1e-3) {
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"Den3 = "<<den3);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"m3 = "<<m3);
-	  LOG4CXX_ERROR(KrisLibrary::logger(),"b3 = "<<b3);
-	  KrisLibrary::loggerWait();
-	}
-	RasterizeVerticalSegment(ix,y1,y3,bary1,bary3);
+        if(y3 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Den3 = "<<den3);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"m3 = "<<m3);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"b3 = "<<b3);
+          KrisLibrary::loggerWait();
+        }
+        RasterizeVerticalSegment(ix,y1,y3,bary1,bary3);
       }
       x += One;
       ix++;
@@ -645,18 +746,204 @@ void Rasterizer2D::RasterizeVerticalSegment(int x,Real y1,Real y2,const Vector3&
   }
 }
 
+void Rasterizer2D::ClippedRasterizeVerticalSegment(int x,Real y1,Real y2,const Vector3& baryA,const Vector3& baryB,Real ymin,Real ymax)
+{
+  Assert(ymin <= ymax);
+  Assert(y1-1e-3 <= y2);
+  if(y2 == y1) return;
+  Real y=Ceil(Max(y1,ymin));
+  int iy=(int)iRound(y);
+  Real u=(y-y1)/(y2-y1);
+  Vector3 bary = (One-u)*baryA + u*baryB;
+  Vector3 baryInc=baryB-baryA;
+  baryInc /= y2-y1;
+  Real yend = Min(y2,ymax);
+  while(y<yend) {
+    VisitCell(bary,x,iy);
+    bary += baryInc;
+    y+=One;
+    iy++;
+  }
+}
+
 
 void Rasterizer2D::ClippedRasterize(const Triangle2D& t,const AABB2D& aabb)
 {
-  vector<Triangle2D> tris(1);
-  vector<BarycentricCoords> bary(1);
-  tris[0] = t;
-  bary[0].a.set(1,0,0);
-  bary[0].b.set(0,1,0);
-  bary[0].c.set(0,0,1);
-  Clip(aabb,tris,bary);
-  for(size_t i=0;i<tris.size();i++) {
-    Rasterize(tris[i],bary[i].a,bary[i].b,bary[i].c);
+  //This version was buggy
+  //   vector<Triangle2D> tris(1);
+  //   vector<BarycentricCoords> bary(1);
+  //   tris[0] = t;
+  //   bary[0].a.set(1,0,0);
+  //   bary[0].b.set(0,1,0);
+  //   bary[0].c.set(0,0,1);
+  //   Clip(aabb,tris,bary);
+  //   Assert(tris.size() == bary.size());
+    
+  //   for(size_t i=0;i<tris.size();i++) {
+  //     Rasterize(tris[i],bary[i].a,bary[i].b,bary[i].c);
+  //   }
+  Math3D::AABB2D aabb_temp;
+  t.getAABB(aabb_temp);
+  if((aabb_temp.bmax-aabb_temp.bmin).maxAbsElement() > 1e5)
+    FatalError("Rasterizer2D: Triangle is too large to rasterize");
+  if(!aabb_temp.intersects(aabb)) return;
+  Vector3 ba,bb,bc;
+  ba.set(1,0,0);
+  bb.set(0,1,0);
+  bc.set(0,0,1);
+  //LOG4CXX_INFO(KrisLibrary::logger(),"Rasterizing triangle "<<t.a<<", "<<t.b<<", "<<t.c<<"...");
+  const Vector2* v[3]={&t.a,&t.b,&t.c};
+  const Vector3* b[3]={&ba,&bb,&bc};
+  //rotate so that least lexicographic is in position 0
+  if(Lexical2DOrder(t.b,t.a)) {
+    if(Lexical2DOrder(t.c,t.b)) {  //c<b<a
+      //set c to the front
+      ShiftForward(v[0],v[1],v[2]);
+      ShiftForward(b[0],b[1],b[2]);
+    }
+    else {  //b<c, b<a
+      ShiftBackward(v[0],v[1],v[2]);
+      ShiftBackward(b[0],b[1],b[2]);
+    }
+  }
+  else {
+    if(Lexical2DOrder(t.c,t.a)) {
+      ShiftForward(v[0],v[1],v[2]);
+      ShiftForward(b[0],b[1],b[2]);
+    }
+  }
+  //find if the long edge of the triangle is up or down (because of ccw ordering, if vertex 1 < vertex 2, it's up)
+  //if it's up, the long end is v[0]--v[2], otherwise it's v[0]--v[1]
+  bool long_end_up = Lexical2DOrder(*v[1],*v[2]);
+  if(long_end_up) {
+    swap(v[1],v[2]);
+    swap(b[1],b[2]);
+  }
+  if(t.orientation() < 0) long_end_up = !long_end_up;
+
+  /********************************************************
+   * now we have this situation (or a vertically mirrored image)
+   *          o(2)
+   *
+   *  o(0)
+   *              o(1)
+   ********************************************************/
+  /********************************************************
+   * Step 1: go down the x direction of the long edge until you hit v[2].x,
+   * filling edge from v[0]--v[1] up to v[0]--v[2].
+   *  |       o(2)
+   *  |  .....|
+   *  o(0)....|
+   *  |       |   o(1)
+   ********************************************************/
+  /********************************************************
+   * Step 2: go down the x direction of the long edge until you hit v[1].x,
+   * filling edge from v[0]--v[1] up to v[2]--v[1].
+   *          o(2)|
+   *     .....|.  |
+   *  o(0)....|.. |
+   *          |...o(1)
+   ********************************************************/
+  //the y-coordinate of a segment x1,y1 to x2,y2, at an x coordinate x
+  //is ((x2-x)*y1 + (x-x1)*y2)/(x2-x1) = x*(y2-y1)/(x2-x1)+(x2*y1-x1*y2)/(x2-x1) = mx+b
+  Real den1 = v[1]->x-v[0]->x;
+  Real den2 = v[2]->x-v[0]->x;
+  Real den3 = v[1]->x-v[2]->x;
+  Assert(den1 >= 0);
+  Assert(den2 >= 0);
+  Assert(den3 >= 0);
+  Real m1,m2,m3,b1,b2,b3;
+  //segments are y=m1*x+b1, y=m2*x+b2, y=m3*x+b3
+  //as x sweeps down the triangle, the segment interpolation parameters are given as
+  //  u1 = (x-v[0].x)/den1, u2 = (x-v[0].x)/den2, u3 = (x-v[2].x)/den3
+  //so barycentric coordinates are
+  //  b = (1-u1)*b[0] + u1*b[1], b = (1-u2)*b[0] + u2*b[2], b=(1-u3)*b[2]-u3*b[1]
+  //which can be converted into mx+b representation like the above
+  Vector3 bm1,bm2,bm3,bb1,bb2,bb3;
+  if(den1==0) { //the long segment is vertical! 
+    return;
+  }
+  Real x = Ceil(Max(v[0]->x,aabb.bmin.x));
+  int ix = (int)iRound(x);
+  m1=(v[1]->y-v[0]->y)/den1;
+  b1=(v[1]->x*v[0]->y - v[0]->x*v[1]->y)/den1;
+  bm1=(*b[1]-*b[0])/den1;
+  bb1=(v[1]->x*(*b[0]) - v[0]->x*(*b[1]))/den1;
+  if(den2>Epsilon) { //step 1
+    m2=(v[2]->y-v[0]->y)/den2;
+    b2=(v[2]->x*v[0]->y - v[0]->x*v[2]->y)/den2;
+    bm2=(*b[2]-*b[0])/den2;
+    bb2=(v[2]->x*(*b[0]) - v[0]->x*(*b[2]))/den2;
+    Real y1 = m1*x+b1,y2=m2*x+b2;
+    Vector3 bary1 = bm1*x+bb1,bary2=bm2*x+bb2;
+    Real xend = Min(v[2]->x,aabb.bmax.x);
+    while(x < xend) {
+      //fill the segment (x,y1)->(x,y2)
+      if(long_end_up) {
+        if(y1 < y2-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y2 = "<<y2);
+          KrisLibrary::loggerWait();
+        }
+        ClippedRasterizeVerticalSegment(ix,y2,y1,bary2,bary1,aabb.bmin.y,aabb.bmax.y);
+      }
+      else {
+        if(y2 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[0]<<"->"<<*v[2]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y2 = "<<y2<<", y1 = "<<y1);
+          KrisLibrary::loggerWait();
+        }
+        ClippedRasterizeVerticalSegment(ix,y1,y2,bary1,bary2,aabb.bmin.y,aabb.bmax.y);
+      }
+      x += One;
+      ix++;
+      y1 += m1;
+      y2 += m2;
+      bary1 += bm1;
+      bary2 += bm2;
+    }
+  }
+  //now x >= v[2]->x
+  if(den3>Epsilon) { //step 2
+    m3=(v[1]->y-v[2]->y)/den3;
+    b3=(v[1]->x*v[2]->y - v[2]->x*v[1]->y)/den3;
+    bm3=(*b[1]-*b[2])/den3;
+    bb3=(v[1]->x*(*b[2]) - v[2]->x*(*b[1]))/den3;
+    Real y1 = m1*x+b1,y3=m3*x+b3;
+    Vector3 bary1 = bm1*x+bb1,bary3=bm3*x+bb3;
+    Real xend = Min(v[1]->x,aabb.bmax.x);
+    while(x < xend) {
+      //fill the segment (x,y1)->(x,y3)
+      if(long_end_up) {
+        if(y1 < y3-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y1 = "<<y1<<", y3 = "<<y3);
+          KrisLibrary::loggerWait();
+        }
+        ClippedRasterizeVerticalSegment(ix,y3,y1,bary3,bary1,aabb.bmin.y,aabb.bmax.y);
+      }
+      else {
+        if(y3 < y1-1e-3) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Rasterizer2D: Warning, top segment passed below bottom segment?");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Segments "<<*v[0]<<"->"<<*v[1]<<", "<<*v[2]<<"->"<<*v[1]<<", x="<<x);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"y3 = "<<y3<<", y1 = "<<y1);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Den3 = "<<den3);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"m3 = "<<m3);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"b3 = "<<b3);
+          KrisLibrary::loggerWait();
+        }
+        ClippedRasterizeVerticalSegment(ix,y1,y3,bary1,bary3,aabb.bmin.y,aabb.bmax.y);
+      }
+      x += One;
+      ix++;
+      y1 += m1;
+      y3 += m3;
+      bary1 += bm1;
+      bary3 += bm3;
+    }
   }
 }
 
@@ -688,6 +975,5 @@ void Rasterizer2D::Rasterize(const AABB2D& b)
   }
 }
 
-//void ClippedRasterize(const AABB2D& t,const AABB2D& aabb);
 
 } //namespace Meshing

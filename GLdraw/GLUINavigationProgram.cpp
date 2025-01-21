@@ -50,7 +50,7 @@ GLUINavigationProgram::GLUINavigationProgram()
   camera.tgt.setZero();
   camera.rot.setZero();
   camera.dist=100;
-  camera.ori=Camera::Camera::XZnY;
+  camera.ori=Camera::CameraConventions::XZnY;
 }
 
 bool GLUINavigationProgram::Initialize()
@@ -71,7 +71,7 @@ void GLUINavigationProgram::Handle_Display()
   glLoadIdentity();
   //SetWorldLights();
 
-  camera.toCamera(viewport);
+  camera.toCameraPose(viewport.pose);
 
   GLView view;
   view.setViewport(viewport);
@@ -116,7 +116,9 @@ void GLUINavigationProgram::Handle_Display()
 void GLUINavigationProgram::Handle_Reshape(int w,int h)
 {
   GLUIProgramBase::Handle_Reshape(w,h);
-  GLUI_Master.get_viewport_area(&viewport.x,&viewport.y,&viewport.w,&viewport.h);
+  int vw,vh;
+  GLUI_Master.get_viewport_area(&viewport.x,&viewport.y,&vw,&vh);
+  viewport.resize(vw,vh);
   glViewport(viewport.x,viewport.y,viewport.w,viewport.h);
   Refresh();
 }
@@ -206,13 +208,14 @@ void GLUINavigationProgram::DragRotate(int dx,int dy)
 
 void GLUINavigationProgram::DragZoom(int dx,int dy)
 {
-  viewport.scale *= (1+float(dy)*0.01);
+  viewport.fx *= (1+float(dy)*0.01);
+  viewport.fy *= (1+float(dy)*0.01);
   SHOW_VIEW_TARGET(0.5);
 }
 
 void GLUINavigationProgram::DragTruck(int dx,int dy)
 {
-  Vector3 v(viewport.zDir());
+  Vector3 v(viewport.forward());
   camera.tgt.madd(v,0.05*Real(dy)/viewport.scale);
   SHOW_VIEW_TARGET(0.5);
 }
@@ -339,7 +342,7 @@ void GLUINavigationProgram::ReadDisplaySettings(istream& in)
   if(str != "ORBITDIST") { in.setstate(ios::badbit); return; }
   in>>camera.dist;
 
-  camera.fromCamera(viewport,camera.dist);
+  camera.fromCameraPose(viewport.pose,camera.dist);
   glutReshapeWindow(viewport.w+dw+dx,viewport.h+dh+dy);
 }
 
@@ -362,7 +365,8 @@ GLUINavigationProgram::GLUINavigationProgram()
   camera.tgt.setZero();
   camera.rot.setZero();
   camera.dist=100;
-  camera.ori=Camera::Camera::XZnY;
+  camera.ori=Camera::CameraConventions::OpenGL;
+  camera.wori=Camera::CameraConventions::Zup;
 }
 
 bool GLUINavigationProgram::Initialize()

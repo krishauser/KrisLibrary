@@ -77,6 +77,16 @@ bool GLRenderToImage::Setup(int w,int h,bool want_color_tex,bool want_depth_tex)
     }
     use_ext = !GLEW_ARB_framebuffer_object;
   }
+  if(width != 0) {
+    if(width == w && width == h) {
+      LOG4CXX_WARN(KrisLibrary::logger(),"GLRenderToImage: already initialized?");
+      return true;
+    }
+    else {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"GLRenderToImage: already initialized with different width / height?");
+      return false;
+    }
+  }
   width = w;
   height = h;
   if(fb == 0) {
@@ -88,6 +98,7 @@ bool GLRenderToImage::Setup(int w,int h,bool want_color_tex,bool want_depth_tex)
       glGenFramebuffers(1, &fb);
       glBindFramebuffer(GL_FRAMEBUFFER, fb);
     }
+    Assert(fb != 0);
   }
   if(want_color_tex) {
     if(color_tex == 0) { 
@@ -208,6 +219,11 @@ bool GLRenderToImage::Setup(int w,int h,bool want_color_tex,bool want_depth_tex)
 #else
   return false;
 #endif //HAVE_GLEW
+
+  GLenum err;
+  while ((err = glGetError()) != GL_NO_ERROR) {
+      printf("GLRenderToImage::Setup(): OpenGL error: %d\n",err);
+  }
 }
 
 void GLRenderToImage::Begin(const Camera::Viewport& vp)
@@ -387,6 +403,11 @@ void GLRenderToImage::GetRGB(vector<unsigned char>& image)
     memcpy(&temp[0],&image[i*stride],rowsize);
     memcpy(&image[i*stride],&image[iflip*stride],rowsize);
     memcpy(&image[iflip*stride],&temp[0],rowsize);
+  }
+  //printf("GLRenderToImage: Upper left corner: %d %d %d\n", image[0], image[1], image[2]);
+  GLenum err;
+  while ((err = glGetError()) != GL_NO_ERROR) {
+      printf("GLRenderToImage::End(): OpenGL error: %d\n",err);
   }
 }
 

@@ -55,20 +55,16 @@ void GLView::setViewport(const Camera::Viewport& v)
 	y=(Real)v.y;
 	w=(Real)v.w;
 	h=(Real)v.h;
-	v.getCameraMatrix(modelview);
+	modelview.setInverse(v.pose);
 
+	AABB2D bb=v.getViewRectangle(v.n,false);
 	if(v.perspective)
-	{
-		Real aspect = w/h;
-		Real width = v.n*Half/v.scale;
-		Real height = v.n*Half/(aspect*v.scale);
-		getFrustumMatrix(-width, width, -height, height, v.n, v.f, projection);
+	{		
+		getFrustumMatrix(bb.bmin.x, bb.bmax.x, bb.bmin.y, bb.bmax.y, v.n, v.f, projection);
 	}
 	else
 	{
-		Real width = w*Half/v.scale;
-		Real height = h*Half/v.scale;
-		getOrthoMatrix(-width, width, -height, height, v.n, v.f, projection);
+		getOrthoMatrix(bb.bmin.x, bb.bmax.x, bb.bmin.y, bb.bmax.y, v.n, v.f, projection);
 	}
 	updateInverses();
 }
@@ -76,7 +72,8 @@ void GLView::setViewport(const Camera::Viewport& v)
 bool GLView::getViewport(Camera::Viewport& v) const
 {
 	v.x=(int)x; v.y=(int)y; v.w=(int)w; v.h=(int)h;
-	v.setCameraMatrix(modelview);
+	RigidTransform Tinv(modelview);
+	Tinv.getInverse(v.pose);
 	const Matrix4& p=projection;
 
 	//now the projmat...
@@ -84,13 +81,21 @@ bool GLView::getViewport(Camera::Viewport& v) const
 	if(p(3,3)==One) {
 		//ortho
 		v.perspective=false;
-		//m00=2/(r-l)=2/(w/scale)=scale*2/w;
-		//m11=2/(t-b)=2/(h/scale)=scale*2/h;
+		//m00=2/(r-l)=2/(w/fx)=fx*2/w;
+		//m03=-(r+l)/(r-l)
+		//m11=2/(t-b)=2/(h/fy)=fy*2/h;
+		//m13=-(t+b)/(t-b)
 		//m22=-2/(f-n)
 		//m23=-(f+n)/(f-n)
 		//[f*m22-n*m22=-2  ] => [m22   -m22 ] * [f] = [-2]
 		//[f*m23-n*m23=-f-n]    [m23+1 -m23+1] * [n]   [0 ]
-		v.scale=(float)(p(0,0)*(w/2));
+		//
+		//fx = m00*w/2
+		//-m03/m00 = (r+l)/2 = (w-2cx)/fx = (w-2cx)/(m00*w/2) => m03*w/4 + w/2 = cx 
+		v.fx = p(0,0)*w/2;
+		v.fy = p(1,1)*h/2;
+		v.cx = w/2 + p(0,3)*w/4;
+		v.cy = h/2 + p(1,3)*h/4;
 		Matrix2 A;
 		A(0,0)=p(2,2); A(0,1)=-p(2,2);
 		A(1,0)=p(2,3)+1; A(1,1)=-p(2,3)+1;
@@ -120,7 +125,8 @@ bool GLView::getViewport(Camera::Viewport& v) const
 	else if(p(3,3)==Zero) {
 		//perspective
 		v.perspective=true;
-		//m00=2n/(r-l)=2n/n/scale=2*scale
+		//m00=2n/(r-l)=2n/(nw/fx)=2fx/w
+		//m02=(r+l)/(r-l)=n(w-2cx)/fx/(nw/fx) = (w-2cx)/w => cx = (w-w*m02)/2
 		//m11=2n/(t-b)=2n/n/(aspect*scale)=2*aspect*scale
 		//m22=-(f+n)/(f-n)
 		//m23=-2fn/(f-n)
@@ -129,7 +135,10 @@ bool GLView::getViewport(Camera::Viewport& v) const
 		//f=n*(m22-1)/(m22+1)=n*c
 		//so n*(c*m23-m23)=2*c*n*n
 		//c*m23-m23=2*c*n
-		v.scale= (float)(p(0,0)*Half);
+		v.fx = w*p(0,0)/2;
+		v.fy = h*p(1,1)/2;
+		v.cx = w/2 - w*p(0,2)/2;
+		v.cy = h/2 - h*p(1,2)/2;
 		if(p(2,2)-One != Zero) {
 			//solve for n
 			Real c=(p(2,2)-1)/(p(2,2)+1);

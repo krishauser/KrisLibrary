@@ -209,7 +209,7 @@ struct AddTriOffset
   int ofs;
 };
 
-void TriMesh::Merge(const vector<TriMesh>& files)
+void TriMesh::Union(const vector<TriMesh>& files)
 {
   if(files.size() == 0) {
     verts.clear();
@@ -388,7 +388,7 @@ bool LoadMultipleTriMeshes(const char* fn,TriMesh& tri)
 
   //TODO: detect errors with FILE
   if(true /* in.eof() */) {
-    tri.Merge(models);
+    tri.Union(models);
     return true;
   }
   else {

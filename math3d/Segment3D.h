@@ -20,6 +20,7 @@ struct Segment3D
   void closestPoint(const Segment3D&,Real& t,Real& u) const;  //same comment as above
   Real distance(const Segment3D&) const;
   void eval(Real t, Point3D& out) const;
+  Point3D eval(Real t) const;
   bool intersects(const AABB3D&) const;
   bool intersects(const AABB3D&, Real& tmin, Real& tmax) const;
   Real distance(const AABB3D& bb) const;

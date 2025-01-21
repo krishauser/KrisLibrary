@@ -54,8 +54,8 @@ struct TriSplitter
  * For each new triangle, triPositive marks true if it is on the positive
  * side of the plane.
  */
-int SplitTriangle(const Triangle3D& t,const Plane3D& p,Vector3 newPts[2],IntTriple newTris[3],bool triPositive[3],Real tol);
-int SplitTriangle(const Triangle2D& t,const Plane2D& p,Vector2 newPts[2],IntTriple newTris[3],bool triPositive[3],Real tol);
+int SplitTriangle(const Triangle3D& t,const Plane3D& p,Vector3 newPts[2],Vector3 newPtBary[2],IntTriple newTris[3],bool triPositive[3],Real tol);
+int SplitTriangle(const Triangle2D& t,const Plane2D& p,Vector2 newPts[2],Vector3 newPtBary[2],IntTriple newTris[3],bool triPositive[3],Real tol);
 void GetCoplanarTris(const TriMesh& mesh,int t,Real tol,vector<int>& tris);
 void GetConnectedCoplanarTris(const TriMeshWithTopology& mesh,int t,Real tol,vector<int>& tris);
 //void GetConnectedCoplanarTris(const TriMeshWithTopology& mesh,int t,Real tol,PolygonWithHoles2D& poly);

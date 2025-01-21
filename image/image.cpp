@@ -36,6 +36,8 @@ PIXELGETPROC pixel_get_proc(Image::PixelFormat format)
 		return r5g5b5x1_get;
 	case Image::A8:
 		return a8_get;
+	case Image::A16:
+		return a16_get;
 	case Image::FloatRGB:
 		return frgb_get;
 	case Image::FloatRGBA:
@@ -66,6 +68,8 @@ PIXELSETPROC pixel_set_proc(Image::PixelFormat format)
 		return r5g5b5x1_set;
 	case Image::A8:
 		return a8_set;
+	case Image::A16:
+		return a16_set;
 	case Image::FloatRGB:
 		return frgb_set;
 	case Image::FloatRGBA:
@@ -89,6 +93,7 @@ static unsigned int pfsizes [] =
 	2,
 	2,
 	1,
+	2,
 	12,
 	16,
 	4
@@ -294,6 +299,8 @@ void Image::blit(Image& dest, int sx, int sy, int bw, int bh, int dx, int dy) co
 	//now do the blit
 	unsigned char* src = getData(sx, sy);
 	unsigned char* dst = dest.getData(dx, dy);
+	Assert(src != NULL);
+	Assert(dst != NULL);
 	int ss = pixelSize(), ds = dest.pixelSize();
 	int sp = pitch(), dp = dest.pitch();
 	COLOROPTYPE col;
@@ -351,6 +358,8 @@ unsigned int Image::pixelChannels() const
 		return 3;
 	case Image::A8:
 		return 1;
+	case Image::A16:
+		return 1;
 	case Image::FloatRGB:
 		return 3;
 	case Image::FloatRGBA:
@@ -377,6 +386,7 @@ void Image::getNormalizedColor(int x, int y, float* out) const
 {
 	int nc = pixelChannels();
 	unsigned char* pixeldat = getData(x,y);
+	Assert(pixeldat != NULL);
 	PIXELGETPROC get = pixel_get_proc(format);
 	COLOROPTYPE col;
 	get(pixeldat,col);
@@ -388,6 +398,7 @@ void Image::setNormalizedColor(int x, int y, const float* in)
 {
 	int nc = pixelChannels();
 	unsigned char* pixeldat = getData(x,y);
+	Assert(pixeldat != NULL);
 	PIXELSETPROC set = pixel_set_proc(format);
 	COLOROPTYPE col;
 	for(int i=0;i<nc;i++)

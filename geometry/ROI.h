@@ -9,12 +9,15 @@
 
 namespace Geometry {
 
+#ifndef EXTRACT_ROI_FLAG_DECL
+#define EXTRACT_ROI_FLAG_DECL
 enum {
     ExtractROIFlagIntersection=0x01,
     ExtractROIFlagTouching=0x02,
     ExtractROIFlagWithin=0x04,
     ExtractROIFlagInvert=0x08
 };
+#endif //EXTRACT_ROI_FLAG_DECL
 
 ///Returns the points in pc within bb.  O(V) time, where V is the number of points.
 void ExtractROI(const Meshing::PointCloud3D& pc,const AABB3D& bb,Meshing::PointCloud3D& pc_roi,int flag=ExtractROIFlagIntersection);

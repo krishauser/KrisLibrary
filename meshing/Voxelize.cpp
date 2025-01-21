@@ -9,10 +9,11 @@
 #include <math3d/Plane3D.h>
 #include <math3d/Segment3D.h>
 #include <geometry/primitives.h>
+#include <geometry/GridSubdivision.h>
 #include <math/random.h>
 #include <Timer.h>
 #include <list>
-#include <set>
+#include <unordered_map>
 using namespace Geometry;
 
 namespace Meshing {
@@ -285,6 +286,7 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
     return;
   }
   Vector3 d = s.b - s.a;
+  Vector3 dinv(PseudoInv(d.x),PseudoInv(d.y),PseudoInv(d.z));
 
   IntTriple i;
   Vector3 aparam = (s.a+tmin*d - bb.bmin);
@@ -317,34 +319,34 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
     int closest=0;  //1=+x,-1=-x,2=+y,-2=-y,3=+z,-3=-z
     param=Inf;
     if(d.x > 0) { //check +x face
-      param = ((cellCorner.x+cellSize.x)-s.a.x)/d.x;
+      param = ((cellCorner.x+cellSize.x)-s.a.x)*dinv.x;
       closest = 1;
     }
     else if(d.x < 0) { //check -x face
-      param = (cellCorner.x-s.a.x)/d.x;
+      param = (cellCorner.x-s.a.x)*dinv.x;
       closest = -1;
     }
     if(d.y > 0) { //check +y face
       if((cellCorner.y+cellSize.y)-s.a.y < param*d.y) {
-        param = ((cellCorner.y+cellSize.y)-s.a.y)/d.y;
+        param = ((cellCorner.y+cellSize.y)-s.a.y)*dinv.y;
         closest = 2;
       }
     }
     else if(d.y < 0) { //check -y face
       if(cellCorner.y-s.a.y > param*d.y) {
-        param = (cellCorner.y-s.a.y)/d.y;
+        param = (cellCorner.y-s.a.y)*dinv.y;
         closest = -2;
       }
     }
     if(d.z > 0) { //check +z face
       if((cellCorner.z+cellSize.z)-s.a.z < param*d.z) {
-        param = ((cellCorner.z+cellSize.z)-s.a.z)/d.z;
+        param = ((cellCorner.z+cellSize.z)-s.a.z)*dinv.z;
         closest = 3;
       }
     }
     else if(d.z < 0) { //check -y face
       if(cellCorner.z-s.a.z > param*d.z) {
-        param = (cellCorner.z-s.a.z)/d.z;
+        param = (cellCorner.z-s.a.z)*dinv.z;
         closest = -3;
       }
     }
@@ -716,6 +718,28 @@ void SurfaceOccupancyGrid(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb)
       index.b = lo.b;
     }
     */
+  }
+}
+
+void SurfaceOccupancyGridFill(const TriMesh& m,Array3D<float>& value,const AABB3D& bb,float fillValue)
+{
+  Triangle3D tri;
+  AABB3D query,cell;
+  IntTriple hi,lo;
+  for(size_t i=0;i<m.tris.size();i++) {
+    m.GetTriangle(i,tri);
+    query.setPoint(tri.a);
+    query.expand(tri.b);
+    query.expand(tri.c);
+    bool q=QueryGrid(value,bb,query,lo,hi);
+    if(!q) continue;
+    VolumeGridIterator<float> it(value,bb);
+    it.setRange(lo,hi);
+    for(;!it.isDone();++it) {
+      it.getCell(cell);
+      if(tri.intersects(cell))
+        value(it.index)=fillValue;
+    }
   }
 }
 
@@ -1545,7 +1569,7 @@ struct TriangleClosestPointData
   Vector3 closestPoint;  //closest point
 };
 
-void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells)
+void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells,bool keepExisting)
 {
   int M=distance.m,N=distance.n,P=distance.p;
   if(gradient.m != M || gradient.n != N || gradient.p != P) gradient.resize(M,N,P);
@@ -1561,9 +1585,8 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
   FixedSizeHeap<Real> queue(M*N*P);
 
   IntTriple index,lo,hi;
-  //fill in initial surface distances, get surface set
-  distance.set(Inf);
-  set<IntTriple> surfaceSet;
+  //get surface set with distances
+  std::unordered_map<IntTriple,Real,IndexHash> surfaceSet(int(Sqrt(double(M*N*P))));
   Triangle3D tri;
   AABB3D query,cell;
   for(size_t i=0;i<m.tris.size();i++) {
@@ -1581,19 +1604,22 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
       index = it.getIndex();
 
       if(tri.intersects(cell)) {
-        surfaceSet.insert(index);
-
         Vector3 cellCenter = (cell.bmin+cell.bmax)*Half;
         TriangleClosestPointData cp;
         //TODO: use triangle neighborhood information
         cp.Calculate(m,i,cellCenter);
 
-        if(Abs(cp.signedDistance) < Abs(distance(index))) {
-          distance(index) = cp.signedDistance;
-          gradient(index) = cp.dir;
+        //int heapIndex = (index.a*N+index.b)*P+index.c;
+        auto old = surfaceSet.find(index);
+        if(old == surfaceSet.end()) {
+          surfaceSet[index] = cp.signedDistance;
+          if(!gradient.empty()) gradient(index) = cp.dir;
           closestFeature(index) = cp.feature;
-          int heapIndex = (index.a*N+index.b)*P+index.c;
-          queue.adjust(heapIndex,-Abs(cp.signedDistance));
+        }
+        else if(Abs(cp.signedDistance) < Abs(old->second)) {
+          old->second = cp.signedDistance;
+          if(!gradient.empty()) gradient(index) = cp.dir;
+          closestFeature(index) = cp.feature;
         }
       }
     }
@@ -1609,9 +1635,33 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
   }
 
   //LOG4CXX_INFO(KrisLibrary::logger(),"Converting surface cells");
-  //convert surface set to vector
+  //convert surface set to vector output
   surfaceCells.resize(surfaceSet.size());
-  copy(surfaceSet.begin(),surfaceSet.end(),surfaceCells.begin());
+  for(const auto& item : surfaceSet) {
+    const auto& index = item.first;
+    surfaceCells.push_back(index);
+  }
+
+  //fill distance and start queue
+  if(!keepExisting) {
+    distance.set(Inf);
+    for(const auto& item : surfaceSet) {
+      const auto& index = item.first;
+      distance(index) = item.second;
+      int heapIndex = (index.a*N+index.b)*P+index.c;
+      queue.push(heapIndex,-Abs(item.second));
+    }
+  }
+  else {
+    for(const auto& item : surfaceSet) {
+      const auto& index = item.first;
+      if(item.second < distance(index)) {
+        distance(index) = item.second;
+        int heapIndex = (index.a*N+index.b)*P+index.c;
+        queue.push(heapIndex,-Abs(item.second));
+      }
+    }
+  }
 
   Vector3 cellSize = (bb.bmax-bb.bmin);
   cellSize.x /= M;
@@ -1672,7 +1722,7 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
       if(Abs(cp.signedDistance) < Abs(distance(index.a,index.b,index.c))) {
         //timer.Reset();
         distance(index.a,index.b,index.c) = cp.signedDistance;
-        gradient(index.a,index.b,index.c) = cp.dir;
+        if(!gradient.empty()) gradient(index.a,index.b,index.c) = cp.dir;
         closestFeature(index.a,index.b,index.c) = cp.feature;
         //overheadTime += timer.ElapsedTime();
         //encode heap index
@@ -1684,12 +1734,14 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
       }
     }
   }
-  //sanity check
-  for(int i=0;i<status.m;i++)
-    for(int j=0;j<status.n;j++)
-      for(int k=0;k<status.p;k++)
-        Assert(status(i,j,k)==Accepted);
-
+  if(!keepExisting) {
+    //sanity check
+    for(int i=0;i<status.m;i++)
+      for(int j=0;j<status.n;j++)
+        for(int k=0;k<status.p;k++)
+          Assert(status(i,j,k)==Accepted);
+  }
+  
   //try to fix flipped triangles by looking at the boundary
   //set<pair<int,int> > flipped;
   set<int> flipped;
@@ -1746,7 +1798,7 @@ void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Arr
   LOG4CXX_INFO(KrisLibrary::logger(),"FMM found "<<numInside<<" interior and "<<M*N*P - numInside<<" exterior cells");
 }
 
-void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells)
+void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells,bool keepExisting)
 {
   int M=distance.m,N=distance.n,P=distance.p;
   if(gradient.m != M || gradient.n != N || gradient.p != P) gradient.resize(M,N,P);
@@ -1787,7 +1839,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
         if(interior(i,j,k)) ninterior ++;
         if(exterior(i,j,k)) nexterior ++;
       }
-  LOG4CXX_INFO(KrisLibrary::logger(),"FMM starting with "<<noccupied<<" surface, "<<ninterior<<" interior, "<<nexterior<<" exterior cells");
+  LOG4CXX_INFO(KrisLibrary::logger(),"FMM_Fill identifies "<<noccupied<<" surface, "<<ninterior<<" interior, "<<nexterior<<" exterior cells");
 
   TrimeshFeature nullFeature; nullFeature.index = -1;
   nullFeature.feature = TrimeshFeature::F;
@@ -1797,9 +1849,8 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
   FixedSizeHeap<Real> queue(M*N*P);
 
   IntTriple index,lo,hi;
-  //fill in initial surface distances, get surface set
-  distance.set(Inf);
-  set<IntTriple> surfaceSet;
+  //get surface set with distances
+  std::unordered_map<IntTriple,Real,IndexHash> surfaceSet(int(Sqrt(double(M*N*P))));
   Triangle3D tri;
   AABB3D query,cell;
   for(size_t i=0;i<m.tris.size();i++) {
@@ -1808,13 +1859,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
     query.expand(tri.b);
     query.expand(tri.c);
     bool q=QueryGrid(distance,bb,query,lo,hi);
-    /*
-    index=lo;
-    while(index.a <= hi.a) {
-      while(index.b <= hi.b) {
-        while(index.c <= hi.c) {
-          GetGridCell(distance,bb,index,cell);
-    */
+    if(!q) continue;
     VolumeGridIterator<Real> it(distance,bb);
     it.setRange(lo,hi);
     for(;!it.isDone();++it) {
@@ -1822,32 +1867,23 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
       index = it.getIndex();
 
       if(!interior(index.a,index.b,index.c) && tri.intersects(cell)) {
-            surfaceSet.insert(index);
+        Vector3 cellCenter = (cell.bmin+cell.bmax)*Half;
+        TriangleClosestPointData cp;
+        //TODO: use triangle neighborhood information
+        cp.Calculate(m,i,cellCenter);
 
-            Vector3 cellCenter = (cell.bmin+cell.bmax)*Half;
-            TriangleClosestPointData cp;
-            //TODO: use triangle neighborhood information
-            cp.Calculate(m,i,cellCenter);
-
-            if(Abs(cp.signedDistance) < Abs(distance(index))) {
-              distance(index) = cp.signedDistance;
-              gradient(index) = cp.dir;
-              closestFeature(index) = cp.feature;
-              int heapIndex = (index.a*N+index.b)*P+index.c;
-              queue.adjust(heapIndex,-Abs(cp.signedDistance));
-              status(index.a,index.b,index.c)=Accepted;
-            }
-          }
-          /*
-          index.c++;
+        auto old = surfaceSet.find(index);
+        if(old == surfaceSet.end()) {
+          surfaceSet[index] = cp.signedDistance;
+          if(!gradient.empty()) gradient(index) = cp.dir;
+          closestFeature(index) = cp.feature;
         }
-        index.b++;
-        index.c = lo.c;
+        else if(Abs(cp.signedDistance) < Abs(old->second)) {
+          old->second = cp.signedDistance;
+          if(!gradient.empty()) gradient(index) = cp.dir;
+          closestFeature(index) = cp.feature;
+        }
       }
-      index.a++;
-      index.b = lo.b;
-    }
-          */
     }
   }
 
@@ -1861,9 +1897,35 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
   }
 
   //LOG4CXX_INFO(KrisLibrary::logger(),"Converting surface cells");
-  //convert surface set to vector
+  //convert surface set to vector output
   surfaceCells.resize(surfaceSet.size());
-  copy(surfaceSet.begin(),surfaceSet.end(),surfaceCells.begin());
+  for(const auto& item : surfaceSet) {
+    const auto& index = item.first;
+    surfaceCells.push_back(index);
+  }
+
+  //fill distance and start queue
+  if(!keepExisting) {
+    distance.set(Inf);
+    for(const auto& item : surfaceSet) {
+      const auto& index = item.first;
+      distance(index) = item.second;
+      int heapIndex = (index.a*N+index.b)*P+index.c;
+      queue.push(heapIndex,-Abs(item.second));
+      status(index)=Accepted;
+    }
+  }
+  else {
+    for(const auto& item : surfaceSet) {
+      const auto& index = item.first;
+      if(item.second < distance(index)) {
+        distance(index) = item.second;
+        int heapIndex = (index.a*N+index.b)*P+index.c;
+        queue.push(heapIndex,-Abs(item.second));
+        status(index)=Accepted;
+      }
+    }
+  }
 
   Vector3 cellSize = (bb.bmax-bb.bmin);
   cellSize.x /= M;
@@ -1937,7 +1999,7 @@ void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distanc
       if(Abs(cp.signedDistance) < Abs(distance(index.a,index.b,index.c))) {
         //timer.Reset();
         distance(index.a,index.b,index.c) = cp.signedDistance;
-        gradient(index.a,index.b,index.c) = cp.dir;
+        if(!gradient.empty()) gradient(index.a,index.b,index.c) = cp.dir;
         closestFeature(index.a,index.b,index.c) = cp.feature;
         //overheadTime += timer.ElapsedTime();
         //encode heap index

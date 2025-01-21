@@ -507,7 +507,7 @@ void DenseTSDFReconstruction::Fuse(const RigidTransform& Tcamera,const PointClou
             vox.rgb[c] = (unsigned char)(vox.rgb[c] + usurf*(rgb[c] - vox.rgb[c]));
         }
         for(size_t k=0;k<auxiliaryAttributes.size();k++) {
-          float vnew = (float)pc.properties[i][auxiliaryAttributes[k]];
+          float vnew = (float)pc.properties(i,auxiliaryAttributes[k]);
           float& v = auxiliary.channels[k].value(c);
           v += (float)(usurf*(vnew - v));
         }
@@ -674,7 +674,7 @@ void DenseTSDFReconstruction::Fill(const VolumeGrid& values)
 
 void DenseTSDFReconstruction::Fill(const AnyGeometry3D& geom)
 {
-  if(geom.type == AnyGeometry3D::Primitive) {
+  if(geom.type == AnyGeometry3D::Type::Primitive) {
     const auto& primitive = geom.AsPrimitive();
     VolumeGrid values;
     values.MakeSimilar(tsdf);
@@ -687,12 +687,12 @@ void DenseTSDFReconstruction::Fill(const AnyGeometry3D& geom)
     }
     Fill(values);
   }
-  else if(geom.type == AnyGeometry3D::TriangleMesh) {
+  else if(geom.type == AnyGeometry3D::Type::TriangleMesh) {
     const auto& mesh = geom.AsTriangleMesh();
     vector<GLDraw::GLColor> colors;
     Fill(mesh,colors);
   }
-  else if(geom.type == AnyGeometry3D::ImplicitSurface) {
+  else if(geom.type == AnyGeometry3D::Type::ImplicitSurface) {
     const auto& grid = geom.AsImplicitSurface();
     Fill(grid);
   }
@@ -1025,7 +1025,7 @@ void DoFuse(FuseThreadData* data,const vector<size_t>& bindices)
                 rgb[c] = (unsigned char)(rgb[c] + usurf*(pointRgb[c] - rgb[c]));
             }
             for(size_t k=0;k<self->auxiliaryAttributes.size();k++) {
-              float vnew = (float)pc.properties[i][self->auxiliaryAttributes[k]];
+              float vnew = (float)pc.properties(i,self->auxiliaryAttributes[k]);
               float& v = b->grid.channels[self->auxiliaryChannelStart+k].value(c);
               v += usurf*(vnew - v);
             }

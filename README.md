@@ -8,6 +8,9 @@ Authors:
 
 ## Version history
 
+0.2 (1/15/2025):
+- Major revision to the geometry classes.  More maintainable now.  New heightmap and occupancygrid classes.
+
 0.1 (pre-2024):
 - First numbered version. Marking this version due to an upcoming major API change.
 

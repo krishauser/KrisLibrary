@@ -91,9 +91,9 @@ namespace GLDraw {
 
   void draw(const Geometry::AnyGeometry3D& geom)
   {
-    if(geom.type == AnyGeometry3D::PointCloud) 
+    if(geom.type == AnyGeometry3D::Type::PointCloud) 
       drawPoints(geom);
-    else if(geom.type == AnyGeometry3D::Group) {
+    else if(geom.type == AnyGeometry3D::Type::Group) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
       for(size_t i=0;i<subgeoms.size();i++)
         draw(subgeoms[i]);
@@ -105,11 +105,11 @@ namespace GLDraw {
   void drawPoints(const Geometry::AnyGeometry3D& geom)
   {
     const vector<Vector3>* verts = NULL;
-    if(geom.type == AnyGeometry3D::TriangleMesh) 
+    if(geom.type == AnyGeometry3D::Type::TriangleMesh) 
       verts = &geom.AsTriangleMesh().verts;
-    else if(geom.type == AnyGeometry3D::PointCloud) 
+    else if(geom.type == AnyGeometry3D::Type::PointCloud) 
       verts = &geom.AsPointCloud().points;
-    else if(geom.type == AnyGeometry3D::Group) {
+    else if(geom.type == AnyGeometry3D::Type::Group) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
       for(size_t i=0;i<subgeoms.size();i++)
         drawPoints(subgeoms[i]);
@@ -128,14 +128,14 @@ namespace GLDraw {
   void drawFaces(const Geometry::AnyGeometry3D& geom)
   {
     const Meshing::TriMesh* trimesh = NULL;
-    if(geom.type == AnyGeometry3D::TriangleMesh) 
+    if(geom.type == AnyGeometry3D::Type::TriangleMesh) 
       trimesh = &geom.AsTriangleMesh();
-    else if(geom.type == AnyGeometry3D::Group) {
+    else if(geom.type == AnyGeometry3D::Type::Group) {
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom.AsGroup();
       for(size_t i=0;i<subgeoms.size();i++)
         drawFaces(subgeoms[i]);
     }
-    else if(geom.type == AnyGeometry3D::Primitive) 
+    else if(geom.type == AnyGeometry3D::Type::Primitive) 
       draw(geom.AsPrimitive());  
 
     //draw the mesh
@@ -171,14 +171,14 @@ namespace GLDraw {
   void drawExpanded(Geometry::AnyCollisionGeometry3D& geom,Real p)
   {
     if(p < 0) p = geom.margin;
-    if(geom.type == Geometry::AnyCollisionGeometry3D::TriangleMesh) {
+    if(geom.type == Geometry::AnyGeometry3D::Type::TriangleMesh) {
       Meshing::TriMesh m;
       geom.TriangleMeshCollisionData().CalcTriNeighbors();
       geom.TriangleMeshCollisionData().CalcIncidentTris();
       Meshing::Expand2Sided(geom.TriangleMeshCollisionData(),p,3,m);
       DrawGLTris(m);
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::PointCloud) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::PointCloud) {
       const Meshing::PointCloud3D& pc = geom.AsPointCloud();
       for(size_t i=0;i<pc.points.size();i++) {
         glPushMatrix();
@@ -187,17 +187,17 @@ namespace GLDraw {
         glPopMatrix();
       }
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::ImplicitSurface) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::ImplicitSurface) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw implicit surface");
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::OccupancyGrid) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::OccupancyGrid) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw occupancy grid");
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::Primitive) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::Primitive) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"TODO: draw expanded primitive");
       draw(geom.AsPrimitive());
     }
-    else if(geom.type == Geometry::AnyCollisionGeometry3D::Group) {
+    else if(geom.type == Geometry::AnyGeometry3D::Type::Group) {
       std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = geom.GroupCollisionData();
       for(size_t i=0;i<subgeoms.size();i++)
         drawExpanded(subgeoms[i],p);
@@ -231,6 +231,8 @@ void CreaseMesh(Meshing::TriMeshWithTopology& in,Meshing::TriMesh& out,Real crea
     in.CalcIncidentTris();
   if(in.triNeighbors.empty())
     in.CalcTriNeighbors();
+  Assert(in.incidentTris.size() == in.verts.size());
+  Assert(in.triNeighbors.size() == in.tris.size());
   Real cosCreaseRads = Cos(creaseRads);
 
   vector<Vector3> triNormals(in.tris.size());
@@ -466,10 +468,55 @@ void GeometryAppearance::Refresh()
   textureObject.cleanup();
 }
 
+void GeometryAppearance::RefreshGeometry()
+{
+  Refresh();
+  tempMesh.reset();
+  tempMesh2.reset();
+  if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
+    const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
+    tempMesh.reset(new Meshing::TriMesh);
+    ImplicitSurfaceToMesh(*g,*tempMesh);
+  }
+  else if(geom->type == AnyGeometry3D::Type::OccupancyGrid) {
+    //TODO: draw as blocks with density
+    AnyGeometry3D gmesh;
+    geom->Convert(AnyGeometry3D::Type::TriangleMesh,gmesh);
+    tempMesh.reset(new Meshing::TriMesh);
+    *tempMesh = gmesh.AsTriangleMesh();
+  }
+  else if(geom->type == AnyGeometry3D::Type::PointCloud) {
+    const Meshing::PointCloud3D& pc = geom->AsPointCloud();
+    if(pc.IsStructured()) {
+      //draw mesh rather than points
+      drawFaces = true;
+      drawVertices = false;
+      tempMesh.reset(new Meshing::TriMesh);
+      //PointCloudToMesh(pc,*tempMesh,*this,0.02);
+      PointCloudToMesh(pc,*tempMesh,0.02);
+    }
+  }
+  else if(geom->type == AnyGeometry3D::Type::ConvexHull) {
+    const Geometry::ConvexHull3D* g = &geom->AsConvexHull();
+    tempMesh.reset(new Meshing::TriMesh);
+    ConvexHullToMesh(*g,*tempMesh);
+  }
+  else if(geom->type == AnyGeometry3D::Type::Heightmap) {
+    const Meshing::Heightmap* g = &geom->AsHeightmap();
+    if(g->HasColors() && faceColor == GLColor(0.5,0.5,0.5) && tempMesh == NULL) { //assume uninitialized color
+      faceColor = GLColor(1,1,1);
+    }
+    tempMesh.reset(new Meshing::TriMesh);
+    HeightmapToMesh(*g,*tempMesh,*this);
+    //will use the heightmap colors as a texture
+    vertexColors.clear();
+  }
+}
+
 void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
 {
   geom = &_geom;
-  if(geom->type == AnyGeometry3D::Group) {
+  if(geom->type == AnyGeometry3D::Type::Group) {
     drawFaces = true;
     drawEdges = true;
     drawVertices = true;
@@ -477,50 +524,36 @@ void GeometryAppearance::Set(const Geometry::AnyCollisionGeometry3D& _geom)
       const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
+        subAppearances[i].CopyMaterialFlat(*this);
         subAppearances[i].Set(subgeoms[i]);
-        bool iDrawFaces = subAppearances[i].drawFaces;
-        bool iDrawEdges = subAppearances[i].drawEdges;
-        bool iDrawVertices = subAppearances[i].drawVertices;
-        if(subgeoms[i].appearanceData.empty())
-          subAppearances[i].CopyMaterialFlat(*this);
-        subAppearances[i].drawFaces = iDrawFaces;
-        subAppearances[i].drawEdges = iDrawEdges;
-        subAppearances[i].drawVertices = iDrawVertices;
       }
     }
     else {
       const std::vector<Geometry::AnyCollisionGeometry3D>& subgeoms = _geom.GroupCollisionData();
       subAppearances.resize(subgeoms.size());
       for(size_t i=0;i<subAppearances.size();i++) {
+        subAppearances[i].CopyMaterialFlat(*this);
         subAppearances[i].Set(subgeoms[i]);
-        ///want item to inherit color of this, but don't want to inherit primitive drawing settings
-        bool iDrawFaces = subAppearances[i].drawFaces;
-        bool iDrawEdges = subAppearances[i].drawEdges;
-        bool iDrawVertices = subAppearances[i].drawVertices;
-        if(subgeoms[i].appearanceData.empty())
-          subAppearances[i].CopyMaterialFlat(*this);
-        subAppearances[i].drawFaces = iDrawFaces;
-        subAppearances[i].drawEdges = iDrawEdges;
-        subAppearances[i].drawVertices = iDrawVertices;
       }
     }
+    RefreshGeometry();
   }
   else {
     Set(*geom);
   }
   collisionGeom = &_geom;
-  Refresh();
 }
 
 void GeometryAppearance::Set(const AnyGeometry3D& _geom)
 {
   geom = &_geom;
   collisionGeom = NULL;
-  if(!_geom.appearanceData.empty()) {
-    const GeometryAppearance* app = AnyCast<GeometryAppearance>(&_geom.appearanceData);
-    CopyMaterial(*app);
+  if(geom->type == AnyGeometry3D::Type::TriangleMesh) {
+    auto& app = dynamic_cast<Geometry3DTriangleMesh*>(geom->data.get())->appearance;
+    if(app) 
+      CopyMaterial(*app);
   }
-  if(geom->type == AnyGeometry3D::Primitive) {
+  if(geom->type == AnyGeometry3D::Type::Primitive) {
     const Math3D::GeometricPrimitive3D* g = &geom->AsPrimitive();
     drawFaces = true;
     drawEdges = false;
@@ -542,154 +575,161 @@ void GeometryAppearance::Set(const AnyGeometry3D& _geom)
       drawEdges = true;
     }
   }
-  else if(geom->type == AnyGeometry3D::ImplicitSurface) {
-    const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
-    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    ImplicitSurfaceToMesh(*g,*tempMesh);
+  else if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
     drawFaces = true;
     drawEdges = false;
     drawVertices = false;
   }
-  else if(geom->type == AnyGeometry3D::OccupancyGrid) {
+  else if(geom->type == AnyGeometry3D::Type::OccupancyGrid) {
     //TODO: draw as blocks with density
-    const Meshing::VolumeGrid* g = &geom->AsOccupancyGrid();
-    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    ImplicitSurfaceToMesh(*g,*tempMesh);
     drawFaces = true;
     drawEdges = false;
     drawVertices = false;
   }
-  else if(geom->type == AnyGeometry3D::PointCloud) {
+  else if(geom->type == AnyGeometry3D::Type::PointCloud) {
     drawVertices = true;
     drawEdges = false;
     drawFaces = false;
     vector<Real> rgb;
     const Meshing::PointCloud3D& pc = geom->AsPointCloud();
     const static Real scale = 1.0/255.0;
-    if(pc.GetProperty("rgb",rgb)) {
-      //convert real to hex to GLcolor
-      vertexColors.resize(rgb.size());
-      for(size_t i=0;i<rgb.size();i++) {
-        unsigned int col = (unsigned int)rgb[i];
-        vertexColors[i].set(((col&0xff0000)>>16) * scale,
-        ((col&0xff00)>>8) * scale,
-        (col&0xff) * scale);
-      }
+    if(vertexColors.size() == pc.points.size()) {
+      //already assigned color
     }
-    if(pc.GetProperty("rgba",rgb)) {
-      //convert real to hex to GLcolor
-      //following PCD, this is actuall A-RGB
-      vertexColors.resize(rgb.size());
-      for(size_t i=0;i<rgb.size();i++) {
-        unsigned int col = (unsigned int)rgb[i];
-        vertexColors[i].set(((col&0xff0000)>>16) * scale,
-        ((col&0xff00)>>8) * scale,
-        (col&0xff) * scale,
-        ((col&0xff000000)>>24) * scale);
-      }
-    }
-    if(pc.GetProperty("r",rgb)) {
-      if(!vertexColors.empty()) 
-        //already assigned color?
-        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has both r channel and either rgb or rgba channel");
-      vertexColors.resize(rgb.size(),vertexColor.rgba);
-      for(size_t i=0;i<rgb.size();i++) 
-        vertexColors[i].rgba[0] = rgb[i];
-    }
-    if(pc.GetProperty("g",rgb)) {
-      if(vertexColors.empty()) {
-        //already assigned color?
-        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has g channel but not r channel?");
-      }
-      else {
-        for(size_t i=0;i<rgb.size();i++) 
-          vertexColors[i].rgba[1] = rgb[i];
-      }
-    }
-    if(pc.GetProperty("b",rgb)) {
-      if(vertexColors.empty()) {
-        //already assigned color?
-        LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has a channel but not r channel?");
-      }
-      else {
-        for(size_t i=0;i<rgb.size();i++) 
-          vertexColors[i].rgba[2] = rgb[i];
-      }
-    }
-    if(pc.GetProperty("opacity",rgb) || pc.GetProperty("a",rgb)) {
-      if(!vertexColors.empty()) {
-        //already assigned color, just get opacity
-        for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i].rgba[3] = rgb[i];
-        }
-      }
-      else {
+    else {
+      if(pc.GetProperty("rgb",rgb)) {
+        //convert real to hex to GLcolor
         vertexColors.resize(rgb.size());
         for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i] = vertexColor.rgba;
-          vertexColors[i].rgba[3] = rgb[i];
+          unsigned int col = (unsigned int)rgb[i];
+          vertexColors[i].set(((col&0xff0000)>>16) * scale,
+          ((col&0xff00)>>8) * scale,
+          (col&0xff) * scale);
         }
       }
-    }
-    if(pc.GetProperty("c",rgb)) {
-      //this is a weird opacity in UINT byte format
-      if(!vertexColors.empty()) {
-        //already assigned color, just get opacity
-        for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i].rgba[3] = rgb[i] * scale;
-        }
-      }
-      else {
+      if(pc.GetProperty("rgba",rgb)) {
+        //convert real to hex to GLcolor
+        //following PCD, this is actuall A-RGB
         vertexColors.resize(rgb.size());
         for(size_t i=0;i<rgb.size();i++) {
-          vertexColors[i] = vertexColor.rgba;
-          vertexColors[i].rgba[3] = rgb[i] * scale;
+          unsigned int col = (unsigned int)rgb[i];
+          vertexColors[i].set(((col&0xff0000)>>16) * scale,
+          ((col&0xff00)>>8) * scale,
+          (col&0xff) * scale,
+          ((col&0xff000000)>>24) * scale);
+        }
+      }
+      if(pc.GetProperty("r",rgb)) {
+        if(!vertexColors.empty()) 
+          //already assigned color?
+          LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has both r channel and either rgb or rgba channel");
+        vertexColors.resize(rgb.size(),vertexColor.rgba);
+        for(size_t i=0;i<rgb.size();i++) 
+          vertexColors[i].rgba[0] = rgb[i];
+      }
+      if(pc.GetProperty("g",rgb)) {
+        if(vertexColors.empty()) {
+          //already assigned color?
+          LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has g channel but not r channel?");
+        }
+        else {
+          for(size_t i=0;i<rgb.size();i++) 
+            vertexColors[i].rgba[1] = rgb[i];
+        }
+      }
+      if(pc.GetProperty("b",rgb)) {
+        if(vertexColors.empty()) {
+          //already assigned color?
+          LOG4CXX_WARN(KrisLibrary::logger(),"Point cloud has a channel but not r channel?");
+        }
+        else {
+          for(size_t i=0;i<rgb.size();i++) 
+            vertexColors[i].rgba[2] = rgb[i];
+        }
+      }
+      if(pc.GetProperty("opacity",rgb) || pc.GetProperty("a",rgb)) {
+        if(!vertexColors.empty()) {
+          //already assigned color, just get opacity
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i].rgba[3] = rgb[i];
+          }
+        }
+        else {
+          vertexColors.resize(rgb.size());
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i] = vertexColor.rgba;
+            vertexColors[i].rgba[3] = rgb[i];
+          }
+        }
+      }
+      if(pc.GetProperty("c",rgb)) {
+        //this is a weird opacity in UINT byte format
+        if(!vertexColors.empty()) {
+          //already assigned color, just get opacity
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i].rgba[3] = rgb[i] * scale;
+          }
+        }
+        else {
+          vertexColors.resize(rgb.size());
+          for(size_t i=0;i<rgb.size();i++) {
+            vertexColors[i] = vertexColor.rgba;
+            vertexColors[i].rgba[3] = rgb[i] * scale;
+          }
         }
       }
     }
     drawFaces = false;
     drawVertices = true;
-    tempMesh = NULL;
-    tempMesh2 = NULL;
     if(pc.IsStructured()) {
       //draw mesh rather than points
       drawFaces = true;
       drawVertices = false;
-      if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-      //PointCloudToMesh(pc,*tempMesh,*this,0.02);
-      PointCloudToMesh(pc,*tempMesh,0.02);
     }
   }
-  else if(geom->type == AnyGeometry3D::ConvexHull) {
-    const Geometry::ConvexHull3D* g = &geom->AsConvexHull();
-    if(!tempMesh) tempMesh.reset(new Meshing::TriMesh);
-    ConvexHullToMesh(*g,*tempMesh);
+  else if(geom->type == AnyGeometry3D::Type::ConvexHull) {
     drawFaces = true;
     drawEdges = false;
     drawVertices = false;
   }
-  else if(geom->type == AnyGeometry3D::Group) {
+  else if(geom->type == AnyGeometry3D::Type::Heightmap) {
+    const Meshing::Heightmap* g = &geom->AsHeightmap();
+    if(g->HasColors() && !tex2D) {
+      tex2D = make_shared<Image>(g->colors);
+      Matrix4 proj;
+      g->viewport.projectionMatrix(proj);
+      if(g->viewport.perspective) {
+        texgen.resize(4);
+        proj.getRow1(texgen[0]);
+        proj.getRow2(texgen[1]);
+        texgen[1].inplaceNegative();  //not sure why this is necessary
+        proj.getRow3(texgen[2]);
+        proj.getRow4(texgen[3]);
+      }
+      else {
+        texgen.resize(2);
+        proj.getRow1(texgen[0]);
+        proj.getRow2(texgen[1]);
+      }
+    }
+    drawFaces = true;
+    drawEdges = false;
+    drawVertices = false;
+  }
+  else if(geom->type == AnyGeometry3D::Type::Group) {
     drawFaces = true;
     drawEdges = true;
     drawVertices = true;
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = _geom.AsGroup();
     subAppearances.resize(subgeoms.size());
     for(size_t i=0;i<subAppearances.size();i++) {
+      subAppearances[i].CopyMaterialFlat(*this);
       subAppearances[i].Set(subgeoms[i]);
-      ///want item to inherit color of this, but don't want to inherit primitive drawing settings
-      bool iDrawFaces = subAppearances[i].drawFaces;
-      bool iDrawEdges = subAppearances[i].drawEdges;
-      bool iDrawVertices = subAppearances[i].drawVertices;
-      if(subgeoms[i].appearanceData.empty())
-        subAppearances[i].CopyMaterialFlat(*this);
-      subAppearances[i].drawFaces = iDrawFaces;
-      subAppearances[i].drawEdges = iDrawEdges;
-      subAppearances[i].drawVertices = iDrawVertices;
     }
   }
   else 
     drawFaces = true;
-  Refresh();
+  RefreshGeometry();
 }
 
 inline void SetTintedColor(const GLColor& col,const GLColor& tintColor,float tintStrength)
@@ -744,13 +784,17 @@ void GeometryAppearance::DrawGL(Element e)
   }
   else
     FatalError("Invalid Element specified");
+  
   if(doDrawVertices) {   
     const vector<Vector3>* verts = NULL;  
-    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::ConvexHull) 
+    if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+      geom->type == AnyGeometry3D::Type::OccupancyGrid ||
+      geom->type == AnyGeometry3D::Type::Heightmap ||
+      geom->type == AnyGeometry3D::Type::ConvexHull) 
       verts = &tempMesh->verts;
-    else if(geom->type == AnyGeometry3D::TriangleMesh) 
+    else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
       verts = &geom->AsTriangleMesh().verts;
-    else if(geom->type == AnyGeometry3D::PointCloud) 
+    else if(geom->type == AnyGeometry3D::Type::PointCloud) 
       verts = &geom->AsPointCloud().points;
     if(verts) {
       //do the drawing
@@ -930,18 +974,29 @@ void GeometryAppearance::DrawGL(Element e)
       Timer timer;
       const Meshing::TriMesh* trimesh = NULL;
       const Meshing::TriMeshWithTopology* trimesh_topology = NULL;
-      if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
+      if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+        geom->type == AnyGeometry3D::Type::OccupancyGrid ||
+        geom->type == AnyGeometry3D::Type::Heightmap ||
+        geom->type == AnyGeometry3D::Type::PointCloud ||
+        geom->type == AnyGeometry3D::Type::ConvexHull) {
         trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::TriangleMesh) {
-        trimesh = &geom->AsTriangleMesh();
-        if(collisionGeom && collisionGeom->CollisionDataInitialized())
-          trimesh_topology = &collisionGeom->TriangleMeshCollisionData();
       }
-      else if(geom->type == AnyGeometry3D::Primitive) 
+      else if(geom->type == AnyGeometry3D::Type::TriangleMesh) {
+        trimesh = &geom->AsTriangleMesh();
+        if(collisionGeom && collisionGeom->CollisionDataInitialized()) {
+          trimesh_topology = &collisionGeom->TriangleMeshCollisionData();
+          //sanity check
+          Assert(trimesh_topology->verts.size() == trimesh->verts.size());
+          Assert(trimesh_topology->tris.size() == trimesh->tris.size());
+          Assert(trimesh_topology->verts.size() == trimesh_topology->incidentTris.size());
+          Assert(trimesh_topology->tris.size() == trimesh_topology->triNeighbors.size());
+        }
+      }
+      else if(geom->type == AnyGeometry3D::Type::Primitive) {
         draw(geom->AsPrimitive());
+      }
 
       //LOG4CXX_INFO(KrisLibrary::logger(),"Compiling face display list "<<trimesh->tris.size());
-
       //draw the mesh
       if(trimesh) {
         Meshing::TriMesh creaseMesh;
@@ -956,6 +1011,8 @@ void GeometryAppearance::DrawGL(Element e)
           bool drop = faceColors.empty();
           Meshing::MergeVertices(*weldMesh,1e-5,drop);
           if((weldMesh->verts.size() == trimesh->verts.size()) && trimesh_topology) {
+            Assert(trimesh_topology->incidentTris.size() == weldMesh->verts.size());
+            Assert(trimesh_topology->triNeighbors.size() == weldMesh->tris.size());
             //copy topology
             weldMesh->vertexNeighbors = trimesh_topology->vertexNeighbors;
             weldMesh->incidentTris = trimesh_topology->incidentTris;
@@ -1140,7 +1197,7 @@ void GeometryAppearance::DrawGL(Element e)
             glEnable(GL_LIGHTING);
         }
       }
-      else if(geom->type == AnyGeometry3D::Primitive) {
+      else if(geom->type == AnyGeometry3D::Type::Primitive) {
         draw(geom->AsPrimitive());
       }
       faceDisplayList.endCompile();
@@ -1173,17 +1230,47 @@ void GeometryAppearance::DrawGL(Element e)
 
   if(doDrawEdges) {
     const Meshing::TriMesh* trimesh = NULL;
-    if(geom->type == AnyGeometry3D::ImplicitSurface || geom->type == AnyGeometry3D::PointCloud || geom->type == AnyGeometry3D::ConvexHull) 
+    if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+      geom->type == AnyGeometry3D::Type::OccupancyGrid || 
+      geom->type == AnyGeometry3D::Type::PointCloud ||
+      geom->type == AnyGeometry3D::Type::ConvexHull) 
       trimesh = tempMesh.get();
-    else if(geom->type == AnyGeometry3D::TriangleMesh) 
+    else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
       trimesh = &geom->AsTriangleMesh();
-    else if(geom->type == AnyGeometry3D::Primitive) {
+    else if(geom->type == AnyGeometry3D::Type::Primitive) {
       if(!edgeDisplayList) {
         edgeDisplayList.beginCompile();
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
           glDisable(GL_LIGHTING);
           glDepthFunc(GL_LEQUAL);
           draw(geom->AsPrimitive());
+        glPopAttrib();
+        edgeDisplayList.endCompile();
+      }
+    }
+    else if (geom->type == AnyGeometry3D::Type::Heightmap) {
+      if(!edgeDisplayList) {
+        edgeDisplayList.beginCompile();
+        glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
+          glDisable(GL_LIGHTING);
+          glDepthFunc(GL_LEQUAL);
+          glBegin(GL_LINES);
+          const Meshing::Heightmap* g = &geom->AsHeightmap();
+          Array2D<Vector3> vertices;
+          g->GetVertices(vertices);
+          for(int i=0;i<vertices.m;i++) {
+            for(int j=0;j<vertices.n;j++) {
+              if(i+1 < vertices.m) {
+                glVertex3v(vertices(i,j));
+                glVertex3v(vertices(i+1,j));
+              }
+              if(j+1 < vertices.n) {
+                glVertex3v(vertices(i,j));
+                glVertex3v(vertices(i,j+1));
+              }
+            }
+          }
+          glEnd();
         glPopAttrib();
         edgeDisplayList.endCompile();
       }
@@ -1226,7 +1313,7 @@ void GeometryAppearance::DrawGL(Element e)
   }
 
   if(doDrawSilhouette) {
-    //TODO: do we want to try silhouettes around point clounds?
+    //TODO: do we want to try silhouettes around point clounds or occupancy grids?
     /*
       if(silhouetteRadius > 0) {
         glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_POINT_BIT);
@@ -1248,17 +1335,18 @@ void GeometryAppearance::DrawGL(Element e)
     if(!weldMesh) {
       //make the weld mesh from the triangle mesh
       const Meshing::TriMesh* trimesh = NULL;
-      if(geom->type == AnyGeometry3D::ImplicitSurface) 
+      if(geom->type == AnyGeometry3D::Type::ImplicitSurface ||
+        geom->type == AnyGeometry3D::Type::Heightmap ||
+        geom->type == AnyGeometry3D::Type::ConvexHull ) 
         trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::PointCloud) 
+      else if(geom->type == AnyGeometry3D::Type::PointCloud) 
         trimesh = tempMesh.get();
-      else if(geom->type == AnyGeometry3D::TriangleMesh) 
+      else if(geom->type == AnyGeometry3D::Type::TriangleMesh) 
         trimesh = &geom->AsTriangleMesh();
-      else if(geom->type == AnyGeometry3D::Primitive) { 
+      else if(geom->type == AnyGeometry3D::Type::Primitive) { 
         const auto& p = geom->AsPrimitive();
         if(p.type == GeometricPrimitive3D::Point || p.type == GeometricPrimitive3D::Segment) {
-          //can't draw silhouette
-          printf("Can't draw silhouette for geometry of type %d\n",p.type);
+          //can't draw silhouette around points or segments
         }
         else {
           tempMesh.reset(new Meshing::TriMesh);
@@ -1321,7 +1409,12 @@ void GeometryAppearance::DrawGL(Element e)
       bool iDrawFaces=subAppearances[i].drawFaces;
       bool iDrawEdges=subAppearances[i].drawEdges;
       bool iDrawVertices=subAppearances[i].drawVertices;
-      if(subgeoms[i].appearanceData.empty())
+      bool customAppearance = false;
+      if(subgeoms[i].type == AnyGeometry3D::Type::TriangleMesh) {
+        auto* mesh = dynamic_cast<Geometry3DTriangleMesh*>(subgeoms[i].data.get());
+        if(mesh->appearance) customAppearance = true;
+      }
+      if(!customAppearance)
         subAppearances[i].CopyMaterialFlat(*this);
       subAppearances[i].drawFaces = iDrawFaces && drawFaces;
       subAppearances[i].drawEdges = iDrawEdges && drawEdges;

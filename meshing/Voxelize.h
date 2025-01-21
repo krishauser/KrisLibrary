@@ -16,6 +16,8 @@ namespace Meshing {
 /** @ingroup Meshing
  * @brief Returns a list of cells that the segment overlaps, given
  * an infinite unit grid.
+ * 
+ * Cell (i,j,k) covers the domain [i,i+1)x[j,j+1)x[k,k+1).
  *
  * If params is not null, the segment parameters that indicate the
  * beginnings / endings of each overlap are output in params.
@@ -25,7 +27,11 @@ void GetSegmentCells(const Segment3D& s,vector<IntTriple>& cells,vector<Real>* p
 /** @ingroup Meshing
  * @brief Returns a list of cells that the segment overlaps, given
  * a grid of size m,n,p over range bb.
- *
+ * 
+ * Cell (i,j,k) covers the domain [u,u+du)x[v,v+dv)x[w,w+dw) where
+ * u = bmin.x + i / m * (bmax.x - bmin.x), v = bmin.y + j / n * (bmax.y - bmin.y),
+ * and w = bmin.z + k / p * (bmax.z - bmin.z).
+ * 
  * If params is not null, the segment parameters that indicate the
  * beginnings / endings of each overlap are output in params.
  */
@@ -34,12 +40,28 @@ void GetSegmentCells(const Segment3D& s,int m,int n,int p,const AABB3D& bb,vecto
 /** @ingroup Meshing
  * @brief Returns a list of cells that the triangle overlaps, given
  * an infinite unit grid.
+ * 
+ * Cell (i,j,k) covers the domain [i,i+1)x[j,j+1)x[k,k+1).
+ * 
+ * Note: this is not particularly efficient for long and thin
+ * triangles that are not axis-aligned because it loops over all
+ * cells that overlap the triangle's bounding box and determines
+ * the triangle-box distance.
  */
 void GetTriangleCells(const Triangle3D& tri,vector<IntTriple>& cells);
 
 /** @ingroup Meshing
  * @brief Returns a list of cells that the triangle overlaps, given
  * a grid of size m,n,p over range bb.
+ * 
+ * Cell (i,j,k) covers the domain [u,u+du)x[v,v+dv)x[w,w+dw) where
+ * u = bmin.x + i / m * (bmax.x - bmin.x), v = bmin.y + j / n * (bmax.y - bmin.y),
+ * and w = bmin.z + k / p * (bmax.z - bmin.z).
+ * 
+ * Note: this is not particularly efficient for long and thin
+ * triangles that are not axis-aligned because it loops over all
+ * cells that overlap the triangle's bounding box and determines
+ * the triangle-box distance.
  */
 void GetTriangleCells(const Triangle3D& tri,int m,int n,int p,const AABB3D& bb,vector<IntTriple>& cells);
 
@@ -51,6 +73,12 @@ void GetTriangleCells(const Triangle3D& tri,int m,int n,int p,const AABB3D& bb,v
  * in the non-border cells of the grid.
  */
 void SurfaceOccupancyGrid(const TriMesh& m,Array3D<bool>& occupied,AABB3D& bb);
+
+/** @ingroup Meshing
+ * @brief Sets cells of a boolean 3D grid (value,bb) that overlap the
+ * surface of m to fillValue.
+ */
+void SurfaceOccupancyGridFill(const TriMesh& m,Array3D<float>& value,const AABB3D& bb,float fillValue=1);
 
 /** @ingroup Meshing
  * @brief Sets cells of a boolean 3D grid (occupied,bb) to true
@@ -88,15 +116,19 @@ void SweepVisibilityGrid(const TriMesh& m,int direction,Array3D<bool>& visible,A
  *
  * If bb is empty, automatically fits the bounding box to contain the mesh
  * in the non-border cells of the grid.
+ * 
+ * If keepExisting = false (default) then the distance field is initialized
+ * to Inf.  If keepExisting = true, then the distance field starts at the
+ * existing values.
  */
-void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells);
+void FastMarchingMethod(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells,bool keepExisting=false);
 
 
 /** @ingroup Meshing
  * @brief Same as FastMarchingMethod but constrains start points to the exterior
  * of the mesh (sometimes avoids artifacts from internal structures)
  */
-void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells);
+void FastMarchingMethod_Fill(const TriMeshWithTopology& m,Array3D<Real>& distance,Array3D<Vector3>& gradient,AABB3D& bb,vector<IntTriple>& surfaceCells,bool keepExisting=false);
 
 
 /** @ingroup Meshing

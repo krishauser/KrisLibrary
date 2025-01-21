@@ -634,7 +634,7 @@ DistanceRecurse(PQP_DistanceResult *res,
   // pair second.
 
   int a1,a2,c1,c2;  // new bv tests 'a' and 'c'
-  PQP_REAL R1[3][3], T1[3], R2[3][3], T2[3], Ttemp[3];
+  //PQP_REAL R1[3][3], T1[3], R2[3][3], T2[3], Ttemp[3];
 
   if (l2 || (!l1 && (sz1 > sz2)))
   {
@@ -747,7 +747,7 @@ DistanceQueueRecurse(PQP_DistanceResult *res,
       res->num_bv_tests += 2;
  
       BVT bvt1,bvt2;
-      PQP_REAL Ttemp[3];
+      //PQP_REAL Ttemp[3];
 
       if (l2 || (!l1 && (sz1 > sz2)))	
       {  
@@ -1056,7 +1056,7 @@ ToleranceQueueRecurse(PQP_ToleranceResult *res,
       res->num_bv_tests += 2;
       
       BVT bvt1,bvt2;
-      PQP_REAL Ttemp[3];
+      //PQP_REAL Ttemp[3];
 
       if (l2 || (!l1 && (sz1 > sz2)))	
       {
