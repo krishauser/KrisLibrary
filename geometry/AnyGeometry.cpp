@@ -906,13 +906,13 @@ bool AnyCollisionGeometry3D::WithinDistance(AnyCollisionGeometry3D &geom, Real t
   geom.InitCollisionData();
   tol += margin + geom.margin;
   if(type < geom.type) {
-    if(geom.collider->WithinDistance(collider.get(),tol,elements2,elements1)) { return !elements1.empty(); }
-    if(collider->WithinDistance(geom.collider.get(),tol,elements1,elements2)) { return !elements1.empty(); }
+    if(geom.collider->WithinDistance(collider.get(),tol,elements2,elements1,maxContacts)) { return !elements1.empty(); }
+    if(collider->WithinDistance(geom.collider.get(),tol,elements1,elements2,maxContacts)) { return !elements1.empty(); }
     return false;
   }
   else {
-    if(collider->WithinDistance(geom.collider.get(),tol,elements1,elements2)) { return !elements1.empty(); }
-    if(geom.collider->WithinDistance(collider.get(),tol,elements2,elements1)) { return !elements1.empty(); }
+    if(collider->WithinDistance(geom.collider.get(),tol,elements1,elements2,maxContacts)) { return !elements1.empty(); }
+    if(geom.collider->WithinDistance(collider.get(),tol,elements2,elements1,maxContacts)) { return !elements1.empty(); }
     return false;
   }
 }
