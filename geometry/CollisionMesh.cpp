@@ -1368,7 +1368,7 @@ struct ClosestPointCallback
   int numTrianglesChecked,numBBsChecked;
 };
 
-int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp,Real bound)
+int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cplocal,Real bound)
 {
   Vector3 plocal;
   mesh.currentTransform.mulInverse(p,plocal);
@@ -1376,7 +1376,7 @@ int ClosestPoint(const CollisionMesh& mesh,const Vector3& p,Vector3& cp,Real bou
   cb.dmin = bound*bound;
   cb.dmax = bound*bound;
   cb.Execute(*mesh.pqpModel,plocal);
-  cp = cb.cp;
+  cplocal = cb.cp;
 
   /*
   //TEST
@@ -1804,33 +1804,60 @@ Real Distance(const CollisionMesh& c,const GeometricPrimitive3D& a,int& closestT
       Tlocal.setInverse(c.currentTransform);
       GeometricPrimitive3D alocal = a;
       alocal.Transform(Tlocal);
-      Real d=bound;
-      closestTri = -1;
       Triangle3D tri;
-      Vector3 cptemp,dirtemp;
-      for(size_t i=0;i<c.tris.size();i++) {
-        c.GetTriangle(i,tri);
-        if(use_cp) {
-          Real di = alocal.ClosestPoints(tri,cptemp,dirtemp);
-          if(di < d) {
-            d = di;
-            closestTri = (int)i;
-            cp = cptemp;
-            dir = dirtemp;
+
+      //first find point - mesh distance
+      Vector3 center = a.GetCentroid();
+      closestTri=ClosestPoint(c,center,cp,bound);
+      if(closestTri < 0) {
+        return bound;
+      }
+      //get closest tri - geometry distance
+      c.GetTriangle(closestTri,tri);
+      Real d;
+      if(use_cp) {
+        d = alocal.ClosestPoints(tri,cp,dir);
+      }
+      else {
+        d = alocal.Distance(tri);
+        cp = Tlocal.t;
+        Vector3 cptemp = tri.centroid();
+        dir = cptemp - cp;
+        dir.inplaceNormalize();
+      }
+      if(d > 0) {
+        //cp is on the primitive, in local coordinates
+        Sphere3D s;
+        s.center = c.currentTransform*cp;
+        s.radius = d;
+        //find tris within d distance from cp
+        vector<int> candidateTris;
+        CollideAll(c,s,candidateTris);
+        Vector3 cptemp,dirtemp;
+        for(auto i:candidateTris) {
+          c.GetTriangle(i,tri);
+          if(use_cp) {
+            Real di = alocal.ClosestPoints(tri,cptemp,dirtemp);
+            if(di < d) {
+              d = di;
+              closestTri = (int)i;
+              cp = cptemp;
+              dir = dirtemp;
+            }
           }
-        }
-        else {
-          Real di = alocal.Distance(tri);
-          if(di < d) {
-            d = di;
-            closestTri = (int)i;
-            cp = Tlocal.t;
-            cptemp = tri.centroid();
-            dirtemp = cptemp - cp;
-            dirtemp.inplaceNormalize();
+          else {
+            Real di = alocal.Distance(tri);
+            if(di < d) {
+              d = di;
+              closestTri = (int)i;
+              cp = Tlocal.t;
+              cptemp = tri.centroid();
+              dirtemp = cptemp - cp;
+              dirtemp.inplaceNormalize();
+            }
           }
+          if(d == 0) break;
         }
-        if(d == 0) break;
       }
       //convert cp and dir to world coordinates, flip them to be on the mesh
       cp = c.currentTransform*cp;

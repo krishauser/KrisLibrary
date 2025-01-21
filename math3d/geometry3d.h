@@ -52,6 +52,7 @@ class GeometricPrimitive3D
   Box3D GetBB() const;
   Sphere3D GetBoundingSphere() const;
   RigidTransform GetFrame() const;
+  Vector3 GetCentroid() const;
   void Transform(const RigidTransform& T);
   bool Transform(const Matrix4& T);
 

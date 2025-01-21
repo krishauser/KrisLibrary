@@ -507,6 +507,52 @@ Box3D GeometricPrimitive3D::GetBB() const
   }
 }
 
+Vector3 GeometricPrimitive3D::GetCentroid() const
+{
+  switch(type) {
+  case Point:
+    {
+      const Vector3* p = AnyCast_Raw<Vector3>(&data);
+      return *p;
+    }
+  case Segment:
+    {
+      const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
+      return 0.5*(s->a+s->b);
+    }
+  case Triangle:
+    {
+      const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
+      return t->centroid();
+    }
+  case Polygon:
+    {
+      const Polygon3D* p=AnyCast_Raw<Polygon3D>(&data);
+      return p->centroidConvex();
+    }
+  case Sphere:
+    {
+      return *AnyCast_Raw<Sphere3D>(&data)->center;
+    }
+  case AABB:
+    {
+      const AABB3D* b = AnyCast_Raw<AABB3D>(&data);
+      return b->midpoint();
+    }
+  case Box:
+    {
+      const Box3D* b = AnyCast_Raw<Box3D>(&data);
+      return b->center();
+    }
+  default:
+    {
+      AABB3D bb = GetAABB();
+      return bb.midpoint();
+    }
+  }
+
+}
+
 Sphere3D GeometricPrimitive3D::GetBoundingSphere() const
 {
   switch(type) {
@@ -518,13 +564,12 @@ Sphere3D GeometricPrimitive3D::GetBoundingSphere() const
   case Segment:
     {
       const Segment3D* s=AnyCast_Raw<Segment3D>(&data);
-      return Sphere3D(s->a,0.5*s->a.distance(s->b));
+      return Sphere3D((s->a+s->b)*0.5,0.5*s->a.distance(s->b));
     }
   case Triangle:
     {
       const Triangle3D* t=AnyCast_Raw<Triangle3D>(&data);
-      Vector3 c = t->a + t->b + t->c;
-      c /= 3.0;
+      Vector3 c = t->centroid();
       Real r = Max(t->a.distance(c),t->b.distance(c));
       r = Max(r,t->c.distance(c));
       return Sphere3D(c,r);
