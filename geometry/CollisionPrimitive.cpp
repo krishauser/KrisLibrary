@@ -119,13 +119,6 @@ bool Collider3DPrimitive::Distance(const Vector3 &pt, const DistanceQuerySetting
     return true;
 }
 
-bool Collides(const GeometricPrimitive3D &a, const GeometricPrimitive3D &b, Real margin)
-{
-    if (margin == 0)
-        return a.Collides(b);
-    return a.Distance(b) <= margin;
-}
-
 bool Collider3DPrimitive::WithinDistance(Collider3D* geom,Real d,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
 {
@@ -138,10 +131,19 @@ bool Collider3DPrimitive::WithinDistance(Collider3D* geom,Real d,
     {
         GeometricPrimitive3D bw = dynamic_cast<const Collider3DPrimitive*>(geom)->data->data;
         bw.Transform(geom->GetTransform());
-        if (::Collides(aw, bw, d))
-        {
-            elements1.push_back(0);
-            elements2.push_back(0);
+        if(d == 0) {
+            if(!aw.SupportsCollides(bw.type)) return false; 
+            if(aw.Collides(bw)) {
+                elements1.push_back(0);
+                elements2.push_back(0);
+            }
+        }
+        else {
+            if(!aw.SupportsDistance(bw.type)) return false;
+            if (aw.Distance(bw) <= d) {
+                elements1.push_back(0);
+                elements2.push_back(0);
+            }
         }
         return true;
     }
