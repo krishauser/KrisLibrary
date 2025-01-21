@@ -287,36 +287,34 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
     const Sphere3D& s = *AnyCast<Sphere3D>(&g.data);
     return Distance(pc,s.center,closestPoint,upperBound+s.radius)-s.radius; 
   }
+  //do point-pointcloud distance
+  Vector3 c = g.GetCentroid();
+  Real dbound = Distance(pc,c,closestPoint,upperBound);
+  if(closestPoint < 0) return upperBound;
+  //use this bound to get a sphere that must contain the closest point on the point cloud 
+  Vector3 dir;
+  Real d = g.ClosestPoints(pc.currentTransform*pc.points[closestPoint],c,dir);
+  if(d == 0) return d;
+  //now query all points within the radius s
+  vector<int> candidatePoints;
+  NearbyPoints(pc,GeometricPrimitive3D(c),d,candidatePoints);
 
   GeometricPrimitive3D glocal = g;
   RigidTransform Tinv;
   Tinv.setInverse(pc.currentTransform);
   glocal.Transform(Tinv);
 
-  closestPoint=-1;
-  if(!IsInf(upperBound) && glocal.Distance(pc.bblocal) > upperBound) {
-    return upperBound;
-  }
-  bool doBoundsTest= (g.type != GeometricPrimitive3D::Point && g.type != GeometricPrimitive3D::Sphere && g.type != GeometricPrimitive3D::AABB);
+  Real dmax = d;
+  bool doBoundsTest= (g.type != GeometricPrimitive3D::AABB);
   if(doBoundsTest) {
-    AABB3D gbb = glocal.GetAABB();
-    Sphere3D sbb;
-    sbb.center = 0.5*(gbb.bmin+gbb.bmax);
-    sbb.radius = sbb.center.distance(gbb.bmin);
-    /*
-    gDistanceTestValue = Inf;
-    gDistanceTestObject = &glocal;
-    pc.grid.BoxQuery(gbb.bmin,gbb.bmax,distanceTest);
-    return gDistanceTestValue;
-    */
+    Sphere3D sbb = glocal.GetBoundingSphere();
     Real radius0 = sbb.radius;
     sbb.radius += upperBound;
     //AABB3D bb0 = gbb;
     //gbb.bmin -= Vector3(upperBound);
     //gbb.bmax += Vector3(upperBound);
     //test all points, linearly
-    Real dmax = upperBound;
-    for(size_t i=0;i<pc.points.size();i++) {
+    for(auto i:candidatePoints) {
       if(sbb.contains(pc.points[i])) {
         Real d = glocal.Distance(pc.points[i]);
         if(pc.radiusIndex >= 0)
@@ -328,12 +326,10 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
         }
       }
     }
-    return dmax;
   }
   else {
-    Real dmax = upperBound;
     //bounds testing not worth it
-    for(size_t i=0;i<pc.points.size();i++) {
+    for(auto i:candidatePoints) {
       Real d = glocal.Distance(pc.points[i]);
       if(pc.radiusIndex >= 0)
         d -= pc.properties(i,pc.radiusIndex);
@@ -342,8 +338,8 @@ Real Distance(const CollisionPointCloud& pc,const GeometricPrimitive3D& g,int& c
         dmax = d;
       }
     }
-    return dmax;
   }
+  return dmax;
 }
 
 Real Distance(const CollisionPointCloud& pc1,const CollisionPointCloud& pc2,int& closestPoint1,int& closestPoint2,Real upperBound)
