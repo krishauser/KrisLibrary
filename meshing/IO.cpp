@@ -850,7 +850,7 @@ void Cast(const aiMatrix4x4& a,Matrix4& out)
   out(3,3) = a.d4;
 }
 
-void AssimpMaterialToAppearance(const aiMaterial* mat,const aiMesh* mesh,const aiScene* scene,GeometryAppearance& app)
+void AssimpMaterialToAppearance(aiMaterial* mat,const aiMesh* mesh,const aiScene* scene,GeometryAppearance& app)
 {
   if(mat->GetName().length == 0 || mat->GetName() == aiString(AI_DEFAULT_MATERIAL_NAME))
     return;
