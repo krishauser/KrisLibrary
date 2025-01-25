@@ -106,7 +106,6 @@ bool GLView::getViewport(Camera::Viewport& v) const
 		v.f=(float)nf.y;
 		
 #ifdef _DEBUG
-		if(v.scale != (float)(p(1,1)*h*0.5)) error=true;
 		  //no projection translation
 		if(p(0,3)!=Zero) error=true;
 		if(p(1,3)!=Zero) error=true;
@@ -151,7 +150,6 @@ bool GLView::getViewport(Camera::Viewport& v) const
 		else error=true;
 
 #ifdef _DEBUG
-		if(v.scale!=p(1,1)*Half*h/w) error=true;
 		//no translation
 		if(p(0,2)!=Zero) error=true;
 		if(p(1,2)!=Zero) error=true;

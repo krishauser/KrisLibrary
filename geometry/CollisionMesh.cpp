@@ -881,31 +881,11 @@ void BVToBox(const BV& b,Box3D& box)
 void BoxToBV(const Box3D& box,BV& b)
 {
   //convert corner-origin box to center-origin BV
-  Vector3 halfDims = box.dims*Half;
-  Vector3 center = box.origin + halfDims.x*box.xbasis + halfDims.y*box.ybasis + halfDims.z*box.zbasis;
-  Copy(halfDims,b.d);
-  Copy(center,b.To);
-
-  /*
-  b.R[0][0] = box.xbasis.x;
-  b.R[0][1] = box.xbasis.y;
-  b.R[0][2] = box.xbasis.z;
-  b.R[1][0] = box.ybasis.x;
-  b.R[1][1] = box.ybasis.y;
-  b.R[1][2] = box.ybasis.z;
-  b.R[2][0] = box.zbasis.x;
-  b.R[2][1] = box.zbasis.y;
-  b.R[2][2] = box.zbasis.z;
-  */
-  b.R[0][0] = box.xbasis.x;
-  b.R[0][1] = box.ybasis.x;
-  b.R[0][2] = box.zbasis.x;
-  b.R[1][0] = box.xbasis.y;
-  b.R[1][1] = box.ybasis.y;
-  b.R[1][2] = box.zbasis.y;
-  b.R[2][0] = box.xbasis.z;
-  b.R[2][1] = box.ybasis.z;
-  b.R[2][2] = box.zbasis.z;
+  Copy(box.dims * 0.5, b.d);
+  Copy(box.center(), b.To);
+  box.xbasis.get(b.R[0][0], b.R[1][0], b.R[2][0]);
+  box.ybasis.get(b.R[0][1], b.R[1][1], b.R[2][1]);
+  box.zbasis.get(b.R[0][2], b.R[1][2], b.R[2][2]);
 }
 
 
