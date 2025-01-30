@@ -473,6 +473,7 @@ void GeometryAppearance::RefreshGeometry()
   Refresh();
   tempMesh.reset();
   tempMesh2.reset();
+  if(!geom) return;
   if(geom->type == AnyGeometry3D::Type::ImplicitSurface) {
     const Meshing::VolumeGrid* g = &geom->AsImplicitSurface();
     tempMesh.reset(new Meshing::TriMesh);
