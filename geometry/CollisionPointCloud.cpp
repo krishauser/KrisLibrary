@@ -780,32 +780,9 @@ inline void Copy(const Vector3 &x, PQP_REAL p[3])
   p[2] = x.z;
 }
 
-inline void BVToBox(const BV &b, Box3D &box)
-{
-  Copy(b.d, box.dims);
-  Copy(b.To, box.origin);
-  //box.xbasis.set(b.R[0][0],b.R[0][1],b.R[0][2]);
-  //box.ybasis.set(b.R[1][0],b.R[1][1],b.R[1][2]);
-  //box.zbasis.set(b.R[2][0],b.R[2][1],b.R[2][2]);
-  box.xbasis.set(b.R[0][0], b.R[1][0], b.R[2][0]);
-  box.ybasis.set(b.R[0][1], b.R[1][1], b.R[2][1]);
-  box.zbasis.set(b.R[0][2], b.R[1][2], b.R[2][2]);
-
-  //move the box to have origin at the corner
-  box.origin -= box.dims.x * box.xbasis;
-  box.origin -= box.dims.y * box.ybasis;
-  box.origin -= box.dims.z * box.zbasis;
-  box.dims *= 2;
-}
-
-inline void BoxToBV(const Box3D &box, BV &b)
-{
-  Copy(box.dims * 0.5, b.d);
-  Copy(box.center(), b.To);
-  box.xbasis.get(b.R[0][0], b.R[1][0], b.R[2][0]);
-  box.ybasis.get(b.R[0][1], b.R[1][1], b.R[2][1]);
-  box.zbasis.get(b.R[0][2], b.R[1][2], b.R[2][2]);
-}
+//defined in CollisionMesh.cpp
+void BVToBox(const BV& b,Box3D& box);
+void BoxToBV(const Box3D &box, BV &b);
 
 inline bool Collide(const Triangle3D &tri, const Sphere3D &s)
 {

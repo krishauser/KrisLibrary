@@ -575,7 +575,7 @@ bool Collider3D::Union(const vector<Collider3D*>& cgeoms)
 {
     if(cgeoms.empty()) return false;
     RigidTransform T0 = GetTransform();
-    vector<Geometry3D*> geoms(geoms.size());
+    vector<Geometry3D*> geoms(cgeoms.size());
     for (size_t i = 0; i < cgeoms.size(); i++) {
         geoms[i] = cgeoms[i]->GetData().get();
         if(geoms[i]->GetType() == geoms[0]->GetType()) {
