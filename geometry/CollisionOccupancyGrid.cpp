@@ -214,6 +214,7 @@ Geometry3DOccupancyGrid::Geometry3DOccupancyGrid(Meshing::VolumeGrid&& _data,Rea
 
 Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real domainExpansion) const
 {
+    Real occ_threshold = (param == 0 ? occupancyThreshold : param); 
     switch(restype) {
     case Type::PointCloud:
         {
@@ -221,7 +222,7 @@ Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real doma
         Meshing::VolumeGridIterator<Real> it=data.getIterator();
         Vector3 c;
         while(!it.isDone()) {
-            if(*it > param) {
+            if(*it > occ_threshold) {
                 it.getCellCenter(c);
                 pc->data.points.push_back(c);
             }
@@ -246,26 +247,26 @@ Geometry3D* Geometry3DOccupancyGrid::ConvertTo(Type restype,Real param,Real doma
         };
         UNORDERED_MAP_TEMPLATE<IntTriple,int,IndexHash> vertexMap;
         while(!it.isDone()) {
-            if(*it > 0) {
+            if(*it > occ_threshold) {
                 vector<int> faces;
                 IntTriple ind = it.getIndex();
                 ind.a += 1;
-                if(ind.a >= data.value.m || data.value(ind) <= 0) faces.push_back(1);
+                if(ind.a >= data.value.m || data.value(ind) <= occ_threshold) faces.push_back(1);
                 ind.a -= 1;
                 ind.a -= 1;
-                if(ind.a < 0 || data.value(ind) <= 0) faces.push_back(-1);
+                if(ind.a < 0 || data.value(ind) <= occ_threshold) faces.push_back(-1);
                 ind.a += 1;
                 ind.b += 1;
-                if(ind.b >= data.value.n || data.value(ind) <= 0) faces.push_back(2);
+                if(ind.b >= data.value.n || data.value(ind) <= occ_threshold) faces.push_back(2);
                 ind.b -= 1;
                 ind.b -= 1;
-                if(ind.b < 0 || data.value(ind) <= 0) faces.push_back(-2);
+                if(ind.b < 0 || data.value(ind) <= occ_threshold) faces.push_back(-2);
                 ind.b += 1;
                 ind.c += 1;
-                if(ind.c >= data.value.p || data.value(ind) <= 0) faces.push_back(3);
+                if(ind.c >= data.value.p || data.value(ind) <= occ_threshold) faces.push_back(3);
                 ind.c -= 1;
                 ind.c -= 1;
-                if(ind.c < 0 || data.value(ind) <= 0) faces.push_back(-3);
+                if(ind.c < 0 || data.value(ind) <= occ_threshold) faces.push_back(-3);
                 ind.c += 1;
                 it.getCell(bb);
                 for(size_t i=0;i<faces.size();i++) {
