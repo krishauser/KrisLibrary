@@ -1,10 +1,10 @@
-#if HAVE_LOG4CXX
+#if HAVE_LOG4CXX 
 
 #include <log4cxx/logger.h>
 #include <log4cxx/basicconfigurator.h>
 #include <log4cxx/xml/domconfigurator.h>
 #include <log4cxx/level.h>
-#include <log4cxx/helpers/objectptr.h>
+//#include <log4cxx/helpers/objectptr.h>
 #include <log4cxx/patternlayout.h>
 #include <log4cxx/consoleappender.h>
 #include "Logger.h"
@@ -30,8 +30,8 @@ log4cxx::LoggerPtr logger()
 	try{
 		log4cxx::xml::DOMConfigurator::configure("./log4cxx.xml");
 		if (rootLogger->getAllAppenders().empty()){
-			log4cxx::LayoutPtr defaultLayout   = new log4cxx::PatternLayout("%m %n");
-       		log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
+			log4cxx::LayoutPtr defaultLayout(new log4cxx::PatternLayout("%m %n"));
+       		log4cxx::AppenderPtr defaultAppender(new log4cxx::ConsoleAppender(defaultLayout));
        		rootLogger->addAppender(defaultAppender);
        		rootLogger->setLevel(log4cxx::Level::getInfo());
 			printf("KrisLibrary::logger(): configured as default\n");
@@ -40,8 +40,8 @@ log4cxx::LoggerPtr logger()
 
 	}
 	catch(...){
-		log4cxx::LayoutPtr defaultLayout   = new log4cxx::PatternLayout("%m %n");
-       	log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
+		log4cxx::LayoutPtr defaultLayout(new log4cxx::PatternLayout("%m %n"));
+       	log4cxx::AppenderPtr defaultAppender(new log4cxx::ConsoleAppender(defaultLayout));
        	rootLogger->addAppender(defaultAppender);
        	rootLogger->setLevel(log4cxx::Level::getInfo());
 		printf("KrisLibrary::logger(): configured as default\n");
@@ -80,8 +80,8 @@ log4cxx::LoggerPtr logger(const char* s)
 				//sets up basic setup if logger doesn't have appender set up.
 				std::stringstream ss;
 				ss<<s<<": %m %n";
-				log4cxx::LayoutPtr defaultLayout   = new log4cxx::PatternLayout(ss.str().c_str());
-			    log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
+				log4cxx::LayoutPtr defaultLayout(new log4cxx::PatternLayout(ss.str().c_str()));
+			    log4cxx::AppenderPtr defaultAppender(new log4cxx::ConsoleAppender(defaultLayout));
 			    myLogger->addAppender(defaultAppender);
 			    myLogger->setLevel(log4cxx::Level::getInfo());
 				printf("KrisLibrary::logger(): %s configured as default\n",s);
@@ -94,8 +94,8 @@ log4cxx::LoggerPtr logger(const char* s)
 			//catches null logger errors
 			rootLogger = log4cxx::Logger::getRootLogger();
 			printf("KrisLibrary::logger(): Hit error. Setting up default logger\n");
-			log4cxx::LayoutPtr defaultLayout   = new log4cxx::PatternLayout("%m %n");
-       		log4cxx::AppenderPtr defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
+			log4cxx::LayoutPtr defaultLayout(new log4cxx::PatternLayout("%m %n"));
+       		log4cxx::AppenderPtr defaultAppender(new log4cxx::ConsoleAppender(defaultLayout));
        		rootLogger->addAppender(defaultAppender);
        		rootLogger->setLevel(log4cxx::Level::getInfo());  // Log level set to INFO
 			//log4cxx::BasicConfigurator::configure();

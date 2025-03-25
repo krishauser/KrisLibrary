@@ -598,7 +598,7 @@ ConvergenceResult BCMinimizationProblem::SolveLM(VectorFieldFunction* vf,int& it
 ConvergenceResult BCMinimizationProblem::LineMinimizationStep(Vector& dx,Real& alpha0)
 {
   if(!AABBContains(x,bmin,bmax)) 
-    LOG4CXX_ERROR(KrisLibrary::logger(),"BCMinimizationProblem::LineMinimizationStep(): Initial state not in bounds?")
+    LOG4CXX_ERROR(KrisLibrary::logger(),"BCMinimizationProblem::LineMinimizationStep(): Initial state not in bounds?");
   activeSet.resize(x.n);
   for(int i=0;i<dx.n;i++) {
     if(FuzzyEquals(x(i),bmin(i),boundEpsilon) ||
@@ -917,7 +917,7 @@ ConvergenceResult ConstrainedMinimizationProblem::StepSQP(Real &alpha)
   */
   deltax.setRef(dxlambda,0,1,x.n);
   if(!AABBContains(x,bmin,bmax)) 
-    LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::StepSQP: Initial state not in bounds?")
+    LOG4CXX_ERROR(KrisLibrary::logger(),"ConstrainedMinimizationProblem::StepSQP: Initial state not in bounds?");
   for(int i=0;i<x.n;i++) {
     if(FuzzyEquals(x[i],bmin[i],boundEpsilon)) {
       if(deltax[i] < 0) deltax[i] = 0;

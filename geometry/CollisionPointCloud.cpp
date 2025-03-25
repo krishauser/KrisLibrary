@@ -107,12 +107,15 @@ void CollisionPointCloud::InitCollisions(int hints)
       validptcount++;
     }
   }
-  LOG4CXX_INFO(GET_LOGGER(Geometry),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
-  //print stats
-  int nmax = 0;
-  for(GridSubdivision3D::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
-    nmax = Max(nmax,(int)i->second.size());
-  LOG4CXX_INFO(GET_LOGGER(Geometry),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
+  bool print_stats = (timer.ElapsedTime() > 0.1);
+  if(print_stats) {
+    //print stats
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"CollisionPointCloud::InitCollisions: "<<validptcount<<" valid points, res "<<res<<", time "<<timer.ElapsedTime());
+    int nmax = 0;
+    for(GridSubdivision3D::HashTable::const_iterator i=grid.buckets.begin();i!=grid.buckets.end();i++)
+      nmax = Max(nmax,(int)i->second.size());
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"  "<<grid.buckets.size()<<" nonempty grid buckets, max size "<<nmax<<", avg "<<Real(points.size())/grid.buckets.size());
+  }
   timer.Reset();
 
   //initialize the octree, 10 points per cell, res is minimum cell size
@@ -129,11 +132,13 @@ void CollisionPointCloud::InitCollisions(int hints)
         octree->Add(points[i],(int)i);
     }
   }
-  LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
+  if(print_stats) 
+    LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree initialized in time "<<timer.ElapsedTime()<<"s, "<<octree->Size()<<" nodes, depth "<<octree->MaxDepth());
   //TEST: should we fit to points?
   if(!(hints & CollisionDataHintFast)) {
     octree->FitToPoints();
-    LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree fit to points in time "<<timer.ElapsedTime());
+    if(print_stats) 
+      LOG4CXX_INFO(GET_LOGGER(Geometry),"  octree fit to points in time "<<timer.ElapsedTime());
   }
   /*
   //TEST: method 2.  Turns out to be much slower

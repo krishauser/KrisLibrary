@@ -134,9 +134,9 @@ public:
           streampos fsize = in.tellg() - fcur;
           in.seekg( fcur );
           if(fsize-streampos(pointsize*numPoints) != 0) {
-            LOG4CXX_WARN(KrisLibrary::logger(),"PCD parser: DATA binary seems too large?")
-            LOG4CXX_WARN(KrisLibrary::logger(),"  Size of point "<<pointsize<<" x "<<numPoints<<" points")
-            LOG4CXX_WARN(KrisLibrary::logger(),"  Remaining bytes left: "<<fsize<<", we'll probably have "<<fsize-streampos(pointsize*numPoints)<<" left?")
+            LOG4CXX_WARN(KrisLibrary::logger(),"PCD parser: DATA binary seems too large?");
+            LOG4CXX_WARN(KrisLibrary::logger(),"  Size of point "<<pointsize<<" x "<<numPoints<<" points");
+            LOG4CXX_WARN(KrisLibrary::logger(),"  Remaining bytes left: "<<fsize<<", we'll probably have "<<fsize-streampos(pointsize*numPoints)<<" left?");
             for(int i=0;i<int(fsize)-pointsize*numPoints;i++) {
               if(in.peek() != 0) {
                 LOG4CXX_WARN(KrisLibrary::logger(),"  Hmmm... what's this wasted space? stopped on "<<i);
