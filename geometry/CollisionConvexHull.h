@@ -22,7 +22,7 @@ public:
   Collider3DConvexHull(const ConvexHull3D& hull);
   Collider3DConvexHull(shared_ptr<Geometry3DConvexHull> data);  
   virtual ~Collider3DConvexHull() {}
-  virtual shared_ptr<Geometry3D> GetData() const { return dynamic_pointer_cast<Geometry3D>(data); }
+  virtual shared_ptr<Geometry3D> GetData() const override { return dynamic_pointer_cast<Geometry3D>(data); }
   virtual void Reset() override;
   virtual AABB3D GetAABB() const override;
   virtual RigidTransform GetTransform() const override { return T; }
