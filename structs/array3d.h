@@ -75,9 +75,15 @@ class Array3D
   void swap(Array3D<T>&);
   inline T* getData() const { return items; }
   
-  class iterator : public std::iterator<std::bidirectional_iterator_tag,T>
+  class iterator 
   {
   public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+
     explicit iterator(const Array3D<T>* array);
     explicit iterator(const Array3D<T>* array,int invalid);
     explicit iterator(const Array3D<T>* array,const Stripe3Indices& range);

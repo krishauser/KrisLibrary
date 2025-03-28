@@ -73,9 +73,14 @@ public:
   inline T* getData() const { return items; }
   inline T* getRowData(int i) const { return &items[i*n]; }
 
-  class iterator : public std::iterator<std::bidirectional_iterator_tag, T>
-  {
+  class iterator {
   public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+
     explicit iterator(const Array2D<T>* array);
     explicit iterator(const Array2D<T>* array,int invalid);
     explicit iterator(const Array2D<T>* array,const Stripe2Indices& range);
