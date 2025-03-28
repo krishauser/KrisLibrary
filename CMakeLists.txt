@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 PROJECT( KrisLibrary )
 
 # version (e.g. for packaging)
