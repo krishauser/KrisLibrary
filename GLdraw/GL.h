@@ -7,6 +7,7 @@
 #endif // _WIN32
 
 #if defined (__APPLE__) || defined (MACOSX)
+#define GL_SILENCE_DEPRECATION //helpful to avoid huge number of deprecation warnings
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>

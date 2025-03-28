@@ -281,7 +281,8 @@ void Matrix3::mulTransposeB(const Matrix3& a, const Matrix3& b)
 #define SWAP(a,b) { tmp = (a) ; (a) = (b) ; (b) = tmp; }
 
 static void rowswap(Matrix3 &m, int i, int j) {
-  register Real tmp;
+  //register Real tmp;
+  Real tmp;
   SWAP(m(i,0),m(j,0));
   SWAP(m(i,1),m(j,1));
   SWAP(m(i,2),m(j,2));
@@ -306,6 +307,7 @@ bool Matrix3::setInverse(const Matrix3& a)
       return false;
     }
     register Real div = Inv(_a(j,j));
+	//Real div = Inv(_a(j,j));
     _b(j,0) *= div;
     _b(j,1) *= div;
     _b(j,2) *= div;
@@ -314,7 +316,8 @@ bool Matrix3::setInverse(const Matrix3& a)
     _a(j,2) *= div;
     for(i=0;i<3;i++) {
       if (i != j) {
-	register Real tmp = _a(i,j);
+	//register Real tmp = _a(i,j);
+	Real tmp = _a(i,j);
 	_b(i,0) -= tmp*_b(j,0);
 	_b(i,1) -= tmp*_b(j,1);
 	_b(i,2) -= tmp*_b(j,2);
