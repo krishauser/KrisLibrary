@@ -46,6 +46,12 @@ extern void loggerWait();
  */
 extern void loggerWait(LoggerType logger);
 
+/** @brief Sets the log level.  level can be "DEBUG", "INFO", "WARN", "ERROR", or "FATAL" */
+extern void setLogLevel(const char* level);
+
+/** @brief Sets the log level.  level can be "DEBUG", "INFO", "WARN", "ERROR", or "FATAL" */
+extern void setLogLevel(LoggerType logger, const char* level);
+
 ///Use this inside a cpp file to define a fast logger 
 #define DEFINE_LOGGER(name) \
   DECLARE_LOGGER(name) \
@@ -95,31 +101,51 @@ inline LoggerType logger(const char* name) { return name; }
 
 /** @brief If the root logger is enabled for debug level, this will cause a getchar() to be called.
  */
-inline void loggerWait() { printf("Press enter to continue...\n"); getchar(); }
+extern void loggerWait();
 
 /** @brief If logger is enabled for debug level, this will cause a getchar() to be called.
  */
-inline void loggerWait(LoggerType logger) { printf("Press enter to continue...\n"); getchar(); }
+extern void loggerWait(LoggerType logger);
+
+/** @brief Sets the log level.  level can be "DEBUG", "INFO", "WARN", "ERROR", or "FATAL" */
+extern void setLogLevel(const char* level);
+
+/** @brief Sets the log level.  level can be "DEBUG", "INFO", "WARN", "ERROR", or "FATAL" */
+extern void setLogLevel(LoggerType logger, const char* level);
+
+/// @brief Internally used. 
+extern bool _shouldLog(LoggerType logger,const char* level);
+
 
 #define LOG4CXX_DEBUG(logger,data) { \
-  if(logger) std::cout<<logger<<": "<<data<<std::endl; \
-  else std::cout<<data<<std::endl; }
+  if(KrisLibrary::_shouldLog(logger,"DEBUG")) { \
+    if(logger) std::cout<<logger<<": "<<data<<std::endl; \
+    else std::cout<<data<<std::endl; } \
+  }
 
 #define LOG4CXX_INFO(logger,data) { \
-  if(logger) std::cout<<logger<<": "<<data<<std::endl; \
-  else std::cout<<data<<std::endl; }
+  if(KrisLibrary::_shouldLog(logger,"INFO")) { \
+    if(logger) std::cout<<logger<<": "<<data<<std::endl; \
+    else std::cout<<data<<std::endl; } \
+  }
 
 #define LOG4CXX_WARN(logger,data) { \
-  if(logger) std::cout<<logger<<": "<<data<<std::endl; \
-  else std::cout<<data<<std::endl; }
+  if(KrisLibrary::_shouldLog(logger,"WARN")) { \
+    if(logger) std::cout<<logger<<": "<<data<<std::endl; \
+    else std::cout<<data<<std::endl; } \
+  }
 
 #define LOG4CXX_ERROR(logger,data) { \
-  if(logger) std::cerr<<logger<<": "<<data<<std::endl; \
-  else std::cerr<<data<<std::endl; }
+  if(KrisLibrary::_shouldLog(logger,"ERROR")) { \
+    if(logger) std::cerr<<logger<<": "<<data<<std::endl; \
+    else std::cerr<<data<<std::endl; } \
+  }
 
 #define LOG4CXX_FATAL(logger,data) { \
-  if(logger) std::cerr<<logger<<": "<<data<<std::endl; \
-  else std::cerr<<data<<std::endl; }
+  if(KrisLibrary::_shouldLog(logger,"FATAL")) { \
+    if(logger) std::cerr<<logger<<": "<<data<<std::endl; \
+    else std::cerr<<data<<std::endl; } \
+  }
 
 ///Use this inside a cpp file to define a fast logger 
 #define DEFINE_LOGGER(name) \
