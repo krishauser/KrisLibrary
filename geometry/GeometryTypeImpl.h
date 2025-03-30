@@ -116,7 +116,7 @@ public:
   Geometry3DConvexHull() {}
   Geometry3DConvexHull(const ConvexHull3D& _data);
   virtual ~Geometry3DConvexHull () {}
-  virtual Type GetType() const { return Type::ConvexHull; }
+  virtual Type GetType() const override { return Type::ConvexHull; }
   virtual bool Load(istream& in) override;
   virtual bool Save(ostream& out) const override;
   virtual bool Empty() const override;
