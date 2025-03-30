@@ -57,16 +57,16 @@ else (WIN32)
 
   FIND_LIBRARY( LOG4CXX_LIBRARY
                NAMES log4cxx
-               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
+               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib64" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
   FIND_LIBRARY( APR_LIBRARY
                NAMES apr-1
-               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
+               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib64" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
   FIND_LIBRARY( APRUTIL_LIBRARY
                NAMES aprutil-1
-               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
+               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib64" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
   FIND_LIBRARY( LOG4CXX_XML_LIBRARY
                NAMES xml2
-               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
+               PATHS "${LOG4CXX_ROOT}/lib" "${LOG4CXX_ROOT}/lib64" "${LOG4CXX_ROOT}/lib/${LOG4CXX_BUILD_DIR}")  
 
 endif( WIN32)
 
