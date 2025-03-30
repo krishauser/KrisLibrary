@@ -733,7 +733,7 @@ bool Collider3DGroup::Union(const vector<Collider3D*>& geoms)
     return true;
 }
 
-bool Collider3DGroup::Merge(const Collider3D* geom)
+bool Collider3DGroup::Merge(Collider3D* geom)
 {
     RigidTransform Tba;
     Tba.mulInverseA(GetTransform(), geom->GetTransform());

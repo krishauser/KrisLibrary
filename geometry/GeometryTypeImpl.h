@@ -258,8 +258,8 @@ public:
   virtual RigidTransform GetTransform() const override;
   virtual void SetTransform(const RigidTransform& T) override;
   virtual Collider3D* ConvertTo(Type restype,Real param=0,Real domainExpansion=0) override;
-  virtual bool Union(const vector<Collider3D*>& geoms);
-  virtual bool Merge(const Collider3D* geom);
+  virtual bool Union(const vector<Collider3D*>& geoms) override;
+  virtual bool Merge(Collider3D* geom) override;
   virtual AABB3D GetAABB() const override;
   virtual AABB3D GetAABBTight() const override;
   virtual Box3D GetBB() const override;
