@@ -306,8 +306,8 @@ bool Matrix3::setInverse(const Matrix3& a)
             //LOG4CXX_ERROR(KrisLibrary::logger(), "Taking inverse of singular Matrix3\n");
       return false;
     }
-    register Real div = Inv(_a(j,j));
-	//Real div = Inv(_a(j,j));
+    //register Real div = Inv(_a(j,j));
+	Real div = Inv(_a(j,j));
     _b(j,0) *= div;
     _b(j,1) *= div;
     _b(j,2) *= div;
