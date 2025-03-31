@@ -437,9 +437,11 @@ void DebugVector(const char* name,const Vector& v)
       LOG4CXX_ERROR(KrisLibrary::logger(),"Error forking process");
     }
     else if(pid==0) {  //child process
-      char* buf=new char[strlen(viewProg)+strlen(tempFile)+2];
-      sprintf(buf,"%s %s",viewProg,tempFile);
+      int len = strlen(viewProg)+strlen(tempFile)+2;
+      char* buf=new char[len];
+      snprintf(buf,len,"%s %s",viewProg,tempFile);
       system(buf);
+      delete [] buf;
       bool res=FileUtils::Delete(tempFile);
       if(!res) {
 	LOG4CXX_ERROR(KrisLibrary::logger(),"Could not delete file "<<tempFile);
@@ -482,8 +484,9 @@ void DebugMatrix(const char* name,const Matrix& v)
       LOG4CXX_ERROR(KrisLibrary::logger(),"Error forking process");
     }
     else if(pid==0) {  //child process
-      char* buf=new char[strlen(viewProg)+strlen(tempFile)+2];
-      sprintf(buf,"%s %s",viewProg,tempFile);
+      int len = strlen(viewProg)+strlen(tempFile)+2;
+      char* buf=new char[len];
+      snprintf(buf,len,"%s %s",viewProg,tempFile);
       system(buf);
       bool res=FileUtils::Delete(tempFile);
       if(!res) {

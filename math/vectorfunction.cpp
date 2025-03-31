@@ -14,7 +14,7 @@ std::string NormScalarFieldFunction::Label() const
   else if(degree == Inf) return "LInfNorm";
   else {
     char buf[32];
-    sprintf(buf,"%f",degree);
+    snprintf(buf,32,"%f",degree);
     std::string str;
     str = "L("; str+=buf; str+=")Norm";
     return str;
@@ -296,7 +296,7 @@ ScalarFieldProjectionFunction::ScalarFieldProjectionFunction(ScalarFieldFunction
 std::string ScalarFieldProjectionFunction::Label() const
 {
   char buf[32];
-  sprintf(buf,"(x+e%d)",i);
+  snprintf(buf,32,"(x+e%d)",i);
   std::string sf=f->Label();
   std::string str=sf; str+=buf; 
   return str;
@@ -334,7 +334,7 @@ VectorFieldProjectionFunction::VectorFieldProjectionFunction(VectorFieldFunction
 std::string VectorFieldProjectionFunction::Label() const
 {
   char buf[32];
-  sprintf(buf,"(x+e%d)",i);
+  snprintf(buf,32,"(x+e%d)",i);
   std::string sf=f->Label();
   std::string str=sf; str+=buf; 
   return str;

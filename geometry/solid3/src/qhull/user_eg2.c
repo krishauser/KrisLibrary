@@ -350,7 +350,7 @@ your project.\n\n");
     coordT array[TOTpoints][DIM];
 
     strcat (qh rbox_command, "user_eg cube");
-    sprintf (options, "qhull s Tcv Q11 %s ", argc >= 2 ? argv[1] : "");
+    snprintf (options, 2000, "qhull s Tcv Q11 %s ", argc >= 2 ? argv[1] : "");
     qh_initflags (options);
     printf( "\ncompute triangulated convex hull of cube after rotating input\n");
     makecube (array[0], SIZEcube, DIM);

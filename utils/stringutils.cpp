@@ -264,19 +264,19 @@ void IncrementStringDigits(std::string& str)
   num++;
   switch(numDigits) {
   case 1:
-    sprintf(buf,"%s%01d%s",&prefix[0],num,&suffix[0]);
+    snprintf(buf,max+1,"%s%01d%s",&prefix[0],num,&suffix[0]);
     break;
   case 2:
-    sprintf(buf,"%s%02d%s",&prefix[0],num,&suffix[0]);
+    snprintf(buf,max+1,"%s%02d%s",&prefix[0],num,&suffix[0]);
     break;
   case 3:
-    sprintf(buf,"%s%03d%s",&prefix[0],num,&suffix[0]);
+    snprintf(buf,max+1,"%s%03d%s",&prefix[0],num,&suffix[0]);
     break;
   case 4:
-    sprintf(buf,"%s%04d%s",&prefix[0],num,&suffix[0]);
+    snprintf(buf,max+1,"%s%04d%s",&prefix[0],num,&suffix[0]);
     break;
   default:
-    sprintf(buf,"%s%d%s",&prefix[0],num,&suffix[0]);
+    snprintf(buf,max+1,"%s%d%s",&prefix[0],num,&suffix[0]);
     break;
   }
   str = buf;

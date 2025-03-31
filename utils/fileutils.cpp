@@ -79,7 +79,7 @@ bool Rename(const char* from,const char* to)
 	/*
 	size_t len = strlen(from) + strlen(to) + 5;
 	char* buf = new char[len];
-	sprintf(buf,"mv %s %s",from,to);
+	snprintf(buf,len,"mv %s %s",from,to);
 	int res = system(buf);
 	delete [] buf;
 	return res == 0;
@@ -94,7 +94,7 @@ bool Copy(const char* from,const char* to,bool override)
 #else
 	size_t len = strlen(from) + strlen(to) + 5;
 	char* buf = new char[len];
-	sprintf(buf,"cp %s %s %s",(override?"-f":""),from,to);
+	snprintf(buf,len,"cp %s %s %s",(override?"-f":""),from,to);
 	int res = system(buf);
 	delete [] buf;
 	return res == 0;

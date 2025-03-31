@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 	      seed= atoi (&argv[i][1]);
 	    else {
 	      seed= time (&timedata);
-	      sprintf (seedbuf, "%d", seed);
+	      snprintf (seedbuf, 200, "%d", seed);
 	      strcat (command, seedbuf);
 	    }
             break;

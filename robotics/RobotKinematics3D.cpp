@@ -146,7 +146,7 @@ void RobotKinematics3D::Subset(const RobotKinematics3D& robot,const vector<int>&
 string RobotKinematics3D::LinkName(int i) const
 {
   char temp[20];
-  sprintf(temp,"Link[%d]",i);
+  snprintf(temp,20,"Link[%d]",i);
   return temp;
 }
 
