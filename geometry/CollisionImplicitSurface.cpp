@@ -1734,7 +1734,7 @@ bool Collider3DImplicitSurface::WithinDistance(Collider3D* geom,Real d,
         bool res=::Collides(*this, b, d, elements1, elements2, maxContacts);
         Assert(res == (!elements1.empty()));
         Assert(elements1.size() == elements2.size());
-        return true;
+        return res;
   }
   case Type::TriangleMesh:
   {
@@ -1742,7 +1742,7 @@ bool Collider3DImplicitSurface::WithinDistance(Collider3D* geom,Real d,
         bool res = Collides(b, d, elements1, elements2, maxContacts);
         Assert(res == (!elements1.empty()));
         Assert(elements1.size() == elements2.size());
-        return true;
+        return res;
   }
   case Type::PointCloud:
   {
@@ -1753,7 +1753,7 @@ bool Collider3DImplicitSurface::WithinDistance(Collider3D* geom,Real d,
             elements1[i] = PointToElement(b.currentTransform * b.points[elements2[i]]);
         Assert(res == (!elements1.empty()));
         Assert(elements1.size() == elements2.size());
-        return true;
+        return res;
   }
   default:
     return false;
