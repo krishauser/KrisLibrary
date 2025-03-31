@@ -1007,14 +1007,16 @@ template <class T>
 T MatrixTemplate<T>::minElement(int*_i,int*_j) const
 {
   if(isEmpty()) RaiseErrorFmt(WHERE_AM_I,MatrixError_SizeZero);
-  if(_i) *_i=0;  if(_j) *_j=0;
+  if(_i) *_i=0;
+  if(_j) *_j=0;
   ItT v=begin();
   T val=*v;
   for(int i=0;i<m;i++,v.nextRow())
     for(int j=0;j<n;j++,v.nextCol())
       if(*v < val) {
        val = *v;
-       if(_i) *_i=i; if(_j) *_j=j;
+       if(_i) *_i=i;
+       if(_j) *_j=j;
       }
   return val;
 }
@@ -1023,14 +1025,16 @@ template <class T>
 T MatrixTemplate<T>::maxElement(int*_i,int*_j) const
 {
   if(isEmpty()) RaiseErrorFmt(WHERE_AM_I,MatrixError_SizeZero);
-  if(_i) *_i=0;  if(_j) *_j=0;
+  if(_i) *_i=0;
+  if(_j) *_j=0;
   ItT v=begin();
   T val=*v;
   for(int i=0;i<m;i++,v.nextRow())
     for(int j=0;j<n;j++,v.nextCol())
       if(*v > val) {
        val = *v;
-       if(_i) *_i=i; if(_j) *_j=j;
+       if(_i) *_i=i;
+       if(_j) *_j=j;
       }
   return val;
 }
@@ -1039,14 +1043,16 @@ template <class T>
 T MatrixTemplate<T>::minAbsElement(int*_i,int*_j) const
 {
   if(isEmpty()) RaiseErrorFmt(WHERE_AM_I,MatrixError_SizeZero);
-  if(_i) *_i=0;  if(_j) *_j=0;
+  if(_i) *_i=0;
+  if(_j) *_j=0;
   ItT v=begin();
   T val=Abs(*v);
   for(int i=0;i<m;i++,v.nextRow())
     for(int j=0;j<n;j++,v.nextCol())
       if(Abs(*v) < val) {
         val = Abs(*v);
-        if(_i) *_i=i; if(_j) *_j=j;
+        if(_i) *_i=i;
+        if(_j) *_j=j;
       }
   return val;
 }
@@ -1055,14 +1061,16 @@ template <class T>
 T MatrixTemplate<T>::maxAbsElement(int*_i,int*_j) const
 {
   if(isEmpty()) RaiseErrorFmt(WHERE_AM_I,MatrixError_SizeZero);
-  if(_i) *_i=0;  if(_j) *_j=0;
+  if(_i) *_i=0;
+  if(_j) *_j=0;
   ItT v=begin();
   T val=Abs(*v);
   for(int i=0;i<m;i++,v.nextRow())
     for(int j=0;j<n;j++,v.nextCol())
       if(Abs(*v) > val) {
         val = Abs(*v);
-        if(_i) *_i=i; if(_j) *_j=j;
+        if(_i) *_i=i;
+        if(_j) *_j=j;
       }
   return val;
 }
@@ -1276,14 +1284,16 @@ template<> Complex MatrixTemplate<Complex>::maxElement(int*_i,int*_j) const
 template<> Complex MatrixTemplate<Complex>::minAbsElement(int*_i,int*_j) const
 {
   if(isEmpty()) RaiseErrorFmt(WHERE_AM_I,MatrixError_SizeZero);
-  if(_i) *_i=0;  if(_j) *_j=0;
+  if(_i) *_i=0;
+  if(_j) *_j=0;
   ItT v=begin();
   Real val=Abs(*v);
   for(int i=0;i<m;i++,v.nextRow())
     for(int j=0;j<n;j++,v.nextCol())
       if(Abs(*v) < val) {
         val = Abs(*v);
-        if(_i) *_i=i; if(_j) *_j=j;
+        if(_i) *_i=i;
+        if(_j) *_j=j;
       }
   return val;
 }
@@ -1291,14 +1301,16 @@ template<> Complex MatrixTemplate<Complex>::minAbsElement(int*_i,int*_j) const
 template<> Complex MatrixTemplate<Complex>::maxAbsElement(int*_i,int*_j) const
 {
   if(isEmpty()) RaiseErrorFmt(WHERE_AM_I,MatrixError_SizeZero);
-  if(_i) *_i=0;  if(_j) *_j=0;
+  if(_i) *_i=0;
+  if(_j) *_j=0;
   ItT v=begin();
   Real val=Abs(*v);
   for(int i=0;i<m;i++,v.nextRow())
     for(int j=0;j<n;j++,v.nextCol())
       if(Abs(*v) > val) {
         val = Abs(*v);
-        if(_i) *_i=i; if(_j) *_j=j;
+        if(_i) *_i=i;
+        if(_j) *_j=j;
       }
   return val;
 }
