@@ -9,8 +9,8 @@ public:
   bool Empty() const { return edges.empty(); }
   bool IsConstant() const { return edges.size()==1 && edges[0]->Start()==edges[0]->End(); }
   CSpace* Space() const { return edges[0]->Space(); }
-  const Config& Begin() const { return edges[0]->Start(); }
-  const Config& End() const { return edges.back()->End(); }
+  const Config& Start() const override { return edges[0]->Start(); }
+  const Config& End() const override { return edges.back()->End(); }
   inline int NumMilestones() const { return edges.size()+1; }
   inline const Config& GetMilestone(int i) const {
     if(i<(int)edges.size()) return edges[i]->Start();

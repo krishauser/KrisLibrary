@@ -73,7 +73,7 @@ int TimedMilestonePath::Eval2(Real t,Config& x) const
 {
   Assert(!edges.empty());
   if(t < 0) {
-    x = Begin();
+    x = Start();
     return -1;
   }
   for(size_t i=0;i<edges.size();i++) {
@@ -99,9 +99,9 @@ void TimedMilestonePath::Split(Real dt,TimedMilestonePath& before,TimedMilestone
 
   CSpace* cspace = Space();
   if(dt < 0) {  //dt is before path
-    before.edges.push_back(cspace->LocalPlanner(Begin(),Begin()));
+    before.edges.push_back(cspace->LocalPlanner(Start(),Start()));
     before.durations.push_back(0);
-    after.edges.push_back(cspace->LocalPlanner(Begin(),Begin()));
+    after.edges.push_back(cspace->LocalPlanner(Start(),Start()));
     after.durations.push_back(-dt);
   }
  
