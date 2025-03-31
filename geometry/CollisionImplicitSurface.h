@@ -23,7 +23,7 @@ public:
     Collider3DImplicitSurface(const Collider3DImplicitSurface& data);
     virtual ~Collider3DImplicitSurface() {}
     virtual shared_ptr<Geometry3D> GetData() const override { return dynamic_pointer_cast<Geometry3D>(data); }
-    virtual void Reset();
+    virtual void Reset() override;
     virtual RigidTransform GetTransform() const override { return currentTransform; }
     virtual Collider3D* Copy(shared_ptr<Geometry3D>) const override;
     virtual bool ConvertFrom(Collider3D* geom,Real param=0,Real domainExpansion=0) override;

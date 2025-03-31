@@ -96,7 +96,7 @@ public:
     ///param is interpreted in a type-dependent manner.
     ///
     ///domainExpansion specifies a domain buffer for certain types, such as ImplicitSurface.
-    virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) { return NULL; }
+    virtual bool ConvertFrom(const Geometry3D* geom,Real param=0,Real domainExpansion=0) { return false; }
     ///Performs a type conversion, trying both ConvertTo and ConvertFrom.
     Geometry3D* Convert(Type restype,Real param=0,Real domainExpansion=0) const;
     ///Re-meshes the geometry at the desired resolution, allocating a new object and returning it
