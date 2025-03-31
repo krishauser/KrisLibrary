@@ -35,8 +35,10 @@ struct AnyKeyable
 BEGIN_TR1_NAMESPACE
 
 template <>
-struct hash<AnyKeyable> : public unary_function<AnyKeyable,size_t>
+struct hash<AnyKeyable> 
 {
+  typedef AnyKeyable argument_type;
+  typedef size_t result_type;
   size_t operator()(const AnyKeyable& key) const { return key.hash(); }
 };
 
