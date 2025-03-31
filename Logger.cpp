@@ -1,3 +1,5 @@
+#include "Logger.h"
+
 #if HAVE_LOG4CXX 
 
 #include <log4cxx/logger.h>
@@ -7,8 +9,8 @@
 //#include <log4cxx/helpers/objectptr.h>
 #include <log4cxx/patternlayout.h>
 #include <log4cxx/consoleappender.h>
-#include "Logger.h"
 #include <stdio.h>
+#include <string.h>
 #include <sstream>
 
 namespace KrisLibrary {
@@ -106,6 +108,21 @@ log4cxx::LoggerPtr logger(const char* s)
 	}
 }
 
+void setLogLevel(const char* level)
+{
+	setLogLevel(KrisLibrary::logger(),level);
+}
+
+void setLogLevel(LoggerType logger, const char* level)
+{
+	if(0 == strcmp(level,"DEBUG")) logger->setLevel(log4cxx::Level::getDebug());
+	else if(0 == strcmp(level,"INFO")) logger->setLevel(log4cxx::Level::getInfo());
+	else if(0 == strcmp(level,"WARN")) logger->setLevel(log4cxx::Level::getWarn());
+	else if(0 == strcmp(level,"ERROR")) logger->setLevel(log4cxx::Level::getError());
+	else if(0 == strcmp(level,"FATAL")) logger->setLevel(log4cxx::Level::getFatal());
+	else logger->setLevel(log4cxx::Level::getInfo());
+}
+
 void loggerWait()
 {
 	loggerWait(KrisLibrary::logger());
@@ -118,6 +135,48 @@ void loggerWait(log4cxx::LoggerPtr logger)
 		getchar();	
 	} 
 }
+
+} //namespace KrisLibrary
+
+#else //HAVE_LOG4CXX
+
+#include <stdio.h>
+#include <string.h>
+
+namespace KrisLibrary
+{
+
+	enum LogLevel { LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
+	LogLevel currentLogLevel = LOG_INFO;
+
+	LogLevel logLevelToEnum(const char* level) {
+		if(0 == strcmp(level,"DEBUG")) return LOG_DEBUG;
+		else if(0 == strcmp(level,"INFO")) return LOG_INFO;
+		else if(0 == strcmp(level,"WARN")) return LOG_WARN;
+		else if(0 == strcmp(level,"ERROR")) return LOG_ERROR;
+		else if(0 == strcmp(level,"FATAL")) return LOG_FATAL;
+		else return LOG_INFO;
+	}
+
+	void setLogLevel(const char* level) {
+		currentLogLevel = logLevelToEnum(level);
+	}
+
+	void loggerWait() {
+		if(currentLogLevel <= LOG_DEBUG) { 
+			printf("Press enter to continue...\n");
+			getchar();
+		}
+	}
+
+	void loggerWait(LoggerType logger) { 
+		loggerWait();
+	}
+
+	bool _shouldLog(LoggerType logger,const char* level) {
+		return logLevelToEnum(level) >= currentLogLevel;
+	}
+
 
 } //namespace KrisLibrary
 
