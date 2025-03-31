@@ -10,7 +10,7 @@ namespace GLDraw {
   void draw(const GeometricPrimitive2D& geom)
   {
     switch(geom.type) {
-    case GeometricPrimitive3D::Empty:
+    case GeometricPrimitive2D::Empty:
       break;
     case GeometricPrimitive2D::Point:
       {
