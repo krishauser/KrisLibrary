@@ -157,7 +157,7 @@ bool LDLDecomposition<T>::getInverse(MatrixT& Ainv) const
       Ainv(j,i)=x(j);
     temp(i)=Zero;
   }
-  return true;
+  return res;
 }
 
 template<class T>
