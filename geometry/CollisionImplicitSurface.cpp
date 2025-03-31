@@ -1310,7 +1310,7 @@ bool Geometry3DImplicitSurface::ConvertFrom(const Geometry3D* geom,Real param,Re
         {
         const auto& mesh = dynamic_cast<const Geometry3DTriangleMesh*>(geom)->data;
         if (param == 0) {
-            if (mesh.tris.empty()) return NULL;
+            if (mesh.tris.empty()) return false;
             Real sumlengths = 0;
             for (size_t i = 0; i < mesh.tris.size(); i++) {
                 sumlengths += mesh.verts[mesh.tris[i].a].distance(mesh.verts[mesh.tris[i].b]);
