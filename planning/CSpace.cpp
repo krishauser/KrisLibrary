@@ -13,11 +13,15 @@ CSet::CSet()
 :test()
 {}
 
-#if __cplusplus > 199711L  || _MSC_VER >= 1900
-  CSet::CSet(PREDICATE_FUNCTION_PTR f)
-  :test(ptr_fun(f))
-  {}
-#endif //C++11
+template<typename Func>
+auto make_function(Func ptr)
+{
+    return std::function<std::remove_pointer_t<Func>>(ptr);
+}
+
+CSet::CSet(PREDICATE_FUNCTION_PTR f)
+:test(make_function(f))
+{}
 
 CSet::CSet(CPredicate _test)
 :test(_test)

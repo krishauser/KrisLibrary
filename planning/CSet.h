@@ -20,18 +20,12 @@ typedef Vector Config;
 class CSet
 {
 public:
-  #if __cplusplus > 199711L || _MSC_VER >= 1900
   typedef std::function<bool(const Config&)> CPredicate;
   typedef bool (*PREDICATE_FUNCTION_PTR) (const Config&);
-  #else
-  typedef bool (*CPredicate) (const Config&);
-  #endif //C++11
 
   CSet();
   CSet(CPredicate f);
-  #if __cplusplus > 199711L || _MSC_VER >= 1900
-    CSet(PREDICATE_FUNCTION_PTR f);
-  #endif
+  CSet(PREDICATE_FUNCTION_PTR f);
   virtual ~CSet () {}
   ///Returns the number of dimensions this accepts (-1) for all dimensions
   virtual int NumDimensions() const { return -1; }
