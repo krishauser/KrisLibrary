@@ -35,16 +35,12 @@ public:
   MyT* successor() const;  //Return a pointer to the smallest key greater than x
   MyT* predecessor() const;  //Return a pointer to the largest key less than x
   void walk(WalkCallback<T>& callback,int level);
-  inline void setColor(Color c) { if(this==NULL) assert(c==Black); else color=c; }
-  inline Color getColor() const { if(this==NULL) return Black; return color; }
-  inline bool hasColor(Color c) const { return c==getColor(); }
 
   MyT *left;		/* Left down */
   MyT *right;		/* Right down */
   MyT *up;		/* Up */
   T key;	
 
-private:
   Color color;
 };
 
@@ -101,6 +97,10 @@ private:
   void _erase_fix(NodeT* x,NodeT* p);
   void _left_rotate(NodeT* x);
   void _right_rotate(NodeT* x);
+
+  inline static void setColor(Node<T>* n,Color c) { if(n==NULL) assert(c==Black); else n->color=c; }
+  inline static Color getColor(const Node<T>* n) { if(n==NULL) return Black; return n->color; }
+  inline static bool hasColor(const Node<T>* n,Color c) { return c==getColor(n); }
 
   NodeT *root;
 };
@@ -215,9 +215,9 @@ void Node<T>::walk(WalkCallback<T>& callback,int level)
 template <class T>
 bool Node<T>::isValid() const
 {
-	if (hasColor(Red))
+	if (color == Red)
 	{
-		if (!left->hasColor(Black) && !right->hasColor(Black))
+		if ((left && left->color != Black) && (right && right->color != Black))
 		{
 						//LOG4CXX_ERROR(KrisLibrary::logger(), "Children of red node not both black, x="<< (unsigned long)this);
 			return false;
@@ -253,10 +253,8 @@ bool Node<T>::isValid() const
 template <class T>
 int Node<T>::count_black()
 {
-	if (this==NULL)
-		return(1);
-
- 	int nleft=left->count_black(), nright=right->count_black();
+ 	int nleft= left ? left->count_black() : 1;
+	int nright= right ? right->count_black() : 1;
 	if (nleft==-1 || nright==-1)
 		return(-1);
 
@@ -266,22 +264,21 @@ int Node<T>::count_black()
 		return(-1);
 	}
 
-	if (hasColor(Black)) nleft++;
+	if (color == Black) nleft++;
 	return(nleft);
 }
 
 template <class T>
 void Node<T>::dumptree(std::ostream& out,int n)
 {
-	if (this!=NULL) {
-		n++;
-    out<<"Tree: "<<n<<" "<<(unsigned int)this<<
-      ": color="<<(hasColor(Black)? "Black" : "Red") <<", key="<<key<<
-      ", left="<<(unsigned int)left<<", right="<<(unsigned int)right<<std::endl;
-		left->dumptree(out,n);
-		right->dumptree(out,n);
-	}	
-}
+	n++;
+	out<<"Tree: "<<n<<" "<<(unsigned int)this<<
+		": color="<<(color==Black? "Black" : "Red") <<", key="<<key<<
+		", left="<<(unsigned int)left<<", right="<<(unsigned int)right<<std::endl;
+	if(left) left->dumptree(out,n);
+	if(right) right->dumptree(out,n);
+}	
+
 
 /*
 ** OK here we go, the balanced tree stuff. The algorithm is the
@@ -420,7 +417,7 @@ Node<T>* Tree<T,Cmp>::_insert(const T& key)
 	z->right=NULL;
 
 	/* color this new node red */
-  z->setColor(Red);
+    setColor(z,Red);
 
 	/* Having added a red node, we must now walk back up the tree balancing
 	** it, by a series of rotations and changing of colors
@@ -432,21 +429,21 @@ Node<T>* Tree<T,Cmp>::_insert(const T& key)
 	** are also going to stop if we are the child of the root
 	*/
 
-	while(x != root && x->up->hasColor(Red))
+	while(x != root && hasColor(x->up,Red))
 	{
 		/* if our parent is on the left side of our grandparent */
 		if (x->up == x->up->up->left)
 		{
 			/* get the right side of our grandparent (uncle?) */
 			y=x->up->up->right;
-			if (y->hasColor(Red))
+			if (hasColor(y,Red))
 			{
 				/* make our parent black */
-				x->up->setColor(Black);
+				setColor(x->up,Black);
 				/* make our uncle black */
-				y->setColor(Black);
+				setColor(y,Black);
 				/* make our grandparent red */
-				x->up->up->setColor(Red);
+				setColor(x->up->up,Red);
 
 				/* now consider our grandparent */
 				x=x->up->up;
@@ -462,9 +459,9 @@ Node<T>* Tree<T,Cmp>::_insert(const T& key)
 				}
 
 				/* make our parent black */
-				x->up->setColor(Black);
+				setColor(x->up,Black);
 				/* make our grandparent red */
-				x->up->up->setColor(Red);
+				setColor(x->up->up,Red);
 				/* right rotate our grandparent */
 				_right_rotate(x->up->up);
 			}
@@ -476,11 +473,11 @@ Node<T>* Tree<T,Cmp>::_insert(const T& key)
 			*/
 
 			y=x->up->up->left;
-			if (y->hasColor(Red))
+			if (hasColor(y,Red))
 			{
-				x->up->setColor(Black);
-				y->setColor(Black);
-				x->up->up->setColor(Red);
+				setColor(x->up,Black);
+				setColor(y,Black);
+				setColor(x->up->up,Red);
 
 				x=x->up->up;
 			}
@@ -492,15 +489,15 @@ Node<T>* Tree<T,Cmp>::_insert(const T& key)
 					_right_rotate(x);
 				}
 
-				x->up->setColor(Black);
-				x->up->up->setColor(Red);
+				setColor(x->up,Black);
+				setColor(x->up->up,Red);
 				_left_rotate(x->up->up);
 			}
 		}
 	}
 
 	/* Set the root node black */
-	root->setColor(Black);
+	setColor(root,Black);
 	return z;
 }
 
@@ -690,17 +687,17 @@ void Tree<T,Cmp>::_erase(NodeT *z)
 {
 	NodeT *x, *y, *p;
 
-  if (z->left == NULL || z->right == NULL)
+	if (z->left == NULL || z->right == NULL)
 		y=z;
-  else
+	else
 		y=z->successor();
 
-  p = y->up;
+	p = y->up;
 	if (y->left != NULL)
 		x=y->left;
 	else
 		x=y->right;
-  if(x) x->up=p;
+	if(x) x->up=p;
 	if (p == NULL)
 	{
 		root=x;
@@ -712,9 +709,9 @@ void Tree<T,Cmp>::_erase(NodeT *z)
 		else
 			p->right = x;
 	}
-  y->detatch();
+	y->detatch();
 
- 	if (y->hasColor(Black))
+ 	if (hasColor(y,Black))
 		_erase_fix(x,p);
 
 /* DELETED: don't want to be changing iterators around on erase!
@@ -734,7 +731,7 @@ void Tree<T,Cmp>::_erase(NodeT *z)
     y->left=z->left;
     if(z->right) z->right->up = y;
     y->right=z->right;
-    y->setColor(z->getColor());
+    setColor(y,getColor(z));
     z->detatch();
   }
 
@@ -746,39 +743,39 @@ template <class T,class Cmp>
 void Tree<T,Cmp>::_erase_fix(NodeT *x,NodeT* p)
 {
 	NodeT *w;
-	while (x!=root && x->hasColor(Black))
+	while (x!=root && hasColor(x,Black))
 	{
 		if (x==p->left)
 		{
 			w=p->right;
-			if (w->hasColor(Red))
+			if (hasColor(w,Red))
 			{
-				w->setColor(Black);
-				p->setColor(Red);
+				setColor(w,Black);
+				setColor(p,Red);
 				_left_rotate(p);
 				w=p->right;
 			}
 
-			if (w->left->hasColor(Black) && w->right->hasColor(Black))
+			if (hasColor(w->left,Black) && hasColor(w->right,Black))
 			{
-				w->setColor(Red);
+				setColor(w,Red);
 				x=p;
-        p=x->up;
+				p=x->up;
 			}
 			else
 			{
-				if (w->right->hasColor(Black))
+				if (hasColor(w->right,Black))
 				{
-					w->left->setColor(Black);
-					w->setColor(Red);
+					setColor(w->left,Black);
+					setColor(w,Red);
 					_right_rotate(w);
 					w=p->right;
 				}
 
 
-				w->setColor(p->getColor());
-				p->setColor(Black);
-				w->right->setColor(Black);
+				setColor(w,getColor(p));
+				setColor(p,Black);
+				setColor(w->right,Black);
 				_left_rotate(p);
 				x=root;
 			}
@@ -786,40 +783,40 @@ void Tree<T,Cmp>::_erase_fix(NodeT *x,NodeT* p)
 		else
 		{
 			w=p->left;
-			if (w->hasColor(Red))
+			if (hasColor(w,Red))
 			{
-				w->setColor(Black);
-				p->setColor(Red);
+				setColor(w,Black);
+				setColor(p,Red);
 				_right_rotate(p);
 				w=p->left;
 			}
 
-			if (w->right->hasColor(Black) && w->left->hasColor(Black))
+			if (hasColor(w->right,Black) && hasColor(w->left,Black))
 			{
-				w->setColor(Red);
+				setColor(w,Red);
 				x=p;
-        p=x->up;
+				p=x->up;
 			}
 			else
 			{
-				if (w->left->hasColor(Black))
+				if (hasColor(w->left,Black))
 				{
-					w->right->setColor(Black);
-					w->setColor(Red);
+					setColor(w->right,Black);
+					setColor(w,Red);
 					_left_rotate(w);
 					w=p->left;
 				}
 
-				w->setColor(p->getColor());
-				p->setColor(Black);
-				w->left->setColor(Black);
+				setColor(w,getColor(p));
+				setColor(p,Black);
+				setColor(w->left,Black);
 				_right_rotate(p);
 				x=root;
 			}
 		}
 	}
 
-	x->setColor(Black);
+	setColor(x,Black);
 }
 
 
