@@ -639,6 +639,7 @@ void Collider3DGroup::Reset()
     for(size_t i=0;i<data->data.size();i++) {
       collisionData[i].type = data->data[i].type;
       collisionData[i].data = data->data[i].data;
+      collisionData[i].InitCollisionData();
     }
 }
 
