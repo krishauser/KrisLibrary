@@ -3,12 +3,14 @@
 #include <locale.h>
 #include <iostream>
 #include <utils/stringutils.h>
+#include <utils/IntPair.h>
 #include <math3d/geometry3d.h>
 #include <math3d/misc.h>
 #include <GLdraw/GL.h>
 #include <GLdraw/drawextra.h>
 #include <fstream>
 #include <algorithm>
+#include <map>
 #include <errors.h>
 namespace Meshing {
 
@@ -96,6 +98,44 @@ bool TriMesh::IsValid() const
     */
   }
   return res;
+}
+
+bool TriMesh::IsWatertight() const
+{
+  size_t numedges = tris.size()*3;
+  std::map<IntPair, int> edgegroup = {};
+  for(size_t i=0;i<tris.size();i++) {
+    for(int j=0;j<3;j++) {
+      int v1, v2;
+      GetEdge(i,j,v1,v2);
+      if(v1>v2) {
+        std::swap(v1,v2);
+      }
+      IntPair edge(v1,v2);
+
+      std::map<IntPair, int>::iterator it;
+      it = edgegroup.find(edge);
+      if(it==edgegroup.end()) {
+        edgegroup.insert(std::make_pair(edge,1));
+      } else {
+        it->second++;
+      }
+    }
+  }
+
+  size_t numsharededges = 0;
+  std::map<IntPair, int>::iterator it;
+  for(it=edgegroup.begin();it!=edgegroup.end();it++) {
+    if(it->second==2) {
+      numsharededges++;
+    }
+  }
+
+  if(numsharededges*2==numedges) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void TriMesh::GetAABB(Vector3& bmin, Vector3& bmax) const
