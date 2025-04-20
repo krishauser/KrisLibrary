@@ -2,6 +2,7 @@
 #include "GeometryAppearance.h"
 #include "GLTexture1D.h"
 #include "GLTexture2D.h"
+#include "GLError.h"
 #include <geometry/AnyGeometry.h>
 #include "drawMesh.h"
 #include "drawgeometry.h"
@@ -856,8 +857,9 @@ void GeometryAppearance::DrawGL(Element e)
       glEnable(GL_LIGHTING);
       SetTintedMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,faceColor,tintColor,tintStrength);
       glMaterialfv(GL_FRONT,GL_EMISSION,emissiveColor.rgba);
-      glMaterialf(GL_FRONT,GL_SHININESS,shininess);
-      if(shininess != 0)
+      float _shininess = Max(Min(shininess,1000.0f),0.0f);
+      glMaterialf(GL_FRONT,GL_SHININESS,_shininess);
+      if(_shininess != 0)
         glMaterialfv(GL_FRONT,GL_SPECULAR,specularColor.rgba);
       else {
         float zeros[4]={0,0,0,0};
@@ -868,6 +870,7 @@ void GeometryAppearance::DrawGL(Element e)
       glDisable(GL_LIGHTING);
       SetTintedColor(faceColor,tintColor,tintStrength);
     }
+
     //set up the texture coordinates
     if(tex1D || tex2D) {
       if(!textureObject) {
@@ -881,6 +884,7 @@ void GeometryAppearance::DrawGL(Element e)
           textureObject.bind(GL_TEXTURE_1D);
         }
       }
+
       glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
       if(tex1D) {
         glEnable(GL_TEXTURE_1D);
@@ -1405,6 +1409,8 @@ void GeometryAppearance::DrawGL(Element e)
 
   if(!subAppearances.empty()) {
     //for group geometries
+    Assert(geom->type == AnyGeometry3D::Type::Group);
+    Assert(subAppearances.size() == geom->AsGroup().size());
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom->AsGroup();
     for(size_t i=0;i<subAppearances.size();i++) {
       bool iDrawFaces=subAppearances[i].drawFaces;
