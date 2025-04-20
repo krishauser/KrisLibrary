@@ -17,32 +17,36 @@ ENDIF (ASSIMP_INCLUDE_DIR)
 
  # Find the headers
 
-#this is for version 2.x of assimp
-FIND_PATH( ASSIMP2_INCLUDE_DIR assimp/assimp.h
-            PATHS /usr/include "${ASSIMP_ROOT}/include" )
-IF(ASSIMP2_INCLUDE_DIR)
+#this is for version 3.x+ of assimp
+FIND_PATH( ASSIMP3_INCLUDE_DIR assimp/scene.h
+  PATHS "${ASSIMP_ROOT}/include" NO_DEFAULT_PATH)
+FIND_PATH( ASSIMP3_INCLUDE_DIR assimp/scene.h)
+IF(ASSIMP3_INCLUDE_DIR)
   IF(NOT ASSIMP_FIND_QUIETLY)
-    SET(ASSIMP_INCLUDE_DIR ${ASSIMP2_INCLUDE_DIR})
-  ENDIF(NOT ASSIMP_FIND_QUIETLY)
-  MESSAGE(STATUS "Assimp configuration: detected version 2.x")
-  SET(ASSIMP_DEFINITIONS -DASSIMP_MAJOR_VERSION=2)
-ELSE(ASSIMP2_INCLUDE_DIR)
-  #this is for version 3.x of assimp
-  FIND_PATH( ASSIMP3_INCLUDE_DIR assimp/scene.h
-    PATHS /usr/include "${ASSIMP_ROOT}/include" )
-  IF(NOT ASSIMP_FIND_QUIETLY)
-    SET(ASSIMP_INCLUDE_DIR ${ASSIMP3_INCLUDE_DIR})
+  SET(ASSIMP_INCLUDE_DIR ${ASSIMP3_INCLUDE_DIR})
   ENDIF(NOT ASSIMP_FIND_QUIETLY)
   FIND_PATH( ASSIMP4_TEST assimp/Defines.h
-      PATHS /usr/include "${ASSIMP_ROOT}/include" )
+    PATHS "${ASSIMP_ROOT}/include" )
   IF(ASSIMP4_TEST)
-    MESSAGE(STATUS "Assimp configuration: detected version 4.x+")
+    MESSAGE(STATUS "Assimp configuration: detected version 4.x+ at ${ASSIMP_INCLUDE_DIR}")
     SET(ASSIMP_DEFINITIONS -DASSIMP_MAJOR_VERSION=4)
   ELSE(ASSIMP4_TEST)
-    MESSAGE(STATUS "Assimp configuration: detected version 3.x")
+    MESSAGE(STATUS "Assimp configuration: detected version 3.x at ${ASSIMP_INCLUDE_DIR}")
     SET(ASSIMP_DEFINITIONS -DASSIMP_MAJOR_VERSION=3)
   ENDIF(ASSIMP4_TEST)
-ENDIF(ASSIMP2_INCLUDE_DIR)
+ELSE(ASSIMP3_INCLUDE_DIR)
+  #this is for version 2.x of assimp
+  FIND_PATH( ASSIMP2_INCLUDE_DIR assimp/assimp.h
+    PATHS "${ASSIMP_ROOT}/include" NO_DEFAULT_PATH)
+  FIND_PATH( ASSIMP2_INCLUDE_DIR assimp/assimp.h)
+  IF(ASSIMP2_INCLUDE_DIR)
+    IF(NOT ASSIMP_FIND_QUIETLY)
+    SET(ASSIMP_INCLUDE_DIR ${ASSIMP2_INCLUDE_DIR})
+    ENDIF(NOT ASSIMP_FIND_QUIETLY)
+    MESSAGE(STATUS "Assimp configuration: detected version 2.x at ${ASSIMP_INCLUDE_DIR}")
+    SET(ASSIMP_DEFINITIONS -DASSIMP_MAJOR_VERSION=2)
+  ENDIF(ASSIMP2_INCLUDE_DIR)
+ENDIF(ASSIMP3_INCLUDE_DIR)
 
 if( WIN32 )
   IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
