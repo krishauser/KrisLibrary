@@ -128,22 +128,23 @@ bool InputQuotedString(std::istream& in, std::string& out)
   while((c=in.peek())!=EOF) {
     switch (state) {
       case 0:
-	if(c=='\"')
-	  state = 1;
-	else if(!isspace(c))
-	  return false;
-	break;
-    case 1:
-      if(c=='\"') { in.get(); return true; }
-      else if(c=='\\') {
-        //TODO: why was this here? I'm guessing there was a reason...
-	//c=in.get();
-	//c=in.peek();
-	out+= c;
-      }
-      else
-	out+= c;
-      break;
+        if(c=='\"')
+          state = 1;
+        else if(!isspace(c))
+          return false;
+        break;
+      case 1:
+        if(c=='\"') { in.get(); return true; }
+        else if(c=='\\') {  //read escaped character
+          out+=c;
+          c=in.get();
+          if(c == EOF) return false; //escape at the end of file?
+          c=in.peek();
+          out+= c;
+        }
+        else
+	        out+= c;
+        break;
     }
     c = in.get();
   }
