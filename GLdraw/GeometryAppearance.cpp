@@ -24,6 +24,8 @@
 #define GL_CLAMP_MODE GL_CLAMP
 #endif //GL_CLAMP_TO_EDGE
 
+#define GL_DEBUG 0
+
 using namespace Geometry;
 namespace GLDraw {
 
@@ -756,6 +758,11 @@ inline void SetTintedMaterial(GLenum face,GLenum pname,const GLColor& col,const 
 
 void GeometryAppearance::DrawGL(Element e)
 {
+  Assert(geom);
+  if(geom->Empty()) {
+    LOG4CXX_INFO(KrisLibrary::logger(),"GeometryAppearance: DrawGL: geom is empty");
+    return;
+  } 
   bool doDrawVertices = false;
   bool doDrawEdges = false;
   bool doDrawFaces = false;
@@ -837,9 +844,12 @@ void GeometryAppearance::DrawGL(Element e)
         }
         //if(silhouetteRadius > 0) glDepthFunc(GL_LESS);
         vertexDisplayList.endCompile();
+        if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: vertexDisplayList compile");
       }
-      else
+      else {
         vertexDisplayList.call();
+        if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: vertexDisplayList call");
+      }
 
       if(vertexColor.rgba[3] != 1.0 || !vertexColors.empty()) {
         glDisable(GL_BLEND); 
@@ -856,14 +866,34 @@ void GeometryAppearance::DrawGL(Element e)
     if(lightFaces) {
       glEnable(GL_LIGHTING);
       SetTintedMaterial(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,faceColor,tintColor,tintStrength);
+      if(GL_DEBUG) {
+        if(CheckGLErrors("GeometryAppearance::DrawGL: set tinted material")) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: DrawGL: set tinted material error");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"  FACE: "<<faceColor.rgba[0]<<" "<<faceColor.rgba[1]<<" "<<faceColor.rgba[2]<<" "<<faceColor.rgba[3]);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"  TINT: "<<tintColor.rgba[0]<<" "<<tintColor.rgba[1]<<" "<<tintColor.rgba[2]<<" "<<tintColor.rgba[3]);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"  STRENGTH: "<<tintStrength);
+        }
+      }
+
+
       glMaterialfv(GL_FRONT,GL_EMISSION,emissiveColor.rgba);
-      float _shininess = Max(Min(shininess,1000.0f),0.0f);
+      float _shininess = Max(Min(shininess,128.0f),0.0f);
       glMaterialf(GL_FRONT,GL_SHININESS,_shininess);
       if(_shininess != 0)
         glMaterialfv(GL_FRONT,GL_SPECULAR,specularColor.rgba);
       else {
         float zeros[4]={0,0,0,0};
         glMaterialfv(GL_FRONT,GL_SPECULAR,zeros);
+      }
+
+      if(GL_DEBUG) {
+        if(CheckGLErrors("GeometryAppearance::DrawGL: face material setup")) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: DrawGL: face material setup error");
+          LOG4CXX_ERROR(KrisLibrary::logger(),"  EMISSIVE: "<<emissiveColor.rgba[0]<<" "<<emissiveColor.rgba[1]<<" "<<emissiveColor.rgba[2]<<" "<<emissiveColor.rgba[3]);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"  SPECULAR: "<<specularColor.rgba[0]<<" "<<specularColor.rgba[1]<<" "<<specularColor.rgba[2]<<" "<<specularColor.rgba[3]);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"  SHININESS: "<<shininess);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"  FACE: "<<faceColor.rgba[0]<<" "<<faceColor.rgba[1]<<" "<<faceColor.rgba[2]<<" "<<faceColor.rgba[3]);
+        }
       }
     }
     else {
@@ -903,6 +933,7 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
           glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
         }
+        if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: tex1d setup");
       }
       else if(tex2D) {
         glEnable(GL_TEXTURE_2D);
@@ -924,6 +955,7 @@ void GeometryAppearance::DrawGL(Element e)
           glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
         }
       }
+      if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: tex2d setup");
     }
 
     if(!texgen.empty()) {
@@ -972,9 +1004,15 @@ void GeometryAppearance::DrawGL(Element e)
       if(texgenEyeTransform) {
         glPopMatrix();
       }
+      if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: texgen setup");
     }
     
     if(!faceDisplayList) {
+      if(GL_DEBUG) {
+        if(CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile, before doing anything")) {
+        }
+      }
+
       faceDisplayList.beginCompileAndExecute();
       Timer timer;
       const Meshing::TriMesh* trimesh = NULL;
@@ -1038,6 +1076,11 @@ void GeometryAppearance::DrawGL(Element e)
           }
         }
 
+        if(GL_DEBUG) {
+          if(CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile, before sending tris")) {
+          }
+        }
+
         if(!texcoords.empty() && texcoords.size()!=trimesh->verts.size())
           LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: warning, texcoords wrong size: "<<(int)texcoords.size()<<" vs "<<(int)trimesh->verts.size());
         if(!faceColors.empty() && faceColors.size()!=trimesh->tris.size())
@@ -1045,8 +1088,10 @@ void GeometryAppearance::DrawGL(Element e)
         if(texcoords.size()!=trimesh->verts.size() && faceColors.size()!=trimesh->tris.size()) {
           if(vertexColors.size() != trimesh->verts.size()) {
             //flat shaded
-            if(creaseAngle == 0)
+            if(creaseAngle == 0) {
               DrawGLTris(*trimesh);
+              if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile face, flat shaded");
+            }
             else {
               //smooth shaded
               glShadeModel(GL_SMOOTH);
@@ -1067,6 +1112,7 @@ void GeometryAppearance::DrawGL(Element e)
                 glVertex3f(c.x,c.y,c.z);
               }
               glEnd();
+              if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile smooth shaded");
             }
             /*
             //testing vertex arrays -- not perceptibly faster.
@@ -1166,6 +1212,7 @@ void GeometryAppearance::DrawGL(Element e)
             glEnd();
             
             glEnable(GL_LIGHTING);
+            if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile, vertex colors");
           }
         }
         else {
@@ -1190,26 +1237,43 @@ void GeometryAppearance::DrawGL(Element e)
               glVertex3f(b.x,b.y,b.z);
               glTexCoord2f(texcoords[t.c].x,texcoords[t.c].y);
               glVertex3f(c.x,c.y,c.z);
+              if(GL_DEBUG) {
+                if(CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile, texture")) {
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"   a "<<a<<" b "<<b<<" c "<<c<<", n "<<n);
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"   tex "<<texcoords[t.a]<<" "<<texcoords[t.b]<<" "<<texcoords[t.c]);
+                }
+              }
             }
             else {
               glVertex3f(a.x,a.y,a.z);
               glVertex3f(b.x,b.y,b.z);
               glVertex3f(c.x,c.y,c.z);
+              if(GL_DEBUG) {
+                if(CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile, colors")) {
+                  LOG4CXX_ERROR(KrisLibrary::logger(),"   a "<<a<<" b "<<b<<" c "<<c<<", n "<<n);
+                }
+              }
             }
           }
           glEnd();
           if(useFaceColors)
             glEnable(GL_LIGHTING);
+          if(GL_DEBUG) {
+            if(CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile face, colors and/or texture")) {
+              LOG4CXX_ERROR(KrisLibrary::logger(),"   Drawing "<<trimesh->tris.size()<<" faces");
+            }
+          }
         }
       }
       else if(geom->type == AnyGeometry3D::Type::Primitive) {
         draw(geom->AsPrimitive());
       }
       faceDisplayList.endCompile();
+      if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList compile");
     }
     else {
-      //Timer timer;
       faceDisplayList.call();
+      if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: faceDisplayList call");
     }
 
     //cleanup, reset GL state
@@ -1251,6 +1315,7 @@ void GeometryAppearance::DrawGL(Element e)
           draw(geom->AsPrimitive());
         glPopAttrib();
         edgeDisplayList.endCompile();
+        if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: edgeDisplayList");
       }
     }
     else if (geom->type == AnyGeometry3D::Type::Heightmap) {
@@ -1400,9 +1465,11 @@ void GeometryAppearance::DrawGL(Element e)
         glEnd();
         glPopAttrib();
         silhouetteDisplayList.endCompile();
+        if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: silhouetteDisplayList compile");
       }
       else {
         silhouetteDisplayList.call();
+        if(GL_DEBUG) CheckGLErrors("GeometryAppearance::DrawGL: silhouetteDisplayList call");
       }
     }
   }
@@ -1412,17 +1479,30 @@ void GeometryAppearance::DrawGL(Element e)
     Assert(geom->type == AnyGeometry3D::Type::Group);
     Assert(subAppearances.size() == geom->AsGroup().size());
     const std::vector<Geometry::AnyGeometry3D>& subgeoms = geom->AsGroup();
+    const std::vector<Geometry::AnyCollisionGeometry3D>* subcollisionGeoms = NULL;
+    if(collisionGeom) {
+      subcollisionGeoms = &collisionGeom->GroupCollisionData();
+      Assert(subcollisionGeoms->size() == subgeoms.size());
+    }
     for(size_t i=0;i<subAppearances.size();i++) {
       bool iDrawFaces=subAppearances[i].drawFaces;
       bool iDrawEdges=subAppearances[i].drawEdges;
       bool iDrawVertices=subAppearances[i].drawVertices;
       bool customAppearance = false;
-      if(subgeoms[i].type == AnyGeometry3D::Type::TriangleMesh) {
+      if(subgeoms[i].type == AnyGeometry3D::Type::TriangleMesh) { //copy appearance data from the mesh, not this
         auto* mesh = dynamic_cast<Geometry3DTriangleMesh*>(subgeoms[i].data.get());
         if(mesh->appearance) customAppearance = true;
       }
       if(!customAppearance)
         subAppearances[i].CopyMaterialFlat(*this);
+      if(subAppearances[i].geom != &subgeoms[i]) {
+        if(!subcollisionGeoms || (*subcollisionGeoms)[i].data.get() != subAppearances[i].geom->data.get()) {
+          printf("Warning: GeometryAppearance::DrawGL: subappearance geometry mismatch: %p vs %p\n",
+                subAppearances[i].geom,subgeoms[i].data.get());
+          // subAppearances[i].Set(subgeoms[i]);
+          // subAppearances[i].RefreshGeometry();
+        }
+      }
       subAppearances[i].drawFaces = iDrawFaces && drawFaces;
       subAppearances[i].drawEdges = iDrawEdges && drawEdges;
       subAppearances[i].drawVertices = iDrawVertices && drawVertices;
@@ -1430,6 +1510,10 @@ void GeometryAppearance::DrawGL(Element e)
       subAppearances[i].drawFaces = iDrawFaces;
       subAppearances[i].drawEdges = iDrawEdges;
       subAppearances[i].drawVertices = iDrawVertices;
+      if(GL_DEBUG) {
+        if(CheckGLErrors("GeometryAppearance::DrawGL: Group sub-appearance"))
+          LOG4CXX_ERROR(KrisLibrary::logger(),"GeometryAppearance: DrawGL: sub-appearance "<<i<<" had GL errors");
+      }
     }
   }
 }
