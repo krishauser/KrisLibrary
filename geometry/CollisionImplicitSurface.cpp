@@ -1542,6 +1542,12 @@ Collider3D* Collider3DImplicitSurface::Copy(shared_ptr<Geometry3D> data) const
 void Collider3DImplicitSurface::Reset()
 {
   auto& baseGrid = data->data;
+  if(baseGrid.value.empty()) {
+    resolutionMap.resize(0);
+    minHierarchy.resize(0);
+    maxHierarchy.resize(0);
+    return;
+  }
   Vector3 dims = baseGrid.bb.bmax-baseGrid.bb.bmin;
   Real maxdim = Max(dims.x,dims.y,dims.z);
   Vector3 res = dims;
