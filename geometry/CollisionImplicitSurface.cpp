@@ -853,6 +853,7 @@ bool Collides(const CollisionPointCloud &a, Real margin, const Collider3DImplici
 bool Collides(const Collider3DImplicitSurface &a, const Collider3DImplicitSurface &b, Real margin,
               vector<int> &elements1, vector<int> &elements2, size_t maxContacts)
 {
+  if(a.resolutionMap.empty() || b.resolutionMap.empty()) return false;  //empty geometries
   Vector3 sa = a.data->data.GetCellSize();
   Vector3 sb = b.data->data.GetCellSize();
   Assert(IsFinite(sa.maxAbsElement()) && IsFinite(sb.maxAbsElement()));
