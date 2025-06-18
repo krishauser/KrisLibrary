@@ -532,6 +532,9 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
     collider.reset(geom.collider->Copy(data));
     collider->SetTransform(currentTransform);
   }
+  else if(collider) {
+    collider.reset();
+  }
   return *this;
 }
 
