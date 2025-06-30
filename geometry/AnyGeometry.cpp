@@ -620,8 +620,8 @@ bool AnyCollisionGeometry3D::Merge(const AnyCollisionGeometry3D& other)
     LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyCollisionGeometry3D::Merge(): Cannot merge with self");
     return false;
   }
-  Assert(collider != other.collider);
   if(collider && other.collider) {
+    Assert(collider != other.collider);
     if(collider->Merge(other.collider.get())) {
       return true;
     }
