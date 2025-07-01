@@ -527,8 +527,8 @@ AnyCollisionGeometry3D &AnyCollisionGeometry3D::operator=(const AnyCollisionGeom
   currentTransform = geom.currentTransform;
   collisionHint = geom.collisionHint;
 
-  //TODO: collider copies don't preserve references to the copied geometry pointer
   if (geom.collider) {
+    //collider copies don't preserve references to the copied geometry pointer
     collider.reset(geom.collider->Copy(data));
     collider->SetTransform(currentTransform);
   }
