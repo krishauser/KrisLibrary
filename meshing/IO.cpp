@@ -231,11 +231,6 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
   }
   else {
 #if HAVE_ASSIMP
-    //setup texture path to same directory as fn
-    char* buf = new char[strlen(fn)+1];
-    GetFilePath(fn,buf);
-    gTexturePath = buf;
-    delete [] buf;
     //do the loading
     if(!LoadAssimp(fn,tri,app)) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn);
@@ -1025,6 +1020,12 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models)
 
 bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearance>& apps)
 {
+  //setup texture path to same directory as fn
+  char* buf = new char[strlen(fn)+1];
+  GetFilePath(fn,buf);
+  gTexturePath = buf;
+  delete [] buf;
+  
   Assimp::Importer importer;
   importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
   importer.SetPropertyInteger(AI_CONFIG_IMPORT_COLLADA_IGNORE_UP_DIRECTION, 1);
