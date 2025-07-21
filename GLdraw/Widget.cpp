@@ -149,8 +149,8 @@ void WidgetSet::SetFocus(bool value)
   else {
     //LOG4CXX_INFO(KrisLibrary::logger(),"Remove focus on widget "<<typeid(*this).name()<<", sub-widget "<<(activeWidget?typeid(*activeWidget).name():"NULL"));
     if(activeWidget) activeWidget->SetFocus(false);
-    activeWidget = NULL;
-    closestWidget = NULL;
+    // activeWidget = NULL;
+    // closestWidget = NULL;
   }
 }
 void WidgetSet::Keypress(char c)
