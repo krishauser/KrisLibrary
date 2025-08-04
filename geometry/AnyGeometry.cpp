@@ -284,6 +284,7 @@ bool AnyGeometry3D::Load(const char *fn)
     LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyGeometry::Load(): Could not determine file extension of "<<fn);
     return false;
   }
+  printf("AnyGeometry3D: loading file %s with extension %s\n",fn,ext);
   if (Meshing::CanLoadTriMeshExt(ext))
   {
     vector<Meshing::TriMesh> meshes;
@@ -369,18 +370,18 @@ bool AnyGeometry3D::Load(const char *fn)
   }
   else if (0 == strcmp(ext, "geom"))
   {
-    ifstream in(fn,ios::in);
-    if(!in) {
-      LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyGeometry::Load(): Could not open file "<<fn);
-      return false;
-    }
-    return Load(in);
-    // data.reset(new Geometry3DPrimitive());
-    // if(!data->Load(fn)) {
+    // ifstream in(fn,ios::in);
+    // if(!in) {
+    //   LOG4CXX_ERROR(GET_LOGGER(Geometry),"AnyGeometry::Load(): Could not open file "<<fn);
     //   return false;
     // }
-    // type = Type::Primitive;
-    // return true;
+    // return Load(in);
+    data.reset(new Geometry3DPrimitive());
+    if(!data->Load(fn)) {
+      return false;
+    }
+    type = Type::Primitive;
+    return true;
   }
   else if (0 == strcmp(ext, "json"))
   {
@@ -417,9 +418,11 @@ bool AnyGeometry3D::Load(istream &in)
 {
   string typestr;
   in >> typestr;
+  cout<<"AnyGeometry3D: Read type "<<typestr<<endl;
   data.reset(Geometry3D::Make(typestr.c_str()));
   if(!data) return false;
   if(!data->Load(in)) {
+    cout<<"AnyGeometry3D: Load failed"<<endl;
     return false;
   }
   type = data->GetType();
