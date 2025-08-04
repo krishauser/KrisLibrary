@@ -360,7 +360,6 @@ bool Export(const char* fn,const TriMesh& tri)
   }
   else {
 #if HAVE_ASSIMP
-    //right now SaveAssimp is not working yet...
     if(!SaveAssimp(fn,tri)) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
       return false;
@@ -405,7 +404,6 @@ bool Export(const char* fn,const TriMesh& tri,const GeometryAppearance& app)
   }
   else {
 #if HAVE_ASSIMP
-    //right now SaveAssimp is not working yet...
     if(!SaveAssimp(fn,tri,app)) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
       return false;
@@ -448,7 +446,6 @@ bool Export(const char* fn,const vector<TriMesh>& meshes,const vector<GeometryAp
   else {
     //use Assimp to save multiple meshes
 #if HAVE_ASSIMP
-    //right now SaveAssimp is not working yet...
     if(!SaveAssimp(fn,meshes,appearances)) {
       LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
       return false;
