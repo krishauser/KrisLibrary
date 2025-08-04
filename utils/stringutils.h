@@ -74,7 +74,7 @@ const char* FileExtension (const char* str);
 void ChangeFileExtension (char* str, const char* ext);
 ///Returns "file.ext" for the str="dir1/dir2/.../file.ext"
 const char* GetFileName(const char* str);
-///Extracts the path from str (formatted as above) into buf, not including the trailing '/'
+///Extracts the path from str (formatted as above) into buf, including the trailing '/'
 void GetFilePath(const char* str, char* buf);
 ///Removes the file extension of str
 void StripExtension(char* str);
