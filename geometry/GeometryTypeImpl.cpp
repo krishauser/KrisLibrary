@@ -13,6 +13,8 @@
 #include "CollisionImplicitSurface.h"
 #include "CollisionOccupancyGrid.h"
 #include "CollisionHeightmap.h"
+#include <KrisLibrary/meshing/IO.h>
+#include <KrisLibrary/utils/stringutils.h>
 #include <fstream>
 
 DECLARE_LOGGER(Geometry)
@@ -369,6 +371,63 @@ Geometry3D* Geometry3DGroup::ExtractROI(const Box3D& bb,int flags) const
     return res;
 }
 
+bool Geometry3DGroup::Load(const char* fn)
+{
+    const char* ext = ::FileExtension(fn);
+    if(ext && Meshing::CanLoadTriMeshExt(ext)) {
+        vector<Meshing::TriMesh> meshes;
+        vector<GLDraw::GeometryAppearance> appearances;
+        if(!Meshing::Import(fn, meshes, appearances)) {
+            return false;
+        }
+        data.resize(meshes.size());
+        for (size_t i = 0; i < meshes.size(); i++) {
+            data[i].type = Geometry3D::Type::TriangleMesh;
+            data[i].data.reset(new Geometry3DTriangleMesh(meshes[i]));
+            if (i < appearances.size()) {
+                auto* appearance = data[i].TriangleMeshAppearanceData();
+                if (appearance) {
+                    *appearance = appearances[i];
+                }
+            }
+        }
+    }
+    else {
+        return Geometry3D::Load(fn);
+    }
+}
+
+bool Geometry3DGroup::Save(const char* fn) const
+{
+    //if all items are trimeshes, can save as a single file
+    bool allTriMeshes = true;
+    for (size_t i = 0; i < data.size(); i++) {
+        if (data[i].type != Geometry3D::Type::TriangleMesh) {
+            allTriMeshes = false;
+            break;
+        }
+    }
+    if(data.empty() || !allTriMeshes) {
+        return Geometry3D::Save(fn);
+    }
+    const char* ext = ::FileExtension(fn);
+    if(ext && Meshing::CanSaveMultipleTriMeshExt(ext)) {
+        //get the meshes and appearances
+        vector<Meshing::TriMesh> meshes(data.size());
+        vector<GLDraw::GeometryAppearance> appearances(data.size());
+        for (size_t i = 0; i < data.size(); i++) {
+            meshes[i] = data[i].AsTriangleMesh();
+            appearances[i] = *data[i].TriangleMeshAppearanceData();
+        }
+        if(!Meshing::Export(fn, meshes, appearances)) {
+            return false;
+        }
+        return true;
+    }
+    else
+        return Geometry3D::Save(fn);
+}
+
 bool Geometry3DGroup::Load(istream& in)
 {
     int n;
@@ -383,7 +442,6 @@ bool Geometry3DGroup::Load(istream& in)
     }
     return true;
 }
-
 
 bool Geometry3DGroup::Save(ostream& out) const
 {

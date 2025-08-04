@@ -202,6 +202,7 @@ public:
   virtual ~Geometry3DHeightmap () {}
   virtual Type GetType() const override { return Type::Heightmap; }
   virtual Geometry3D* Copy() const override { return new Geometry3DHeightmap(data); }
+  virtual const char* FileExtension() const override { return "json"; }
   virtual bool Load(const char* fn) override;
   virtual bool Save(const char* fn) const override;
   virtual bool Load(istream& in) override;
@@ -228,6 +229,8 @@ public:
   Geometry3DGroup(const vector<AnyGeometry3D>& _data);
   virtual ~Geometry3DGroup ();
   virtual Type GetType() const override { return Type::Group; }
+  virtual bool Load(const char* fn) override;
+  virtual bool Save(const char* fn) const override;
   virtual bool Load(istream& in) override;
   virtual bool Save(ostream& out) const override;
   virtual bool Empty() const override;
