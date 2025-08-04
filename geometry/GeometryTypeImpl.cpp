@@ -299,13 +299,29 @@ bool Geometry3DGroup::Merge(const Geometry3D* geom,const RigidTransform* Tgeom)
 
 Geometry3D* Geometry3DGroup::ConvertTo(Type restype, Real param,Real domainExpansion) const
 {
+    if(data.empty()) {
+        //LOG4CXX_INFO(GET_LOGGER(Geometry),"Geometry3DGroup::ConvertTo(): empty group, returning NULL");
+        return NULL;
+    }
     vector<AnyGeometry3D> convert(data.size());
     for (size_t i = 0; i < data.size(); i++) {
-        auto* res = data[i].data->ConvertTo(restype, param, domainExpansion);
-        if(!res) 
-            return NULL;
-        convert[i].type = res->GetType();
-        convert[i].data.reset(res);
+        if(data[i].type == restype) {
+            convert[i] = data[i];
+            continue;
+        }
+        else {
+            auto* res = data[i].data->ConvertTo(restype, param, domainExpansion);
+            if(!res) {
+                // printf("Group::ConvertTo: Could not convert geometry %d of type %s to type %s\n",
+                //     (int)i, Geometry3D::TypeName(data[i].type), Geometry3D::TypeName(restype));
+                return NULL;
+            }
+            convert[i].type = res->GetType();
+            convert[i].data.reset(res);
+        }
+    }
+    if(convert.size()==1) {
+        return convert[0].data->Copy();
     }
     auto* res = Geometry3D::Make(restype);
     vector<Geometry3D*> impls(convert.size());
