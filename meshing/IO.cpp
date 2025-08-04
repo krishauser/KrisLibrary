@@ -1243,12 +1243,23 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
   }
   models.resize(0);
   int upAxis=2,upAxisSign=1,frontAxis=1,frontAxisSign=1,coordAxis=0,coordAxisSign=1;
+  float scaleFactor = 1.0;
+  const char* ext = FileExtension(fn);
+  if(0==strcmp(ext,"gltf") || 0 == strcmp(ext,"gltf2") || 0 == strcmp(ext,"glb") || 0 == strcmp(ext,"glb2")) {
+    //gltf files have no axis metadata, so assume Y up, Z front, X right
+    upAxis = 1;
+    frontAxis = 2;
+    coordAxis = 0;
+    upAxisSign = 1;
+    frontAxisSign = -1;
+    coordAxisSign = 1;
+  }
+
   #if ASSIMP_MAJOR_VERSION>3
-    /* for(int i=0;i<scene->mMetaData->mNumProperties;i++) {
-      printf("ASSIMP: Property %s\n",scene->mMetaData->mKeys[i].C_Str());
-    }
-    */
-    /* //some versions of assimp > 3 don't have mMetaData... this doesn't appear to be helpful anyways so ¯\_(ツ)_/¯
+    // for(int i=0;i<scene->mMetaData->mNumProperties;i++) {
+    //   printf("ASSIMP: Property %s\n",scene->mMetaData->mKeys[i].C_Str());
+    // }
+    //some versions of assimp > 3 don't have mMetaData... 
     if(scene->mMetaData){
       scene->mMetaData->Get<int>("UpAxis",upAxis);
       scene->mMetaData->Get<int>("UpAxisSign",upAxisSign);
@@ -1256,8 +1267,9 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
       scene->mMetaData->Get<int>("FrontAxisSign",frontAxisSign);
       scene->mMetaData->Get<int>("CoordAxis",coordAxis);
       scene->mMetaData->Get<int>("CoordAxisSign",coordAxisSign);
+      scene->mMetaData->Get<float>("UnitScaleFactor",scaleFactor);
     }
-    */
+  
   #endif //ASSIMP_MAJOR_VERSION>3
   if(upAxis == frontAxis || upAxis == coordAxis || frontAxis == coordAxis) {
     LOG4CXX_WARN(KrisLibrary::logger(), "AssimpImporter: Warning, axis metadata is erroneous in " << fn << "!");
@@ -1277,6 +1289,14 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
   Troot(1,frontAxis) = frontAxisSign;
   Troot(2,upAxis) = upAxisSign;
   Troot(3,3) = 1;
+  if(scaleFactor != 1.0) {
+    LOG4CXX_WARN(KrisLibrary::logger(), "AssimpImporter: Warning, scale factor is not 1.0 in " << fn << ", may wish to scale by "<<scaleFactor);
+    // for(int i=0;i<3;i++) {
+    //   for(int j=0;j<3;j++) {
+    //     Troot(i,j) *= scaleFactor;
+    //   }
+    // }
+  }
   if(!WalkAssimpNodes(fn,scene,scene->mRootNode,Troot,models,apps)) {
     LOG4CXX_ERROR(KrisLibrary::logger(), "AssimpImporter: Error Processing " << fn << "!");
     return false;
@@ -1333,7 +1353,7 @@ bool SaveAssimp(const char* fn, const TriMesh& model)
   Assimp::Exporter exporter;
   const char* exporter_id = NULL;
   const char* ext = FileExtension(fn);
-  for(int i=0;i<exporter.GetExportFormatCount();i++) {
+  for(unsigned int i=0;i<exporter.GetExportFormatCount();i++) {
     const aiExportFormatDesc* desc = exporter.GetExportFormatDescription(i);
     if(0==strcmp(desc->fileExtension,ext)) {
       exporter_id = desc->id;
@@ -1394,7 +1414,7 @@ bool SaveAssimp(const char* fn, const TriMesh& model,const GeometryAppearance& a
   Assimp::Exporter exporter;
   const char* exporter_id = NULL;
   const char* ext = FileExtension(fn);
-  for(int i=0;i<exporter.GetExportFormatCount();i++) {
+  for(unsigned int i=0;i<exporter.GetExportFormatCount();i++) {
     const aiExportFormatDesc* desc = exporter.GetExportFormatDescription(i);
     if(0==strcmp(desc->fileExtension,ext)) {
       exporter_id = desc->id;
@@ -1467,7 +1487,7 @@ bool SaveAssimp(const char* fn, const vector<TriMesh>& models,const vector<Geome
   Assimp::Exporter exporter;
   const char* exporter_id = NULL;
   const char* ext = FileExtension(fn);
-  for(int i=0;i<exporter.GetExportFormatCount();i++) {
+  for(unsigned int i=0;i<exporter.GetExportFormatCount();i++) {
     const aiExportFormatDesc* desc = exporter.GetExportFormatDescription(i);
     if(0==strcmp(desc->fileExtension,ext)) {
       exporter_id = desc->id;
