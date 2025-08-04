@@ -166,6 +166,7 @@ void SaveTriMeshExtensions(std::vector<std::string>& exts)
 #endif //HAVE_ASSIMP
 }
 
+
 ///Returns true if the extension is a file type that we can save to
 bool CanSaveTriMeshExt(const char* ext)
 {
@@ -185,11 +186,34 @@ bool CanSaveTriMeshExt(const char* ext)
   return false;
 }
 
+bool CanSaveTriMeshAppearanceExt(const char* ext)
+{
+  if(0==strcmp(ext,"obj")) return true; //Wavefront OBJ supports per-vertex colors
+  else if(0==strcmp(ext,"off")) return true; //GeomView OFF supports per-face colors
+  else if(0==strcmp(ext,"tri")) return false;
+  else if(0==strcmp(ext,"stl")) return false;
+  else if(0==strcmp(ext,"ply")) return false;
+  else return CanSaveTriMeshExt(ext);  //assume Assimp supports appearance data
+}
+
+bool CanSaveMultipleTriMeshExt(const char* ext)
+{
+  if(0==strcmp(ext,"tri")) return false; 
+  else if(0==strcmp(ext,"off")) return false; 
+  else if(0==strcmp(ext,"obj")) return false; //Wavefront OBJ does not support multiple meshes
+  else if(0==strcmp(ext,"stl")) return false; //STL does not support multiple meshes
+  else return CanSaveTriMeshExt(ext);  //assume Assimp supports multiple meshes
+}
+
 
 ///Import will try to determine the file type via the file extension
 bool Import(const char* fn,TriMesh& tri)
 {
   const char* ext=FileExtension(fn);
+  if(!ext) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn<<" has no extension, cannot determine type");
+    return false;
+  }
   if(0==strcmp(ext,"tri")) {
     return LoadMultipleTriMeshes(fn,tri);
   }
@@ -226,6 +250,10 @@ bool Import(const char* fn,TriMesh& tri)
 bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
 {
   const char* ext=FileExtension(fn);
+  if(!ext) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn<<" has no extension, cannot determine type");
+    return false;
+  }
   if(0==strcmp(ext,"tri")) {
     return LoadMultipleTriMeshes(fn,tri);
   }
@@ -247,7 +275,7 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
     else if(0==strcmp(ext,"off")) {
       ifstream in(fn,ios::in);
       if(!in) return false;
-      return LoadOFF(in,tri);
+      return LoadOFF(in,tri,app);
     }
     if(0==strcmp(ext,"wrl")) {
       ifstream in(fn,ios::in);
@@ -263,10 +291,59 @@ bool Import(const char* fn,TriMesh& tri,GeometryAppearance& app)
   }
 }
 
+bool Import(const char* fn,vector<TriMesh>& meshes,vector<GLDraw::GeometryAppearance>& appearances)
+{
+  const char* ext=FileExtension(fn);
+  if(!ext) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn<<" has no extension, cannot determine type");
+    return false;
+  }
+  if(0==strcmp(ext,"tri")) {
+    meshes.resize(0);
+    appearances.resize(0);
+    ifstream in(fn);
+    if(!in) return false;
+    while(in) {
+      TriMesh tri;
+      in>>tri;
+      if(in.bad()) {
+        if(meshes.empty()) {
+          LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn<<" is not a valid .tri file");
+          return false;
+        }
+        break; //EOF or error
+      }
+      meshes.push_back(tri);
+      appearances.push_back(GLDraw::GeometryAppearance());
+    }
+    return true;
+  }
+  else {
+#if HAVE_ASSIMP
+    //do the loading
+    if(!LoadAssimp(fn,meshes,appearances)) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Import(TriMesh): file "<<fn);
+      return false;
+    }
+    else {
+      return true;
+    }
+#else
+    meshes.resize(1);
+    appearances.resize(1);
+    return Import(fn,meshes[0],appearances[0]);
+#endif
+  }
+}
+
 
 bool Export(const char* fn,const TriMesh& tri)
 {
   const char* ext=FileExtension(fn);
+  if(!ext) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" has no extension, cannot determine type");
+    return false;
+  }
   if(0==strcmp(ext,"tri")) {
     ofstream out(fn,ios::out);
     if(!out) return false;
@@ -307,7 +384,82 @@ bool Export(const char* fn,const TriMesh& tri)
 
 bool Export(const char* fn,const TriMesh& tri,const GeometryAppearance& app)
 {
-  return Export(fn,tri);
+  const char* ext=FileExtension(fn);
+  if(!ext) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" has no extension, cannot determine type");
+    return false;
+  }
+  if(0==strcmp(ext,"tri")) {
+    ofstream out(fn,ios::out);
+    if(!out) return false;
+    out<<tri;
+    return true;
+  }
+  else if(0==strcmp(ext,"off")) {
+    ofstream out(fn,ios::out);
+    if(!out) return false;
+    return SaveOFF(out,tri,app);
+  }
+  else if(0==strcmp(ext,"obj")) {
+    return SaveOBJ(fn,tri,app);
+  }
+  else {
+#if HAVE_ASSIMP
+    //right now SaveAssimp is not working yet...
+    if(!SaveAssimp(fn,tri,app)) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
+      return false;
+    }
+    else {
+      return true;
+    }
+#else
+    if(0==strcmp(ext,"wrl")) {
+      ofstream out(fn,ios::out);
+      if(!out) return false;
+      return SaveVRML(out,tri);
+    }
+    else {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file extension "<<ext);
+      return false;
+    }
+#endif
+  }
+}
+
+bool Export(const char* fn,const vector<TriMesh>& meshes,const vector<GeometryAppearance>& appearances)
+{
+  assert(meshes.size() == appearances.size());
+  const char* ext=FileExtension(fn);
+  if(!ext) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" has no extension, cannot determine type");
+    return false;
+  }
+  if(!CanSaveMultipleTriMeshExt(ext)) {
+    //merge the meshes
+    if(meshes.size() == 1) {
+      return Export(fn,meshes[0],appearances[0]);
+    }
+    TriMesh tri;
+    tri.Union(meshes);
+    //too bad, can't merge appearances
+    return Export(fn,tri,appearances[0]);
+  }
+  else {
+    //use Assimp to save multiple meshes
+#if HAVE_ASSIMP
+    //right now SaveAssimp is not working yet...
+    if(!SaveAssimp(fn,meshes,appearances)) {
+      LOG4CXX_ERROR(KrisLibrary::logger(),"Export(TriMesh): file "<<fn<<" could not be saved to type "<<ext);
+      return false;
+    }
+    else {
+      return true;
+    }
+#else
+    return false;
+#endif
+  }
 }
 
 
@@ -326,7 +478,7 @@ bool SaveVRML(std::ostream& out,const TriMesh& tri)
 }
 
 ///Loads from the GeomView Object File Format (OFF)
-bool LoadOFF(std::istream& in,TriMesh& tri)
+bool LoadOFF(std::istream& in,TriMesh& tri,vector<GLDraw::GLColor>& faceColors)
 {
   string tag;
   in>>tag;
@@ -360,6 +512,7 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
       }
       tri.verts.resize(nv);
       tri.tris.resize(0);
+      faceColors.resize(0);
       numFaces = nf;
       mode = 1;
       if((int)tri.verts.size() == vertIndex) mode=2;
@@ -368,7 +521,7 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
       stringstream ss(line);
       ss >> tri.verts[vertIndex];
       if(ss.bad()) {
-                LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: unable to read vertex from line "<<lineno<<" = "<<line);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: unable to read vertex from line "<<lineno<<" = "<<line);
         in.setstate(ios::badbit);
         return false;
       }
@@ -383,7 +536,7 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
       vector<int> face;
       ss >> nv;
       if(ss.bad()) {
-                LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: unable to load number of vertices on face line "<<lineno<<" = "<<line);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: unable to load number of vertices on face line "<<lineno<<" = "<<line);
         in.setstate(ios::badbit);
         return false;
       }
@@ -391,22 +544,33 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
         int v;
         ss>>v;
         if(v < 0 || v >= int(tri.verts.size())) {
-                    LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: invalid vertex reference on line "<<lineno<<" = "<<line);
+          LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: invalid vertex reference on line "<<lineno<<" = "<<line);
           return false;
         }
         face.push_back(v);
       }
       if(ss.bad()) {
-                LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: incorrect number of vertices on line "<<lineno<<" = "<<line);
+        LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: incorrect number of vertices on line "<<lineno<<" = "<<line);
         in.setstate(ios::badbit);
         return false;
       }
-      //ignore RGBA colors
-
       //triangulate faces, assume convex
       for(int i=1;i+1<nv;i++) {
         tri.tris.push_back(IntTriple(face[0],face[i],face[i+1]));
       }
+            //get optional RGBA colors
+      GLColor color;
+      color.rgba[3] = 1;
+      if(ss >> color.rgba[0] >> color.rgba[1] >> color.rgba[2]) {
+        color.rgba[0] /= 255.0f;
+        color.rgba[1] /= 255.0f;
+        color.rgba[2] /= 255.0f;
+        //RGBA color specified
+        while(faceColors.size() <= tri.tris.size()) {
+          faceColors.push_back(color);
+        }
+      }
+
       faceIndex++;
       if(faceIndex == numFaces) return true;
     }
@@ -415,6 +579,32 @@ bool LoadOFF(std::istream& in,TriMesh& tri)
     LOG4CXX_ERROR(KrisLibrary::logger(),"LoadOFF: Unexpected end of file on line "<<lineno<<", face "<<faceIndex<<" / "<<numFaces);
   return false;
 }
+
+bool LoadOFF(std::istream& in,TriMesh& tri)
+{
+  vector<GLDraw::GLColor> faceColors;
+  return LoadOFF(in,tri,faceColors);
+}
+
+bool LoadOFF(std::istream& in,TriMesh& tri,GLDraw::GeometryAppearance& app)
+{
+  if(!LoadOFF(in,tri,app.faceColors)) return false;
+  //if all face colors are the same, then set the appearance color
+  if(app.faceColors.size() > 0) {
+    bool all_same = true;
+    for(size_t i=1;i<app.faceColors.size();i++) {
+      if(app.faceColors[i] != app.faceColors[0]) {
+        all_same = false;
+      }
+    }
+    if(all_same) {
+      app.faceColor = app.faceColors[0];
+      app.faceColors.resize(0); //clear the per-face colors
+    }
+  }
+  return true;
+}
+
 
 ///Saves to the GeomView Object File Format (OFF)
 bool SaveOFF(std::ostream& out,const TriMesh& tri)
@@ -427,6 +617,21 @@ bool SaveOFF(std::ostream& out,const TriMesh& tri)
     out<<"3  "<<tri.tris[i]<<endl;
   return true;
 }
+
+///Saves to the GeomView Object File Format (OFF)
+bool SaveOFF(std::ostream& out,const TriMesh& tri,const GeometryAppearance& app)
+{
+  out<<"OFF"<<endl;
+  out<<tri.verts.size()<<" "<<tri.tris.size()<<" 0"<<endl;
+  for(size_t i=0;i<tri.verts.size();i++)
+    out<<tri.verts[i]<<endl;
+  for(size_t i=0;i<tri.tris.size();i++) {
+    const GLColor& c = app.faceColors.empty() ? app.faceColor : app.faceColors[i];
+    out<<"3  "<<tri.tris[i]<<"   "<<int(c.rgba[0]*255.0)<<" "<<int(c.rgba[1]*255.0)<<" "<<int(c.rgba[2]*255.0)<<endl;
+  }
+  return true;
+}
+
 
 //scans until endc is read
 bool fscanto(FILE* f, char endc)
@@ -1082,40 +1287,23 @@ bool LoadAssimp(const char* fn, vector<TriMesh>& models,vector<GeometryAppearanc
   return true;
 }
 
-bool SaveAssimp(const char* fn, const TriMesh& model)
+ 
+aiMesh* MeshToAssimp(const TriMesh& model)
 {
-  aiScene scene;
-
-  scene.mRootNode = new aiNode();
-
-  scene.mMaterials = new aiMaterial*[ 1 ];
-  scene.mNumMaterials = 1;
-  scene.mMaterials[ 0 ] = new aiMaterial();
-
-  scene.mMeshes = new aiMesh*[ 1 ];
-  scene.mMeshes[ 0 ] = nullptr;
-  scene.mNumMeshes = 1;
-
-  scene.mMeshes[ 0 ] = new aiMesh();
-  scene.mMeshes[ 0 ]->mMaterialIndex = 0;
-
-  scene.mRootNode->mMeshes = new unsigned int[ 1 ];
-  scene.mRootNode->mMeshes[ 0 ] = 0;
-  scene.mRootNode->mNumMeshes = 1;
-
-  auto pMesh = scene.mMeshes[ 0 ];
-
-  pMesh->mVertices = new aiVector3D[ model.verts.size() ];
-  pMesh->mNumVertices = model.verts.size();
+  aiMesh* mesh = new aiMesh();
+  mesh->mMaterialIndex = 0; //default material
+  mesh->mVertices = new aiVector3D[ model.verts.size() ];
+  mesh->mNumVertices = model.verts.size();
 
   for ( size_t i=0;i<model.verts.size();i++)
-    pMesh->mVertices[ i ] = aiVector3D( (float)model.verts[i].x, (float)model.verts[i].y, (float)model.verts[i].z );
+    mesh->mVertices[ i ] = aiVector3D( (float)model.verts[i].x, (float)model.verts[i].y, (float)model.verts[i].z );
 
-  pMesh->mFaces = new aiFace[ model.tris.size() ];
-  pMesh->mNumFaces = model.tris.size();
+  mesh->mFaces = new aiFace[ model.tris.size() ];
+  mesh->mNumFaces = model.tris.size();
 
+  mesh->mPrimitiveTypes = aiPrimitiveType_TRIANGLE;
   for(size_t i=0;i<model.tris.size();i++) {
-    aiFace& face = pMesh->mFaces[i];
+    aiFace& face = mesh->mFaces[i];
     face.mIndices = new unsigned int[ 3 ];
     face.mNumIndices = 3;
 
@@ -1123,11 +1311,45 @@ bool SaveAssimp(const char* fn, const TriMesh& model)
     face.mIndices[ 1 ] = model.tris[i][ 1 ];
     face.mIndices[ 2 ] = model.tris[i][ 2 ];
   }
+  return mesh;
+}
+
+bool SaveAssimp(const char* fn, const TriMesh& model)
+{
+  aiScene scene;
+
+  scene.mMetaData = new aiMetadata();
+  scene.mRootNode = new aiNode();
+
+  scene.mMaterials = new aiMaterial*[ 1 ];
+  scene.mNumMaterials = 1;
+  scene.mMaterials[ 0 ] = new aiMaterial();
+
+  scene.mMeshes = new aiMesh*[ 1 ];
+  scene.mNumMeshes = 1;
+
+  scene.mMeshes[ 0 ] = MeshToAssimp(model);
+  scene.mRootNode->mMeshes = new unsigned int[ 1 ];
+  scene.mRootNode->mMeshes[ 0 ] = 0;
+  scene.mRootNode->mNumMeshes = 1;
 
   Assimp::Exporter exporter;
-  auto res = exporter.Export(&scene,FileExtension(fn),fn);
+  const char* exporter_id = NULL;
+  const char* ext = FileExtension(fn);
+  for(int i=0;i<exporter.GetExportFormatCount();i++) {
+    const aiExportFormatDesc* desc = exporter.GetExportFormatDescription(i);
+    if(0==strcmp(desc->fileExtension,ext)) {
+      exporter_id = desc->id;
+      break;
+    }
+  }
+  if(exporter_id == NULL) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SaveAssimp: No exporter found for file extension "<<ext);
+    return false;
+  }
+  auto res = exporter.Export(&scene,exporter_id,fn);
   if(res != AI_SUCCESS)
-    LOG4CXX_WARN(KrisLibrary::logger(),"Assimp Exporter failed!");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Assimp Exporter failed!  Error: "<<exporter.GetErrorString());
   return (res == AI_SUCCESS);
 }
 
@@ -1135,6 +1357,7 @@ bool SaveAssimp(const char* fn, const TriMesh& model,const GeometryAppearance& a
 {
   aiScene scene;
 
+  scene.mMetaData = new aiMetadata();
   scene.mRootNode = new aiNode();
 
   scene.mMaterials = new aiMaterial*[ 1 ];
@@ -1142,38 +1365,17 @@ bool SaveAssimp(const char* fn, const TriMesh& model,const GeometryAppearance& a
   scene.mMaterials[ 0 ] = new aiMaterial();
 
   scene.mMeshes = new aiMesh*[ 1 ];
-  scene.mMeshes[ 0 ] = nullptr;
   scene.mNumMeshes = 1;
 
-  scene.mMeshes[ 0 ] = new aiMesh();
-  scene.mMeshes[ 0 ]->mMaterialIndex = 0;
+  scene.mMeshes[ 0 ] = MeshToAssimp(model);
 
   scene.mRootNode->mMeshes = new unsigned int[ 1 ];
   scene.mRootNode->mMeshes[ 0 ] = 0;
   scene.mRootNode->mNumMeshes = 1;
 
-  auto pMesh = scene.mMeshes[ 0 ];
-
-  pMesh->mVertices = new aiVector3D[ model.verts.size() ];
-  pMesh->mNumVertices = model.verts.size();
-
-  for ( size_t i=0;i<model.verts.size();i++)
-    pMesh->mVertices[ i ] = aiVector3D((float)model.verts[i].x, (float)model.verts[i].y, (float)model.verts[i].z );
-
-  pMesh->mFaces = new aiFace[ model.tris.size() ];
-  pMesh->mNumFaces = model.tris.size();
-
-  for(size_t i=0;i<model.tris.size();i++) {
-    aiFace& face = pMesh->mFaces[i];
-    face.mIndices = new unsigned int[ 3 ];
-    face.mNumIndices = 3;
-
-    face.mIndices[ 0 ] = model.tris[i][ 0 ];
-    face.mIndices[ 1 ] = model.tris[i][ 1 ];
-    face.mIndices[ 2 ] = model.tris[i][ 2 ];
-  }
 
   if(!app.vertexColors.empty()) {
+    auto pMesh = scene.mMeshes[ 0 ];
     pMesh->mColors[0] = new aiColor4D[ model.verts.size() ];
     for ( size_t i=0;i<model.verts.size();i++) {
       pMesh->mColors[0][i].r = app.vertexColors[i].rgba[0];
@@ -1193,11 +1395,98 @@ bool SaveAssimp(const char* fn, const TriMesh& model,const GeometryAppearance& a
   }
 
   Assimp::Exporter exporter;
-  auto res = exporter.Export(&scene,FileExtension(fn),fn);
+  const char* exporter_id = NULL;
+  const char* ext = FileExtension(fn);
+  for(int i=0;i<exporter.GetExportFormatCount();i++) {
+    const aiExportFormatDesc* desc = exporter.GetExportFormatDescription(i);
+    if(0==strcmp(desc->fileExtension,ext)) {
+      exporter_id = desc->id;
+      //break;
+    }
+  }
+  if(exporter_id == NULL) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SaveAssimp: No exporter found for file extension "<<ext);
+    return false;
+  }
+  auto res = exporter.Export(&scene,exporter_id,fn);
   if(res != AI_SUCCESS)
-    LOG4CXX_WARN(KrisLibrary::logger(),"Assimp Exporter failed!");
+    LOG4CXX_WARN(KrisLibrary::logger(),"Assimp Exporter failed!  Error: "<<exporter.GetErrorString());
   return (res == AI_SUCCESS);
 }
+
+bool SaveAssimp(const char* fn, const vector<TriMesh>& models,const vector<GeometryAppearance>& appearances)
+{
+  if(models.size() == 0) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SaveAssimp: No models to save");
+    return false;
+  }
+  aiScene scene;
+
+  scene.mMetaData = new aiMetadata();
+  scene.mRootNode = new aiNode();
+
+  scene.mNumMaterials = Max(1,(int)appearances.size());
+  scene.mMaterials = new aiMaterial*[ scene.mNumMaterials ];
+  for(size_t i=0;i<scene.mNumMaterials;i++)
+    scene.mMaterials[i] = new aiMaterial();
+
+  scene.mMeshes = new aiMesh*[ models.size() ];
+  scene.mNumMeshes = models.size();
+
+  for(size_t i=0;i<models.size();i++) {
+    scene.mMeshes[i] = MeshToAssimp(models[i]);
+  }
+
+  scene.mRootNode->mMeshes = new unsigned int[ models.size() ];
+  for(size_t i=0;i<models.size();i++) {
+    scene.mRootNode->mMeshes[i] = i;
+  }
+  scene.mRootNode->mNumMeshes = models.size();
+
+  for(size_t i=0;i<models.size();i++) {
+    if(i < appearances.size()) {
+      const auto& app = appearances[i];
+      if(!app.vertexColors.empty()) {
+        auto pMesh = scene.mMeshes[i];
+        pMesh->mColors[0] = new aiColor4D[ models[i].verts.size() ];
+        for ( size_t j=0;j<models[i].verts.size();j++) {
+          pMesh->mColors[0][j].r = app.vertexColors[j].rgba[0];
+          pMesh->mColors[0][j].g = app.vertexColors[j].rgba[1];
+          pMesh->mColors[0][j].b = app.vertexColors[j].rgba[2];
+          pMesh->mColors[0][j].a = app.vertexColors[j].rgba[3];
+        }
+      }
+      scene.mMaterials[i]->AddProperty( &app.faceColor.rgba, 1, AI_MATKEY_COLOR_DIFFUSE );
+
+      if(!app.faceColors.empty()) {
+        LOG4CXX_WARN(KrisLibrary::logger(),"Can't export per-face colors yet");
+      }
+      if(!app.tex1D || !app.tex2D) {
+        LOG4CXX_WARN(KrisLibrary::logger(),"Can't export textures yet");
+      }
+    }
+  }  
+  
+  Assimp::Exporter exporter;
+  const char* exporter_id = NULL;
+  const char* ext = FileExtension(fn);
+  for(int i=0;i<exporter.GetExportFormatCount();i++) {
+    const aiExportFormatDesc* desc = exporter.GetExportFormatDescription(i);
+    if(0==strcmp(desc->fileExtension,ext)) {
+      exporter_id = desc->id;
+      break;
+    }
+  }
+  if(exporter_id == NULL) {
+    LOG4CXX_ERROR(KrisLibrary::logger(),"SaveAssimp: No exporter found for file extension "<<ext);
+    return false;
+  }
+  auto res = exporter.Export(&scene,exporter_id,fn);
+  if(res != AI_SUCCESS)
+    LOG4CXX_WARN(KrisLibrary::logger(),"Assimp Exporter failed!  Error: "<<exporter.GetErrorString());
+  return (res == AI_SUCCESS);
+}
+
 
 #else
 
@@ -1218,6 +1507,19 @@ bool SaveAssimp(const char* fn, const TriMesh& mesh)
   LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Exporter defined!");
   return false;
 }
+
+bool SaveAssimp(const char* fn, const TriMesh& mesh,const GeometryAppearance& app)
+{
+  LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Exporter defined!");
+  return false;
+}
+
+bool SaveAssimp(const char* fn, const vector<TriMesh>& meshes,const vector<GeometryAppearance>& appearances)
+{
+  LOG4CXX_INFO(KrisLibrary::logger(),"No Assimp Exporter defined!");
+  return false;
+}
+
 
 
 #endif

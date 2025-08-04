@@ -17,15 +17,24 @@ bool Import(const char* fn,TriMesh& tri);
 ///If the file format does not contain any appearance information,
 ///then the appearance argument will be untouched.
 bool Import(const char* fn,TriMesh& tri,GLDraw::GeometryAppearance& appearance);
+///Imports from a file that may contain multiple individual meshes
+bool Import(const char* fn,vector<TriMesh>& meshes,vector<GLDraw::GeometryAppearance>& appearances);
 ///Export will try to determine the file type via the file extension
 bool Export(const char* fn,const TriMesh& tri);
 ///Export will try to determine the file type via the file extension
 bool Export(const char* fn,const TriMesh& tri,const GLDraw::GeometryAppearance& appearance);
+///Export will try to determine the file type via the file extension.  Will save multiple meshes if the file type supports it,
+///and otherwise will merge the meshes into a single mesh.
+bool Export(const char* fn,const vector<TriMesh>& meshes,const vector<GLDraw::GeometryAppearance>& appearances);
 
 ///Returns true if the extension is a file type that we can load from
 bool CanLoadTriMeshExt(const char* ext);
 ///Returns true if the extension is a file type that we can save to 
 bool CanSaveTriMeshExt(const char* ext);
+///Returns true if the extension is a file type that we can save appearance data to 
+bool CanSaveTriMeshAppearanceExt(const char* ext);
+///Returns true if the extension is a file type that we can save multiple meshes to without compression 
+bool CanSaveMultipleTriMeshExt(const char* ext);
 ///Returns all the supported extensions
 void LoadTriMeshExtensions(std::vector<std::string>& exts);
 ///Returns all the supported extensions
@@ -38,8 +47,12 @@ bool SaveVRML(std::ostream& out,const TriMesh& tri);
 
 ///Loads from the GeomView Object File Format (OFF)
 bool LoadOFF(std::istream& in,TriMesh& tri);
+///Loads from the GeomView Object File Format (OFF) (can get per-face colors)
+bool LoadOFF(std::istream& in,TriMesh& tri,GLDraw::GeometryAppearance& app);
 ///Saves to the GeomView Object File Format (OFF)
 bool SaveOFF(std::ostream& out,const TriMesh& tri);
+///Saves to the Wavefront OBJ file format (OFF) saving per-face colors
+bool SaveOFF(std::ostream& out,const TriMesh& tri,const GLDraw::GeometryAppearance& app);
 
 ///Loads from the Wavefront OBJ file format
 bool LoadOBJ(const char* fn,TriMesh& tri);
@@ -62,6 +75,8 @@ bool LoadAssimp(const char* fn,vector<TriMesh>& meshes,vector<GLDraw::GeometryAp
 bool SaveAssimp(const char* fn,const TriMesh& tri);
 ///Saves using Assimp if available on your system (vertex color output is experimental)
 bool SaveAssimp(const char* fn,const TriMesh& tri,const GLDraw::GeometryAppearance& appearance);
+///Saves using Assimp if available on your system.  Saves individual meshes
+bool SaveAssimp(const char* fn,const vector<TriMesh>& meshes,const vector<GLDraw::GeometryAppearance>& appearances);
 
 } //namespace Meshing
 
