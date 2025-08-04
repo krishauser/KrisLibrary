@@ -90,6 +90,22 @@ namespace Meshing {
  * while space below the heightmap (away) is filled.  Space outside of the bounds
  * of the heightmap is also free.
  * 
+ * File format
+ * -----------
+ * 
+ * The heightmap is saved in JSON format, with the following fields:
+ * - `type`: The type of the object, which is "Heightmap".
+ * - `heights`: The height image, given as a relative path to an image file.
+ * - `height_range`: The range of heights, given as a list of two floats (min, max).
+ * - `xsize`: The dimensions of the heightmap in the x direction (optional).
+ * - `ysize`: The dimensions of the heightmap in the y direction (optional).
+ * - `xfov`: The horizontal field of view (optional).  If present, will set the viewport to perspective mode.
+ * - `yfov`: The vertical field of view (optional).  If present, will set the viewport to perspective mode.
+ * - `offset`: The offset of the translation of the heightmap in the world frame, given as a list of three floats (x, y, z) (optional).
+ * - `orientation`: The orientation of the heightmap in the world frame, given as 3x3 rotation matrix (optional).
+ * - `colors`: The vertex colors, given as a relative path to an image file (optional).
+ * - `properties`: Additional properties as a dict from property names to a property description (optional).
+ *     The property description can be a relative path to an image file or a {image:file, range:(min,max)} dictionary.
  */ 
 class Heightmap
 {

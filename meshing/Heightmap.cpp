@@ -301,6 +301,7 @@ bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorF
         items["xfov"] = xfov;
         items["yfov"] = yfov;
     }
+    //save translation as "offset"
     if(viewport.pose.t.maxAbsElement() > 0) {
         AnyCollection joffset;
         joffset.resize(3);
@@ -309,7 +310,31 @@ bool Heightmap::Save(std::ostream& out, const char* heightFn, const char* colorF
         joffset[2] = viewport.pose.t.z;
         items["offset"] = joffset;
     }
-    //TODO: orientation
+    //save orientation as "orientation"
+    Matrix3 ident;
+    ident.setIdentity();
+    if(viewport.pose.R != ident) {
+        AnyCollection jorientation;
+        jorientation.resize(3);
+        AnyCollection o1,o2,o3;
+        o1.resize(3);
+        o2.resize(3);
+        o3.resize(3);
+        o1[0] = viewport.pose.R(0,0);
+        o1[1] = viewport.pose.R(0,1);
+        o1[2] = viewport.pose.R(0,2);
+        o2[0] = viewport.pose.R(1,0);
+        o2[1] = viewport.pose.R(1,1);
+        o2[2] = viewport.pose.R(1,2);
+        o3[0] = viewport.pose.R(2,0);
+        o3[1] = viewport.pose.R(2,1);
+        o3[2] = viewport.pose.R(2,2);
+        jorientation[0] = o1;
+        jorientation[1] = o2;
+        jorientation[2] = o3;
+        items["orientation"] = jorientation;
+    }
+    //save heights
     Image himg;
     float hmin = *std::min_element(heights.begin(),heights.end());
     float hmax = *std::max_element(heights.begin(),heights.end());
