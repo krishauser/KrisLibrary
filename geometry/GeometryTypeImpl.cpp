@@ -989,7 +989,7 @@ bool Collider3DGroup::RayCast(const Ray3D& r,Real margin,Real& distance,int& ele
         int elem;
         if (items[i].collider->RayCast(r, margin + items[i].margin, d, elem))
         {
-            if (d < distance)
+            if (elem >= 0 && d < distance)
             {
                 distance = d;
                 element = (int)i;
